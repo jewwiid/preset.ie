@@ -1,0 +1,72 @@
+{
+  "mcpServers": {
+    "preset-filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "description": "Provides file system access for the Preset project"
+    },
+    "preset-git": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git", "--repository", "."],
+      "description": "Git operations and repository management"
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=${SUPABASE_PROJECT_REF}"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
+      },
+      "description": "Supabase database schema and data access with write permissions"
+    }
+  },
+  "contextSources": [
+    {
+      "type": "file",
+      "patterns": [
+        "packages/domain/**/*.ts",
+        "packages/application/**/*.ts", 
+        "packages/adapters/**/*.ts",
+        "supabase/migrations/*.sql",
+        "*.md",
+        "package.json",
+        "turbo.json"
+      ],
+      "description": "Core domain and application logic files"
+    },
+    {
+      "type": "documentation",
+      "files": [
+        "CLAUDE.md",
+        "PRODUCTION_ROADMAP.md",
+        "preset_scope_final.md"
+      ],
+      "description": "Project documentation and specifications"
+    }
+  ],
+  "workflows": {
+    "domain-first": {
+      "description": "Always start with domain modeling when adding new features",
+      "steps": [
+        "Define domain entities and value objects",
+        "Create domain events if needed", 
+        "Implement use cases in application layer",
+        "Create adapter implementations",
+        "Add API endpoints and UI"
+      ]
+    },
+    "safety-first": {
+      "description": "Security and safety checks for all user-generated content",
+      "requirements": [
+        "EXIF stripping for images",
+        "Content moderation",
+        "RLS policy verification",
+        "Age verification enforcement",
+        "Usage rights compliance"
+      ]
+    }
+  }
+}

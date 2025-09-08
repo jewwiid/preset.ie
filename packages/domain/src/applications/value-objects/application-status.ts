@@ -1,0 +1,7 @@
+export enum ApplicationStatus {
+  PENDING = 'PENDING',
+  SHORTLISTED = 'SHORTLISTED',
+  ACCEPTED = 'ACCEPTED',
+  DECLINED = 'DECLINED',
+  WITHDRAWN = 'WITHDRAWN'
+}

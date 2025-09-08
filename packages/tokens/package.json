@@ -1,0 +1,26 @@
+{
+  "name": "@preset/tokens",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./css": "./dist/tokens.css",
+    "./native": "./dist/native.js"
+  },
+  "scripts": {
+    "build": "npm run build:js && npm run build:css",
+    "build:js": "tsc",
+    "build:css": "node scripts/build-css.js",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  }
+}

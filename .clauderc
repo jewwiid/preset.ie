@@ -1,0 +1,61 @@
+{
+  "mcp": {
+    "servers": {
+      "preset-context": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/judeokun/Documents/GitHub/preset/preset.ie/preset"],
+        "env": {}
+      },
+      "preset-git": {
+        "command": "npx", 
+        "args": ["-y", "@modelcontextprotocol/server-git", "--repository", "/Users/judeokun/Documents/GitHub/preset/preset.ie/preset"],
+        "env": {}
+      },
+      "supabase": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@supabase/mcp-server-supabase@latest",
+          "--read-only",
+          "--project-ref=${SUPABASE_PROJECT_REF}",
+          "--access-token=${SUPABASE_ACCESS_TOKEN}"
+        ],
+        "env": {}
+      }
+    }
+  },
+  "rules": [
+    "Always use the shared domain types from @preset/domain",
+    "Follow hexagonal architecture patterns with ports and adapters", 
+    "Implement proper error handling and validation in all use cases",
+    "Use TypeScript strict mode and ensure type safety",
+    "Follow the subscription tier gating rules defined in the domain layer",
+    "Always strip EXIF data from uploaded images for privacy",
+    "Implement proper RLS policies for data access control",
+    "Use domain events for cross-context communication",
+    "Keep the domain layer pure (no framework dependencies)",
+    "Test all use cases with proper mocking of ports"
+  ],
+  "projectContext": {
+    "name": "Preset",
+    "description": "Cross-platform creative collaboration platform built with DDD + Hexagonal architecture",
+    "architecture": "Domain-Driven Design with Hexagonal Architecture (Ports & Adapters)",
+    "stack": [
+      "TypeScript",
+      "Next.js (Web)",
+      "Expo/React Native (Mobile)", 
+      "Supabase (Backend)",
+      "Tamagui (UI)",
+      "Stripe (Subscriptions)",
+      "Turborepo (Monorepo)"
+    ],
+    "boundedContexts": [
+      "Identity & Access",
+      "Gigs",
+      "Applications", 
+      "Collaboration & Messaging",
+      "Media & Moodboards",
+      "Showcases & Reviews"
+    ]
+  }
+}

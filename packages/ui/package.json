@@ -1,26 +1,45 @@
 {
-  "name": "@repo/ui",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@preset/ui",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    "./*": "./src/*.tsx"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
-    "generate:component": "turbo gen react-component",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
     "check-types": "tsc --noEmit"
   },
-  "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
-    "@types/node": "^22.15.3",
-    "@types/react": "19.1.0",
-    "@types/react-dom": "19.1.1",
-    "eslint": "^9.34.0",
-    "typescript": "5.9.2"
-  },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "@preset/tokens": "*",
+    "@tamagui/animations-react-native": "^1.112.15",
+    "@tamagui/button": "^1.112.15",
+    "@tamagui/config": "^1.112.15",
+    "@tamagui/core": "^1.112.15",
+    "@tamagui/font-inter": "^1.112.15",
+    "@tamagui/get-token": "^1.112.15",
+    "@tamagui/input": "^1.112.15",
+    "@tamagui/lucide-icons": "^1.112.15",
+    "@tamagui/shorthands": "^1.112.15",
+    "@tamagui/stacks": "^1.112.15",
+    "@tamagui/text": "^1.112.15",
+    "@tamagui/themes": "^1.112.15",
+    "react": "^18.2.0",
+    "react-native": "0.75.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/react": "^18.2.79",
+    "@types/react-native": "^0.73.0",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "react": ">=17",
+    "react-native": ">=0.70"
   }
 }

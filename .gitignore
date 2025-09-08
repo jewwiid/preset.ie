@@ -36,3 +36,32 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Expo
+.expo/
+
+# Supabase local
+.supabase/
+
+# Keep context files for Claude Code
+!.claude/
+
+# Test files with potential sensitive data
+test_*.js
+*_test.js
+create_*.js
+fix_*.js
+verify_*.js
+check_*.js
+apply_*.js
+setup_*.js
+sync_*.js
+
+# Temporary scripts
+*.temp.js
+*.tmp.js
+
+# API keys and credentials
+*.key
+*.pem
+credentials.json
