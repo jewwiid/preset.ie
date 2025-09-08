@@ -589,6 +589,20 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
       
       if (!data.success) {
         console.error('Enhancement API error:', data)
+        
+        // Handle specific error codes for better user feedback
+        if (data.code === 'DATA_URL_NOT_SUPPORTED') {
+          throw new Error('Please use a direct image URL instead of pasted/uploaded images for enhancement')
+        } else if (data.code === 'IMAGE_URL_INACCESSIBLE') {
+          throw new Error('The image URL is not accessible. Please ensure it\'s publicly available')
+        } else if (data.code === 'INSUFFICIENT_CREDITS') {
+          throw new Error(data.error || 'Insufficient credits for enhancement')
+        } else if (data.code === 'INVALID_IMAGE_FORMAT') {
+          throw new Error('Invalid image format. Please use JPEG, PNG, or WebP images')
+        } else if (data.code === 'NETWORK_ERROR') {
+          throw new Error('Network error. Please check your connection and try again')
+        }
+        
         throw new Error(data.error || 'Enhancement failed')
       }
 

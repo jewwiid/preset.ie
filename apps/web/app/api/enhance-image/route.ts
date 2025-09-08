@@ -138,23 +138,75 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Optimize image URL for faster processing
+    // Validate and optimize image URL
     let optimizedImageUrl = inputImageUrl;
     
-    // Apply optimization based on image source
-    if (inputImageUrl.includes('unsplash.com')) {
-      const url = new URL(inputImageUrl);
-      url.searchParams.set('w', '1024');  // Limit to 1024px width
-      url.searchParams.set('q', '85');    // 85% quality
-      url.searchParams.set('fm', 'jpg');  // Use JPEG format
-      url.searchParams.set('fit', 'max'); // Maintain aspect ratio
-      optimizedImageUrl = url.toString();
-      console.log('Optimized Unsplash URL:', optimizedImageUrl);
-    } else if (inputImageUrl.includes('pexels.com')) {
-      optimizedImageUrl = inputImageUrl.replace(/\?.*$/, '?auto=compress&cs=tinysrgb&w=1024');
-      console.log('Optimized Pexels URL:', optimizedImageUrl);
+    // Ensure URL is absolute and valid
+    try {
+      const urlObj = new URL(inputImageUrl);
+      
+      // Check if URL is accessible (not localhost unless in dev)
+      if (process.env.NODE_ENV === 'production' && 
+          (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1')) {
+        console.error('Invalid URL for production:', inputImageUrl);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Invalid image URL. Please use a publicly accessible URL.',
+            details: 'Local URLs are not accessible to the enhancement service'
+          },
+          { status: 400 }
+        );
+      }
+      
+      // Apply optimization based on image source
+      if (inputImageUrl.includes('unsplash.com')) {
+        urlObj.searchParams.set('w', '1024');  // Limit to 1024px width
+        urlObj.searchParams.set('q', '85');    // 85% quality
+        urlObj.searchParams.set('fm', 'jpg');  // Use JPEG format
+        urlObj.searchParams.set('fit', 'max'); // Maintain aspect ratio
+        optimizedImageUrl = urlObj.toString();
+        console.log('Optimized Unsplash URL:', optimizedImageUrl);
+      } else if (inputImageUrl.includes('pexels.com')) {
+        optimizedImageUrl = inputImageUrl.replace(/\?.*$/, '?auto=compress&cs=tinysrgb&w=1024');
+        console.log('Optimized Pexels URL:', optimizedImageUrl);
+      } else if (inputImageUrl.includes('images.pexels.com')) {
+        // Direct Pexels image URLs
+        optimizedImageUrl = inputImageUrl.includes('?') 
+          ? inputImageUrl + '&auto=compress&cs=tinysrgb&w=1024'
+          : inputImageUrl + '?auto=compress&cs=tinysrgb&w=1024';
+        console.log('Optimized direct Pexels URL:', optimizedImageUrl);
+      }
+      
+      // Log the final URL being sent
+      console.log('Final image URL for NanoBanana:', optimizedImageUrl);
+      
+    } catch (urlError) {
+      console.error('Invalid URL provided:', inputImageUrl, urlError);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Invalid image URL format',
+          details: 'Please provide a valid absolute URL'
+        },
+        { status: 400 }
+      );
     }
 
+    // Handle data URLs (base64 images) - NanoBanana needs actual URLs
+    if (optimizedImageUrl.startsWith('data:')) {
+      console.error('Data URLs not supported directly');
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Base64/data URLs are not supported',
+          details: 'Please upload the image first or use a direct image URL',
+          code: 'DATA_URL_NOT_SUPPORTED'
+        },
+        { status: 400 }
+      );
+    }
+    
     // Prepare NanoBanana API payload according to official docs
     const enhancementPayload = {
       prompt: `${prompt} (Enhancement type: ${enhancementType}, Strength: ${strength})`,
@@ -170,16 +222,46 @@ export async function POST(request: NextRequest) {
     console.log('Sending to NanoBanana:', enhancementPayload);
 
     // Call NanoBanana API - official endpoint from docs
-    const nanoBananaResponse = await fetch('https://api.nanobananaapi.ai/api/v1/nanobanana/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${nanoBananaApiKey}`
-      },
-      body: JSON.stringify(enhancementPayload)
-    });
+    let nanoBananaResponse;
+    let nanoBananaData;
+    
+    try {
+      nanoBananaResponse = await fetch('https://api.nanobananaapi.ai/api/v1/nanobanana/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${nanoBananaApiKey}`
+        },
+        body: JSON.stringify(enhancementPayload)
+      });
 
-    const nanoBananaData = await nanoBananaResponse.json();
+      nanoBananaData = await nanoBananaResponse.json();
+    } catch (fetchError: any) {
+      console.error('Failed to call NanoBanana API:', fetchError);
+      
+      // Check if it's a network error
+      if (fetchError.message?.includes('fetch')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Failed to connect to enhancement service',
+            details: 'Network error or service temporarily unavailable',
+            code: 'NETWORK_ERROR'
+          },
+          { status: 503 }
+        );
+      }
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Enhancement service error',
+          details: fetchError.message || 'Unknown error occurred',
+          code: 'API_CALL_FAILED'
+        },
+        { status: 500 }
+      );
+    }
     
     // Debug logging
     console.log('NanoBanana API response:', JSON.stringify(nanoBananaData, null, 2));
@@ -198,6 +280,37 @@ export async function POST(request: NextRequest) {
             code: 'ENHANCEMENT_SERVICE_CREDITS'
           },
           { status: 402 }
+        );
+      }
+      
+      // Check if error message indicates URL issue
+      if (nanoBananaData.msg?.toLowerCase().includes('url') || 
+          nanoBananaData.msg?.toLowerCase().includes('image') ||
+          nanoBananaData.msg?.toLowerCase().includes('fetch')) {
+        console.error('URL issue detected:', inputImageUrl);
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Image URL not accessible',
+            details: 'The enhancement service could not access the image. Please ensure the URL is publicly accessible and not behind authentication.',
+            originalUrl: inputImageUrl,
+            code: 'IMAGE_URL_INACCESSIBLE'
+          },
+          { status: 400 }
+        );
+      }
+      
+      // Check for invalid image format
+      if (nanoBananaData.msg?.toLowerCase().includes('format') || 
+          nanoBananaData.msg?.toLowerCase().includes('invalid')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Invalid image format',
+            details: 'Please use JPEG, PNG, or WebP images',
+            code: 'INVALID_IMAGE_FORMAT'
+          },
+          { status: 400 }
         );
       }
       
