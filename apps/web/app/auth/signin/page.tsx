@@ -17,14 +17,14 @@ export default function SignInPage() {
     setLoading(true)
     setError(null)
 
-    const { error } = await signIn(email, password)
+    const { error, redirectPath } = await signIn(email, password)
     
     if (error) {
       setError(error.message)
       setLoading(false)
     } else {
-      // Redirect to dashboard after successful signin
-      router.push('/dashboard')
+      // Use the redirect path determined by the auth context
+      router.push(redirectPath || '/dashboard')
     }
   }
 

@@ -4,13 +4,15 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { debugSession } from './session-debug'
+import { getUserRole, UserRole } from './auth-helpers'
 
 export interface AuthContextType {
   user: User | null
   session: Session | null
+  userRole: UserRole | null
   loading: boolean
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; redirectPath?: string }>
   signOut: () => Promise<{ error: AuthError | null }>
 }
 
@@ -19,6 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -39,6 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('Initial session:', session ? 'Found' : 'Not found')
           if (session) {
             console.log('Session expires at:', new Date(session.expires_at! * 1000).toLocaleString())
+            // Fetch user role when session is found
+            const role = await getUserRole(session.user.id)
+            setUserRole(role)
           }
           setSession(session)
           setUser(session?.user ?? null)
@@ -58,6 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Auth state changed:', event)
         setSession(session)
         setUser(session?.user ?? null)
+        
+        // Update user role on auth state changes
+        if (session?.user) {
+          const role = await getUserRole(session.user.id)
+          setUserRole(role)
+        } else {
+          setUserRole(null)
+        }
+        
         setLoading(false)
         
         // Handle token refresh
@@ -79,21 +94,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-    return { error }
+    
+    let redirectPath = '/dashboard'
+    
+    if (!error && data.user) {
+      // Get user role to determine redirect path
+      const role = await getUserRole(data.user.id)
+      setUserRole(role)
+      
+      if (role?.isAdmin) {
+        redirectPath = '/admin'
+      }
+    }
+    
+    return { error, redirectPath }
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    return { error }
+    try {
+      // Clear local state immediately for instant UI feedback
+      setUser(null)
+      setSession(null)
+      setUserRole(null)
+      
+      // Check if there's an active session before trying to sign out
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      
+      if (currentSession) {
+        // Only attempt sign out if there's an active session
+        const { error } = await supabase.auth.signOut({ scope: 'local' })
+        
+        if (error) {
+          // Log the error but don't throw - we've already cleared local state
+          console.warn('Supabase sign out warning:', error.message)
+        }
+      }
+      
+      // Always return success since local state is cleared
+      return { error: null }
+    } catch (err) {
+      // Even on error, local state is cleared so UI updates correctly
+      console.warn('Sign out process warning:', err)
+      return { error: null }
+    }
   }
 
   const value: AuthContextType = {
     user,
     session,
+    userRole,
     loading,
     signUp,
     signIn,

@@ -5,6 +5,20 @@ import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { 
+  Shield, 
+  Users, 
+  AlertTriangle, 
+  CreditCard, 
+  BarChart3, 
+  FileText, 
+  CheckCircle 
+} from 'lucide-react'
+
+// Import admin components
+import { ReportsQueue } from '../components/admin/ReportsQueue'
+import { UserManagement } from '../components/admin/UserManagement'
+import { VerificationQueue } from '../components/admin/VerificationQueue'
 
 interface PlatformStats {
   totalUsers: number
@@ -61,9 +75,9 @@ interface RefundMetrics {
 }
 
 export default function AdminDashboard() {
-  const { user, loading: authLoading } = useAuth()
-  const [isAdmin, setIsAdmin] = useState(false)
+  const { user, loading: authLoading, signOut } = useAuth()
   const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [stats, setStats] = useState<PlatformStats | null>(null)
   const [platformCredits, setPlatformCredits] = useState<PlatformCredits[]>([])
   const [creditPackages, setCreditPackages] = useState<CreditPackage[]>([])
@@ -92,49 +106,49 @@ export default function AdminDashboard() {
         .eq('user_id', user.id)
         .single()
 
-      if (!profile || !profile.role_flags.includes('ADMIN')) {
-        router.push('/dashboard')
+      if (!profile?.role_flags?.includes('ADMIN')) {
+        router.push('/')
         return
       }
 
       setIsAdmin(true)
       await Promise.all([
-        fetchPlatformStats(),
+        fetchStats(),
         fetchPlatformCredits(),
         fetchCreditPackages(),
         fetchRefundMetrics()
       ])
     } catch (error) {
       console.error('Error checking admin access:', error)
-      router.push('/dashboard')
+      router.push('/')
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchPlatformStats = async () => {
+  const fetchStats = async () => {
     try {
-      // Fetch user count
-      const { count: userCount } = await supabase
+      // Fetch users count
+      const { count: usersCount } = await supabase
         .from('users_profile')
         .select('*', { count: 'exact', head: true })
 
-      // Fetch gig count
-      const { count: gigCount } = await supabase
+      // Fetch gigs count
+      const { count: gigsCount } = await supabase
         .from('gigs')
         .select('*', { count: 'exact', head: true })
 
-      // Fetch application count
-      const { count: applicationCount } = await supabase
+      // Fetch applications count
+      const { count: applicationsCount } = await supabase
         .from('applications')
         .select('*', { count: 'exact', head: true })
 
-      // Fetch showcase count
-      const { count: showcaseCount } = await supabase
+      // Fetch showcases count
+      const { count: showcasesCount } = await supabase
         .from('showcases')
         .select('*', { count: 'exact', head: true })
 
-      // Fetch subscription distribution
+      // Fetch subscription counts
       const { data: subscriptions } = await supabase
         .from('users_profile')
         .select('subscription_tier')
@@ -148,78 +162,39 @@ export default function AdminDashboard() {
       }, { free: 0, plus: 0, pro: 0 }) || { free: 0, plus: 0, pro: 0 }
 
       setStats({
-        totalUsers: userCount || 0,
-        totalGigs: gigCount || 0,
-        totalApplications: applicationCount || 0,
-        totalShowcases: showcaseCount || 0,
+        totalUsers: usersCount || 0,
+        totalGigs: gigsCount || 0,
+        totalApplications: applicationsCount || 0,
+        totalShowcases: showcasesCount || 0,
         activeSubscriptions: subscriptionCounts
       })
     } catch (error) {
-      console.error('Error fetching platform stats:', error)
+      console.error('Error fetching stats:', error)
     }
   }
 
   const fetchPlatformCredits = async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('platform_credits')
         .select('*')
-        .order('provider')
 
-      if (!error && data) {
+      if (data) {
         setPlatformCredits(data)
-        // Check for last sync time
-        const nanoBanana = data.find(c => c.provider === 'nanobanana')
-        if (nanoBanana?.metadata?.last_sync_at) {
-          setLastSync(nanoBanana.metadata.last_sync_at)
-        }
       }
     } catch (error) {
       console.error('Error fetching platform credits:', error)
     }
   }
 
-  const syncRealCredits = async () => {
-    setSyncingCredits(true)
-    try {
-      const token = await supabase.auth.getSession()
-      const response = await fetch('/api/admin/sync-credits', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token.data.session?.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ provider: 'nanobanana', forceUpdate: true })
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        console.log('Credit sync result:', result)
-        
-        // Refresh the credits display
-        await fetchPlatformCredits()
-        
-        // Show success message
-        alert(`Synced NanoBanana credits: ${result.data.realCredits} credits available`)
-      } else {
-        throw new Error('Failed to sync credits')
-      }
-    } catch (error) {
-      console.error('Error syncing credits:', error)
-      alert('Failed to sync credits. Check console for details.')
-    } finally {
-      setSyncingCredits(false)
-    }
-  }
-
   const fetchCreditPackages = async () => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('credit_packages')
         .select('*')
-        .order('user_credits')
+        .order('user_credits', { ascending: true })
 
-      if (!error && data) {
+      if (data) {
         setCreditPackages(data)
       }
     } catch (error) {
@@ -229,453 +204,331 @@ export default function AdminDashboard() {
 
   const fetchRefundMetrics = async () => {
     try {
-      // Fetch total refunds
-      const { data: refunds, count } = await supabase
-        .from('refund_audit_log')
-        .select('*', { count: 'exact' })
+      // Fetch all refunds
+      const { data: refunds } = await supabase
+        .from('credit_refunds')
+        .select('*')
         .order('created_at', { ascending: false })
-        .limit(10)
 
-      // Fetch refunds by reason
-      const { data: refundsByReason } = await supabase
-        .from('refund_audit_log')
-        .select('refund_reason, credits_refunded')
+      if (!refunds) return
 
       // Calculate metrics
-      const totalRefunds = count || 0
-      const totalCreditsRefunded = refunds?.reduce((sum, r) => sum + r.credits_refunded, 0) || 0
-      const platformLoss = refunds?.reduce((sum, r) => sum + (r.platform_loss || 0), 0) || 0
+      const totalRefunds = refunds.length
+      const totalCreditsRefunded = refunds.reduce((sum, r) => sum + r.credits_refunded, 0)
+      const platformLoss = refunds.reduce((sum, r) => sum + (r.platform_credits_lost || 0), 0)
 
       // Get total enhancements for refund rate
       const { count: totalEnhancements } = await supabase
-        .from('enhancement_tasks')
+        .from('credit_consumption')
         .select('*', { count: 'exact', head: true })
 
       const refundRate = totalEnhancements ? (totalRefunds / totalEnhancements) * 100 : 0
 
-      // Group refunds by reason
-      const reasonGroups = refundsByReason?.reduce((acc, r) => {
-        if (!acc[r.refund_reason]) {
-          acc[r.refund_reason] = { reason: r.refund_reason, count: 0, credits: 0 }
+      // Group by reason
+      const reasonGroups = refunds.reduce((acc: any, refund) => {
+        const reason = refund.refund_reason || 'Unknown'
+        if (!acc[reason]) {
+          acc[reason] = { reason, count: 0, credits: 0 }
         }
-        acc[r.refund_reason].count++
-        acc[r.refund_reason].credits += r.credits_refunded
+        acc[reason].count++
+        acc[reason].credits += refund.credits_refunded
         return acc
-      }, {} as Record<string, any>)
+      }, {})
 
       setRefundMetrics({
         totalRefunds,
         totalCreditsRefunded,
         platformLoss,
         refundRate,
-        refundsByReason: Object.values(reasonGroups || {}),
-        recentRefunds: refunds || []
+        refundsByReason: Object.values(reasonGroups),
+        recentRefunds: refunds.slice(0, 10)
       })
     } catch (error) {
       console.error('Error fetching refund metrics:', error)
     }
   }
 
-  const handleRefillCredits = async (provider: string, amount: number) => {
-    if (!confirm(`Refill ${amount} credits for ${provider}?`)) return
-
+  const syncNanoBananaCredits = async () => {
+    setSyncingCredits(true)
     try {
-      // First get current values
-      const { data: current } = await supabase
-        .from('platform_credits')
-        .select('current_balance, total_purchased')
-        .eq('provider', provider)
-        .single()
+      const response = await fetch('/api/credits/sync-nanobanana', {
+        method: 'POST'
+      })
       
-      if (!current) {
-        alert('Provider not found')
-        return
-      }
-
-      const { error } = await supabase
-        .from('platform_credits')
-        .update({ 
-          current_balance: current.current_balance + amount,
-          total_purchased: current.total_purchased + amount,
-          last_purchase_at: new Date().toISOString()
-        })
-        .eq('provider', provider)
-
-      if (!error) {
-        alert(`Successfully added ${amount} credits to ${provider}`)
-        fetchPlatformCredits()
-      } else {
-        throw error
+      if (response.ok) {
+        const data = await response.json()
+        await fetchPlatformCredits()
+        setLastSync(new Date().toLocaleTimeString())
       }
     } catch (error) {
-      console.error('Error refilling credits:', error)
-      alert('Failed to refill credits')
+      console.error('Error syncing credits:', error)
+    } finally {
+      setSyncingCredits(false)
     }
   }
 
-  if (authLoading || loading) {
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/')
+  }
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'reports', label: 'Reports', icon: AlertTriangle },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'verification', label: 'Verification', icon: CheckCircle },
+    { id: 'credits', label: 'Credits', icon: CreditCard },
+  ]
+
+  if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500"></div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white">Loading admin dashboard...</div>
       </div>
     )
   }
 
   if (!isAdmin) {
-    return null
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white">Access denied. Admin privileges required.</div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700">
+      <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold text-emerald-400">Admin Dashboard</h1>
-              <nav className="flex space-x-6">
-                <button
-                  onClick={() => setActiveTab('overview')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    activeTab === 'overview' 
-                      ? 'bg-gray-900 text-emerald-400' 
-                      : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  Overview
-                </button>
-                <button
-                  onClick={() => setActiveTab('credits')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    activeTab === 'credits' 
-                      ? 'bg-gray-900 text-emerald-400' 
-                      : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  Credits
-                </button>
-                <button
-                  onClick={() => setActiveTab('users')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    activeTab === 'users' 
-                      ? 'bg-gray-900 text-emerald-400' 
-                      : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  Users
-                </button>
-                <button
-                  onClick={() => setActiveTab('content')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    activeTab === 'content' 
-                      ? 'bg-gray-900 text-emerald-400' 
-                      : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  Content
-                </button>
-                <button
-                  onClick={() => setActiveTab('refunds')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium ${
-                    activeTab === 'refunds' 
-                      ? 'bg-gray-900 text-emerald-400' 
-                      : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  Refunds
-                </button>
-              </nav>
+            <div className="flex items-center">
+              <Shield className="h-8 w-8 text-blue-600 mr-3" />
+              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
             </div>
-            <Link 
-              href="/dashboard"
-              className="text-gray-400 hover:text-white text-sm"
-            >
-              Back to Dashboard
-            </Link>
+            <div className="flex gap-3">
+              <Link 
+                href="/dashboard"
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                User Dashboard
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md text-sm font-medium"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
+      {/* Tabs */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex space-x-8">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
+                  ${activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }
+                `}
+              >
+                <tab.icon className="h-5 w-5" />
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {activeTab === 'overview' && stats && (
-          <div className="px-4 py-6 sm:px-0">
-            {/* Platform Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-gray-800 rounded-lg p-6">
-                <div className="text-sm font-medium text-gray-400">Total Users</div>
-                <div className="mt-2 text-3xl font-bold text-white">{stats.totalUsers}</div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white rounded-lg shadow p-6">
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.totalUsers || 0}</p>
               </div>
-              <div className="bg-gray-800 rounded-lg p-6">
-                <div className="text-sm font-medium text-gray-400">Total Gigs</div>
-                <div className="mt-2 text-3xl font-bold text-white">{stats.totalGigs}</div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <p className="text-sm font-medium text-gray-600">Total Gigs</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.totalGigs || 0}</p>
               </div>
-              <div className="bg-gray-800 rounded-lg p-6">
-                <div className="text-sm font-medium text-gray-400">Applications</div>
-                <div className="mt-2 text-3xl font-bold text-white">{stats.totalApplications}</div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <p className="text-sm font-medium text-gray-600">Applications</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.totalApplications || 0}</p>
               </div>
-              <div className="bg-gray-800 rounded-lg p-6">
-                <div className="text-sm font-medium text-gray-400">Showcases</div>
-                <div className="mt-2 text-3xl font-bold text-white">{stats.totalShowcases}</div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <p className="text-sm font-medium text-gray-600">Showcases</p>
+                <p className="text-3xl font-bold text-gray-900">{stats?.totalShowcases || 0}</p>
               </div>
             </div>
 
             {/* Subscription Distribution */}
-            <div className="bg-gray-800 rounded-lg p-6 mb-8">
-              <h2 className="text-lg font-semibold text-white mb-4">Subscription Distribution</h2>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Subscriptions</h2>
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-400">{stats.activeSubscriptions.free}</div>
-                  <div className="text-sm text-gray-500">Free</div>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.activeSubscriptions?.free || 0}</p>
+                  <p className="text-sm text-gray-600">Free</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-400">{stats.activeSubscriptions.plus}</div>
-                  <div className="text-sm text-gray-500">Plus</div>
+                  <p className="text-2xl font-bold text-blue-600">{stats?.activeSubscriptions?.plus || 0}</p>
+                  <p className="text-sm text-gray-600">Plus</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-400">{stats.activeSubscriptions.pro}</div>
-                  <div className="text-sm text-gray-500">Pro</div>
+                  <p className="text-2xl font-bold text-purple-600">{stats?.activeSubscriptions?.pro || 0}</p>
+                  <p className="text-sm text-gray-600">Pro</p>
                 </div>
               </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Link href="/admin/users" className="bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition">
-                <h3 className="text-lg font-semibold text-white mb-2">User Management</h3>
-                <p className="text-sm text-gray-400">Manage user accounts, roles, and subscriptions</p>
-              </Link>
-              <Link href="/admin/moderation" className="bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition">
-                <h3 className="text-lg font-semibold text-white mb-2">Content Moderation</h3>
-                <p className="text-sm text-gray-400">Review reported content and user complaints</p>
-              </Link>
-              <Link href="/admin/analytics" className="bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition">
-                <h3 className="text-lg font-semibold text-white mb-2">Analytics</h3>
-                <p className="text-sm text-gray-400">View detailed platform analytics and trends</p>
-              </Link>
             </div>
           </div>
         )}
 
+        {/* Reports Tab */}
+        {activeTab === 'reports' && <ReportsQueue />}
+
+        {/* Users Tab */}
+        {activeTab === 'users' && <UserManagement />}
+
+        {/* Verification Tab */}
+        {activeTab === 'verification' && <VerificationQueue />}
+
+        {/* Credits Tab */}
         {activeTab === 'credits' && (
-          <div className="px-4 py-6 sm:px-0">
-            {/* Platform Credits */}
-            <div className="bg-gray-800 rounded-lg p-6 mb-8">
+          <div className="space-y-6">
+            {/* Platform Credits Overview */}
+            <div className="bg-white rounded-lg shadow p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-white">Platform Credit Balances</h2>
-                <div className="flex items-center space-x-4">
-                  {lastSync && (
-                    <span className="text-sm text-gray-400">
-                      Last sync: {new Date(lastSync).toLocaleString()}
-                    </span>
-                  )}
-                  <button
-                    onClick={syncRealCredits}
-                    disabled={syncingCredits}
-                    className={`px-4 py-2 rounded-md text-sm font-medium ${
-                      syncingCredits
-                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
-                  >
-                    {syncingCredits ? 'Syncing...' : '🔄 Sync Real Credits'}
-                  </button>
-                </div>
+                <h2 className="text-lg font-semibold text-gray-900">Platform Credits</h2>
+                <button
+                  onClick={syncNanoBananaCredits}
+                  disabled={syncingCredits}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  {syncingCredits ? 'Syncing...' : 'Sync Credits'}
+                </button>
               </div>
-              <div className="space-y-4">
-                {platformCredits.map((credit) => (
-                  <div key={credit.provider} className="border border-gray-700 rounded-lg p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-md font-semibold text-white capitalize">{credit.provider}</h3>
-                        <div className="mt-2 space-y-1">
-                          <div className="text-sm text-gray-400">
-                            Current Balance: 
-                            <span className={`ml-2 font-bold ${
-                              credit.current_balance < credit.low_balance_threshold 
-                                ? 'text-red-400' 
-                                : 'text-green-400'
-                            }`}>
-                              {credit.current_balance.toLocaleString()} credits
-                            </span>
-                            {credit.metadata?.last_api_balance && (
-                              <span className="ml-2 text-xs text-gray-500">
-                                (API: {credit.metadata.last_api_balance})
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-gray-400">
-                            Total Purchased: {credit.total_purchased.toLocaleString()}
-                          </div>
-                          <div className="text-sm text-gray-400">
-                            Total Consumed: {credit.total_consumed.toLocaleString()}
-                          </div>
-                          <div className="text-sm text-gray-400">
-                            Credit Ratio: 1 user credit = {credit.credit_ratio} provider credits
-                          </div>
-                          <div className="text-sm text-gray-400">
-                            Low Balance Alert: {credit.low_balance_threshold} credits
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <button 
-                          onClick={() => handleRefillCredits(credit.provider, 1000)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                        >
-                          +1,000
-                        </button>
-                        <button 
-                          onClick={() => handleRefillCredits(credit.provider, 5000)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                        >
-                          +5,000
-                        </button>
-                        <button 
-                          onClick={() => handleRefillCredits(credit.provider, 10000)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                        >
-                          +10,000
-                        </button>
-                      </div>
+              
+              {platformCredits.map((credit) => (
+                <div key={credit.provider} className="mb-6 p-4 border rounded-lg">
+                  <h3 className="font-semibold text-gray-900 mb-2">{credit.provider}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Current Balance</p>
+                      <p className="text-xl font-bold text-green-600">{credit.current_balance}</p>
+                      {credit.current_balance < credit.low_balance_threshold && (
+                        <p className="text-xs text-red-600">⚠️ Low balance!</p>
+                      )}
                     </div>
-                    {credit.current_balance < credit.low_balance_threshold && (
-                      <div className="mt-3 p-2 bg-red-900/20 border border-red-700 rounded text-sm text-red-400">
-                        ⚠️ Low balance warning! Consider refilling soon.
-                      </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total Purchased</p>
+                      <p className="text-xl font-bold">{credit.total_purchased}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Total Consumed</p>
+                      <p className="text-xl font-bold">{credit.total_consumed}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Credit Ratio</p>
+                      <p className="text-xl font-bold">1:{credit.credit_ratio}</p>
+                      <p className="text-xs text-gray-500">User:Provider</p>
+                    </div>
+                  </div>
+                  {credit.metadata?.last_api_balance !== undefined && (
+                    <div className="mt-2 text-sm text-gray-500">
+                      Last API Balance: {credit.metadata.last_api_balance} credits
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {lastSync && (
+                <p className="text-sm text-gray-500">Last synced: {lastSync}</p>
+              )}
+            </div>
+
+            {/* Credit Packages */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Credit Packages</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {creditPackages.map((pkg) => (
+                  <div key={pkg.id} className={`p-4 border rounded-lg ${pkg.is_active ? 'border-green-500' : 'border-gray-300 opacity-50'}`}>
+                    <h3 className="font-semibold text-gray-900">{pkg.name}</h3>
+                    <p className="text-sm text-gray-600 mb-2">{pkg.description}</p>
+                    <p className="text-2xl font-bold text-gray-900">{pkg.user_credits} credits</p>
+                    <p className="text-lg text-green-600">${pkg.price_usd}</p>
+                    <p className="text-xs text-gray-500">${(pkg.price_usd / pkg.user_credits).toFixed(2)} per credit</p>
+                    {!pkg.is_active && (
+                      <span className="inline-block mt-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">Inactive</span>
                     )}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Credit Packages */}
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Credit Packages</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {creditPackages.map((pkg) => (
-                  <div key={pkg.id} className="border border-gray-700 rounded-lg p-4">
-                    <h3 className="text-md font-semibold text-white">{pkg.name}</h3>
-                    <p className="text-sm text-gray-400 mt-1">{pkg.description}</p>
-                    <div className="mt-3 space-y-1">
-                      <div className="text-sm text-gray-400">
-                        Credits: <span className="text-white font-bold">{pkg.user_credits}</span>
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        Price: <span className="text-emerald-400 font-bold">€{pkg.price_usd}</span>
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        Status: 
-                        <span className={`ml-2 ${pkg.is_active ? 'text-green-400' : 'text-red-400'}`}>
-                          {pkg.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'users' && (
-          <div className="px-4 py-6 sm:px-0">
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">User Management</h2>
-              <p className="text-gray-400">User management interface coming soon...</p>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'content' && (
-          <div className="px-4 py-6 sm:px-0">
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Content Moderation</h2>
-              <p className="text-gray-400">Content moderation interface coming soon...</p>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'refunds' && (
-          <div className="px-4 py-6 sm:px-0">
-            {/* Refund Metrics Overview */}
-            <div className="bg-gray-800 rounded-lg p-6 mb-8">
-              <h2 className="text-lg font-semibold text-white mb-4">Refund Metrics</h2>
+            {/* Refund Metrics */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Refund Metrics</h2>
               
               {refundMetrics ? (
                 <div>
                   {/* Key Metrics */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <p className="text-gray-400 text-sm">Total Refunds</p>
-                      <p className="text-2xl font-bold text-white">{refundMetrics.totalRefunds}</p>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">Total Refunds</p>
+                      <p className="text-2xl font-bold text-gray-900">{refundMetrics.totalRefunds}</p>
                     </div>
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <p className="text-gray-400 text-sm">Credits Refunded</p>
-                      <p className="text-2xl font-bold text-emerald-400">{refundMetrics.totalCreditsRefunded}</p>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">Credits Refunded</p>
+                      <p className="text-2xl font-bold text-green-600">{refundMetrics.totalCreditsRefunded}</p>
                     </div>
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <p className="text-gray-400 text-sm">Platform Loss</p>
-                      <p className="text-2xl font-bold text-red-400">{refundMetrics.platformLoss} NB</p>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">Platform Loss</p>
+                      <p className="text-2xl font-bold text-red-600">{refundMetrics.platformLoss} NB</p>
                       <p className="text-xs text-gray-500">NanoBanana credits lost</p>
                     </div>
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <p className="text-gray-400 text-sm">Refund Rate</p>
-                      <p className="text-2xl font-bold text-yellow-400">{refundMetrics.refundRate.toFixed(2)}%</p>
-                      <p className="text-xs text-gray-500">
-                        {refundMetrics.refundRate < 1 ? '✅ Excellent' : 
-                         refundMetrics.refundRate < 3 ? '⚠️ Normal' :
-                         refundMetrics.refundRate < 5 ? '⚠️ Concerning' : '🔴 Critical'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Refunds by Reason */}
-                  <div className="mb-6">
-                    <h3 className="text-md font-semibold text-white mb-3">Refunds by Error Type</h3>
-                    <div className="space-y-2">
-                      {refundMetrics.refundsByReason.map((reason) => (
-                        <div key={reason.reason} className="flex justify-between items-center bg-gray-700 rounded p-3">
-                          <span className="text-gray-300">{reason.reason || 'Unknown'}</span>
-                          <div className="flex items-center space-x-4">
-                            <span className="text-gray-400">{reason.count} refunds</span>
-                            <span className="text-emerald-400 font-medium">{reason.credits} credits</span>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600">Refund Rate</p>
+                      <p className="text-2xl font-bold text-yellow-600">{refundMetrics.refundRate.toFixed(2)}%</p>
                     </div>
                   </div>
 
                   {/* Recent Refunds */}
                   <div>
-                    <h3 className="text-md font-semibold text-white mb-3">Recent Refunds</h3>
+                    <h3 className="font-semibold text-gray-900 mb-3">Recent Refunds</h3>
                     <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-700">
-                        <thead>
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Task ID</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">User</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Credits</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Reason</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Date</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Task ID</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Credits</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-700">
+                        <tbody className="bg-white divide-y divide-gray-200">
                           {refundMetrics.recentRefunds.map((refund) => (
                             <tr key={refund.id}>
-                              <td className="px-4 py-2 text-sm text-gray-300">
+                              <td className="px-4 py-2 text-sm text-gray-900">
                                 {refund.task_id?.substring(0, 8)}...
                               </td>
-                              <td className="px-4 py-2 text-sm text-gray-300">
-                                {refund.user_id?.substring(0, 8)}...
-                              </td>
-                              <td className="px-4 py-2 text-sm text-emerald-400">
+                              <td className="px-4 py-2 text-sm text-green-600">
                                 {refund.credits_refunded}
                               </td>
-                              <td className="px-4 py-2 text-sm text-gray-300">
+                              <td className="px-4 py-2 text-sm text-gray-900">
                                 {refund.refund_reason}
                               </td>
-                              <td className="px-4 py-2 text-sm text-gray-400">
+                              <td className="px-4 py-2 text-sm text-gray-500">
                                 {new Date(refund.created_at).toLocaleDateString()}
                               </td>
                             </tr>
@@ -686,22 +539,8 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-400">Loading refund metrics...</p>
+                <p className="text-gray-500">Loading refund metrics...</p>
               )}
-            </div>
-
-            {/* Refund Policy Configuration */}
-            <div className="bg-gray-800 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Refund Policies</h2>
-              <p className="text-gray-400 text-sm mb-4">
-                Configure which error types trigger automatic refunds
-              </p>
-              <button
-                onClick={() => fetchRefundMetrics()}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
-              >
-                Refresh Metrics
-              </button>
             </div>
           </div>
         )}

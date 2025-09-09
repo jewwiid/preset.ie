@@ -17,7 +17,7 @@ interface UserProfile {
 }
 
 export default function Dashboard() {
-  const { user, loading: authLoading, signOut } = useAuth()
+  const { user, userRole, loading: authLoading, signOut } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -77,8 +77,9 @@ export default function Dashboard() {
     return null
   }
 
-  const isContributor = profile.role_flags.includes('CONTRIBUTOR')
-  const isTalent = profile.role_flags.includes('TALENT')
+  const isContributor = userRole?.isContributor || profile.role_flags.includes('CONTRIBUTOR')
+  const isTalent = userRole?.isTalent || profile.role_flags.includes('TALENT')
+  const isAdmin = userRole?.isAdmin || profile.role_flags.includes('ADMIN')
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -92,12 +93,22 @@ export default function Dashboard() {
               </h1>
               <p className="text-gray-600">@{profile.handle}</p>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Sign Out
-            </button>
+            <div className="flex gap-2">
+              {isAdmin && (
+                <button
+                  onClick={() => router.push('/admin')}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  Admin Dashboard
+                </button>
+              )}
+              <button
+                onClick={handleSignOut}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </header>

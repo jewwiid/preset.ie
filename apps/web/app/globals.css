@@ -147,6 +147,37 @@ a {
   }
 }
 
+/* Force light theme for form inputs to prevent dark backgrounds */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  background-color: white !important;
+  color: #0f172a !important;
+  color-scheme: light !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  color-scheme: light !important;
+  accent-color: #10b981 !important;
+}
+
+/* Ensure placeholders are visible */
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
 /* Custom animations */
 @keyframes fadeIn {
   from {
