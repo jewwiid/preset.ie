@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Admin user credentials
 const ADMIN_EMAIL = 'admin@preset.ie';
-const ADMIN_PASSWORD = 'AdminPreset2025!';
+const ADMIN_PASSWORD = 'admin123456';
 
 async function testCompleteRefundFlow() {
   console.log('🧪 TESTING COMPLETE REFUND FLOW\n');

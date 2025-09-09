@@ -60,7 +60,7 @@ This will:
 ### 5. Monitor in Admin Dashboard
 1. Sign in as admin:
    - Email: `admin@preset.ie`
-   - Password: `AdminPreset2025!`
+   - Password: `admin123456`
 
 2. Go to: http://localhost:3000/admin
 

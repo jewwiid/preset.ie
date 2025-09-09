@@ -17,7 +17,7 @@
 
 ### Login Credentials
 - **Email**: admin@preset.ie
-- **Password**: AdminPreset2025!
+- **Password**: admin123456
 - **URL**: http://localhost:3000/admin
 
 ### Real Credit Monitoring

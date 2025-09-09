@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function createAdminUser() {
   const email = 'admin@preset.ie';
-  const password = 'AdminPreset2025!'; // Strong password for admin
+  const password = 'admin123456'; // Strong password for admin
   
   try {
     console.log('Creating admin user...');
@@ -103,7 +103,7 @@ async function makeAdmin(user) {
     console.log('='.repeat(60));
     console.log('\n📧 Admin Login Credentials:');
     console.log('   Email: admin@preset.ie');
-    console.log('   Password: AdminPreset2025!');
+    console.log('   Password: admin123456');
     console.log('\n🔗 Admin Dashboard URL:');
     console.log('   http://localhost:3000/admin');
     console.log('\n📝 Admin Capabilities:');

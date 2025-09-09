@@ -10,7 +10,7 @@ async function getAdminId() {
   // Sign in as admin to get the user ID
   const { data: { user }, error } = await supabase.auth.signInWithPassword({
     email: 'admin@preset.ie',
-    password: 'AdminPreset2025!'
+    password: 'admin123456'
   });
   
   if (error) {

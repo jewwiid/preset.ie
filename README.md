@@ -19,7 +19,7 @@ open http://localhost:3000
 
 ### Admin Credentials
 - **Email**: admin@preset.ie
-- **Password**: AdminPreset2025!
+- **Password**: admin123456
 - **Dashboard**: http://localhost:3000/admin
 
 ### Admin Capabilities

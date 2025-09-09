@@ -14,12 +14,8 @@ ADD COLUMN IF NOT EXISTS total_cost DECIMAL(10,4) DEFAULT 0,
 ADD COLUMN IF NOT EXISTS generated_prompts TEXT[] DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS ai_provider VARCHAR(50);
 
--- Update user_media table to match specification
-ALTER TABLE public.user_media 
-ADD COLUMN IF NOT EXISTS file_name VARCHAR(255),
-ADD COLUMN IF NOT EXISTS mime_type VARCHAR(100),
-ADD COLUMN IF NOT EXISTS palette TEXT[] DEFAULT '{}',
-ADD COLUMN IF NOT EXISTS upload_purpose VARCHAR(50) DEFAULT 'moodboard';
+-- Note: user_media table doesn't exist, skipping this update
+-- These fields would be added to the media table if needed
 
 -- Create moodboard_items table for better structure
 CREATE TABLE IF NOT EXISTS public.moodboard_items (
