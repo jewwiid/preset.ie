@@ -4,244 +4,217 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// Credit packages available for purchase
-const CREDIT_PACKAGES = {
-  small: {
-    credits: 10,
-    price: 2.50,  // $0.25 per credit
-    name: 'Small Pack'
-  },
-  medium: {
-    credits: 25,
-    price: 5.00,  // $0.20 per credit (discount)
-    name: 'Medium Pack'
-  },
-  large: {
-    credits: 60,
-    price: 10.00, // $0.167 per credit (bigger discount)
-    name: 'Large Pack'
-  }
-};
-
 export async function POST(request: NextRequest) {
   try {
-    // Get auth token from header
+    // Get user from auth
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     const token = authHeader.replace('Bearer ', '');
-    
-    // Initialize Supabase with service role
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Verify the user's token
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
     if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Parse request body
-    const { packageType } = await request.json();
-
-    // Validate package type
-    if (!packageType || !CREDIT_PACKAGES[packageType as keyof typeof CREDIT_PACKAGES]) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid package type' },
-        { status: 400 }
-      );
-    }
-
-    const selectedPackage = CREDIT_PACKAGES[packageType as keyof typeof CREDIT_PACKAGES];
-
-    // Check user's subscription tier (only Plus and Pro can purchase)
-    const { data: profile } = await supabase
-      .from('users_profile')
-      .select('subscription_tier')
-      .eq('user_id', user.id)
+    const { packageId, userCredits, priceUsd } = await request.json();
+    
+    // CRITICAL: Check if platform has enough credits
+    const requiredNanoBananaCredits = userCredits * 4; // 1:4 ratio
+    
+    // Get current platform balance
+    const { data: platformCredit } = await supabase
+      .from('platform_credits')
+      .select('current_balance, low_balance_threshold')
+      .eq('provider', 'nanobanana')
       .single();
-
-    if (!profile || profile.subscription_tier === 'FREE' || profile.subscription_tier === 'free') {
+    
+    if (!platformCredit) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Credit purchases are only available for Plus and Pro subscribers',
-          upgradeRequired: true
-        },
-        { status: 403 }
+        { error: 'Platform configuration error' },
+        { status: 500 }
       );
     }
-
-    // Get or create user credits record
-    const { data: existingCredits } = await supabase
-      .from('user_credits')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (existingCredits) {
-      // Update existing credits
-      const { data: updatedCredits, error: updateError } = await supabase
-        .from('user_credits')
-        .update({
-          current_balance: existingCredits.current_balance + selectedPackage.credits,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      // Record the transaction
-      await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: user.id,
-          transaction_type: 'purchase',
-          credits_used: selectedPackage.credits,
-          cost_usd: selectedPackage.price,
-          description: `Purchased ${selectedPackage.name}: ${selectedPackage.credits} credits`,
-          status: 'completed',
-          metadata: {
-            package: packageType,
-            price: selectedPackage.price,
-            credits: selectedPackage.credits
-          }
-        });
-
-      return NextResponse.json({
-        success: true,
-        credits: {
-          purchased: selectedPackage.credits,
-          newBalance: updatedCredits.current_balance,
-          price: selectedPackage.price
-        },
-        message: `Successfully purchased ${selectedPackage.credits} credits`
+    
+    // Check platform capacity
+    const availableUserCredits = Math.floor(platformCredit.current_balance / 4);
+    
+    if (availableUserCredits < userCredits) {
+      // PLATFORM DOESN'T HAVE ENOUGH CREDITS!
+      console.error(`
+        ⚠️ CRITICAL: Platform capacity exceeded!
+        User wants: ${userCredits} credits
+        Platform can serve: ${availableUserCredits} credits
+        NanoBanana balance: ${platformCredit.current_balance}
+        Needed: ${requiredNanoBananaCredits} NanoBanana credits
+      `);
+      
+      // Log alert
+      await supabase.from('platform_alerts').insert({
+        alert_type: 'insufficient_platform_credits',
+        provider: 'nanobanana',
+        severity: 'critical',
+        message: `Cannot sell ${userCredits} credits. Platform only has ${platformCredit.current_balance} NanoBanana credits (can serve ${availableUserCredits} user credits)`,
+        metadata: {
+          requested_user_credits: userCredits,
+          available_user_credits: availableUserCredits,
+          platform_balance: platformCredit.current_balance,
+          required_provider_credits: requiredNanoBananaCredits
+        }
       });
       
-    } else {
-      // Create new credits record
-      const { data: newCredits, error: createError } = await supabase
-        .from('user_credits')
-        .insert({
-          user_id: user.id,
-          subscription_tier: profile.subscription_tier,
-          monthly_allowance: profile.subscription_tier === 'PRO' || profile.subscription_tier === 'pro' ? 25 : 10,
-          current_balance: selectedPackage.credits,
-          consumed_this_month: 0,
-          lifetime_consumed: 0
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        throw createError;
-      }
-
-      // Record the transaction
-      await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: user.id,
-          transaction_type: 'purchase',
-          credits_used: selectedPackage.credits,
-          cost_usd: selectedPackage.price,
-          description: `Purchased ${selectedPackage.name}: ${selectedPackage.credits} credits`,
-          status: 'completed'
-        });
-
-      return NextResponse.json({
-        success: true,
-        credits: {
-          purchased: selectedPackage.credits,
-          newBalance: newCredits.current_balance,
-          price: selectedPackage.price
+      return NextResponse.json(
+        { 
+          error: 'Service temporarily unavailable',
+          message: 'The platform cannot fulfill this credit purchase at the moment. Please try a smaller package or contact support.',
+          availableCredits: availableUserCredits,
+          requestedCredits: userCredits
         },
-        message: `Successfully purchased ${selectedPackage.credits} credits`
+        { status: 503 }
+      );
+    }
+    
+    // Platform has enough credits, proceed with purchase
+    
+    // 1. Add credits to user
+    const { data: userCreditsData } = await supabase
+      .from('user_credits')
+      .select('current_balance')
+      .eq('user_id', user.id)
+      .single();
+    
+    const newBalance = (userCreditsData?.current_balance || 0) + userCredits;
+    
+    await supabase
+      .from('user_credits')
+      .upsert({
+        user_id: user.id,
+        current_balance: newBalance,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+    
+    // 2. Log the purchase
+    await supabase
+      .from('user_credit_purchases')
+      .insert({
+        user_id: user.id,
+        package_id: packageId,
+        credits_purchased: userCredits,
+        amount_paid_usd: priceUsd,
+        payment_method: 'stripe', // Would come from Stripe webhook
+        status: 'completed',
+        completed_at: new Date().toISOString()
+      });
+    
+    // 3. Update platform tracking (reserve these credits)
+    await supabase
+      .from('platform_credit_consumption')
+      .insert({
+        provider: 'nanobanana',
+        user_id: user.id,
+        operation_type: 'credit_purchase_reservation',
+        user_credits_charged: userCredits,
+        provider_credits_consumed: requiredNanoBananaCredits,
+        metadata: {
+          package_id: packageId,
+          reservation: true,
+          note: 'Credits reserved for user purchase'
+        }
+      });
+    
+    // 4. Check if platform is running low after this purchase
+    const remainingPlatformCredits = platformCredit.current_balance - requiredNanoBananaCredits;
+    const remainingUserCapacity = Math.floor(remainingPlatformCredits / 4);
+    
+    if (remainingPlatformCredits < platformCredit.low_balance_threshold) {
+      // Alert admin that platform is running low
+      await supabase.from('platform_alerts').insert({
+        alert_type: 'low_platform_credits_after_sale',
+        provider: 'nanobanana',
+        severity: remainingPlatformCredits < 100 ? 'critical' : 'warning',
+        message: `Platform credits low after sale. Only ${remainingUserCapacity} user credits can be sold.`,
+        metadata: {
+          remaining_provider_credits: remainingPlatformCredits,
+          remaining_user_capacity: remainingUserCapacity,
+          last_sale_credits: userCredits
+        }
       });
     }
-
+    
+    return NextResponse.json({
+      success: true,
+      newBalance,
+      message: `Successfully purchased ${userCredits} credits`,
+      platformStatus: {
+        remainingCapacity: remainingUserCapacity,
+        isLow: remainingPlatformCredits < platformCredit.low_balance_threshold
+      }
+    });
+    
   } catch (error: any) {
     console.error('Credit purchase error:', error);
-    
     return NextResponse.json(
-      { success: false, error: 'Failed to purchase credits' },
+      { error: 'Failed to process credit purchase' },
       { status: 500 }
     );
   }
 }
 
-// GET endpoint to fetch credit packages and user balance
+// GET endpoint to check platform capacity before showing packages
 export async function GET(request: NextRequest) {
   try {
-    // Get auth token from header
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-    
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Initialize Supabase
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Verify the user's token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Get platform credits
+    const { data: platformCredit } = await supabase
+      .from('platform_credits')
+      .select('current_balance')
+      .eq('provider', 'nanobanana')
+      .single();
     
-    if (authError || !user) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
-      );
+    // Get credit packages
+    const { data: packages } = await supabase
+      .from('credit_packages')
+      .select('*')
+      .eq('is_active', true)
+      .order('user_credits');
+    
+    if (!platformCredit || !packages) {
+      return NextResponse.json({ error: 'Configuration error' }, { status: 500 });
     }
-
-    // Get user's current credits
-    const { data: credits } = await supabase
-      .from('user_credits')
-      .select('current_balance, monthly_allowance, consumed_this_month')
-      .eq('user_id', user.id)
-      .single();
-
-    // Get user's subscription tier
-    const { data: profile } = await supabase
-      .from('users_profile')
-      .select('subscription_tier')
-      .eq('user_id', user.id)
-      .single();
-
-    const canPurchase = profile && 
-      profile.subscription_tier !== 'FREE' && 
-      profile.subscription_tier !== 'free';
-
-    return NextResponse.json({
-      success: true,
-      packages: CREDIT_PACKAGES,
-      currentBalance: credits?.current_balance || 0,
-      monthlyAllowance: credits?.monthly_allowance || 0,
-      consumedThisMonth: credits?.consumed_this_month || 0,
-      canPurchase,
-      subscriptionTier: profile?.subscription_tier || 'FREE'
-    });
-
-  } catch (error: any) {
-    console.error('Credit info error:', error);
     
+    // Calculate which packages can be fulfilled
+    const availableUserCredits = Math.floor(platformCredit.current_balance / 4);
+    
+    const packagesWithAvailability = packages.map(pkg => ({
+      ...pkg,
+      available: pkg.user_credits <= availableUserCredits,
+      warning: pkg.user_credits > availableUserCredits * 0.5, // Warn if package uses >50% of capacity
+      message: pkg.user_credits > availableUserCredits 
+        ? `Temporarily unavailable (platform capacity: ${availableUserCredits} credits)`
+        : null
+    }));
+    
+    return NextResponse.json({
+      packages: packagesWithAvailability,
+      platformCapacity: {
+        totalUserCredits: availableUserCredits,
+        nanoBananaCredits: platformCredit.current_balance,
+        canSellStarter: availableUserCredits >= 10,
+        canSellCreative: availableUserCredits >= 50,
+        canSellPro: availableUserCredits >= 100,
+        canSellStudio: availableUserCredits >= 500
+      }
+    });
+  } catch (error: any) {
+    console.error('Error checking package availability:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch credit information' },
+      { error: 'Failed to check availability' },
       { status: 500 }
     );
   }

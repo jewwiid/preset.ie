@@ -133,6 +133,14 @@ export class SubscriptionEnforcer {
   }
 
   /**
+   * Check if user can perform bulk shortlisting
+   */
+  async canBulkShortlist(userTier: SubscriptionTier): Promise<boolean> {
+    // Bulk shortlisting is available for Plus and Pro tiers
+    return userTier === SubscriptionTier.PLUS || userTier === SubscriptionTier.PRO;
+  }
+
+  /**
    * Get the subscription policy instance
    */
   getPolicy(): SubscriptionPolicy {

@@ -1,135 +1,234 @@
-import { Entity } from '../../shared/entity';
-import { EntityId } from '../../shared/value-objects/entity-id';
+import { BaseAggregateRoot } from '../../shared/BaseAggregateRoot';
+import { Visibility } from '../value-objects/Visibility';
+import { Approval } from '../value-objects/Approval';
 
 export interface ShowcaseProps {
-  gigId: EntityId;
-  creatorUserId: EntityId;
-  talentUserId: EntityId;
-  mediaIds: EntityId[];
-  caption?: string;
+  id: string;
+  gigId: string;
+  creatorId: string;  // Contributor who created the gig
+  talentId: string;   // Talent who participated
+  mediaIds: string[]; // 3-6 media items
+  caption: string;
   tags: string[];
-  palette: string[];
-  approvedByCreatorAt?: Date;
-  approvedByTalentAt?: Date;
-  visibility: ShowcaseVisibility;
+  palette: string[];  // Extracted color palette
+  approvals: Approval[];
+  visibility: Visibility;
   createdAt: Date;
-  updatedAt: Date;
+  publishedAt?: Date;
+  viewCount: number;
+  likeCount: number;
 }
 
-export enum ShowcaseVisibility {
-  DRAFT = 'DRAFT',
-  PUBLIC = 'PUBLIC',
-  PRIVATE = 'PRIVATE'
-}
+/**
+ * Showcase aggregate root - portfolio item from completed gig
+ */
+export class Showcase extends BaseAggregateRoot {
+  private static readonly MIN_MEDIA = 3;
+  private static readonly MAX_MEDIA = 6;
+  private static readonly MAX_CAPTION_LENGTH = 500;
+  private static readonly MAX_TAGS = 10;
 
-export class Showcase extends Entity<ShowcaseProps> {
   private props: ShowcaseProps;
 
-  constructor(id: EntityId, props: ShowcaseProps) {
-    super(id);
-    this.props = props;
+  constructor(props: ShowcaseProps) {
+    super();
+    this.props = { ...props };
     this.validateMediaCount();
   }
 
   private validateMediaCount(): void {
-    if (this.props.mediaIds.length < 3 || this.props.mediaIds.length > 6) {
-      throw new Error('Showcase must contain between 3 and 6 media items');
+    if (this.props.mediaIds.length < Showcase.MIN_MEDIA) {
+      throw new Error(`Showcase must have at least ${Showcase.MIN_MEDIA} media items`);
+    }
+
+    if (this.props.mediaIds.length > Showcase.MAX_MEDIA) {
+      throw new Error(`Showcase cannot have more than ${Showcase.MAX_MEDIA} media items`);
     }
   }
 
-  static create(
-    gigId: EntityId,
-    creatorUserId: EntityId,
-    talentUserId: EntityId,
-    mediaIds: EntityId[],
-    caption?: string,
-    tags: string[] = [],
-    palette: string[] = []
-  ): Showcase {
-    const id = EntityId.generate();
-    const now = new Date();
+  static create(params: {
+    id: string;
+    gigId: string;
+    creatorId: string;
+    talentId: string;
+    mediaIds: string[];
+    caption: string;
+    tags: string[];
+    palette: string[];
+  }): Showcase {
+    const showcase = new Showcase({
+      id: params.id,
+      gigId: params.gigId,
+      creatorId: params.creatorId,
+      talentId: params.talentId,
+      mediaIds: params.mediaIds,
+      caption: params.caption,
+      tags: params.tags,
+      palette: params.palette,
+      approvals: [],
+      visibility: Visibility.PRIVATE, // Start as private until approved
+      createdAt: new Date(),
+      viewCount: 0,
+      likeCount: 0
+    });
 
-    return new Showcase(id, {
-      gigId,
-      creatorUserId,
-      talentUserId,
-      mediaIds,
-      caption,
-      tags,
-      palette,
-      visibility: ShowcaseVisibility.DRAFT,
-      createdAt: now,
-      updatedAt: now
+    showcase.addDomainEvent({
+      aggregateId: params.id,
+      eventType: 'ShowcaseCreated',
+      occurredAt: new Date(),
+      payload: {
+        showcaseId: params.id,
+        gigId: params.gigId,
+        creatorId: params.creatorId,
+        talentId: params.talentId,
+        mediaCount: params.mediaIds.length
+      }
+    });
+
+    return showcase;
+  }
+
+  /**
+   * Approve showcase for publication
+   */
+  approve(userId: string, note?: string): void {
+    // Check if user is authorized to approve
+    if (userId !== this.props.creatorId && userId !== this.props.talentId) {
+      throw new Error('Only creator or talent can approve showcase');
+    }
+
+    // Check if already approved by this user
+    const existingApproval = this.props.approvals.find(a => a.getUserId() === userId);
+    if (existingApproval) {
+      throw new Error('User has already approved this showcase');
+    }
+
+    const approval = new Approval(userId, new Date(), note);
+    this.props.approvals.push(approval);
+
+    this.addDomainEvent({
+      aggregateId: this.props.id,
+      eventType: 'ShowcaseApproved',
+      occurredAt: new Date(),
+      payload: {
+        showcaseId: this.props.id,
+        approvedBy: userId,
+        gigId: this.props.gigId
+      }
+    });
+
+    // If both parties have approved, publish
+    if (this.hasBothApprovals()) {
+      this.publish();
+    }
+  }
+
+  /**
+   * Publish showcase (make it public)
+   */
+  private publish(): void {
+    if (!this.hasBothApprovals()) {
+      throw new Error('Showcase needs approval from both creator and talent');
+    }
+
+    this.props.visibility = Visibility.PUBLIC;
+    this.props.publishedAt = new Date();
+
+    this.addDomainEvent({
+      aggregateId: this.props.id,
+      eventType: 'ShowcasePublished',
+      occurredAt: new Date(),
+      payload: {
+        showcaseId: this.props.id,
+        gigId: this.props.gigId,
+        creatorId: this.props.creatorId,
+        talentId: this.props.talentId
+      }
     });
   }
 
-  approveByCreator(): void {
-    if (this.props.approvedByCreatorAt) {
-      throw new Error('Creator has already approved this showcase');
+  /**
+   * Add media to showcase
+   */
+  addMedia(mediaId: string): void {
+    if (this.props.mediaIds.length >= Showcase.MAX_MEDIA) {
+      throw new Error(`Cannot add more than ${Showcase.MAX_MEDIA} media items`);
     }
-    
-    this.props.approvedByCreatorAt = new Date();
-    this.props.updatedAt = new Date();
-    
-    this.checkAndPublish();
-  }
 
-  approveByTalent(): void {
-    if (this.props.approvedByTalentAt) {
-      throw new Error('Talent has already approved this showcase');
+    if (this.props.mediaIds.includes(mediaId)) {
+      throw new Error('Media already exists in showcase');
     }
-    
-    this.props.approvedByTalentAt = new Date();
-    this.props.updatedAt = new Date();
-    
-    this.checkAndPublish();
-  }
 
-  private checkAndPublish(): void {
-    if (this.props.approvedByCreatorAt && this.props.approvedByTalentAt) {
-      this.props.visibility = ShowcaseVisibility.PUBLIC;
+    if (this.props.visibility === Visibility.PUBLIC) {
+      throw new Error('Cannot modify published showcase');
     }
+
+    this.props.mediaIds.push(mediaId);
   }
 
-  updateMedia(mediaIds: EntityId[]): void {
-    this.props.mediaIds = mediaIds;
-    this.validateMediaCount();
-    this.props.updatedAt = new Date();
-  }
-
+  /**
+   * Update showcase caption
+   */
   updateCaption(caption: string): void {
+    if (caption.length > Showcase.MAX_CAPTION_LENGTH) {
+      throw new Error(`Caption cannot exceed ${Showcase.MAX_CAPTION_LENGTH} characters`);
+    }
+
+    if (this.props.visibility === Visibility.PUBLIC) {
+      throw new Error('Cannot modify published showcase');
+    }
+
     this.props.caption = caption;
-    this.props.updatedAt = new Date();
-  }
-
-  updateTags(tags: string[]): void {
-    this.props.tags = tags;
-    this.props.updatedAt = new Date();
-  }
-
-  makePrivate(): void {
-    this.props.visibility = ShowcaseVisibility.PRIVATE;
-    this.props.updatedAt = new Date();
   }
 
   isPublished(): boolean {
-    return this.props.visibility === ShowcaseVisibility.PUBLIC;
+    return this.props.visibility === Visibility.PUBLIC;
   }
 
-  isFullyApproved(): boolean {
-    return Boolean(this.props.approvedByCreatorAt && this.props.approvedByTalentAt);
+  hasApprovalFrom(userId: string): boolean {
+    return this.props.approvals.some(a => a.getUserId() === userId);
   }
 
-  get gigId(): EntityId { return this.props.gigId; }
-  get creatorUserId(): EntityId { return this.props.creatorUserId; }
-  get talentUserId(): EntityId { return this.props.talentUserId; }
-  get mediaIds(): EntityId[] { return this.props.mediaIds; }
-  get caption(): string | undefined { return this.props.caption; }
-  get tags(): string[] { return this.props.tags; }
-  get palette(): string[] { return this.props.palette; }
-  get approvedByCreatorAt(): Date | undefined { return this.props.approvedByCreatorAt; }
-  get approvedByTalentAt(): Date | undefined { return this.props.approvedByTalentAt; }
-  get visibility(): ShowcaseVisibility { return this.props.visibility; }
-  get createdAt(): Date { return this.props.createdAt; }
-  get updatedAt(): Date { return this.props.updatedAt; }
+  hasBothApprovals(): boolean {
+    const hasCreatorApproval = this.hasApprovalFrom(this.props.creatorId);
+    const hasTalentApproval = this.hasApprovalFrom(this.props.talentId);
+    return hasCreatorApproval && hasTalentApproval;
+  }
+
+  // Getters
+  getId(): string { return this.props.id; }
+  getGigId(): string { return this.props.gigId; }
+  getCreatorId(): string { return this.props.creatorId; }
+  getTalentId(): string { return this.props.talentId; }
+  getMediaIds(): string[] { return [...this.props.mediaIds]; }
+  getCaption(): string { return this.props.caption; }
+  getTags(): string[] { return [...this.props.tags]; }
+  getPalette(): string[] { return [...this.props.palette]; }
+  getApprovals(): Approval[] { return [...this.props.approvals]; }
+  getVisibility(): Visibility { return this.props.visibility; }
+  getCreatedAt(): Date { return new Date(this.props.createdAt); }
+  getPublishedAt(): Date | undefined { 
+    return this.props.publishedAt ? new Date(this.props.publishedAt) : undefined; 
+  }
+  getViewCount(): number { return this.props.viewCount; }
+  getLikeCount(): number { return this.props.likeCount; }
+
+  toJSON() {
+    return {
+      id: this.props.id,
+      gigId: this.props.gigId,
+      creatorId: this.props.creatorId,
+      talentId: this.props.talentId,
+      mediaIds: this.props.mediaIds,
+      caption: this.props.caption,
+      tags: this.props.tags,
+      palette: this.props.palette,
+      approvals: this.props.approvals.map(a => a.toJSON()),
+      visibility: this.props.visibility,
+      createdAt: this.props.createdAt.toISOString(),
+      publishedAt: this.props.publishedAt?.toISOString(),
+      viewCount: this.props.viewCount,
+      likeCount: this.props.likeCount
+    };
+  }
 }

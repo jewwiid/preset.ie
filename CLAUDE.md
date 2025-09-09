@@ -206,4 +206,88 @@ RLS: owners can CRUD their rows; public can read open gigs + public media; caps 
 
 ---
 
+## 18) Credit Marketplace System
+
+### Overview
+Preset operates as a **credit marketplace** where the platform manages provider relationships transparently. Users see simple pricing (1 credit = 1 operation) while the platform handles complex provider ratios.
+
+### Credit Scaling Architecture
+- **User View**: 1 credit = 1 enhancement/generation (simple, predictable)
+- **Platform Reality**: Dynamic provider ratios (e.g., 1 user credit = 4 NanoBanana credits)
+- **Marketplace Model**: Platform purchases credits wholesale, sells retail to users
+
+### Credit Packages (User Pricing)
+- **Starter Pack**: 10 credits for €9.99
+- **Creative Bundle**: 50 credits for €39.99
+- **Pro Pack**: 100 credits for €69.99
+- **Studio Pack**: 500 credits for €299.99
+
+### Implementation Components
+- **CreditScalingService**: Handles conversions between user and provider credits
+- **Platform Credit Tables**: 
+  - `platform_credits`: Tracks platform balance with each provider
+  - `credit_packages`: Marketplace offerings
+  - `platform_credit_consumption`: Detailed usage logs
+- **Safety Mechanisms**: Platform balance checks, low credit alerts, graceful degradation
+
+### NanoBanana Integration
+- **API Endpoints**: Text-to-image, image editing, task status, credit balance
+- **Credit Ratio**: 1 user credit = 4 NanoBanana credits (handled transparently)
+- **Callback System**: Async task processing with webhook notifications
+- **Error Handling**: Content policy violations, insufficient credits, rate limits
+
+---
+
+## 19) Implementation Status (DDD Architecture)
+
+### ✅ Phase 1: Foundation (COMPLETED)
+- **Domain Events Infrastructure**: BaseAggregateRoot, DomainEvent interface, EventBus port
+- **Subscription System**: SubscriptionTier enum, SubscriptionPolicy, SubscriptionEnforcer
+- **Database**: domain_events table for event sourcing
+
+### ✅ Phase 2: Core Contexts (COMPLETED)
+**Identity & Access Context**:
+- Entities: User, Profile with Email, Handle, VerificationStatus value objects
+- Use Cases: RegisterUser, UpdateProfile, VerifyUser, UpgradeSubscription
+- Events: UserRegistered, EmailVerified, SubscriptionUpgraded, ProfileUpdated
+
+**Gigs Context**:
+- Entities: Gig with Location, DateTimeWindow, CompensationType value objects
+- Use Cases: CreateGig, PublishGig, CloseGig, BoostGig, SearchGigs
+- Events: GigCreated, GigPublished, GigBooked, GigClosed, MoodboardAttached
+
+**Applications Context**:
+- Entities: Application with ApplicationStatus, ApplicationNote value objects
+- Use Cases: ApplyToGig, ReviewApplication, ShortlistApplicants, BookTalent
+- Events: ApplicationSubmitted, ApplicantShortlisted, TalentBooked, ApplicationDeclined
+
+### ✅ Phase 3: Collaboration (COMPLETED)
+**Collaboration & Messaging Context**:
+- Entities: Conversation (aggregate), Message with ConversationStatus, MessageBody, Attachment
+- Use Cases: SendMessage, GetConversations, BlockUser, MarkAsRead
+- Events: ConversationStarted, MessageSent, UserBlocked, MessageRead
+
+**Showcases & Reviews Context**:
+- Entities: Showcase, Review with Visibility, Approval, Rating, ReviewTag value objects
+- Use Cases: CreateShowcase, ApproveShowcase, PublishShowcase, SubmitReview
+- Events: ShowcaseCreated, ShowcaseApproved, ShowcasePublished, ReviewSubmitted
+
+### ⏳ Phase 4: Integration (PENDING)
+- Wire up event handlers for side effects
+- Stripe subscription webhooks
+- Update API routes to use new use cases
+- Migrate existing data to new structure
+
+### Architecture Compliance
+- ✅ All 5 bounded contexts implemented
+- ✅ Domain events defined for all aggregates
+- ✅ Subscription limits enforced in use cases
+- ✅ Proper authorization in all operations
+- ✅ Zero direct database calls in application layer
+- ✅ Hexagonal architecture with clear ports & adapters
+- ⏳ Event handlers for async operations (pending)
+- ⏳ Full API migration (pending)
+
+---
+
 **End of Document**

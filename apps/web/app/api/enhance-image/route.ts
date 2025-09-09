@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { creditScalingService } from '@/../../packages/domain/src/credits/CreditScalingService';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const nanoBananaApiKey = process.env.NANOBANANA_API_KEY || process.env.NANOBANAN_API_KEY!;
+const PROVIDER = 'nanobanana';
+const USER_CREDITS_PER_ENHANCEMENT = 1; // Users always see 1 credit
 
 // Debug: Check if env vars are loaded
 if (!supabaseUrl || !supabaseServiceKey || !nanoBananaApiKey) {
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
     // Check user credits using admin client
     let { data: userCredits, error: creditsError } = await supabaseAdmin
       .from('user_credits')
-      .select('current_balance, subscription_tier')
+      .select('current_balance, subscription_tier, consumed_this_month')
       .eq('user_id', user.id)
       .single();
 
@@ -123,18 +126,38 @@ export async function POST(request: NextRequest) {
       subscriptionTier: userCredits?.subscription_tier
     });
 
-    // Check if user has enough credits
-    if (!userCredits || userCredits.current_balance < 1) {
+    // Check if user has enough credits (always 1 credit from user perspective)
+    if (!userCredits || userCredits.current_balance < USER_CREDITS_PER_ENHANCEMENT) {
       console.log('Insufficient credits for user:', user.id, 'Balance:', userCredits?.current_balance);
       return NextResponse.json(
         { 
           success: false, 
-          error: `Insufficient credits. You have ${userCredits?.current_balance || 0} credits remaining. Please upgrade your plan or purchase more credits.`,
+          error: `Insufficient credits. You need ${USER_CREDITS_PER_ENHANCEMENT} credit for enhancement. You have ${userCredits?.current_balance || 0} credits remaining.`,
           code: 'INSUFFICIENT_CREDITS',
           currentBalance: userCredits?.current_balance || 0,
+          requiredCredits: USER_CREDITS_PER_ENHANCEMENT,
           subscriptionTier: userCredits?.subscription_tier || 'free'
         },
         { status: 402 }
+      );
+    }
+
+    // Check if platform has enough credits with provider
+    const { data: platformCredits } = await supabaseAdmin
+      .rpc('check_platform_credits', { 
+        p_provider: PROVIDER,
+        p_user_credits: USER_CREDITS_PER_ENHANCEMENT 
+      });
+    
+    if (!platformCredits) {
+      console.error('Platform has insufficient NanoBanana credits');
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Enhancement service temporarily unavailable. Please try again later.',
+          code: 'PLATFORM_CREDITS_LOW'
+        },
+        { status: 503 }
       );
     }
 
@@ -345,7 +368,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Store task in database using admin client
-    const { data: task, error: taskError } = await supabaseAdmin
+    const { error: taskError } = await supabaseAdmin
       .from('enhancement_tasks')
       .insert({
         id: nanoBananaData.data.taskId,
@@ -359,9 +382,7 @@ export async function POST(request: NextRequest) {
         api_task_id: nanoBananaData.data.taskId,
         cost_usd: 0.025,
         created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
+      });
 
     if (taskError) {
       console.error('Failed to store task:', taskError);
@@ -375,28 +396,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Deduct credit using admin client
+    // Deduct user credit (always 1 from user perspective)
     await supabaseAdmin
       .from('user_credits')
       .update({ 
-        current_balance: userCredits.current_balance - 1,
+        current_balance: userCredits.current_balance - USER_CREDITS_PER_ENHANCEMENT,
+        consumed_this_month: userCredits.consumed_this_month + USER_CREDITS_PER_ENHANCEMENT,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', user.id);
+    
+    // Consume platform credits (handles the 1:4 ratio internally)
+    await supabaseAdmin.rpc('consume_platform_credits', {
+      p_provider: PROVIDER,
+      p_user_id: user.id,
+      p_user_credits: USER_CREDITS_PER_ENHANCEMENT,
+      p_operation_type: enhancementType,
+      p_task_id: nanoBananaData.data.taskId,
+      p_moodboard_id: moodboardId
+    });
 
-    // Log transaction using admin client
+    // Log transaction (user sees 1 credit, but we track the actual provider cost)
+    const providerCost = creditScalingService.calculateProviderCost(PROVIDER, USER_CREDITS_PER_ENHANCEMENT);
     await supabaseAdmin
       .from('credit_transactions')
       .insert({
         user_id: user.id,
         moodboard_id: moodboardId,
         transaction_type: 'deduction',
-        credits_used: 1,
-        cost_usd: 0.025, // NanoBanana cost per request
-        provider: 'nanobanana',
+        credits_used: USER_CREDITS_PER_ENHANCEMENT, // User perspective: 1 credit
+        cost_usd: 0.10, // Actual cost for 4 NanoBanana credits
+        provider: PROVIDER,
         api_request_id: nanoBananaData.data.taskId,
         enhancement_type: enhancementType,
         status: 'completed',
+        metadata: {
+          provider_credits_used: providerCost.providerCredits,
+          credit_ratio: providerCost.ratio
+        },
         created_at: new Date().toISOString()
       });
 

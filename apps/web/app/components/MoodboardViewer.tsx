@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import DraggableMasonryGrid from './DraggableMasonryGrid'
 
 interface MoodboardItem {
   id: string
@@ -11,9 +12,18 @@ interface MoodboardItem {
   thumbnail_url?: string
   enhanced_url?: string  // URL of enhanced version if exists
   caption?: string
+  width?: number
+  height?: number
   photographer?: string
   photographer_url?: string
   position: number
+  enhancement_prompt?: string
+  original_image_id?: string
+  original_url?: string
+  enhancement_task_id?: string
+  enhancement_status?: 'pending' | 'processing' | 'completed' | 'failed'
+  cost?: number
+  showing_original?: boolean
 }
 
 interface MoodboardViewerProps {
@@ -107,34 +117,14 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
           </div>
         )}
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {moodboard.items.map((item: MoodboardItem) => (
-            <div
-              key={item.id}
-              className="relative group cursor-pointer"
-              onClick={() => setSelectedImage(item)}
-            >
-              {item.type === 'image' ? (
-                <img
-                  src={item.enhanced_url || item.thumbnail_url || item.url}
-                  alt={item.caption || ''}
-                  className="w-full h-48 object-contain rounded bg-gray-100 hover:opacity-90 transition-opacity"
-                />
-              ) : (
-                <video
-                  src={item.url}
-                  className="w-full h-48 object-contain rounded bg-gray-100"
-                  muted
-                />
-              )}
-              {item.photographer && (
-                <div className="absolute bottom-1 left-1 text-xs text-white bg-black bg-opacity-60 px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                  📷 {item.photographer}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <DraggableMasonryGrid
+          items={moodboard.items}
+          onItemClick={(item) => setSelectedImage(item)} // Open lightbox on click
+          enhancingItems={new Set()}
+          enhancementTasks={new Map()}
+          subscriptionTier="free"
+          editable={false} // Viewer mode - no editing
+        />
       </div>
       
       {/* Lightbox Modal */}

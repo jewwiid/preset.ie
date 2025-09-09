@@ -90,10 +90,10 @@ export async function POST(request: NextRequest) {
           
           if (aiContent) {
             // Parse AI response
-            const lines = aiContent.split('\n').filter(l => l.trim())
-            const vibeSummary = lines.find(l => l.toLowerCase().includes('vibe') || l.length > 50) || vibeAnalysis.vibeSummary
-            const moodDescriptors = extractWords(lines.find(l => l.toLowerCase().includes('mood')) || '') || vibeAnalysis.moodDescriptors
-            const tags = extractWords(lines.find(l => l.toLowerCase().includes('tag')) || '') || vibeAnalysis.tags
+            const lines = aiContent.split('\n').filter((l: string) => l.trim())
+            const vibeSummary = lines.find((l: string) => l.toLowerCase().includes('vibe') || l.length > 50) || vibeAnalysis.vibeSummary
+            const moodDescriptors = extractWords(lines.find((l: string) => l.toLowerCase().includes('mood')) || '') || vibeAnalysis.moodDescriptors
+            const tags = extractWords(lines.find((l: string) => l.toLowerCase().includes('tag')) || '') || vibeAnalysis.tags
             
             return NextResponse.json({
               success: true,
