@@ -109,7 +109,7 @@ export async function GET(
     const riskScore = Math.min(100, violationCount * 15)
 
     // Format response
-    const user = {
+    const userResponse = {
       ...userDetails,
       violation_count: violationCount,
       risk_score: riskScore,
@@ -138,7 +138,7 @@ export async function GET(
       })) || []
     }
 
-    return NextResponse.json({ user })
+    return NextResponse.json({ user: userResponse })
 
   } catch (error) {
     console.error('Error fetching user details:', error)
