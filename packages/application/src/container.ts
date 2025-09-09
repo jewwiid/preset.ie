@@ -2,9 +2,12 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { MoodboardRepository } from '@preset/domain/moodboards/ports/MoodboardRepository';
 import { ImageStorageService } from '@preset/domain/moodboards/ports/ImageStorageService';
 import { AIImageService } from '@preset/domain/moodboards/ports/AIImageService';
+import { EventBus } from '@preset/domain/shared/ports/EventBus';
 import { SupabaseMoodboardRepository } from '@preset/adapters/persistence/SupabaseMoodboardRepository';
 import { SupabaseImageStorage } from '@preset/adapters/storage/SupabaseImageStorage';
 import { NanoBananaService } from '@preset/adapters/external/NanoBananaService';
+import { SupabaseEventBus } from '@preset/adapters/events/SupabaseEventBus';
+import { InMemoryEventBus } from '@preset/adapters/events/InMemoryEventBus';
 import { CreateMoodboardUseCase } from './moodboards/use-cases/CreateMoodboard';
 import { EnhanceImageUseCase } from './moodboards/use-cases/EnhanceImage';
 import { GetMoodboardUseCase } from './moodboards/use-cases/GetMoodboard';
@@ -15,6 +18,9 @@ import { GetMoodboardUseCase } from './moodboards/use-cases/GetMoodboard';
  */
 export class DIContainer {
   private static instance: DIContainer;
+  
+  // Core Infrastructure
+  private eventBus!: EventBus;
   
   // Repositories
   private moodboardRepository!: MoodboardRepository;
@@ -31,6 +37,7 @@ export class DIContainer {
     private config?: {
       nanoBananaApiKey?: string;
       nanoBananaCallbackUrl?: string;
+      useInMemoryEventBus?: boolean;
     }
   ) {
     this.initializeAdapters();
@@ -42,6 +49,7 @@ export class DIContainer {
     config?: {
       nanoBananaApiKey?: string;
       nanoBananaCallbackUrl?: string;
+      useInMemoryEventBus?: boolean;
     }
   ): DIContainer {
     if (!DIContainer.instance) {
@@ -51,6 +59,13 @@ export class DIContainer {
   }
 
   private initializeAdapters(): void {
+    // Initialize event bus
+    if (this.config?.useInMemoryEventBus) {
+      this.eventBus = new InMemoryEventBus();
+    } else {
+      this.eventBus = new SupabaseEventBus(this.supabase);
+    }
+    
     // Initialize concrete implementations
     this.moodboardRepository = new SupabaseMoodboardRepository(this.supabase);
     this.imageStorage = new SupabaseImageStorage(this.supabase);
@@ -69,7 +84,8 @@ export class DIContainer {
     this.createMoodboardUseCase = new CreateMoodboardUseCase(
       this.moodboardRepository,
       this.imageStorage,
-      this.aiService
+      this.aiService,
+      this.eventBus
     );
     
     this.getMoodboardUseCase = new GetMoodboardUseCase(
@@ -107,6 +123,10 @@ export class DIContainer {
 
   getAIService(): AIImageService | undefined {
     return this.aiService;
+  }
+
+  getEventBus(): EventBus {
+    return this.eventBus;
   }
 }
 

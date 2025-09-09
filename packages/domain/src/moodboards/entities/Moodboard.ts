@@ -1,3 +1,7 @@
+import { BaseAggregateRoot } from '../../shared/BaseAggregateRoot';
+import { MoodboardCreated, MoodboardItemAdded, ImageEnhanced } from '../events/MoodboardEvents';
+import { MoodboardItem } from './MoodboardItem';
+
 export interface MoodboardProps {
   id: string;
   gigId: string;
@@ -31,16 +35,31 @@ export interface EnhancementLogEntry {
   timestamp: Date;
 }
 
-export class Moodboard {
-  constructor(private props: MoodboardProps) {}
+export class Moodboard extends BaseAggregateRoot {
+  constructor(private props: MoodboardProps) {
+    super();
+  }
 
   static create(data: Omit<MoodboardProps, 'id' | 'createdAt' | 'updatedAt'>): Moodboard {
-    return new Moodboard({
+    const moodboard = new Moodboard({
       ...data,
       id: crypto.randomUUID(),
       createdAt: new Date(),
       updatedAt: new Date()
     });
+    
+    // Emit domain event
+    moodboard.raise(new MoodboardCreated(
+      moodboard.id,
+      {
+        gigId: data.gigId,
+        ownerId: data.ownerId,
+        title: data.title,
+        itemCount: data.items.length
+      }
+    ));
+    
+    return moodboard;
   }
 
   get id(): string { return this.props.id; }
@@ -55,6 +74,17 @@ export class Moodboard {
     this.props.items.push(item);
     this.updateSourceBreakdown(item);
     this.props.updatedAt = new Date();
+    
+    // Emit domain event
+    this.raise(new MoodboardItemAdded(
+      this.id,
+      {
+        moodboardId: this.id,
+        itemId: item.id,
+        itemType: item.type,
+        source: item.source
+      }
+    ));
   }
 
   removeItem(itemId: string): void {
@@ -72,6 +102,18 @@ export class Moodboard {
     this.props.totalCost += entry.cost;
     this.props.sourceBreakdown.aiEnhanced++;
     this.props.updatedAt = new Date();
+    
+    // Emit domain event
+    this.raise(new ImageEnhanced(
+      this.id,
+      {
+        moodboardId: this.id,
+        originalUrl: entry.originalUrl,
+        enhancedUrl: entry.enhancedUrl,
+        enhancementType: entry.enhancementType,
+        cost: entry.cost
+      }
+    ));
   }
   
   logEnhancement(entry: EnhancementLogEntry): void {

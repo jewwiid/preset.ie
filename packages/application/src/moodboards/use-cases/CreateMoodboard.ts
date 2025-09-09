@@ -2,6 +2,7 @@ import { Moodboard } from '@preset/domain/moodboards/entities/Moodboard';
 import { MoodboardRepository } from '@preset/domain/moodboards/ports/MoodboardRepository';
 import { ImageStorageService } from '@preset/domain/moodboards/ports/ImageStorageService';
 import { AIImageService } from '@preset/domain/moodboards/ports/AIImageService';
+import { EventBus } from '@preset/domain/shared/ports/EventBus';
 
 export interface CreateMoodboardCommand {
   gigId: string;
@@ -20,7 +21,8 @@ export class CreateMoodboardUseCase {
   constructor(
     private moodboardRepository: MoodboardRepository,
     private imageStorage: ImageStorageService,
-    private aiService?: AIImageService
+    private aiService?: AIImageService,
+    private eventBus?: EventBus
   ) {}
 
   async execute(command: CreateMoodboardCommand): Promise<{ moodboardId: string }> {
@@ -78,6 +80,13 @@ export class CreateMoodboardUseCase {
     
     // Save to repository
     await this.moodboardRepository.save(moodboard);
+    
+    // Publish domain events
+    if (this.eventBus) {
+      const events = moodboard.getUncommittedEvents();
+      await this.eventBus.publishAll(events);
+      moodboard.markEventsAsCommitted();
+    }
     
     return { moodboardId: moodboard.id };
   }
