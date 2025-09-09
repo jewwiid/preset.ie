@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
       callBackUrl: process.env.NANOBANANA_CALLBACK_URL || 
         (process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/api/nanobanana/callback` : 
          process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/nanobanana/callback` : 
-         'http://localhost:3000/api/nanobanana/callback'),
+         'https://preset-51brxeczd-jewwiids-projects.vercel.app/api/nanobanana/callback'),
       numImages: 1
     };
 

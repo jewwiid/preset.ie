@@ -44,24 +44,52 @@ async function processCallback(payload: any) {
   
   try {
     const { code, data, msg } = payload;
-    const taskId = data?.taskId;
+    console.log('Callback data structure:', JSON.stringify(data, null, 2));
+    
+    // Try different possible field names for taskId
+    const taskId = data?.taskId || data?.task_id || data?.id;
     
     if (!taskId) {
-      console.error('No taskId in callback payload');
+      console.error('No taskId in callback payload. Available fields:', Object.keys(data || {}));
       return;
     }
     
+    console.log('Using taskId:', taskId);
+    
     // Get the task from our database
-    const { data: task, error: taskError } = await supabaseAdmin
+    console.log('Looking for task with api_task_id:', taskId);
+    let { data: task, error: taskError } = await supabaseAdmin
       .from('enhancement_tasks')
       .select('*')
       .eq('api_task_id', taskId)
       .single();
     
-    if (taskError || !task) {
+    if (taskError) {
+      console.error('Error fetching task:', taskError);
+      
+      // Try looking by main id field as fallback
+      console.log('Trying fallback lookup by main id field');
+      const { data: fallbackTask, error: fallbackError } = await supabaseAdmin
+        .from('enhancement_tasks')
+        .select('*')
+        .eq('id', taskId)
+        .single();
+      
+      if (fallbackError || !fallbackTask) {
+        console.error('Task not found in either field:', taskId);
+        return;
+      }
+      
+      // Use fallback task
+      task = fallbackTask;
+    }
+    
+    if (!task) {
       console.error('Task not found:', taskId);
       return;
     }
+    
+    console.log('Found task:', task.id, 'Status:', task.status);
     
     // Update task based on callback status
     if (code === 200 && data?.info?.resultImageUrl) {
