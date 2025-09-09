@@ -7,7 +7,6 @@ import { Upload, Search, Sparkles, Save, Loader2, X, Palette, Clock, CheckCircle
 import { extractPaletteFromImages } from '../../lib/color-extractor'
 import { extractAIPaletteFromImages } from '../../lib/ai-color-extractor'
 import EnhancementModal from './EnhancementModal'
-import EnhancementPreview from './EnhancementPreview'
 import { optimizeImageForAPI, preloadImages, estimateProcessingTime, compressImageClientSide } from '../../lib/image-optimizer'
 
 interface MoodboardItem {
@@ -653,8 +652,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
         prompt
       })
 
-      // Close the enhancement modal
-      setEnhancementModal({ isOpen: false, itemId: null })
+      // Keep the modal open but update status
+      // setEnhancementModal({ isOpen: false, itemId: null }) // Don't close yet
 
       // Update progress
       setEnhancementTasks(prev => new Map(prev).set(itemId, { status: 'polling', progress: 30 }))
@@ -713,7 +712,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
             
             clearInterval(pollInterval)
             
-            // Clean up after showing success
+            // Clean up after showing success and close modal
             setTimeout(() => {
               setEnhancingItems(prev => {
                 const newSet = new Set(prev)
@@ -725,6 +724,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
                 newMap.delete(itemId)
                 return newMap
               })
+              // Close the enhancement modal after showing the result
+              setEnhancementModal({ isOpen: false, itemId: null })
             }, 2000)
           } else if (statusData.task.status === 'failed') {
             setError(statusData.task.errorMessage || 'Enhancement failed')
@@ -1462,85 +1463,14 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
               await enhanceImage(itemId, type, prompt)
             }
           }}
-          itemUrl={items.find(i => i.id === enhancementModal.itemId)?.url || ''}
+          itemUrl={items.find(i => i.id === enhancementModal.itemId)?.original_url || items.find(i => i.id === enhancementModal.itemId)?.url || ''}
           itemCaption={items.find(i => i.id === enhancementModal.itemId)?.caption}
           credits={userCredits?.current || 0}
+          enhancedUrl={items.find(i => i.id === enhancementModal.itemId)?.enhanced_url}
+          isEnhancing={enhancingItems.has(enhancementModal.itemId)}
         />
       )}
 
-      {/* Enhancement Preview - Full Screen Loading */}
-      {activeEnhancement && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-8">
-          <div className="max-w-4xl w-full">
-            <EnhancementPreview
-              originalImage={activeEnhancement.url}
-              taskId={activeEnhancement.taskId}
-              enhancementType={activeEnhancement.type}
-              prompt={activeEnhancement.prompt}
-              onComplete={async (resultUrl) => {
-                console.log('Enhancement completed with URL:', resultUrl)
-                // Update the item with the enhanced URL but KEEP original
-                setItems(prev => prev.map(i => 
-                  i.id === activeEnhancement.itemId 
-                    ? { 
-                        ...i, 
-                        enhanced_url: resultUrl,
-                        original_url: i.original_url || i.url,  // Store original if not already stored
-                        url: resultUrl, // Display enhanced version by default
-                        enhancement_status: 'completed',
-                        source: 'ai-enhanced' as const,
-                        showing_original: false  // Track which version is showing
-                      }
-                    : i
-                ))
-                setEnhancingItems(prev => {
-                  const newSet = new Set(prev)
-                  newSet.delete(activeEnhancement.itemId)
-                  return newSet
-                })
-                setEnhancementTasks(prev => {
-                  const newMap = new Map(prev)
-                  newMap.delete(activeEnhancement.itemId)
-                  return newMap
-                })
-                // Refresh credits display
-                fetchUserCredits()
-                // Save the updated moodboard to database
-                if (moodboardId) {
-                  saveMoodboard()
-                }
-                // Close preview after a short delay
-                setTimeout(() => {
-                  setActiveEnhancement(null)
-                }, 2000)
-              }}
-              onError={(error) => {
-                console.error('Enhancement error:', error)
-                setError(`Enhancement failed: ${error}`)
-                setEnhancingItems(prev => {
-                  const newSet = new Set(prev)
-                  newSet.delete(activeEnhancement.itemId)
-                  return newSet
-                })
-                setEnhancementTasks(prev => {
-                  const newMap = new Map(prev)
-                  newMap.delete(activeEnhancement.itemId)
-                  return newMap
-                })
-                setActiveEnhancement(null)
-              }}
-            />
-            
-            {/* Close button */}
-            <button
-              onClick={() => setActiveEnhancement(null)}
-              className="mt-4 px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
-            >
-              Cancel Enhancement
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

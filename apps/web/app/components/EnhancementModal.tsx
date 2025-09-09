@@ -10,6 +10,8 @@ interface EnhancementModalProps {
   itemUrl: string
   itemCaption?: string
   credits: number
+  enhancedUrl?: string | null
+  isEnhancing?: boolean
 }
 
 const enhancementTypes = [
@@ -49,7 +51,9 @@ export default function EnhancementModal({
   onEnhance,
   itemUrl,
   itemCaption,
-  credits
+  credits,
+  enhancedUrl = null,
+  isEnhancing = false
 }: EnhancementModalProps) {
   const [selectedType, setSelectedType] = useState('lighting')
   const [prompt, setPrompt] = useState('')
@@ -62,14 +66,23 @@ export default function EnhancementModal({
   useEffect(() => {
     if (isOpen) {
       console.log('Enhancement modal opened')
-      setStatus('idle')
-      setProgress(0)
+      // If we have an enhanced URL, show completed state
+      if (enhancedUrl) {
+        setStatus('completed')
+        setProgress(100)
+      } else if (isEnhancing) {
+        setStatus('polling')
+        setProgress(50)
+      } else {
+        setStatus('idle')
+        setProgress(0)
+      }
       setError(null)
-      setIsProcessing(false)
+      setIsProcessing(isEnhancing)
     } else {
       console.log('Enhancement modal closed')
     }
-  }, [isOpen])
+  }, [isOpen, enhancedUrl, isEnhancing])
 
   useEffect(() => {
     if (status === 'processing' || status === 'polling') {
@@ -170,11 +183,23 @@ export default function EnhancementModal({
                 {status === 'completed' ? 'Enhanced' : 'Preview'}
               </p>
               <div className="relative w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-                {status === 'idle' && (
+                {status === 'idle' && !enhancedUrl && (
                   <div className="text-center">
                     <Sparkles className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">Enhancement preview</p>
                   </div>
+                )}
+                
+                {/* Show enhanced image when available */}
+                {enhancedUrl && (
+                  <img
+                    src={enhancedUrl}
+                    alt="Enhanced"
+                    className="w-full h-full object-cover rounded-lg"
+                    onClick={() => window.open(enhancedUrl, '_blank')}
+                    style={{ cursor: 'pointer' }}
+                    title="Click to view full size"
+                  />
                 )}
                 
                 {(status === 'processing' || status === 'polling') && (
