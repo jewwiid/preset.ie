@@ -115,11 +115,21 @@ export async function POST(
 
     const flag = flagMap[request_data.verification_type]
     if (flag) {
+      // Get current role_flags
+      const { data: userData } = await supabase
+        .from('users_profile')
+        .select('role_flags')
+        .eq('user_id', request_data.user_id)
+        .single()
+      
+      let updatedFlags = userData?.role_flags || []
+      // Remove flag if it exists, then add it
+      updatedFlags = updatedFlags.filter((f: string) => f !== flag)
+      updatedFlags.push(flag)
+      
       await supabase
         .from('users_profile')
-        .update({
-          role_flags: supabase.sql`array_append(array_remove(role_flags, '${flag}'), '${flag}')`
-        })
+        .update({ role_flags: updatedFlags })
         .eq('user_id', request_data.user_id)
     }
 
