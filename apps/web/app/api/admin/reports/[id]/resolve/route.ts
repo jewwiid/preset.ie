@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 
 // POST /api/admin/reports/[id]/resolve - Resolve report with action
 export async function POST(
@@ -9,17 +8,9 @@ export async function POST(
 ) {
   const { id } = await params
   try {
-    const cookieStore = cookies()
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
     // Check if user is admin

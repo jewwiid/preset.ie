@@ -1,21 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 
 // GET /api/admin/reports - List all reports with filters
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = cookies()
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
     // Check if user is admin
@@ -91,17 +82,9 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/reports - Create a new report
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = cookies()
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
     // Check authentication

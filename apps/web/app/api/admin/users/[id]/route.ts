@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
 
 // GET /api/admin/users/[id] - Get user details + violations
 export async function GET(
@@ -183,17 +183,9 @@ export async function PATCH(
 ) {
   const { id } = await params
   try {
-    const cookieStore = cookies()
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
     // Check if user is admin
