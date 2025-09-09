@@ -4,8 +4,9 @@ import { cookies } from 'next/headers'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const supabase = createRouteHandlerClient({ cookies })
     
@@ -40,7 +41,7 @@ export async function POST(
       .from('moderation_actions')
       .insert({
         admin_user_id: user.id,
-        target_user_id: params.id,
+        target_user_id: id,
         action_type: 'warning',
         reason,
         notes
@@ -50,7 +51,7 @@ export async function POST(
     await supabase
       .from('user_violations')
       .insert({
-        user_id: params.id,
+        user_id: id,
         violation_type: 'warning',
         severity: 'low',
         description: reason,

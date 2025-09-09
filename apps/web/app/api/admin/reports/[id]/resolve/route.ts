@@ -5,8 +5,9 @@ import { cookies } from 'next/headers'
 // POST /api/admin/reports/[id]/resolve - Resolve report with action
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const cookieStore = cookies()
     const supabase = createClient(
@@ -54,7 +55,7 @@ export async function POST(
     const { data: report } = await supabase
       .from('reports')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (!report) {
@@ -72,7 +73,7 @@ export async function POST(
         resolved_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (updateError) {
       console.error('Error resolving report:', updateError)
@@ -98,12 +99,12 @@ export async function POST(
           admin_user_id: user.id,
           target_user_id: report.reported_user_id,
           action_type: actionType,
-          reason: `Report #${params.id}: ${report.reason} - ${report.description}`,
+          reason: `Report #${id}: ${report.reason} - ${report.description}`,
           duration_hours: actionType === 'suspend' ? (duration_hours || 24) : null,
           expires_at: actionType === 'suspend' && duration_hours 
             ? new Date(Date.now() + duration_hours * 60 * 60 * 1000).toISOString()
             : null,
-          report_id: params.id
+          report_id: id
         })
 
       if (actionError) {
@@ -122,7 +123,7 @@ export async function POST(
             user_id: report.reported_user_id,
             violation_type: report.reason,
             severity,
-            report_id: params.id,
+            report_id: id,
             description: report.description,
             evidence_urls: report.evidence_urls
           })

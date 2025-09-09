@@ -5,8 +5,9 @@ import { cookies } from 'next/headers'
 // POST /api/admin/verification/[id]/reject - Reject verification
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const cookieStore = cookies()
     const supabase = createClient(
@@ -53,7 +54,7 @@ export async function POST(
     const { data: request_data, error: requestError } = await supabase
       .from('verification_requests')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (requestError || !request_data) {
@@ -75,7 +76,7 @@ export async function POST(
         reviewed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (updateError) {
       console.error('Error rejecting verification request:', updateError)

@@ -5,8 +5,9 @@ import { cookies } from 'next/headers'
 // POST /api/admin/verification/[id]/approve - Approve verification
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const cookieStore = cookies()
     const supabase = createClient(
@@ -48,7 +49,7 @@ export async function POST(
     const { data: request_data, error: requestError } = await supabase
       .from('verification_requests')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (requestError || !request_data) {
@@ -69,7 +70,7 @@ export async function POST(
         reviewed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (updateError) {
       console.error('Error updating verification request:', updateError)
@@ -101,7 +102,7 @@ export async function POST(
       .insert({
         user_id: request_data.user_id,
         badge_type,
-        verification_request_id: params.id,
+        verification_request_id: id,
         issued_by: user.id,
         expires_at,
         is_active: true

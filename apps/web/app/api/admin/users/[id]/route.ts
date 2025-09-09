@@ -5,8 +5,9 @@ import { cookies } from 'next/headers'
 // GET /api/admin/users/[id] - Get user details + violations
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const supabase = createRouteHandlerClient({ cookies })
     
@@ -40,7 +41,7 @@ export async function GET(
         created_at,
         last_seen_at
       `)
-      .eq('user_id', params.id)
+      .eq('user_id', id)
       .single()
 
     if (userError || !userDetails) {
@@ -60,7 +61,7 @@ export async function GET(
       supabase
         .from('user_violations')
         .select('*')
-        .eq('user_id', params.id)
+        .eq('user_id', id)
         .order('created_at', { ascending: false })
         .limit(10),
 
@@ -68,14 +69,14 @@ export async function GET(
       supabase
         .from('verification_badges')
         .select('*')
-        .eq('user_id', params.id)
+        .eq('user_id', id)
         .eq('is_active', true),
 
       // Subscription
       supabase
         .from('subscriptions')
         .select('*')
-        .eq('user_id', params.id)
+        .eq('user_id', id)
         .order('created_at', { ascending: false })
         .limit(1)
         .single(),
@@ -84,14 +85,14 @@ export async function GET(
       supabase
         .from('user_credits')
         .select('balance')
-        .eq('user_id', params.id)
+        .eq('user_id', id)
         .single(),
 
       // Recent activity (from domain events)
       supabase
         .from('domain_events')
         .select('*')
-        .eq('aggregate_id', params.id)
+        .eq('aggregate_id', id)
         .order('occurred_at', { ascending: false })
         .limit(20),
 
@@ -99,7 +100,7 @@ export async function GET(
       supabase
         .from('user_suspensions')
         .select('*')
-        .eq('user_id', params.id)
+        .eq('user_id', id)
         .eq('is_active', true)
         .single()
     ])
@@ -230,7 +231,7 @@ export async function PATCH(
     const { data: updatedUser, error } = await supabase
       .from('users_profile')
       .update(updateData)
-      .eq('user_id', params.id)
+      .eq('user_id', id)
       .select()
       .single()
 
@@ -245,7 +246,7 @@ export async function PATCH(
         .from('moderation_actions')
         .insert({
           admin_user_id: user.id,
-          target_user_id: params.id,
+          target_user_id: id,
           action_type: 'verify', // Generic action for profile updates
           reason: notes,
           metadata: { updates: updateData }

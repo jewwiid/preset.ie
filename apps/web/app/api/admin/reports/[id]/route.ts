@@ -5,8 +5,9 @@ import { cookies } from 'next/headers'
 // GET /api/admin/reports/[id] - Get report details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const cookieStore = cookies()
     const supabase = createClient(
@@ -42,7 +43,7 @@ export async function GET(
     const { data: report, error } = await supabase
       .from('admin_reports_dashboard')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (error) {
@@ -60,7 +61,7 @@ export async function GET(
         .from('reports')
         .select('id, reason, status, created_at')
         .eq('reported_user_id', report.reported_user_id)
-        .neq('id', params.id)
+        .neq('id', id)
         .order('created_at', { ascending: false })
         .limit(5)
       
@@ -80,8 +81,9 @@ export async function GET(
 // PATCH /api/admin/reports/[id] - Update report status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const cookieStore = cookies()
     const supabase = createClient(
@@ -140,7 +142,7 @@ export async function PATCH(
     const { data: report, error } = await supabase
       .from('reports')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 

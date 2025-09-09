@@ -4,8 +4,9 @@ import { cookies } from 'next/headers'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const supabase = createRouteHandlerClient({ cookies })
     
@@ -32,7 +33,7 @@ export async function POST(
     const { error: suspensionError } = await supabase
       .from('user_suspensions')
       .update({ is_active: false })
-      .eq('user_id', params.id)
+      .eq('user_id', id)
       .eq('is_active', true)
 
     if (suspensionError) {
@@ -48,7 +49,7 @@ export async function POST(
       .from('moderation_actions')
       .insert({
         admin_user_id: user.id,
-        target_user_id: params.id,
+        target_user_id: id,
         action_type: 'unsuspend',
         reason: reason || 'Manual unsuspension',
         notes

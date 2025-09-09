@@ -4,8 +4,9 @@ import { cookies } from 'next/headers'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const supabase = createRouteHandlerClient({ cookies })
     
@@ -32,7 +33,7 @@ export async function POST(
     const { data: targetUser } = await supabase
       .from('users_profile')
       .select('role_flags')
-      .eq('user_id', params.id)
+      .eq('user_id', id)
       .single()
 
     if (!targetUser) {
@@ -48,7 +49,7 @@ export async function POST(
     const { error: updateError } = await supabase
       .from('users_profile')
       .update({ role_flags: updatedFlags })
-      .eq('user_id', params.id)
+      .eq('user_id', id)
 
     if (updateError) {
       console.error('Error unbanning user:', updateError)
@@ -63,7 +64,7 @@ export async function POST(
       .from('moderation_actions')
       .insert({
         admin_user_id: user.id,
-        target_user_id: params.id,
+        target_user_id: id,
         action_type: 'unban',
         reason: reason || 'Manual unban',
         notes
