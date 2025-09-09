@@ -46,7 +46,7 @@ export async function GET(
     }
 
     // Get related reports for the same user
-    let relatedReports = []
+    let relatedReports: any[] = []
     if (report.reported_user_id) {
       const { data } = await supabase
         .from('reports')
