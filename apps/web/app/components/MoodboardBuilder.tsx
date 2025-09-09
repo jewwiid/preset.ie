@@ -7,6 +7,7 @@ import { Upload, Search, Sparkles, Save, Loader2, X, Palette, Clock, CheckCircle
 import { extractPaletteFromImages } from '../../lib/color-extractor'
 import { extractAIPaletteFromImages } from '../../lib/ai-color-extractor'
 import EnhancementModal from './EnhancementModal'
+import DraggableMasonryGrid from './DraggableMasonryGrid'
 import { optimizeImageForAPI, preloadImages, estimateProcessingTime, compressImageClientSide } from '../../lib/image-optimizer'
 
 interface MoodboardItem {
@@ -68,6 +69,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
   const [userCredits, setUserCredits] = useState<{ current: number, monthly: number } | null>(null)
   const [enhancingItems, setEnhancingItems] = useState<Set<string>>(new Set())
   const [enhancementModal, setEnhancementModal] = useState<{ isOpen: boolean, itemId: string | null }>({ isOpen: false, itemId: null })
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isSavingPositions, setIsSavingPositions] = useState(false)
   const [enhancementTasks, setEnhancementTasks] = useState<Map<string, { status: string, progress: number }>>(new Map())
   const [activeEnhancement, setActiveEnhancement] = useState<{ itemId: string, taskId: string, url: string, type: string, prompt: string } | null>(null)
 
@@ -810,42 +813,115 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
     }
   }
 
-  // Generate moodboard with AI enhancements
+  // Generate moodboard with AI analysis and enhancements
   const generateMoodboard = async () => {
-    if (!user || !gigId) return
+    if (!user) return
     
     setIsGenerating(true)
     setError(null)
     
     try {
-      const response = await fetch('/api/generate-moodboard', {
+      // First save the basic moodboard
+      await saveMoodboard()
+      
+      if (!moodboardId && !gigId) {
+        throw new Error('No moodboard or gig ID available')
+      }
+      
+      // Generate AI analysis for the moodboard
+      console.log('Generating AI analysis for moodboard...')
+      
+      // Call AI to analyze the vibe and generate summary
+      const aiAnalysisResponse = await fetch('/api/analyze-moodboard', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
-          gigId,
+          items: items.map(item => ({
+            url: item.enhanced_url || item.url,
+            caption: item.caption,
+            type: item.type,
+            source: item.source
+          })),
           title: title || 'Untitled Moodboard',
-          pexelsQuery: pexelsQuery || undefined,
-          userUploadIds: items.filter(item => item.source === 'upload').map(item => item.id),
-          enhancementRequests,
-          palette
+          description: description
         })
       })
 
-      const data = await response.json()
-
-      if (data.success) {
-        onSave?.(data.moodboard.id)
+      if (!aiAnalysisResponse.ok) {
+        console.warn('AI analysis failed, saving without AI features')
       } else {
-        throw new Error(data.error || 'Generation failed')
+        const aiData = await aiAnalysisResponse.json()
+        
+        // Update moodboard with AI-generated data
+        if (aiData.success && moodboardId) {
+          const { error: updateError } = await supabase
+            .from('moodboards')
+            .update({
+              vibe_summary: aiData.vibeSummary,
+              palette: aiData.palette || palette,
+              tags: aiData.tags,
+              mood_descriptors: aiData.moodDescriptors,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', moodboardId)
+          
+          if (updateError) {
+            console.error('Failed to update with AI analysis:', updateError)
+          } else {
+            console.log('Moodboard enhanced with AI analysis')
+            // Update local state
+            setAiAnalysis({
+              description: aiData.vibeSummary,
+              mood: aiData.moodDescriptors?.join(', ')
+            })
+            if (aiData.palette) {
+              setPalette(aiData.palette)
+            }
+          }
+        }
+      }
+      
+      if (moodboardId) {
+        onSave?.(moodboardId)
       }
     } catch (err: any) {
       console.error('Generation error:', err)
-      setError(err.message || 'Failed to generate moodboard')
+      setError(err.message || 'Failed to generate AI analysis')
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  // Save only the positions of moodboard items (for auto-save during reordering)
+  const saveMoodboardPositions = async (reorderedItems: MoodboardItem[]) => {
+    if (!user || !moodboardId) return
+    
+    setIsSavingPositions(true)
+    try {
+      console.log('Auto-saving item positions...')
+      const { error: updateError } = await supabase
+        .from('moodboards')
+        .update({
+          items: reorderedItems,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', moodboardId)
+      
+      if (updateError) {
+        console.error('Failed to save positions:', updateError)
+        setError('Failed to save arrangement')
+      } else {
+        console.log('Positions saved successfully')
+        setHasUnsavedChanges(false)
+      }
+    } catch (err) {
+      console.error('Error saving positions:', err)
+      setError('Failed to save arrangement')
+    } finally {
+      setIsSavingPositions(false)
     }
   }
 
@@ -885,6 +961,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
         
         if (updateError) throw updateError
         console.log('Moodboard updated successfully with enhanced items')
+        setHasUnsavedChanges(false)
         onSave?.(moodboardId)
       } else {
         // Create new moodboard
@@ -1091,16 +1168,18 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
               </div>
               
               {pexelsResults.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {pexelsResults.map((photo) => (
                     <div key={photo.id} className="relative group cursor-pointer" onClick={() => addPexelsImage(photo)}>
-                      <img
-                        src={photo.src.medium}
-                        alt={photo.alt}
-                        className="w-full h-40 object-contain rounded bg-gray-100"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded flex items-center justify-center">
-                        <span className="text-white opacity-0 group-hover:opacity-100">+ Add</span>
+                      <div className="aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                        <img
+                          src={photo.src.medium}
+                          alt={photo.alt}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg flex items-center justify-center">
+                          <span className="text-white opacity-0 group-hover:opacity-100 font-medium">+ Add</span>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1242,172 +1321,54 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
             </div>
           )}
           
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-            {items.map((item, index) => (
-              <div
-                key={item.id}
-                draggable={!enhancingItems.has(item.id)}
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, index)}
-                className="relative group cursor-move"
-              >
-                {item.type === 'image' ? (
-                  <img
-                    src={
-                      item.showing_original && item.original_url 
-                        ? item.original_url 
-                        : item.enhanced_url  // Always show enhanced if available
-                        ? item.enhanced_url
-                        : (item.thumbnail_url || item.url)
+          <DraggableMasonryGrid
+            items={items}
+            onRemove={removeItem}
+            onEnhance={(itemId: string) => {
+              console.log('Opening enhancement modal for item:', itemId)
+              setEnhancementModal({ isOpen: true, itemId })
+            }}
+            onToggleOriginal={(itemId: string) => {
+              setItems(prev => prev.map(i => 
+                i.id === itemId 
+                  ? { ...i, showing_original: !i.showing_original }
+                  : i
+              ))
+            }}
+            onRedoEnhancement={(itemId: string) => {
+              // Reset to original and open enhancement modal again
+              setItems(prev => prev.map(i => 
+                i.id === itemId 
+                  ? { 
+                      ...i, 
+                      url: i.original_url || i.url,
+                      enhanced_url: undefined,
+                      enhancement_status: undefined,
+                      showing_original: false
                     }
-                    alt={item.caption || ''}
-                    className={`w-full h-48 object-contain rounded bg-gray-100 ${
-                      enhancingItems.has(item.id) ? 'opacity-50' : ''
-                    }`}
-                  />
-                ) : (
-                  <video
-                    src={item.url}
-                    className="w-full h-48 object-contain rounded bg-gray-100"
-                    muted
-                  />
-                )}
-                
-                {/* Enhancement status indicator with progress */}
-                {enhancingItems.has(item.id) && (
-                  <div className="absolute inset-0 bg-black bg-opacity-60 rounded flex flex-col items-center justify-center">
-                    {(() => {
-                      const task = enhancementTasks.get(item.id)
-                      if (task?.status === 'completed') {
-                        return (
-                          <>
-                            <CheckCircle className="w-8 h-8 text-green-400 mb-1" />
-                            <span className="text-xs text-white">Enhanced!</span>
-                          </>
-                        )
-                      } else if (task?.status === 'failed') {
-                        return (
-                          <>
-                            <X className="w-8 h-8 text-red-400 mb-1" />
-                            <span className="text-xs text-white">Failed</span>
-                          </>
-                        )
-                      } else {
-                        return (
-                          <>
-                            <div className="relative">
-                              <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-                              {task && (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-xs font-bold text-white">
-                                    {Math.round(task.progress)}%
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="w-20 h-1 bg-gray-700 rounded-full mt-2 overflow-hidden">
-                              <div 
-                                className="h-full bg-purple-400 transition-all duration-500"
-                                style={{ width: `${task?.progress || 0}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-gray-300 mt-1">
-                              {task?.status === 'processing' ? 'Initializing...' : 'Enhancing...'}
-                            </span>
-                          </>
-                        )
-                      }
-                    })()}
-                  </div>
-                )}
-                
-                {item.enhancement_status === 'completed' && !enhancingItems.has(item.id) && (
-                  <>
-                    <div className="absolute top-1 left-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      {item.showing_original ? 'Original' : 'Enhanced'}
-                    </div>
-                    
-                    {/* Before/After Toggle */}
-                    {item.original_url && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                          setItems(prev => prev.map(i => 
-                            i.id === item.id 
-                              ? { ...i, showing_original: !i.showing_original }
-                              : i
-                          ))
-                        }}
-                        className="absolute top-1 right-1 bg-white bg-opacity-90 text-gray-700 rounded px-2 py-0.5 text-xs hover:bg-opacity-100 transition-all whitespace-nowrap"
-                        title={item.showing_original ? "Show Enhanced" : "Show Original"}
-                      >
-                        {item.showing_original ? "Enhanced" : "Original"}
-                      </button>
-                    )}
-                    
-                    {/* Redo Enhancement */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        e.preventDefault()
-                        // Reset to original and open enhancement modal again
-                        setItems(prev => prev.map(i => 
-                          i.id === item.id 
-                            ? { 
-                                ...i, 
-                                url: i.original_url || i.url,
-                                enhanced_url: undefined,
-                                enhancement_status: undefined,
-                                showing_original: false
-                              }
-                            : i
-                        ))
-                        setEnhancementModal({ isOpen: true, itemId: item.id })
-                      }}
-                      className="absolute bottom-1 right-1 bg-orange-500 text-white rounded px-2 py-0.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-orange-600 whitespace-nowrap"
-                      title="Redo Enhancement"
-                    >
-                      Redo
-                    </button>
-                  </>
-                )}
-                
-                {/* Enhancement button for Plus/Pro users */}
-                {subscriptionTier !== 'free' && item.type === 'image' && !item.enhanced_url && !enhancingItems.has(item.id) && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                      console.log('Opening enhancement modal for item:', item.id)
-                      setEnhancementModal({ isOpen: true, itemId: item.id })
-                    }}
-                    className="absolute bottom-1 left-1 bg-purple-500 text-white rounded px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-purple-600 whitespace-nowrap"
-                    title="Enhance with AI"
-                  >
-                    <Sparkles className="w-3 h-3 inline mr-1" />
-                    Enhance
-                  </button>
-                )}
-                
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  ×
-                </button>
-                
-                {/* Attribution for Pexels or original source */}
-                {(item.photographer || item.original_url) && (
-                  <div className="absolute bottom-1 left-1 text-xs text-white bg-black bg-opacity-50 px-1 rounded">
-                    📷 {item.photographer || 'Original'}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  : i
+              ))
+              setEnhancementModal({ isOpen: true, itemId })
+            }}
+            onReorder={(reorderedItems: MoodboardItem[]) => {
+              console.log('Items reordered, updating positions')
+              setItems(reorderedItems)
+              setHasUnsavedChanges(true)
+              
+              // Auto-save after a short delay to avoid too many saves during rapid reordering
+              if (moodboardId) {
+                clearTimeout((window as any).reorderSaveTimeout)
+                ;(window as any).reorderSaveTimeout = setTimeout(() => {
+                  console.log('Auto-saving reordered positions...')
+                  saveMoodboardPositions(reorderedItems)
+                }, 1500) // Save 1.5 seconds after last reorder
+              }
+            }}
+            enhancingItems={enhancingItems}
+            enhancementTasks={enhancementTasks}
+            subscriptionTier={subscriptionTier}
+            editable={true}
+          />
         </div>
       )}
       
@@ -1419,31 +1380,74 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
         >
           Cancel
         </button>
-        <div className="flex gap-2">
-          <button
-            onClick={saveMoodboard}
-            disabled={loading || items.length === 0}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            {loading ? 'Saving...' : 'Save Simple'}
-          </button>
-          <button
-            onClick={generateMoodboard}
-            disabled={isGenerating || items.length === 0}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Generate with AI
-              </>
-            )}
-          </button>
+        <div className="flex gap-2 items-center">
+          {/* Auto-save indicator */}
+          {(hasUnsavedChanges || isSavingPositions) && moodboardId && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              {isSavingPositions ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>
+                  <span>Saving arrangement...</span>
+                </>
+              ) : hasUnsavedChanges ? (
+                <>
+                  <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+                  <span>Unsaved changes</span>
+                </>
+              ) : null}
+            </div>
+          )}
+          
+          <div className="relative group">
+            <button
+              onClick={saveMoodboard}
+              disabled={loading || items.length === 0}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save Moodboard'}
+            </button>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+              Save images and layout only
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                <div className="border-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="relative group">
+            <button
+              onClick={generateMoodboard}
+              disabled={isGenerating || items.length === 0}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Add AI Analysis
+                </>
+              )}
+            </button>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal z-50 w-64">
+              <div className="font-semibold mb-1">AI analyzes your moodboard to add:</div>
+              <ul className="text-xs space-y-0.5">
+                <li>• Vibe summary & aesthetic description</li>
+                <li>• Mood descriptors (ethereal, bold, etc.)</li>
+                <li>• Searchable style tags</li>
+                <li>• Color palette extraction</li>
+              </ul>
+              <div className="mt-2 pt-2 border-t border-gray-700 text-xs italic">
+                No credits used - doesn't modify images
+              </div>
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                <div className="border-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
