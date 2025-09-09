@@ -11,6 +11,21 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+
+# Scripts with potential secrets
+*deploy*.js
+*execute*.sql
+*migration*.js
+deploy-*.js
+execute_*.sql
+add_*_credits.js
+fix_*.sql
+check_*.sql
+
+# Temporary SQL files
+*.sql.tmp
+temp-*.sql
 
 # Testing
 coverage
