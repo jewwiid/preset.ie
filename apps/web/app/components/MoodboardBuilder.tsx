@@ -352,10 +352,12 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
         const fileExt = file.name.split('.').pop() || 'jpg'
         const fileName = `${user.id}-${timestamp}-${randomStr}.${fileExt}`
         
-        console.log('Uploading file:', fileName, 'to bucket: user-media')
+        // Try moodboard-media bucket first, fallback to user-media
+        const bucketName = 'user-media'; // Change to 'moodboard-media' if you create the new bucket
+        console.log('Uploading file:', fileName, 'to bucket:', bucketName)
         
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('user-media')
+          .from(bucketName)
           .upload(fileName, fileToUpload, {
             cacheControl: '3600',
             upsert: false,
@@ -364,6 +366,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
         
         if (uploadError) {
           console.error('Upload error details:', uploadError)
+          console.error('Error code:', uploadError.message)
+          console.error('Make sure to run the storage policy fixes in Supabase Dashboard')
           throw uploadError
         }
         
@@ -371,7 +375,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
         
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
-          .from('user-media')
+          .from(bucketName)
           .getPublicUrl(fileName)
         
         // Add to items
