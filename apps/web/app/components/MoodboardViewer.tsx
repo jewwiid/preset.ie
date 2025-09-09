@@ -6,9 +6,10 @@ import { supabase } from '../../lib/supabase'
 interface MoodboardItem {
   id: string
   type: 'image' | 'video' | 'pexels'
-  source: 'upload' | 'pexels' | 'url'
+  source: 'upload' | 'pexels' | 'url' | 'ai-enhanced'
   url: string
   thumbnail_url?: string
+  enhanced_url?: string  // URL of enhanced version if exists
   caption?: string
   photographer?: string
   photographer_url?: string
@@ -57,9 +58,9 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Visual Inspiration</h2>
         <div className="animate-pulse">
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="bg-gray-200 h-32 rounded"></div>
+              <div key={i} className="bg-gray-200 h-48 rounded"></div>
             ))}
           </div>
         </div>
@@ -106,7 +107,7 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
           </div>
         )}
         
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {moodboard.items.map((item: MoodboardItem) => (
             <div
               key={item.id}
@@ -115,14 +116,14 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
             >
               {item.type === 'image' ? (
                 <img
-                  src={item.thumbnail_url || item.url}
+                  src={item.enhanced_url || item.thumbnail_url || item.url}
                   alt={item.caption || ''}
-                  className="w-full h-32 object-cover rounded hover:opacity-90 transition-opacity"
+                  className="w-full h-48 object-contain rounded bg-gray-100 hover:opacity-90 transition-opacity"
                 />
               ) : (
                 <video
                   src={item.url}
-                  className="w-full h-32 object-cover rounded"
+                  className="w-full h-48 object-contain rounded bg-gray-100"
                   muted
                 />
               )}
@@ -145,7 +146,7 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
           <div className="max-w-4xl max-h-[90vh] relative">
             {selectedImage.type === 'image' ? (
               <img
-                src={selectedImage.url}
+                src={selectedImage.enhanced_url || selectedImage.url}
                 alt={selectedImage.caption || ''}
                 className="max-w-full max-h-[90vh] object-contain"
               />

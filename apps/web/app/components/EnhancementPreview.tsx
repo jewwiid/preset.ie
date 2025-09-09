@@ -25,6 +25,8 @@ export default function EnhancementPreview({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('EnhancementPreview mounted for task:', taskId);
+    
     // Simulate progress for better UX
     const progressSteps = [
       { progress: 10, status: 'Analyzing image...', delay: 1000 },
@@ -45,26 +47,34 @@ export default function EnhancementPreview({
     // Poll for actual result (checking database for callback update)
     const pollInterval = setInterval(async () => {
       try {
+        console.log('Polling enhancement status for task:', taskId);
         const response = await fetch(`/api/enhancement-status/${taskId}`);
         if (response.ok) {
           const data = await response.json();
+          console.log('Polling response:', data);
           
           if (data.status === 'completed' && data.resultUrl) {
+            console.log('✅ Enhancement completed! Result URL:', data.resultUrl);
             setProgress(100);
             setStatus('Enhancement complete!');
             setResultUrl(data.resultUrl);
             clearInterval(pollInterval);
             if (onComplete) onComplete(data.resultUrl);
           } else if (data.status === 'failed') {
+            console.log('❌ Enhancement failed:', data.error);
             setError(data.error || 'Enhancement failed');
             clearInterval(pollInterval);
             if (onError) onError(data.error);
+          } else {
+            console.log('⏳ Still processing, status:', data.status);
           }
+        } else {
+          console.error('Polling failed with status:', response.status);
         }
       } catch (err) {
         console.error('Failed to check status:', err);
       }
-    }, 5000); // Check every 5 seconds
+    }, 2000); // Check every 2 seconds for faster response
 
     // Timeout after 2 minutes
     const timeout = setTimeout(() => {

@@ -44,13 +44,15 @@ async function processCallback(payload: any) {
   
   try {
     const { code, data, msg } = payload;
-    console.log('Callback data structure:', JSON.stringify(data, null, 2));
+    console.log('Callback payload structure:', JSON.stringify(payload, null, 2));
     
-    // Try different possible field names for taskId
-    const taskId = data?.taskId || data?.task_id || data?.id;
+    // According to NanoBanana docs, the structure is:
+    // { code: 200, msg: "success", data: { taskId: "...", info: { resultImageUrl: "..." } } }
+    const taskId = data?.taskId;
     
     if (!taskId) {
       console.error('No taskId in callback payload. Available fields:', Object.keys(data || {}));
+      console.error('Full payload:', JSON.stringify(payload, null, 2));
       return;
     }
     
@@ -95,6 +97,7 @@ async function processCallback(payload: any) {
     if (code === 200 && data?.info?.resultImageUrl) {
       // Success - download and store the image
       const resultUrl = data.info.resultImageUrl;
+      console.log('Enhancement successful! Result URL:', resultUrl);
       
       console.log('Enhancement successful, result URL:', resultUrl);
       

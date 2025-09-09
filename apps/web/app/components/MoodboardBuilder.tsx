@@ -77,6 +77,11 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
     console.log('Enhancement modal state:', enhancementModal)
   }, [enhancementModal])
   
+  // Debug active enhancement state
+  useEffect(() => {
+    console.log('Active enhancement state:', activeEnhancement)
+  }, [activeEnhancement])
+  
   // Debug items updates
   useEffect(() => {
     const enhancedItems = items.filter(i => i.enhanced_url)
@@ -303,6 +308,13 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
     setError(null)
     
     try {
+      // Check if user is authenticated
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        setError('You must be logged in to upload files')
+        return
+      }
+      
       for (const file of Array.from(files)) {
         // Check file type
         if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
@@ -334,25 +346,33 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
           }
         }
         
-        // Upload to Supabase Storage
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${user.id}/${Date.now()}-${Math.random()}.${fileExt}`
-        const filePath = `moodboards/${fileName}`
+        // Generate a simpler file path (avoid nested folders that might cause issues)
+        const timestamp = Date.now()
+        const randomStr = Math.random().toString(36).substring(7)
+        const fileExt = file.name.split('.').pop() || 'jpg'
+        const fileName = `${user.id}-${timestamp}-${randomStr}.${fileExt}`
+        
+        console.log('Uploading file:', fileName, 'to bucket: user-media')
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('user-media')
-          .upload(filePath, fileToUpload, {
+          .upload(fileName, fileToUpload, {
             cacheControl: '3600',
             upsert: false,
             contentType: fileToUpload.type || 'image/jpeg'
           })
         
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error('Upload error details:', uploadError)
+          throw uploadError
+        }
+        
+        console.log('File uploaded successfully:', fileName)
         
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
           .from('user-media')
-          .getPublicUrl(filePath)
+          .getPublicUrl(fileName)
         
         // Add to items
         const newItem: MoodboardItem = {
@@ -614,6 +634,13 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
       ))
 
       // Set active enhancement to show preview
+      console.log('Setting active enhancement:', {
+        itemId,
+        taskId: data.taskId,
+        url: item.url,
+        type: enhancementType,
+        prompt
+      })
       setActiveEnhancement({
         itemId,
         taskId: data.taskId,
@@ -1059,13 +1086,13 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
               </div>
               
               {pexelsResults.length > 0 && (
-                <div className="mt-4 grid grid-cols-3 gap-2">
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
                   {pexelsResults.map((photo) => (
                     <div key={photo.id} className="relative group cursor-pointer" onClick={() => addPexelsImage(photo)}>
                       <img
                         src={photo.src.medium}
                         alt={photo.alt}
-                        className="w-full h-32 object-cover rounded"
+                        className="w-full h-40 object-contain rounded bg-gray-100"
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded flex items-center justify-center">
                         <span className="text-white opacity-0 group-hover:opacity-100">+ Add</span>
@@ -1210,7 +1237,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
             </div>
           )}
           
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-2 mt-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
             {items.map((item, index) => (
               <div
                 key={item.id}
@@ -1230,14 +1257,14 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
                         : (item.thumbnail_url || item.url)
                     }
                     alt={item.caption || ''}
-                    className={`w-full h-32 object-cover rounded ${
+                    className={`w-full h-48 object-contain rounded bg-gray-100 ${
                       enhancingItems.has(item.id) ? 'opacity-50' : ''
                     }`}
                   />
                 ) : (
                   <video
                     src={item.url}
-                    className="w-full h-32 object-cover rounded"
+                    className="w-full h-48 object-contain rounded bg-gray-100"
                     muted
                   />
                 )}
@@ -1309,7 +1336,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
                               : i
                           ))
                         }}
-                        className="absolute top-1 right-8 bg-white bg-opacity-90 text-gray-700 rounded px-2 py-0.5 text-xs hover:bg-opacity-100 transition-all"
+                        className="absolute top-1 right-1 bg-white bg-opacity-90 text-gray-700 rounded px-2 py-0.5 text-xs hover:bg-opacity-100 transition-all whitespace-nowrap"
                         title={item.showing_original ? "Show Enhanced" : "Show Original"}
                       >
                         {item.showing_original ? "Enhanced" : "Original"}
@@ -1335,7 +1362,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
                         ))
                         setEnhancementModal({ isOpen: true, itemId: item.id })
                       }}
-                      className="absolute bottom-1 left-1 bg-orange-500 text-white rounded px-2 py-0.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-orange-600"
+                      className="absolute bottom-1 right-1 bg-orange-500 text-white rounded px-2 py-0.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-orange-600 whitespace-nowrap"
                       title="Redo Enhancement"
                     >
                       Redo
@@ -1352,7 +1379,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
                       console.log('Opening enhancement modal for item:', item.id)
                       setEnhancementModal({ isOpen: true, itemId: item.id })
                     }}
-                    className="absolute bottom-1 right-1 bg-purple-500 text-white rounded px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-purple-600"
+                    className="absolute bottom-1 left-1 bg-purple-500 text-white rounded px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity hover:bg-purple-600 whitespace-nowrap"
                     title="Enhance with AI"
                   >
                     <Sparkles className="w-3 h-3 inline mr-1" />
@@ -1446,7 +1473,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
               taskId={activeEnhancement.taskId}
               enhancementType={activeEnhancement.type}
               prompt={activeEnhancement.prompt}
-              onComplete={(resultUrl) => {
+              onComplete={async (resultUrl) => {
                 console.log('Enhancement completed with URL:', resultUrl)
                 // Update the item with the enhanced URL but KEEP original
                 setItems(prev => prev.map(i => 
@@ -1474,6 +1501,10 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel 
                 })
                 // Refresh credits display
                 fetchUserCredits()
+                // Save the updated moodboard to database
+                if (moodboardId) {
+                  saveMoodboard()
+                }
                 // Close preview after a short delay
                 setTimeout(() => {
                   setActiveEnhancement(null)
