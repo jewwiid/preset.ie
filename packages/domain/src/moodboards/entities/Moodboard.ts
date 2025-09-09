@@ -23,9 +23,10 @@ export interface SourceBreakdown {
 }
 
 export interface EnhancementLogEntry {
-  imageId: string;
+  originalUrl: string;
+  enhancedUrl: string;
   enhancementType: string;
-  prompt: string;
+  taskId: string;
   cost: number;
   timestamp: Date;
 }
@@ -66,10 +67,15 @@ export class Moodboard {
     }
   }
 
-  logEnhancement(entry: EnhancementLogEntry): void {
+  addEnhancement(entry: EnhancementLogEntry): void {
     this.props.enhancementLog.push(entry);
     this.props.totalCost += entry.cost;
+    this.props.sourceBreakdown.aiEnhanced++;
     this.props.updatedAt = new Date();
+  }
+  
+  logEnhancement(entry: EnhancementLogEntry): void {
+    this.addEnhancement(entry);
   }
 
   updatePalette(palette: string[]): void {

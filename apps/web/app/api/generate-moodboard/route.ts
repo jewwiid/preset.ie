@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createClient as createPexelsClient } from 'pexels'
+import { createContainer } from '@preset/application/container'
+import { PexelsService } from '@preset/adapters/external/PexelsService'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpic21neW15Zmhud2pkbm1sZWxyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzEwODg1MywiZXhwIjoyMDcyNjg0ODUzfQ.XkDZmk6mfJAGUEUl3uusETrtsJZ5fBPtHMrda7nD__U'
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,148 +70,112 @@ export async function POST(request: NextRequest) {
       title, 
       pexelsQuery, 
       userUploadIds, 
+      urlImages,
       enhancementRequests,
       palette 
     } = await request.json()
     
-    // Get subscription limits
-    const subscriptionLimits: Record<string, any> = {
-      free: { aiEnhancements: 0, userUploads: 0 },
-      FREE: { aiEnhancements: 0, userUploads: 0 },
-      plus: { aiEnhancements: 2, userUploads: 3 },
-      PLUS: { aiEnhancements: 2, userUploads: 3 },
-      pro: { aiEnhancements: 4, userUploads: 6 },
-      PRO: { aiEnhancements: 4, userUploads: 6 }
-    }
+    // Initialize DI container
+    const container = createContainer(supabase, {
+      nanoBananaApiKey: process.env.NANOBANANA_API_KEY,
+      nanoBananaCallbackUrl: process.env.NANOBANANA_CALLBACK_URL || 
+        `${supabaseUrl}/functions/v1/nanobanana-callback`
+    })
     
-    const tier = profile.subscription_tier || 'free'
-    const limits = subscriptionLimits[tier] || subscriptionLimits.free
-    
-    // Validate enhancement requests against limits
-    if (enhancementRequests && enhancementRequests.length > limits.aiEnhancements) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: `Enhancement limit exceeded. ${tier} tier allows ${limits.aiEnhancements} enhancements.` 
-        },
-        { status: 400 }
-      )
-    }
-    
-    let moodboardItems: any[] = []
-    let totalCost = 0
-    let sourceBreakdown = {
-      pexels: 0,
-      user_upload: userUploadIds?.length || 0,
-      ai_enhanced: 0,
-      ai_generated: 0
-    }
+    // Prepare moodboard items
+    let items: any[] = []
     
     // 1. Add Pexels images if query provided
     if (pexelsQuery) {
-      try {
-        const pexelsClient = createPexelsClient(process.env.PEXELS_API_KEY!)
-        const response = await pexelsClient.photos.search({
-          query: pexelsQuery,
-          per_page: 6
-        })
-        
-        if ('photos' in response) {
-          response.photos.forEach((image: any, index: number) => {
-            moodboardItems.push({
-              id: crypto.randomUUID(),
-              type: 'image',
-              source: 'pexels',
-              url: image.src.large2x,
-              thumbnail_url: image.src.medium,
-              caption: image.alt,
-              width: image.width,
-              height: image.height,
-              photographer: image.photographer,
-              photographer_url: image.photographer_url,
-              position: index
-            })
-            sourceBreakdown.pexels++
-          })
-        }
-      } catch (error) {
-        console.error('Pexels search failed:', error)
-        // Continue without Pexels images
-      }
+      const pexelsService = new PexelsService(process.env.PEXELS_API_KEY!)
+      const pexelsImages = await pexelsService.searchPhotos(pexelsQuery, 6)
+      
+      items = items.concat(pexelsImages.map((img, index) => ({
+        type: 'image' as const,
+        url: img.url,
+        caption: img.caption,
+        source: 'pexels' as const,
+        order: index
+      })))
     }
     
-    // 2. Process AI enhancements (mock for now)
-    const enhancementLog: any[] = []
+    // 2. Add URL images
+    if (urlImages && urlImages.length > 0) {
+      items = items.concat(urlImages.map((url: string, index: number) => ({
+        type: 'image' as const,
+        url,
+        caption: '',
+        source: 'url' as const,
+        order: items.length + index
+      })))
+    }
     
-    if (enhancementRequests && enhancementRequests.length > 0) {
-      for (const request of enhancementRequests) {
-        // Mock enhancement - in production, call NanoBanana API
-        const enhancedItem = {
-          id: crypto.randomUUID(),
+    // 3. Add user uploads
+    if (userUploadIds && userUploadIds.length > 0) {
+      // Fetch upload URLs from storage
+      for (const uploadId of userUploadIds) {
+        const { data } = supabase.storage
+          .from('user-uploads')
+          .getPublicUrl(uploadId)
+        
+        items.push({
           type: 'image' as const,
-          source: 'ai-enhanced' as const,
-          url: moodboardItems.find(item => item.id === request.imageId)?.url || '',
-          thumbnail_url: moodboardItems.find(item => item.id === request.imageId)?.thumbnail_url || '',
-          caption: `AI Enhanced: ${request.enhancementType}`,
-          position: moodboardItems.length,
-          enhancement_prompt: request.prompt || `Apply ${request.enhancementType} enhancement`,
-          original_image_id: request.imageId,
-          cost: 0.025
-        }
-        
-        moodboardItems.push(enhancedItem)
-        sourceBreakdown.ai_enhanced++
-        totalCost += 0.025
-        
-        enhancementLog.push({
-          original_id: request.imageId,
-          enhanced_id: enhancedItem.id,
-          type: request.enhancementType,
-          prompt: enhancedItem.enhancement_prompt,
-          cost: 0.025,
-          timestamp: new Date().toISOString()
+          url: data.publicUrl,
+          caption: '',
+          source: 'user-upload' as const,
+          order: items.length
         })
       }
     }
     
-    // 3. Generate vibe summary
-    const vibeSummary = pexelsQuery 
-      ? `A ${pexelsQuery}-inspired mood with ${moodboardItems.length} carefully curated images`
-      : `A creative moodboard with ${moodboardItems.length} visual elements`
+    // Use the CreateMoodboard use case
+    const createMoodboardUseCase = container.getCreateMoodboardUseCase()
     
-    // 4. Create the moodboard in database
-    const { data: moodboard, error: createError } = await supabase
-      .from('moodboards')
-      .insert({
-        owner_user_id: profile.id,
-        gig_id: gigId,
-        title: title || 'AI Generated Moodboard',
-        description: `Generated with ${sourceBreakdown.pexels} stock photos and ${sourceBreakdown.ai_enhanced} AI enhancements`,
-        vibe_summary: vibeSummary,
-        palette: palette || ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'],
-        items: moodboardItems,
-        is_public: false
-      })
-      .select()
-      .single()
+    const result = await createMoodboardUseCase.execute({
+      gigId,
+      ownerId: user.id,
+      title: title || 'AI Generated Moodboard',
+      summary: pexelsQuery 
+        ? `A ${pexelsQuery}-inspired mood with ${items.length} carefully curated images`
+        : `A creative moodboard with ${items.length} visual elements`,
+      items
+    })
     
-    if (createError) {
-      console.error('Failed to create moodboard:', createError)
-      return NextResponse.json(
-        { success: false, error: 'Failed to save moodboard' },
-        { status: 500 }
-      )
+    // Process AI enhancements if requested
+    if (enhancementRequests && enhancementRequests.length > 0) {
+      const enhanceImageUseCase = container.getEnhanceImageUseCase()
+      
+      for (const request of enhancementRequests) {
+        try {
+          await enhanceImageUseCase.execute({
+            moodboardId: result.moodboardId,
+            imageUrl: request.imageUrl,
+            enhancementType: request.enhancementType,
+            style: request.style,
+            userId: user.id
+          })
+        } catch (error) {
+          console.error('Enhancement failed:', error)
+          // Continue with other enhancements
+        }
+      }
     }
     
-    // 5. Return success response
+    // Get the updated moodboard
+    const getMoodboardUseCase = container.getGetMoodboardUseCase()
+    const moodboard = await getMoodboardUseCase.execute({
+      moodboardId: result.moodboardId
+    })
+    
+    // Return success response
     return NextResponse.json({
       success: true,
       moodboard: {
-        id: moodboard.id,
-        title: moodboard.title,
-        itemCount: moodboardItems.length,
-        totalCost: totalCost,
-        sourceBreakdown: sourceBreakdown
+        id: result.moodboardId,
+        title: moodboard ? moodboard.title : title,
+        itemCount: items.length,
+        totalCost: moodboard ? moodboard.totalCost : 0,
+        sourceBreakdown: moodboard ? moodboard.sourceBreakdown : null
       }
     })
     
@@ -222,4 +187,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-

@@ -1,21 +1,20 @@
 export interface AIEnhancementRequest {
-  inputImageUrl: string;
-  enhancementType: 'lighting' | 'style' | 'background' | 'mood' | 'custom';
-  prompt: string;
-  strength?: number;
+  imageUrl: string;
+  enhancementType: 'upscale' | 'style-transfer' | 'background-removal';
+  style?: string;
 }
 
 export interface AIEnhancedImage {
-  id: string;
+  taskId: string;
   originalUrl: string;
   enhancedUrl: string;
   enhancementType: string;
-  prompt: string;
   cost: number;
 }
 
 export interface AIImageService {
   enhanceImage(request: AIEnhancementRequest): Promise<AIEnhancedImage>;
   generateImage(prompt: string): Promise<AIEnhancedImage>;
+  extractPalette(imageUrls: string[]): Promise<string[]>;
 }
 

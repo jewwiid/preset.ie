@@ -1,62 +1,61 @@
-import { AIImageService, AIEnhancementRequest, AIEnhancedImage } from '../../domain/moodboards/ports/AIImageService';
-
-export interface NanoBananaTask {
-  id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  result?: {
-    output_image: string;
-    cost: number;
-  };
-  error?: string;
-}
+import { AIImageService, AIEnhancementRequest, AIEnhancedImage } from '@preset/domain/moodboards/ports/AIImageService';
 
 export class NanoBananaService implements AIImageService {
-  private readonly baseUrl = 'https://api.nanobanana.ai';
+  private readonly baseUrl = 'https://api.nanobanana.com/v1';
+  private readonly callbackUrl: string;
 
-  constructor(private apiKey: string) {
+  constructor(private apiKey: string, callbackUrl: string) {
     if (!apiKey) {
       throw new Error('NanoBanana API key is required');
     }
+    this.callbackUrl = callbackUrl;
   }
 
   async enhanceImage(request: AIEnhancementRequest): Promise<AIEnhancedImage> {
-    const enhancementPrompt = this.buildEnhancementPrompt(request);
+    const model = this.getModelForType(request.enhancementType);
+    const prompt = request.style || this.getDefaultPrompt(request.enhancementType);
 
     try {
-      // Step 1: Submit enhancement task
-      const taskResponse = await fetch(`${this.baseUrl}/generate`, {
+      // Submit task with callback URL - NanoBanana doesn't have polling
+      const taskResponse = await fetch(`${this.baseUrl}/tasks`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'X-Api-Key': this.apiKey,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          input_image: request.inputImageUrl,
-          prompt: enhancementPrompt,
-          strength: request.strength || 0.8,
-          aspect_ratio: '4:3',
-          num_inference_steps: 20
+          type: 'IMAGETOIMAGE',
+          input: {
+            image: request.imageUrl,
+            model,
+            prompt,
+            negativePrompt: 'blur, distortion, artifacts',
+            width: 1024,
+            height: 1024,
+            guidanceScale: 7.5,
+            strength: 0.75,
+            numInferenceSteps: 30,
+            numOutputs: 1,
+          },
+          callbackUrl: this.callbackUrl,
         })
       });
 
       if (!taskResponse.ok) {
-        const errorData = await taskResponse.json();
-        throw new Error(`NanoBanana API error: ${taskResponse.status} - ${errorData.message || 'Unknown error'}`);
+        const errorData = await taskResponse.text();
+        throw new Error(`NanoBanana API error: ${taskResponse.status} - ${errorData}`);
       }
 
       const taskData = await taskResponse.json();
-      const taskId = taskData.id;
-
-      // Step 2: Poll for completion
-      const result = await this.pollForCompletion(taskId);
       
+      // NanoBanana uses callbacks, not polling
+      // Return task info, enhanced URL will come via callback
       return {
-        id: `enhanced_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        originalUrl: request.inputImageUrl,
-        enhancedUrl: result.output_image,
+        taskId: taskData.id,
+        originalUrl: request.imageUrl,
+        enhancedUrl: '', // Will be filled by callback
         enhancementType: request.enhancementType,
-        prompt: enhancementPrompt,
-        cost: result.cost || 0.025
+        cost: taskData.cost || 0.10
       };
     } catch (error) {
       console.error('NanoBanana enhancement error:', error);
@@ -64,58 +63,27 @@ export class NanoBananaService implements AIImageService {
     }
   }
 
-  private async pollForCompletion(taskId: string, maxAttempts: number = 30): Promise<{ output_image: string; cost: number }> {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      try {
-        const response = await fetch(`${this.baseUrl}/task/${taskId}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to check task status: ${response.status}`);
-        }
-
-        const taskData: NanoBananaTask = await response.json();
-
-        if (taskData.status === 'completed' && taskData.result) {
-          return taskData.result;
-        }
-
-        if (taskData.status === 'failed') {
-          throw new Error(`Task failed: ${taskData.error || 'Unknown error'}`);
-        }
-
-        // Wait 2 seconds before next poll
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (error) {
-        if (attempt === maxAttempts - 1) {
-          throw error;
-        }
-        // Wait before retrying
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
-
-    throw new Error('Task did not complete within expected time');
-  }
-
   async generateImage(prompt: string): Promise<AIEnhancedImage> {
     try {
-      const response = await fetch(`${this.baseUrl}/generate`, {
+      const response = await fetch(`${this.baseUrl}/tasks`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'X-Api-Key': this.apiKey,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          prompt: `Professional photography style, ${prompt}, high quality, creative composition`,
-          aspect_ratio: '4:3',
-          num_inference_steps: 25,
-          guidance_scale: 7.5
+          type: 'TEXTTOIMAGE',
+          input: {
+            model: 'sdxl-lightning',
+            prompt: `Professional photography style, ${prompt}, high quality, creative composition`,
+            negativePrompt: 'blur, distortion, artifacts',
+            width: 1024,
+            height: 1024,
+            guidanceScale: 7.5,
+            numInferenceSteps: 30,
+            numOutputs: 1,
+          },
+          callbackUrl: this.callbackUrl,
         })
       });
 
@@ -126,12 +94,11 @@ export class NanoBananaService implements AIImageService {
       const data = await response.json();
       
       return {
-        id: `generated_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        taskId: data.id,
         originalUrl: '',
-        enhancedUrl: data.output_image,
-        enhancementType: 'generation',
-        prompt,
-        cost: 0.025
+        enhancedUrl: '', // Will be filled by callback
+        enhancementType: 'generated',
+        cost: data.cost || 0.10
       };
     } catch (error) {
       console.error('NanoBanana generation error:', error);
@@ -139,15 +106,27 @@ export class NanoBananaService implements AIImageService {
     }
   }
 
-  private buildEnhancementPrompt(request: AIEnhancementRequest): string {
-    const templates = {
-      'lighting': `Adjust the lighting in this image to create ${request.prompt} atmosphere, enhance shadows and highlights professionally`,
-      'style': `Apply ${request.prompt} artistic style to this image while maintaining the subject and composition`,
-      'background': `Replace or enhance the background with ${request.prompt}, keep the main subject unchanged`,
-      'mood': `Enhance the overall mood and atmosphere to be ${request.prompt}, adjust colors and contrast accordingly`,
-      'custom': request.prompt
-    };
+  async extractPalette(imageUrls: string[]): Promise<string[]> {
+    // For now, return a placeholder palette
+    // This could be implemented with a color extraction service
+    return ['#FF5733', '#33FF57', '#3357FF', '#F3F3F3', '#1A1A1A'];
+  }
 
-    return templates[request.enhancementType] || request.prompt;
+  private getModelForType(type: string): string {
+    const models: Record<string, string> = {
+      'upscale': 'realesrgan',
+      'style-transfer': 'sdxl-lightning',
+      'background-removal': 'rembg',
+    };
+    return models[type] || 'sdxl-lightning';
+  }
+
+  private getDefaultPrompt(type: string): string {
+    const prompts: Record<string, string> = {
+      'upscale': 'high resolution, sharp details, professional quality',
+      'style-transfer': 'artistic style, creative interpretation',
+      'background-removal': 'transparent background, clean edges',
+    };
+    return prompts[type] || 'enhanced image';
   }
 }
