@@ -9,6 +9,10 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'sb-preset-auth-token',
+    flowType: 'pkce',
+    debug: process.env.NODE_ENV === 'development'
   }
 })
