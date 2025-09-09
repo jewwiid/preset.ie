@@ -26,6 +26,7 @@
     "packages/*"
   ],
   "dependencies": {
+    "@supabase/supabase-js": "^2.57.2",
     "node-fetch": "^2.7.0",
     "pg": "^8.16.3"
   }

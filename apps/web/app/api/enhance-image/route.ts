@@ -208,15 +208,13 @@ export async function POST(request: NextRequest) {
     }
     
     // Prepare NanoBanana API payload according to official docs
-    const callbackUrl = (process.env.NANOBANANA_CALLBACK_URL ||
-      (process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/api/nanobanana/callback` :
-       process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/nanobanana/callback` :
-       'https://preset-51brxeczd-jewwiids-projects.vercel.app/api/nanobanana/callback')).trim();
+    // Use Supabase Edge Function for callback (no auth issues)
+    const callbackUrl = process.env.NANOBANANA_CALLBACK_URL || 
+      `${supabaseUrl}/functions/v1/nanobanana-callback`;
     
     // Verify callback URL is valid
     console.log('Callback URL configured:', callbackUrl);
-    console.log('Callback URL length:', callbackUrl.length);
-    console.log('Callback URL last char code:', callbackUrl.charCodeAt(callbackUrl.length - 1));
+    console.log('Using Supabase Edge Function for reliable callbacks');
     
     const enhancementPayload = {
       prompt: `${prompt} (Enhancement type: ${enhancementType}, Strength: ${strength})`,
