@@ -3,6 +3,7 @@
 
 -- Update moodboards table with missing fields
 ALTER TABLE public.moodboards 
+ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT false,
 ADD COLUMN IF NOT EXISTS source_breakdown JSONB DEFAULT '{
   "pexels": 0,
   "user_uploads": 0,
@@ -58,21 +59,17 @@ ON CONFLICT (name) DO NOTHING;
 ALTER TABLE public.users_profile 
 ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(20) DEFAULT 'free' REFERENCES public.subscription_tiers(name);
 
--- Update rate_limits table structure
-ALTER TABLE public.rate_limits 
-ADD COLUMN IF NOT EXISTS action VARCHAR(50),
-ADD COLUMN IF NOT EXISTS last_reset TIMESTAMPTZ DEFAULT NOW();
+-- Note: rate_limits table is created in a later migration (20250108_moodboards.sql)
+-- Skipping rate_limits updates here to avoid dependency issues
 
--- Create storage bucket for moodboard uploads
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('moodboard-uploads', 'moodboard-uploads', false)
-ON CONFLICT (id) DO NOTHING;
+-- Note: Storage bucket creation may need manual setup depending on Supabase version
+-- Skipping bucket creation to avoid schema conflicts
 
 -- Add indexes for performance
 CREATE INDEX IF NOT EXISTS idx_moodboard_items_moodboard_id ON public.moodboard_items(moodboard_id);
 CREATE INDEX IF NOT EXISTS idx_moodboard_items_position ON public.moodboard_items(moodboard_id, position);
 CREATE INDEX IF NOT EXISTS idx_users_subscription_tier ON public.users_profile(subscription_tier);
-CREATE INDEX IF NOT EXISTS idx_rate_limits_user_action ON public.rate_limits(user_id, action);
+-- Note: idx_rate_limits_user_action index is created with the rate_limits table in 20250108_moodboards.sql
 
 -- RLS Policies for moodboard_items
 ALTER TABLE public.moodboard_items ENABLE ROW LEVEL SECURITY;
@@ -82,7 +79,7 @@ CREATE POLICY "Users can view moodboard items" ON public.moodboard_items
     EXISTS (
       SELECT 1 FROM public.moodboards 
       WHERE id = moodboard_items.moodboard_id 
-      AND (is_public = true OR owner_user_id = auth.uid()::text)
+      AND (is_public = true OR owner_user_id = auth.uid())
     )
   );
 
@@ -91,7 +88,7 @@ CREATE POLICY "Users can manage their own moodboard items" ON public.moodboard_i
     EXISTS (
       SELECT 1 FROM public.moodboards 
       WHERE id = moodboard_items.moodboard_id 
-      AND owner_user_id = auth.uid()::text
+      AND owner_user_id = auth.uid()
     )
   );
 
@@ -101,18 +98,8 @@ ALTER TABLE public.subscription_tiers ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can view subscription tiers" ON public.subscription_tiers
   FOR SELECT USING (true);
 
--- Storage policies for moodboard uploads
-CREATE POLICY "Users can upload their own moodboard images" ON storage.objects
-  FOR INSERT WITH CHECK (
-    bucket_id = 'moodboard-uploads' 
-    AND auth.uid()::text = (storage.foldername(name))[1]
-  );
-
-CREATE POLICY "Users can view their own moodboard images" ON storage.objects
-  FOR SELECT USING (
-    bucket_id = 'moodboard-uploads' 
-    AND auth.uid()::text = (storage.foldername(name))[1]
-  );
+-- Note: Storage policies for moodboard-uploads bucket
+-- These will need to be created after the bucket is manually set up
 
 -- Update existing RLS policies for moodboards
 DROP POLICY IF EXISTS "Public moodboards viewable" ON public.moodboards;
@@ -125,14 +112,14 @@ CREATE POLICY "Public moodboards are viewable by everyone" ON public.moodboards
   FOR SELECT USING (is_public = true);
 
 CREATE POLICY "Users can view their own moodboards" ON public.moodboards
-  FOR SELECT USING (auth.uid()::text = owner_user_id::text);
+  FOR SELECT USING (auth.uid() = owner_user_id);
 
 CREATE POLICY "Users can create their own moodboards" ON public.moodboards
-  FOR INSERT WITH CHECK (auth.uid()::text = owner_user_id::text);
+  FOR INSERT WITH CHECK (auth.uid() = owner_user_id);
 
 CREATE POLICY "Users can update their own moodboards" ON public.moodboards
-  FOR UPDATE USING (auth.uid()::text = owner_user_id::text);
+  FOR UPDATE USING (auth.uid() = owner_user_id);
 
 CREATE POLICY "Users can delete their own moodboards" ON public.moodboards
-  FOR DELETE USING (auth.uid()::text = owner_user_id::text);
+  FOR DELETE USING (auth.uid() = owner_user_id);
 

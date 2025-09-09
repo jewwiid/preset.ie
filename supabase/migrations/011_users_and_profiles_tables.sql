@@ -1,14 +1,26 @@
 -- Migration: Create users and profiles tables for Identity & Access context
 -- Description: Core user authentication and profile management with subscription tiers
 
--- Create subscription_tier enum
-CREATE TYPE subscription_tier AS ENUM ('FREE', 'PLUS', 'PRO');
+-- Create subscription_tier enum if not exists
+DO $$ BEGIN
+    CREATE TYPE subscription_tier AS ENUM ('FREE', 'PLUS', 'PRO');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- Create verification_status enum
-CREATE TYPE verification_status AS ENUM ('UNVERIFIED', 'EMAIL_VERIFIED', 'ID_VERIFIED');
+-- Create verification_status enum if not exists
+DO $$ BEGIN
+    CREATE TYPE verification_status AS ENUM ('UNVERIFIED', 'EMAIL_VERIFIED', 'ID_VERIFIED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- Create user_role enum
-CREATE TYPE user_role AS ENUM ('CONTRIBUTOR', 'TALENT', 'ADMIN');
+-- Create user_role enum if not exists
+DO $$ BEGIN
+    CREATE TYPE user_role AS ENUM ('CONTRIBUTOR', 'TALENT', 'ADMIN');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Create users table (extends Supabase auth.users)
 CREATE TABLE IF NOT EXISTS users (
@@ -46,13 +58,13 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 -- Create indexes
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_subscription_tier ON users(subscription_tier);
-CREATE INDEX idx_users_stripe_customer_id ON users(stripe_customer_id);
-CREATE INDEX idx_profiles_user_id ON profiles(user_id);
-CREATE INDEX idx_profiles_handle ON profiles(handle);
-CREATE INDEX idx_profiles_style_tags ON profiles USING GIN(style_tags);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_subscription_tier ON users(subscription_tier);
+CREATE INDEX IF NOT EXISTS idx_users_stripe_customer_id ON users(stripe_customer_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_handle ON profiles(handle);
+CREATE INDEX IF NOT EXISTS idx_profiles_style_tags ON profiles USING GIN(style_tags);
 
 -- Enable Row Level Security
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;

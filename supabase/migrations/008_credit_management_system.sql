@@ -4,7 +4,7 @@
 -- Credit pools and tracking
 CREATE TABLE IF NOT EXISTS credit_pools (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  provider VARCHAR(50) NOT NULL, -- 'nanobanan', 'fal_ai', etc.
+  provider VARCHAR(50) UNIQUE NOT NULL, -- 'nanobanan', 'fal_ai', etc.
   total_purchased DECIMAL(12,4) DEFAULT 0,
   total_consumed DECIMAL(12,4) DEFAULT 0,
   available_balance DECIMAL(12,4) DEFAULT 0,

@@ -1,6 +1,10 @@
 -- Add AI analysis columns to moodboards table
 -- This migration adds support for AI-generated vibe analysis and mood descriptors
 
+-- Add vibe_summary column for AI-generated summary
+ALTER TABLE public.moodboards 
+ADD COLUMN IF NOT EXISTS vibe_summary TEXT;
+
 -- Add mood_descriptors column for AI-generated mood words
 ALTER TABLE public.moodboards 
 ADD COLUMN IF NOT EXISTS mood_descriptors TEXT[] DEFAULT '{}';

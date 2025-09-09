@@ -21,7 +21,7 @@ ALTER TABLE domain_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Service role can insert domain events" ON domain_events
   FOR INSERT
   TO service_role
-  USING (true);
+  WITH CHECK (true);
 
 -- Policy: Service role can read all events
 CREATE POLICY "Service role can read domain events" ON domain_events
