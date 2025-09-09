@@ -6,13 +6,13 @@ CREATE TABLE IF NOT EXISTS domain_events (
   payload JSONB NOT NULL,
   metadata JSONB,
   occurred_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  
-  -- Indexes for querying
-  INDEX idx_domain_events_aggregate_id (aggregate_id),
-  INDEX idx_domain_events_event_type (event_type),
-  INDEX idx_domain_events_occurred_at (occurred_at)
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Create indexes for querying
+CREATE INDEX idx_domain_events_aggregate_id ON domain_events(aggregate_id);
+CREATE INDEX idx_domain_events_event_type ON domain_events(event_type);
+CREATE INDEX idx_domain_events_occurred_at ON domain_events(occurred_at);
 
 -- Enable RLS
 ALTER TABLE domain_events ENABLE ROW LEVEL SECURITY;
