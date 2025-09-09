@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 // GET /api/admin/users/[id] - Get user details + violations
@@ -178,8 +179,9 @@ function getActivityDescription(event: any): string {
 // PATCH /api/admin/users/[id] - Update user flags/status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const cookieStore = cookies()
     const supabase = createClient(
