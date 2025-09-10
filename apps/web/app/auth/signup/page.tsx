@@ -22,6 +22,7 @@ import {
   CheckCircle2
 } from 'lucide-react'
 import ProfileSetupForm from '../../../components/ProfileSetupForm'
+import { DatePicker } from '../../../components/ui/date-picker'
 
 type SignupStep = 'role' | 'credentials' | 'profile' | 'styles'
 type UserRole = 'CONTRIBUTOR' | 'TALENT' | 'BOTH'
@@ -63,18 +64,17 @@ export default function SignUpPage() {
   const [profileData, setProfileData] = useState<any>({})
   
   // Age verification
-  const [dateOfBirth, setDateOfBirth] = useState('')
+  const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   
   // Calculate age from date of birth
-  const calculateAge = (dob: string): number => {
+  const calculateAge = (dob: Date | undefined): number => {
     if (!dob) return 0
     const today = new Date()
-    const birthDate = new Date(dob)
-    let age = today.getFullYear() - birthDate.getFullYear()
-    const monthDiff = today.getMonth() - birthDate.getMonth()
+    let age = today.getFullYear() - dob.getFullYear()
+    const monthDiff = today.getMonth() - dob.getMonth()
     
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
       age--
     }
     return age
@@ -245,7 +245,7 @@ export default function SignUpPage() {
           city: city || null,
           country: profileData.country || null,
           avatar_url: avatarUrl, // Use the uploaded photo URL
-          date_of_birth: dateOfBirth,
+          date_of_birth: dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : null,
           age_verified: false, // Will be verified by admin
           account_status: 'pending_verification',
           role_flags: roleFlags,
@@ -288,11 +288,13 @@ export default function SignUpPage() {
         })
       
       // Trigger age verification
-      await supabase.rpc('verify_user_age', {
-        p_user_id: user.id,
-        p_date_of_birth: dateOfBirth,
-        p_method: 'self_attestation'
-      })
+      if (dateOfBirth) {
+        await supabase.rpc('verify_user_age', {
+          p_user_id: user.id,
+          p_date_of_birth: dateOfBirth.toISOString().split('T')[0],
+          p_method: 'self_attestation'
+        })
+      }
 
       if (profileError) {
         console.error('Profile creation error:', profileError)
@@ -621,13 +623,12 @@ export default function SignUpPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Date of Birth <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="date"
-                  value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                  max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
-                  required
+                <DatePicker
+                  date={dateOfBirth}
+                  onDateChange={setDateOfBirth}
+                  placeholder="Select your birth date"
+                  maxDate={new Date()}
+                  className="w-full"
                 />
                 {dateOfBirth && (
                   <div className={`mt-2 text-sm ${isOver18 ? 'text-green-600' : 'text-red-600'}`}>
