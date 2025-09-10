@@ -4,7 +4,7 @@
 -- Create user_violations table
 CREATE TABLE IF NOT EXISTS user_violations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users_profile(user_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     violation_type TEXT NOT NULL,
     severity TEXT CHECK (severity IN ('minor', 'moderate', 'severe', 'critical')) NOT NULL,
     report_id UUID REFERENCES reports(id) ON DELETE SET NULL,
@@ -12,10 +12,7 @@ CREATE TABLE IF NOT EXISTS user_violations (
     description TEXT NOT NULL,
     evidence_urls TEXT[],
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    expires_at TIMESTAMPTZ,
-    is_active BOOLEAN GENERATED ALWAYS AS (
-        expires_at IS NULL OR expires_at > NOW()
-    ) STORED
+    expires_at TIMESTAMPTZ
 );
 
 -- Create violation_thresholds table for progressive enforcement
@@ -40,7 +37,8 @@ ON CONFLICT (violation_count) DO NOTHING;
 
 -- Create indexes
 CREATE INDEX idx_user_violations_user ON user_violations(user_id);
-CREATE INDEX idx_user_violations_active ON user_violations(user_id, is_active) WHERE is_active = true;
+CREATE INDEX idx_user_violations_active ON user_violations(user_id, expires_at);
+CREATE INDEX idx_user_violations_not_expired ON user_violations(user_id) WHERE expires_at IS NULL;
 CREATE INDEX idx_user_violations_severity ON user_violations(severity);
 CREATE INDEX idx_user_violations_created ON user_violations(created_at DESC);
 CREATE INDEX idx_user_violations_report ON user_violations(report_id) WHERE report_id IS NOT NULL;
@@ -65,7 +63,7 @@ BEGIN
     -- Get counts
     SELECT 
         COUNT(*) as total,
-        COUNT(*) FILTER (WHERE is_active) as active,
+        COUNT(*) FILTER (WHERE expires_at IS NULL OR expires_at > NOW()) as active,
         COUNT(*) FILTER (WHERE severity = 'minor') as minor,
         COUNT(*) FILTER (WHERE severity = 'moderate') as moderate,
         COUNT(*) FILTER (WHERE severity = 'severe') as severe,
@@ -154,7 +152,7 @@ BEGIN
     SELECT COUNT(*) INTO v_total_violations
     FROM user_violations
     WHERE user_id = p_user_id
-    AND is_active = true;
+    AND (expires_at IS NULL OR expires_at > NOW());
     
     -- Check thresholds for auto-enforcement
     SELECT action_type, auto_apply INTO v_suggested_action, v_should_enforce
@@ -197,7 +195,7 @@ BEGIN
     SELECT COUNT(*) INTO v_violation_count
     FROM user_violations
     WHERE user_id = p_user_id
-    AND is_active = true;
+    AND (expires_at IS NULL OR expires_at > NOW());
     
     -- Determine action based on thresholds
     SELECT action_type INTO v_action_type
@@ -299,9 +297,9 @@ ALTER TABLE violation_thresholds ENABLE ROW LEVEL SECURITY;
 CREATE POLICY admin_view_all_violations ON user_violations
     FOR SELECT
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid() AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -309,9 +307,9 @@ CREATE POLICY admin_view_all_violations ON user_violations
 CREATE POLICY admin_manage_violations ON user_violations
     FOR ALL
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid() AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -325,9 +323,9 @@ CREATE POLICY user_view_own_violations ON user_violations
 CREATE POLICY admin_manage_thresholds ON violation_thresholds
     FOR ALL
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid() AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -350,13 +348,19 @@ SELECT
     (
         SELECT COUNT(*) FROM user_violations
         WHERE user_id = uv.user_id
-        AND is_active = true
+        AND (expires_at IS NULL OR expires_at > NOW())
     ) as active_violation_count,
-    get_user_violation_summary(uv.user_id) as violation_summary
+    vs.total_violations,
+    vs.minor_count,
+    vs.moderate_count,
+    vs.severe_count,
+    vs.critical_count,
+    vs.risk_level
 FROM user_violations uv
 LEFT JOIN users_profile u ON uv.user_id = u.user_id
 LEFT JOIN reports r ON uv.report_id = r.id
 LEFT JOIN moderation_actions ma ON uv.moderation_action_id = ma.id
+LEFT JOIN LATERAL get_user_violation_summary(uv.user_id) vs ON true
 ORDER BY uv.created_at DESC;
 
 -- Grant view access
@@ -371,7 +375,7 @@ SELECT
     COUNT(*) FILTER (WHERE severity = 'moderate') as moderate_violations,
     COUNT(*) FILTER (WHERE severity = 'severe') as severe_violations,
     COUNT(*) FILTER (WHERE severity = 'critical') as critical_violations,
-    COUNT(*) FILTER (WHERE is_active) as active_violations,
+    COUNT(*) FILTER (WHERE expires_at IS NULL OR expires_at > NOW()) as active_violations,
     COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours') as violations_24h,
     COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days') as violations_7d,
     COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '30 days') as violations_30d

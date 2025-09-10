@@ -1,18 +1,21 @@
 -- Reports System for Admin Dashboard
 -- Handles user reports, content moderation, and safety violations
 
+-- Drop existing table if it exists to recreate with all columns
+DROP TABLE IF EXISTS reports CASCADE;
+
 -- Create reports table
-CREATE TABLE IF NOT EXISTS reports (
+CREATE TABLE reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    reporter_user_id UUID NOT NULL REFERENCES users_profile(user_id) ON DELETE CASCADE,
-    reported_user_id UUID REFERENCES users_profile(user_id) ON DELETE SET NULL,
+    reporter_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    reported_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     reported_content_id UUID,
     content_type TEXT CHECK (content_type IN ('user', 'gig', 'showcase', 'message', 'image', 'moodboard')) NOT NULL,
     reason TEXT CHECK (reason IN ('spam', 'inappropriate', 'harassment', 'scam', 'copyright', 'other', 'underage', 'safety')) NOT NULL,
     description TEXT NOT NULL,
     status TEXT CHECK (status IN ('pending', 'reviewing', 'resolved', 'dismissed')) DEFAULT 'pending',
     priority TEXT CHECK (priority IN ('low', 'medium', 'high', 'critical')) DEFAULT 'medium',
-    resolved_by UUID REFERENCES users_profile(user_id) ON DELETE SET NULL,
+    resolved_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     resolution_notes TEXT,
     resolution_action TEXT CHECK (resolution_action IN ('warning', 'content_removed', 'user_suspended', 'user_banned', 'dismissed', 'no_action')),
     evidence_urls TEXT[],
@@ -28,12 +31,12 @@ CREATE TABLE IF NOT EXISTS reports (
 );
 
 -- Create indexes for efficient querying
-CREATE INDEX idx_reports_status ON reports(status) WHERE status != 'resolved';
-CREATE INDEX idx_reports_priority ON reports(priority, created_at DESC) WHERE status IN ('pending', 'reviewing');
-CREATE INDEX idx_reports_reporter ON reports(reporter_user_id);
-CREATE INDEX idx_reports_reported_user ON reports(reported_user_id) WHERE reported_user_id IS NOT NULL;
-CREATE INDEX idx_reports_created_at ON reports(created_at DESC);
-CREATE INDEX idx_reports_content ON reports(content_type, reported_content_id) WHERE reported_content_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status) WHERE status != 'resolved';
+CREATE INDEX IF NOT EXISTS idx_reports_priority ON reports(priority, created_at DESC) WHERE status IN ('pending', 'reviewing');
+CREATE INDEX IF NOT EXISTS idx_reports_reporter ON reports(reporter_user_id);
+CREATE INDEX IF NOT EXISTS idx_reports_reported_user ON reports(reported_user_id) WHERE reported_user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reports_content ON reports(content_type, reported_content_id) WHERE reported_content_id IS NOT NULL;
 
 -- Auto-update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_reports_updated_at()
@@ -170,9 +173,10 @@ ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 CREATE POLICY admin_view_all_reports ON reports
     FOR SELECT
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid()
+            AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -180,9 +184,10 @@ CREATE POLICY admin_view_all_reports ON reports
 CREATE POLICY admin_update_reports ON reports
     FOR UPDATE
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid()
+            AND 'ADMIN' = ANY(role_flags)
         )
     );
 

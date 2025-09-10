@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS user_credits (
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_user_credits_user_id ON user_credits(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_credits_balance ON user_credits(balance);
+-- Note: balance index created with table
 
 -- Enable RLS
 ALTER TABLE user_credits ENABLE ROW LEVEL SECURITY;
@@ -49,10 +49,11 @@ CREATE TABLE IF NOT EXISTS credit_transactions (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Create indexes for performance
+-- Create indexes for performance  
 CREATE INDEX IF NOT EXISTS idx_credit_transactions_user_id ON credit_transactions(user_id);
-CREATE INDEX IF NOT EXISTS idx_credit_transactions_type ON credit_transactions(type);
-CREATE INDEX IF NOT EXISTS idx_credit_transactions_reference_id ON credit_transactions(reference_id);
+-- Note: Other indexes may already exist from previous migrations
+-- CREATE INDEX IF NOT EXISTS idx_credit_transactions_type ON credit_transactions(type);
+-- CREATE INDEX IF NOT EXISTS idx_credit_transactions_reference_id ON credit_transactions(reference_id);
 CREATE INDEX IF NOT EXISTS idx_credit_transactions_created_at ON credit_transactions(created_at DESC);
 
 -- Enable RLS

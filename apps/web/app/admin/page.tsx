@@ -19,6 +19,7 @@ import {
 import { ReportsQueue } from '../components/admin/ReportsQueue'
 import { UserManagement } from '../components/admin/UserManagement'
 import { VerificationQueue } from '../components/admin/VerificationQueue'
+import { AgeVerificationQueue } from '../components/admin/AgeVerificationQueue'
 
 interface PlatformStats {
   totalUsers: number
@@ -276,7 +277,8 @@ export default function AdminDashboard() {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'reports', label: 'Reports', icon: AlertTriangle },
     { id: 'users', label: 'Users', icon: Users },
-    { id: 'verification', label: 'Verification', icon: CheckCircle },
+    { id: 'age-verification', label: 'Age Verification', icon: Shield },
+    { id: 'verification', label: 'ID Verification', icon: CheckCircle },
     { id: 'credits', label: 'Credits', icon: CreditCard },
   ]
 
@@ -400,7 +402,10 @@ export default function AdminDashboard() {
         {/* Users Tab */}
         {activeTab === 'users' && <UserManagement />}
 
-        {/* Verification Tab */}
+        {/* Age Verification Tab */}
+        {activeTab === 'age-verification' && <AgeVerificationQueue />}
+
+        {/* ID Verification Tab */}
         {activeTab === 'verification' && <VerificationQueue />}
 
         {/* Credits Tab */}

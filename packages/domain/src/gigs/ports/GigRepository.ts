@@ -1,4 +1,4 @@
-import { Gig } from '../entities/Gig';
+import { Gig } from '../entities/gig';
 import { GigStatus } from '../value-objects/GigStatus';
 
 /**

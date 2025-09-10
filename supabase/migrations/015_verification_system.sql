@@ -4,12 +4,12 @@
 -- Create verification_requests table
 CREATE TABLE IF NOT EXISTS verification_requests (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users_profile(user_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     verification_type TEXT CHECK (verification_type IN ('identity', 'professional', 'business')) NOT NULL,
     document_urls TEXT[] NOT NULL,
     document_types TEXT[] NOT NULL,
     status TEXT CHECK (status IN ('pending', 'reviewing', 'approved', 'rejected', 'expired', 'additional_info_required')) DEFAULT 'pending',
-    reviewed_by UUID REFERENCES users_profile(user_id) ON DELETE SET NULL,
+    reviewed_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     review_notes TEXT,
     rejection_reason TEXT,
     additional_info_request TEXT,
@@ -29,22 +29,21 @@ CREATE TABLE IF NOT EXISTS verification_requests (
 -- Create verification_badges table for awarded verifications
 CREATE TABLE IF NOT EXISTS verification_badges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users_profile(user_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     badge_type TEXT CHECK (badge_type IN ('verified_identity', 'verified_professional', 'verified_business')) NOT NULL,
     verification_request_id UUID REFERENCES verification_requests(id) ON DELETE SET NULL,
-    issued_by UUID NOT NULL REFERENCES users_profile(user_id),
+    issued_by UUID NOT NULL REFERENCES auth.users(id),
     issued_at TIMESTAMPTZ DEFAULT NOW(),
     expires_at TIMESTAMPTZ,
     revoked_at TIMESTAMPTZ,
-    revoked_by UUID REFERENCES users_profile(user_id) ON DELETE SET NULL,
-    revoke_reason TEXT,
-    is_active BOOLEAN GENERATED ALWAYS AS (
-        revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())
-    ) STORED,
-    
-    -- Only one active badge per type per user
-    CONSTRAINT unique_active_badge UNIQUE (user_id, badge_type, is_active)
+    revoked_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    revoke_reason TEXT
 );
+
+-- Create partial unique index for active badges
+CREATE UNIQUE INDEX unique_active_badge_per_type 
+ON verification_badges (user_id, badge_type) 
+WHERE revoked_at IS NULL;
 
 -- Create indexes
 CREATE INDEX idx_verification_requests_user ON verification_requests(user_id);
@@ -52,7 +51,7 @@ CREATE INDEX idx_verification_requests_status ON verification_requests(status) W
 CREATE INDEX idx_verification_requests_type ON verification_requests(verification_type);
 CREATE INDEX idx_verification_requests_submitted ON verification_requests(submitted_at DESC);
 CREATE INDEX idx_verification_badges_user ON verification_badges(user_id);
-CREATE INDEX idx_verification_badges_active ON verification_badges(user_id, is_active) WHERE is_active = true;
+CREATE INDEX idx_verification_badges_active ON verification_badges(user_id, badge_type) WHERE revoked_at IS NULL;
 
 -- Auto-update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_verification_updated_at()
@@ -85,39 +84,45 @@ BEGIN
             SELECT 1 FROM verification_badges
             WHERE user_id = p_user_id
             AND badge_type = 'verified_identity'
-            AND is_active = true
+            AND revoked_at IS NULL
+            AND (expires_at IS NULL OR expires_at > NOW())
         ) as has_verified_identity,
         EXISTS (
             SELECT 1 FROM verification_badges
             WHERE user_id = p_user_id
             AND badge_type = 'verified_professional'
-            AND is_active = true
+            AND revoked_at IS NULL
+            AND (expires_at IS NULL OR expires_at > NOW())
         ) as has_verified_professional,
         EXISTS (
             SELECT 1 FROM verification_badges
             WHERE user_id = p_user_id
             AND badge_type = 'verified_business'
-            AND is_active = true
+            AND revoked_at IS NULL
+            AND (expires_at IS NULL OR expires_at > NOW())
         ) as has_verified_business,
         (
             SELECT expires_at FROM verification_badges
             WHERE user_id = p_user_id
             AND badge_type = 'verified_identity'
-            AND is_active = true
+            AND revoked_at IS NULL
+            AND (expires_at IS NULL OR expires_at > NOW())
             LIMIT 1
         ) as identity_expires_at,
         (
             SELECT expires_at FROM verification_badges
             WHERE user_id = p_user_id
             AND badge_type = 'verified_professional'
-            AND is_active = true
+            AND revoked_at IS NULL
+            AND (expires_at IS NULL OR expires_at > NOW())
             LIMIT 1
         ) as professional_expires_at,
         (
             SELECT expires_at FROM verification_badges
             WHERE user_id = p_user_id
             AND badge_type = 'verified_business'
-            AND is_active = true
+            AND revoked_at IS NULL
+            AND (expires_at IS NULL OR expires_at > NOW())
             LIMIT 1
         ) as business_expires_at;
 END;
@@ -260,9 +265,9 @@ ALTER TABLE verification_badges ENABLE ROW LEVEL SECURITY;
 CREATE POLICY admin_view_all_verification_requests ON verification_requests
     FOR SELECT
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid() AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -270,9 +275,9 @@ CREATE POLICY admin_view_all_verification_requests ON verification_requests
 CREATE POLICY admin_update_verification_requests ON verification_requests
     FOR UPDATE
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid() AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -296,9 +301,9 @@ CREATE POLICY public_view_badges ON verification_badges
 CREATE POLICY admin_manage_badges ON verification_badges
     FOR ALL
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid() AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -314,12 +319,13 @@ SELECT
     vr.*,
     u.display_name as user_name,
     u.handle as user_handle,
-    u.email as user_email,
+    au.email as user_email,
     reviewer.display_name as reviewer_name,
     (
         SELECT COUNT(*) FROM verification_badges
         WHERE user_id = vr.user_id
-        AND is_active = true
+        AND revoked_at IS NULL
+        AND (expires_at IS NULL OR expires_at > NOW())
     ) as active_badges_count,
     (
         SELECT COUNT(*) FROM verification_requests
@@ -328,6 +334,7 @@ SELECT
     ) as previous_rejections
 FROM verification_requests vr
 LEFT JOIN users_profile u ON vr.user_id = u.user_id
+LEFT JOIN auth.users au ON vr.user_id = au.id
 LEFT JOIN users_profile reviewer ON vr.reviewed_by = reviewer.user_id
 ORDER BY 
     CASE 

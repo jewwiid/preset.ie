@@ -1,223 +1,183 @@
-# Preset - Creative Collaboration Platform
+# Supabase CLI
 
-A subscription-based, cross-platform creative collaboration app where photographers, videographers, and talent connect for shoots. Built with DDD + Hexagonal architecture.
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## 🚀 Quick Start
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+
+This repository contains all the functionality for Supabase CLI.
+
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+
+## Getting started
+
+### Install the CLI
+
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Access the app
-open http://localhost:3000
+npm i supabase --save-dev
 ```
 
-## 🔑 Admin Access
+To install the beta release channel:
 
-### Admin Credentials
-- **Email**: admin@preset.ie
-- **Password**: admin123456
-- **Dashboard**: http://localhost:3000/admin
-
-### Admin Capabilities
-- Platform credit management
-- User administration
-- Analytics and monitoring
-- Content moderation
-- System configuration
-
-## 📱 Key Features
-
-### For Contributors (Photographers/Videographers)
-- Create and manage gigs
-- AI-powered moodboard generation
-- Review applications and book talent
-- Showcase completed work
-
-### For Talent
-- Browse and apply to gigs
-- Build portfolio through showcases
-- Message with contributors
-- Track application status
-
-### Platform Features
-- **AI Moodboard Builder**: Upload images or generate with AI
-- **Credit Marketplace**: Simple 1-credit pricing (handles provider complexity)
-- **Subscription Tiers**: Free, Plus (€9-12/mo), Pro (€19-24/mo)
-- **Safety & Trust**: Age verification, release forms, moderation
-
-## 💳 Credit System
-
-### User Perspective
-- 1 credit = 1 enhancement/generation
-- Simple, predictable pricing
-
-### Platform Reality (Admin Only)
-- NanoBanana: 1 user credit = 4 provider credits
-- OpenAI: 1 user credit = 0.1 provider credits
-- Pexels: 1 user credit = 1 API call
-
-### Credit Packages
-- **Starter Pack**: 10 credits @ €9.99
-- **Creative Bundle**: 50 credits @ €39.99
-- **Pro Pack**: 100 credits @ €69.99
-- **Studio Pack**: 500 credits @ €299.99
-
-## 🏗️ Architecture
-
-### Tech Stack
-- **Frontend**: Next.js 15, React, TailwindCSS
-- **Backend**: Supabase (Postgres + Auth + Storage)
-- **AI Services**: NanoBanana, OpenAI, Pexels
-- **Architecture**: Domain-Driven Design with Hexagonal/Ports & Adapters
-- **Deployment**: Vercel + Supabase Edge Functions
-
-### Project Structure
-```
-preset/
-├── apps/
-│   ├── web/         # Next.js app
-│   └── edge/        # Edge functions
-├── packages/
-│   ├── domain/      # DDD domain logic
-│   ├── application/ # Use cases & ports
-│   ├── adapters/    # External integrations
-│   └── ui/          # Shared components
-└── scripts/         # Admin & utility scripts
-```
-
-## 🛠️ Development
-
-### Environment Variables
-Create `.env.local` with:
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_key
-
-# NanoBanana API
-NANOBANANA_API_KEY=your_api_key
-NANOBANANA_CREDIT_RATIO=4
-
-# Other services
-OPENAI_API_KEY=your_openai_key
-PEXELS_API_KEY=your_pexels_key
-```
-
-### Database Setup
 ```bash
-# Apply migrations
-npx supabase db push
-
-# Create platform credit tables
-psql $DATABASE_URL -f execute_platform_sql.sql
-
-# Create admin user
-node scripts/create-admin-user.js
+npm i supabase@beta --save-dev
 ```
 
-### Testing
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
+```
+
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+
+<details>
+  <summary><b>macOS</b></summary>
+
+  Available via [Homebrew](https://brew.sh). To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
+
 ```bash
-# Run tests
-npm test
-
-# Test enhancement flow
-node scripts/test-mock-enhancement.js
-
-# Test credit system
-node scripts/test-user-credits.js
+supabase bootstrap
 ```
 
-## 📊 Admin Dashboard
+Or using npx:
 
-### Accessing Admin Features
-1. Sign in with admin credentials
-2. Navigate to `/admin`
-3. Monitor platform health, credits, and analytics
-
-### Key Admin Functions
-- **Credit Management**: Monitor and refill platform credits
-- **User Management**: View users, modify roles, manage subscriptions
-- **Analytics**: Track growth, revenue, usage patterns
-- **Content Moderation**: Review reported content
-- **System Health**: Monitor error rates and performance
-
-## 🔒 Security
-
-### Authentication
-- Supabase Auth with email/OTP
-- Role-based access control (ADMIN, CONTRIBUTOR, TALENT)
-- Row Level Security (RLS) policies
-
-### Data Protection
-- Private storage buckets
-- Signed URLs for media
-- EXIF data stripping
-- GDPR compliance ready
-
-## 📈 Monitoring
-
-### Platform Health Indicators
-- 🟢 **Excellent**: >5x credit threshold
-- 🟡 **Good**: >2x credit threshold
-- 🟠 **Warning**: >1x threshold
-- 🔴 **Critical**: Below threshold
-
-### Key Metrics
-- User growth rate
-- Credit consumption
-- Revenue per user
-- Error rates
-- Active users
-
-## 🚢 Deployment
-
-### Production Deployment
 ```bash
-# Deploy to Vercel
-vercel deploy --prod
-
-# Update environment variables
-vercel env add SUPABASE_SERVICE_ROLE_KEY
-
-# Run production migrations
-npx supabase db push --db-url $PRODUCTION_DB_URL
+npx supabase bootstrap
 ```
 
-### Monitoring Production
-- Check `/admin` dashboard regularly
-- Monitor Supabase dashboard
-- Review Vercel analytics
-- Track error rates in logs
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
 
-## 📝 Documentation
+## Docs
 
-- [Admin Dashboard Guide](./ADMIN_DASHBOARD.md)
-- [Credit Marketplace](./CREDIT_MARKETPLACE.md)
-- [API Documentation](./docs/API.md)
-- [Architecture Overview](./CLAUDE.md)
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
 
-## 🤝 Contributing
+## Breaking changes
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
 
-## 📄 License
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
 
-Copyright © 2025 Preset. All rights reserved.
+## Developing
 
-## 🆘 Support
+To run from source:
 
-- **Admin Issues**: Check [Admin Dashboard Guide](./ADMIN_DASHBOARD.md)
-- **Credit Issues**: See [Credit Marketplace](./CREDIT_MARKETPLACE.md)
-- **General Help**: Create an issue on GitHub
-
----
-
-Built with ❤️ for the creative community
+```sh
+# Go >= 1.22
+go run . help
+```

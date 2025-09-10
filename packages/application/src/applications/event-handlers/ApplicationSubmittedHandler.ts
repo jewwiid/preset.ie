@@ -1,7 +1,5 @@
 import { EventHandler } from '../../shared/EventHandler';
-import { DomainEvent } from '@preset/domain/shared/DomainEvent';
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
+import { DomainEvent, GigRepository, UserRepository } from '@preset/domain';
 
 export interface ApplicationSubmittedEvent extends DomainEvent {
   eventType: 'ApplicationSubmitted';

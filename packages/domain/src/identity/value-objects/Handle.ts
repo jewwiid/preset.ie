@@ -39,7 +39,7 @@ export class Handle {
   static generateFromEmail(email: string): string {
     const localPart = email.split('@')[0];
     // Remove non-alphanumeric characters and ensure it starts with a letter
-    let handle = localPart.replace(/[^a-zA-Z0-9_]/g, '');
+    let handle = localPart?.replace(/[^a-zA-Z0-9_]/g, '') || 'user';
     
     // Ensure it starts with a letter
     if (!/^[a-zA-Z]/.test(handle)) {

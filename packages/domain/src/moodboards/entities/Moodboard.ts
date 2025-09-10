@@ -81,7 +81,7 @@ export class Moodboard extends BaseAggregateRoot {
       {
         moodboardId: this.id,
         itemId: item.id,
-        itemType: item.type,
+        itemType: item.source,
         source: item.source
       }
     ));
@@ -92,7 +92,9 @@ export class Moodboard extends BaseAggregateRoot {
     if (itemIndex !== -1) {
       const item = this.props.items[itemIndex];
       this.props.items.splice(itemIndex, 1);
-      this.decreaseSourceBreakdown(item);
+      if (item) {
+        this.decreaseSourceBreakdown(item);
+      }
       this.props.updatedAt = new Date();
     }
   }

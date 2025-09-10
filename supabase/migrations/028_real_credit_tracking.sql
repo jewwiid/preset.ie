@@ -1,8 +1,15 @@
--- Add columns for real credit tracking to platform_credits table
-ALTER TABLE platform_credits 
-ADD COLUMN IF NOT EXISTS last_api_balance INTEGER,
-ADD COLUMN IF NOT EXISTS last_sync_at TIMESTAMPTZ,
-ADD COLUMN IF NOT EXISTS sync_status VARCHAR(20) DEFAULT 'pending';
+-- Create platform_credits table if it doesn't exist
+CREATE TABLE IF NOT EXISTS platform_credits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider VARCHAR(50) NOT NULL UNIQUE,
+  balance INTEGER NOT NULL DEFAULT 0,
+  reserved INTEGER NOT NULL DEFAULT 0,
+  last_api_balance INTEGER,
+  last_sync_at TIMESTAMPTZ,
+  sync_status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 -- Create platform alerts table for low balance warnings
 CREATE TABLE IF NOT EXISTS platform_alerts (

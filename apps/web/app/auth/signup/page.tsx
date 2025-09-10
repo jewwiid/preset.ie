@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
+import { uploadProfilePhoto } from '../../../lib/storage'
 import { 
   Camera, 
   Users, 
@@ -20,6 +21,7 @@ import {
   X,
   CheckCircle2
 } from 'lucide-react'
+import ProfileSetupForm from '../../../components/ProfileSetupForm'
 
 type SignupStep = 'role' | 'credentials' | 'profile' | 'styles'
 type UserRole = 'CONTRIBUTOR' | 'TALENT' | 'BOTH'
@@ -57,9 +59,29 @@ export default function SignUpPage() {
   const [selectedStyles, setSelectedStyles] = useState<string[]>([])
   const [selectedVibes, setSelectedVibes] = useState<string[]>([])
   
+  // Additional profile fields
+  const [profileData, setProfileData] = useState<any>({})
+  
   // Age verification
-  const [isOver18, setIsOver18] = useState(false)
+  const [dateOfBirth, setDateOfBirth] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  
+  // Calculate age from date of birth
+  const calculateAge = (dob: string): number => {
+    if (!dob) return 0
+    const today = new Date()
+    const birthDate = new Date(dob)
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    return age
+  }
+  
+  const userAge = calculateAge(dateOfBirth)
+  const isOver18 = userAge >= 18
   
   // Password validation state
   const [passwordFocused, setPasswordFocused] = useState(false)
@@ -119,6 +141,10 @@ export default function SignUpPage() {
       return
     }
 
+    if (!dateOfBirth) {
+      setError('Please enter your date of birth')
+      return
+    }
     if (!isOver18) {
       setError('You must be 18 or older to use Preset')
       return
@@ -194,7 +220,17 @@ export default function SignUpPage() {
         return
       }
 
-      // Step 3: Create user profile
+      // Step 3: Upload profile photo if provided
+      let avatarUrl = null
+      if (profileData.avatarFile) {
+        console.log('Uploading profile photo...')
+        avatarUrl = await uploadProfilePhoto(profileData.avatarFile, user.id)
+        if (!avatarUrl) {
+          console.warn('Failed to upload profile photo, continuing without it')
+        }
+      }
+
+      // Step 4: Create user profile with enhanced fields
       const roleFlags = selectedRole === 'BOTH' 
         ? ['CONTRIBUTOR', 'TALENT'] 
         : [selectedRole!]
@@ -207,13 +243,56 @@ export default function SignUpPage() {
           handle: handle.toLowerCase(),
           bio: bio || null,
           city: city || null,
+          country: profileData.country || null,
+          avatar_url: avatarUrl, // Use the uploaded photo URL
+          date_of_birth: dateOfBirth,
+          age_verified: false, // Will be verified by admin
+          account_status: 'pending_verification',
           role_flags: roleFlags,
           style_tags: selectedStyles,
+          // Social media
+          instagram_handle: profileData.instagramHandle || null,
+          tiktok_handle: profileData.tiktokHandle || null,
+          website_url: profileData.websiteUrl || null,
+          portfolio_url: profileData.portfolioUrl || null,
+          phone_number: profileData.phoneNumber || null,
+          // Contributor-specific fields
+          years_experience: profileData.yearsExperience || 0,
+          specializations: profileData.specializations || [],
+          equipment_list: profileData.equipment || [],
+          editing_software: profileData.editingSoftware || [],
+          languages: profileData.languages || [],
+          hourly_rate_min: profileData.hourlyRateMin || null,
+          hourly_rate_max: profileData.hourlyRateMax || null,
+          available_for_travel: profileData.availableForTravel || false,
+          travel_radius_km: profileData.travelRadius || 50,
+          studio_name: profileData.studioName || null,
+          has_studio: profileData.hasStudio || false,
+          studio_address: profileData.studioAddress || null,
+          typical_turnaround_days: profileData.typicalTurnaroundDays || null,
+          // Talent-specific fields
+          height_cm: profileData.heightCm || null,
+          measurements: profileData.measurements || null,
+          eye_color: profileData.eyeColor || null,
+          hair_color: profileData.hairColor || null,
+          shoe_size: profileData.shoeSize || null,
+          clothing_sizes: profileData.clothingSizes || null,
+          tattoos: profileData.tattoos || false,
+          piercings: profileData.piercings || false,
+          talent_categories: profileData.talentCategories || [],
+          // Subscription
           subscription_tier: 'FREE',
           subscription_status: 'ACTIVE',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
+      
+      // Trigger age verification
+      await supabase.rpc('verify_user_age', {
+        p_user_id: user.id,
+        p_date_of_birth: dateOfBirth,
+        p_method: 'self_attestation'
+      })
 
       if (profileError) {
         console.error('Profile creation error:', profileError)
@@ -537,18 +616,37 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 border-t pt-4">
-                <label className="flex items-start">
-                  <input
-                    type="checkbox"
-                    checked={isOver18}
-                    onChange={(e) => setIsOver18(e.target.checked)}
-                    className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">
-                    I confirm that I am 18 years or older
-                  </span>
+              {/* Date of Birth Field */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date of Birth <span className="text-red-500">*</span>
                 </label>
+                <input
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                  required
+                />
+                {dateOfBirth && (
+                  <div className={`mt-2 text-sm ${isOver18 ? 'text-green-600' : 'text-red-600'}`}>
+                    {isOver18 ? (
+                      <span className="flex items-center">
+                        <CheckCircle2 className="w-4 h-4 mr-1" />
+                        You are {userAge} years old - eligible to join
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <AlertCircle className="w-4 h-4 mr-1" />
+                        You must be 18 or older to use Preset (you are {userAge})
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3 border-t pt-4">
 
                 <label className="flex items-start">
                   <input
@@ -590,104 +688,28 @@ export default function SignUpPage() {
 
           {/* Profile Step */}
           {currentStep === 'profile' && (
-            <form onSubmit={handleProfileSubmit} className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                  Set up your profile
-                </h2>
-                <p className="text-gray-600">
-                  Tell us a bit about yourself
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Display name
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      id="displayName"
-                      type="text"
-                      required
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
-                      placeholder="John Doe"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="handle" className="block text-sm font-medium text-gray-700 mb-1">
-                    Handle
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">@</span>
-                    <input
-                      id="handle"
-                      type="text"
-                      required
-                      value={handle}
-                      onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
-                      className="pl-8 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
-                      placeholder="johndoe"
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    This will be your unique username
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-                    City (optional)
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      id="city"
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
-                      placeholder="Dublin, Ireland"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
-                    Bio (optional)
-                  </label>
-                  <textarea
-                    id="bio"
-                    rows={3}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
-                    placeholder="Tell us about yourself and your creative journey..."
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep('credentials')}
-                  className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                >
-                  Continue
-                </button>
-              </div>
-            </form>
+            <ProfileSetupForm
+              role={selectedRole || 'BOTH'}
+              currentData={{
+                displayName,
+                handle,
+                bio,
+                city,
+                ...profileData
+              }}
+              onUpdate={(data) => {
+                // Update basic fields
+                if (data.displayName !== undefined) setDisplayName(data.displayName)
+                if (data.handle !== undefined) setHandle(data.handle)
+                if (data.bio !== undefined) setBio(data.bio)
+                if (data.city !== undefined) setCity(data.city)
+                
+                // Store all additional fields
+                setProfileData(data)
+              }}
+              onNext={() => setCurrentStep('styles')}
+              onBack={() => setCurrentStep('credentials')}
+            />
           )}
 
           {/* Styles Step */}

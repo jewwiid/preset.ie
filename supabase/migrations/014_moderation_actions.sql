@@ -4,8 +4,8 @@
 -- Create moderation_actions table
 CREATE TABLE IF NOT EXISTS moderation_actions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    admin_user_id UUID NOT NULL REFERENCES users_profile(user_id) ON DELETE CASCADE,
-    target_user_id UUID REFERENCES users_profile(user_id) ON DELETE SET NULL,
+    admin_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    target_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     target_content_id UUID,
     content_type TEXT CHECK (content_type IN ('user', 'gig', 'showcase', 'message', 'image', 'moodboard')),
     action_type TEXT CHECK (action_type IN ('warning', 'suspend', 'ban', 'unban', 'content_remove', 'shadowban', 'unshadowban', 'verify', 'unverify')) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS moderation_actions (
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     revoked_at TIMESTAMPTZ,
-    revoked_by UUID REFERENCES users_profile(user_id) ON DELETE SET NULL,
+    revoked_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     revoke_reason TEXT,
     
     -- Ensure we have a target
@@ -176,9 +176,10 @@ ALTER TABLE moderation_actions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY admin_view_all_actions ON moderation_actions
     FOR SELECT
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid()
+            AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -186,9 +187,10 @@ CREATE POLICY admin_view_all_actions ON moderation_actions
 CREATE POLICY admin_create_actions ON moderation_actions
     FOR INSERT
     WITH CHECK (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid()
+            AND 'ADMIN' = ANY(role_flags)
         )
         AND admin_user_id = auth.uid()
     );
@@ -197,9 +199,10 @@ CREATE POLICY admin_create_actions ON moderation_actions
 CREATE POLICY admin_update_actions ON moderation_actions
     FOR UPDATE
     USING (
-        auth.uid() IN (
-            SELECT user_id FROM users_profile 
-            WHERE 'ADMIN' = ANY(role_flags)
+        EXISTS (
+            SELECT 1 FROM users_profile 
+            WHERE user_id = auth.uid()
+            AND 'ADMIN' = ANY(role_flags)
         )
     );
 

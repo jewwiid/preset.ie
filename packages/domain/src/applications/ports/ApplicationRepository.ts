@@ -1,4 +1,4 @@
-import { Application } from '../entities/Application';
+import { Application } from '../entities/application';
 import { ApplicationStatus } from '../value-objects/ApplicationStatus';
 
 /**

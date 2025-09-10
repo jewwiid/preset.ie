@@ -1,0 +1,50 @@
+{
+  "name": "@preset/types",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./api": {
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.mjs",
+      "require": "./dist/api/index.js"
+    },
+    "./dto": {
+      "types": "./dist/dto/index.d.ts",
+      "import": "./dist/dto/index.mjs",
+      "require": "./dist/dto/index.js"
+    },
+    "./validation": {
+      "types": "./dist/validation/index.d.ts",
+      "import": "./dist/validation/index.mjs",
+      "require": "./dist/validation/index.js"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "import": "./dist/database/index.mjs",
+      "require": "./dist/database/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "*",
+    "@types/node": "^20.11.24",
+    "tsup": "^8.0.2",
+    "typescript": "^5.3.3"
+  }
+}
