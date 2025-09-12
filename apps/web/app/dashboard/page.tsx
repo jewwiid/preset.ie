@@ -19,6 +19,13 @@ interface UserProfile {
   verification_status: string
   avatar_url?: string
   header_banner_url?: string
+  header_banner_position?: string // JSON string of BannerPosition
+}
+
+interface BannerPosition {
+  x: number
+  y: number
+  scale: number
 }
 
 interface RecentGig {
@@ -313,11 +320,24 @@ export default function Dashboard() {
       <div className="relative overflow-hidden pb-32">
         {/* Custom Banner Background */}
         {profile.header_banner_url ? (
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 overflow-hidden">
             <img
               src={profile.header_banner_url}
               alt="Header banner"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-300"
+              style={(() => {
+                try {
+                  const position: BannerPosition = profile.header_banner_position 
+                    ? JSON.parse(profile.header_banner_position) 
+                    : { x: 0, y: 0, scale: 1 }
+                  return {
+                    transform: `translate(${position.x}px, ${position.y}px) scale(${position.scale})`,
+                    transformOrigin: 'center center'
+                  }
+                } catch {
+                  return {}
+                }
+              })()}
             />
             <div className="absolute inset-0 bg-black/40"></div>
           </div>

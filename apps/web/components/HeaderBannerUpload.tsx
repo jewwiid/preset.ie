@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { Camera, Upload, X, AlertCircle, CheckCircle } from 'lucide-react'
+import { Camera, Upload, X, AlertCircle, CheckCircle, Move, Edit3, RotateCcw } from 'lucide-react'
 
 interface HeaderBannerUploadProps {
   currentBannerUrl?: string
@@ -10,11 +10,90 @@ interface HeaderBannerUploadProps {
   userId: string
 }
 
+interface BannerPosition {
+  x: number
+  y: number
+  scale: number
+}
+
 export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }: HeaderBannerUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [isAdjusting, setIsAdjusting] = useState(false)
+  const [bannerPosition, setBannerPosition] = useState<BannerPosition>({ x: 0, y: 0, scale: 1 })
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const bannerRef = useRef<HTMLImageElement>(null)
+
+  // Drag functionality for banner positioning
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!isAdjusting) return
+    setIsDragging(true)
+    setDragStart({
+      x: e.clientX - bannerPosition.x,
+      y: e.clientY - bannerPosition.y
+    })
+  }, [isAdjusting, bannerPosition])
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || !isAdjusting) return
+    e.preventDefault()
+    
+    const newX = e.clientX - dragStart.x
+    const newY = e.clientY - dragStart.y
+    
+    setBannerPosition(prev => ({
+      ...prev,
+      x: Math.max(-100, Math.min(100, newX)),
+      y: Math.max(-50, Math.min(50, newY))
+    }))
+  }, [isDragging, isAdjusting, dragStart])
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!isAdjusting) return
+    e.preventDefault()
+    
+    const delta = e.deltaY > 0 ? -0.1 : 0.1
+    setBannerPosition(prev => ({
+      ...prev,
+      scale: Math.max(0.5, Math.min(2, prev.scale + delta))
+    }))
+  }, [isAdjusting])
+
+  const resetPosition = () => {
+    setBannerPosition({ x: 0, y: 0, scale: 1 })
+  }
+
+  const saveBannerPosition = async () => {
+    if (!currentBannerUrl) return
+    
+    try {
+      const { error } = await supabase
+        .from('users_profile')
+        .update({ 
+          header_banner_position: JSON.stringify(bannerPosition)
+        })
+        .eq('user_id', userId)
+
+      if (error) {
+        console.error('Error saving banner position:', error)
+      }
+    } catch (err) {
+      console.error('Error saving banner position:', err)
+    }
+  }
+
+  // Save position when adjusting is finished
+  const handleFinishAdjusting = () => {
+    setIsAdjusting(false)
+    saveBannerPosition()
+  }
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -131,20 +210,80 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       {/* Current Banner Preview */}
       {currentBannerUrl && (
         <div className="relative">
-          <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
+          <div 
+            className={`w-full h-32 bg-gray-100 rounded-lg overflow-hidden relative ${isAdjusting ? 'cursor-move' : ''}`}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onWheel={handleWheel}
+          >
             <img
+              ref={bannerRef}
               src={currentBannerUrl}
               alt="Header banner"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-200"
+              style={{
+                transform: `translate(${bannerPosition.x}px, ${bannerPosition.y}px) scale(${bannerPosition.scale})`,
+                transformOrigin: 'center center'
+              }}
             />
+            
+            {/* Overlay Controls */}
+            <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 group">
+              <div className="absolute top-2 left-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button
+                  onClick={isAdjusting ? handleFinishAdjusting : () => setIsAdjusting(true)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isAdjusting 
+                      ? 'bg-emerald-600 text-white' 
+                      : 'bg-white bg-opacity-90 text-gray-700 hover:bg-opacity-100'
+                  }`}
+                  title={isAdjusting ? 'Finish adjusting' : 'Adjust position'}
+                >
+                  <Move className="w-4 h-4" />
+                </button>
+                
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="p-2 bg-white bg-opacity-90 text-gray-700 hover:bg-opacity-100 rounded-lg transition-colors disabled:opacity-50"
+                  title="Change banner"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+                
+                {isAdjusting && (
+                  <button
+                    onClick={resetPosition}
+                    className="p-2 bg-white bg-opacity-90 text-gray-700 hover:bg-opacity-100 rounded-lg transition-colors"
+                    title="Reset position"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              
+              <button
+                onClick={handleRemoveBanner}
+                disabled={uploading}
+                className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
+                title="Remove banner"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {/* Adjustment Instructions */}
+            {isAdjusting && (
+              <div className="absolute bottom-2 left-2 right-2 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
+                <div className="flex items-center justify-between">
+                  <span>Drag to move • Scroll to zoom</span>
+                  <span>Scale: {Math.round(bannerPosition.scale * 100)}%</span>
+                </div>
+              </div>
+            )}
           </div>
-          <button
-            onClick={handleRemoveBanner}
-            disabled={uploading}
-            className="absolute top-2 right-2 p-1 bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors disabled:opacity-50"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
       )}
 
@@ -163,7 +302,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
             <Camera className="w-6 h-6 text-gray-400" />
           </div>
           
-          <div>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
@@ -181,10 +320,29 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
                 </>
               )}
             </button>
+            
+            {currentBannerUrl && (
+              <button
+                onClick={isAdjusting ? handleFinishAdjusting : () => setIsAdjusting(true)}
+                className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isAdjusting 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Move className="w-4 h-4 mr-2" />
+                {isAdjusting ? 'Finish Adjusting' : 'Adjust Position'}
+              </button>
+            )}
           </div>
           
           <p className="text-sm text-gray-500">
             Recommended: 1200x300px, max 5MB
+            {isAdjusting && (
+              <span className="block mt-1 text-emerald-600">
+                💡 Drag to move • Scroll to zoom • Click finish when done
+              </span>
+            )}
           </p>
         </div>
       </div>
