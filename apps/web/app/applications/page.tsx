@@ -263,7 +263,7 @@ export default function ApplicationsPage() {
         console.log('Applications: Successfully fetched', data?.length || 0, 'talent applications')
         setApplications(data || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Applications: Critical error in fetchApplications:', error);
       console.error('Applications: Error details:', {
         message: error?.message,

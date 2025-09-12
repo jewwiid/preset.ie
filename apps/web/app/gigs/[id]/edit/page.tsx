@@ -444,12 +444,12 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   const steps: GigEditStep[] = ['basic', 'schedule', 'requirements', 'moodboard', 'review']
 
   // Validation functions
-  const isBasicStepValid = () => {
-    return title.trim() !== '' && description.trim() !== '' && purpose && compType
+  const isBasicStepValid = (): boolean => {
+    return Boolean(title.trim() !== '' && description.trim() !== '' && purpose && compType)
   }
 
-  const isLocationStepValid = () => {
-    return location.trim() !== '' && startDate && endDate && applicationDeadline
+  const isLocationStepValid = (): boolean => {
+    return Boolean(location.trim() !== '' && startDate && endDate && applicationDeadline)
   }
 
   const getLocationValidationErrors = () => {
@@ -664,7 +664,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
             moodboardId={moodboardId || undefined}
             onStatusChange={setStatus}
             onBack={handleBackStep}
-            onSave={handleSubmit}
+            onSave={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)}
             saving={saving}
             applicationCount={applicationCount}
             warnings={warnings}

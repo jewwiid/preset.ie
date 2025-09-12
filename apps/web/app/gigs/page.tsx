@@ -228,8 +228,8 @@ export default function GigDiscoveryPage() {
     const simulatedData: Partial<Gig> = {
       style_tags: [],
       vibe_tags: [],
-      city: extractCityFromLocation(gig.location_text, gig.location),
-      country: extractCountryFromLocation(gig.location_text, gig.location),
+      city: extractCityFromLocation(gig.location_text, undefined),
+      country: extractCountryFromLocation(gig.location_text, undefined),
       palette_colors: gig.palette_colors || getSimulatedPaletteColors(gig.purpose, gig.title)
     };
 
@@ -915,16 +915,16 @@ export default function GigDiscoveryPage() {
 
                 <div className="flex items-center gap-3 mt-3 p-3 bg-gray-50 rounded-lg">
                   <img
-                    src={gig.users_profile.avatar_url || '/default-avatar.png'}
-                    alt={gig.users_profile.display_name}
+                    src={gig.users_profile?.avatar_url || '/default-avatar.png'}
+                    alt={gig.users_profile?.display_name || 'User'}
                     className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h4 className="text-sm font-semibold text-gray-900 truncate">
-                        {gig.users_profile.display_name}
+                        {gig.users_profile?.display_name || 'Unknown User'}
                       </h4>
-                      {gig.users_profile.verified_id && (
+                      {gig.users_profile?.verified_id && (
                         <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -933,7 +933,7 @@ export default function GigDiscoveryPage() {
                         </div>
                       )}
                     </div>
-                    {gig.users_profile.handle && (
+                    {gig.users_profile?.handle && (
                       <p className="text-xs text-gray-500 mt-0.5">@{gig.users_profile.handle}</p>
                     )}
                   </div>

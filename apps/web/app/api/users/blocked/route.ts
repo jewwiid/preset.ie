@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = await createClient();
     
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -79,12 +79,10 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         blockedUsers: result.blockedUsers,
-        totalCount: result.totalCount,
-        hasMore: result.hasMore,
+        hasMore: result.pagination.hasMore,
         pagination: {
           limit: validatedQuery.limit || 20,
-          offset: validatedQuery.offset || 0,
-          totalCount: result.totalCount
+          offset: validatedQuery.offset || 0
         }
       }
     });
