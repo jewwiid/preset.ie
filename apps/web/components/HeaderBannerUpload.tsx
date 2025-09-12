@@ -20,7 +20,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isAdjusting, setIsAdjusting] = useState(false)
-  const [bannerPosition, setBannerPosition] = useState<BannerPosition>({ y: 0, scale: 1 })
+  const [bannerPosition, setBannerPosition] = useState<BannerPosition>({ y: 0, scale: 1.2 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ y: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -63,7 +63,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
   }, [isAdjusting])
 
   const resetPosition = () => {
-    setBannerPosition({ y: 0, scale: 1 })
+    setBannerPosition({ y: 0, scale: 1.2 })
   }
 
   const saveBannerPosition = async () => {
@@ -218,7 +218,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
               ref={bannerRef}
               src={currentBannerUrl}
               alt="Header banner"
-              className="w-full h-full object-contain transition-transform duration-200"
+              className="w-full h-full object-cover transition-transform duration-200"
               style={{
                 transform: `translateY(${bannerPosition.y}px) scale(${bannerPosition.scale})`,
                 transformOrigin: 'center center'
