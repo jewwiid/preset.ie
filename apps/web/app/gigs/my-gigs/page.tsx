@@ -50,7 +50,8 @@ export default function MyGigsPage() {
         .single()
       
       if (!profile) {
-        console.error('Profile not found')
+        console.log('No profile found - user has no gigs yet')
+        setGigs([])
         return
       }
 

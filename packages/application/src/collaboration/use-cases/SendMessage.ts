@@ -5,6 +5,7 @@ import { ApplicationRepository } from '@preset/domain/applications/ports/Applica
 import { EventBus } from '@preset/domain/shared/EventBus';
 import { IdGenerator } from '@preset/domain/shared/IdGenerator';
 import { Attachment } from '@preset/domain/collaboration/value-objects/Attachment';
+import { ContentModerationService, ContentRejectedError, ContentFlaggedError } from '../services/ContentModerationService';
 
 export interface SendMessageCommand {
   gigId: string;
@@ -31,7 +32,8 @@ export class SendMessageUseCase {
     private gigRepo: GigRepository,
     private applicationRepo: ApplicationRepository,
     private eventBus: EventBus,
-    private idGenerator: IdGenerator
+    private idGenerator: IdGenerator,
+    private moderationService: ContentModerationService
   ) {}
 
   async execute(command: SendMessageCommand): Promise<SendMessageResult> {
@@ -97,18 +99,68 @@ export class SendMessageUseCase {
       });
     }
 
+    // Moderate content before sending
+    try {
+      const moderationResult = await this.moderationService.moderateContent({
+        content: command.body,
+        contentType: 'message',
+        userId: command.fromUserId,
+        metadata: {
+          gigId: command.gigId,
+          recipientId: command.toUserId
+        }
+      });
+
+      // Handle moderation results
+      if (moderationResult.action === 'auto_reject') {
+        throw new ContentRejectedError(moderationResult.reasons);
+      }
+
+      if (moderationResult.action === 'flag_for_review') {
+        throw new ContentFlaggedError('Message flagged for review. Please ensure your content follows community guidelines.');
+      }
+
+      if (moderationResult.action === 'shadow_ban' || moderationResult.action === 'rate_limit') {
+        // For now, we'll treat these as rejections
+        // In the future, we might implement more sophisticated handling
+        throw new ContentRejectedError(moderationResult.reasons);
+      }
+    } catch (error) {
+      if (error instanceof ContentRejectedError || error instanceof ContentFlaggedError) {
+        throw error;
+      }
+      // Log moderation service errors but don't block messaging entirely
+      console.error('Content moderation service error:', error);
+    }
+
     // Process attachments
     const attachments = command.attachments?.map(file => 
       Attachment.fromFile(file)
     ) || [];
 
+    // Generate message ID first for moderation queue reference
+    const messageId = this.idGenerator.generate();
+
     // Send the message
     const message = conversation.sendMessage({
-      messageId: this.idGenerator.generate(),
+      messageId,
       fromUserId: command.fromUserId,
       body: command.body,
       attachments
     });
+
+    // Queue content for post-creation moderation check (lower priority)
+    try {
+      await this.moderationService.queueExistingContent(
+        messageId,
+        'message',
+        command.body,
+        command.fromUserId
+      );
+    } catch (error) {
+      // Don't fail the message send if queue fails
+      console.error('Failed to queue message for post-moderation:', error);
+    }
 
     // Save the conversation
     await this.conversationRepo.save(conversation);

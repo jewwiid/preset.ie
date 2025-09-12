@@ -6,7 +6,14 @@ const PEXELS_API_KEY = process.env.PEXELS_API_KEY || 'YOUR_PEXELS_API_KEY'
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, page = 1, per_page = 12 } = await request.json()
+    const { 
+      query, 
+      page = 1, 
+      per_page = 12, 
+      orientation, 
+      size, 
+      color 
+    } = await request.json()
     
     if (!query) {
       return NextResponse.json(
@@ -18,12 +25,20 @@ export async function POST(request: NextRequest) {
     // Initialize Pexels client
     const client = createClient(PEXELS_API_KEY)
     
-    // Search for photos
-    const response = await client.photos.search({
+    // Build search parameters
+    const searchParams: any = {
       query,
       page,
       per_page
-    })
+    }
+    
+    // Add optional filters
+    if (orientation) searchParams.orientation = orientation
+    if (size) searchParams.size = size  
+    if (color) searchParams.color = color
+    
+    // Search for photos
+    const response = await client.photos.search(searchParams)
     
     if ('error' in response) {
       return NextResponse.json(

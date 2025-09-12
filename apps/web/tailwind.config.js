@@ -15,11 +15,19 @@ export default {
   				'200': '#99f6e0',
   				'300': '#5eead4',
   				'400': '#2dd4bf',
-  				'500': '#00876f',
+  				'500': '#00876f', // Primary brand color
   				'600': '#0d7d72',
   				'700': '#15706b',
   				'800': '#155e56',
-  				'900': '#134e48'
+  				'900': '#134e48',
+  				'950': '#0a3b35' // Ultra dark for maximum contrast
+  			},
+  			// Brand semantic colors for easy access
+  			brand: {
+  				primary: '#00876f',
+  				secondary: '#2dd4bf',
+  				light: '#ccfbef',
+  				dark: '#134e48'
   			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

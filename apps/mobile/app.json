@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Preset",
+    "slug": "preset",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F46E5"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ie.preset.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Preset uses the camera to capture photos for your creative projects.",
+        "NSPhotoLibraryUsageDescription": "Preset needs access to your photo library to upload images.",
+        "NSLocationWhenInUseUsageDescription": "Preset uses your location to show nearby gigs and collaborations."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4F46E5"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "ie.preset.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-camera",
+      "expo-image-picker",
+      "expo-location",
+      "expo-secure-store"
+    ]
+  }
+}

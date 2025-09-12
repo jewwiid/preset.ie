@@ -58,9 +58,43 @@ export async function POST(request: NextRequest) {
     // In production, this would call OpenAI/Claude API
     const vibeAnalysis = analyzeVibe(items, title, description)
     
-    // If we have OpenAI API key, use it for better analysis
+    // If we have OpenAI API key, use it for better analysis with vision
     if (process.env.OPENAI_API_KEY) {
       try {
+        // Prepare images for analysis (limit to first 4 images for cost efficiency)
+        const imageItems = items.filter(item => item.type === 'image').slice(0, 4)
+        const imageContent = imageItems.map(item => ({
+          type: "image_url",
+          image_url: {
+            url: item.enhanced_url || item.url,
+            detail: "low" // Use low detail for cost efficiency
+          }
+        }))
+
+        const messages = [
+          {
+            role: 'system',
+            content: 'You are an expert creative director and aesthetic analyst. Analyze the visual content of these moodboard images and provide specific, insightful analysis based on what you actually see in the images.'
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: "text",
+                text: `Analyze this moodboard titled "${title}"${description ? ` with description: "${description}"` : ''}.
+                
+Based on the actual visual content you can see in these images, provide:
+1. A specific vibe summary (1-2 sentences) that describes the actual visual themes, colors, mood, and style you observe
+2. 3-5 mood descriptors (single words) that accurately reflect what you see
+3. 3-5 style tags for searchability based on the visual content
+
+Be specific about what you actually observe - colors, lighting, subjects, composition, mood, era, style elements, etc. Avoid generic descriptions.`
+              },
+              ...imageContent
+            ]
+          }
+        ]
+
         const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -68,19 +102,10 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'gpt-4-turbo-preview',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a creative director analyzing moodboards for aesthetic and vibe.'
-              },
-              {
-                role: 'user',
-                content: generateVibePrompt(items, title, description)
-              }
-            ],
+            model: 'gpt-4o', // Use GPT-4 with vision
+            messages,
             temperature: 0.7,
-            max_tokens: 300
+            max_tokens: 400
           })
         })
         
@@ -89,19 +114,33 @@ export async function POST(request: NextRequest) {
           const aiContent = aiData.choices[0]?.message?.content
           
           if (aiContent) {
-            // Parse AI response
+            console.log('OpenAI Vision Analysis:', aiContent)
+            
+            // Parse structured AI response
             const lines = aiContent.split('\n').filter((l: string) => l.trim())
-            const vibeSummary = lines.find((l: string) => l.toLowerCase().includes('vibe') || l.length > 50) || vibeAnalysis.vibeSummary
-            const moodDescriptors = extractWords(lines.find((l: string) => l.toLowerCase().includes('mood')) || '') || vibeAnalysis.moodDescriptors
-            const tags = extractWords(lines.find((l: string) => l.toLowerCase().includes('tag')) || '') || vibeAnalysis.tags
+            
+            // Extract vibe summary (look for numbered item 1 or sentences describing the visual content)
+            const vibeLine = lines.find(l => 
+              /^1\./.test(l.trim()) || 
+              /vibe|aesthetic|visual|mood|atmosphere/i.test(l) && l.length > 30
+            )
+            const vibeSummary = vibeLine ? vibeLine.replace(/^1\.\s*/, '').trim() : vibeAnalysis.vibeSummary
+            
+            // Extract mood descriptors (look for numbered item 2 or words in quotes/lists)
+            const moodLine = lines.find(l => /^2\./.test(l.trim()) || /mood.*descriptor|descriptors/i.test(l))
+            const moodDescriptors = moodLine ? extractWordsFromLine(moodLine) : vibeAnalysis.moodDescriptors
+            
+            // Extract style tags (look for numbered item 3 or tag-related content)  
+            const tagLine = lines.find(l => /^3\./.test(l.trim()) || /tag|style.*tag/i.test(l))
+            const tags = tagLine ? extractWordsFromLine(tagLine) : vibeAnalysis.tags
             
             return NextResponse.json({
               success: true,
-              vibeSummary,
-              moodDescriptors,
-              tags,
+              vibeSummary: vibeSummary || vibeAnalysis.vibeSummary,
+              moodDescriptors: moodDescriptors.length > 0 ? moodDescriptors : vibeAnalysis.moodDescriptors,
+              tags: tags.length > 0 ? tags : vibeAnalysis.tags,
               palette,
-              aiProvider: 'openai'
+              aiProvider: 'openai-vision'
             })
           }
         }
@@ -220,5 +259,29 @@ function extractWords(text: string): string[] {
   const words = text.match(/\b[a-z]+\b/gi) || []
   return words
     .filter(w => w.length > 3 && !['mood', 'descriptors', 'tags', 'style', 'words'].includes(w.toLowerCase()))
+    .slice(0, 5)
+}
+
+// Extract words from structured AI response line
+function extractWordsFromLine(line: string): string[] {
+  // Remove numbered prefixes and common words
+  const cleanLine = line.replace(/^[0-9]\.\s*/, '').replace(/mood descriptors?:?/i, '').replace(/style tags?:?/i, '')
+  
+  // Look for words in quotes, parentheses, or comma-separated
+  const quotedWords = cleanLine.match(/"([^"]+)"/g) || []
+  const parenWords = cleanLine.match(/\(([^)]+)\)/g) || []
+  const commaWords = cleanLine.split(',').map(w => w.trim()).filter(w => w.length > 2)
+  
+  // Combine all extracted words
+  const allWords = [
+    ...quotedWords.map(w => w.replace(/"/g, '')),
+    ...parenWords.map(w => w.replace(/[()]/g, '')),
+    ...commaWords
+  ]
+  
+  // Clean and filter words
+  return allWords
+    .map(w => w.trim().toLowerCase())
+    .filter(w => w.length > 2 && !['and', 'the', 'with', 'for', 'are', 'that', 'this'].includes(w))
     .slice(0, 5)
 }

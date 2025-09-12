@@ -89,8 +89,8 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
           {moodboard.title || 'Visual Inspiration'}
         </h2>
         
-        {moodboard.description && (
-          <p className="text-gray-600 mb-4">{moodboard.description}</p>
+        {moodboard.summary && (
+          <p className="text-gray-600 mb-4">{moodboard.summary}</p>
         )}
         
         {moodboard.vibe_summary && (

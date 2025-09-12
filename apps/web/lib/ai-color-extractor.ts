@@ -8,6 +8,8 @@ interface AIColorAnalysis {
   description: string
   mood: string
   suggestions: string[]
+  visualAnalysis?: string
+  treatmentNotes?: string
 }
 
 /**
@@ -62,11 +64,13 @@ export async function extractAIPalette(
  * Extract palette from multiple images using AI
  * @param imageUrls - Array of image URLs
  * @param context - Context about the moodboard
- * @returns Combined AI-analyzed palette
+ * @param gigData - Optional gig data for comprehensive analysis
+ * @returns Combined AI-analyzed palette with treatment insights
  */
 export async function extractAIPaletteFromImages(
   imageUrls: string[],
-  context: string = 'fashion moodboard'
+  context: string = 'fashion moodboard',
+  gigData?: any
 ): Promise<AIColorAnalysis> {
   if (imageUrls.length === 0) {
     return {
@@ -78,8 +82,8 @@ export async function extractAIPaletteFromImages(
   }
 
   try {
-    // Analyze up to 3 images for efficiency
-    const imagesToAnalyze = imageUrls.slice(0, 3)
+    // Analyze up to 8 images for comprehensive treatment analysis
+    const imagesToAnalyze = imageUrls.slice(0, 8)
     
     const response = await fetch('/api/ai-palette-batch', {
       method: 'POST',
@@ -88,7 +92,8 @@ export async function extractAIPaletteFromImages(
       },
       body: JSON.stringify({
         imageUrls: imagesToAnalyze,
-        context
+        context,
+        gigData
       })
     })
 
@@ -164,9 +169,9 @@ export async function getFashionColorRecommendations(
  */
 function generateComplementaryColors(baseColor: string): string[] {
   const hex = baseColor.replace('#', '')
-  const r = parseInt(hex.substr(0, 2), 16)
-  const g = parseInt(hex.substr(2, 2), 16)
-  const b = parseInt(hex.substr(4, 2), 16)
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
   
   return [
     // Complementary

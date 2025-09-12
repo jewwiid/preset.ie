@@ -1,0 +1,27 @@
+# Multi-Provider Environment Configuration
+# Add these variables to your .env.local file
+
+# Image Generation Provider Configuration
+IMAGE_PROVIDER=nanobanana  # Options: nanobanana, seedream
+
+# NanoBanana API Configuration
+NANOBANANA_API_KEY=e0847916744535b2241e366dbca9a465
+NANOBANANA_BASE_URL=https://api.nanobanana.ai
+NANOBANANA_CALLBACK_URL=http://localhost:3000/api/imagegen/callback
+
+# WaveSpeed API Configuration (for Seedream V4)
+# Get your API key from: https://wavespeed.ai/dashboard
+WAVESPEED_API_KEY=your_wavespeed_api_key_here
+WAVESPEED_BASE_URL=https://api.wavespeed.ai
+WAVESPEED_WEBHOOK_SECRET=your_webhook_secret_here
+
+# Public callback URL for webhooks
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Credit Configuration
+USER_CREDITS_PER_NANOBANANA_ENHANCEMENT=1
+USER_CREDITS_PER_SEEDREAM_ENHANCEMENT=2
+
+# Provider Performance Tracking
+ENABLE_PROVIDER_ANALYTICS=true
+PROVIDER_FALLBACK_ENABLED=true

@@ -10,11 +10,7 @@ export default function Home() {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, loading, router]);
+  // Removed automatic redirect - let users choose to view homepage or go to dashboard
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,42 +31,14 @@ export default function Home() {
     );
   }
 
-  if (user) {
-    return null; // Will redirect to dashboard
-  }
+  // Allow both authenticated and non-authenticated users to view the homepage
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-sm' : 'bg-transparent'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-2">
-              <Image src="/logo.svg" alt="Preset" width={32} height={32} className="w-8 h-8" />
-              <span className="font-bold text-xl text-preset-600 dark:text-preset-400">Preset</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <a
-                href="/auth/signin"
-                className="text-gray-700 dark:text-gray-300 hover:text-preset-600 dark:hover:text-preset-400 font-medium transition-colors"
-              >
-                Sign in
-              </a>
-              <a
-                href="/auth/signup"
-                className="bg-preset-500 hover:bg-preset-600 text-white px-4 py-2 rounded-lg font-medium transition-all hover:shadow-lg hover:scale-105"
-              >
-                Get Started
-              </a>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Navigation is now handled by the global NavBar in layout.tsx */}
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
           <Image
@@ -95,19 +63,39 @@ export default function Home() {
             Build your portfolio with Showcases. Free to start, subscription-based.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="/auth/signup"
-              className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-preset-500 rounded-xl overflow-hidden transition-all hover:scale-105"
-            >
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-br from-preset-400 to-preset-600"></span>
-              <span className="relative">Start Creating for Free</span>
-            </a>
-            <a
-              href="#features"
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-preset-600 dark:text-preset-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-preset-200 dark:border-preset-800 hover:border-preset-300 dark:hover:border-preset-600 transition-all"
-            >
-              Learn More
-            </a>
+            {user ? (
+              <>
+                <a
+                  href="/dashboard"
+                  className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-preset-500 rounded-xl overflow-hidden transition-all hover:scale-105"
+                >
+                  <span className="absolute inset-0 w-full h-full bg-gradient-to-br from-preset-400 to-preset-600"></span>
+                  <span className="relative">Go to Dashboard</span>
+                </a>
+                <a
+                  href="/gigs/create"
+                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-preset-600 dark:text-preset-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-preset-200 dark:border-preset-800 hover:border-preset-300 dark:hover:border-preset-600 transition-all"
+                >
+                  Create a Gig
+                </a>
+              </>
+            ) : (
+              <>
+                <a
+                  href="/auth/signup"
+                  className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-preset-500 rounded-xl overflow-hidden transition-all hover:scale-105"
+                >
+                  <span className="absolute inset-0 w-full h-full bg-gradient-to-br from-preset-400 to-preset-600"></span>
+                  <span className="relative">Start Creating for Free</span>
+                </a>
+                <a
+                  href="#features"
+                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-preset-600 dark:text-preset-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-preset-200 dark:border-preset-800 hover:border-preset-300 dark:hover:border-preset-600 transition-all"
+                >
+                  Learn More
+                </a>
+              </>
+            )}
           </div>
         </div>
 
@@ -221,18 +209,37 @@ export default function Home() {
             Free to start, with powerful features to grow your creative business.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="/auth/signup"
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-preset-600 bg-white rounded-xl hover:shadow-xl transition-all hover:scale-105"
-            >
-              Sign Up for Free
-            </a>
-            <a
-              href="/auth/signin"
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white border-2 border-white rounded-xl hover:bg-white hover:text-preset-600 transition-all"
-            >
-              Sign In →
-            </a>
+            {user ? (
+              <>
+                <a
+                  href="/dashboard"
+                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-preset-600 bg-white rounded-xl hover:shadow-xl transition-all hover:scale-105"
+                >
+                  Go to Dashboard
+                </a>
+                <a
+                  href="/gigs"
+                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white border-2 border-white rounded-xl hover:bg-white hover:text-preset-600 transition-all"
+                >
+                  Browse Gigs →
+                </a>
+              </>
+            ) : (
+              <>
+                <a
+                  href="/auth/signup"
+                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-preset-600 bg-white rounded-xl hover:shadow-xl transition-all hover:scale-105"
+                >
+                  Sign Up for Free
+                </a>
+                <a
+                  href="/auth/signin"
+                  className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white border-2 border-white rounded-xl hover:bg-white hover:text-preset-600 transition-all"
+                >
+                  Sign In →
+                </a>
+              </>
+            )}
           </div>
         </div>
       </section>

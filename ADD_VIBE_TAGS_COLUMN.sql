@@ -1,0 +1,26 @@
+-- Add missing vibe_tags column to users_profile table
+-- Run this in your Supabase SQL Editor
+
+-- Add vibe_tags column if it doesn't exist
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users_profile' AND column_name = 'vibe_tags') THEN
+        ALTER TABLE users_profile ADD COLUMN vibe_tags TEXT[] DEFAULT '{}';
+        RAISE NOTICE 'Added vibe_tags column to users_profile table';
+    ELSE
+        RAISE NOTICE 'vibe_tags column already exists';
+    END IF;
+END 
+$$;
+
+-- Add index for better performance on vibe_tags queries
+CREATE INDEX IF NOT EXISTS idx_users_profile_vibe_tags ON users_profile USING GIN (vibe_tags);
+
+-- Add comment explaining the column
+COMMENT ON COLUMN users_profile.vibe_tags IS 'Array of vibe tags selected by the user (e.g., calm, energetic, creative)';
+
+-- Verify the column was added
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns 
+WHERE table_name = 'users_profile' 
+AND column_name = 'vibe_tags';

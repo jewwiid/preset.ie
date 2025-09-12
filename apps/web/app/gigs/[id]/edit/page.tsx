@@ -1,14 +1,19 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../../lib/auth-context'
 import { supabase } from '../../../../lib/supabase'
-import MoodboardBuilder from '../../../components/MoodboardBuilder'
+import { useGigFormPersistence, CompType, PurposeType, StatusType } from '../../../../lib/gig-form-persistence'
+import { CheckCircle2, X } from 'lucide-react'
 
-type CompType = 'TFP' | 'PAID' | 'EXPENSES' | 'OTHER'
-type PurposeType = 'PORTFOLIO' | 'COMMERCIAL' | 'EDITORIAL' | 'FASHION' | 'BEAUTY' | 'LIFESTYLE' | 'WEDDING' | 'EVENT' | 'PRODUCT' | 'ARCHITECTURE' | 'STREET' | 'CONCEPTUAL' | 'OTHER'
-type StatusType = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'COMPLETED'
+// Step Components
+import StepIndicator, { GigEditStep } from '../../../components/gig-edit-steps/StepIndicator'
+import BasicDetailsStep from '../../../components/gig-edit-steps/BasicDetailsStep'
+import LocationScheduleStep from '../../../components/gig-edit-steps/LocationScheduleStep'
+import RequirementsStep from '../../../components/gig-edit-steps/RequirementsStep'
+import MoodboardStep from '../../../components/gig-edit-steps/MoodboardStep'
+import ReviewPublishStep from '../../../components/gig-edit-steps/ReviewPublishStep'
 
 interface GigDetails {
   id: string
@@ -32,6 +37,25 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   const resolvedParams = use(params)
   const gigId = resolvedParams.id
   
+  // Form persistence
+  const { 
+    saveGigData, 
+    debouncedSaveGigData, 
+    getGigData, 
+    saveCurrentStep, 
+    getCurrentStep,
+    saveCompletedSteps,
+    getCompletedSteps,
+    clearGigData,
+    hasUnsavedData 
+  } = useGigFormPersistence(gigId)
+  
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState<GigEditStep>('basic')
+  const [completedSteps, setCompletedSteps] = useState<GigEditStep[]>([])
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false)
+  
+  // Page state
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,6 +80,63 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   // Warnings
   const [warnings, setWarnings] = useState<string[]>([])
   
+  // Initialize form with saved data on mount - but only after gig data is loaded
+  useEffect(() => {
+    // Only check for saved data if we're not in loading state (meaning gig data has been fetched)
+    if (!loading) {
+      const savedData = getGigData()
+      const savedStep = getCurrentStep() as GigEditStep
+      const savedCompleted = getCompletedSteps() as GigEditStep[]
+      
+      if (Object.keys(savedData).length > 1) { // More than just lastSaved
+        setShowRestorePrompt(true)
+      }
+      
+      // Set completed steps only if no database-derived completed steps exist
+      if (completedSteps.length === 0) {
+        setCompletedSteps(savedCompleted)
+      }
+    }
+  }, [loading, getGigData, getCurrentStep, getCompletedSteps, completedSteps.length])
+  
+  // Auto-save form data whenever it changes
+  useEffect(() => {
+    const formData = {
+      title,
+      description,
+      purpose,
+      compType,
+      usageRights,
+      location,
+      startDate,
+      endDate,
+      applicationDeadline,
+      maxApplicants,
+      status,
+      moodboardId: moodboardId || undefined
+    }
+    
+    // Only save if we have meaningful data and user is owner
+    if (isOwner && (title || description || location || moodboardId)) {
+      debouncedSaveGigData(formData)
+    }
+  }, [title, description, purpose, compType, usageRights, location, startDate, endDate, 
+      applicationDeadline, maxApplicants, status, moodboardId, debouncedSaveGigData, isOwner])
+  
+  // Auto-save current step
+  useEffect(() => {
+    if (isOwner) {
+      saveCurrentStep(currentStep)
+    }
+  }, [currentStep, saveCurrentStep, isOwner])
+  
+  // Auto-save completed steps
+  useEffect(() => {
+    if (isOwner) {
+      saveCompletedSteps(completedSteps)
+    }
+  }, [completedSteps, saveCompletedSteps, isOwner])
+  
   useEffect(() => {
     if (user) {
       fetchGigDetails()
@@ -63,6 +144,31 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
       router.push('/auth/signin')
     }
   }, [gigId, user])
+  
+  // Function to detect which steps are completed based on gig data
+  const detectCompletedSteps = useCallback((gig: any): GigEditStep[] => {
+    const completed: GigEditStep[] = []
+    
+    // Basic step: Check if title and description exist
+    if (gig?.title && gig?.description) {
+      completed.push('basic')
+    }
+    
+    // Schedule step: Check if start_time and end_time exist
+    if (gig?.start_time && gig?.end_time && gig?.location_text) {
+      completed.push('schedule')
+    }
+    
+    // Requirements step: Check if comp_type and usage_rights exist
+    if (gig?.comp_type && gig?.usage_rights) {
+      completed.push('requirements')
+    }
+    
+    // Moodboard step is always considered completed (it's optional)
+    completed.push('moodboard')
+    
+    return completed
+  }, [])
   
   const fetchGigDetails = async () => {
     try {
@@ -99,13 +205,14 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
       setApplicationCount(count || 0)
       
       // Fetch existing moodboard
-      const { data: moodboard } = await supabase
+      const { data: moodboards } = await supabase
         .from('moodboards')
         .select('id')
         .eq('gig_id', gigId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+      
+      const moodboard = moodboards?.[0] || null
       
       if (moodboard) {
         setMoodboardId(moodboard.id)
@@ -146,6 +253,10 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
       }
       
       setWarnings(newWarnings)
+      
+      // Detect and set completed steps based on existing data
+      const completed = detectCompletedSteps(gig)
+      setCompletedSteps(completed)
       
     } catch (err: any) {
       console.error('Error fetching gig:', err)
@@ -252,12 +363,120 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
       
       if (deleteError) throw deleteError
       
+      clearGigData()
       router.push('/dashboard')
     } catch (err: any) {
       console.error('Error deleting gig:', err)
       setError(err.message || 'Failed to delete gig')
       setSaving(false)
     }
+  }
+
+  // Wizard navigation functions
+  const handleNextStep = () => {
+    const currentStepIndex = steps.indexOf(currentStep)
+    if (currentStepIndex < steps.length - 1) {
+      const nextStep = steps[currentStepIndex + 1]
+      setCurrentStep(nextStep)
+      
+      // Mark current step as completed
+      if (!completedSteps.includes(currentStep)) {
+        setCompletedSteps(prev => [...prev, currentStep])
+      }
+    }
+  }
+
+  const handleBackStep = () => {
+    const currentStepIndex = steps.indexOf(currentStep)
+    if (currentStepIndex > 0) {
+      const prevStep = steps[currentStepIndex - 1]
+      setCurrentStep(prevStep)
+    }
+  }
+
+  const handleStepClick = (step: GigEditStep) => {
+    // Only allow clicking on completed steps or the current step
+    const stepIndex = steps.indexOf(step)
+    const currentIndex = steps.indexOf(currentStep)
+    const isCompleted = completedSteps.includes(step)
+    
+    if (isCompleted || stepIndex <= currentIndex) {
+      setCurrentStep(step)
+    }
+  }
+
+  const handleMoodboardSave = (newMoodboardId: string) => {
+    setMoodboardId(newMoodboardId)
+  }
+
+  const handleRestoreSavedData = () => {
+    const savedData = getGigData()
+    const savedStep = getCurrentStep() as GigEditStep
+    
+    // Restore form data
+    if (savedData.title) setTitle(savedData.title)
+    if (savedData.description) setDescription(savedData.description)
+    if (savedData.purpose) setPurpose(savedData.purpose)
+    if (savedData.compType) setCompType(savedData.compType)
+    if (savedData.usageRights) setUsageRights(savedData.usageRights)
+    if (savedData.location) setLocation(savedData.location)
+    if (savedData.startDate) setStartDate(savedData.startDate)
+    if (savedData.endDate) setEndDate(savedData.endDate)
+    if (savedData.applicationDeadline) setApplicationDeadline(savedData.applicationDeadline)
+    if (savedData.maxApplicants) setMaxApplicants(savedData.maxApplicants)
+    if (savedData.status) setStatus(savedData.status)
+    if (savedData.moodboardId) setMoodboardId(savedData.moodboardId)
+    
+    // Restore wizard step
+    if (savedStep && steps.includes(savedStep)) {
+      setCurrentStep(savedStep)
+    }
+    
+    setShowRestorePrompt(false)
+  }
+
+  const handleDiscardSavedData = () => {
+    clearGigData()
+    setShowRestorePrompt(false)
+  }
+
+  // Step definitions
+  const steps: GigEditStep[] = ['basic', 'schedule', 'requirements', 'moodboard', 'review']
+
+  // Validation functions
+  const isBasicStepValid = () => {
+    return title.trim() !== '' && description.trim() !== '' && purpose && compType
+  }
+
+  const isLocationStepValid = () => {
+    return location.trim() !== '' && startDate && endDate && applicationDeadline
+  }
+
+  const getLocationValidationErrors = () => {
+    const errors: string[] = []
+    
+    if (!location.trim()) errors.push('Location is required')
+    if (!startDate) errors.push('Start date is required')
+    if (!endDate) errors.push('End date is required')
+    if (!applicationDeadline) errors.push('Application deadline is required')
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      if (end <= start) errors.push('End time must be after start time')
+    }
+    
+    if (applicationDeadline && startDate) {
+      const deadline = new Date(applicationDeadline)
+      const start = new Date(startDate)
+      if (deadline >= start) errors.push('Application deadline must be before the gig starts')
+    }
+    
+    return errors
+  }
+
+  const isRequirementsStepValid = () => {
+    return usageRights.trim() !== '' && maxApplicants >= 1
   }
   
   if (loading) {
@@ -287,10 +506,54 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white shadow rounded-lg p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Restore prompt */}
+        {showRestorePrompt && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-blue-800 mb-2">
+                  Unsaved Changes Found
+                </h3>
+                <p className="text-sm text-blue-700 mb-3">
+                  You have unsaved changes from a previous editing session. Would you like to restore them?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRestoreSavedData}
+                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Restore Changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDiscardSavedData}
+                    className="px-3 py-1 bg-white border border-blue-300 text-blue-700 text-xs rounded hover:bg-blue-50 transition-colors"
+                  >
+                    Discard & Start Fresh
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRestorePrompt(false)}
+                className="text-blue-400 hover:text-blue-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="bg-white shadow rounded-lg p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Edit Gig</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Edit Gig</h1>
+              <p className="text-gray-600 text-sm mt-1">Update your gig details step by step</p>
+            </div>
             <div className="flex gap-2">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                 status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
@@ -307,274 +570,134 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
               )}
             </div>
           </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Warnings */}
-            {warnings.length > 0 && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <p className="text-sm text-yellow-700">
-                      <strong>Important:</strong>
-                    </p>
-                    <ul className="mt-2 text-sm text-yellow-700 list-disc list-inside">
-                      {warnings.map((warning, index) => (
-                        <li key={index}>{warning}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
-            
-            {success && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                {success}
-              </div>
-            )}
-            
-            {/* Title */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Gig Title *
-              </label>
-              <input
-                type="text"
-                id="title"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-              />
-            </div>
-            
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description *
-              </label>
-              <textarea
-                id="description"
-                required
-                rows={4}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-              />
-            </div>
-            
-            {/* Purpose and Compensation */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="purpose" className="block text-sm font-medium text-gray-700">
-                  Purpose of Shoot *
-                </label>
-                <select
-                  id="purpose"
-                  required
-                  value={purpose}
-                  onChange={(e) => setPurpose(e.target.value as PurposeType)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                >
-                  <option value="PORTFOLIO">Portfolio Building</option>
-                  <option value="COMMERCIAL">Commercial</option>
-                  <option value="EDITORIAL">Editorial</option>
-                  <option value="FASHION">Fashion</option>
-                  <option value="BEAUTY">Beauty</option>
-                  <option value="LIFESTYLE">Lifestyle</option>
-                  <option value="WEDDING">Wedding</option>
-                  <option value="EVENT">Event</option>
-                  <option value="PRODUCT">Product</option>
-                  <option value="ARCHITECTURE">Architecture</option>
-                  <option value="STREET">Street</option>
-                  <option value="CONCEPTUAL">Conceptual</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-              
-              <div>
-                <label htmlFor="comp-type" className="block text-sm font-medium text-gray-700">
-                  Compensation Type *
-                </label>
-                <select
-                  id="comp-type"
-                  value={compType}
-                  onChange={(e) => setCompType(e.target.value as CompType)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                >
-                  <option value="TFP">TFP (Time for Prints/Portfolio)</option>
-                  <option value="PAID">Paid</option>
-                  <option value="EXPENSES">Expenses Covered</option>
-                  <option value="OTHER">Other</option>
-                </select>
-              </div>
-            </div>
-            
-            {/* Usage Rights and Location */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="usage-rights" className="block text-sm font-medium text-gray-700">
-                  Usage Rights *
-                </label>
-                <input
-                  type="text"
-                  id="usage-rights"
-                  required
-                  value={usageRights}
-                  onChange={(e) => setUsageRights(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                  Shoot Location *
-                </label>
-                <input
-                  type="text"
-                  id="location"
-                  required
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                />
-              </div>
-            </div>
-            
-            {/* Dates */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Schedule</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="start-date" className="block text-sm font-medium text-gray-700">
-                    Start Date/Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="start-date"
-                    required
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="end-date" className="block text-sm font-medium text-gray-700">
-                    End Date/Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="end-date"
-                    required
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-              
-              <div className="mt-4">
-                <label htmlFor="deadline" className="block text-sm font-medium text-gray-700">
-                  Application Deadline *
-                </label>
-                <input
-                  type="datetime-local"
-                  id="deadline"
-                  required
-                  value={applicationDeadline}
-                  onChange={(e) => setApplicationDeadline(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Must be before the gig start time
-                </p>
-              </div>
-            </div>
-            
-            {/* Status and Max Applicants */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as StatusType)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                >
-                  <option value="DRAFT">Draft</option>
-                  <option value="PUBLISHED">Published</option>
-                  <option value="CLOSED">Closed</option>
-                  <option value="COMPLETED">Completed</option>
-                </select>
-                <p className="mt-1 text-xs text-gray-500">
-                  Only published gigs are visible to talent
-                </p>
-              </div>
-              
-              <div>
-                <label htmlFor="max-applicants" className="block text-sm font-medium text-gray-700">
-                  Max Applicants
-                </label>
-                <input
-                  type="number"
-                  id="max-applicants"
-                  min="1"
-                  max="100"
-                  value={maxApplicants}
-                  onChange={(e) => setMaxApplicants(parseInt(e.target.value))}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Current applications: {applicationCount}
-                </p>
-              </div>
-            </div>
-            
-            {/* Moodboard Section */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Visual Moodboard</h3>
-              <MoodboardBuilder 
-                gigId={gigId}
-                moodboardId={moodboardId || undefined}
-                onSave={(newMoodboardId) => setMoodboardId(newMoodboardId)}
-              />
-            </div>
-            
-            {/* Submit Buttons */}
-            <div className="flex justify-between pt-4">
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => router.push(`/gigs/${gigId}`)}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Delete Gig
-                </button>
-              </div>
+
+          {/* Step Indicator */}
+          <StepIndicator
+            currentStep={currentStep}
+            completedSteps={completedSteps}
+            onStepClick={handleStepClick}
+          />
+        </div>
+
+        {/* Global Alerts */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
+        
+        {success && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p className="text-green-700 text-sm">{success}</p>
+          </div>
+        )}
+
+        {/* Step Content */}
+        {currentStep === 'basic' && (
+          <BasicDetailsStep
+            title={title}
+            description={description}
+            purpose={purpose}
+            compType={compType}
+            onTitleChange={setTitle}
+            onDescriptionChange={setDescription}
+            onPurposeChange={setPurpose}
+            onCompTypeChange={setCompType}
+            onNext={handleNextStep}
+            isValid={isBasicStepValid()}
+          />
+        )}
+
+        {currentStep === 'schedule' && (
+          <LocationScheduleStep
+            location={location}
+            startDate={startDate}
+            endDate={endDate}
+            applicationDeadline={applicationDeadline}
+            onLocationChange={setLocation}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            onApplicationDeadlineChange={setApplicationDeadline}
+            onNext={handleNextStep}
+            onBack={handleBackStep}
+            isValid={isLocationStepValid()}
+            validationErrors={getLocationValidationErrors()}
+          />
+        )}
+
+        {currentStep === 'requirements' && (
+          <RequirementsStep
+            usageRights={usageRights}
+            maxApplicants={maxApplicants}
+            onUsageRightsChange={setUsageRights}
+            onMaxApplicantsChange={setMaxApplicants}
+            onNext={handleNextStep}
+            onBack={handleBackStep}
+            isValid={isRequirementsStepValid()}
+            applicationCount={applicationCount}
+          />
+        )}
+
+        {currentStep === 'moodboard' && (
+          <MoodboardStep
+            gigId={gigId}
+            moodboardId={moodboardId || undefined}
+            onMoodboardSave={handleMoodboardSave}
+            onNext={handleNextStep}
+            onBack={handleBackStep}
+          />
+        )}
+
+        {currentStep === 'review' && (
+          <ReviewPublishStep
+            title={title}
+            description={description}
+            purpose={purpose}
+            compType={compType}
+            location={location}
+            startDate={startDate}
+            endDate={endDate}
+            applicationDeadline={applicationDeadline}
+            usageRights={usageRights}
+            maxApplicants={maxApplicants}
+            status={status}
+            moodboardId={moodboardId || undefined}
+            onStatusChange={setStatus}
+            onBack={handleBackStep}
+            onSave={handleSubmit}
+            saving={saving}
+            applicationCount={applicationCount}
+            warnings={warnings}
+          />
+        )}
+
+        {/* Quick Actions */}
+        <div className="bg-white shadow rounded-lg p-6 mt-6">
+          <div className="flex justify-between">
+            <div className="flex gap-2">
               <button
-                type="submit"
-                disabled={saving}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+                onClick={() => router.push(`/gigs/${gigId}`)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 border border-red-300 rounded-lg text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+              >
+                Delete Gig
               </button>
             </div>
-          </form>
+            
+            {hasUnsavedData() && (
+              <div className="text-sm text-gray-500 flex items-center gap-2">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                Auto-saving changes...
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -34,10 +34,14 @@ export * from './applications/events/ApplicationEvents';
 // Collaboration
 export * from './collaboration/entities/Conversation';
 export * from './collaboration/entities/Message';
+export * from './collaboration/entities/UserBlock';
 export * from './collaboration/ports/ConversationRepository';
+export * from './collaboration/ports/UserBlockRepository';
 export * from './collaboration/value-objects/Attachment';
+export * from './collaboration/value-objects/BlockReason';
 export * from './collaboration/value-objects/ConversationStatus';
 export * from './collaboration/value-objects/MessageBody';
+export * from './collaboration/events/UserBlockEvents';
 
 // Moodboards
 export * from './moodboards/entities/Moodboard';
