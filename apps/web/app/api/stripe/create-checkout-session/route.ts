@@ -6,13 +6,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
-  // Temporary disabled - Stripe package not installed
-  return NextResponse.json(
-    { error: 'Stripe integration temporarily disabled' },
-    { status: 503 }
-  );
-
-  /* Original code (commented out until Stripe is installed)
   try {
     // Get user from auth
     const authHeader = request.headers.get('Authorization');
@@ -212,18 +205,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-  */
 }
 
 // GET endpoint to retrieve checkout session details
 export async function GET(request: NextRequest) {
-  // Temporary disabled - Stripe package not installed
-  return NextResponse.json(
-    { error: 'Stripe integration temporarily disabled' },
-    { status: 503 }
-  );
-
-  /* Original code (commented out until Stripe is installed)
   try {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('session_id');
@@ -287,5 +272,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-  */
 }

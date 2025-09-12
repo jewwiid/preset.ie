@@ -38,19 +38,46 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
       const session = await supabase.auth.getSession()
       if (!session.data.session) throw new Error('No session')
 
-      const response = await fetch('/api/credits/purchase', {
+      // Get packages and platform capacity
+      const packagesResponse = await fetch('/api/credits/purchase', {
         headers: {
           'Authorization': `Bearer ${session.data.session.access_token}`
         }
       })
 
-      const data = await response.json()
+      const packagesData = await packagesResponse.json()
       
-      if (data.success) {
-        setCreditInfo(data)
-      } else {
-        setError(data.error)
+      if (packagesData.error) {
+        setError(packagesData.error)
+        return
       }
+
+      // Get user's current credit balance
+      const { data: userCredits } = await supabase
+        .from('user_credits')
+        .select('current_balance, monthly_allowance, consumed_this_month, subscription_tier')
+        .eq('user_id', user.id)
+        .single()
+
+      // Get user profile for subscription tier
+      const { data: profile } = await supabase
+        .from('users_profile')
+        .select('subscription_tier')
+        .eq('user_id', user.id)
+        .single()
+
+      const subscriptionTier = profile?.subscription_tier || 'FREE'
+      const canPurchase = subscriptionTier === 'PLUS' || subscriptionTier === 'PRO'
+
+      setCreditInfo({
+        packages: packagesData.packages,
+        platformCapacity: packagesData.platformCapacity,
+        currentBalance: userCredits?.current_balance || 0,
+        monthlyAllowance: userCredits?.monthly_allowance || 0,
+        consumedThisMonth: userCredits?.consumed_this_month || 0,
+        subscriptionTier,
+        canPurchase
+      })
     } catch (err: any) {
       console.error('Error fetching credit info:', err)
       setError('Failed to load credit information')
@@ -59,10 +86,10 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
     }
   }
 
-  const purchaseCredits = async (packageType: string) => {
+  const purchaseCredits = async (packageId: string) => {
     if (!user) return
     
-    setPurchasing(packageType)
+    setPurchasing(packageId)
     setError(null)
     setSuccess(null)
     
@@ -70,22 +97,33 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
       const session = await supabase.auth.getSession()
       if (!session.data.session) throw new Error('No session')
 
+      // Find the package details
+      const selectedPackage = creditInfo?.packages?.find((pkg: any) => pkg.id === packageId)
+      if (!selectedPackage) {
+        setError('Package not found')
+        return
+      }
+
       const response = await fetch('/api/credits/purchase', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.data.session.access_token}`
         },
-        body: JSON.stringify({ packageType })
+        body: JSON.stringify({ 
+          packageId: selectedPackage.id,
+          userCredits: selectedPackage.credits,
+          priceUsd: selectedPackage.price_usd
+        })
       })
 
       const data = await response.json()
       
       if (data.success) {
-        setSuccess(`Successfully purchased ${data.credits.purchased} credits!`)
+        setSuccess(`Successfully purchased ${selectedPackage.credits} credits!`)
         setCreditInfo((prev: any) => ({
           ...prev,
-          currentBalance: data.credits.newBalance
+          currentBalance: data.newBalance
         }))
         
         if (onPurchaseComplete) {
@@ -98,10 +136,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
           setSuccess(null)
         }, 2000)
       } else {
-        setError(data.error)
-        if (data.upgradeRequired) {
-          setError('Please upgrade to Plus or Pro to purchase credits')
-        }
+        setError(data.error || data.message)
       }
     } catch (err: any) {
       console.error('Purchase error:', err)
@@ -122,8 +157,6 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
   if (!creditInfo) {
     return null
   }
-
-  const packages = Object.entries(creditInfo.packages || {})
 
   return (
     <div className={`${embedded ? '' : 'max-w-4xl mx-auto p-6'}`}>
@@ -171,18 +204,18 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
       {/* Credit Packages */}
       {creditInfo.canPurchase ? (
         <div className="grid md:grid-cols-3 gap-4">
-          {packages.map(([key, pkg]: [string, any]) => {
-            const isPopular = key === 'medium'
-            const savings = key === 'medium' ? 20 : key === 'large' ? 33 : 0
+          {creditInfo.packages?.map((pkg: any) => {
+            const isPopular = pkg.id === 'creative'
+            const savings = pkg.id === 'creative' ? 20 : pkg.id === 'pro' ? 33 : 0
             
             return (
               <div
-                key={key}
+                key={pkg.id}
                 className={`relative rounded-lg border-2 p-6 ${
                   isPopular 
                     ? 'border-purple-500 shadow-lg' 
                     : 'border-gray-200 hover:border-gray-300'
-                }`}
+                } ${!pkg.available ? 'opacity-50' : ''}`}
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -199,10 +232,10 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     <span className="text-gray-600 ml-1">credits</span>
                   </div>
                   <div className="mt-1">
-                    <span className="text-2xl font-bold text-emerald-600">${pkg.price.toFixed(2)}</span>
+                    <span className="text-2xl font-bold text-emerald-600">${pkg.price_usd.toFixed(2)}</span>
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
-                    ${(pkg.price / pkg.credits).toFixed(3)} per credit
+                    ${(pkg.price_usd / pkg.credits).toFixed(3)} per credit
                   </div>
                   {savings > 0 && (
                     <div className="mt-2">
@@ -211,18 +244,25 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                       </span>
                     </div>
                   )}
+                  {!pkg.available && (
+                    <div className="mt-2">
+                      <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+                        Temporarily Unavailable
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
                 <button
-                  onClick={() => purchaseCredits(key)}
-                  disabled={purchasing !== null}
+                  onClick={() => purchaseCredits(pkg.id)}
+                  disabled={purchasing !== null || !pkg.available}
                   className={`w-full py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center gap-2 ${
                     isPopular
                       ? 'bg-purple-600 text-white hover:bg-purple-700'
                       : 'bg-gray-900 text-white hover:bg-gray-800'
                   } disabled:opacity-50`}
                 >
-                  {purchasing === key ? (
+                  {purchasing === pkg.id ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Processing...
@@ -230,7 +270,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4" />
-                      Purchase
+                      {!pkg.available ? 'Unavailable' : 'Purchase'}
                     </>
                   )}
                 </button>

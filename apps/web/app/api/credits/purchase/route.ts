@@ -23,12 +23,9 @@ export async function POST(request: NextRequest) {
     const { packageId, userCredits, priceUsd } = await request.json();
     
     // CRITICAL: Check if platform has enough credits
-    const requiredNanoBananaCredits = userCredits * 4; // 1:4 ratio
-    
-    // Get current platform balance
     const { data: platformCredit } = await supabase
       .from('platform_credits')
-      .select('current_balance, low_balance_threshold')
+      .select('current_balance, low_balance_threshold, credit_ratio')
       .eq('provider', 'nanobanana')
       .single();
     
@@ -39,8 +36,11 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    const creditRatio = platformCredit.credit_ratio || 4; // Default 1:4 ratio
+    const requiredNanoBananaCredits = userCredits * creditRatio;
+    
     // Check platform capacity
-    const availableUserCredits = Math.floor(platformCredit.current_balance / 4);
+    const availableUserCredits = Math.floor(platformCredit.current_balance / creditRatio);
     
     if (availableUserCredits < userCredits) {
       // PLATFORM DOESN'T HAVE ENOUGH CREDITS!
@@ -51,20 +51,6 @@ export async function POST(request: NextRequest) {
         NanoBanana balance: ${platformCredit.current_balance}
         Needed: ${requiredNanoBananaCredits} NanoBanana credits
       `);
-      
-      // Log alert
-      await supabase.from('platform_alerts').insert({
-        alert_type: 'insufficient_platform_credits',
-        provider: 'nanobanana',
-        severity: 'critical',
-        message: `Cannot sell ${userCredits} credits. Platform only has ${platformCredit.current_balance} NanoBanana credits (can serve ${availableUserCredits} user credits)`,
-        metadata: {
-          requested_user_credits: userCredits,
-          available_user_credits: availableUserCredits,
-          platform_balance: platformCredit.current_balance,
-          required_provider_credits: requiredNanoBananaCredits
-        }
-      });
       
       return NextResponse.json(
         { 
@@ -106,9 +92,8 @@ export async function POST(request: NextRequest) {
         package_id: packageId,
         credits_purchased: userCredits,
         amount_paid_usd: priceUsd,
-        payment_method: 'stripe', // Would come from Stripe webhook
-        status: 'completed',
-        completed_at: new Date().toISOString()
+        payment_provider: 'stripe', // Would come from Stripe webhook
+        status: 'completed'
       });
     
     // 3. Update platform tracking (reserve these credits)
@@ -118,33 +103,13 @@ export async function POST(request: NextRequest) {
         provider: 'nanobanana',
         user_id: user.id,
         operation_type: 'credit_purchase_reservation',
-        user_credits_charged: userCredits,
         provider_credits_consumed: requiredNanoBananaCredits,
-        metadata: {
-          package_id: packageId,
-          reservation: true,
-          note: 'Credits reserved for user purchase'
-        }
+        cost_usd: priceUsd
       });
     
     // 4. Check if platform is running low after this purchase
     const remainingPlatformCredits = platformCredit.current_balance - requiredNanoBananaCredits;
-    const remainingUserCapacity = Math.floor(remainingPlatformCredits / 4);
-    
-    if (remainingPlatformCredits < platformCredit.low_balance_threshold) {
-      // Alert admin that platform is running low
-      await supabase.from('platform_alerts').insert({
-        alert_type: 'low_platform_credits_after_sale',
-        provider: 'nanobanana',
-        severity: remainingPlatformCredits < 100 ? 'critical' : 'warning',
-        message: `Platform credits low after sale. Only ${remainingUserCapacity} user credits can be sold.`,
-        metadata: {
-          remaining_provider_credits: remainingPlatformCredits,
-          remaining_user_capacity: remainingUserCapacity,
-          last_sale_credits: userCredits
-        }
-      });
-    }
+    const remainingUserCapacity = Math.floor(remainingPlatformCredits / creditRatio);
     
     return NextResponse.json({
       success: true,
@@ -173,7 +138,7 @@ export async function GET(request: NextRequest) {
     // Get platform credits
     const { data: platformCredit } = await supabase
       .from('platform_credits')
-      .select('current_balance')
+      .select('current_balance, credit_ratio')
       .eq('provider', 'nanobanana')
       .single();
     
@@ -182,20 +147,21 @@ export async function GET(request: NextRequest) {
       .from('credit_packages')
       .select('*')
       .eq('is_active', true)
-      .order('user_credits');
+      .order('credits');
     
     if (!platformCredit || !packages) {
       return NextResponse.json({ error: 'Configuration error' }, { status: 500 });
     }
     
     // Calculate which packages can be fulfilled
-    const availableUserCredits = Math.floor(platformCredit.current_balance / 4);
+    const creditRatio = platformCredit.credit_ratio || 4; // Default 1:4 ratio
+    const availableUserCredits = Math.floor(platformCredit.current_balance / creditRatio);
     
     const packagesWithAvailability = packages.map(pkg => ({
       ...pkg,
-      available: pkg.user_credits <= availableUserCredits,
-      warning: pkg.user_credits > availableUserCredits * 0.5, // Warn if package uses >50% of capacity
-      message: pkg.user_credits > availableUserCredits 
+      available: pkg.credits <= availableUserCredits,
+      warning: pkg.credits > availableUserCredits * 0.5, // Warn if package uses >50% of capacity
+      message: pkg.credits > availableUserCredits 
         ? `Temporarily unavailable (platform capacity: ${availableUserCredits} credits)`
         : null
     }));

@@ -1,31 +1,9 @@
-// Temporarily disabled until Stripe package is installed properly
-// import Stripe from 'stripe';
+import Stripe from 'stripe';
 
-// Placeholder for Stripe functionality
-export const stripe = {
-  // Placeholder methods
-  customers: {
-    create: () => Promise.reject(new Error('Stripe not installed')),
-    retrieve: () => Promise.reject(new Error('Stripe not installed')),
-    update: () => Promise.reject(new Error('Stripe not installed')),
-    del: () => Promise.reject(new Error('Stripe not installed')),
-  },
-  paymentMethods: {
-    list: () => Promise.reject(new Error('Stripe not installed')),
-  },
-  invoices: {
-    list: () => Promise.reject(new Error('Stripe not installed')),
-  },
-  checkout: {
-    sessions: {
-      create: () => Promise.reject(new Error('Stripe not installed')),
-      retrieve: () => Promise.reject(new Error('Stripe not installed')),
-    }
-  },
-  webhooks: {
-    constructEvent: () => { throw new Error('Stripe not installed'); }
-  }
-};
+// Initialize Stripe with secret key
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-08-27.basil',
+});
 
 export const STRIPE_CONFIG = {
   publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
