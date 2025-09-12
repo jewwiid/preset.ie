@@ -18,6 +18,7 @@ interface UserProfile {
   subscription_tier: string
   verification_status: string
   avatar_url?: string
+  header_banner_url?: string
 }
 
 interface RecentGig {
@@ -309,7 +310,23 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-preset-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
       {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-preset-500 to-preset-600 pb-32">
+      <div className="relative overflow-hidden pb-32">
+        {/* Custom Banner Background */}
+        {profile.header_banner_url ? (
+          <div className="absolute inset-0">
+            <img
+              src={profile.header_banner_url}
+              alt="Header banner"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/40"></div>
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-r from-preset-500 to-preset-600">
+            <div className="absolute inset-0 bg-gradient-to-r from-preset-600/90 to-preset-500/90"></div>
+          </div>
+        )}
+        
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
           <div className="flex justify-between items-start">
             <div className="text-white">
@@ -335,7 +352,6 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-preset-600/90 to-preset-500/90"></div>
       </div>
 
       {/* Main Content */}
@@ -628,33 +644,28 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Sidebar - Now First on Mobile */}
-            <div className="lg:order-2 space-y-6">
-
-            </div>
-
-            {/* Quick Actions - Second on Mobile, First on Desktop */}
-            <div className="lg:order-1 lg:col-span-2 space-y-6">
-              {/* Contributor Actions */}
-              {isContributor && (
-                <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-gradient-to-br from-preset-400 to-preset-600 rounded-xl flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Contributor Actions</h3>
+          {/* Action Cards - 2 Column Layout on Desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Contributor Actions */}
+            {isContributor && (
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-br from-preset-400 to-preset-600 rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button 
-                      onClick={() => router.push('/gigs/create')}
-                      className="group relative overflow-hidden bg-gradient-to-r from-preset-500 to-preset-600 text-white px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 hover:shadow-lg"
-                    >
-                      <span className="relative z-10">Create New Gig</span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-preset-600 to-preset-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-                    </button>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Contributor Actions</h3>
+                </div>
+                <div className="space-y-4">
+                  <button 
+                    onClick={() => router.push('/gigs/create')}
+                    className="group relative overflow-hidden bg-gradient-to-r from-preset-500 to-preset-600 text-white px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 hover:shadow-lg w-full"
+                  >
+                    <span className="relative z-10">Create New Gig</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-preset-600 to-preset-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                  </button>
+                  <div className="grid grid-cols-2 gap-4">
                     <button 
                       onClick={() => router.push('/gigs/my-gigs')}
                       className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
@@ -669,27 +680,29 @@ export default function Dashboard() {
                     </button>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Talent Actions */}
-              {isTalent && (
-                <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Talent Actions</h3>
+            {/* Talent Actions */}
+            {isTalent && (
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button 
-                      onClick={() => router.push('/gigs')}
-                      className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 hover:shadow-lg"
-                    >
-                      <span className="relative z-10">Browse Gigs</span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
-                    </button>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Talent Actions</h3>
+                </div>
+                <div className="space-y-4">
+                  <button 
+                    onClick={() => router.push('/gigs')}
+                    className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 hover:shadow-lg w-full"
+                  >
+                    <span className="relative z-10">Browse Gigs</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                  </button>
+                  <div className="grid grid-cols-2 gap-4">
                     <button 
                       onClick={() => router.push('/applications/my-applications')}
                       className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
@@ -704,8 +717,8 @@ export default function Dashboard() {
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

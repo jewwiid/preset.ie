@@ -1,0 +1,11 @@
+-- Add header_banner_url field to users_profile table
+-- This allows users to upload a custom header banner for their profile
+
+ALTER TABLE users_profile 
+ADD COLUMN header_banner_url TEXT;
+
+-- Add comment for documentation
+COMMENT ON COLUMN users_profile.header_banner_url IS 'URL of the user''s custom header banner image';
+
+-- Create index for better performance when querying profiles with banners
+CREATE INDEX idx_users_profile_header_banner_url ON users_profile(header_banner_url) WHERE header_banner_url IS NOT NULL;

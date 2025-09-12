@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import CreditsDashboard from '../../components/profile/CreditsDashboard'
 import { AvatarUpload } from '../../components/AvatarUpload'
+import { HeaderBannerUpload } from '../../components/HeaderBannerUpload'
 import { validateAndCheckTag } from '../../lib/contentModeration'
 import { 
   User, 
@@ -61,6 +62,7 @@ interface UserProfile {
   display_name: string
   handle: string
   avatar_url?: string
+  header_banner_url?: string
   bio?: string
   city?: string
   role_flags: string[]
@@ -1066,6 +1068,16 @@ function ProfilePageContent() {
     }
   }
 
+  const handleBannerUpdate = (newBannerUrl: string) => {
+    // Update the profile state immediately for UI feedback
+    if (profile) {
+      setProfile({
+        ...profile,
+        header_banner_url: newBannerUrl
+      })
+    }
+  }
+
   const fetchStats = async () => {
     if (!user || !profile) return
 
@@ -1251,6 +1263,32 @@ function ProfilePageContent() {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
               
               <div className="space-y-4">
+                {/* Header Banner */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Header Banner</label>
+                  {editing ? (
+                    <HeaderBannerUpload 
+                      currentBannerUrl={profile.header_banner_url}
+                      onBannerUpdate={handleBannerUpdate}
+                      userId={user.id}
+                    />
+                  ) : (
+                    <div className="w-full h-32 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg overflow-hidden">
+                      {profile.header_banner_url ? (
+                        <img
+                          src={profile.header_banner_url}
+                          alt="Header banner"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Camera className="w-8 h-8 text-white/50" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Avatar */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Profile Photo</label>
