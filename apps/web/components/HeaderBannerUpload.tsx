@@ -207,7 +207,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       {currentBannerUrl && (
         <div className="relative">
           <div 
-            className={`w-full h-32 bg-gray-100 rounded-lg overflow-hidden relative ${isAdjusting ? 'cursor-ns-resize' : ''}`}
+            className={`w-full h-32 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg overflow-hidden relative ${isAdjusting ? 'cursor-ns-resize' : ''}`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -218,7 +218,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
               ref={bannerRef}
               src={currentBannerUrl}
               alt="Header banner"
-              className="w-full h-full object-cover transition-transform duration-200"
+              className="w-full h-full object-contain transition-transform duration-200"
               style={{
                 transform: `translateY(${bannerPosition.y}px) scale(${bannerPosition.scale})`,
                 transformOrigin: 'center center'

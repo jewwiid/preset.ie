@@ -319,11 +319,11 @@ export default function Dashboard() {
       <div className="relative overflow-hidden pb-32">
         {/* Custom Banner Background */}
         {profile.header_banner_url ? (
-          <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 overflow-hidden bg-gradient-to-r from-gray-200 to-gray-300">
             <img
               src={profile.header_banner_url}
               alt="Header banner"
-              className="w-full h-full object-cover transition-transform duration-300"
+              className="w-full h-full object-contain transition-transform duration-300"
               style={(() => {
                 try {
                   const position: BannerPosition = profile.header_banner_position 
