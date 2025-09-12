@@ -7,12 +7,12 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 // Validation schema for conversation ID
 const ConversationParamsSchema = z.object({
-  conversationId: z.string().uuid('Invalid conversation ID')
+  id: z.string().uuid('Invalid conversation ID')
 });
 
 interface RouteContext {
   params: Promise<{
-    conversationId: string;
+    id: string;
   }>;
 }
 
@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const { data: messages, error: messagesError } = await supabaseAdmin
       .from('messages')
       .select('id')
-      .eq('gig_id', validatedParams.conversationId)
+      .eq('gig_id', validatedParams.id)
       .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
       .limit(1);
 
@@ -61,7 +61,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const { error: updateError } = await supabaseAdmin
       .from('messages')
       .update({ read_at: new Date().toISOString() })
-      .eq('gig_id', validatedParams.conversationId)
+      .eq('gig_id', validatedParams.id)
       .eq('to_user_id', user.id)
       .is('read_at', null);
 
@@ -75,7 +75,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({
       success: true,
       message: 'All messages marked as read',
-      conversationId: validatedParams.conversationId,
+      conversationId: validatedParams.id,
       markedAt: new Date().toISOString()
     });
 

@@ -8,12 +8,12 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 // Validation schema for conversation ID
 const ConversationParamsSchema = z.object({
-  conversationId: z.string().uuid('Invalid conversation ID')
+  id: z.string().uuid('Invalid conversation ID')
 });
 
 interface RouteContext {
   params: Promise<{
-    conversationId: string;
+    id: string;
   }>;
 }
 
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         *,
         gig:gigs(*)
       `)
-      .eq('gig_id', validatedParams.conversationId)
+      .eq('gig_id', validatedParams.id)
       .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
       .order('created_at', { ascending: true });
 
@@ -80,8 +80,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Transform to expected format
     const conversationData = {
-      id: validatedParams.conversationId,
-      gigId: validatedParams.conversationId,
+      id: validatedParams.id,
+      gigId: validatedParams.id,
       participants: [user.id, otherUserId].filter(Boolean),
       messages: messages.map(msg => ({
         id: msg.id,
@@ -177,7 +177,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const { data: messages, error: messagesError } = await supabaseAdmin
       .from('messages')
       .select('id')
-      .eq('gig_id', validatedParams.conversationId)
+      .eq('gig_id', validatedParams.id)
       .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
       .limit(1);
 

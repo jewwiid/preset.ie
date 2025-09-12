@@ -39,17 +39,65 @@ export async function GET(request: NextRequest) {
     
     const validatedQuery = GetConversationsQuerySchema.parse(queryObject);
 
-    // Use the get_user_conversations function to get conversations
-    const { data: conversations, error } = await supabaseAdmin
-      .rpc('get_user_conversations', {
-        p_user_id: user.id,
-        p_limit: validatedQuery.limit,
-        p_offset: validatedQuery.offset
-      });
+    // Get conversations by querying messages directly
+    const { data: messages, error } = await supabaseAdmin
+      .from('messages')
+      .select(`
+        gig_id,
+        from_user_id,
+        to_user_id,
+        body,
+        created_at,
+        read_at,
+        gig:gigs(*)
+      `)
+      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .order('created_at', { ascending: false })
+      .limit(validatedQuery.limit * 10); // Get more messages to group by conversation
 
     if (error) {
+      console.error('Database error:', error);
       return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
     }
+
+    // Group messages by gig_id to create conversations
+    const conversationMap = new Map();
+    
+    messages?.forEach((message: any) => {
+      const gigId = message.gig_id;
+      if (!conversationMap.has(gigId)) {
+        conversationMap.set(gigId, {
+          gig_id: gigId,
+          gig: message.gig,
+          messages: [],
+          unread_count: 0,
+          last_message_at: message.created_at,
+          last_message_id: message.id,
+          last_message_content: message.body,
+          other_user_id: message.from_user_id === user.id ? message.to_user_id : message.from_user_id
+        });
+      }
+      
+      const conv = conversationMap.get(gigId);
+      conv.messages.push(message);
+      
+      // Count unread messages (messages sent to user that haven't been read)
+      if (message.to_user_id === user.id && !message.read_at) {
+        conv.unread_count++;
+      }
+      
+      // Update last message if this is more recent
+      if (new Date(message.created_at) > new Date(conv.last_message_at)) {
+        conv.last_message_at = message.created_at;
+        conv.last_message_id = message.id;
+        conv.last_message_content = message.body;
+        conv.other_user_id = message.from_user_id === user.id ? message.to_user_id : message.from_user_id;
+      }
+    });
+
+    const conversations = Array.from(conversationMap.values())
+      .sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
+      .slice(validatedQuery.offset, validatedQuery.offset + validatedQuery.limit);
 
     // Transform the function result to match the expected API structure
     const transformedConversations = conversations?.map((conv: any) => ({
