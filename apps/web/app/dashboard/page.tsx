@@ -316,7 +316,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-preset-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
       {/* Hero Header */}
-      <div className="relative overflow-hidden pb-32">
+      <div className="relative overflow-hidden pb-48">
         {/* Custom Banner Background */}
         {profile.header_banner_url ? (
           <div className="absolute inset-0 overflow-hidden bg-gradient-to-r from-gray-200 to-gray-300">
