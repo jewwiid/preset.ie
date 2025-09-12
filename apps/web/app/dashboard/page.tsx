@@ -323,7 +323,7 @@ export default function Dashboard() {
             <img
               src={profile.header_banner_url}
               alt="Header banner"
-              className="w-full h-full object-cover transition-transform duration-300"
+              className="w-full h-full object-contain transition-transform duration-300"
               style={(() => {
                 try {
                   const position: BannerPosition = profile.header_banner_position 
@@ -331,15 +331,10 @@ export default function Dashboard() {
                     : { y: 0, scale: 1 }
                   return {
                     transform: `translateY(${position.y}px) scale(${position.scale})`,
-                    transformOrigin: 'center center',
-                    minWidth: '100%',
-                    minHeight: '100%'
+                    transformOrigin: 'center center'
                   }
                 } catch {
-                  return {
-                    minWidth: '100%',
-                    minHeight: '100%'
-                  }
+                  return {}
                 }
               })()}
             />
