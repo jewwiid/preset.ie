@@ -207,7 +207,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       {currentBannerUrl && (
         <div className="relative">
           <div 
-            className={`w-full aspect-[3/1] bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg overflow-hidden relative ${isAdjusting ? 'cursor-ns-resize' : ''}`}
+            className={`w-full aspect-[2/1] bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg overflow-hidden relative ${isAdjusting ? 'cursor-ns-resize' : ''}`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -313,7 +313,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
           </div>
           
           <p className="text-sm text-gray-500">
-            Recommended: 1200x400px, max 5MB
+            Recommended: 1200x600px, max 5MB
             {isAdjusting && (
               <span className="block mt-1 text-emerald-600">
                 💡 Drag up/down to move • Scroll to zoom • Click finish when done
