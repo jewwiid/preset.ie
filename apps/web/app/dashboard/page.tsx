@@ -314,7 +314,7 @@ export default function Dashboard() {
   const isAdmin = userRole?.isAdmin || profile.role_flags?.includes('ADMIN')
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-preset-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-preset-50 to-white dark:from-gray-900 dark:to-gray-800 pt-12">
       {/* Hero Header */}
       <div className="relative overflow-hidden pb-64">
         {/* Custom Banner Background */}
