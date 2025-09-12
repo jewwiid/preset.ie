@@ -214,16 +214,19 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
           >
-            <img
-              ref={bannerRef}
-              src={currentBannerUrl}
-              alt="Header banner"
-              className="w-full h-full object-cover transition-transform duration-200"
-              style={{
-                transform: `translateY(${bannerPosition.y}px) scale(${bannerPosition.scale})`,
-                transformOrigin: 'center center'
-              }}
-            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <img
+                ref={bannerRef}
+                src={currentBannerUrl}
+                alt="Header banner"
+                className="w-full h-auto object-contain transition-transform duration-200"
+                style={{
+                  transform: `translateY(${bannerPosition.y}px) scale(${bannerPosition.scale})`,
+                  transformOrigin: 'center center',
+                  minHeight: '100%'
+                }}
+              />
+            </div>
             
             {/* Overlay Controls */}
             <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 group">
