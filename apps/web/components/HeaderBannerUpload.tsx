@@ -11,7 +11,6 @@ interface HeaderBannerUploadProps {
 }
 
 interface BannerPosition {
-  x: number
   y: number
   scale: number
 }
@@ -21,18 +20,17 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isAdjusting, setIsAdjusting] = useState(false)
-  const [bannerPosition, setBannerPosition] = useState<BannerPosition>({ x: 0, y: 0, scale: 1 })
+  const [bannerPosition, setBannerPosition] = useState<BannerPosition>({ y: 0, scale: 1 })
   const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [dragStart, setDragStart] = useState({ y: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bannerRef = useRef<HTMLImageElement>(null)
 
-  // Drag functionality for banner positioning
+  // Drag functionality for vertical banner positioning only
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!isAdjusting) return
     setIsDragging(true)
     setDragStart({
-      x: e.clientX - bannerPosition.x,
       y: e.clientY - bannerPosition.y
     })
   }, [isAdjusting, bannerPosition])
@@ -41,12 +39,10 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
     if (!isDragging || !isAdjusting) return
     e.preventDefault()
     
-    const newX = e.clientX - dragStart.x
     const newY = e.clientY - dragStart.y
     
     setBannerPosition(prev => ({
       ...prev,
-      x: Math.max(-100, Math.min(100, newX)),
       y: Math.max(-50, Math.min(50, newY))
     }))
   }, [isDragging, isAdjusting, dragStart])
@@ -67,7 +63,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
   }, [isAdjusting])
 
   const resetPosition = () => {
-    setBannerPosition({ x: 0, y: 0, scale: 1 })
+    setBannerPosition({ y: 0, scale: 1 })
   }
 
   const saveBannerPosition = async () => {
@@ -211,7 +207,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       {currentBannerUrl && (
         <div className="relative">
           <div 
-            className={`w-full h-32 bg-gray-100 rounded-lg overflow-hidden relative ${isAdjusting ? 'cursor-move' : ''}`}
+            className={`w-full h-32 bg-gray-100 rounded-lg overflow-hidden relative ${isAdjusting ? 'cursor-ns-resize' : ''}`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -224,8 +220,10 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
               alt="Header banner"
               className="w-full h-full object-cover transition-transform duration-200"
               style={{
-                transform: `translate(${bannerPosition.x}px, ${bannerPosition.y}px) scale(${bannerPosition.scale})`,
-                transformOrigin: 'center center'
+                transform: `translateY(${bannerPosition.y}px) scale(${bannerPosition.scale})`,
+                transformOrigin: 'center center',
+                minWidth: '100%',
+                minHeight: '100%'
               }}
             />
             
@@ -278,7 +276,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
             {isAdjusting && (
               <div className="absolute bottom-2 left-2 right-2 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
                 <div className="flex items-center justify-between">
-                  <span>Drag to move • Scroll to zoom</span>
+                  <span>Drag up/down to move • Scroll to zoom</span>
                   <span>Scale: {Math.round(bannerPosition.scale * 100)}%</span>
                 </div>
               </div>
@@ -340,7 +338,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
             Recommended: 1200x300px, max 5MB
             {isAdjusting && (
               <span className="block mt-1 text-emerald-600">
-                💡 Drag to move • Scroll to zoom • Click finish when done
+                💡 Drag up/down to move • Scroll to zoom • Click finish when done
               </span>
             )}
           </p>

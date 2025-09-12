@@ -23,7 +23,6 @@ interface UserProfile {
 }
 
 interface BannerPosition {
-  x: number
   y: number
   scale: number
 }
@@ -329,13 +328,18 @@ export default function Dashboard() {
                 try {
                   const position: BannerPosition = profile.header_banner_position 
                     ? JSON.parse(profile.header_banner_position) 
-                    : { x: 0, y: 0, scale: 1 }
+                    : { y: 0, scale: 1 }
                   return {
-                    transform: `translate(${position.x}px, ${position.y}px) scale(${position.scale})`,
-                    transformOrigin: 'center center'
+                    transform: `translateY(${position.y}px) scale(${position.scale})`,
+                    transformOrigin: 'center center',
+                    minWidth: '100%',
+                    minHeight: '100%'
                   }
                 } catch {
-                  return {}
+                  return {
+                    minWidth: '100%',
+                    minHeight: '100%'
+                  }
                 }
               })()}
             />
