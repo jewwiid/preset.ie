@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import { SupabaseMessageReportRepository } from '@preset/adapters/reports/SupabaseMessageReportRepository';
 
 // Validation schemas
 const GetMessageReportsSchema = z.object({
@@ -53,16 +52,53 @@ export async function GET(request: NextRequest) {
 
     const filters = validation.data;
 
-    // Create report repository
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const reportRepository = new SupabaseMessageReportRepository(supabaseUrl, supabaseServiceKey);
+    // Build query for message reports
+    let query = supabase
+      .from('message_reports')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(filters.offset, filters.offset + filters.limit - 1);
 
-    // Fetch message reports
-    const reports = await reportRepository.getMessageReports(filters);
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
 
-    // Get statistics
-    const stats = await reportRepository.getReportStats();
+    if (filters.priority) {
+      query = query.eq('priority', filters.priority);
+    }
+
+    if (filters.reportedUserId) {
+      query = query.eq('reported_user_id', filters.reportedUserId);
+    }
+
+    const { data: reports, error } = await query;
+
+    if (error) {
+      return NextResponse.json({ error: 'Failed to fetch message reports' }, { status: 500 });
+    }
+
+    // Get basic statistics
+    const { data: statsData } = await supabase
+      .from('message_reports')
+      .select('status')
+      .then(({ data }: { data: { status: string }[] | null }) => {
+        const counts = data?.reduce((acc: Record<string, number>, item: { status: string }) => {
+          acc[item.status] = (acc[item.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>) || {};
+        
+        return {
+          data: {
+            pending: counts.pending || 0,
+            reviewing: counts.reviewing || 0,
+            resolved: counts.resolved || 0,
+            dismissed: counts.dismissed || 0,
+            total: data?.length || 0
+          }
+        };
+      });
+
+    const stats = statsData;
 
     return NextResponse.json({
       reports,
@@ -117,13 +153,19 @@ export async function PATCH(request: NextRequest) {
 
     const { reportId, action, notes } = validation.data;
 
-    // Create report repository
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const reportRepository = new SupabaseMessageReportRepository(supabaseUrl, supabaseServiceKey);
+    // Update report directly
+    const { error: updateError } = await supabase
+      .from('message_reports')
+      .update({
+        status: action,
+        resolved_by: user.id,
+        resolved_at: new Date().toISOString(),
+        admin_notes: notes
+      })
+      .eq('id', reportId)
+      .eq('status', 'pending');
 
-    // Resolve the report
-    const success = await reportRepository.resolveReport(reportId, user.id, action, notes);
+    const success = !updateError;
 
     if (!success) {
       return NextResponse.json(

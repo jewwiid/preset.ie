@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { SupabaseConversationRepository } from '@preset/adapters/repositories/supabase-conversation-repository';
-import { GetConversationsUseCase } from '@preset/application/collaboration/use-cases/GetConversations';
 import { z } from 'zod';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -12,8 +10,8 @@ const GetConversationsQuerySchema = z.object({
   gigId: z.string().optional(),
   status: z.enum(['ACTIVE', 'ARCHIVED', 'BLOCKED']).optional(),
   hasUnread: z.string().transform(val => val === 'true').optional(),
-  limit: z.string().transform(val => parseInt(val, 10)).default('20'),
-  offset: z.string().transform(val => parseInt(val, 10)).default('0')
+  limit: z.string().transform(val => parseInt(val, 10)).default(20),
+  offset: z.string().transform(val => parseInt(val, 10)).default(0)
 });
 
 export async function GET(request: NextRequest) {
@@ -38,15 +36,40 @@ export async function GET(request: NextRequest) {
     
     const validatedQuery = GetConversationsQuerySchema.parse(queryObject);
 
-    // Initialize use case
-    const conversationRepo = new SupabaseConversationRepository(supabase);
-    const getConversationsUseCase = new GetConversationsUseCase(conversationRepo);
+    // Build query for conversations
+    let query = supabase
+      .from('conversations')
+      .select(`
+        *,
+        messages:messages(*),
+        gig:gigs(*),
+        participants:conversation_participants(*)
+      `)
+      .eq('participants.user_id', user.id)
+      .order('updated_at', { ascending: false })
+      .limit(validatedQuery.limit);
 
-    // Execute use case
-    const result = await getConversationsUseCase.execute({
-      userId: user.id,
-      ...validatedQuery
-    });
+    if (validatedQuery.gigId) {
+      query = query.eq('gig_id', validatedQuery.gigId);
+    }
+
+    if (validatedQuery.status) {
+      query = query.eq('status', validatedQuery.status);
+    }
+
+    const { data: conversations, error } = await query;
+
+    if (error) {
+      return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
+    }
+
+    const result = {
+      conversations: conversations || [],
+      pagination: {
+        limit: validatedQuery.limit,
+        hasMore: (conversations?.length || 0) === validatedQuery.limit
+      }
+    };
 
     return NextResponse.json(result);
 

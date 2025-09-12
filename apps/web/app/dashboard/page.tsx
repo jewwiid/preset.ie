@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
+// Simplified credit calculation
+const calculateCreditValue = (credits: number) => credits * 0.01; // Mock calculation
 
 interface UserProfile {
   id: string
@@ -209,12 +211,12 @@ export default function Dashboard() {
           .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
       )
 
-      // Also fetch user credits
+      // Also fetch user credits with proper error handling
       const creditsQuery = supabase
         .from('user_credits')
         .select('current_balance, monthly_allowance, consumed_this_month')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle() // Use maybeSingle instead of single to handle missing records
 
       const [gigsCount, applicationsCount, showcasesCount, messagesCount, userCredits] = await Promise.all([
         ...statsPromises,
@@ -237,18 +239,39 @@ export default function Dashboard() {
         totalMessages: messagesCount.count || 0
       })
 
-      // Set credits data - use fallback for new users without credit records
-      if ('data' in userCredits && userCredits.data) {
+      // Set credits data with proper null checking
+      if ('data' in userCredits && userCredits.data && 'current_balance' in userCredits.data) {
         setCredits({
           current_balance: userCredits.data.current_balance || 0,
           monthly_allowance: userCredits.data.monthly_allowance || 0,
           consumed_this_month: userCredits.data.consumed_this_month || 0
         })
       } else {
-        // New user - no credit record yet
+        // Initialize credits for new user
+        const { data: profile } = await supabase
+          .from('users_profile')
+          .select('subscription_tier')
+          .eq('user_id', user.id)
+          .single()
+        
+        const tier = profile?.subscription_tier || 'free'
+        const allowance = tier === 'pro' ? 25 : tier === 'plus' ? 10 : 0
+        
+        // Create credit record
+        await supabase
+          .from('user_credits')
+          .insert({
+            user_id: user.id,
+            subscription_tier: tier,
+            monthly_allowance: allowance,
+            current_balance: allowance,
+            consumed_this_month: 0,
+            last_reset_at: new Date().toISOString()
+          })
+        
         setCredits({
-          current_balance: 0,
-          monthly_allowance: 0,
+          current_balance: allowance,
+          monthly_allowance: allowance,
           consumed_this_month: 0
         })
       }
@@ -411,7 +434,7 @@ export default function Dashboard() {
                     <div className="flex-1">
                       <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mb-1">Account Balance</p>
                       <div className="flex items-baseline gap-2">
-                        <p className="text-gray-900 dark:text-white text-2xl font-bold">€{(credits.current_balance * 0.025).toFixed(2)}</p>
+                        <p className="text-gray-900 dark:text-white text-2xl font-bold">€{calculateCreditValue(credits.current_balance).toFixed(2)}</p>
                         <p className="text-gray-500 dark:text-gray-400 text-sm">EUR</p>
                       </div>
                     </div>

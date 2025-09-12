@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { SupabaseConversationRepository } from '@preset/adapters/repositories/supabase-conversation-repository';
-import { GetConversationUseCase } from '@preset/application/collaboration/use-cases/GetConversations';
+import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -13,9 +12,9 @@ const ConversationParamsSchema = z.object({
 });
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     conversationId: string;
-  };
+  }>;
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
@@ -27,7 +26,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createSupabaseClient(supabaseUrl, supabaseServiceKey);
     
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -35,17 +34,28 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Validate conversation ID
-    const validatedParams = ConversationParamsSchema.parse(context.params);
+    const resolvedParams = await context.params;
+    const validatedParams = ConversationParamsSchema.parse(resolvedParams);
 
-    // Initialize use case
-    const conversationRepo = new SupabaseConversationRepository(supabase);
-    const getConversationUseCase = new GetConversationUseCase(conversationRepo);
+    // Get conversation directly
+    const { data: conversation, error } = await supabase
+      .from('conversations')
+      .select(`
+        *,
+        messages:messages(*),
+        gig:gigs(*),
+        participants:conversation_participants(*)
+      `)
+      .eq('id', validatedParams.conversationId)
+      .eq('participants.user_id', user.id)
+      .single();
 
-    // Execute use case
-    const conversation = await getConversationUseCase.execute({
-      conversationId: validatedParams.conversationId,
-      userId: user.id
-    });
+    if (error || !conversation) {
+      return NextResponse.json(
+        { error: 'Conversation not found or access denied' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -97,7 +107,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createSupabaseClient(supabaseUrl, supabaseServiceKey);
     
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -105,7 +115,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // Validate conversation ID
-    const validatedParams = ConversationParamsSchema.parse(context.params);
+    const resolvedParams = await context.params;
+    const validatedParams = ConversationParamsSchema.parse(resolvedParams);
     
     const body = await request.json();
     const { action } = body; // 'archive', 'block', 'unblock'
@@ -117,19 +128,26 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Initialize repository
-    const conversationRepo = new SupabaseConversationRepository(supabase);
-    
     // Check if user is a participant
-    const conversation = await conversationRepo.findById(validatedParams.conversationId);
-    if (!conversation) {
+    const { data: conversation, error: conversationError } = await supabase
+      .from('conversations')
+      .select(`
+        *,
+        participants:conversation_participants(*)
+      `)
+      .eq('id', validatedParams.conversationId)
+      .eq('participants.user_id', user.id)
+      .single();
+    if (conversationError || !conversation) {
       return NextResponse.json(
         { error: 'Conversation not found' },
         { status: 404 }
       );
     }
 
-    if (!conversation.hasParticipant(user.id)) {
+    // Check if user is a participant
+    const isParticipant = conversation.participants?.some((p: any) => p.user_id === user.id);
+    if (!isParticipant) {
       return NextResponse.json(
         { error: 'You are not authorized to modify this conversation' },
         { status: 403 }

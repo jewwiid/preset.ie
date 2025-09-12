@@ -3,10 +3,11 @@ import { supabase } from '../../../../../lib/supabase';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const gigId = params.id;
+    const resolvedParams = await params;
+    const gigId = resolvedParams.id;
 
     // Get authorization header
     const authHeader = request.headers.get('authorization');

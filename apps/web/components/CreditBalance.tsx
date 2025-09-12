@@ -46,13 +46,17 @@ export default function CreditBalance({ className = '', showPurchaseButton = tru
 
       setUser(session.user);
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_credits')
-        .select('balance')
+        .select('current_balance')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      setBalance(data?.balance || 0);
+      if (error) {
+        console.error('Error loading credit balance:', error);
+      }
+      
+      setBalance(data?.current_balance || 0);
     } catch (error) {
       console.error('Error loading credit balance:', error);
       setBalance(0);
@@ -84,7 +88,7 @@ export default function CreditBalance({ className = '', showPurchaseButton = tru
         </span>
       </div>
       
-      {showPurchaseButton && (balance === null || balance < 10) && (
+      {showPurchaseButton && balance < 10 && (
         <Link href="/profile?tab=credits">
           <Button size="sm" variant="outline" className="h-8 px-2">
             <Plus className="w-3 h-3 mr-1" />

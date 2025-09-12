@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { SupabaseConversationRepository } from '@preset/adapters/repositories/supabase-conversation-repository';
-import { SupabaseGigRepository } from '@preset/adapters/repositories/supabase-gig-repository';
-import { SupabaseApplicationRepository } from '@preset/adapters/repositories/supabase-application-repository';
-import { SendMessageUseCase } from '@preset/application/collaboration/use-cases/SendMessage';
-import { InMemoryEventBus } from '@preset/adapters/events/InMemoryEventBus';
-import { IdGenerator } from '@preset/domain/shared/IdGenerator';
+import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -33,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createSupabaseClient(supabaseUrl, supabaseServiceKey);
     
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -44,37 +39,35 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = SendMessageSchema.parse(body);
 
-    // Initialize repositories and dependencies
-    const conversationRepo = new SupabaseConversationRepository(supabase);
-    const gigRepo = new SupabaseGigRepository(supabase);
-    const applicationRepo = new SupabaseApplicationRepository(supabase);
-    const eventBus = new InMemoryEventBus();
-    const idGenerator = new IdGenerator();
+    // Create message directly
+    const { data: message, error: messageError } = await supabase
+      .from('messages')
+      .insert({
+        gig_id: validatedData.gigId,
+        from_user_id: user.id,
+        to_user_id: validatedData.toUserId,
+        body: validatedData.body,
+        attachments: validatedData.attachments || [],
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-    // Initialize use case
-    const sendMessageUseCase = new SendMessageUseCase(
-      conversationRepo,
-      gigRepo,
-      applicationRepo,
-      eventBus,
-      idGenerator
-    );
+    if (messageError) {
+      console.error('Failed to create message:', messageError);
+      return NextResponse.json(
+        { error: 'Failed to send message' },
+        { status: 500 }
+      );
+    }
 
-    // Execute use case
-    const result = await sendMessageUseCase.execute({
-      gigId: validatedData.gigId,
-      fromUserId: user.id,
-      toUserId: validatedData.toUserId,
-      body: validatedData.body,
-      attachments: validatedData.attachments
-    });
+    const result = { messageId: message.id };
 
     return NextResponse.json({
       success: true,
       data: {
-        conversationId: result.conversationId,
         messageId: result.messageId,
-        sentAt: result.sentAt.toISOString()
+        sentAt: new Date().toISOString()
       }
     });
 

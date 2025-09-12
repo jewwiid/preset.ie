@@ -20,6 +20,8 @@ import { ReportsQueue } from '../components/admin/ReportsQueue'
 import { UserManagement } from '../components/admin/UserManagement'
 import { VerificationQueue } from '../components/admin/VerificationQueue'
 import { AgeVerificationQueue } from '../components/admin/AgeVerificationQueue'
+import { ModerationQueue } from '../components/admin/ModerationQueue'
+import { ModerationAnalytics } from '../components/admin/ModerationAnalytics'
 
 interface PlatformStats {
   totalUsers: number
@@ -275,6 +277,7 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'moderation', label: 'Moderation', icon: Shield },
     { id: 'reports', label: 'Reports', icon: AlertTriangle },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'age-verification', label: 'Age Verification', icon: Shield },
@@ -392,6 +395,30 @@ export default function AdminDashboard() {
                   <p className="text-sm text-gray-600">Pro</p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Moderation Tab */}
+        {activeTab === 'moderation' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Content Moderation</h2>
+                <p className="text-gray-600">Review and moderate flagged content across the platform</p>
+              </div>
+            </div>
+            
+            {/* Moderation Analytics */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold mb-4">Analytics Overview</h3>
+              <ModerationAnalytics />
+            </div>
+            
+            {/* Moderation Queue */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold mb-4">Content Queue</h3>
+              <ModerationQueue />
             </div>
           </div>
         )}

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import { createMessagingContainer } from '@preset/application/collaboration/MessagingContainer';
-import { ReportMessageUseCase } from '@preset/application/collaboration/use-cases/ReportMessage';
-import { SupabaseMessageReportRepository } from '@preset/adapters/reports/SupabaseMessageReportRepository';
 
 // Validation schema
 const ReportMessageSchema = z.object({
@@ -14,7 +11,7 @@ const ReportMessageSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -26,7 +23,8 @@ export async function POST(
     }
 
     // Validate message ID
-    const messageId = params.id;
+    const resolvedParams = await params;
+    const messageId = resolvedParams.id;
     if (!messageId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(messageId)) {
       return NextResponse.json({ error: 'Invalid message ID' }, { status: 400 });
     }
@@ -65,33 +63,33 @@ export async function POST(
       return NextResponse.json({ error: 'You cannot report your own messages' }, { status: 400 });
     }
 
-    // Create messaging container and report repository
-    const container = createMessagingContainer(supabase);
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    
-    const reportRepository = new SupabaseMessageReportRepository(supabaseUrl, supabaseServiceKey);
-    
-    const reportUseCase = new ReportMessageUseCase(
-      reportRepository,
-      container.getEventBus(),
-      container.getIdGenerator()
-    );
+    // Create report directly in database
+    const { data: report, error: reportError } = await supabase
+      .from('message_reports')
+      .insert({
+        message_id: messageId,
+        reporter_id: user.id,
+        reason: reason,
+        description: description,
+        evidence_urls: evidenceUrls,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-    // Execute the report use case
-    const result = await reportUseCase.execute({
-      reporterId: user.id,
-      messageId,
-      reason,
-      description,
-      evidenceUrls
-    });
+    if (reportError) {
+      console.error('Failed to create message report:', reportError);
+      return NextResponse.json(
+        { error: 'Failed to submit report' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      reportId: result.reportId,
-      status: result.status,
-      priority: result.priority,
+      reportId: report.id,
+      status: 'pending',
       message: 'Thank you for your report. We will review it and take appropriate action if necessary.'
     });
 

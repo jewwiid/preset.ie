@@ -30,13 +30,18 @@ export async function POST(request: NextRequest) {
       $$;
     `
 
-    const { error: funcError } = await supabase.rpc('exec_raw_sql', {
-      sql_query: createFunctionSql
-    }).catch(async () => {
+    let funcError;
+    try {
+      const result = await supabase.rpc('exec_raw_sql', {
+        sql_query: createFunctionSql
+      });
+      funcError = result.error;
+    } catch (error) {
       // If function doesn't exist, create it using a different approach
       console.log('Creating exec function via direct query...')
-      return await supabase.rpc('create_admin_policies')
-    })
+      const result = await supabase.rpc('create_admin_policies');
+      funcError = result.error;
+    }
 
     // Now execute the policies
     const policies = [
@@ -68,6 +73,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, message: 'Admin policies processed' })
   } catch (error) {
     console.error('Error adding admin policies:', error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 })
   }
 }

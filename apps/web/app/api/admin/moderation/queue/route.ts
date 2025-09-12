@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import { createMessagingContainer } from '@preset/application/collaboration/MessagingContainer';
 
 // Validation schemas
 const GetModerationQueueSchema = z.object({
@@ -46,16 +45,48 @@ export async function GET(request: NextRequest) {
 
     const filters = validation.data;
 
-    // Get moderation service
-    const container = createMessagingContainer(supabase);
-    const moderationService = container.getContentModerationService();
+    // Build query for moderation queue
+    let query = supabase
+      .from('content_moderation_queue')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(filters.offset, filters.offset + filters.limit - 1);
 
-    // Fetch moderation queue
-    const queueItems = await moderationService.getModerationQueue(filters);
+    if (filters.status) {
+      query = query.eq('status', filters.status);
+    }
 
-    // Get statistics
-    const moderationRepo = container.getContentModerationRepository();
-    const stats = await moderationRepo.getModerationStats();
+    if (filters.severityMin) {
+      query = query.gte('severity_score', filters.severityMin);
+    }
+
+    const { data: queueItems, error } = await query;
+
+    if (error) {
+      return NextResponse.json({ error: 'Failed to fetch moderation queue' }, { status: 500 });
+    }
+
+    // Get basic statistics
+    const { data: stats } = await supabase
+      .from('content_moderation_queue')
+      .select('status')
+      .then(({ data }: any) => {
+        const counts = data?.reduce((acc: any, item: any) => {
+          acc[item.status] = (acc[item.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>) || {};
+        
+        return {
+          data: {
+            pending: counts.pending || 0,
+            reviewing: counts.reviewing || 0,
+            approved: counts.approved || 0,
+            rejected: counts.rejected || 0,
+            escalated: counts.escalated || 0,
+            total: data?.length || 0
+          }
+        };
+      });
 
     return NextResponse.json({
       items: queueItems,
@@ -119,12 +150,20 @@ export async function PATCH(request: NextRequest) {
 
     const { items } = validation.data;
 
-    // Get moderation service
-    const container = createMessagingContainer(supabase);
-    const moderationRepo = container.getContentModerationRepository();
+    // Batch resolve items directly
+    const updates = items.map(item => ({
+      id: item.queueId,
+      status: item.status,
+      resolved_by: user.id,
+      resolved_at: new Date().toISOString(),
+      admin_notes: item.notes
+    }));
 
-    // Batch resolve items
-    const resolvedCount = await moderationRepo.batchResolveItems(items, user.id);
+    const { error: updateError } = await supabase
+      .from('content_moderation_queue')
+      .upsert(updates);
+
+    const resolvedCount = updateError ? 0 : items.length;
 
     return NextResponse.json({
       success: true,

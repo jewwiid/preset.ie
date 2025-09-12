@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
     if (process.env.OPENAI_API_KEY) {
       try {
         // Prepare images for analysis (limit to first 4 images for cost efficiency)
-        const imageItems = items.filter(item => item.type === 'image').slice(0, 4)
-        const imageContent = imageItems.map(item => ({
+        const imageItems = items.filter((item: any) => item.type === 'image').slice(0, 4)
+        const imageContent = imageItems.map((item: any) => ({
           type: "image_url",
           image_url: {
             url: item.enhanced_url || item.url,
@@ -120,18 +120,18 @@ Be specific about what you actually observe - colors, lighting, subjects, compos
             const lines = aiContent.split('\n').filter((l: string) => l.trim())
             
             // Extract vibe summary (look for numbered item 1 or sentences describing the visual content)
-            const vibeLine = lines.find(l => 
+            const vibeLine = lines.find((l: any) => 
               /^1\./.test(l.trim()) || 
               /vibe|aesthetic|visual|mood|atmosphere/i.test(l) && l.length > 30
             )
             const vibeSummary = vibeLine ? vibeLine.replace(/^1\.\s*/, '').trim() : vibeAnalysis.vibeSummary
             
             // Extract mood descriptors (look for numbered item 2 or words in quotes/lists)
-            const moodLine = lines.find(l => /^2\./.test(l.trim()) || /mood.*descriptor|descriptors/i.test(l))
+            const moodLine = lines.find((l: string) => /^2\./.test(l.trim()) || /mood.*descriptor|descriptors/i.test(l))
             const moodDescriptors = moodLine ? extractWordsFromLine(moodLine) : vibeAnalysis.moodDescriptors
             
             // Extract style tags (look for numbered item 3 or tag-related content)  
-            const tagLine = lines.find(l => /^3\./.test(l.trim()) || /tag|style.*tag/i.test(l))
+            const tagLine = lines.find((l: string) => /^3\./.test(l.trim()) || /tag|style.*tag/i.test(l))
             const tags = tagLine ? extractWordsFromLine(tagLine) : vibeAnalysis.tags
             
             return NextResponse.json({

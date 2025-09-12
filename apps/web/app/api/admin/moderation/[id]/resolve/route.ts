@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import { createMessagingContainer } from '@preset/application/collaboration/MessagingContainer';
 
 // Validation schema
 const ResolveModerationSchema = z.object({
@@ -11,7 +10,7 @@ const ResolveModerationSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -34,7 +33,8 @@ export async function POST(
     }
 
     // Validate moderation queue ID
-    const queueId = params.id;
+    const resolvedParams = await params;
+    const queueId = resolvedParams.id;
     if (!queueId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queueId)) {
       return NextResponse.json({ error: 'Invalid moderation queue ID' }, { status: 400 });
     }
@@ -52,17 +52,19 @@ export async function POST(
 
     const { status, notes } = validation.data;
 
-    // Get moderation service
-    const container = createMessagingContainer(supabase);
-    const moderationService = container.getContentModerationService();
+    // Update moderation queue item directly
+    const { error: updateError } = await supabase
+      .from('content_moderation_queue')
+      .update({
+        status,
+        resolved_by: user.id,
+        resolved_at: new Date().toISOString(),
+        admin_notes: notes
+      })
+      .eq('id', queueId)
+      .eq('status', 'pending');
 
-    // Resolve the moderation item
-    const success = await moderationService.resolveModeration(
-      queueId,
-      user.id,
-      status,
-      notes
-    );
+    const success = !updateError;
 
     if (!success) {
       return NextResponse.json(

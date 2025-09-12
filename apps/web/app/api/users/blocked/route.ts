@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { SupabaseUserBlockRepository } from '@preset/adapters/repositories/supabase-user-block-repository';
-import { SupabaseProfileRepository } from '@preset/adapters/identity/SupabaseProfileRepository';
-import { GetBlockedUsersUseCase } from '@preset/application/collaboration/use-cases/GetBlockedUsers';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -54,24 +51,29 @@ export async function GET(request: NextRequest) {
     
     const validatedQuery = GetBlockedUsersSchema.parse(queryParams);
 
-    // Initialize repositories and dependencies
-    const userBlockRepo = new SupabaseUserBlockRepository(supabase);
-    const profileRepo = new SupabaseProfileRepository(supabase);
+    // Get blocked users directly
+    const { data: blockedUsers, error } = await supabase
+      .from('user_blocks')
+      .select(`
+        *,
+        blocked_user:users_profile(*)
+      `)
+      .eq('blocker_id', profile.id)
+      .order(validatedQuery.sortBy || 'created_at', { ascending: validatedQuery.sortOrder === 'asc' })
+      .range(validatedQuery.offset || 0, (validatedQuery.offset || 0) + (validatedQuery.limit || 20) - 1);
 
-    // Initialize use case
-    const getBlockedUsersUseCase = new GetBlockedUsersUseCase(
-      userBlockRepo,
-      profileRepo
-    );
+    if (error) {
+      return NextResponse.json({ error: 'Failed to fetch blocked users' }, { status: 500 });
+    }
 
-    // Execute use case
-    const result = await getBlockedUsersUseCase.execute({
-      requestingUserId: profile.id,
-      limit: validatedQuery.limit,
-      offset: validatedQuery.offset,
-      sortBy: validatedQuery.sortBy,
-      sortOrder: validatedQuery.sortOrder
-    });
+    const result = {
+      blockedUsers: blockedUsers || [],
+      pagination: {
+        limit: validatedQuery.limit || 20,
+        offset: validatedQuery.offset || 0,
+        hasMore: (blockedUsers?.length || 0) === (validatedQuery.limit || 20)
+      }
+    };
 
     return NextResponse.json({
       success: true,

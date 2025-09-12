@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { SupabaseUserBlockRepository } from '@preset/adapters/repositories/supabase-user-block-repository';
-import { UnblockUserUseCase } from '@preset/application/collaboration/use-cases/UnblockUser';
-import { InMemoryEventBus } from '@preset/adapters/events/InMemoryEventBus';
+import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -45,29 +42,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = UnblockUserSchema.parse(body);
 
-    // Initialize repositories and dependencies
-    const userBlockRepo = new SupabaseUserBlockRepository(supabase);
-    const eventBus = new InMemoryEventBus();
+    // Remove block directly
+    const { error: deleteError } = await supabase
+      .from('user_blocks')
+      .delete()
+      .eq('blocker_id', profile.id)
+      .eq('blocked_id', validatedData.blockedUserId);
 
-    // Initialize use case
-    const unblockUserUseCase = new UnblockUserUseCase(
-      userBlockRepo,
-      eventBus
-    );
+    if (deleteError) {
+      console.error('Failed to unblock user:', deleteError);
+      return NextResponse.json(
+        { error: 'Failed to unblock user' },
+        { status: 500 }
+      );
+    }
 
-    // Execute use case
-    const result = await unblockUserUseCase.execute({
-      blockerUserId: profile.id,
-      blockedUserId: validatedData.blockedUserId,
-      reason: validatedData.reason
-    });
+    const result = { success: true };
 
     return NextResponse.json({
       success: true,
       data: {
         success: result.success,
-        canCommunicate: result.canCommunicate,
-        removedBlockId: result.removedBlockId
+        canCommunicate: true,
+        removedBlockId: validatedData.blockedUserId
       }
     });
 

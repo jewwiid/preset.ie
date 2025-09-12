@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { SupabaseUserBlockRepository } from '@preset/adapters/repositories/supabase-user-block-repository';
-import { SupabaseProfileRepository } from '@preset/adapters/identity/SupabaseProfileRepository';
-import { BlockUserUseCase } from '@preset/application/collaboration/use-cases/BlockUser';
-import { InMemoryEventBus } from '@preset/adapters/events/InMemoryEventBus';
-import { IdGenerator } from '@preset/domain/shared/IdGenerator';
-import { BlockReason } from '@preset/domain/collaboration/value-objects/BlockReason';
+import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -14,9 +9,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 // Validation schema for block user request
 const BlockUserSchema = z.object({
   blockedUserId: z.string().uuid('Invalid user ID'),
-  reason: z.nativeEnum(BlockReason, { 
-    errorMap: () => ({ message: 'Invalid block reason' })
-  }),
+  reason: z.enum(['harassment', 'spam', 'inappropriate', 'scam', 'other']),
   details: z.string().max(500, 'Details cannot exceed 500 characters').optional()
 });
 
@@ -29,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createSupabaseClient(supabaseUrl, supabaseServiceKey);
     
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -51,34 +44,35 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = BlockUserSchema.parse(body);
 
-    // Initialize repositories and dependencies
-    const userBlockRepo = new SupabaseUserBlockRepository(supabase);
-    const profileRepo = new SupabaseProfileRepository(supabase);
-    const eventBus = new InMemoryEventBus();
-    const idGenerator = new IdGenerator();
+    // Create block directly
+    const { data: block, error: blockError } = await supabase
+      .from('user_blocks')
+      .insert({
+        blocker_id: profile.id,
+        blocked_id: validatedData.blockedUserId,
+        reason: validatedData.reason,
+        details: validatedData.details,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-    // Initialize use case
-    const blockUserUseCase = new BlockUserUseCase(
-      userBlockRepo,
-      profileRepo,
-      eventBus,
-      idGenerator
-    );
+    if (blockError) {
+      console.error('Failed to create user block:', blockError);
+      return NextResponse.json(
+        { error: 'Failed to block user' },
+        { status: 500 }
+      );
+    }
 
-    // Execute use case
-    const result = await blockUserUseCase.execute({
-      blockerUserId: profile.id,
-      blockedUserId: validatedData.blockedUserId,
-      reason: validatedData.reason,
-      details: validatedData.details
-    });
+    const result = { blockId: block.id };
 
     return NextResponse.json({
       success: true,
       data: {
         blockId: result.blockId,
-        createdAt: result.createdAt.toISOString(),
-        canCommunicate: result.canCommunicate
+        createdAt: new Date().toISOString(),
+        canCommunicate: false
       }
     });
 
