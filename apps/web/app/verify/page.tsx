@@ -179,6 +179,7 @@ export default function VerificationPage() {
       }
 
       if (uploadError) throw uploadError
+      if (!uploadData) throw new Error('Upload failed - no data returned')
 
       // 4. Prepare data for new schema
       const socialLinks = {

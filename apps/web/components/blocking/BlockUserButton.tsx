@@ -123,7 +123,7 @@ export function BlockUserButton({
       <div className={className}>
         <Button
           variant="outline"
-          size={size}
+          size={size === 'md' ? 'default' : size}
           onClick={handleUnblock}
           disabled={isUnblocking}
           className="text-red-600 hover:text-red-700 border-red-200"
@@ -142,7 +142,7 @@ export function BlockUserButton({
         <div className={className}>
           <Button
             variant="outline"
-            size={size}
+            size={size === 'md' ? 'default' : size}
             onClick={handleUnblock}
             disabled={isUnblocking}
             className="text-green-600 hover:text-green-700 border-green-200"
@@ -157,7 +157,7 @@ export function BlockUserButton({
         <div className={className}>
           <Button
             variant="outline"
-            size={size}
+            size={size === 'md' ? 'default' : size}
             onClick={() => setShowBlockDialog(true)}
             className="text-red-600 hover:text-red-700 border-red-200"
           >

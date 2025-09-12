@@ -221,8 +221,8 @@ export default function EnhancedProfileForm({
                   Date of Birth
                 </label>
                 <DatePicker
-                  selected={formData.dateOfBirth}
-                  onSelect={(date) => setFormData((prev: any) => ({ ...prev, dateOfBirth: date }))}
+                  date={formData.dateOfBirth}
+                  onDateChange={(date) => setFormData((prev: any) => ({ ...prev, dateOfBirth: date }))}
                   className="w-full"
                 />
               </div>

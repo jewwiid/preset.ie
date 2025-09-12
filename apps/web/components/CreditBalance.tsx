@@ -88,7 +88,7 @@ export default function CreditBalance({ className = '', showPurchaseButton = tru
         </span>
       </div>
       
-      {showPurchaseButton && balance < 10 && (
+      {showPurchaseButton && balance !== null && balance < 10 && (
         <Link href="/profile?tab=credits">
           <Button size="sm" variant="outline" className="h-8 px-2">
             <Plus className="w-3 h-3 mr-1" />

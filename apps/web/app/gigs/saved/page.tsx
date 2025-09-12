@@ -111,10 +111,10 @@ export default function SavedGigsPage() {
         const validSavedGigs = (data || []).filter(
           savedGig => 
             savedGig.gig && 
-            savedGig.gig.status === 'PUBLISHED' &&
-            new Date(savedGig.gig.application_deadline) > new Date()
+            (savedGig.gig as any)?.status === 'PUBLISHED' &&
+            new Date((savedGig.gig as any).application_deadline) > new Date()
         );
-        setSavedGigs(validSavedGigs);
+        setSavedGigs(validSavedGigs as any);
       }
     } catch (error) {
       console.error('Error fetching saved gigs:', error);

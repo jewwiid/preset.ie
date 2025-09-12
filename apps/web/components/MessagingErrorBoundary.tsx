@@ -54,7 +54,7 @@ export class MessagingErrorBoundary extends Component<
     
     // Log to our error handler
     MessageErrorHandler.logError(error, {
-      ...errorInfo,
+      componentStack: errorInfo.componentStack || '',
       timestamp: Date.now(),
       eventType: 'component_error'
     }, context)

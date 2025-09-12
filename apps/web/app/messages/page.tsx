@@ -30,7 +30,7 @@ export default function MessagesPage() {
   // Refs for auto-scrolling and input management
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const typingTimeoutRef = useRef<number | null>(null)
 
   // Real-time event handlers
   function handleNewMessage(message: RealtimeMessage) {
@@ -47,6 +47,7 @@ export default function MessagesPage() {
             fromUserId: message.fromUserId,
             toUserId: message.toUserId,
             body: message.body,
+            attachments: [],
             sentAt: message.sentAt,
             readAt: message.readAt
           }]
@@ -60,8 +61,11 @@ export default function MessagesPage() {
         return {
           ...conv,
           lastMessage: {
+            id: message.id,
             body: message.body,
-            sentAt: message.sentAt
+            fromUserId: message.fromUserId,
+            sentAt: message.sentAt,
+            read: selectedConversation === message.conversation_id
           },
           lastMessageAt: message.sentAt,
           unreadCount: selectedConversation === message.conversation_id ? 0 : (conv.unreadCount + 1)

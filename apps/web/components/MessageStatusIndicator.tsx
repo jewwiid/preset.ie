@@ -114,7 +114,6 @@ export function MessageStatusIndicator({
     <div className={`inline-flex items-center space-x-1 ${className}`}>
       <IconComponent 
         className={`${currentSize.icon} ${config.color} ${iconClassName}`}
-        title={config.description}
       />
       {showText && (
         <span className={`${currentSize.text} ${config.color} ${textClassName}`}>
@@ -127,7 +126,6 @@ export function MessageStatusIndicator({
   const renderMinimal = () => (
     <IconComponent 
       className={`${currentSize.icon} ${config.color} ${iconClassName} ${className}`}
-      title={config.description}
     />
   )
 

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useUserBlockingApi, BlockReason } from '@/lib/api/user-blocking';
+import { useUserBlockingApi, BlockReason, UserBlockingApi } from '@/lib/api/user-blocking';
 import { AlertTriangle, Shield } from 'lucide-react';
 
 interface BlockUserDialogProps {
@@ -29,7 +29,7 @@ export function BlockUserDialog({ isOpen, onClose, targetUser, onBlockSuccess }:
   const [error, setError] = useState<string | null>(null);
 
   const userBlockingApi = useUserBlockingApi();
-  const blockReasons = useUserBlockingApi.constructor.getBlockReasons();
+  const blockReasons = UserBlockingApi.getBlockReasons();
 
   const handleBlock = async () => {
     if (!selectedReason) {
@@ -97,7 +97,7 @@ export function BlockUserDialog({ isOpen, onClose, targetUser, onBlockSuccess }:
 
           <div className="space-y-2">
             <Label htmlFor="reason">Reason for blocking *</Label>
-            <Select value={selectedReason} onValueChange={setSelectedReason}>
+            <Select value={selectedReason} onValueChange={(value) => setSelectedReason(value as BlockReason)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a reason" />
               </SelectTrigger>
