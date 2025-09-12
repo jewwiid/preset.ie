@@ -218,7 +218,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
               ref={bannerRef}
               src={currentBannerUrl}
               alt="Header banner"
-              className="w-full h-full object-contain transition-transform duration-200"
+              className="w-full h-full object-cover transition-transform duration-200"
               style={{
                 transform: `translateY(${bannerPosition.y}px) scale(${bannerPosition.scale})`,
                 transformOrigin: 'center center'
