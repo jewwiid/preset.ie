@@ -33,7 +33,7 @@ export class PerformanceMonitor {
   mark(name: string, metadata?: Record<string, any>): void {
     const mark: PerformanceMark = {
       name,
-      startTime: performance.now(),
+      startTime: Date.now(),
       metadata,
     };
     this.marks.set(name, mark);
@@ -51,8 +51,8 @@ export class PerformanceMonitor {
       return null;
     }
 
-    const endTime = endMark ? this.marks.get(endMark)?.startTime : performance.now();
-    if (!endTime) {
+    const endTime = endMark ? this.marks.get(endMark)?.startTime : Date.now();
+    if (endTime === undefined) {
       logger.warn(`Performance mark '${endMark}' not found`);
       return null;
     }
@@ -85,12 +85,12 @@ export class PerformanceMonitor {
     fn: () => Promise<T>,
     metadata?: Record<string, any>
   ): Promise<T> {
-    const startTime = performance.now();
+    const startTime = Date.now();
     const transaction = sentry.startTransaction(name, 'function');
 
     try {
       const result = await fn();
-      const duration = performance.now() - startTime;
+      const duration = Date.now() - startTime;
       
       transaction.finish();
       logger.logPerformance(name, duration, metadata);
@@ -109,11 +109,11 @@ export class PerformanceMonitor {
     fn: () => T,
     metadata?: Record<string, any>
   ): T {
-    const startTime = performance.now();
+    const startTime = Date.now();
 
     try {
       const result = fn();
-      const duration = performance.now() - startTime;
+      const duration = Date.now() - startTime;
       
       logger.logPerformance(name, duration, metadata);
       metrics.createHistogram(`performance.${name}`).observe(duration);

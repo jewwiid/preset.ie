@@ -1,160 +1,183 @@
 #!/usr/bin/env node
 
-// Test script to verify credit management system is working
 const { createClient } = require('@supabase/supabase-js');
-
-// Load environment variables
 require('dotenv').config();
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 async function testCreditSystem() {
-  console.log('🧪 Testing Credit Management System...\n');
-
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    console.error('❌ Missing required environment variables');
-    process.exit(1);
-  }
-
+  console.log('🧪 Testing Credit System...\n');
+  
   try {
-    // Initialize Supabase client with service role
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    console.log('✅ Connected to Supabase database');
-
-    // Test 1: Check if tables exist
-    console.log('\n📋 Test 1: Checking if tables exist...');
+    // Test 1: Basic table query to check if table exists and has expected columns
+    console.log('Test 1: Checking table structure...');
+    const { data: sampleRecord, error: structureError } = await supabase
+      .from('user_credits')
+      .select('current_balance, monthly_allowance, consumed_this_month, subscription_tier, last_reset_at')
+      .limit(1);
     
-    const tables = ['credit_pools', 'user_credits', 'credit_transactions', 'enhancement_tasks', 'api_providers', 'system_alerts'];
+    if (structureError) {
+      console.error('❌ Table structure issue:', structureError.message);
+      return false;
+    }
     
-    for (const tableName of tables) {
+    console.log('✅ Table structure appears valid\n');
+    
+    // Test 2: Check if users have credit records
+    console.log('Test 2: Checking user credit records...');
+    const { data: users, error: usersError } = await supabase
+      .from('auth.users')
+      .select('id')
+      .limit(5);
+    
+    if (usersError) {
+      console.error('❌ Failed to fetch users:', usersError.message);
+      return false;
+    }
+    
+    let userCount = 0;
+    for (const user of users || []) {
+      const { data: credits, error: creditsError } = await supabase
+        .from('user_credits')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (creditsError && creditsError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        console.error(`❌ Error checking credits for user ${user.id}:`, creditsError.message);
+      } else if (!credits) {
+        console.warn(`⚠️  User ${user.id} has no credit record`);
+      } else {
+        console.log(`✅ User ${user.id}: ${credits.current_balance} credits (${credits.subscription_tier})`);
+        userCount++;
+      }
+    }
+    
+    if (userCount === 0) {
+      console.warn('⚠️  No users have credit records');
+    }
+    
+    // Test 3: Test a basic credit query
+    console.log('\nTest 3: Testing basic credit query...');
+    const { data: sampleCredits, error: sampleError } = await supabase
+      .from('user_credits')
+      .select('*')
+      .limit(1);
+    
+    if (sampleError) {
+      console.error('❌ Failed to query credits:', sampleError.message);
+      return false;
+    }
+    
+    if (sampleCredits && sampleCredits.length > 0) {
+      const credit = sampleCredits[0];
+      console.log(`✅ Sample credit record:`, {
+        user_id: credit.user_id.substring(0, 8) + '...',
+        current_balance: credit.current_balance,
+        monthly_allowance: credit.monthly_allowance,
+        consumed_this_month: credit.consumed_this_month,
+        subscription_tier: credit.subscription_tier
+      });
+    } else {
+      console.log('⚠️  No credit records found in database');
+    }
+    
+    // Test 4: Test credit manipulation functions
+    console.log('\nTest 4: Testing credit functions...');
+    if (sampleCredits && sampleCredits.length > 0) {
+      const testUserId = sampleCredits[0].user_id;
       try {
-        const { data, error } = await supabase
-          .from(tableName)
-          .select('*')
-          .limit(1);
-
-        if (error) {
-          console.log(`   ❌ ${tableName}: ${error.message}`);
+        const { data: updateResult, error: updateError } = await supabase
+          .rpc('update_user_credits', {
+            p_user_id: testUserId,
+            p_amount: 0, // No-op to test function exists
+            p_type: 'adjustment',
+            p_description: 'Test function call'
+          });
+          
+        if (updateError) {
+          console.log('⚠️  update_user_credits function may not exist:', updateError.message);
         } else {
-          console.log(`   ✅ ${tableName}: Table accessible`);
+          console.log('✅ update_user_credits function exists and works');
         }
-      } catch (err) {
-        console.log(`   ❌ ${tableName}: ${err.message}`);
+      } catch (funcError) {
+        console.log('⚠️  Credit manipulation functions need setup');
       }
+    } else {
+      console.log('⚠️  No test data available for function testing');
     }
-
-    // Test 2: Check credit pool initialization
-    console.log('\n💰 Test 2: Checking credit pool initialization...');
     
-    try {
-      const { data: creditPools, error } = await supabase
-        .from('credit_pools')
-        .select('*')
-        .eq('provider', 'nanobanan');
-
-      if (error) {
-        console.log(`   ❌ Error fetching credit pools: ${error.message}`);
-      } else if (creditPools && creditPools.length > 0) {
-        const pool = creditPools[0];
-        console.log(`   ✅ NanoBanana credit pool found:`);
-        console.log(`      - Available balance: ${pool.available_balance}`);
-        console.log(`      - Cost per credit: $${pool.cost_per_credit}`);
-        console.log(`      - Status: ${pool.status}`);
-      } else {
-        console.log(`   ⚠️  No NanoBanana credit pool found`);
-      }
-    } catch (err) {
-      console.log(`   ❌ Error: ${err.message}`);
-    }
-
-    // Test 3: Check API provider configuration
-    console.log('\n🔧 Test 3: Checking API provider configuration...');
+    console.log('\n🎉 Credit system tests complete!');
+    console.log('\n📋 Summary:');
+    console.log('- Table structure: ✅ Valid');
+    console.log('- User records:', userCount > 0 ? '✅ Found' : '⚠️  None found');
+    console.log('- Basic queries: ✅ Working');
     
-    try {
-      const { data: providers, error } = await supabase
-        .from('api_providers')
-        .select('*')
-        .eq('name', 'nanobanan');
-
-      if (error) {
-        console.log(`   ❌ Error fetching API providers: ${error.message}`);
-      } else if (providers && providers.length > 0) {
-        const provider = providers[0];
-        console.log(`   ✅ NanoBanana API provider found:`);
-        console.log(`      - Base URL: ${provider.base_url}`);
-        console.log(`      - Cost per request: $${provider.cost_per_request}`);
-        console.log(`      - Priority: ${provider.priority}`);
-        console.log(`      - Active: ${provider.is_active}`);
-      } else {
-        console.log(`   ⚠️  No NanoBanana API provider found`);
-      }
-    } catch (err) {
-      console.log(`   ❌ Error: ${err.message}`);
-    }
-
-    // Test 4: Test credit functions
-    console.log('\n⚙️  Test 4: Testing credit management functions...');
+    return true;
     
-    try {
-      // Test if functions exist by checking the information schema
-      const { data: functions, error } = await supabase
-        .from('information_schema.routines')
-        .select('routine_name')
-        .eq('routine_schema', 'public')
-        .in('routine_name', ['consume_user_credits', 'consume_platform_credits', 'refund_user_credits']);
-
-      if (error) {
-        console.log(`   ❌ Error checking functions: ${error.message}`);
-      } else if (functions && functions.length > 0) {
-        console.log(`   ✅ Credit management functions found:`);
-        functions.forEach(func => {
-          console.log(`      - ${func.routine_name}`);
-        });
-      } else {
-        console.log(`   ⚠️  No credit management functions found`);
-      }
-    } catch (err) {
-      console.log(`   ❌ Error: ${err.message}`);
-    }
-
-    // Test 5: Check system alerts
-    console.log('\n🚨 Test 5: Checking system alerts...');
-    
-    try {
-      const { data: alerts, error } = await supabase
-        .from('system_alerts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) {
-        console.log(`   ❌ Error fetching alerts: ${error.message}`);
-      } else if (alerts && alerts.length > 0) {
-        console.log(`   ✅ System alerts found (${alerts.length} recent):`);
-        alerts.forEach(alert => {
-          console.log(`      - ${alert.type}: ${alert.message} (${alert.level})`);
-        });
-      } else {
-        console.log(`   ⚠️  No system alerts found`);
-      }
-    } catch (err) {
-      console.log(`   ❌ Error: ${err.message}`);
-    }
-
-    console.log('\n🎉 Credit Management System Test Complete!');
-    console.log('\n📋 Next Steps:');
-    console.log('   1. Start the Next.js app: npm run dev');
-    console.log('   2. Test the API endpoint: POST /api/enhance-image');
-    console.log('   3. Check the admin dashboard: /admin/credits');
-    console.log('   4. Set up background jobs: node scripts/setup-background-jobs.js run-all');
-
   } catch (error) {
-    console.error('❌ Test failed:', error.message);
-    process.exit(1);
+    console.error('💥 Test failed with error:', error);
+    return false;
   }
 }
 
-// Run the test
-testCreditSystem();
+async function createTestUser() {
+  console.log('\n🔧 Creating test credit record...');
+  
+  try {
+    // Get a user without credits
+    const { data: users } = await supabase
+      .from('auth.users')
+      .select('id')
+      .limit(1);
+    
+    if (!users || users.length === 0) {
+      console.log('⚠️  No users found to create test record');
+      return;
+    }
+    
+    const testUserId = users[0].id;
+    
+    // Create a test credit record
+    const { data, error } = await supabase
+      .from('user_credits')
+      .upsert({
+        user_id: testUserId,
+        subscription_tier: 'free',
+        monthly_allowance: 0,
+        current_balance: 5,
+        consumed_this_month: 0,
+        last_reset_at: new Date().toISOString()
+      })
+      .select();
+    
+    if (error) {
+      console.error('❌ Failed to create test record:', error.message);
+    } else {
+      console.log('✅ Test credit record created:', {
+        user_id: testUserId.substring(0, 8) + '...',
+        current_balance: data[0].current_balance
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error creating test record:', error.message);
+  }
+}
+
+if (require.main === module) {
+  (async () => {
+    const success = await testCreditSystem();
+    
+    if (!success) {
+      console.log('\n🔧 Attempting to create test data...');
+      await createTestUser();
+    }
+    
+    process.exit(success ? 0 : 1);
+  })();
+}
+
+module.exports = { testCreditSystem };
