@@ -218,7 +218,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
               ref={bannerRef}
               src={currentBannerUrl}
               alt="Header banner"
-              className="w-full h-full object-contain transition-transform duration-200"
+              className="w-full h-full object-cover transition-transform duration-200"
               style={{
                 transform: `translateY(${bannerPosition.y}px) scale(${bannerPosition.scale})`,
                 transformOrigin: 'center center'
@@ -238,15 +238,6 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
                   title={isAdjusting ? 'Finish adjusting' : 'Adjust position'}
                 >
                   <Move className="w-4 h-4" />
-                </button>
-                
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="p-2 bg-white bg-opacity-90 text-gray-700 hover:bg-opacity-100 rounded-lg transition-colors disabled:opacity-50"
-                  title="Change banner"
-                >
-                  <Edit3 className="w-4 h-4" />
                 </button>
                 
                 {isAdjusting && (
@@ -298,7 +289,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
             <Camera className="w-6 h-6 text-gray-400" />
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+          <div className="flex justify-center">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
@@ -316,20 +307,6 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
                 </>
               )}
             </button>
-            
-            {currentBannerUrl && (
-              <button
-                onClick={isAdjusting ? handleFinishAdjusting : () => setIsAdjusting(true)}
-                className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  isAdjusting 
-                    ? 'bg-emerald-600 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <Move className="w-4 h-4 mr-2" />
-                {isAdjusting ? 'Finish Adjusting' : 'Adjust Position'}
-              </button>
-            )}
           </div>
           
           <p className="text-sm text-gray-500">
