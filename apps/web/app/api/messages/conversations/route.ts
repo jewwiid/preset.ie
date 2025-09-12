@@ -39,39 +39,43 @@ export async function GET(request: NextRequest) {
     
     const validatedQuery = GetConversationsQuerySchema.parse(queryObject);
 
-    // Build query for conversations using admin client
-    let query = supabaseAdmin
-      .from('conversations')
-      .select(`
-        *,
-        messages:messages(*),
-        gig:gigs(*),
-        participants:conversation_participants(*)
-      `)
-      .eq('participants.user_id', user.id)
-      .order('updated_at', { ascending: false })
-      .limit(validatedQuery.limit);
-
-    if (validatedQuery.gigId) {
-      query = query.eq('gig_id', validatedQuery.gigId);
-    }
-
-    if (validatedQuery.status) {
-      query = query.eq('status', validatedQuery.status);
-    }
-
-    const { data: conversations, error } = await query;
+    // Use the get_user_conversations function to get conversations
+    const { data: conversations, error } = await supabaseAdmin
+      .rpc('get_user_conversations', {
+        p_user_id: user.id,
+        p_limit: validatedQuery.limit,
+        p_offset: validatedQuery.offset
+      });
 
     if (error) {
       return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
     }
 
+    // Transform the function result to match the expected API structure
+    const transformedConversations = conversations?.map((conv: any) => ({
+      id: conv.gig_id, // Use gig_id as conversation ID
+      gigId: conv.gig_id,
+      participants: [user.id, conv.other_user_id],
+      lastMessage: {
+        id: conv.last_message_id,
+        body: conv.last_message_content,
+        fromUserId: conv.last_message_content ? user.id : conv.other_user_id, // Simplified
+        sentAt: conv.last_message_at,
+        read: conv.unread_count === 0
+      },
+      unreadCount: conv.unread_count || 0,
+      status: 'ACTIVE' as const,
+      startedAt: conv.last_message_at, // Use last message time as started time
+      lastMessageAt: conv.last_message_at
+    })) || [];
+
+    // Calculate total unread count
+    const totalUnread = transformedConversations.reduce((sum: number, conv: any) => sum + conv.unreadCount, 0);
+
     const result = {
-      conversations: conversations || [],
-      pagination: {
-        limit: validatedQuery.limit,
-        hasMore: (conversations?.length || 0) === validatedQuery.limit
-      }
+      conversations: transformedConversations,
+      total: transformedConversations.length,
+      totalUnread: totalUnread
     };
 
     return NextResponse.json(result);

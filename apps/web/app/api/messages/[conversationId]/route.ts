@@ -40,29 +40,68 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const resolvedParams = await context.params;
     const validatedParams = ConversationParamsSchema.parse(resolvedParams);
 
-    // Get conversation directly using admin client
-    const { data: conversation, error } = await supabaseAdmin
-      .from('conversations')
+    // Get messages for this conversation (using gig_id as conversation_id)
+    const { data: messages, error: messagesError } = await supabaseAdmin
+      .from('messages')
       .select(`
         *,
-        messages:messages(*),
-        gig:gigs(*),
-        participants:conversation_participants(*)
+        gig:gigs(*)
       `)
-      .eq('id', validatedParams.conversationId)
-      .eq('participants.user_id', user.id)
-      .single();
+      .eq('gig_id', validatedParams.conversationId)
+      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .order('created_at', { ascending: true });
 
-    if (error || !conversation) {
+    if (messagesError) {
+      return NextResponse.json(
+        { error: 'Failed to fetch conversation messages' },
+        { status: 500 }
+      );
+    }
+
+    if (!messages || messages.length === 0) {
       return NextResponse.json(
         { error: 'Conversation not found or access denied' },
         { status: 404 }
       );
     }
 
+    // Get gig information
+    const gig = messages[0]?.gig;
+    if (!gig) {
+      return NextResponse.json(
+        { error: 'Gig not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get other participant
+    const otherUserId = messages.find(m => m.from_user_id !== user.id)?.from_user_id || 
+                       messages.find(m => m.to_user_id !== user.id)?.to_user_id;
+
+    // Transform to expected format
+    const conversationData = {
+      id: validatedParams.conversationId,
+      gigId: validatedParams.conversationId,
+      participants: [user.id, otherUserId].filter(Boolean),
+      messages: messages.map(msg => ({
+        id: msg.id,
+        fromUserId: msg.from_user_id,
+        toUserId: msg.to_user_id,
+        body: msg.body,
+        attachments: msg.attachments || [],
+        sentAt: msg.created_at,
+        readAt: msg.read_at,
+        editedAt: msg.updated_at,
+        deletedAt: null
+      })),
+      status: 'ACTIVE' as const,
+      startedAt: messages[0]?.created_at,
+      lastMessageAt: messages[messages.length - 1]?.created_at
+    };
+
     return NextResponse.json({
       success: true,
-      data: conversation
+      data: conversationData
     });
 
   } catch (error: any) {
@@ -134,29 +173,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Check if user is a participant using admin client
-    const { data: conversation, error: conversationError } = await supabaseAdmin
-      .from('conversations')
-      .select(`
-        *,
-        participants:conversation_participants(*)
-      `)
-      .eq('id', validatedParams.conversationId)
-      .eq('participants.user_id', user.id)
-      .single();
-    if (conversationError || !conversation) {
-      return NextResponse.json(
-        { error: 'Conversation not found' },
-        { status: 404 }
-      );
-    }
+    // Check if user is a participant by checking if they have messages in this conversation
+    const { data: messages, error: messagesError } = await supabaseAdmin
+      .from('messages')
+      .select('id')
+      .eq('gig_id', validatedParams.conversationId)
+      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .limit(1);
 
-    // Check if user is a participant
-    const isParticipant = conversation.participants?.some((p: any) => p.user_id === user.id);
-    if (!isParticipant) {
+    if (messagesError || !messages || messages.length === 0) {
       return NextResponse.json(
-        { error: 'You are not authorized to modify this conversation' },
-        { status: 403 }
+        { error: 'Conversation not found or access denied' },
+        { status: 404 }
       );
     }
 

@@ -42,30 +42,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const resolvedParams = await context.params;
     const validatedParams = ConversationParamsSchema.parse(resolvedParams);
 
-    // Check if user is a participant in this conversation using admin client
-    const { data: conversation, error: conversationError } = await supabaseAdmin
-      .from('conversations')
-      .select(`
-        *,
-        participants:conversation_participants(*)
-      `)
-      .eq('id', validatedParams.conversationId)
-      .eq('participants.user_id', user.id)
-      .single();
+    // Check if user is a participant by checking if they have messages in this conversation
+    const { data: messages, error: messagesError } = await supabaseAdmin
+      .from('messages')
+      .select('id')
+      .eq('gig_id', validatedParams.conversationId)
+      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .limit(1);
 
-    if (conversationError || !conversation) {
+    if (messagesError || !messages || messages.length === 0) {
       return NextResponse.json(
-        { error: 'Conversation not found' },
+        { error: 'Conversation not found or access denied' },
         { status: 404 }
-      );
-    }
-
-    // Check if user is a participant
-    const isParticipant = conversation.participants?.some((p: any) => p.user_id === user.id);
-    if (!isParticipant) {
-      return NextResponse.json(
-        { error: 'You are not authorized to mark messages in this conversation as read' },
-        { status: 403 }
       );
     }
 
@@ -73,7 +61,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const { error: updateError } = await supabaseAdmin
       .from('messages')
       .update({ read_at: new Date().toISOString() })
-      .eq('conversation_id', validatedParams.conversationId)
+      .eq('gig_id', validatedParams.conversationId)
       .eq('to_user_id', user.id)
       .is('read_at', null);
 
