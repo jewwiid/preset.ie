@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { useMessagesApi, ConversationDTO, ConversationDetailsDTO, MessageDTO } from '../../lib/api/messages'

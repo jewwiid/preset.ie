@@ -26,9 +26,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createSupabaseClient(supabaseUrl, supabaseServiceKey);
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Create anon client for user authentication
+    const supabaseAnon = createSupabaseClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
@@ -37,8 +40,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const resolvedParams = await context.params;
     const validatedParams = ConversationParamsSchema.parse(resolvedParams);
 
-    // Get conversation directly
-    const { data: conversation, error } = await supabase
+    // Get conversation directly using admin client
+    const { data: conversation, error } = await supabaseAdmin
       .from('conversations')
       .select(`
         *,
@@ -107,9 +110,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createSupabaseClient(supabaseUrl, supabaseServiceKey);
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Create anon client for user authentication
+    const supabaseAnon = createSupabaseClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
@@ -128,8 +134,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Check if user is a participant
-    const { data: conversation, error: conversationError } = await supabase
+    // Check if user is a participant using admin client
+    const { data: conversation, error: conversationError } = await supabaseAdmin
       .from('conversations')
       .select(`
         *,

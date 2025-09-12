@@ -28,9 +28,12 @@ export async function POST(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createSupabaseClient(supabaseUrl, supabaseServiceKey);
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Create anon client for user authentication
+    const supabaseAnon = createSupabaseClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
@@ -39,8 +42,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = SendMessageSchema.parse(body);
 
-    // Create message directly
-    const { data: message, error: messageError } = await supabase
+    // Create message directly using admin client
+    const { data: message, error: messageError } = await supabaseAdmin
       .from('messages')
       .insert({
         gig_id: validatedData.gigId,

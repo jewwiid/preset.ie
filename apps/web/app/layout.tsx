@@ -3,7 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "../lib/auth-context";
 import { NavBar } from "../components/NavBar";
-import { ToastProvider } from "../components/toast/ToastContext";
+import { FeedbackProvider } from "../components/feedback/FeedbackContext";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -27,14 +27,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ToastProvider>
+        <FeedbackProvider>
           <AuthProvider>
             <NavBar />
             <main className="min-h-screen">
               {children}
             </main>
           </AuthProvider>
-        </ToastProvider>
+        </FeedbackProvider>
       </body>
     </html>
   );

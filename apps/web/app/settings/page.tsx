@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { useRouter } from 'next/navigation'
@@ -8,13 +10,13 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
-import { useToast } from '../../components/toast/ToastContext'
+import { useFeedback } from '../../components/feedback/FeedbackContext'
 import { supabase } from '../../lib/supabase'
 
 export default function SettingsPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const { showToast } = useToast()
+  const { showFeedback } = useFeedback()
   const [settings, setSettings] = useState({
     email_notifications: true,
     push_notifications: true,
@@ -56,7 +58,7 @@ export default function SettingsPage() {
       if (error) {
         if (error.code === 'PGRST205') {
           // Table doesn't exist - show message to user
-          showToast({
+          showFeedback({
             type: 'warning',
             title: 'Setup Required',
             message: 'User settings table needs to be created. Please contact support.'
@@ -109,20 +111,20 @@ export default function SettingsPage() {
         console.error('Error updating settings:', error)
         
         if (error.code === 'PGRST205') {
-          showToast({
+          showFeedback({
             type: 'error',
             title: 'Database Setup Required',
             message: 'Settings table is missing. Please contact support to set up the database.'
           })
         } else {
-          showToast({
+          showFeedback({
             type: 'error',
             title: 'Error',
             message: error.message || 'Failed to update settings'
           })
         }
       } else {
-        showToast({
+        showFeedback({
           type: 'success',
           title: 'Success',
           message: 'Settings updated successfully'
@@ -130,7 +132,7 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('Catch error updating settings:', error)
-      showToast({
+      showFeedback({
         type: 'error',
         title: 'Error',
         message: 'Failed to update settings'
@@ -142,7 +144,7 @@ export default function SettingsPage() {
 
   const changePassword = async () => {
     if (passwords.new !== passwords.confirm) {
-      showToast({
+      showFeedback({
         type: 'error',
         title: 'Error',
         message: 'New passwords do not match'
@@ -151,7 +153,7 @@ export default function SettingsPage() {
     }
 
     if (passwords.new.length < 8) {
-      showToast({
+      showFeedback({
         type: 'error',
         title: 'Error',
         message: 'Password must be at least 8 characters long'
@@ -167,13 +169,13 @@ export default function SettingsPage() {
 
       if (error) {
         console.error('Error changing password:', error)
-        showToast({
+        showFeedback({
         type: 'error',
         title: 'Error',
         message: 'Failed to change password'
       })
       } else {
-        showToast({
+        showFeedback({
           type: 'success',
           title: 'Success',
           message: 'Password changed successfully'
@@ -182,7 +184,7 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('Error changing password:', error)
-      showToast({
+      showFeedback({
         type: 'error',
         title: 'Error',
         message: 'Failed to change password'
@@ -198,14 +200,14 @@ export default function SettingsPage() {
     }
 
     try {
-      showToast({
+      showFeedback({
         type: 'info',
         title: 'Info',
         message: 'Account deletion will be available soon'
       })
     } catch (error) {
       console.error('Error deleting account:', error)
-      showToast({
+      showFeedback({
         type: 'error',
         title: 'Error',
         message: 'Failed to delete account'

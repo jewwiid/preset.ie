@@ -278,7 +278,7 @@ export class PerformanceMonitor {
 
     const getPercentile = (p: number) => {
       const index = Math.ceil((p / 100) * totalMeasures) - 1;
-      return durations[Math.max(0, index)];
+      return durations[Math.max(0, index)] || 0;
     };
 
     return {
@@ -287,8 +287,8 @@ export class PerformanceMonitor {
       summary: {
         totalMeasures,
         averageDuration: durations.reduce((a, b) => a + b, 0) / totalMeasures,
-        minDuration: durations[0],
-        maxDuration: durations[totalMeasures - 1],
+        minDuration: durations[0] || 0,
+        maxDuration: durations[totalMeasures - 1] || 0,
         p50: getPercentile(50),
         p95: getPercentile(95),
         p99: getPercentile(99),

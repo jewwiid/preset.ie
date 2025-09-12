@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useFeedback } from '@/components/feedback/FeedbackContext';
 
 interface ReportMessageDialogProps {
   isOpen: boolean;
@@ -71,7 +71,7 @@ export function ReportMessageDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
+  const { showFeedback } = useFeedback();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,9 +109,10 @@ export function ReportMessageDialog({
       const result = await response.json();
       
       setIsSubmitted(true);
-      toast({
+      showFeedback({
+        type: 'success',
         title: "Report Submitted",
-        description: "Thank you for your report. We'll review it and take appropriate action.",
+        message: "Thank you for your report. We'll review it and take appropriate action.",
         duration: 5000,
       });
 
@@ -125,10 +126,10 @@ export function ReportMessageDialog({
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit report';
       setError(errorMessage);
       
-      toast({
+      showFeedback({
+        type: 'error',
         title: "Report Failed",
-        description: errorMessage,
-        variant: "destructive",
+        message: errorMessage,
         duration: 5000,
       });
     } finally {

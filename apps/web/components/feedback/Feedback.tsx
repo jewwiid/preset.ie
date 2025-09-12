@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from 'react'
 import { CheckCircle, XCircle, AlertCircle, Info, Bell, X } from 'lucide-react'
-import type { ToastMessage } from './ToastContext'
+import type { FeedbackMessage } from './FeedbackContext'
 
-interface ToastProps extends ToastMessage {
+interface FeedbackProps extends FeedbackMessage {
   onClose: () => void
 }
 
-const toastStyles = {
+const feedbackStyles = {
   success: {
     container: 'bg-white/95 backdrop-blur-md border-green-200/50 shadow-lg shadow-green-100/50',
     accent: 'border-l-4 border-l-green-500',
@@ -46,11 +46,11 @@ const toastStyles = {
   }
 }
 
-export function Toast({ type, title, message, actions, avatar, dismissible = true, onClose }: ToastProps) {
+export function Feedback({ type, title, message, actions, avatar, dismissible = true, onClose }: FeedbackProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
 
-  const style = toastStyles[type]
+  const style = feedbackStyles[type]
   const IconComponent = style.icon
 
   useEffect(() => {

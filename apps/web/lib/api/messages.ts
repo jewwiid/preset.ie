@@ -196,12 +196,8 @@ export class MessagesApi {
  */
 export function useMessagesApi() {
   const getAuthToken = async (): Promise<string> => {
-    // Get the current session from Supabase
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    // Import the existing Supabase client to ensure session consistency
+    const { supabase } = await import('../supabase');
     
     const { data: { session } } = await supabase.auth.getSession();
     

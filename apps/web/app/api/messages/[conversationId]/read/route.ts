@@ -28,9 +28,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Create anon client for user authentication
+    const supabaseAnon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
@@ -39,8 +42,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const resolvedParams = await context.params;
     const validatedParams = ConversationParamsSchema.parse(resolvedParams);
 
-    // Check if user is a participant in this conversation
-    const { data: conversation, error: conversationError } = await supabase
+    // Check if user is a participant in this conversation using admin client
+    const { data: conversation, error: conversationError } = await supabaseAdmin
       .from('conversations')
       .select(`
         *,
@@ -66,8 +69,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Mark all messages as read for this user
-    const { error: updateError } = await supabase
+    // Mark all messages as read for this user using admin client
+    const { error: updateError } = await supabaseAdmin
       .from('messages')
       .update({ read_at: new Date().toISOString() })
       .eq('conversation_id', validatedParams.conversationId)

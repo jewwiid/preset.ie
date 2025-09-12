@@ -2,13 +2,45 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../auth-context'
-import { useToast } from '../../components/toast/ToastContext'
+import { useFeedback } from '../../components/feedback/FeedbackContext'
 import { supabase } from '../supabase'
-import type { 
-  Notification, 
-  NotificationFilters,
-  NotificationPreferences 
-} from '@preset/types/src/notifications'
+// Define types locally to avoid import issues
+export interface NotificationFilters {
+  category?: string
+  read?: boolean
+  read_status?: 'all' | 'read' | 'unread'
+  date_range?: {
+    from: Date
+    to: Date
+  }
+  limit?: number
+  offset?: number
+}
+
+export interface NotificationPreferences {
+  email_enabled: boolean
+  push_enabled: boolean
+  digest_frequency: 'immediate' | 'daily' | 'weekly' | 'never'
+  categories: Record<string, boolean>
+}
+
+// Define Notification type locally
+export interface Notification {
+  id: string
+  user_id: string
+  recipient_id: string
+  type: string
+  category: string
+  title: string
+  message?: string
+  avatar_url?: string
+  thumbnail_url?: string
+  action_url?: string
+  data?: any
+  read: boolean
+  read_at?: string | null
+  created_at: string
+}
 
 export interface UseNotificationsResult {
   // State
@@ -31,7 +63,7 @@ export interface UseNotificationsResult {
 
 export function useNotifications(): UseNotificationsResult {
   const { user } = useAuth()
-  const { showToast } = useToast()
+  const { showFeedback } = useFeedback()
   
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -194,13 +226,13 @@ export function useNotifications(): UseNotificationsResult {
       setUnreadCount(prev => Math.max(0, prev - 1))
 
     } catch (err: any) {
-      showToast({
+      showFeedback({
         type: 'error',
         title: 'Error',
         message: err.message
       })
     }
-  }, [user, showToast])
+  }, [user, showFeedback])
 
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
@@ -224,20 +256,20 @@ export function useNotifications(): UseNotificationsResult {
 
       setUnreadCount(0)
 
-      showToast({
+      showFeedback({
         type: 'success',
         title: 'Success',
         message: 'All notifications marked as read'
       })
 
     } catch (err: any) {
-      showToast({
+      showFeedback({
         type: 'error',
         title: 'Error',
         message: err.message
       })
     }
-  }, [user, showToast])
+  }, [user, showFeedback])
 
   // Dismiss notification
   const dismiss = useCallback(async (notificationId: string) => {
@@ -264,13 +296,13 @@ export function useNotifications(): UseNotificationsResult {
       }
 
     } catch (err: any) {
-      showToast({
+      showFeedback({
         type: 'error',
         title: 'Error',
         message: err.message
       })
     }
-  }, [user, notifications, showToast])
+  }, [user, notifications, showFeedback])
 
   // Refresh data
   const refresh = useCallback(async () => {
@@ -303,7 +335,7 @@ export function useNotifications(): UseNotificationsResult {
         setUnreadCount(prev => prev + 1)
 
         // Show toast notification with enhanced features
-        showToast({
+        showFeedback({
           type: 'notification',
           title: newNotification.title,
           message: newNotification.message,
@@ -328,7 +360,7 @@ export function useNotifications(): UseNotificationsResult {
       console.log('Cleaning up notification subscription')
       supabase.removeChannel(channel)
     }
-  }, [user, showToast])
+  }, [user, showFeedback])
 
   // Initial data fetch
   useEffect(() => {

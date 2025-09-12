@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../auth-context'
-import { useToast } from '../../components/toast/ToastContext'
+import { useFeedback } from '../../components/feedback/FeedbackContext'
 import { supabase } from '../supabase'
 import type { MessageDTO } from '../api/messages'
 import { RealtimeChannel, REALTIME_LISTEN_TYPES } from '@supabase/supabase-js'
@@ -58,7 +58,7 @@ export interface UseRealtimeMessagesResult {
 
 export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): UseRealtimeMessagesResult {
   const { user } = useAuth()
-  const { showToast } = useToast()
+  const { showFeedback } = useFeedback()
   
   const {
     conversationId,
@@ -213,7 +213,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
 
           // Show toast notification
           if (enableToastNotifications && conversationId !== newMessage.conversation_id) {
-            showToast({
+            showFeedback({
               type: 'notification',
               title: 'New Message',
               message: newMessage.body.length > 50 
@@ -361,7 +361,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
     onTypingUpdate, 
     onConnectionChange,
     markAsDelivered,
-    showToast
+    showFeedback
   ])
 
   // Reconnect function

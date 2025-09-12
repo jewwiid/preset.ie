@@ -23,9 +23,12 @@ export async function GET(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Create anon client for user authentication
+    const supabaseAnon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
@@ -36,8 +39,8 @@ export async function GET(request: NextRequest) {
     
     const validatedQuery = GetConversationsQuerySchema.parse(queryObject);
 
-    // Build query for conversations
-    let query = supabase
+    // Build query for conversations using admin client
+    let query = supabaseAdmin
       .from('conversations')
       .select(`
         *,
@@ -103,9 +106,12 @@ export async function POST(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Create anon client for user authentication
+    const supabaseAnon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }

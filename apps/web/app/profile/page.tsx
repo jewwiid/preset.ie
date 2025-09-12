@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+export const dynamic = 'force-dynamic'
+
+import { useState, useEffect, Suspense } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -800,7 +802,7 @@ function UserSettingsTab() {
   )
 }
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const { user, userRole, loading: authLoading } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -1749,5 +1751,18 @@ export default function ProfilePage() {
         )}
       </div>
     </div>
+  )
+}
+
+// Wrapper component with Suspense for useSearchParams
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500"></div>
+      </div>
+    }>
+      <ProfilePageContent />
+    </Suspense>
   )
 }

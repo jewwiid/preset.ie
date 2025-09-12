@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { creditScalingService } from '@/../../packages/domain/src/credits/CreditScalingService';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -417,7 +416,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Log transaction (user sees 1 credit, but we track the actual provider cost)
-    const providerCost = creditScalingService.calculateProviderCost(PROVIDER, USER_CREDITS_PER_ENHANCEMENT);
+    // NanoBanana ratio: 1 user credit = 4 provider credits
+    const providerCost = {
+      userCredits: USER_CREDITS_PER_ENHANCEMENT,
+      providerCredits: USER_CREDITS_PER_ENHANCEMENT * 4,
+      ratio: 4
+    };
     await supabaseAdmin
       .from('credit_transactions')
       .insert({

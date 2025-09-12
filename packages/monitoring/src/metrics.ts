@@ -36,7 +36,7 @@ export class MetricsCollector {
   private gauges: Map<string, Gauge> = new Map();
   private histograms: Map<string, Histogram> = new Map();
   private metricsBuffer: Metric[] = [];
-  private flushInterval: NodeJS.Timeout | null = null;
+  private flushInterval: ReturnType<typeof setInterval> | null = null;
 
   private constructor() {}
 
@@ -54,7 +54,7 @@ export class MetricsCollector {
 
     this.flushInterval = setInterval(() => {
       this.flush();
-    }, flushIntervalMs) as NodeJS.Timeout;
+    }, flushIntervalMs);
   }
 
   destroy(): void {

@@ -1,0 +1,94 @@
+# Vercel Environment Variables Configuration
+# Copy these variables to your Vercel project settings
+# Go to: Vercel Dashboard → Your Project → Settings → Environment Variables
+
+# =============================================================================
+# STATUS SUMMARY
+# =============================================================================
+# ✅ ALREADY CONFIGURED IN VERCEL:
+# - NEXT_PUBLIC_SUPABASE_URL
+# - NEXT_PUBLIC_SUPABASE_ANON_KEY  
+# - SUPABASE_SERVICE_ROLE_KEY
+# - NANOBANANA_API_KEY
+# - NANOBANANA_CALLBACK_URL
+# - NEXT_PUBLIC_APP_URL
+# - OPENAI_API_KEY
+# - PEXELS_API_KEY
+#
+# ❌ STILL NEED TO ADD:
+# - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+# - STRIPE_WEBHOOK_SECRET
+# - Optional monitoring and additional services
+# =============================================================================
+
+# =============================================================================
+# CORE SUPABASE CONFIGURATION (REQUIRED) ✅ CONFIGURED
+# =============================================================================
+NEXT_PUBLIC_SUPABASE_URL=https://zbsmgymyfhnwjdnmlelr.supabase.co ✅ ALREADY SET IN VERCEL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpic21neW15Zmhud2pkbm1sZWxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxMDg4NTMsImV4cCI6MjA3MjY4NDg1M30.02U7mfQVPhw-zw9oTHnPWF7pRRgz-a_DhQ8dwBDUi2c ✅ ALREADY SET IN VERCEL
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpic21neW15Zmhud2pkbm1sZWxyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzEwODg1MywiZXhwIjoyMDcyNjg0ODUzfQ.XkDZmk6mfJAGUEUl3uusETrtsJZ5fBPtHMrda7nD__U ✅ ALREADY SET IN VERCEL
+
+# =============================================================================
+# NANOBANANA API CONFIGURATION (REQUIRED for image enhancement) ✅ CONFIGURED
+# =============================================================================
+NANOBANANA_API_KEY=e0847916744535b2241e366dbca9a465 ✅ ALREADY SET IN VERCEL
+NANOBANANA_CALLBACK_URL=https://preset-pgc17ubpc-jewwiids-projects.vercel.app/api/imagegen/callback ✅ ALREADY SET IN VERCEL
+NANOBANAN_CREDITS_PER_ENHANCEMENT=1 ❌ NEEDS TO BE ADDED
+
+# =============================================================================
+# STRIPE PAYMENT CONFIGURATION (REQUIRED for payments) ❌ NOT CONFIGURED
+# =============================================================================
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51Nd8IxAYxJrUymbHj0j41qWHzYAAygLRcExhv9dOPeAcasY5Bdvqnb0jC7alZp0faaXou1gpQwTMdisgtL9Pudh700iX1xOAva ❌ NEEDS TO BE ADDED
+STRIPE_WEBHOOK_SECRET=whsec_LZGD1Vo4An2p8ZFUMR9UF1UV4CF7VW87 ❌ NEEDS TO BE ADDED
+
+# =============================================================================
+# APP URL CONFIGURATION (REQUIRED for callbacks) ✅ CONFIGURED
+# =============================================================================
+NEXT_PUBLIC_APP_URL=https://preset-pgc17ubpc-jewwiids-projects.vercel.app ✅ ALREADY SET IN VERCEL
+
+# =============================================================================
+# OPTIONAL AI SERVICES (For enhanced features) ✅ CONFIGURED
+# =============================================================================
+OPENAI_API_KEY=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 ✅ ALREADY SET IN VERCEL
+PEXELS_API_KEY=7cp1HqLTITG09HHLsMGCYtE7ONIn86x5BL0IISNPvqw3J7URiGHcFeGv ✅ ALREADY SET IN VERCEL
+
+# =============================================================================
+# OPTIONAL MONITORING (For error tracking)
+# =============================================================================
+SENTRY_DSN=your_sentry_dsn
+NEXT_PUBLIC_SENTRY_DSN=your_sentry_dsn
+NEXT_PUBLIC_ENVIRONMENT=production
+
+# =============================================================================
+# OPTIONAL ADDITIONAL SERVICES
+# =============================================================================
+FAL_AI_API_KEY=your_fal_ai_api_key
+KIE_AI_API_KEY=your_kie_ai_api_key
+GOOGLE_AI_API_KEY=your_google_ai_api_key
+SLACK_WEBHOOK_URL=your_slack_webhook_url
+EMAIL_SERVICE_API_KEY=your_email_service_api_key
+REDIS_URL=your_redis_url
+BACKGROUND_JOB_TOKEN=your_secure_background_job_token
+
+# =============================================================================
+# WAVESPEED API (For Seedrun integration)
+# =============================================================================
+WAVESPEED_API_KEY=a65e58dbbba5c24d2ad6462ed784ad524dfc1d752e0331b1ef46ba2e9d85fb0d ❌ NEEDS TO BE ADDED
+
+# =============================================================================
+# INSTRUCTIONS:
+# =============================================================================
+# 1. Replace all "your_*" values with your actual API keys and URLs
+# 2. Go to your Vercel project dashboard
+# 3. Click on Settings → Environment Variables
+# 4. Add each variable with its corresponding value
+# 5. Set Environment to "Production" for all variables
+# 6. Click Save after adding each variable
+#
+# IMPORTANT NOTES:
+# - NEXT_PUBLIC_ variables are exposed to the browser (safe to share)
+# - Non-NEXT_PUBLIC variables are server-side only (keep secret)
+# - Replace "your-vercel-app-url.vercel.app" with your actual Vercel URL
+# - Core Supabase and NanoBanana configs are essential for basic functionality
+# - Stripe config is required for payment features
+# =============================================================================
