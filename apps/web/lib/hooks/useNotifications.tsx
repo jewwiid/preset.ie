@@ -8,7 +8,7 @@ import type {
   Notification, 
   NotificationFilters,
   NotificationPreferences 
-} from '@preset/types'
+} from '@preset/types/src/notifications'
 
 export interface UseNotificationsResult {
   // State

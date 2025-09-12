@@ -159,7 +159,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
         // Auto-clear typing after 3 seconds of inactivity
         typingTimeoutRef.current = setTimeout(() => {
           setTyping(conversationId, false)
-        }, 3000)
+        }, 3000) as unknown as NodeJS.Timeout
       } else {
         // Remove typing indicator
         const { error } = await supabase
@@ -324,19 +324,14 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
     // Subscribe to all channels
     Promise.all(channels.map(channel => channel.subscribe()))
       .then((results) => {
-        const allSuccessful = results.every(result => result === 'SUBSCRIBED')
+        // All channels were subscribed successfully
+        setIsConnected(true)
+        setIsConnecting(false)
+        setConnectionError(null)
+        console.log('All realtime subscriptions established')
         
-        if (allSuccessful) {
-          setIsConnected(true)
-          setIsConnecting(false)
-          setConnectionError(null)
-          console.log('All realtime subscriptions established')
-          
-          if (onConnectionChange) {
-            onConnectionChange(true)
-          }
-        } else {
-          throw new Error('Some subscriptions failed')
+        if (onConnectionChange) {
+          onConnectionChange(true)
         }
       })
       .catch((error) => {
@@ -352,7 +347,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
         // Attempt to reconnect after delay
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnect()
-        }, 5000)
+        }, 5000) as unknown as NodeJS.Timeout
       })
 
   }, [

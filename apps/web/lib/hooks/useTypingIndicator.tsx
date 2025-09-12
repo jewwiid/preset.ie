@@ -92,7 +92,7 @@ export function useTypingIndicator(options: UseTypingIndicatorOptions = {}): Use
       // Set auto-stop timeout
       typingTimeoutRef.current = setTimeout(() => {
         stopTyping(targetConversationId)
-      }, typingTimeout)
+      }, typingTimeout) as unknown as NodeJS.Timeout
 
     } catch (error) {
       console.error('Error in startTyping:', error)
@@ -264,7 +264,7 @@ export function useTypingIndicator(options: UseTypingIndicatorOptions = {}): Use
 
   // Setup cleanup interval
   useEffect(() => {
-    cleanupIntervalRef.current = setInterval(cleanupOldIndicators, cleanupInterval)
+    cleanupIntervalRef.current = setInterval(cleanupOldIndicators, cleanupInterval) as unknown as NodeJS.Timeout
 
     return () => {
       if (cleanupIntervalRef.current) {

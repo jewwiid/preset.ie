@@ -77,8 +77,8 @@ export function useConnectionStatus(options: UseConnectionStatusOptions = {}): U
   // Refs
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const statusChangeCallbackRef = useRef<((status: ConnectionStatus) => void) | undefined>()
-  const qualityChangeCallbackRef = useRef<((quality: ConnectionQuality) => void) | undefined>()
+  const statusChangeCallbackRef = useRef<((status: ConnectionStatus) => void) | undefined>(undefined)
+  const qualityChangeCallbackRef = useRef<((quality: ConnectionQuality) => void) | undefined>(undefined)
 
   // Derived state
   const isConnected = status === 'connected'
@@ -88,12 +88,17 @@ export function useConnectionStatus(options: UseConnectionStatusOptions = {}): U
     const startTime = Date.now()
     
     try {
-      // Use a simple query to test the connection
-      const { error } = await supabase
+      // Use a simple query to test the connection with manual timeout
+      const queryPromise = supabase
         .from('users_profile')
         .select('id')
         .limit(1)
-        .timeout(pingTimeout)
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Connection timeout')), pingTimeout)
+      })
+      
+      const { error } = await Promise.race([queryPromise, timeoutPromise]) as any
 
       const latency = Date.now() - startTime
 
@@ -203,7 +208,7 @@ export function useConnectionStatus(options: UseConnectionStatusOptions = {}): U
       setReconnectAttempt(prev => prev + 1)
       updateStatus('reconnecting')
       checkConnection()
-    }, delay)
+    }, delay) as unknown as NodeJS.Timeout
   }, [reconnectAttempt, reconnectAttempts, reconnectDelay, checkConnection, updateStatus])
 
   // Manual reconnect
@@ -246,7 +251,7 @@ export function useConnectionStatus(options: UseConnectionStatusOptions = {}): U
             scheduleReconnect()
           }
         }
-      }, heartbeatInterval)
+      }, heartbeatInterval) as unknown as NodeJS.Timeout
     }
 
     startHeartbeat()

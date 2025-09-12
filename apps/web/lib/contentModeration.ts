@@ -119,7 +119,7 @@ export async function checkTagDuplicate(
     
     // Flatten all tags and check for duplicates
     const allTags = data
-      .map(row => row[column] || [])
+      .map(row => (row as any)[column] || [])
       .flat()
       .map((t: string) => t.toLowerCase().trim())
     

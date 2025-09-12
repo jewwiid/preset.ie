@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Bell, Check, CheckCheck, X, BellOff, Volume2, VolumeX } from 'lucide-react'
 import { useNotifications } from '../lib/hooks/useNotifications'
-import type { Notification } from '@preset/types'
+import type { Notification } from '@preset/types/src/notifications'
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)

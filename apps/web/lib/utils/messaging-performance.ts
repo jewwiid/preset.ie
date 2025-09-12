@@ -19,7 +19,7 @@ export function useDebounce<T extends any[]>(
     
     timeoutRef.current = setTimeout(() => {
       callback(...args)
-    }, delay)
+    }, delay) as unknown as NodeJS.Timeout
   }, [callback, delay])
 }
 
@@ -45,7 +45,7 @@ export function useThrottle<T extends any[]>(
       timeoutRef.current = setTimeout(() => {
         lastCallRef.current = Date.now()
         callback(...args)
-      }, delay - (now - lastCallRef.current))
+      }, delay - (now - lastCallRef.current)) as unknown as NodeJS.Timeout
     }
   }, [callback, delay])
 }
@@ -81,7 +81,7 @@ export class MessageBatcher<T> {
     if (!this.timeout) {
       this.timeout = setTimeout(() => {
         this.flush()
-      }, this.maxWaitTime)
+      }, this.maxWaitTime) as unknown as NodeJS.Timeout
     }
   }
 
@@ -136,7 +136,9 @@ export class LRUCache<K, V> {
     } else if (this.cache.size >= this.maxSize) {
       // Remove least recently used (first item)
       const firstKey = this.cache.keys().next().value
-      this.cache.delete(firstKey)
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey)
+      }
     }
     
     this.cache.set(key, value)
@@ -368,7 +370,7 @@ export class MemoryManager {
       // Periodic cleanup logic could go here
       // For now, just log memory usage
       console.debug('Memory usage:', this.getMemoryUsage())
-    }, 60000) // Every minute
+    }, 60000) as unknown as NodeJS.Timeout // Every minute
   }
   
   destroy(): void {

@@ -196,7 +196,7 @@ export class FormPersistence {
     let timeoutId: NodeJS.Timeout
     return (...args: Parameters<T>) => {
       clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => func.apply(null, args), delay)
+      timeoutId = setTimeout(() => func.apply(null, args), delay) as unknown as NodeJS.Timeout
     }
   }
 }

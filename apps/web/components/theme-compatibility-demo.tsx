@@ -24,7 +24,7 @@ export function ThemeCompatibilityDemo() {
 
   const handleThemeChange = (theme: "default" | "blue") => {
     setCurrentTheme(theme)
-    const themeColors = exampleThemes[theme][isDark ? "dark" : "light"]
+    const themeColors = (exampleThemes[theme] as any)[isDark ? "dark" : "light"]
     if (typeof window !== "undefined") {
       applyTweakcnTheme(themeColors, isDark ? "dark" : "light")
     }
@@ -33,7 +33,7 @@ export function ThemeCompatibilityDemo() {
   const handleModeToggle = () => {
     const newMode = !isDark
     setIsDark(newMode)
-    const themeColors = exampleThemes[currentTheme][newMode ? "dark" : "light"]
+    const themeColors = (exampleThemes[currentTheme] as any)[newMode ? "dark" : "light"]
     if (typeof window !== "undefined") {
       applyTweakcnTheme(themeColors, newMode ? "dark" : "light")
     }

@@ -30,7 +30,7 @@ export default function MessagesPage() {
   // Refs for auto-scrolling and input management
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const typingTimeoutRef = useRef<number | null>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Real-time event handlers
   function handleNewMessage(message: RealtimeMessage) {
@@ -222,7 +222,7 @@ export default function MessagesPage() {
         setIsTyping(false)
         realtimeMessages.setTyping(selectedConversation, false)
       }
-    }, 1000)
+    }, 1000) as unknown as NodeJS.Timeout
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
