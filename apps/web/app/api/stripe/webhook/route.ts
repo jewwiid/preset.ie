@@ -342,4 +342,4 @@ function mapStripePriceToTier(priceId: string | undefined): string {
   
   return priceToTierMap[priceId || ''] || 'FREE';
 }
-*/
+// End of commented functions */

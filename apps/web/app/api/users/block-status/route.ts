@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient();
     
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
