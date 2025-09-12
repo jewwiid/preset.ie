@@ -43,7 +43,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('user-assets')
+        .from('profile-photos')
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
@@ -55,7 +55,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
 
       // Get the public URL
       const { data: urlData } = supabase.storage
-        .from('user-assets')
+        .from('profile-photos')
         .getPublicUrl(fileName)
 
       if (urlData?.publicUrl) {
@@ -98,7 +98,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
 
       // Delete from storage
       const { error: deleteError } = await supabase.storage
-        .from('user-assets')
+        .from('profile-photos')
         .remove([fullPath])
 
       if (deleteError) {
