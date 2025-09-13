@@ -183,3 +183,4 @@ go run . help
 ```
 # Trigger deployment with secrets configured
 # Test deployment with Production environment secrets
+# Test deployment with corrected secrets
