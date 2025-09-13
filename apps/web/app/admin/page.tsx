@@ -357,7 +357,7 @@ export default function AdminDashboard() {
       {/* Tabs */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitScrollbar: { display: 'none' } }}>
+          <nav className="flex overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <div className="flex space-x-2 sm:space-x-8 min-w-max">
               {tabs.map((tab) => (
                 <button
