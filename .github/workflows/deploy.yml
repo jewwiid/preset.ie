@@ -62,7 +62,9 @@ jobs:
           cache: 'npm'
 
       - name: Install Supabase CLI
-        run: npm install --global supabase@latest
+        run: |
+          curl -fsSL https://github.com/supabase/cli/releases/download/v1.200.3/supabase_linux_amd64.tar.gz | tar -xz
+          sudo mv supabase /usr/local/bin/
 
       - name: Deploy Edge Functions
         run: |
@@ -89,7 +91,9 @@ jobs:
           cache: 'npm'
 
       - name: Install Supabase CLI
-        run: npm install --global supabase@latest
+        run: |
+          curl -fsSL https://github.com/supabase/cli/releases/download/v1.200.3/supabase_linux_amd64.tar.gz | tar -xz
+          sudo mv supabase /usr/local/bin/
 
       - name: Run Migrations
         run: |
@@ -106,16 +110,5 @@ jobs:
       - name: Send Slack notification
         run: |
           curl -X POST -H 'Content-type: application/json' \
-            --data '{
-              "text": "Deployment to production ${{ job.status }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Deployment Status:* ${{ job.status }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Message:* ${{ github.event.head_commit.message }}"
-                  }
-                }
-              ]
-            }' \
+            --data '{"text": "Deployment to production ${{ job.status }}", "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": "*Deployment Status:* ${{ job.status }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Message:* ${{ github.event.head_commit.message }}"}}]}' \
             ${{ secrets.SLACK_WEBHOOK }}
