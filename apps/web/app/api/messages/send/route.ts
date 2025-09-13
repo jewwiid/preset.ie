@@ -42,6 +42,35 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = SendMessageSchema.parse(body);
 
+    // Check if recipient allows messages from strangers
+    const { data: recipientProfile } = await supabaseAdmin
+      .from('users_profile')
+      .select('id')
+      .eq('user_id', validatedData.toUserId)
+      .single();
+
+    if (!recipientProfile) {
+      return NextResponse.json({ error: 'Recipient not found' }, { status: 404 });
+    }
+
+    // Validate message permission using database function
+    const { data: permissionResult, error: permissionError } = await supabaseAdmin
+      .rpc('validate_message_permission', {
+        sender_user_id: user.id,
+        recipient_user_id: validatedData.toUserId
+      });
+
+    if (permissionError) {
+      console.error('Permission check error:', permissionError);
+      return NextResponse.json({ error: 'Failed to validate message permission' }, { status: 500 });
+    }
+
+    if (!permissionResult) {
+      return NextResponse.json({ 
+        error: 'Recipient does not allow messages from users they haven\'t worked with' 
+      }, { status: 403 });
+    }
+
     // Create message directly using admin client
     const { data: message, error: messageError } = await supabaseAdmin
       .from('messages')
