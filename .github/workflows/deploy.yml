@@ -64,7 +64,7 @@ jobs:
       - name: Install Supabase CLI
         run: |
           curl -fsSL https://github.com/supabase/cli/releases/download/v1.200.3/supabase_linux_amd64.tar.gz | tar -xz
-          sudo mv supabase /usr/local/bin/
+          sudo mv supabase /usr/local/bin/ || true
 
       - name: Deploy Edge Functions
         run: |
@@ -93,7 +93,7 @@ jobs:
       - name: Install Supabase CLI
         run: |
           curl -fsSL https://github.com/supabase/cli/releases/download/v1.200.3/supabase_linux_amd64.tar.gz | tar -xz
-          sudo mv supabase /usr/local/bin/
+          sudo mv supabase /usr/local/bin/ || true
 
       - name: Run Migrations
         run: |
@@ -109,6 +109,10 @@ jobs:
     steps:
       - name: Send Slack notification
         run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data '{"text": "Deployment to production ${{ job.status }}", "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": "*Deployment Status:* ${{ job.status }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Message:* ${{ github.event.head_commit.message }}"}}]}' \
-            ${{ secrets.SLACK_WEBHOOK }}
+          if [ -n "${{ secrets.SLACK_WEBHOOK }}" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data '{"text": "Deployment to production ${{ job.status }}", "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": "*Deployment Status:* ${{ job.status }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Message:* ${{ github.event.head_commit.message }}"}}]}' \
+              ${{ secrets.SLACK_WEBHOOK }}
+          else
+            echo "Slack webhook not configured, skipping notification"
+          fi
