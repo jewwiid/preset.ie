@@ -68,12 +68,14 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   const [description, setDescription] = useState('')
   const [purpose, setPurpose] = useState<PurposeType>('PORTFOLIO')
   const [compType, setCompType] = useState<CompType>('TFP')
+  const [compDetails, setCompDetails] = useState('')
   const [usageRights, setUsageRights] = useState('')
   const [location, setLocation] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [applicationDeadline, setApplicationDeadline] = useState('')
   const [maxApplicants, setMaxApplicants] = useState(10)
+  const [safetyNotes, setSafetyNotes] = useState('')
   const [status, setStatus] = useState<StatusType>('DRAFT')
   const [moodboardId, setMoodboardId] = useState<string | null>(null)
   
@@ -599,10 +601,12 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
             description={description}
             purpose={purpose}
             compType={compType}
+            compDetails={compDetails}
             onTitleChange={setTitle}
             onDescriptionChange={setDescription}
             onPurposeChange={setPurpose}
             onCompTypeChange={setCompType}
+            onCompDetailsChange={setCompDetails}
             onNext={handleNextStep}
             isValid={isBasicStepValid()}
           />
@@ -629,8 +633,10 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
           <RequirementsStep
             usageRights={usageRights}
             maxApplicants={maxApplicants}
+            safetyNotes={safetyNotes}
             onUsageRightsChange={setUsageRights}
             onMaxApplicantsChange={setMaxApplicants}
+            onSafetyNotesChange={setSafetyNotes}
             onNext={handleNextStep}
             onBack={handleBackStep}
             isValid={isRequirementsStepValid()}
@@ -654,12 +660,14 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
             description={description}
             purpose={purpose}
             compType={compType}
+            compDetails={compDetails}
             location={location}
             startDate={startDate}
             endDate={endDate}
             applicationDeadline={applicationDeadline}
             usageRights={usageRights}
             maxApplicants={maxApplicants}
+            safetyNotes={safetyNotes}
             status={status}
             moodboardId={moodboardId || undefined}
             onStatusChange={setStatus}

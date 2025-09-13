@@ -65,7 +65,7 @@ export async function checkUserConnection(
           connectionType: 'mutual_application',
           connectionDetails: {
             gigId: mutualGigs[0],
-            gigTitle: mutualApplications.find(app => app.gig_id === mutualGigs[0])?.gigs?.title
+            gigTitle: mutualApplications.find(app => app.gig_id === mutualGigs[0])?.gigs?.[0]?.title
           }
         }
       }
