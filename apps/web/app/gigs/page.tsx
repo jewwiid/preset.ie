@@ -567,34 +567,39 @@ export default function GigDiscoveryPage() {
               />
             </div>
 
-            {/* Filter Buttons */}
-            <div className="flex gap-2">
-              <select
-                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={selectedCompType}
-                onChange={(e) => setSelectedCompType(e.target.value as CompensationType | 'ALL')}
-              >
-                <option value="ALL">All Types</option>
-                <option value="TFP">TFP</option>
-                <option value="PAID">Paid</option>
-                <option value="EXPENSES">Expenses</option>
-                <option value="OTHER">Other</option>
-              </select>
+            {/* Filter Buttons - Mobile Responsive */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
+              {/* First row on mobile: Type selector and Location */}
+              <div className="flex gap-2 flex-1">
+                <select
+                  className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base flex-shrink-0"
+                  value={selectedCompType}
+                  onChange={(e) => setSelectedCompType(e.target.value as CompensationType | 'ALL')}
+                >
+                  <option value="ALL">All Types</option>
+                  <option value="TFP">TFP</option>
+                  <option value="PAID">Paid</option>
+                  <option value="EXPENSES">Expenses</option>
+                  <option value="OTHER">Other</option>
+                </select>
 
-              <input
-                type="text"
-                placeholder="Location..."
-                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={locationFilter}
-                onChange={(e) => setLocationFilter(e.target.value)}
-              />
+                <input
+                  type="text"
+                  placeholder="Location..."
+                  className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base flex-1 min-w-0"
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                />
+              </div>
 
+              {/* Filter button - always visible */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="px-4 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                className="px-3 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm sm:text-base flex-shrink-0 whitespace-nowrap"
               >
                 <Filter className="w-4 h-4" />
-                Filters
+                <span className="hidden sm:inline">Filters</span>
+                <span className="sm:hidden">Filt</span>
               </button>
             </div>
           </div>

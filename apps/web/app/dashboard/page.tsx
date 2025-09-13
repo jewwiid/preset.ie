@@ -357,33 +357,37 @@ export default function Dashboard() {
         )}
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-          <div className="flex justify-between items-start">
-            <div className="text-white">
-              <h1 className="text-4xl md:text-5xl font-bold mb-2">
-                Welcome back, {isAdmin ? 'Admin' : profile.display_name}!
-              </h1>
-            </div>
-            <div className="flex gap-2">
+          {/* Mobile-first layout: buttons first, then welcome message */}
+          <div className="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between lg:items-start">
+            {/* Action Buttons - Mobile optimized */}
+            <div className="flex flex-wrap gap-2 lg:order-2">
               {isAdmin && (
                 <button
                   onClick={() => router.push('/admin')}
-                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium backdrop-blur-sm border border-white/20 transition-all"
+                  className="bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-medium backdrop-blur-sm border border-white/20 transition-all flex-shrink-0"
                 >
                   Admin Dashboard
                 </button>
               )}
               <button
                 onClick={() => router.push('/profile')}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex-shrink-0"
               >
                 Profile Settings
               </button>
               <button
                 onClick={handleSignOut}
-                className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-medium backdrop-blur-sm border border-white/20 transition-all"
+                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-medium backdrop-blur-sm border border-white/20 transition-all flex-shrink-0"
               >
                 Sign Out
               </button>
+            </div>
+            
+            {/* Welcome Message - Below buttons on mobile */}
+            <div className="text-white lg:order-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2">
+                Welcome back, {isAdmin ? 'Admin' : profile.display_name}!
+              </h1>
             </div>
           </div>
         </div>
@@ -454,23 +458,23 @@ export default function Dashboard() {
                 )}
               </div>
               
-              {/* Credits & Balance Row - Enhanced Layout */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Credits & Balance Row - Enhanced Mobile Layout */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <button 
                   onClick={() => router.push('/credits/purchase')}
-                  className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-green-100 dark:border-green-800/50 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 transition-all duration-200 hover:shadow-md hover:scale-[1.02] group"
+                  className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-3 sm:p-4 border border-green-100 dark:border-green-800/50 hover:from-green-100 hover:to-emerald-100 dark:hover:from-green-900/30 dark:hover:to-emerald-900/30 transition-all duration-200 hover:shadow-md hover:scale-[1.02] group"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200">
-                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200 flex-shrink-0">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                       </svg>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-green-600 dark:text-green-400 text-sm font-medium mb-1">Available Credits</p>
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-gray-900 dark:text-white text-2xl font-bold">{credits.current_balance}</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-green-600 dark:text-green-400 text-xs sm:text-sm font-medium mb-1 truncate">Available Credits</p>
+                      <div className="flex items-baseline gap-1 sm:gap-2">
+                        <p className="text-gray-900 dark:text-white text-lg sm:text-2xl font-bold">{credits.current_balance}</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
                           of {credits.monthly_allowance || 'unlimited'}
                         </p>
                       </div>
@@ -480,19 +484,19 @@ export default function Dashboard() {
                 
                 <button 
                   onClick={() => router.push('/credits/purchase')}
-                  className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800/50 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-200 hover:shadow-md hover:scale-[1.02] group"
+                  className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-3 sm:p-4 border border-blue-100 dark:border-blue-800/50 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-200 hover:shadow-md hover:scale-[1.02] group"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200">
-                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200 flex-shrink-0">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                       </svg>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mb-1">Account Balance</p>
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-gray-900 dark:text-white text-2xl font-bold">€{calculateCreditValue(credits.current_balance).toFixed(2)}</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">EUR</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-medium mb-1 truncate">Account Balance</p>
+                      <div className="flex items-baseline gap-1 sm:gap-2">
+                        <p className="text-gray-900 dark:text-white text-lg sm:text-2xl font-bold">€{calculateCreditValue(credits.current_balance).toFixed(2)}</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">EUR</p>
                       </div>
                     </div>
                   </div>
