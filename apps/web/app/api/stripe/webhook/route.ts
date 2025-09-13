@@ -4,20 +4,27 @@ import Stripe from 'stripe';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY!;
-const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-const stripe = new Stripe(stripeSecretKey, {
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
   apiVersion: '2025-08-27.basil',
-});
+}) : null;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!stripe || !stripeWebhookSecret) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured' },
+        { status: 500 }
+      );
+    }
+    
     const body = await request.text();
     const signature = request.headers.get('stripe-signature');
 
-    if (!signature || !stripeWebhookSecret) {
-      console.error('❌ Missing Stripe signature or webhook secret');
+    if (!signature) {
+      console.error('❌ Missing Stripe signature');
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
     }
 
