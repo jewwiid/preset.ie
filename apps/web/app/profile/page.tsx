@@ -40,6 +40,7 @@ import {
   Filter,
   Target,
   Palette,
+  MessageSquare,
   Hash,
   ArrowLeft,
   TrendingUp,
@@ -95,6 +96,9 @@ interface UserSettings {
   profile_visibility: 'public' | 'private'
   show_contact_info: boolean
   two_factor_enabled: boolean
+  message_notifications: boolean
+  message_read_receipts: boolean
+  allow_stranger_messages: boolean
   created_at: string
   updated_at: string
 }
@@ -141,6 +145,7 @@ function UserSettingsTab() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showBlockedUsers, setShowBlockedUsers] = useState(false)
   const [dynamicVibes, setDynamicVibes] = useState<string[]>([])
   const [dynamicStyles, setDynamicStyles] = useState<string[]>([])
   const [loadingDynamic, setLoadingDynamic] = useState(false)
@@ -259,7 +264,10 @@ function UserSettingsTab() {
             marketing_emails: false,
             profile_visibility: 'public',
             show_contact_info: true,
-            two_factor_enabled: false
+            two_factor_enabled: false,
+            message_notifications: true,
+            message_read_receipts: true,
+            allow_stranger_messages: true
           })
           .select()
           .single()
@@ -597,6 +605,90 @@ function UserSettingsTab() {
         </div>
       </div>
 
+      {/* Messaging Privacy */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center mb-6">
+          <MessageSquare className="w-5 h-5 text-blue-600 mr-3" />
+          <h2 className="text-xl font-bold text-gray-900">Messaging Privacy</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900">Message Notifications</h3>
+              <p className="text-sm text-gray-500">Receive notifications for new messages</p>
+            </div>
+            <button
+              onClick={() => updateSetting('message_notifications', !settings.message_notifications)}
+              disabled={saving}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                settings.message_notifications ? 'bg-emerald-600' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  settings.message_notifications ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900">Message Read Receipts</h3>
+              <p className="text-sm text-gray-500">Let others know when you've read their messages</p>
+            </div>
+            <button
+              onClick={() => updateSetting('message_read_receipts', !settings.message_read_receipts)}
+              disabled={saving}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                settings.message_read_receipts ? 'bg-emerald-600' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  settings.message_read_receipts ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900">Allow Messages from Strangers</h3>
+              <p className="text-sm text-gray-500">Allow users you haven't worked with to message you</p>
+            </div>
+            <button
+              onClick={() => updateSetting('allow_stranger_messages', !settings.allow_stranger_messages)}
+              disabled={saving}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                settings.allow_stranger_messages ? 'bg-emerald-600' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  settings.allow_stranger_messages ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900">Blocked Users</h3>
+                <p className="text-sm text-gray-500">Manage users you've blocked from messaging you</p>
+              </div>
+              <button
+                onClick={() => setShowBlockedUsers(true)}
+                className="px-3 py-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors"
+              >
+                Manage
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Gig Notification Preferences */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="flex items-center mb-6">
@@ -811,6 +903,38 @@ function UserSettingsTab() {
           )}
         </div>
       </div>
+
+      {/* Blocked Users Modal */}
+      {showBlockedUsers && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Blocked Users</h3>
+              <button
+                onClick={() => setShowBlockedUsers(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="text-center py-8">
+              <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">You haven't blocked any users yet.</p>
+              <p className="text-sm text-gray-500">
+                Blocked users won't be able to message you or see your profile.
+              </p>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowBlockedUsers(false)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
