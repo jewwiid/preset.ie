@@ -28,7 +28,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
+    "@repo/eslint-config": "*",
     "@types/jest": "^29.5.8",
     "@types/node": "^20.11.24",
     "eslint": "^9.34.0",
