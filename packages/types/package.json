@@ -36,6 +36,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "type-check": "tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
