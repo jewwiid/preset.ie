@@ -82,6 +82,12 @@ export default function ReviewPublishStep({
     
     setLoadingMoodboard(true)
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setLoadingMoodboard(false)
+        return
+      }
+
       // Get moodboard details including items stored as JSON
       const { data: moodboard, error: moodboardError } = await supabase
         .from('moodboards')

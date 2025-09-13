@@ -32,6 +32,11 @@ export function ReportsQueue() {
 
   const fetchReports = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+      
       let query = supabase
         .from('reports')
         .select('*')
@@ -60,6 +65,11 @@ export function ReportsQueue() {
 
   const updateReportStatus = async (reportId: string, newStatus: string, notes?: string) => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+      
       const { error } = await supabase
         .from('reports')
         .update({

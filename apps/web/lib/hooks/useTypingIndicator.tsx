@@ -62,7 +62,7 @@ export function useTypingIndicator(options: UseTypingIndicatorOptions = {}): Use
 
   // Start typing indicator
   const startTyping = useCallback(async (targetConversationId: string) => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       // Clear any existing timeout
@@ -101,7 +101,7 @@ export function useTypingIndicator(options: UseTypingIndicatorOptions = {}): Use
 
   // Stop typing indicator
   const stopTyping = useCallback(async (targetConversationId: string) => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       // Clear timeout
@@ -160,7 +160,7 @@ export function useTypingIndicator(options: UseTypingIndicatorOptions = {}): Use
 
   // Setup real-time subscription
   const setupSubscription = useCallback(() => {
-    if (!user) return
+    if (!user || !supabase) return
 
     console.log('Setting up typing indicator subscription for user:', user.id)
 
@@ -184,6 +184,7 @@ export function useTypingIndicator(options: UseTypingIndicatorOptions = {}): Use
             if (typingData.user_id === user.id) return
 
             // Get user profile information
+            if (!supabase) return
             const { data: profile } = await supabase
               .from('users_profile')
               .select('display_name, handle')
@@ -253,7 +254,7 @@ export function useTypingIndicator(options: UseTypingIndicatorOptions = {}): Use
     }
 
     return () => {
-      if (channelRef.current) {
+      if (channelRef.current && supabase) {
         console.log('Cleaning up typing indicator subscription')
         supabase.removeChannel(channelRef.current)
         channelRef.current = null

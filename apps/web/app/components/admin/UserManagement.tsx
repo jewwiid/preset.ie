@@ -30,6 +30,11 @@ export function UserManagement() {
 
   const fetchUsers = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+      
       let query = supabase
         .from('users_profile')
         .select('*')
@@ -87,6 +92,11 @@ export function UserManagement() {
         case 'unban':
           updatedRoleFlags = updatedRoleFlags.filter(flag => flag !== 'BANNED')
           break
+      }
+
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
       }
 
       const { error } = await supabase

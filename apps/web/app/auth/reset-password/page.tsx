@@ -62,6 +62,10 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     // Check if we have a valid session/token for password reset
     const checkResetToken = async () => {
+      if (!supabase) {
+        setError('Authentication service not available')
+        return
+      }
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
         setError('Invalid or expired reset link. Please request a new password reset.')
@@ -89,6 +93,11 @@ export default function ResetPasswordPage() {
     }
 
     try {
+      if (!supabase) {
+        setError('Authentication service not available')
+        setLoading(false)
+        return
+      }
       const { error } = await supabase.auth.updateUser({
         password: password
       })

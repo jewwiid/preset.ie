@@ -22,6 +22,10 @@ export async function checkUserConnection(
   otherUserId: string
 ): Promise<ConnectionStatus> {
   try {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+
     // Check if they've worked together on completed gigs
     const { data: gigCollaboration, error: gigError } = await supabase
       .rpc('check_user_connection', {
@@ -104,6 +108,10 @@ export async function canMessageUser(
   targetUserId: string
 ): Promise<{ canMessage: boolean; reason?: string }> {
   try {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+
     // Get target user's messaging settings
     const { data: targetSettings } = await supabase
       .from('user_settings')

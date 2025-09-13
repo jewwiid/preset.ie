@@ -49,7 +49,12 @@ export default function SettingsPage() {
     if (!user) return
 
     try {
-      const { data, error } = await supabase
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
+      const { data, error } = await supabase!
         .from('user_settings')
         .select('*')
         .eq('user_id', user.id)
@@ -93,7 +98,13 @@ export default function SettingsPage() {
 
     setLoadingSettings(true)
     try {
-      const { data, error } = await supabase
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setLoadingSettings(false)
+        return
+      }
+
+      const { data, error } = await supabase!
         .from('user_settings')
         .upsert({
           user_id: user.id,
@@ -163,7 +174,7 @@ export default function SettingsPage() {
 
     setChangingPassword(true)
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { error } = await supabase!.auth.updateUser({
         password: passwords.new
       })
 

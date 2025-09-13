@@ -16,6 +16,13 @@ export interface ResendEmailResult {
  */
 export async function resendConfirmationEmail(email: string): Promise<ResendEmailResult> {
   try {
+    if (!supabase) {
+      return {
+        success: false,
+        error: 'Supabase client not available'
+      }
+    }
+    
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
@@ -48,6 +55,14 @@ export async function checkEmailStatus(email: string): Promise<{
   error?: string
 }> {
   try {
+    if (!supabase) {
+      return {
+        exists: false,
+        verified: false,
+        error: 'Supabase client not available'
+      }
+    }
+    
     // Try to sign in to check if user exists and is verified
     const { data, error } = await supabase.auth.signInWithPassword({
       email: email,
@@ -84,6 +99,14 @@ export async function checkEmailStatus(email: string): Promise<{
  */
 export async function smartSignup(email: string, password: string, options?: any) {
   try {
+    if (!supabase) {
+      return {
+        success: false,
+        error: 'Supabase client not available',
+        shouldRedirectToSignIn: false
+      }
+    }
+    
     // First check if user already exists
     const emailStatus = await checkEmailStatus(email)
     

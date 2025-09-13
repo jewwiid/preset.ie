@@ -113,6 +113,12 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
       setLoading(true)
       
       try {
+        if (!supabase) {
+          console.error('Supabase client not available')
+          setLoading(false)
+          return
+        }
+
         const { data, error } = await supabase
           .from('moodboards')
           .select('*')
@@ -175,6 +181,11 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
       if (!gigId || !user) return
 
       try {
+        if (!supabase) {
+          console.error('Supabase client not available')
+          return
+        }
+
         const { data, error } = await supabase
           .from('gigs')
           .select('*')
@@ -250,6 +261,11 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
   const fetchSubscriptionTier = async () => {
     if (!user) return
     
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
+
     const { data: profile } = await supabase
       .from('users_profile')
       .select('subscription_tier')
@@ -264,6 +280,11 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
   const fetchUserCredits = async () => {
     if (!user) return
     
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
+
     const { data: credits } = await supabase
       .from('user_credits')
       .select('current_balance, monthly_allowance')
@@ -284,6 +305,12 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     console.log('Fetching moodboard with ID:', moodboardId)
     setLoading(true)
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setLoading(false)
+        return
+      }
+
       const { data: moodboard, error } = await supabase
         .from('moodboards')
         .select('*')
@@ -349,6 +376,12 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     setError(null)
     
     try {
+      if (!supabase) {
+        setError('Database connection not available. Please try again.')
+        setLoading(false)
+        return
+      }
+
       // Check if user is authenticated
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       if (sessionError || !session) {
@@ -606,6 +639,11 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     setEnhancementTasks(prev => new Map(prev).set(itemId, { status: 'processing', progress: 10 }))
     
     try {
+      if (!supabase) {
+        setError('Database connection not available. Please try again.')
+        return
+      }
+
       const session = await supabase.auth.getSession()
       if (!session.data.session) {
         throw new Error('No active session. Please sign in again.')
@@ -897,7 +935,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${supabase ? (await supabase.auth.getSession()).data.session?.access_token : ''}`
         },
         body: JSON.stringify({
           items: items.map(item => ({
@@ -917,7 +955,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
         const aiData = await aiAnalysisResponse.json()
         
         // Update moodboard with AI-generated data
-        if (aiData.success && moodboardId) {
+        if (aiData.success && moodboardId && supabase) {
           const { error: updateError } = await supabase
             .from('moodboards')
             .update({
@@ -963,6 +1001,12 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     setIsSavingPositions(true)
     try {
       console.log('Auto-saving item positions...')
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setIsSavingPositions(false)
+        return
+      }
+      
       const { error: updateError } = await supabase
         .from('moodboards')
         .update({
@@ -1001,6 +1045,12 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     setError(null)
     
     try {
+      if (!supabase) {
+        setError('Database connection not available. Please try again.')
+        setLoading(false)
+        return
+      }
+      
       // Get user profile ID
       const { data: profile } = await supabase
         .from('users_profile')

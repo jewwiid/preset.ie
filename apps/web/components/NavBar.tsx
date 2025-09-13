@@ -112,13 +112,17 @@ export function NavBar() {
 
   const fetchProfileSimple = async () => {
     if (!user) return
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
     
     console.log('🚀 NavBar: Simple profile fetch started')
     setProfileLoading(true)
     
     try {
       // Use the exact same query as profile page, but without timeout
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('users_profile')
         .select('avatar_url, display_name, role_flags, handle')  // Include handle
         .eq('user_id', user.id)

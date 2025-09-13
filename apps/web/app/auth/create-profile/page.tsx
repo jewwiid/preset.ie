@@ -51,6 +51,10 @@ export default function CreateProfilePage() {
 
     try {
       // Create user profile in database
+      if (!supabase) {
+        setError('Database service not available')
+        return
+      }
       const { error } = await supabase
         .from('users_profile')
         .insert({

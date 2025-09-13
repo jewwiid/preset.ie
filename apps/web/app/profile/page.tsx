@@ -163,7 +163,13 @@ function UserSettingsTab() {
       // First, try to fetch with the correct status and check if columns exist
       console.log('🔍 Fetching dynamic vibes from gigs...')
       
-      const { data: gigsData, error: gigsError } = await supabase
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setLoadingDynamic(false)
+        return
+      }
+
+      const { data: gigsData, error: gigsError } = await supabase!
         .from('gigs')
         .select('vibe_tags, style_tags')
         .eq('status', 'PUBLISHED')
@@ -175,7 +181,7 @@ function UserSettingsTab() {
         console.log('Trying fallback approach without column filters...')
         
         // Fallback: try to fetch just basic gig data to see if table is accessible
-        const { data: fallbackData, error: fallbackError } = await supabase
+        const { data: fallbackData, error: fallbackError } = await supabase!
           .from('gigs')
           .select('id, title, status')
           .eq('status', 'PUBLISHED')
@@ -233,14 +239,19 @@ function UserSettingsTab() {
     if (!user) return
 
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
       // Fetch both user settings and notification preferences in parallel
       const [settingsResult, notificationResult] = await Promise.all([
-        supabase
+        supabase!
           .from('user_settings')
           .select('*')
           .eq('user_id', user.id)
           .single(),
-        supabase
+        supabase!
           .from('gig_notification_preferences')
           .select('*')
           .eq('user_id', user.id)
@@ -255,7 +266,7 @@ function UserSettingsTab() {
         setSettings(settingsResult.data)
       } else {
         // Create default settings if none exist
-        const { data: newSettings, error: insertError } = await supabase
+        const { data: newSettings, error: insertError } = await supabase!
           .from('user_settings')
           .insert({
             user_id: user.id,
@@ -302,7 +313,7 @@ function UserSettingsTab() {
           notify_on_match: true
         }
 
-        const { data: newPrefs, error: insertError } = await supabase
+        const { data: newPrefs, error: insertError } = await supabase!
           .from('gig_notification_preferences')
           .insert(defaultPrefs)
           .select()
@@ -316,7 +327,7 @@ function UserSettingsTab() {
           // If record already exists, try to fetch it
           if (insertError.code === '23505') {
             console.log('Record already exists, trying to fetch existing preferences...')
-            const { data: existingPrefs, error: fetchError } = await supabase
+            const { data: existingPrefs, error: fetchError } = await supabase!
               .from('gig_notification_preferences')
               .select('*')
               .eq('user_id', user.id)
@@ -356,7 +367,13 @@ function UserSettingsTab() {
         return
       }
 
-      const { error } = await supabase
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setSaving(false)
+        return
+      }
+
+      const { error } = await supabase!
         .from('user_settings')
         .update({ [key]: value })
         .eq('user_id', user.id)
@@ -381,7 +398,13 @@ function UserSettingsTab() {
 
     setSaving(true)
     try {
-      const { error } = await supabase
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setSaving(false)
+        return
+      }
+
+      const { error } = await supabase!
         .from('gig_notification_preferences')
         .update({ [key]: value })
         .eq('user_id', user.id)
@@ -1064,7 +1087,7 @@ function ProfilePageContent() {
         setHeaderPosition(newPosition)
         
         // Save position after keyboard adjustment
-        if (user) {
+        if (user && supabase) {
           supabase
             .from('users_profile')
             .update({
@@ -1145,7 +1168,12 @@ function ProfilePageContent() {
     if (!user) return
 
     try {
-      const { data, error } = await supabase
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
+      const { data, error } = await supabase!
         .from('users_profile')
         .select('*')
         .eq('user_id', user.id)
@@ -1194,7 +1222,13 @@ function ProfilePageContent() {
     setError(null)
 
     try {
-      const { error, data } = await supabase
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setSaving(false)
+        return
+      }
+
+      const { error, data } = await supabase!
         .from('users_profile')
         .update({
           display_name: formData.display_name,
@@ -1343,7 +1377,12 @@ function ProfilePageContent() {
     if (!user) return
 
     try {
-      const { error } = await supabase
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
+      const { error } = await supabase!
         .from('users_profile')
         .update({
           header_banner_url: newBannerUrl,
@@ -1446,7 +1485,13 @@ function ProfilePageContent() {
         // Upload to Supabase storage
         console.log('📤 Uploading header banner:', { filePath, fileName, fileSize: file.size })
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        if (!supabase) {
+          setError('Database connection not available. Please try again.')
+          setSaving(false)
+          return
+        }
+
+        const { data: uploadData, error: uploadError } = await supabase!.storage
           .from('avatars') // Using avatars bucket for header banners
           .upload(filePath, file, {
             cacheControl: '3600',
@@ -1461,7 +1506,7 @@ function ProfilePageContent() {
         console.log('✅ Upload successful:', uploadData)
 
         // Get public URL
-        const { data: publicUrlData } = supabase.storage
+        const { data: publicUrlData } = supabase!.storage
           .from('avatars')
           .getPublicUrl(filePath)
 
@@ -1509,19 +1554,19 @@ function ProfilePageContent() {
     setStatsLoading(true)
     try {
       // Fetch gigs created by this user (as contributor)
-      const { count: gigsCount } = await supabase
+      const { count: gigsCount } = await supabase!
         .from('gigs')
         .select('*', { count: 'exact', head: true })
         .eq('owner_user_id', profile.id)
 
       // Fetch applications made by this user (as talent)
-      const { count: applicationsCount } = await supabase
+      const { count: applicationsCount } = await supabase!
         .from('applications')
         .select('*', { count: 'exact', head: true })
         .eq('applicant_user_id', profile.id)
 
       // Fetch showcases where this user is either creator or talent
-      const { count: showcasesCount } = await supabase
+      const { count: showcasesCount } = await supabase!
         .from('showcases')
         .select('*', { count: 'exact', head: true })
         .or(`creator_user_id.eq.${profile.id},talent_user_id.eq.${profile.id}`)
@@ -1756,7 +1801,7 @@ function ProfilePageContent() {
                       if (profile?.header_banner_url && user) {
                         setSaving(true)
                         try {
-                          const { error } = await supabase
+                          const { error } = await supabase!
                             .from('users_profile')
                             .update({
                               header_banner_position: JSON.stringify(headerPosition),
@@ -1935,7 +1980,7 @@ function ProfilePageContent() {
                                     const fileName = `${Date.now()}.${fileExt}`
                                     const filePath = `${user?.id}/${fileName}`
                                     
-                                    const { error: uploadError } = await supabase.storage
+                                    const { error: uploadError } = await supabase!.storage
                                       .from('profile-images')
                                       .upload(filePath, file, {
                                         cacheControl: '3600',
@@ -1944,7 +1989,7 @@ function ProfilePageContent() {
                                     
                                     if (uploadError) throw uploadError
                                     
-                                    const { data } = supabase.storage
+                                    const { data } = supabase!.storage
                                       .from('profile-images')
                                       .getPublicUrl(filePath)
                                     

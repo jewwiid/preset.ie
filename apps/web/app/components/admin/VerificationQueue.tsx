@@ -32,6 +32,11 @@ export function VerificationQueue() {
 
   const fetchVerifications = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+      
       let query = supabase
         .from('verification_requests')
         .select(`
@@ -74,6 +79,11 @@ export function VerificationQueue() {
 
       if (newStatus === 'rejected' && rejectionReason) {
         updateData.rejection_reason = rejectionReason
+      }
+
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
       }
 
       const { error } = await supabase

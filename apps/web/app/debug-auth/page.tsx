@@ -34,11 +34,21 @@ export default function DebugAuth() {
   }, [])
 
   const handleSignOut = async () => {
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
+    
     await supabase.auth.signOut()
     window.location.reload()
   }
 
   const handleRefresh = async () => {
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
+    
     const { data, error } = await supabase.auth.refreshSession()
     console.log('Refresh result:', { data, error })
   }

@@ -41,6 +41,11 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
   
   const fetchMoodboard = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+      
       const { data, error } = await supabase
         .from('moodboards')
         .select('*')

@@ -51,6 +51,11 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
   const fetchUserProfile = async () => {
     if (!user) return
     
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
+
     const { data } = await supabase
       .from('users_profile')
       .select('*')
@@ -74,6 +79,11 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
       
       console.log('Fetching gig with ID:', gigId)
       
+      if (!supabase) {
+        console.error('Supabase client not available')
+        throw new Error('Database connection not available')
+      }
+
       // First fetch the gig details
       const { data: gigData, error: gigError } = await supabase
         .from('gigs')

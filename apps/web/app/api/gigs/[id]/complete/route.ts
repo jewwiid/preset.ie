@@ -6,6 +6,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Check if supabase client is available
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Supabase client not configured' },
+        { status: 500 }
+      );
+    }
+
     const resolvedParams = await params;
     const gigId = resolvedParams.id;
 

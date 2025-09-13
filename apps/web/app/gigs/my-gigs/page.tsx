@@ -42,6 +42,12 @@ export default function MyGigsPage() {
     
     setLoading(true)
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setLoading(false)
+        return
+      }
+
       // Get user profile
       const { data: profile } = await supabase
         .from('users_profile')
@@ -74,6 +80,13 @@ export default function MyGigsPage() {
       // Get application counts for each gig
       const gigsWithCounts = await Promise.all(
         (gigsData || []).map(async (gig) => {
+          if (!supabase) {
+            return {
+              ...gig,
+              applicationCount: 0
+            }
+          }
+
           const { count } = await supabase
             .from('applications')
             .select('*', { count: 'exact', head: true })

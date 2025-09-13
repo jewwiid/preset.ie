@@ -16,6 +16,13 @@ export async function resolveUsernameToEmail(usernameOrEmail: string): Promise<{
   
   // It might be a username/handle, try to look it up
   try {
+    if (!supabase) {
+      return { 
+        email: null, 
+        error: 'Database connection not available. Please use your email address to sign in.'
+      }
+    }
+
     const { data, error } = await supabase
       .from('users_profile')
       .select('user_id')

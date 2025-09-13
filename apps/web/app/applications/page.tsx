@@ -94,6 +94,11 @@ export default function ApplicationsPage() {
     if (!user) return;
     
     try {
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
+
       const { data, error } = await supabase
         .from('users_profile')
         .select('*')
@@ -134,6 +139,10 @@ export default function ApplicationsPage() {
       if (viewMode === 'admin') {
         console.log('Applications: Admin mode - fetching all platform applications...')
         // Fetch all applications across the platform for admin review
+        if (!supabase) {
+          console.error('Supabase client not configured')
+          return
+        }
         const { data, error } = await supabase
           .from('applications')
           .select(`
@@ -180,6 +189,10 @@ export default function ApplicationsPage() {
       } else if (viewMode === 'contributor') {
         console.log('Applications: Contributor mode - fetching owned gigs first...')
         // Fetch applications for gigs owned by the contributor
+        if (!supabase) {
+          console.error('Supabase client not configured')
+          return
+        }
         const { data: gigs, error: gigsError } = await supabase
           .from('gigs')
           .select('id')
@@ -200,6 +213,10 @@ export default function ApplicationsPage() {
         const gigIds = gigs.map(g => g.id);
         console.log('Applications: Fetching applications for gig IDs:', gigIds)
         
+        if (!supabase) {
+          console.error('Supabase client not configured')
+          return
+        }
         const { data, error } = await supabase
           .from('applications')
           .select(`
@@ -234,6 +251,10 @@ export default function ApplicationsPage() {
       } else {
         console.log('Applications: Talent mode - fetching user applications...')
         // Fetch applications submitted by the talent
+        if (!supabase) {
+          console.error('Supabase client not configured')
+          return
+        }
         const { data, error } = await supabase
           .from('applications')
           .select(`
@@ -279,6 +300,11 @@ export default function ApplicationsPage() {
   const fetchAdminStats = async () => {
     try {
       console.log('Applications: Fetching admin stats...')
+      
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
       
       // Get total applications count
       const { count: totalApps, error: totalError } = await supabase
@@ -331,6 +357,10 @@ export default function ApplicationsPage() {
       console.log('Applications: Banning user:', userId, displayName)
       
       // Get current user data
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
       const { data: userData, error: fetchError } = await supabase
         .from('users_profile')
         .select('role_flags')
@@ -345,6 +375,10 @@ export default function ApplicationsPage() {
         currentFlags.push('BANNED');
       }
       
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
       const { error } = await supabase
         .from('users_profile')
         .update({ role_flags: currentFlags })
@@ -372,6 +406,10 @@ export default function ApplicationsPage() {
       setUpdating(true);
       console.log('Applications: Deleting application:', applicationId)
       
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
       const { error } = await supabase
         .from('applications')
         .delete()
@@ -412,6 +450,10 @@ export default function ApplicationsPage() {
   const updateApplicationStatus = async (applicationId: string, newStatus: ApplicationStatus) => {
     setUpdating(true);
     try {
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
       const { error } = await supabase
         .from('applications')
         .update({ status: newStatus })

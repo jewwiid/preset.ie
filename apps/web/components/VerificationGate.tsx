@@ -27,7 +27,13 @@ export function VerificationGate({ feature, children, fallback }: VerificationGa
 
   const checkAccess = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setCanAccess(false)
+        return
+      }
+
+      const { data: { user } } = await supabase!.auth.getUser()
       
       if (!user) {
         setCanAccess(false)
@@ -35,7 +41,7 @@ export function VerificationGate({ feature, children, fallback }: VerificationGa
       }
 
       // Check if user can access the feature
-      const { data, error } = await supabase.rpc('can_access_feature', {
+      const { data, error } = await supabase!.rpc('can_access_feature', {
         p_user_id: user.id,
         p_feature: feature
       })
@@ -217,14 +223,20 @@ export function useVerificationStatus() {
 
   const checkStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setStatus(null)
+        return
+      }
+
+      const { data: { user } } = await supabase!.auth.getUser()
       
       if (!user) {
         setStatus(null)
         return
       }
 
-      const { data: profile } = await supabase
+      const { data: profile } = await supabase!
         .from('users_profile')
         .select('*')
         .eq('user_id', user.id)
@@ -233,9 +245,9 @@ export function useVerificationStatus() {
       if (profile) {
         // Check various permissions
         const [canCreateGigs, canApplyToGigs, canMessage] = await Promise.all([
-          supabase.rpc('can_access_feature', { p_user_id: user.id, p_feature: 'create_gigs' }),
-          supabase.rpc('can_access_feature', { p_user_id: user.id, p_feature: 'apply_to_gigs' }),
-          supabase.rpc('can_access_feature', { p_user_id: user.id, p_feature: 'messaging' })
+          supabase!.rpc('can_access_feature', { p_user_id: user.id, p_feature: 'create_gigs' }),
+          supabase!.rpc('can_access_feature', { p_user_id: user.id, p_feature: 'apply_to_gigs' }),
+          supabase!.rpc('can_access_feature', { p_user_id: user.id, p_feature: 'messaging' })
         ])
 
         setStatus({

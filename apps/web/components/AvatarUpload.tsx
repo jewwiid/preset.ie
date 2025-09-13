@@ -55,6 +55,10 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
 
   const uploadAvatar = async (file: File) => {
     if (!user) return
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
 
     setIsUploading(true)
     try {
@@ -62,7 +66,7 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
       if (currentAvatarUrl) {
         const oldPath = currentAvatarUrl.split('/').pop()
         if (oldPath) {
-          await supabase.storage
+          await supabase!.storage
             .from('profile-images')
             .remove([`${user.id}/${oldPath}`])
         }
@@ -74,7 +78,7 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
       const filePath = `${user.id}/${fileName}`
 
       // Upload new avatar
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase!.storage
         .from('profile-images')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -84,14 +88,14 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
       if (uploadError) throw uploadError
 
       // Get public URL
-      const { data } = supabase.storage
+      const { data } = supabase!.storage
         .from('profile-images')
         .getPublicUrl(filePath)
 
       const newAvatarUrl = data.publicUrl
 
       // Update user profile
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabase!
         .from('users_profile')
         .update({ avatar_url: newAvatarUrl })
         .eq('user_id', user.id)
@@ -123,19 +127,23 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
 
   const handleRemoveAvatar = async () => {
     if (!user || !currentAvatarUrl) return
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
 
     setIsUploading(true)
     try {
       // Delete from storage
       const oldPath = currentAvatarUrl.split('/').pop()
       if (oldPath) {
-        await supabase.storage
+        await supabase!.storage
           .from('profile-images')
           .remove([`${user.id}/${oldPath}`])
       }
 
       // Update profile
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('users_profile')
         .update({ avatar_url: null })
         .eq('user_id', user.id)

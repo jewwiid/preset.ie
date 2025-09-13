@@ -88,6 +88,10 @@ export function useConnectionStatus(options: UseConnectionStatusOptions = {}): U
     const startTime = Date.now()
     
     try {
+      if (!supabase) {
+        return null
+      }
+      
       // Use a simple query to test the connection with manual timeout
       const queryPromise = supabase
         .from('users_profile')
@@ -299,7 +303,7 @@ export function useConnectionStatus(options: UseConnectionStatusOptions = {}): U
 
   // Monitor Supabase connection
   useEffect(() => {
-    if (!user) return
+    if (!user || !supabase) return
 
     // Listen to Supabase connection events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {

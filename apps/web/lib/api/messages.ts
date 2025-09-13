@@ -199,6 +199,10 @@ export function useMessagesApi() {
     // Import the existing Supabase client to ensure session consistency
     const { supabase } = await import('../supabase');
     
+    if (!supabase) {
+      throw new Error('Supabase client not available');
+    }
+    
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session?.access_token) {

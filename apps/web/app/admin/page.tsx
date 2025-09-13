@@ -103,6 +103,11 @@ export default function AdminDashboard() {
     }
 
     try {
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
+
       const { data: profile } = await supabase
         .from('users_profile')
         .select('role_flags')
@@ -131,6 +136,11 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
+
       // Fetch users count
       const { count: usersCount } = await supabase
         .from('users_profile')
@@ -178,6 +188,11 @@ export default function AdminDashboard() {
 
   const fetchPlatformCredits = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
+
       const { data } = await supabase
         .from('platform_credits')
         .select('*')
@@ -192,6 +207,11 @@ export default function AdminDashboard() {
 
   const fetchCreditPackages = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
+
       const { data } = await supabase
         .from('credit_packages')
         .select('*')
@@ -207,6 +227,11 @@ export default function AdminDashboard() {
 
   const fetchRefundMetrics = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
+
       // Fetch all refunds
       const { data: refunds } = await supabase
         .from('credit_refunds')

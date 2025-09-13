@@ -38,7 +38,12 @@ export default function ShowcasesPage() {
 
   const fetchShowcases = async () => {
     try {
-      let query = supabase
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
+      let query = supabase!
         .from('showcases')
         .select(`
           *,
@@ -49,7 +54,7 @@ export default function ShowcasesPage() {
         .order('created_at', { ascending: false })
 
       if (user && filter === 'my-creations') {
-        const { data: profile } = await supabase
+        const { data: profile } = await supabase!
           .from('users_profile')
           .select('id')
           .eq('user_id', user.id)

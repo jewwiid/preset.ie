@@ -118,14 +118,21 @@ export default function VerificationPage() {
     setError(null)
 
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setError('Database connection not available. Please try again.')
+        setUploading(false)
+        return
+      }
+
       // 1. Get current user
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase!.auth.getUser()
       if (!user) {
         throw new Error('Please log in to submit a verification request')
       }
 
       // 2. Get user profile
-      const { data: profile } = await supabase
+      const { data: profile } = await supabase!
         .from('users_profile')
         .select('id')
         .eq('user_id', user.id)
@@ -143,7 +150,7 @@ export default function VerificationPage() {
       let uploadData, uploadError
       
       try {
-        const result = await supabase.storage
+        const result = await supabase!.storage
           .from('verification-documents')
           .upload(fileName, formData.document_file, {
             cacheControl: '3600',
@@ -155,14 +162,14 @@ export default function VerificationPage() {
         // If bucket doesn't exist, try to create it
         if (error.message?.includes('bucket') || error.message?.includes('not found')) {
           try {
-            await supabase.storage.createBucket('verification-documents', { 
+            await supabase!.storage.createBucket('verification-documents', { 
               public: false,
               fileSizeLimit: 5242880, // 5MB
               allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
             })
             
             // Retry upload after creating bucket
-            const result = await supabase.storage
+            const result = await supabase!.storage
               .from('verification-documents')
               .upload(fileName, formData.document_file, {
                 cacheControl: '3600',
@@ -217,7 +224,7 @@ export default function VerificationPage() {
       }
 
       // 5. Create verification request with corrected schema
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabase!
         .from('verification_requests')
         .insert({
           user_id: profile.id,

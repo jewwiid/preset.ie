@@ -212,6 +212,12 @@ export default function SignUpPage() {
       }
 
       // Step 2: Get the newly created user
+      if (!supabase) {
+        setError('Database connection not available. Please try again.')
+        setLoading(false)
+        return
+      }
+      
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {

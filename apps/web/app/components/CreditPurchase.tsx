@@ -37,6 +37,12 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
     
     setLoading(true)
     try {
+      if (!supabase) {
+        setError('Database connection not available. Please try again.')
+        setLoading(false)
+        return
+      }
+      
       const session = await supabase.auth.getSession()
       if (!session.data.session) throw new Error('No session')
 
@@ -107,6 +113,11 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
     setSuccess(null)
     
     try {
+      if (!supabase) {
+        setError('Database connection not available. Please try again.')
+        return
+      }
+      
       const session = await supabase.auth.getSession()
       if (!session.data.session) throw new Error('No session')
 
@@ -165,6 +176,12 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
     setError(null)
     
     try {
+      if (!supabase) {
+        setError('Database connection not available. Please try again.')
+        setLoading(false)
+        return
+      }
+
       const session = await supabase.auth.getSession()
       if (!session.data.session) throw new Error('No session')
       
@@ -207,6 +224,11 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
     setSuccess(null)
     
     try {
+      if (!supabase) {
+        setError('Database connection not available. Please try again.')
+        return
+      }
+
       const session = await supabase.auth.getSession()
       if (!session.data.session) throw new Error('No session')
 

@@ -64,6 +64,12 @@ export default function SavedGigsPage() {
 
     try {
       setLoading(true);
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setLoading(false)
+        return
+      }
+
       const { data, error } = await supabase
         .from('saved_gigs')
         .select(`
@@ -129,6 +135,11 @@ export default function SavedGigsPage() {
 
     try {
       setRemovingGigs(prev => new Set([...prev, gigId]));
+
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
 
       const { error } = await supabase
         .from('saved_gigs')

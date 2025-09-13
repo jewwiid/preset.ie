@@ -68,9 +68,13 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
 
   const saveBannerPosition = async () => {
     if (!currentBannerUrl) return
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
     
     try {
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('users_profile')
         .update({ 
           header_banner_position: JSON.stringify(bannerPosition)
@@ -94,6 +98,10 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -117,7 +125,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       const fileName = `${userId}/header-banner-${Date.now()}.${fileExt}`
       
       // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase!.storage
         .from('profile-images')
         .upload(fileName, file, {
           cacheControl: '3600',
@@ -129,13 +137,13 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       }
 
       // Get the public URL
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = supabase!.storage
         .from('profile-images')
         .getPublicUrl(fileName)
 
       if (urlData?.publicUrl) {
         // Update the user's profile with the new banner URL
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabase!
           .from('users_profile')
           .update({ header_banner_url: urlData.publicUrl })
           .eq('user_id', userId)
@@ -161,6 +169,10 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
 
   const handleRemoveBanner = async () => {
     if (!currentBannerUrl) return
+    if (!supabase) {
+      console.error('Supabase client not available')
+      return
+    }
 
     setUploading(true)
     setError(null)
@@ -172,7 +184,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       const fullPath = `${userId}/${fileName}`
 
       // Delete from storage
-      const { error: deleteError } = await supabase.storage
+      const { error: deleteError } = await supabase!.storage
         .from('profile-images')
         .remove([fullPath])
 

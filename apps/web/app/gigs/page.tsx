@@ -83,6 +83,11 @@ export default function GigDiscoveryPage() {
 
   const fetchGigs = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
       const { data, error } = await supabase
         .from('gigs')
         .select(`
@@ -129,6 +134,12 @@ export default function GigDiscoveryPage() {
 
   const fetchSavedGigs = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setSavedGigs(new Set())
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setSavedGigs(new Set());
@@ -156,6 +167,11 @@ export default function GigDiscoveryPage() {
 
   const fetchAvailablePalettes = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
       // Get unique colors from all gig moodboards
       const { data, error } = await supabase.rpc('get_popular_palette_colors', { limit_count: 50 });
       
@@ -445,6 +461,11 @@ export default function GigDiscoveryPage() {
 
   const toggleSaveGig = async (gigId: string) => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/auth/signin');

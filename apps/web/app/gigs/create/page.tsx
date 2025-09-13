@@ -177,6 +177,10 @@ export default function CreateGigPage() {
     
     if (!user) throw new Error('User not authenticated')
     
+    if (!supabase) {
+      throw new Error('Database connection not available')
+    }
+
     const { data: profile, error: profileError } = await supabase
       .from('users_profile')
       .select('id')
@@ -225,6 +229,10 @@ export default function CreateGigPage() {
     setError(null)
     
     try {
+      if (!supabase) {
+        throw new Error('Database connection not available')
+      }
+
       // Get user profile
       const { data: profile, error: profileError } = await supabase
         .from('users_profile')

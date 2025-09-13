@@ -84,15 +84,18 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
 
   // Clean up channels
   const cleanupChannels = useCallback(() => {
-    channelsRef.current.forEach(channel => {
-      supabase.removeChannel(channel)
-    })
+    if (supabase) {
+      const client = supabase
+      channelsRef.current.forEach(channel => {
+        client.removeChannel(channel)
+      })
+    }
     channelsRef.current = []
   }, [])
 
   // Mark messages as delivered when user views conversation
   const markAsDelivered = useCallback(async (conversationId: string) => {
-    if (!user || !enableMessageStatus) return
+    if (!user || !enableMessageStatus || !supabase) return
 
     try {
       const { error } = await supabase.rpc('mark_conversation_delivered', {
@@ -110,7 +113,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
 
   // Mark specific message as read
   const markAsRead = useCallback(async (messageId: string) => {
-    if (!user || !enableMessageStatus) return
+    if (!user || !enableMessageStatus || !supabase) return
 
     try {
       const { error } = await supabase
@@ -129,7 +132,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
 
   // Set typing indicator
   const setTyping = useCallback(async (conversationId: string, isTyping: boolean) => {
-    if (!user || !enableTypingIndicators) return
+    if (!user || !enableTypingIndicators || !supabase) return
 
     try {
       // Clear existing timeout
@@ -179,7 +182,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
 
   // Setup real-time subscriptions
   const setupSubscriptions = useCallback(() => {
-    if (!user) return
+    if (!user || !supabase) return
 
     setIsConnecting(true)
     setConnectionError(null)
@@ -273,6 +276,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
               if (typingData.user_id === user.id) return
 
               // Get user profile info for display
+              if (!supabase) return
               const { data: profile } = await supabase
                 .from('users_profile')
                 .select('display_name')
@@ -408,7 +412,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
   // Cleanup typing indicators when component unmounts or user changes
   useEffect(() => {
     return () => {
-      if (user && conversationId && enableTypingIndicators) {
+      if (user && conversationId && enableTypingIndicators && supabase) {
         // Clear any active typing indicators
         supabase
           .from('typing_indicators')

@@ -8,6 +8,10 @@ export interface UserRole {
 
 export async function getUserRole(userId: string): Promise<UserRole | null> {
   try {
+    if (!supabase) {
+      return null
+    }
+    
     const { data: profile } = await supabase
       .from('users_profile')
       .select('role_flags')

@@ -174,6 +174,11 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   
   const fetchGigDetails = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
       // Get gig details
       const { data: gig, error: gigError } = await supabase
         .from('gigs')
@@ -309,6 +314,12 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
         }
       }
       
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setSaving(false)
+        return
+      }
+
       // Update the gig
       const { error: updateError } = await supabase
         .from('gigs')
@@ -358,6 +369,12 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
     try {
       setSaving(true)
       
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setSaving(false)
+        return
+      }
+
       const { error: deleteError } = await supabase
         .from('gigs')
         .delete()

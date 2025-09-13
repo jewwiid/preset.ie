@@ -84,6 +84,11 @@ export default function Dashboard() {
     console.log('👤 fetchProfile: Starting profile fetch for user:', user.id)
 
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+      
       const { data, error } = await supabase
         .from('users_profile')
         .select('*')
@@ -132,6 +137,11 @@ export default function Dashboard() {
     })
 
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+      
       // Debug: Check what gigs exist in the database first
       const { data: allGigs, error: allGigsError } = await supabase
         .from('gigs')

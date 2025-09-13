@@ -83,6 +83,10 @@ export default function CreditsDashboard() {
         console.log('❌ No user found - user not authenticated');
         return;
       }
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
 
       console.log('✅ User found:', {
         userId: user.id,
@@ -90,7 +94,7 @@ export default function CreditsDashboard() {
       });
 
       // Load user credits
-      const { data: creditsData, error: creditsError } = await supabase
+      const { data: creditsData, error: creditsError } = await supabase!
         .from('user_credits')
         .select('*')
         .eq('user_id', user.id)
@@ -170,11 +174,15 @@ export default function CreditsDashboard() {
         console.log('❌ No user found for purchase');
         return;
       }
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
 
       console.log('🛒 Starting purchase for package:', packageId);
 
       // Get session for the API call
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase!.auth.getSession();
       if (!session) {
         console.log('❌ No session found for purchase');
         return;

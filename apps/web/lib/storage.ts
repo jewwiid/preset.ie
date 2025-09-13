@@ -8,6 +8,10 @@ import { supabase } from './supabase'
  */
 export async function uploadProfilePhoto(file: File, userId: string): Promise<string | null> {
   try {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       throw new Error('File must be an image')
@@ -55,6 +59,10 @@ export async function uploadProfilePhoto(file: File, userId: string): Promise<st
  */
 export async function deleteProfilePhoto(photoUrl: string, userId: string): Promise<boolean> {
   try {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+
     // Extract file path from URL
     const urlParts = photoUrl.split('/storage/v1/object/public/profile-photos/')
     if (urlParts.length !== 2) {
@@ -98,6 +106,10 @@ export async function updateProfilePhoto(
   oldPhotoUrl?: string
 ): Promise<string | null> {
   try {
+    if (!supabase) {
+      throw new Error('Supabase client not initialized')
+    }
+
     // Upload new photo
     const newPhotoUrl = await uploadProfilePhoto(file, userId)
     

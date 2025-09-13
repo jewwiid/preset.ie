@@ -77,7 +77,7 @@ export function useNotifications(): UseNotificationsResult {
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       setLoading(true)
@@ -146,7 +146,7 @@ export function useNotifications(): UseNotificationsResult {
 
   // Fetch user preferences
   const fetchPreferences = useCallback(async () => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       let { data, error } = await supabase
@@ -201,7 +201,7 @@ export function useNotifications(): UseNotificationsResult {
 
   // Mark notification as read
   const markAsRead = useCallback(async (notificationId: string) => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       const { error } = await supabase
@@ -236,7 +236,7 @@ export function useNotifications(): UseNotificationsResult {
 
   // Mark all notifications as read
   const markAllAsRead = useCallback(async () => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       const { error } = await supabase
@@ -273,7 +273,7 @@ export function useNotifications(): UseNotificationsResult {
 
   // Dismiss notification
   const dismiss = useCallback(async (notificationId: string) => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       const { error } = await supabase
@@ -314,7 +314,7 @@ export function useNotifications(): UseNotificationsResult {
 
   // Set up real-time subscription
   useEffect(() => {
-    if (!user) return
+    if (!user || !supabase) return
 
     console.log('Setting up notification real-time subscription for user:', user.id)
 
@@ -358,7 +358,9 @@ export function useNotifications(): UseNotificationsResult {
 
     return () => {
       console.log('Cleaning up notification subscription')
-      supabase.removeChannel(channel)
+      if (supabase) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [user, showFeedback])
 

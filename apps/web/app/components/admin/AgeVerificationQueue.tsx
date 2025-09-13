@@ -47,6 +47,11 @@ export function AgeVerificationQueue() {
 
   const fetchUsers = async () => {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+      
       let query = supabase
         .from('admin_age_verification_queue')
         .select('*')
@@ -79,6 +84,12 @@ export function AgeVerificationQueue() {
   const verifyUser = async (userId: string, dateOfBirth: string) => {
     setProcessing(true)
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setProcessing(false)
+        return
+      }
+      
       // Call the verification function
       const { data, error } = await supabase.rpc('verify_user_age', {
         p_user_id: userId,
@@ -106,6 +117,12 @@ export function AgeVerificationQueue() {
   const suspendUser = async (userId: string, reason: string) => {
     setProcessing(true)
     try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        setProcessing(false)
+        return
+      }
+      
       const { error } = await supabase
         .from('users_profile')
         .update({ 

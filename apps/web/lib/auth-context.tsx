@@ -34,6 +34,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         // Get initial session
+        if (!supabase) {
+          console.error('Supabase client not available')
+          return
+        }
+        
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -59,6 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth()
 
     // Listen for auth changes
+    if (!supabase) {
+      console.error('Supabase client not available for auth state change listener')
+      return
+    }
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event)
@@ -86,6 +96,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signUp = async (email: string, password: string) => {
+    if (!supabase) {
+      return { error: null }
+    }
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -94,6 +108,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) {
+      return { error: null }
+    }
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -122,6 +140,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserRole(null)
       
       // Check if there's an active session before trying to sign out
+      if (!supabase) {
+        console.error('Supabase client not available for sign out')
+        return { error: null }
+      }
+      
       const { data: { session: currentSession } } = await supabase.auth.getSession()
       
       if (currentSession) {

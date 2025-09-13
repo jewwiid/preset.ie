@@ -56,7 +56,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
 
   // Mark message as delivered
   const markAsDelivered = useCallback(async (messageId: string) => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       const { error } = await supabase
@@ -96,7 +96,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
 
   // Mark message as read
   const markAsRead = useCallback(async (messageId: string) => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       const { error } = await supabase
@@ -137,7 +137,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
 
   // Mark all messages in conversation as delivered
   const markConversationAsDelivered = useCallback(async (targetConversationId: string) => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       const { data, error } = await supabase
@@ -183,7 +183,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
 
   // Mark all messages in conversation as read
   const markConversationAsRead = useCallback(async (targetConversationId: string) => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       const { data, error } = await supabase
@@ -261,7 +261,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
 
   // Load initial message statuses for conversation
   const loadMessageStatuses = useCallback(async () => {
-    if (!user || !conversationId) return
+    if (!user || !conversationId || !supabase) return
 
     try {
       const { data, error } = await supabase
@@ -298,7 +298,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
 
   // Setup real-time subscription for message status updates
   const setupRealtimeSubscription = useCallback(() => {
-    if (!user || !enableRealtimeUpdates) return
+    if (!user || !enableRealtimeUpdates || !supabase) return
 
     console.log('Setting up message status subscription for user:', user.id)
 
@@ -381,7 +381,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
     }
 
     return () => {
-      if (channelRef.current) {
+      if (channelRef.current && supabase) {
         console.log('Cleaning up message status subscription')
         supabase.removeChannel(channelRef.current)
         channelRef.current = null
