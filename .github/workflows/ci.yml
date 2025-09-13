@@ -50,7 +50,7 @@ jobs:
         run: npm ci
 
       - name: Run type checking
-        run: npm run type-check
+        run: npm run check-types
 
   test:
     name: Test
