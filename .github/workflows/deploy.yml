@@ -128,7 +128,8 @@ jobs:
       - name: Run Database Migrations
         run: |
           git checkout HEAD -- supabase/
-          cd supabase && supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          cd supabase && supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+          supabase db push
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
