@@ -40,7 +40,7 @@
       ]
     },
     "check-types": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "@preset/types#build"]
     },
     "test": {
       "dependsOn": ["^test"],
