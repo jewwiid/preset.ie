@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { useMessagesApi, ConversationDTO, ConversationDetailsDTO, MessageDTO } from '../../lib/api/messages'
 import { useRealtimeMessages, RealtimeMessage, MessageStatusUpdate, TypingEvent } from '../../lib/hooks/useRealtimeMessages'
-import { MessageSquare, Send, Search, User, Clock, AlertCircle, Wifi, WifiOff } from 'lucide-react'
+import { MessageSquare, Send, Search, User, Clock, AlertCircle, Wifi, WifiOff, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
 
 interface ExtendedConversationDTO extends ConversationDTO {
   otherUser?: {
@@ -28,6 +28,13 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isTyping, setIsTyping] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // Check if we're on mobile by default
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024 // lg breakpoint
+    }
+    return false
+  })
   
   // Refs for auto-scrolling and input management
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -127,6 +134,18 @@ export default function MessagesPage() {
       fetchConversations()
     }
   }, [user])
+
+  // Handle window resize for responsive sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setSidebarCollapsed(true)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     if (selectedConversation) {
@@ -348,28 +367,54 @@ export default function MessagesPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 8rem)' }}>
+          {/* Mobile backdrop overlay */}
+          {!sidebarCollapsed && (
+            <div 
+              className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-5"
+              onClick={() => setSidebarCollapsed(true)}
+            />
+          )}
           <div className="flex h-full">
             {/* Conversations Sidebar */}
-            <div className="w-1/3 border-r border-gray-200 flex flex-col">
+            <div className={`${sidebarCollapsed ? 'w-16' : 'w-1/3'} border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${
+              sidebarCollapsed ? 'lg:relative absolute lg:translate-x-0 -translate-x-full z-10 lg:z-auto' : 'lg:relative absolute lg:translate-x-0 translate-x-0 z-10 lg:z-auto'
+            } lg:static ${!sidebarCollapsed ? 'lg:bg-transparent bg-white lg:shadow-none shadow-lg' : ''}`}>
               {/* Header */}
               <div className="p-4 border-b border-gray-200">
-                <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
-                <div className="mt-2 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <input
-                    type="text"
-                    placeholder="Search conversations..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
+                <div className="flex items-center justify-between">
+                  {!sidebarCollapsed && (
+                    <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
+                  )}
+                  <button
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                  >
+                    {sidebarCollapsed ? (
+                      <ChevronRight className="h-5 w-5 text-gray-600" />
+                    ) : (
+                      <ChevronLeft className="h-5 w-5 text-gray-600" />
+                    )}
+                  </button>
                 </div>
+                {!sidebarCollapsed && (
+                  <div className="mt-2 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <input
+                      type="text"
+                      placeholder="Search conversations..."
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Conversations List */}
               <div className="flex-1 overflow-y-auto">
                 {conversations.length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">
-                    <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm">No conversations yet</p>
+                  <div className={`text-center text-gray-500 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
+                    <MessageSquare className={`mx-auto mb-2 text-gray-400 ${sidebarCollapsed ? 'h-6 w-6' : 'h-8 w-8'}`} />
+                    {!sidebarCollapsed && <p className="text-sm">No conversations yet</p>}
                   </div>
                 ) : (
                   conversations.map((conversation) => {
@@ -383,43 +428,46 @@ export default function MessagesPage() {
                       <div
                         key={conversation.id}
                         onClick={() => setSelectedConversation(conversation.id)}
-                        className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                        className={`${sidebarCollapsed ? 'p-2' : 'p-4'} border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
                           selectedConversation === conversation.id ? 'bg-emerald-50 border-emerald-200' : ''
                         } ${
                           hasTypingUsers ? 'bg-blue-50' : ''
                         }`}
+                        title={sidebarCollapsed ? `${conversation.otherUser?.display_name || 'Unknown User'}: ${conversation.lastMessage?.body || 'No messages yet'}` : ''}
                       >
-                        <div className="flex items-start space-x-3">
-                          <div className="flex-shrink-0">
-                            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
-                              <User className="h-5 w-5 text-white" />
+                        <div className={`flex items-start ${sidebarCollapsed ? 'justify-center' : 'space-x-3'}`}>
+                          <div className="flex-shrink-0 relative">
+                            <div className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-10 h-10'} bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center`}>
+                              <User className={`text-white ${sidebarCollapsed ? 'h-4 w-4' : 'h-5 w-5'}`} />
                             </div>
+                            {conversation.unreadCount > 0 && (
+                              <span className={`absolute -top-1 -right-1 inline-flex items-center justify-center text-xs font-medium text-white bg-emerald-600 rounded-full ${
+                                sidebarCollapsed ? 'w-4 h-4 text-xs' : 'px-2 py-1'
+                              }`}>
+                                {sidebarCollapsed ? conversation.unreadCount : conversation.unreadCount}
+                              </span>
+                            )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-sm font-medium text-gray-900 truncate">
-                                {conversation.otherUser?.display_name || 'Unknown User'}
-                              </h3>
-                              <div className="flex items-center space-x-2">
-                                {conversation.unreadCount > 0 && (
-                                  <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium text-white bg-emerald-600 rounded-full">
-                                    {conversation.unreadCount}
-                                  </span>
-                                )}
+                          {!sidebarCollapsed && (
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-medium text-gray-900 truncate">
+                                  {conversation.otherUser?.display_name || 'Unknown User'}
+                                </h3>
                                 <p className="text-xs text-gray-500">
                                   {conversation.lastMessageAt && formatDate(conversation.lastMessageAt)}
                                 </p>
                               </div>
+                              <p className="text-xs text-gray-500 mb-1">@{conversation.otherUser?.handle || 'unknown'}</p>
+                              <p className="text-sm text-gray-600 truncate">
+                                {hasTypingUsers ? (
+                                  <span className="italic text-blue-600">typing...</span>
+                                ) : (
+                                  conversation.lastMessage?.body || 'No messages yet'
+                                )}
+                              </p>
                             </div>
-                            <p className="text-xs text-gray-500 mb-1">@{conversation.otherUser?.handle || 'unknown'}</p>
-                            <p className="text-sm text-gray-600 truncate">
-                              {hasTypingUsers ? (
-                                <span className="italic text-blue-600">typing...</span>
-                              ) : (
-                                conversation.lastMessage?.body || 'No messages yet'
-                              )}
-                            </p>
-                          </div>
+                          )}
                         </div>
                       </div>
                     )
@@ -436,6 +484,14 @@ export default function MessagesPage() {
                   <div className="p-4 border-b border-gray-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
+                        {/* Mobile sidebar toggle */}
+                        <button
+                          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                          className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          title={sidebarCollapsed ? 'Show conversations' : 'Hide conversations'}
+                        >
+                          <Menu className="h-5 w-5 text-gray-600" />
+                        </button>
                         <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
                           <User className="h-5 w-5 text-white" />
                         </div>
