@@ -63,7 +63,6 @@ export function NavBar() {
 
     // Base items for all authenticated users
     const baseItems = [
-      { label: 'Dashboard', href: '/dashboard', icon: Home, requiresAuth: true },
       { label: 'Messages', href: '/messages', icon: MessageSquare, requiresAuth: true },
     ]
 
@@ -202,6 +201,23 @@ export function NavBar() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:ml-8 md:flex md:space-x-1">
+              {/* Dashboard - Always First */}
+              {user && (
+                <Link
+                  href="/dashboard"
+                  className={`
+                    inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                    ${(isActive('/dashboard'))
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <Home className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Link>
+              )}
+
               {/* Gigs Dropdown */}
               {user && (
                 <DropdownMenu>
@@ -437,6 +453,24 @@ export function NavBar() {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 pb-3 pt-2">
+            {/* Dashboard - Always First */}
+            {user && (
+              <Link
+                href="/dashboard"
+                className={`
+                  block px-3 py-2 text-base font-medium rounded-md
+                  ${isActive('/dashboard')
+                    ? 'text-emerald-600 bg-emerald-50'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }
+                `}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Home className="w-5 h-5 inline mr-3" />
+                Dashboard
+              </Link>
+            )}
+
             {/* Gigs Section */}
             {user && (
               <>
@@ -526,14 +560,6 @@ export function NavBar() {
 
             {!loading && user && (
               <div className="mt-3 border-t border-gray-200 pt-3">
-                <Link
-                  href="/dashboard"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Home className="w-5 h-5 inline mr-3" />
-                  Dashboard
-                </Link>
                 {isAdmin && (
                   <Link
                     href="/admin"
