@@ -19,7 +19,9 @@
     "@preset/domain": "*"
   },
   "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
     "@types/node": "^20.11.24",
+    "eslint": "^9.34.0",
     "typescript": "^5.3.3"
   }
 }
