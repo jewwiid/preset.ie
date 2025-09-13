@@ -32,7 +32,7 @@ export default function CreditPurchasePage() {
         {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          className="mb-6 inline-flex items-center gap-2 px-4 py-2 bg-preset-500 text-white rounded-lg hover:bg-preset-600 transition-colors duration-200 font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           Back

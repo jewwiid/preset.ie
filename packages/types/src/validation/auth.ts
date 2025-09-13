@@ -7,7 +7,9 @@ export const signUpSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   displayName: z.string().min(2).max(50),
   handle: handleSchema,
-  role: z.nativeEnum(UserRole).exclude([UserRole.ADMIN]),
+  role: z.nativeEnum(UserRole).refine(role => role !== UserRole.ADMIN, {
+    message: 'Admin role cannot be selected during signup',
+  }),
   acceptTerms: z.literal(true, {
     errorMap: () => ({ message: 'You must accept the terms of service' }),
   }),

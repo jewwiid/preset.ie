@@ -20,7 +20,9 @@ export const completeOnboardingSchema = z.object({
   bio: z.string().max(500),
   city: z.string().max(100),
   styleTags: styleTagsSchema.min(1, 'Select at least one style tag'),
-  role: z.nativeEnum(UserRole).exclude([UserRole.ADMIN]),
+  role: z.nativeEnum(UserRole).refine(role => role !== UserRole.ADMIN, {
+    message: 'Admin role cannot be selected during onboarding',
+  }),
 });
 
 export const getProfileSchema = z.object({

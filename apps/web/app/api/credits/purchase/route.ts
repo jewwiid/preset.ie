@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
     
     // CRITICAL: Check if platform has enough credits
     const { data: platformCredit } = await supabase
-      .from('platform_credits')
-      .select('current_balance, low_balance_threshold, credit_ratio')
-      .eq('provider', 'nanobanana')
+      .from('credit_pools')
+      .select('available_balance, auto_refill_threshold, total_consumed')
+      .eq('provider', 'nanobanan')
       .single();
     
     if (!platformCredit) {
@@ -36,11 +36,11 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const creditRatio = platformCredit.credit_ratio || 4; // Default 1:4 ratio
+    const creditRatio = 4; // Default 1:4 ratio (1 user credit = 4 nanobanan credits)
     const requiredNanoBananaCredits = userCredits * creditRatio;
     
     // Check platform capacity
-    const availableUserCredits = Math.floor(platformCredit.current_balance / creditRatio);
+    const availableUserCredits = Math.floor(platformCredit.available_balance / creditRatio);
     
     if (availableUserCredits < userCredits) {
       // PLATFORM DOESN'T HAVE ENOUGH CREDITS!
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         ⚠️ CRITICAL: Platform capacity exceeded!
         User wants: ${userCredits} credits
         Platform can serve: ${availableUserCredits} credits
-        NanoBanana balance: ${platformCredit.current_balance}
+        NanoBanana balance: ${platformCredit.available_balance}
         Needed: ${requiredNanoBananaCredits} NanoBanana credits
       `);
       
@@ -98,17 +98,16 @@ export async function POST(request: NextRequest) {
     
     // 3. Update platform tracking (reserve these credits)
     await supabase
-      .from('platform_credit_consumption')
-      .insert({
-        provider: 'nanobanana',
-        user_id: user.id,
-        operation_type: 'credit_purchase_reservation',
-        provider_credits_consumed: requiredNanoBananaCredits,
-        cost_usd: priceUsd
-      });
+      .from('credit_pools')
+      .update({
+        available_balance: platformCredit.available_balance - requiredNanoBananaCredits,
+        total_consumed: platformCredit.total_consumed + requiredNanoBananaCredits,
+        updated_at: new Date().toISOString()
+      })
+      .eq('provider', 'nanobanan');
     
     // 4. Check if platform is running low after this purchase
-    const remainingPlatformCredits = platformCredit.current_balance - requiredNanoBananaCredits;
+    const remainingPlatformCredits = platformCredit.available_balance - requiredNanoBananaCredits;
     const remainingUserCapacity = Math.floor(remainingPlatformCredits / creditRatio);
     
     return NextResponse.json({
@@ -117,7 +116,7 @@ export async function POST(request: NextRequest) {
       message: `Successfully purchased ${userCredits} credits`,
       platformStatus: {
         remainingCapacity: remainingUserCapacity,
-        isLow: remainingPlatformCredits < platformCredit.low_balance_threshold
+        isLow: remainingPlatformCredits < platformCredit.auto_refill_threshold
       }
     });
     
@@ -137,9 +136,9 @@ export async function GET(request: NextRequest) {
     
     // Get platform credits
     const { data: platformCredit } = await supabase
-      .from('platform_credits')
-      .select('current_balance, credit_ratio')
-      .eq('provider', 'nanobanana')
+      .from('credit_pools')
+      .select('available_balance')
+      .eq('provider', 'nanobanan')
       .single();
     
     // Get credit packages
@@ -154,8 +153,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Calculate which packages can be fulfilled
-    const creditRatio = platformCredit.credit_ratio || 4; // Default 1:4 ratio
-    const availableUserCredits = Math.floor(platformCredit.current_balance / creditRatio);
+    const creditRatio = 4; // Default 1:4 ratio (1 user credit = 4 nanobanan credits)
+    const availableUserCredits = Math.floor(platformCredit.available_balance / creditRatio);
     
     const packagesWithAvailability = packages.map(pkg => ({
       ...pkg,
@@ -165,16 +164,38 @@ export async function GET(request: NextRequest) {
         ? `Temporarily unavailable (platform capacity: ${availableUserCredits} credits)`
         : null
     }));
+
+    // Check for lootbox availability only if requested
+    const { searchParams } = new URL(request.url);
+    const includeLootbox = searchParams.get('include_lootbox') === 'true';
+    let lootboxPackages = [];
+    
+    if (includeLootbox) {
+      try {
+        const lootboxResponse = await fetch(`${request.nextUrl.origin}/api/lootbox/availability`);
+        if (lootboxResponse.ok) {
+          const lootboxData = await lootboxResponse.json();
+          if (lootboxData.success && lootboxData.lootbox.is_available) {
+            lootboxPackages = lootboxData.lootbox.available_packages;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking lootbox availability:', error);
+        // Continue without lootbox packages
+      }
+    }
     
     return NextResponse.json({
       packages: packagesWithAvailability,
+      lootboxPackages: lootboxPackages,
       platformCapacity: {
         totalUserCredits: availableUserCredits,
-        nanoBananaCredits: platformCredit.current_balance,
+        nanoBananaCredits: platformCredit.available_balance,
         canSellStarter: availableUserCredits >= 10,
         canSellCreative: availableUserCredits >= 50,
         canSellPro: availableUserCredits >= 100,
-        canSellStudio: availableUserCredits >= 500
+        canSellStudio: availableUserCredits >= 500,
+        lootboxAvailable: lootboxPackages.length > 0
       }
     });
   } catch (error: any) {

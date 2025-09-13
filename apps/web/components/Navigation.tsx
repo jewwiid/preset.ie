@@ -215,6 +215,21 @@ export default function Navigation({ className = '' }: NavigationProps) {
                       )}
                       <div className="border-t border-gray-100 my-1"></div>
                       <HeadlessMenu.Item>
+                        {({ active, close }) => (
+                          <Link
+                            href="/profile"
+                            onClick={close}
+                            className={`${
+                              active ? 'bg-emerald-50' : ''
+                            } flex items-center px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors cursor-pointer font-medium`}
+                          >
+                            <User className="h-4 w-4 mr-2" />
+                            Edit Profile
+                          </Link>
+                        )}
+                      </HeadlessMenu.Item>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <HeadlessMenu.Item>
                         {({ active }) => (
                           <button
                             onClick={handleSignOut}
@@ -337,6 +352,14 @@ export default function Navigation({ className = '' }: NavigationProps) {
                     Admin Panel
                   </Link>
                 )}
+                <Link
+                  href="/profile"
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-white bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <User className="h-5 w-5 mr-2" />
+                  Edit Profile
+                </Link>
                 <button
                   onClick={() => {
                     handleSignOut()

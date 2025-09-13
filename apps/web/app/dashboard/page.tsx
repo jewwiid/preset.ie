@@ -363,6 +363,12 @@ export default function Dashboard() {
                 </button>
               )}
               <button
+                onClick={() => router.push('/profile')}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all"
+              >
+                Profile Settings
+              </button>
+              <button
                 onClick={handleSignOut}
                 className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-sm font-medium backdrop-blur-sm border border-white/20 transition-all"
               >
@@ -483,20 +489,10 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* Quick Actions Row */}
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => router.push('/profile')}
-                    className="flex items-center gap-2 px-4 py-2 text-preset-600 dark:text-preset-400 hover:bg-preset-50 dark:hover:bg-preset-900/20 rounded-lg transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <span className="text-sm font-medium">Edit Profile</span>
-                  </button>
-
-                  {profile.city && (
+              {/* Location Row */}
+              {profile.city && (
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center justify-end">
                     <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -504,9 +500,9 @@ export default function Dashboard() {
                       </svg>
                       <span className="text-sm">{profile.city}</span>
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           
           {/* My Recent Gigs - Second Column */}

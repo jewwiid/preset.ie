@@ -1,4 +1,5 @@
 import { UserRole, SubscriptionTier, VerificationStatus } from '../database/enums';
+import { SubscriptionDTO } from './subscription';
 
 export interface UserDTO {
   id: string;
@@ -42,28 +43,6 @@ export interface SocialsDTO {
   twitter?: string;
 }
 
-export interface SubscriptionDTO {
-  tier: SubscriptionTier;
-  status: string;
-  startedAt: Date;
-  expiresAt?: Date;
-  features: SubscriptionFeatureDTO[];
-  usage: SubscriptionUsageDTO;
-}
-
-export interface SubscriptionFeatureDTO {
-  name: string;
-  enabled: boolean;
-  limit?: number;
-  used?: number;
-}
-
-export interface SubscriptionUsageDTO {
-  gigsThisMonth: number;
-  applicationsThisMonth: number;
-  showcases: number;
-  boostsAvailable: number;
-}
 
 export interface PublicProfileDTO {
   id: string;

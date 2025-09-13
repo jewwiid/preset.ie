@@ -40,7 +40,12 @@ import {
   Filter,
   Target,
   Palette,
-  Hash
+  Hash,
+  ArrowLeft,
+  TrendingUp,
+  Coins,
+  History,
+  ShoppingCart
 } from 'lucide-react'
 
 // Predefined vibe options  
@@ -63,6 +68,7 @@ interface UserProfile {
   handle: string
   avatar_url?: string
   header_banner_url?: string
+  header_banner_position?: string // JSON string of BannerPosition
   bio?: string
   city?: string
   role_flags: string[]
@@ -73,6 +79,11 @@ interface UserProfile {
   verified_id: boolean
   created_at: string
   updated_at: string
+}
+
+interface BannerPosition {
+  y: number
+  scale: number
 }
 
 interface UserSettings {
@@ -433,16 +444,16 @@ function UserSettingsTab() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm">
           <p className="text-red-800">{error}</p>
         </div>
       )}
 
       {/* Notifications */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center mb-4">
-          <Bell className="w-5 h-5 text-gray-400 mr-3" />
-          <h2 className="text-lg font-semibold text-gray-900">Notification Preferences</h2>
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center mb-6">
+          <Bell className="w-5 h-5 text-emerald-600 mr-3" />
+          <h2 className="text-xl font-bold text-gray-900">Notification Preferences</h2>
         </div>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -508,10 +519,10 @@ function UserSettingsTab() {
       </div>
 
       {/* Privacy */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center mb-4">
-          <Eye className="w-5 h-5 text-gray-400 mr-3" />
-          <h2 className="text-lg font-semibold text-gray-900">Privacy Settings</h2>
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center mb-6">
+          <Eye className="w-5 h-5 text-blue-600 mr-3" />
+          <h2 className="text-xl font-bold text-gray-900">Privacy Settings</h2>
         </div>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -553,10 +564,10 @@ function UserSettingsTab() {
       </div>
 
       {/* Security */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center mb-4">
-          <Lock className="w-5 h-5 text-gray-400 mr-3" />
-          <h2 className="text-lg font-semibold text-gray-900">Security Settings</h2>
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center mb-6">
+          <Lock className="w-5 h-5 text-red-600 mr-3" />
+          <h2 className="text-xl font-bold text-gray-900">Security Settings</h2>
         </div>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -587,10 +598,10 @@ function UserSettingsTab() {
       </div>
 
       {/* Gig Notification Preferences */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center mb-4">
-          <Target className="w-5 h-5 text-gray-400 mr-3" />
-          <h2 className="text-lg font-semibold text-gray-900">Gig Notification Preferences</h2>
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center mb-6">
+          <Target className="w-5 h-5 text-purple-600 mr-3" />
+          <h2 className="text-xl font-bold text-gray-900">Gig Notification Preferences</h2>
         </div>
         <div className="space-y-6">
           <p className="text-sm text-gray-600 mb-4">
@@ -811,6 +822,11 @@ function ProfilePageContent() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isDraggingHeader, setIsDraggingHeader] = useState(false)
+  const [headerPosition, setHeaderPosition] = useState({ y: 0, scale: 1 })
+  const [showHeaderOptions, setShowHeaderOptions] = useState(false)
+  const [isHoveringHeader, setIsHoveringHeader] = useState(false)
+  const [isEditingHeader, setIsEditingHeader] = useState(false)
   const [stats, setStats] = useState({
     gigsCreated: 0,
     applications: 0,
@@ -869,6 +885,125 @@ function ProfilePageContent() {
       fetchStats()
     }
   }, [profile, user])
+
+  // Initialize header position from profile data
+  useEffect(() => {
+    if (profile?.header_banner_position) {
+      try {
+        const position = JSON.parse(profile.header_banner_position)
+        setHeaderPosition(position)
+      } catch {
+        setHeaderPosition({ y: 0, scale: 1 })
+      }
+    }
+  }, [profile?.header_banner_position])
+
+  // Close header options dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showHeaderOptions) {
+        setShowHeaderOptions(false)
+      }
+    }
+
+    if (showHeaderOptions) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showHeaderOptions])
+
+  // Keyboard support for header positioning
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!profile?.header_banner_url) return
+      
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        event.preventDefault()
+        const step = 10 // pixels to move per keypress
+        const newY = event.key === 'ArrowUp' 
+          ? headerPosition.y - step 
+          : headerPosition.y + step
+        
+        const newPosition = { ...headerPosition, y: newY }
+        setHeaderPosition(newPosition)
+        
+        // Save position after keyboard adjustment
+        if (user) {
+          supabase
+            .from('users_profile')
+            .update({
+              header_banner_position: JSON.stringify(newPosition),
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id)
+            .then(({ error }) => {
+              if (error) console.error('Error updating header position:', error)
+            })
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [profile?.header_banner_url, headerPosition, user])
+
+  // Global mouse event handling for drag
+  useEffect(() => {
+    if (!isDraggingHeader) return
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!profile?.header_banner_url) {
+        console.log('❌ No header banner URL in global mouse move')
+        return
+      }
+      
+      console.log('🌍 Global mouse move while dragging:', { 
+        clientY: e.clientY, 
+        isDraggingHeader,
+        hasBanner: !!profile.header_banner_url 
+      })
+      
+      // Get the header container bounds
+      const headerContainer = document.querySelector('[data-header-container]') as HTMLElement
+      if (!headerContainer) {
+        console.log('❌ Header container not found')
+        return
+      }
+      
+      const rect = headerContainer.getBoundingClientRect()
+      const relativeY = e.clientY - rect.top
+      const percentage = relativeY / rect.height
+      const y = (percentage - 0.5) * 200 // Limit movement to ±200px
+      
+      console.log('🌍 Global drag update:', { 
+        relativeY, 
+        percentage, 
+        y, 
+        rectTop: rect.top,
+        rectHeight: rect.height,
+        newPosition: { y }
+      })
+      
+      setHeaderPosition(prevPosition => {
+        const newPos = { ...prevPosition, y }
+        console.log('🔄 Setting new position:', newPos)
+        return newPos
+      })
+    }
+
+    const handleGlobalMouseUp = () => {
+      console.log('🌍 Global mouse up - ending drag')
+      handleHeaderDragEnd()
+    }
+
+    document.addEventListener('mousemove', handleGlobalMouseMove)
+    document.addEventListener('mouseup', handleGlobalMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove)
+      document.removeEventListener('mouseup', handleGlobalMouseUp)
+    }
+  }, [isDraggingHeader, profile?.header_banner_url])
 
   const fetchProfile = async () => {
     if (!user) return
@@ -1068,14 +1203,168 @@ function ProfilePageContent() {
     }
   }
 
-  const handleBannerUpdate = (newBannerUrl: string) => {
+  const handleBannerUpdate = async (newBannerUrl: string) => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('users_profile')
+        .update({
+          header_banner_url: newBannerUrl,
+          header_banner_position: JSON.stringify(headerPosition),
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
     // Update the profile state immediately for UI feedback
     if (profile) {
       setProfile({
         ...profile,
-        header_banner_url: newBannerUrl
-      })
+          header_banner_url: newBannerUrl,
+          header_banner_position: JSON.stringify(headerPosition)
+        })
+      }
+    } catch (error) {
+      console.error('Error updating banner:', error)
+      setError('Failed to update banner')
     }
+  }
+
+  const handleHeaderDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!profile?.header_banner_url) {
+      console.log('❌ No header banner URL, drag start blocked')
+      return
+    }
+    console.log('🎯 Drag START triggered!', { 
+      isDraggingHeader, 
+      isEditingHeader,
+      hasBanner: !!profile.header_banner_url, 
+      eventType: e.type,
+      target: e.currentTarget,
+      clientY: 'touches' in e ? e.touches[0].clientY : e.clientY,
+      currentPosition: headerPosition
+    })
+    setIsDraggingHeader(true)
+    setIsEditingHeader(true) // Set editing mode when drag starts
+    console.log('✅ Drag state set to true')
+    e.preventDefault()
+    e.stopPropagation()
+  }
+
+  const handleHeaderDrag = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDraggingHeader || !profile?.header_banner_url) return
+    
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    
+    // Simple vertical positioning based on mouse position
+    const relativeY = clientY - rect.top
+    const percentage = relativeY / rect.height
+    const y = (percentage - 0.5) * 200 // Limit movement to ±200px
+    
+    const newPosition = { ...headerPosition, y }
+    
+    console.log('🔄 Dragging:', { 
+      clientY, 
+      relativeY, 
+      percentage, 
+      y, 
+      newPosition
+    })
+    
+    setHeaderPosition(newPosition)
+  }
+
+  const handleHeaderDragEnd = () => {
+    if (!isDraggingHeader) return
+    console.log('🏁 Drag END - position updated locally, waiting for save')
+    setIsDraggingHeader(false)
+    setShowHeaderOptions(false)
+    // Don't reset isEditingHeader here - keep it true so "Save Changes" button stays visible
+  }
+
+  const handleHeaderUpload = () => {
+    // Trigger file input for header upload
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file || !user) return
+
+      setIsEditingHeader(true)
+      setSaving(true)
+      setError(null)
+      setShowHeaderOptions(false)
+
+      try {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `header-${Date.now()}.${fileExt}`
+        const filePath = `${user.id}/${fileName}`
+
+        // Upload to Supabase storage
+        console.log('📤 Uploading header banner:', { filePath, fileName, fileSize: file.size })
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('avatars') // Using avatars bucket for header banners
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false,
+          })
+
+        if (uploadError) {
+          console.error('❌ Upload error:', uploadError)
+          throw uploadError
+        }
+
+        console.log('✅ Upload successful:', uploadData)
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath)
+
+        console.log('🔗 Public URL generated:', publicUrlData?.publicUrl)
+
+        if (publicUrlData?.publicUrl) {
+          await handleBannerUpdate(publicUrlData.publicUrl)
+        } else {
+          throw new Error('Failed to get public URL for uploaded banner')
+        }
+      } catch (err: any) {
+        console.error('❌ Error uploading header banner:', err)
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to upload header banner'
+        if (err.message?.includes('row-level security')) {
+          errorMessage = 'Permission denied. Please try again.'
+        } else if (err.message?.includes('Bucket not found')) {
+          errorMessage = 'Storage bucket not configured. Please contact support.'
+        } else if (err.message?.includes('File too large')) {
+          errorMessage = 'File is too large. Please choose a smaller image.'
+        } else if (err.message) {
+          errorMessage = `Upload failed: ${err.message}`
+        }
+        
+        setError(errorMessage)
+      } finally {
+        setSaving(false)
+        setIsEditingHeader(false)
+      }
+    }
+    input.click()
+  }
+
+  const handleRepositionHeader = () => {
+    setShowHeaderOptions(false)
+    setIsEditingHeader(true)
+    // Don't set isDraggingHeader here - only when user actually starts dragging
+    console.log('🎯 Reposition mode ready - click and drag to reposition!')
   }
 
   const fetchStats = async () => {
@@ -1194,30 +1483,239 @@ function ProfilePageContent() {
   const maxVibeTags = 5
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-              <p className="text-gray-600">Manage your profile and preferences</p>
+    <div className="min-h-screen bg-gradient-to-br from-preset-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {/* Hero Header - Dashboard Style */}
+        <div className="relative overflow-hidden pb-80">
+        {/* Custom Banner Background */}
+        {profile.header_banner_url ? (
+          <div 
+            data-header-container
+            className={`absolute inset-0 overflow-hidden bg-gradient-to-r from-gray-200 to-gray-300 ${isDraggingHeader ? 'cursor-grabbing select-none' : 'cursor-grab select-none'}`}
+            onClick={() => console.log('🎯 Container clicked!')}
+            style={{ userSelect: 'none', zIndex: 10 }}
+            onMouseDown={(e) => {
+              console.log('🖱️ Mouse down on header container', {
+                event: e,
+                target: e.target,
+                currentTarget: e.currentTarget,
+                clientX: e.clientX,
+                clientY: e.clientY,
+                isEditingHeader,
+                isDraggingHeader
+              })
+              e.preventDefault() // Prevent text selection
+              handleHeaderDragStart(e)
+            }}
+            onMouseUp={(e) => {
+              console.log('🖱️ Mouse up on header container')
+              e.preventDefault() // Prevent text selection
+              handleHeaderDragEnd()
+            }}
+            onMouseLeave={(e) => {
+              console.log('🖱️ Mouse leave header container')
+              handleHeaderDragEnd()
+              setIsHoveringHeader(false)
+            }}
+            onMouseEnter={() => {
+              console.log('🖱️ Mouse enter header container')
+              setIsHoveringHeader(true)
+            }}
+            onTouchStart={handleHeaderDragStart}
+            onTouchMove={handleHeaderDrag}
+            onTouchEnd={handleHeaderDragEnd}
+            onDragStart={(e) => e.preventDefault()} // Prevent image drag
+          >
+            <img
+              src={profile.header_banner_url}
+              alt="Header banner"
+              className="w-full h-full object-cover transition-transform duration-300 select-none"
+              style={{
+                transform: `translateY(${headerPosition.y}px)`,
+                pointerEvents: 'none', // Prevent image from interfering with drag events
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                MozUserSelect: 'none',
+                msUserSelect: 'none'
+              }}
+              draggable={false}
+            />
+            {/* Dark overlay gradient - same as dashboard */}
+            <div className="absolute inset-0 bg-black/40"></div>
+            {/* Drag indicator */}
+            {isDraggingHeader && (
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                <div className="bg-white/90 rounded-lg px-4 py-2 text-sm font-medium text-gray-900">
+                  Drag to adjust position
+                </div>
+              </div>
+            )}
+            
+            
+          </div>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-r from-preset-500 to-preset-600">
+            <div className="absolute inset-0 bg-gradient-to-r from-preset-600/90 to-preset-500/90"></div>
+          </div>
+        )}
+        
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-20" style={{ zIndex: 0 }}>
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}></div>
+        </div>
+        
+        
+        <div className="relative z-50 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <div className="flex justify-between items-start">
+            <div className="text-white select-none" style={{ userSelect: 'none' }}>
+              <div className="flex items-center mb-2">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="mr-4 p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-all backdrop-blur-sm border border-white/20"
+                >
+                  <ArrowLeft className="w-5 h-5 text-white" />
+                </button>
+                <h1 className="text-4xl md:text-5xl font-bold select-none">Profile Settings</h1>
+              </div>
+              <p className="text-gray-300 text-lg select-none">Manage your profile, credits, and preferences</p>
             </div>
-            {activeTab === 'profile' && !editing && (
+            
+            {/* Action Buttons - Dashboard Style */}
+            <div className="flex gap-2">
+              {activeTab === 'profile' && !editing && !isEditingHeader && (
+                <>
               <button
                 onClick={() => setEditing(true)}
-                className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl"
               >
-                <Edit3 className="w-4 h-4 mr-2" />
+                    <Edit3 className="w-4 h-4 mr-2 inline" />
                 Edit Profile
+              </button>
+                  <button
+                    onClick={() => setShowHeaderOptions(!showHeaderOptions)}
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium backdrop-blur-sm border border-white/20 transition-all"
+                  >
+                    <Camera className="w-4 h-4 mr-2 inline" />
+                    {profile.header_banner_url ? 'Edit Header' : 'Add Header'}
+                  </button>
+                </>
+              )}
+              {(activeTab === 'profile' && editing) || (activeTab === 'profile' && isEditingHeader) ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setEditing(false)
+                      setIsEditingHeader(false)
+                      setIsDraggingHeader(false)
+                      setShowHeaderOptions(false)
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium backdrop-blur-sm border border-white/20 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={isEditingHeader ? async () => {
+                      // Save header position
+                      if (profile?.header_banner_url && user) {
+                        setSaving(true)
+                        try {
+                          const { error } = await supabase
+                            .from('users_profile')
+                            .update({
+                              header_banner_position: JSON.stringify(headerPosition),
+                              updated_at: new Date().toISOString()
+                            })
+                            .eq('user_id', user.id)
+
+                          if (error) throw error
+
+                          // Update the profile state
+                          if (profile) {
+                            setProfile({
+                              ...profile,
+                              header_banner_position: JSON.stringify(headerPosition)
+                            })
+                          }
+                          
+                          console.log('✅ Header position saved:', headerPosition)
+                        } catch (error) {
+                          console.error('Error updating header position:', error)
+                          setError('Failed to save header position')
+                        } finally {
+                          setSaving(false)
+                        }
+                      }
+                      
+                      // Reset editing states
+                      setIsEditingHeader(false)
+                      setIsDraggingHeader(false)
+                      setShowHeaderOptions(false)
+                    } : handleSave}
+                    disabled={saving}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2 inline" />
+                        Save Changes
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : null}
+            </div>
+          </div>
+          </div>
+
+        {/* Header Options Dropdown */}
+        {showHeaderOptions && (
+          <div className="absolute top-20 right-4 z-50 bg-white rounded-xl shadow-xl border border-gray-200 py-2 min-w-[200px]">
+            {profile.header_banner_url ? (
+              <>
+                <button
+                  onClick={handleHeaderUpload}
+                  className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                >
+                  <Camera className="w-4 h-4 text-gray-500" />
+                  Change Header Image
+                </button>
+                <button
+                  onClick={handleRepositionHeader}
+                  className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                >
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  Reposition Header
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleHeaderUpload}
+                className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+              >
+                <Camera className="w-4 h-4 text-gray-500" />
+                Upload Header Image
               </button>
             )}
           </div>
+        )}
+      </div>
 
-          {/* Tab Navigation */}
-          <div className="mt-6">
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
+
+      {/* Main Content */}
+      <main className="relative -mt-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+          {/* Tab Navigation - Dashboard Style */}
+          <div className="mb-8">
+            <div className="bg-white rounded-xl shadow-lg p-2 relative z-50">
+              <nav className="flex space-x-1">
                 {[
                   { id: 'profile', label: 'Profile', icon: User },
                   { id: 'credits', label: 'Credits & Billing', icon: CreditCard },
@@ -1226,10 +1724,10 @@ function ProfilePageContent() {
                   <button
                     key={id}
                     onClick={() => setActiveTab(id as any)}
-                    className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-sm transition-all ${
                       activeTab === id
-                        ? 'border-emerald-500 text-emerald-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -1237,152 +1735,189 @@ function ProfilePageContent() {
                   </button>
                 ))}
               </nav>
-            </div>
-          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Tab Content */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm">
             <p className="text-red-800">{error}</p>
           </div>
         )}
 
-        {/* Tab Content */}
-        {activeTab === 'credits' && <CreditsDashboard />}
+        {activeTab === 'credits' && <div className="relative z-50"><CreditsDashboard /></div>}
         
-        {activeTab === 'settings' && <UserSettingsTab />}
+        {activeTab === 'settings' && <div className="relative z-50"><UserSettingsTab /></div>}
 
         {activeTab === 'profile' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative z-50">
           {/* Profile Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Info */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
-              
-              <div className="space-y-4">
-                {/* Header Banner */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Header Banner</label>
-                  {editing ? (
-                    <HeaderBannerUpload 
-                      currentBannerUrl={profile.header_banner_url}
-                      onBannerUpdate={handleBannerUpdate}
-                      userId={user.id}
-                    />
-                  ) : (
-                    <div className="w-full h-32 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg overflow-hidden">
-                      {profile.header_banner_url ? (
-                        <img
-                          src={profile.header_banner_url}
-                          alt="Header banner"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Camera className="w-8 h-8 text-white/50" />
-                        </div>
-                      )}
-                    </div>
-                  )}
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl relative z-50">
+                <div className="flex items-center mb-6">
+                  <User className="w-5 h-5 text-emerald-600 mr-3" />
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Basic Information</h2>
                 </div>
 
-                {/* Avatar */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Profile Photo</label>
-                  {editing ? (
-                    <AvatarUpload 
-                      currentAvatarUrl={profile.avatar_url}
-                      onAvatarUpdate={handleAvatarUpdate}
-                      size="lg"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center">
+              <div className="space-y-3">
+                {/* Avatar and Name in one row */}
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <div className="relative">
                       {profile.avatar_url ? (
                         <img
                           src={profile.avatar_url}
                           alt={profile.display_name}
-                          className="w-20 h-20 rounded-full object-cover"
+                          className="w-16 h-16 rounded-full object-cover border-2 border-preset-200 shadow-lg"
                         />
                       ) : (
-                        <User className="w-10 h-10 text-white" />
+                        <div className="w-16 h-16 bg-gradient-to-br from-preset-400 to-preset-600 rounded-full flex items-center justify-center border-2 border-preset-200 shadow-lg">
+                          <span className="text-white font-bold text-lg">
+                            {profile.display_name?.charAt(0)?.toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-400 border-2 border-white dark:border-gray-800 rounded-full flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                      </div>
+                      
+                      {/* Compact upload overlay for editing */}
+                      {editing && (
+                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => {
+                              const input = document.createElement('input')
+                              input.type = 'file'
+                              input.accept = 'image/*'
+                              input.onchange = async (e) => {
+                                const file = (e.target as HTMLInputElement).files?.[0]
+                                if (file) {
+                                  // Upload file and get URL
+                                  try {
+                                    const fileExt = file.name.split('.').pop()
+                                    const fileName = `${Date.now()}.${fileExt}`
+                                    const filePath = `${user?.id}/${fileName}`
+                                    
+                                    const { error: uploadError } = await supabase.storage
+                                      .from('profile-images')
+                                      .upload(filePath, file, {
+                                        cacheControl: '3600',
+                                        upsert: false
+                                      })
+                                    
+                                    if (uploadError) throw uploadError
+                                    
+                                    const { data } = supabase.storage
+                                      .from('profile-images')
+                                      .getPublicUrl(filePath)
+                                    
+                                    handleAvatarUpdate(data.publicUrl)
+                                  } catch (error) {
+                                    console.error('Avatar upload error:', error)
+                                    alert('Failed to upload avatar. Please try again.')
+                                  }
+                                }
+                              }
+                              input.click()
+                            }}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white p-1.5 rounded-full transition-colors"
+                          >
+                            <Camera className="w-3 h-3" />
+                          </button>
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
-
-                {/* Name and Handle */}
-                <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {editing ? (
-                        <input
-                          type="text"
-                          value={formData.display_name}
-                          onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          placeholder="Display name"
-                        />
-                      ) : (
-                        profile.display_name
-                      )}
-                    </h3>
-                    <p className="text-gray-600">
-                      @{editing ? (
-                        <input
-                          type="text"
-                          value={formData.handle}
-                          onChange={(e) => setFormData({ ...formData, handle: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                          placeholder="Handle"
-                        />
-                      ) : (
-                        profile.handle
-                      )}
-                    </p>
                   </div>
-
-                {/* Bio */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-                  {editing ? (
-                    <textarea
-                      value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Tell us about yourself..."
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profile.bio || 'No bio provided'}</p>
-                  )}
+                  
+                  {/* Name and Handle */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-1">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        {editing ? (
+                          <input
+                            type="text"
+                            value={formData.display_name}
+                            onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                            className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-lg font-bold"
+                            placeholder="Display name"
+                          />
+                        ) : (
+                          profile.display_name
+                        )}
+                      </h3>
+                      <span className="px-2 py-0.5 bg-gradient-to-r from-preset-500 to-preset-600 text-white text-xs font-bold rounded-full uppercase tracking-wide">
+                        {profile.subscription_tier}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                      <span className="text-sm">
+                        @{editing ? (
+                          <input
+                            type="text"
+                            value={formData.handle}
+                            onChange={(e) => setFormData({ ...formData, handle: e.target.value })}
+                            className="px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                            placeholder="Handle"
+                          />
+                        ) : (
+                          profile.handle
+                        )}
+                      </span>
+                      <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span className="text-xs font-medium">
+                          {profile.role_flags?.includes('CONTRIBUTOR') && profile.role_flags?.includes('TALENT') ? 'Contributor & Talent' : 
+                           profile.role_flags?.includes('CONTRIBUTOR') ? 'Contributor' : 'Talent'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Location */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                  {editing ? (
-                    <input
-                      type="text"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="City, Country"
-                    />
-                  ) : (
-                    <p className="text-gray-900 flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {profile.city || 'No location provided'}
-                    </p>
-                  )}
+
+                {/* Bio and Location in one row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
+                    {editing ? (
+                      <textarea
+                        value={formData.bio}
+                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                        rows={2}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="Tell us about yourself..."
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900 dark:text-white">{profile.bio || 'No bio provided'}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                    {editing ? (
+                      <input
+                        type="text"
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="City, Country"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900 dark:text-white flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {profile.city || 'No location provided'}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Style Tags */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Style Tags</label>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Style Tags</label>
                   {editing ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {/* Current Style Tags */}
                       <div className="flex flex-wrap gap-2">
                         {formData.style_tags.map((tag, index) => (
@@ -1478,14 +2013,14 @@ function ProfilePageContent() {
 
                 {/* Vibe Tags */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
                     <div className="flex items-center">
-                      <Sparkles className="w-4 h-4 mr-2" />
+                      <Sparkles className="w-3 h-3 mr-1" />
                       Vibe Tags
                     </div>
                   </label>
                   {editing ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {/* Current Vibe Tags */}
                       <div className="flex flex-wrap gap-2">
                         {vibeTags.map((tag, index) => (
@@ -1609,8 +2144,11 @@ function ProfilePageContent() {
             </div>
 
             {/* Account Info */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center mb-6">
+                  <Shield className="w-5 h-5 text-blue-600 mr-3" />
+                  <h2 className="text-xl font-bold text-gray-900">Account Information</h2>
+                </div>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-2">
@@ -1675,79 +2213,101 @@ function ProfilePageContent() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="bg-white rounded-xl shadow-lg p-6 relative z-50">
+                <div className="flex items-center mb-6">
+                  <Briefcase className="w-5 h-5 text-emerald-600 mr-3" />
+                  <h3 className="text-xl font-bold text-gray-900">Quick Actions</h3>
+                </div>
               <div className="space-y-3">
                 {isContributor && (
                   <button
                     onClick={() => router.push('/gigs/create')}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
                   >
+                      <Plus className="w-4 h-4 mr-2 inline" />
                     Create New Gig
                   </button>
                 )}
                 {isTalent && (
                   <button
                     onClick={() => router.push('/gigs')}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
                   >
+                      <Briefcase className="w-4 h-4 mr-2 inline" />
                     Browse Gigs
                   </button>
                 )}
                 <button
                   onClick={() => router.push('/showcases')}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-all shadow-md hover:shadow-lg"
                 >
+                    <Star className="w-4 h-4 mr-2 inline" />
                   View Showcases
                 </button>
                 <button
                   onClick={() => router.push('/settings')}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md"
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-lg text-sm font-medium transition-all"
                 >
+                    <Settings className="w-4 h-4 mr-2 inline" />
                   Account Settings
                 </button>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Stats</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Profile views</span>
-                  <span className="text-gray-900">
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <div className="flex items-center mb-6">
+                  <TrendingUp className="w-5 h-5 text-green-600 mr-3" />
+                  <h3 className="text-xl font-bold text-gray-900">Stats</h3>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <Eye className="w-4 h-4 text-gray-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Profile views</span>
+                    </div>
+                    <span className="text-2xl font-bold text-gray-900">
                     {statsLoading ? (
-                      <div className="animate-pulse bg-gray-200 h-4 w-8 rounded"></div>
+                        <div className="animate-pulse bg-gray-200 h-6 w-12 rounded"></div>
                     ) : (
                       stats.profileViews || '-'
                     )}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Gigs created</span>
-                  <span className="text-gray-900">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <Briefcase className="w-4 h-4 text-green-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Gigs created</span>
+                    </div>
+                    <span className="text-2xl font-bold text-gray-900">
                     {statsLoading ? (
-                      <div className="animate-pulse bg-gray-200 h-4 w-8 rounded"></div>
+                        <div className="animate-pulse bg-gray-200 h-6 w-12 rounded"></div>
                     ) : (
                       stats.gigsCreated
                     )}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Applications</span>
-                  <span className="text-gray-900">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <User className="w-4 h-4 text-blue-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Applications</span>
+                    </div>
+                    <span className="text-2xl font-bold text-gray-900">
                     {statsLoading ? (
-                      <div className="animate-pulse bg-gray-200 h-4 w-8 rounded"></div>
+                        <div className="animate-pulse bg-gray-200 h-6 w-12 rounded"></div>
                     ) : (
                       stats.applications
                     )}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Showcases</span>
-                  <span className="text-gray-900">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <Star className="w-4 h-4 text-purple-500 mr-3" />
+                      <span className="text-gray-700 font-medium">Showcases</span>
+                    </div>
+                    <span className="text-2xl font-bold text-gray-900">
                     {statsLoading ? (
-                      <div className="animate-pulse bg-gray-200 h-4 w-8 rounded"></div>
+                        <div className="animate-pulse bg-gray-200 h-6 w-12 rounded"></div>
                     ) : (
                       stats.showcases
                     )}
@@ -1758,36 +2318,8 @@ function ProfilePageContent() {
           </div>
           </div>
         )}
-
-        {/* Edit Actions */}
-        {editing && activeTab === 'profile' && (
-          <div className="mt-8 flex justify-end space-x-3">
-            <button
-              onClick={handleCancel}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50"
-            >
-              {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </button>
           </div>
-        )}
-      </div>
+      </main>
     </div>
   )
 }
