@@ -77,18 +77,7 @@ jobs:
 
       - name: Deploy Edge Functions
         run: |
-          echo "Current directory contents:"
-          ls -la
-          echo "Checking if supabase directory exists:"
-          ls -la supabase/ || echo "supabase directory not found"
-          echo "Checking git status:"
-          git status
-          echo "Checking git ls-files for supabase:"
-          git ls-files supabase/ | head -10
-          echo "Force checkout supabase directory:"
           git checkout HEAD -- supabase/
-          echo "After checkout, checking if supabase directory exists:"
-          ls -la supabase/ || echo "supabase directory still not found"
           cd supabase && supabase functions deploy --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
