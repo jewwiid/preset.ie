@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Ionicons } from '@expo/vector-icons'
+import { supabase } from '../lib/supabase'
 
 // Import screens (we'll create these next)
 import SignInScreen from '../screens/auth/SignInScreen'
@@ -80,12 +81,40 @@ function MainTabs() {
 
 export default function Navigation() {
   const [isAuthenticated, setIsAuthenticated] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(true)
 
-  // TODO: Check authentication state from Supabase
   React.useEffect(() => {
-    // Check if user is logged in
-    // setIsAuthenticated(!!user)
+    // Check initial authentication state
+    const checkAuthState = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        setIsAuthenticated(!!session)
+      } catch (error) {
+        console.error('Error checking auth state:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkAuthState()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('Navigation auth event:', event)
+        setIsAuthenticated(!!session)
+      }
+    )
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
+
+  if (isLoading) {
+    // You could show a loading screen here
+    return null
+  }
 
   return (
     <NavigationContainer>

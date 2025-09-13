@@ -22,7 +22,7 @@ interface Gig {
   location_text: string
   city: string
   country: string
-  start_date: string
+  start_time: string
   application_deadline: string
   max_applicants: number
   moodboard_urls: string[]
@@ -143,7 +143,7 @@ export default function GigsScreen() {
           </View>
           <View style={styles.metaItem}>
             <Ionicons name="calendar-outline" size={14} color="#6B7280" />
-            <Text style={styles.metaText}>{formatDate(item.start_date)}</Text>
+            <Text style={styles.metaText}>{formatDate(item.start_time)}</Text>
           </View>
         </View>
 

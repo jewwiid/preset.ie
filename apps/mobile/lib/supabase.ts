@@ -4,12 +4,13 @@ import { createClient } from '@supabase/supabase-js'
 import * as SecureStore from 'expo-secure-store'
 import * as aesjs from 'aes-js'
 import 'react-native-get-random-values'
+import { Platform } from 'react-native'
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || ''
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''
 
-// SecureStore adapter for Supabase Auth
-class SecureStoreAdapter {
+// Platform-specific storage adapter
+class PlatformStorageAdapter {
   private async _encrypt(key: string, value: string) {
     const encryptionKey = key.substring(0, 32).padEnd(32, '0')
     const textBytes = aesjs.utils.utf8.toBytes(value)
@@ -36,36 +37,54 @@ class SecureStoreAdapter {
 
   async getItem(key: string): Promise<string | null> {
     try {
-      const encrypted = await SecureStore.getItemAsync(key)
-      if (!encrypted) return null
-      return await this._decrypt(key, encrypted)
+      if (Platform.OS === 'web') {
+        // Use localStorage for web
+        return localStorage.getItem(key)
+      } else {
+        // Use SecureStore for native platforms
+        const encrypted = await SecureStore.getItemAsync(key)
+        if (!encrypted) return null
+        return await this._decrypt(key, encrypted)
+      }
     } catch (error) {
-      console.error('SecureStore get error:', error)
+      console.error('Storage get error:', error)
       return null
     }
   }
 
   async setItem(key: string, value: string): Promise<void> {
     try {
-      const encrypted = await this._encrypt(key, value)
-      await SecureStore.setItemAsync(key, encrypted)
+      if (Platform.OS === 'web') {
+        // Use localStorage for web
+        localStorage.setItem(key, value)
+      } else {
+        // Use SecureStore for native platforms
+        const encrypted = await this._encrypt(key, value)
+        await SecureStore.setItemAsync(key, encrypted)
+      }
     } catch (error) {
-      console.error('SecureStore set error:', error)
+      console.error('Storage set error:', error)
     }
   }
 
   async removeItem(key: string): Promise<void> {
     try {
-      await SecureStore.deleteItemAsync(key)
+      if (Platform.OS === 'web') {
+        // Use localStorage for web
+        localStorage.removeItem(key)
+      } else {
+        // Use SecureStore for native platforms
+        await SecureStore.deleteItemAsync(key)
+      }
     } catch (error) {
-      console.error('SecureStore remove error:', error)
+      console.error('Storage remove error:', error)
     }
   }
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: new SecureStoreAdapter(),
+    storage: new PlatformStorageAdapter(),
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
