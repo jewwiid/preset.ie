@@ -223,29 +223,32 @@ export default function SavedGigsPage() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <Heart className="w-7 h-7 text-red-500" />
-                My Saved Gigs
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-red-500 flex-shrink-0" />
+                <span className="truncate">My Saved Gigs</span>
               </h1>
               <p className="mt-1 text-sm text-gray-600">
                 Gigs you've saved for later • {savedGigs.length} saved
               </p>
             </div>
-            <Link
-              href="/gigs"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Browse More Gigs
-            </Link>
+            <div className="flex-shrink-0">
+              <Link
+                href="/gigs"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm sm:text-base whitespace-nowrap"
+              >
+                <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Browse More Gigs</span>
+                <span className="sm:hidden">Browse Gigs</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {savedGigs.length === 0 ? (
           /* Empty State */
           <div className="text-center py-16">
@@ -256,9 +259,9 @@ export default function SavedGigsPage() {
             </p>
             <Link
               href="/gigs"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm sm:text-base"
             >
-              <ExternalLink className="w-5 h-5" />
+              <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
               Browse Gigs
             </Link>
           </div>
