@@ -86,7 +86,6 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, type-check]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -103,9 +102,22 @@ jobs:
 
       - name: Build packages
         run: npm run build
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NANOBANANA_API_KEY: ${{ secrets.NANOBANANA_API_KEY }}
+          NANOBANAN_API_KEY: ${{ secrets.NANOBANAN_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          NANOBANANA_CALLBACK_URL: ${{ secrets.NANOBANANA_CALLBACK_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NODE_ENV: production
+          IMAGE_PROVIDER: ${{ secrets.IMAGE_PROVIDER }}
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: |
@@ -155,7 +167,7 @@ jobs:
         run: npm ci
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: build-artifacts
 
