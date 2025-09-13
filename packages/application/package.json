@@ -16,7 +16,8 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@preset/domain": "*"
+    "@preset/domain": "*",
+    "@preset/types": "*"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
