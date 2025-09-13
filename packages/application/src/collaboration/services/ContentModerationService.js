@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ContentFlaggedError = exports.ContentRejectedError = exports.ContentModerationError = exports.ContentModerationService = void 0;
-const DomainError_1 = require("../../shared/DomainError");
+const domain_1 = require("@preset/domain");
 class ContentModerationService {
     constructor(moderationRepo) {
         this.moderationRepo = moderationRepo;
@@ -197,11 +197,10 @@ class ContentModerationService {
 }
 exports.ContentModerationService = ContentModerationService;
 // Error classes
-class ContentModerationError extends DomainError_1.DomainError {
+class ContentModerationError extends domain_1.DomainError {
     constructor(message, code) {
-        super(message);
+        super(message, code);
         this.code = code;
-        this.name = 'ContentModerationError';
     }
 }
 exports.ContentModerationError = ContentModerationError;

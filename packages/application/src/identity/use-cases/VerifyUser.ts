@@ -1,5 +1,4 @@
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
+import { UserRepository, EventBus } from '@preset/domain';
 
 export interface VerifyUserCommand {
   userId: string;

@@ -1,7 +1,4 @@
-import { ApplicationRepository } from '@preset/domain/applications/ports/ApplicationRepository';
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { EventBus } from '@preset/domain/shared/EventBus';
-import { GigStatus } from '@preset/domain/gigs/value-objects/GigStatus';
+import { ApplicationRepository, GigRepository, EventBus, GigStatus, EntityId } from '@preset/domain';
 
 export interface BookTalentCommand {
   applicationId: string;
@@ -36,27 +33,27 @@ export class BookTalentUseCase {
     }
 
     // Verify the requester is the gig owner
-    if (gig.getOwnerId() !== command.gigOwnerId) {
+    if (gig.ownerId.toString() !== command.gigOwnerId) {
       throw new Error('Only the gig owner can book talent');
     }
 
     // Check if gig is already booked
-    if (gig.getStatus() === GigStatus.BOOKED) {
+    if (gig.status === GigStatus.BOOKED) {
       return {
         success: false,
-        gigId: gig.getId(),
+        gigId: gig.id.toString(),
         talentId: '',
         message: 'This gig already has talent booked'
       };
     }
 
     // Check if gig can be booked
-    if (gig.getStatus() !== GigStatus.PUBLISHED && gig.getStatus() !== GigStatus.CLOSED) {
+    if (gig.status !== GigStatus.PUBLISHED && gig.status !== GigStatus.CLOSED) {
       return {
         success: false,
-        gigId: gig.getId(),
+        gigId: gig.id.toString(),
         talentId: '',
-        message: `Cannot book talent for a gig with status: ${gig.getStatus()}`
+        message: `Cannot book talent for a gig with status: ${gig.status}`
       };
     }
 
@@ -64,7 +61,7 @@ export class BookTalentUseCase {
     if (application.isFinalized()) {
       return {
         success: false,
-        gigId: gig.getId(),
+        gigId: gig.id.toString(),
         talentId: application.getApplicantId(),
         message: `Application is already ${application.getStatus()}`
       };
@@ -76,11 +73,11 @@ export class BookTalentUseCase {
       await this.applicationRepo.save(application);
 
       // Book the gig
-      gig.book(application.getApplicantId());
+      gig.book([EntityId.from(application.getApplicantId())]);
       await this.gigRepo.save(gig);
 
       // Auto-decline all other pending/shortlisted applications
-      const otherApplications = await this.applicationRepo.findByGigId(gig.getId());
+      const otherApplications = await this.applicationRepo.findByGigId(gig.id.toString());
       
       for (const otherApp of otherApplications) {
         if (otherApp.getId() !== application.getId() && !otherApp.isFinalized()) {
@@ -112,14 +109,14 @@ export class BookTalentUseCase {
 
       return {
         success: true,
-        gigId: gig.getId(),
+        gigId: gig.id.toString(),
         talentId: application.getApplicantId(),
         message: 'Talent booked successfully'
       };
     } catch (error) {
       return {
         success: false,
-        gigId: gig.getId(),
+        gigId: gig.id.toString(),
         talentId: application.getApplicantId(),
         message: error instanceof Error ? error.message : 'Failed to book talent'
       };

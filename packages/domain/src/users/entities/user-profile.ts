@@ -1,4 +1,4 @@
-import { AggregateRoot } from '../../shared/aggregate-root';
+import { BaseAggregateRoot } from '../../shared/BaseAggregateRoot';
 import { EntityId } from '../../shared/value-objects/entity-id';
 import { UserRoles } from '../value-objects/user-role';
 import { Subscription, SubscriptionTier, SubscriptionStatus } from '../value-objects/subscription-tier';
@@ -18,11 +18,11 @@ export interface UserProfileProps {
   updatedAt: Date;
 }
 
-export class UserProfile extends AggregateRoot<UserProfileProps> {
+export class UserProfile extends BaseAggregateRoot {
   private props: UserProfileProps;
 
   constructor(id: EntityId, props: UserProfileProps) {
-    super(id);
+    super();
     this.props = props;
   }
 

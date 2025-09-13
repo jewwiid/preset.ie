@@ -1,12 +1,5 @@
-import { Application } from '@preset/domain/applications/entities/Application';
-import { ApplicationRepository } from '@preset/domain/applications/ports/ApplicationRepository';
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { ProfileRepository } from '@preset/domain/identity/ports/ProfileRepository';
-import { EventBus } from '@preset/domain/shared/EventBus';
-import { IdGenerator } from '@preset/domain/shared/IdGenerator';
+import { Application, ApplicationRepository, GigRepository, UserRepository, ProfileRepository, EventBus, IdGenerator, GigStatus, EntityId } from '@preset/domain';
 import { SubscriptionEnforcer } from '../../shared/SubscriptionEnforcer';
-import { GigStatus } from '@preset/domain/gigs/value-objects/GigStatus';
 
 export interface ApplyToGigCommand {
   gigId: string;
@@ -53,7 +46,7 @@ export class ApplyToGigUseCase {
     }
 
     // Check if gig is accepting applications
-    if (gig.getStatus() !== GigStatus.PUBLISHED) {
+    if (gig.status !== GigStatus.PUBLISHED) {
       return {
         applicationId: '',
         status: 'gig_not_accepting',
@@ -63,7 +56,7 @@ export class ApplyToGigUseCase {
 
     // Check if gig has reached max applicants
     const applicationCount = await this.applicationRepo.countByGig(command.gigId);
-    if (gig.getMaxApplicants() && applicationCount >= gig.getMaxApplicants()) {
+    if (gig.maxApplicants && applicationCount >= gig.maxApplicants) {
       return {
         applicationId: '',
         status: 'gig_not_accepting',
@@ -72,7 +65,7 @@ export class ApplyToGigUseCase {
     }
 
     // Check if application deadline has passed
-    if (gig.getApplicationDeadline() && gig.getApplicationDeadline() < new Date()) {
+    if (gig.applicationDeadline && gig.applicationDeadline < new Date()) {
       return {
         applicationId: '',
         status: 'gig_not_accepting',
@@ -89,8 +82,9 @@ export class ApplyToGigUseCase {
     // Check subscription limits for applications
     try {
       await this.subscriptionEnforcer.enforceApplication(
-        user.getId(),
-        user.getSubscriptionTier()
+        user.subscriptionTier,
+        user.id.toString(),
+        this.applicationRepo
       );
     } catch (error) {
       return {
@@ -105,23 +99,23 @@ export class ApplyToGigUseCase {
     
     // Create profile snapshot
     const profileSnapshot = profile ? {
-      displayName: profile.getDisplayName(),
-      handle: profile.getHandle(),
-      avatarUrl: profile.getAvatarUrl(),
-      bio: profile.getBio(),
-      city: profile.getCity(),
-      styleTags: profile.getStyleTags(),
-      showcaseCount: profile.getShowcaseIds().length,
+      displayName: profile.displayName,
+      handle: profile.handle.toString(),
+      avatarUrl: profile.avatarUrl,
+      bio: profile.bio,
+      city: profile.city,
+      styleTags: profile.styleTags,
+      showcaseCount: profile.showcaseIds.length,
       averageRating: undefined // TODO: Get from reviews when implemented
     } : undefined;
 
     // Create the application
     const application = Application.create({
-      id: this.idGenerator.generate(),
+      id: IdGenerator.generate(),
       gigId: command.gigId,
       applicantId: command.applicantId,
-      note: command.note,
-      profileSnapshot
+      note: command.note || '',
+      profileSnapshot: profileSnapshot
     });
 
     // Save the application
@@ -135,7 +129,7 @@ export class ApplyToGigUseCase {
     application.markEventsAsCommitted();
 
     return {
-      applicationId: application.getId(),
+      applicationId: application.id,
       status: 'success',
       message: 'Application submitted successfully'
     };

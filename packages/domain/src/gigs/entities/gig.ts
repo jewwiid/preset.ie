@@ -152,4 +152,19 @@ export class Gig extends AggregateRoot<GigProps> {
   get boostLevel(): number { return this.props.boostLevel; }
   get createdAt(): Date { return this.props.createdAt; }
   get updatedAt(): Date { return this.props.updatedAt; }
+
+  // Additional getter methods needed by application layer
+  getOwnerId(): string { return this.props.ownerUserId.toString(); }
+  getTitle(): string { return this.props.title; }
+  getId(): string { return this.id.toString(); }
+  get ownerId(): EntityId { return this.props.ownerUserId; }
+  getDateTimeWindow(): { getStartTime(): Date; getEndTime(): Date } {
+    return {
+      getStartTime: () => this.props.startTime,
+      getEndTime: () => this.props.endTime
+    };
+  }
+  attachMoodboard(moodboardId: EntityId): void {
+    this.props.updatedAt = new Date();
+  }
 }

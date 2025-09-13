@@ -1,7 +1,7 @@
 // Shared
 export * from './shared/entity';
-export * from './shared/aggregate-root';
-export * from './shared/domain-event';
+export * from './shared/DomainEvent';
+export * from './shared/DomainError';
 export * from './shared/BaseAggregateRoot';
 export * from './shared/value-objects/entity-id';
 export * from './shared/ports/EventBus';

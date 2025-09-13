@@ -1,5 +1,4 @@
-import { UserBlockRepository } from '@preset/domain/collaboration/ports/UserBlockRepository';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
+import { UserBlockRepository, EventBus } from '@preset/domain';
 
 export interface UnblockUserCommand {
   blockerUserId: string;

@@ -78,6 +78,16 @@ export interface GigRepository {
   countByOwnerThisMonth(ownerId: string): Promise<number>;
 
   /**
+   * Count gigs by user this month (alias for countByOwnerThisMonth)
+   */
+  countByUserThisMonth(userId: string): Promise<number>;
+
+  /**
+   * Increment application count for a gig
+   */
+  incrementApplicationCount(gigId: string): Promise<void>;
+
+  /**
    * Increment view count
    */
   incrementViews(gigId: string): Promise<void>;

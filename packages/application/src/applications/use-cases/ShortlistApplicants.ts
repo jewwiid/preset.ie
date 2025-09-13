@@ -1,7 +1,4 @@
-import { ApplicationRepository } from '@preset/domain/applications/ports/ApplicationRepository';
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { EventBus } from '@preset/domain/shared/EventBus';
+import { ApplicationRepository, GigRepository, UserRepository, EventBus } from '@preset/domain';
 import { SubscriptionEnforcer } from '../../shared/SubscriptionEnforcer';
 
 export interface ShortlistApplicantsCommand {

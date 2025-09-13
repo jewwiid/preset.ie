@@ -1,8 +1,5 @@
 import { EventHandler } from '../../shared/EventHandler';
-import { DomainEvent } from '@preset/domain/shared/DomainEvent';
-import { ProfileRepository } from '@preset/domain/identity/ports/ProfileRepository';
-import { Profile } from '@preset/domain/identity/entities/Profile';
-import { IdGenerator } from '@preset/domain/shared/IdGenerator';
+import { DomainEvent, ProfileRepository, Profile, IdGenerator } from '@preset/domain';
 
 export interface UserRegisteredEvent extends DomainEvent {
   eventType: 'UserRegistered';
@@ -22,7 +19,6 @@ export class UserRegisteredHandler implements EventHandler<UserRegisteredEvent> 
 
   constructor(
     private profileRepo: ProfileRepository,
-    private idGenerator: IdGenerator,
     private emailService?: { sendWelcomeEmail(email: string, role: string): Promise<void> }
   ) {}
 
@@ -49,14 +45,9 @@ export class UserRegisteredHandler implements EventHandler<UserRegisteredEvent> 
 
     // Create default profile
     const profile = Profile.create({
-      id: this.idGenerator.generate(),
       userId,
       handle,
-      displayName: email.split('@')[0], // Default display name
-      bio: '',
-      city: '',
-      styleTags: [],
-      showcaseIds: []
+      displayName: email.split('@')[0] || 'User' // Default display name with fallback
     });
 
     // Save profile

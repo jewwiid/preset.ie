@@ -1,6 +1,4 @@
-import { UserBlock } from '@preset/domain/collaboration/entities/UserBlock';
-import { UserBlockRepository } from '@preset/domain/collaboration/ports/UserBlockRepository';
-import { ProfileRepository } from '@preset/domain/identity/ports/ProfileRepository';
+import { UserBlock, UserBlockRepository, ProfileRepository } from '@preset/domain';
 
 export interface GetBlockedUsersQuery {
   requestingUserId: string;

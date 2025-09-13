@@ -1,6 +1,4 @@
-import { ProfileRepository } from '@preset/domain/identity/ports/ProfileRepository';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
+import { ProfileRepository, UserRepository, EventBus } from '@preset/domain';
 
 export interface UpdateProfileCommand {
   userId: string;

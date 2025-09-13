@@ -1,5 +1,4 @@
-import { EventBus } from '@preset/domain/shared/EventBus';
-import { IdGenerator } from '@preset/domain/shared/IdGenerator';
+import { EventBus, IdGenerator } from '@preset/domain';
 
 export interface ReportMessageCommand {
   reporterId: string;

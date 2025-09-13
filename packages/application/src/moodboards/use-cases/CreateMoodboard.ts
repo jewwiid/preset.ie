@@ -1,8 +1,4 @@
-import { Moodboard } from '@preset/domain/moodboards/entities/Moodboard';
-import { MoodboardRepository } from '@preset/domain/moodboards/ports/MoodboardRepository';
-import { ImageStorageService } from '@preset/domain/moodboards/ports/ImageStorageService';
-import { AIImageService } from '@preset/domain/moodboards/ports/AIImageService';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
+import { Moodboard, MoodboardItem, MoodboardRepository, ImageStorageService, AIImageService, EventBus } from '@preset/domain';
 
 export interface CreateMoodboardCommand {
   gigId: string;
@@ -42,14 +38,19 @@ export class CreateMoodboardUseCase {
           finalUrl = await this.imageStorage.upload(imageBuffer, fileName, 'image/jpeg');
         }
         
-        return {
-          id: crypto.randomUUID(),
-          type: item.type,
-          url: finalUrl,
-          caption: item.caption || '',
+        return MoodboardItem.create({
           source: item.source,
-          order: 0
-        };
+          url: finalUrl,
+          attribution: item.caption || '',
+          position: 0,
+          width: undefined,
+          height: undefined,
+          palette: undefined,
+          blurhash: undefined,
+          enhancementPrompt: undefined,
+          originalImageId: undefined,
+          thumbnailUrl: undefined
+        });
       })
     );
     

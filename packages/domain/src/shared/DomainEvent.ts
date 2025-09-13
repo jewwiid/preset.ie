@@ -51,23 +51,3 @@ export abstract class BaseDomainEvent implements DomainEvent {
     this.metadata = metadata;
   }
 }
-
-/**
- * Interface for entities that can emit domain events
- */
-export interface AggregateRoot {
-  /**
-   * Events that have been raised by this aggregate
-   */
-  getUncommittedEvents(): DomainEvent[];
-  
-  /**
-   * Mark all events as committed (after persisting)
-   */
-  markEventsAsCommitted(): void;
-  
-  /**
-   * Add a new domain event
-   */
-  addDomainEvent(event: DomainEvent): void;
-}

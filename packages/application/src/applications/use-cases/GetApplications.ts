@@ -1,5 +1,5 @@
-import { ApplicationRepository } from '@preset/domain/applications/ports/ApplicationRepository';
-import { ApplicationStatus } from '@preset/domain/applications/value-objects/ApplicationStatus';
+import { ApplicationRepository } from '@preset/domain';
+import { ApplicationStatus } from '@preset/types';
 
 export interface GetApplicationsQuery {
   gigId?: string;

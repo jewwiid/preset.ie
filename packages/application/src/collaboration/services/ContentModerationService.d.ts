@@ -1,4 +1,4 @@
-import { DomainError } from '../../shared/DomainError';
+import { DomainError } from '@preset/domain';
 export interface ModerationResult {
     shouldFlag: boolean;
     reasons: ModerationReason[];

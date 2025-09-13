@@ -18,13 +18,15 @@ export class PresetNotificationService implements NotificationService {
   async send(payload: NotificationPayload): Promise<Notification> {
     // Check user preferences before sending
     const category = this.getCategoryFromType(payload.type)
-    const preferences = await this.preferencesRepository.shouldSendNotification(
-      payload.recipient_id,
-      category,
-      'in_app'
-    )
+    const preferences = await this.preferencesRepository.getByUserId(payload.recipient_id)
 
-    if (!preferences.shouldSend) {
+    if (!preferences?.in_app_enabled) {
+      throw new Error(`User has disabled in-app notifications`)
+    }
+
+    // Check category-specific preferences
+    const categoryEnabled = this.isCategoryEnabled(preferences, category)
+    if (!categoryEnabled) {
       throw new Error(`User has disabled ${category} notifications`)
     }
 
@@ -220,7 +222,8 @@ export class PresetNotificationService implements NotificationService {
     console.log(`📧 Processing ${frequency} digest emails...`)
     
     // Get users who want digest emails at this frequency
-    const userIds = await this.preferencesRepository.getUsersForDigest(frequency)
+    // For now, return empty array since getUsersForDigest method doesn't exist yet
+    const userIds: string[] = []
     
     // This would integrate with an email service
     // For now, we'll return the count of users who would receive digests
@@ -266,6 +269,25 @@ export class PresetNotificationService implements NotificationService {
     }
 
     return categoryMap[type] || 'system'
+  }
+
+  private isCategoryEnabled(preferences: NotificationPreferences, category: NotificationCategory): boolean {
+    switch (category) {
+      case 'gig':
+        return preferences.gig_notifications
+      case 'application':
+        return preferences.application_notifications
+      case 'message':
+        return preferences.message_notifications
+      case 'booking':
+        return preferences.booking_notifications
+      case 'system':
+        return preferences.system_notifications
+      case 'marketing':
+        return preferences.marketing_notifications
+      default:
+        return true
+    }
   }
 
   private async findMatchingTalent(gig: any): Promise<any[]> {

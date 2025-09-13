@@ -1,9 +1,4 @@
-import { UserBlock } from '@preset/domain/collaboration/entities/UserBlock';
-import { UserBlockRepository } from '@preset/domain/collaboration/ports/UserBlockRepository';
-import { ProfileRepository } from '@preset/domain/identity/ports/ProfileRepository';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
-import { IdGenerator } from '@preset/domain/shared/IdGenerator';
-import { BlockReason, BlockReasonDetails } from '@preset/domain/collaboration/value-objects/BlockReason';
+import { UserBlock, UserBlockRepository, ProfileRepository, EventBus, IdGenerator, BlockReason, BlockReasonDetails } from '@preset/domain';
 
 export interface BlockUserCommand {
   blockerUserId: string;

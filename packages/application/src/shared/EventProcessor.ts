@@ -1,5 +1,4 @@
-import { EventBus } from '@preset/domain/shared/EventBus';
-import { DomainEvent } from '@preset/domain/shared/DomainEvent';
+import { EventBus, DomainEvent } from '@preset/domain';
 import { EventHandlerRegistry } from './EventHandler';
 
 /**

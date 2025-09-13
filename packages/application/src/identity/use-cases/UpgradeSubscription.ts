@@ -1,6 +1,4 @@
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { SubscriptionTier } from '@preset/domain/subscriptions/SubscriptionTier';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
+import { UserRepository, SubscriptionTier, EventBus } from '@preset/domain';
 
 export interface UpgradeSubscriptionCommand {
   userId: string;

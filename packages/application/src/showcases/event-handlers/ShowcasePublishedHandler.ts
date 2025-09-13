@@ -1,7 +1,5 @@
 import { EventHandler } from '../../shared/EventHandler';
-import { DomainEvent } from '@preset/domain/shared/DomainEvent';
-import { ProfileRepository } from '@preset/domain/identity/ports/ProfileRepository';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
+import { DomainEvent, ProfileRepository, UserRepository } from '@preset/domain';
 
 export interface ShowcasePublishedEvent extends DomainEvent {
   eventType: 'ShowcasePublished';

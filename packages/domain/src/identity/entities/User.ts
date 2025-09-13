@@ -80,6 +80,10 @@ export class User extends BaseAggregateRoot {
   get isSuspended(): boolean { return this.props.isSuspended; }
   get createdAt(): Date { return this.props.createdAt; }
 
+  // Additional getter methods needed by application layer
+  getEmail(): string { return this.props.email.toString(); }
+  getSubscriptionTier(): SubscriptionTier { return this.props.subscriptionTier; }
+
   /**
    * Verify user's email
    */

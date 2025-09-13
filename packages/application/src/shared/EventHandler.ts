@@ -1,4 +1,4 @@
-import { DomainEvent } from '@preset/domain/shared/DomainEvent';
+import { DomainEvent } from '@preset/domain';
 
 /**
  * Base interface for all event handlers

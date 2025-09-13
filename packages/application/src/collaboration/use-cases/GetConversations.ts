@@ -1,5 +1,4 @@
-import { ConversationRepository } from '@preset/domain/collaboration/ports/ConversationRepository';
-import { ConversationStatus } from '@preset/domain/collaboration/value-objects/ConversationStatus';
+import { ConversationRepository, ConversationStatus } from '@preset/domain';
 
 export interface GetConversationsQuery {
   userId: string;

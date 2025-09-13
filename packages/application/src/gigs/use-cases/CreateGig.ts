@@ -1,9 +1,5 @@
-import { Gig } from '@preset/domain/gigs/entities/Gig';
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { CompensationType } from '@preset/domain/gigs/value-objects/CompensationType';
+import { Gig, GigRepository, UserRepository, CompensationType, EventBus, EntityId } from '@preset/domain';
 import { SubscriptionEnforcer } from '../../shared/SubscriptionEnforcer';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
 
 export interface CreateGigCommand {
   ownerId: string;
@@ -77,26 +73,19 @@ export class CreateGigUseCase {
     }
 
     // Create the gig
-    const gig = Gig.create({
-      ownerId: command.ownerId,
-      title: command.title,
-      description: command.description,
-      purpose: command.purpose,
-      compensationType: command.compensationType,
-      compensationAmount: command.compensationAmount,
-      compensationDetails: command.compensationDetails,
-      locationText: command.locationText,
-      locationLat: command.locationLat,
-      locationLng: command.locationLng,
-      locationRadius: command.locationRadius,
-      startTime: command.startTime,
-      endTime: command.endTime,
-      usageRights: command.usageRights,
-      safetyNotes: command.safetyNotes,
-      applicationDeadline: command.applicationDeadline,
-      maxApplicants: command.maxApplicants,
-      tags: command.tags
-    });
+    const gig = Gig.create(
+      EntityId.from(command.ownerId),
+      command.title,
+      command.description,
+      command.compensationType,
+      command.locationText,
+      command.startTime,
+      command.endTime,
+      command.applicationDeadline,
+      command.maxApplicants,
+      command.usageRights,
+      command.safetyNotes
+    );
 
     // Save to repository
     await this.gigRepository.save(gig);
@@ -108,6 +97,6 @@ export class CreateGigUseCase {
       gig.markEventsAsCommitted();
     }
 
-    return { gigId: gig.id };
+    return { gigId: gig.id.toString() };
   }
 }

@@ -8,12 +8,7 @@ import { TalentBookedHandler } from '../applications/event-handlers/TalentBooked
 import { ShowcasePublishedHandler } from '../showcases/event-handlers/ShowcasePublishedHandler';
 
 // Import repositories and services
-import { ProfileRepository } from '@preset/domain/identity/ports/ProfileRepository';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { ConversationRepository } from '@preset/domain/collaboration/ports/ConversationRepository';
-import { IdGenerator } from '@preset/domain/shared/IdGenerator';
-import { DomainEvent } from '@preset/domain/shared/DomainEvent';
+import { ProfileRepository, UserRepository, GigRepository, ConversationRepository, IdGenerator, DomainEvent } from '@preset/domain';
 
 export interface EventHandlerDependencies {
   // Repositories

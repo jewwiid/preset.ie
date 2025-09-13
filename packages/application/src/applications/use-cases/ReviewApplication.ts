@@ -1,6 +1,4 @@
-import { ApplicationRepository } from '@preset/domain/applications/ports/ApplicationRepository';
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { EventBus } from '@preset/domain/shared/EventBus';
+import { ApplicationRepository, GigRepository, EventBus } from '@preset/domain';
 
 export interface ReviewApplicationCommand {
   applicationId: string;

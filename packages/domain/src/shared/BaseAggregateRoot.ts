@@ -1,4 +1,13 @@
-import { DomainEvent, AggregateRoot } from './DomainEvent';
+import { DomainEvent } from './DomainEvent';
+
+/**
+ * Interface for entities that can emit domain events
+ */
+interface AggregateRoot {
+  getUncommittedEvents(): DomainEvent[];
+  markEventsAsCommitted(): void;
+  addDomainEvent(event: DomainEvent): void;
+}
 
 /**
  * Base class for aggregate roots that can emit domain events

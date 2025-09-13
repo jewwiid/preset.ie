@@ -1,5 +1,4 @@
-import { Moodboard } from '@preset/domain/moodboards/entities/Moodboard';
-import { MoodboardRepository } from '@preset/domain/moodboards/ports/MoodboardRepository';
+import { Moodboard, MoodboardRepository } from '@preset/domain';
 
 export interface GetMoodboardQuery {
   moodboardId?: string;

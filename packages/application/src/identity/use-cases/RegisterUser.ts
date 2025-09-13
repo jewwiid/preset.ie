@@ -1,10 +1,4 @@
-import { User } from '@preset/domain/identity/entities/User';
-import { Profile } from '@preset/domain/identity/entities/Profile';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { ProfileRepository } from '@preset/domain/identity/ports/ProfileRepository';
-import { UserRole } from '@preset/domain/identity/value-objects/UserRole';
-import { Handle } from '@preset/domain/identity/value-objects/Handle';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
+import { User, Profile, UserRepository, ProfileRepository, UserRole, Handle, EventBus } from '@preset/domain';
 
 export interface RegisterUserCommand {
   email: string;

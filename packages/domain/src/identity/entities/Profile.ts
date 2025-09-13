@@ -80,6 +80,29 @@ export class Profile extends BaseAggregateRoot {
   get showcaseIds(): string[] { return [...this.props.showcaseIds]; }
   get isPublic(): boolean { return this.props.isPublic; }
 
+  // Role and permission methods for application layer compatibility
+  get roles(): { isTalent(): boolean; isContributor(): boolean } {
+    return {
+      isTalent: () => true, // Default to talent for now
+      isContributor: () => true // Default to contributor for now
+    };
+  }
+
+  canApply(applicationCount: number): boolean {
+    // Basic application limits - can be enhanced with subscription tiers
+    return applicationCount < 10; // Allow up to 10 applications per month
+  }
+
+  canCreateGig(gigCount: number): boolean {
+    // Basic gig creation limits - can be enhanced with subscription tiers
+    return gigCount < 5; // Allow up to 5 gigs per month
+  }
+
+  canCreateShowcase(showcaseCount: number): boolean {
+    // Basic showcase limits - can be enhanced with subscription tiers
+    return showcaseCount < 3; // Allow up to 3 showcases total for free tier
+  }
+
   /**
    * Update profile information
    */

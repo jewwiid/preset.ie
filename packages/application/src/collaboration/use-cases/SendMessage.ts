@@ -1,10 +1,4 @@
-import { Conversation } from '@preset/domain/collaboration/entities/Conversation';
-import { ConversationRepository } from '@preset/domain/collaboration/ports/ConversationRepository';
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { ApplicationRepository } from '@preset/domain/applications/ports/ApplicationRepository';
-import { EventBus } from '@preset/domain/shared/EventBus';
-import { IdGenerator } from '@preset/domain/shared/IdGenerator';
-import { Attachment } from '@preset/domain/collaboration/value-objects/Attachment';
+import { Conversation, ConversationRepository, GigRepository, ApplicationRepository, EventBus, IdGenerator, Attachment } from '@preset/domain';
 import { ContentModerationService, ContentRejectedError, ContentFlaggedError } from '../services/ContentModerationService';
 
 export interface SendMessageCommand {

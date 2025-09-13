@@ -1,13 +1,10 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { MoodboardRepository } from '@preset/domain/moodboards/ports/MoodboardRepository';
-import { ImageStorageService } from '@preset/domain/moodboards/ports/ImageStorageService';
-import { AIImageService } from '@preset/domain/moodboards/ports/AIImageService';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
-import { SupabaseMoodboardRepository } from '@preset/adapters/persistence/SupabaseMoodboardRepository';
-import { SupabaseImageStorage } from '@preset/adapters/storage/SupabaseImageStorage';
-import { NanoBananaService } from '@preset/adapters/external/NanoBananaService';
-import { SupabaseEventBus } from '@preset/adapters/events/SupabaseEventBus';
-import { InMemoryEventBus } from '@preset/adapters/events/InMemoryEventBus';
+import { MoodboardRepository, ImageStorageService, AIImageService, EventBus } from '@preset/domain';
+// import { SupabaseMoodboardRepository } from '@preset/adapters/persistence/SupabaseMoodboardRepository';
+// import { SupabaseImageStorage } from '@preset/adapters/storage/SupabaseImageStorage';
+// import { NanoBananaService } from '@preset/adapters/external/NanoBananaService';
+// import { SupabaseEventBus } from '@preset/adapters/events/SupabaseEventBus';
+// import { InMemoryEventBus } from '@preset/adapters/events/InMemoryEventBus';
 import { CreateMoodboardUseCase } from './moodboards/use-cases/CreateMoodboard';
 import { EnhanceImageUseCase } from './moodboards/use-cases/EnhanceImage';
 import { GetMoodboardUseCase } from './moodboards/use-cases/GetMoodboard';
@@ -61,22 +58,25 @@ export class DIContainer {
   private initializeAdapters(): void {
     // Initialize event bus
     if (this.config?.useInMemoryEventBus) {
-      this.eventBus = new InMemoryEventBus();
+      // this.eventBus = new InMemoryEventBus();
+      throw new Error('EventBus implementation not available - adapters package needs to be built');
     } else {
-      this.eventBus = new SupabaseEventBus(this.supabase);
+      // this.eventBus = new SupabaseEventBus(this.supabase);
+      throw new Error('EventBus implementation not available - adapters package needs to be built');
     }
     
     // Initialize concrete implementations
-    this.moodboardRepository = new SupabaseMoodboardRepository(this.supabase);
-    this.imageStorage = new SupabaseImageStorage(this.supabase);
+    // this.moodboardRepository = new SupabaseMoodboardRepository(this.supabase);
+    // this.imageStorage = new SupabaseImageStorage(this.supabase);
     
     // Initialize AI service if configured
-    if (this.config?.nanoBananaApiKey && this.config?.nanoBananaCallbackUrl) {
-      this.aiService = new NanoBananaService(
-        this.config.nanoBananaApiKey,
-        this.config.nanoBananaCallbackUrl
-      );
-    }
+    // if (this.config?.nanoBananaApiKey && this.config?.nanoBananaCallbackUrl) {
+    //   this.aiService = new NanoBananaService(
+    //     this.config.nanoBananaApiKey,
+    //     this.config.nanoBananaCallbackUrl
+    //   );
+    // }
+    throw new Error('Repository implementations not available - adapters package needs to be built');
   }
 
   private initializeUseCases(): void {

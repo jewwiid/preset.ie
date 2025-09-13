@@ -1,7 +1,4 @@
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { MoodboardRepository } from '@preset/domain/moodboards/ports/MoodboardRepository';
-import { EventBus } from '@preset/domain/shared/ports/EventBus';
+import { GigRepository, UserRepository, MoodboardRepository, EventBus, EntityId } from '@preset/domain';
 
 export interface PublishGigCommand {
   gigId: string;
@@ -28,7 +25,7 @@ export class PublishGigUseCase {
     }
 
     // Verify user owns the gig
-    if (gig.ownerId !== command.userId) {
+    if (gig.ownerId.toString() !== command.userId) {
       throw new Error('You do not have permission to publish this gig');
     }
 
@@ -44,7 +41,7 @@ export class PublishGigUseCase {
         throw new Error('You do not have permission to use this moodboard');
       }
 
-      gig.attachMoodboard(command.moodboardId);
+      gig.attachMoodboard(EntityId.from(command.moodboardId));
     }
 
     // Publish the gig

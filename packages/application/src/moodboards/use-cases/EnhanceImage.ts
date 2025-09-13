@@ -1,7 +1,4 @@
-import { Moodboard } from '@preset/domain/moodboards/entities/Moodboard';
-import { MoodboardRepository } from '@preset/domain/moodboards/ports/MoodboardRepository';
-import { ImageStorageService } from '@preset/domain/moodboards/ports/ImageStorageService';
-import { AIImageService } from '@preset/domain/moodboards/ports/AIImageService';
+import { Moodboard, MoodboardRepository, ImageStorageService, AIImageService } from '@preset/domain';
 
 export interface EnhanceImageCommand {
   moodboardId: string;

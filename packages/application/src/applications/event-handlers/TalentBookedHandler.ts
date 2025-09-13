@@ -1,10 +1,5 @@
 import { EventHandler } from '../../shared/EventHandler';
-import { DomainEvent } from '@preset/domain/shared/DomainEvent';
-import { GigRepository } from '@preset/domain/gigs/ports/GigRepository';
-import { UserRepository } from '@preset/domain/identity/ports/UserRepository';
-import { ConversationRepository } from '@preset/domain/collaboration/ports/ConversationRepository';
-import { Conversation } from '@preset/domain/collaboration/entities/Conversation';
-import { IdGenerator } from '@preset/domain/shared/IdGenerator';
+import { DomainEvent, GigRepository, UserRepository, ConversationRepository, Conversation, IdGenerator } from '@preset/domain';
 
 export interface TalentBookedEvent extends DomainEvent {
   eventType: 'TalentBooked';
@@ -27,7 +22,6 @@ export class TalentBookedHandler implements EventHandler<TalentBookedEvent> {
     private gigRepo: GigRepository,
     private userRepo: UserRepository,
     private conversationRepo: ConversationRepository,
-    private idGenerator: IdGenerator,
     private notificationService?: {
       sendBookingConfirmation(
         talentEmail: string,
@@ -69,7 +63,7 @@ export class TalentBookedHandler implements EventHandler<TalentBookedEvent> {
     if (!conversation) {
       // Create conversation for post-booking communication
       conversation = Conversation.create({
-        id: this.idGenerator.generate(),
+        id: IdGenerator.generate(),
         gigId,
         contributorId: gig.getOwnerId(),
         talentId
@@ -77,7 +71,7 @@ export class TalentBookedHandler implements EventHandler<TalentBookedEvent> {
 
       // Send initial booking confirmation message
       conversation.sendMessage({
-        messageId: this.idGenerator.generate(),
+        messageId: IdGenerator.generate(),
         fromUserId: gig.getOwnerId(),
         body: `Congratulations! You've been booked for "${gig.getTitle()}". Let's discuss the details.`,
         attachments: []

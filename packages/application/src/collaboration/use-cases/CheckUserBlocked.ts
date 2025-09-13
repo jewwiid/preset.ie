@@ -1,4 +1,4 @@
-import { UserBlockRepository } from '@preset/domain/collaboration/ports/UserBlockRepository';
+import { UserBlockRepository } from '@preset/domain';
 
 export interface CheckUserBlockedQuery {
   userId1: string;

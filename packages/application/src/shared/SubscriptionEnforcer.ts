@@ -1,6 +1,4 @@
-import { SubscriptionPolicy } from '@preset/domain/subscriptions/SubscriptionPolicy';
-import { SubscriptionTier } from '@preset/domain/subscriptions/SubscriptionTier';
-import { SubscriptionLimitExceeded } from '@preset/domain/subscriptions/SubscriptionLimitExceeded';
+import { SubscriptionPolicy, SubscriptionTier, SubscriptionLimitExceeded } from '@preset/domain';
 
 /**
  * Application service for enforcing subscription limits

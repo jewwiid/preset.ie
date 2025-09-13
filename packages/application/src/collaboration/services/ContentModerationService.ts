@@ -1,4 +1,4 @@
-import { DomainError } from '../../shared/DomainError';
+import { DomainError } from '@preset/domain';
 
 // Moderation result types
 export interface ModerationResult {
@@ -336,8 +336,7 @@ export class ContentModerationService {
 // Error classes
 export class ContentModerationError extends DomainError {
   constructor(message: string, public readonly code: string) {
-    super(message);
-    this.name = 'ContentModerationError';
+    super(message, code);
   }
 }
 
