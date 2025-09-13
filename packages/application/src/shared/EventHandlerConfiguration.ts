@@ -41,7 +41,6 @@ export function configureEventHandlers(deps: EventHandlerDependencies): EventPro
   // Register Identity handlers
   registry.register(new UserRegisteredHandler(
     deps.profileRepository,
-    deps.idGenerator,
     deps.emailService
   ));
 
@@ -56,7 +55,6 @@ export function configureEventHandlers(deps: EventHandlerDependencies): EventPro
     deps.gigRepository,
     deps.userRepository,
     deps.conversationRepository,
-    deps.idGenerator,
     deps.notificationService
   ));
 

@@ -191,7 +191,7 @@ export class CreditManager {
       await this.alertService?.notify({
         type: 'credit_refill_failed',
         level: 'error',
-        message: `Failed to refill credits for ${provider}: ${error.message}`
+        message: `Failed to refill credits for ${provider}: ${error instanceof Error ? error.message : String(error)}`
       });
 
       return false;
@@ -264,7 +264,8 @@ export class CreditManager {
       .single();
 
     const tier = profile?.subscription_tier || 'free';
-    const allowance = { free: 0, plus: 10, pro: 25 }[tier] || 0;
+    const allowances = { free: 0, plus: 10, pro: 25 };
+    const allowance = allowances[tier as keyof typeof allowances] || 0;
 
     const { data, error } = await this.supabase
       .from('user_credits')

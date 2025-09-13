@@ -1,4 +1,4 @@
-import { Application, EntityId } from '@preset/domain';
+import { Application, EntityId, IdGenerator } from '@preset/domain';
 import { ApplicationRepository } from '../../ports/repositories/application-repository';
 import { GigRepository } from '../../ports/repositories/gig-repository';
 import { UserRepository } from '../../ports/repositories/user-repository';
@@ -74,11 +74,12 @@ export class ApplyToGigUseCase {
     }
 
     // Create application
-    const application = Application.create(
-      EntityId.from(command.gigId),
-      EntityId.from(applicant.id.toString()),
-      command.note
-    );
+    const application = Application.create({
+      id: IdGenerator.generate(),
+      gigId: command.gigId,
+      applicantId: applicant.id.toString(),
+      note: command.note
+    });
 
     // Save application
     await this.applicationRepository.save(application);
@@ -90,10 +91,10 @@ export class ApplyToGigUseCase {
         gigOwner.userId,
         'New Application',
         `${applicant.displayName} applied to your gig "${gig.title}"`,
-        { gigId: command.gigId, applicationId: application.id.toString() }
+        { gigId: command.gigId, applicationId: application.getId() }
       );
     }
 
-    return { applicationId: application.id.toString() };
+    return { applicationId: application.getId() };
   }
 }

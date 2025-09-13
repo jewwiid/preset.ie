@@ -91,6 +91,6 @@ export class CreateGigUseCase {
     await this.eventBus.publishMany(events);
     gig.clearEvents();
 
-    return { gigId: gig.id.toString() };
+    return { gigId: gig.getId() };
   }
 }

@@ -31,6 +31,18 @@ export class EventHandlerRegistry {
   }
 
   /**
+   * Unregister an event handler
+   */
+  unregister(handler: EventHandler): void {
+    const handlers = this.handlers.get(handler.eventType) || [];
+    const index = handlers.indexOf(handler);
+    if (index > -1) {
+      handlers.splice(index, 1);
+      this.handlers.set(handler.eventType, handlers);
+    }
+  }
+
+  /**
    * Get handlers for an event type
    */
   getHandlers(eventType: string): EventHandler[] {

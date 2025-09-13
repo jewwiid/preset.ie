@@ -350,4 +350,9 @@ export class Profile extends BaseAggregateRoot {
       updated_at: this.props.updatedAt.toISOString()
     };
   }
+
+  // Additional getter methods needed by application layer
+  getDisplayName(): string { return this.props.displayName; }
+  getHandle(): Handle { return this.props.handle; }
+  getAvatarUrl(): string | undefined { return this.props.avatarUrl; }
 }

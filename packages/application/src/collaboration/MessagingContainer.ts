@@ -23,17 +23,17 @@ export class MessagingContainer {
   private static instance: MessagingContainer;
   
   // Infrastructure
-  private eventBus: EventBus;
-  private idGenerator: IdGenerator;
+  // private eventBus: EventBus;
+  // private idGenerator: IdGenerator;
   
   // Repositories
-  private conversationRepository: ConversationRepository;
-  private userBlockRepository: UserBlockRepository;
-  private gigRepository: GigRepository;
-  private applicationRepository: ApplicationRepository;
-  private profileRepository: ProfileRepository;
-  private contentModerationRepository: SupabaseContentModerationRepository;
-  private messageReportRepository: SupabaseMessageReportRepository;
+  // private conversationRepository: ConversationRepository;
+  // private userBlockRepository: UserBlockRepository;
+  // private gigRepository: GigRepository;
+  // private applicationRepository: ApplicationRepository;
+  // private profileRepository: ProfileRepository;
+  // private contentModerationRepository: SupabaseContentModerationRepository;
+  // private messageReportRepository: SupabaseMessageReportRepository;
   
   // Services
   private contentModerationService!: ContentModerationService;
@@ -62,10 +62,10 @@ export class MessagingContainer {
   }
 
   private initializeInfrastructure(): void {
-    this.eventBus = new SupabaseEventBus(this.supabase);
-    this.idGenerator = {
-      generate: () => crypto.randomUUID()
-    };
+    // this.eventBus = new SupabaseEventBus(this.supabase);
+    // this.idGenerator = {
+    //   generate: () => crypto.randomUUID()
+    // };
   }
 
   private initializeRepositories(): void {
@@ -170,26 +170,26 @@ export class MessagingContainer {
   // }
 
   // Repository Getters
-  getConversationRepository(): ConversationRepository {
-    return this.conversationRepository;
-  }
+  // getConversationRepository(): ConversationRepository {
+  //   return this.conversationRepository;
+  // }
 
-  getUserBlockRepository(): UserBlockRepository {
-    return this.userBlockRepository;
-  }
+  // getUserBlockRepository(): UserBlockRepository {
+  //   return this.userBlockRepository;
+  // }
 
-  getContentModerationRepository(): SupabaseContentModerationRepository {
-    return this.contentModerationRepository;
-  }
+  // getContentModerationRepository(): SupabaseContentModerationRepository {
+  //   return this.contentModerationRepository;
+  // }
 
   // Infrastructure Getters
-  getEventBus(): EventBus {
-    return this.eventBus;
-  }
+  // getEventBus(): EventBus {
+  //   return this.eventBus;
+  // }
 
-  getIdGenerator(): IdGenerator {
-    return this.idGenerator;
-  }
+  // getIdGenerator(): IdGenerator {
+  //   return this.idGenerator;
+  // }
 }
 
 /**

@@ -70,7 +70,7 @@ export class BlockUserUseCase {
 
     // Create the user block
     const userBlock = UserBlock.create({
-      id: this.idGenerator.generate(),
+      id: IdGenerator.generate(),
       blockerUserId: command.blockerUserId,
       blockedUserId: command.blockedUserId,
       reasonDetails

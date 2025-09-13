@@ -1,4 +1,4 @@
-import { AggregateRoot } from '../../shared/aggregate-root';
+import { BaseAggregateRoot } from '../../shared/BaseAggregateRoot';
 import { EntityId } from '../../shared/value-objects/entity-id';
 import { Compensation } from '../value-objects/compensation-type';
 import { Location } from '../value-objects/location';
@@ -23,12 +23,12 @@ export interface GigProps {
   updatedAt: Date;
 }
 
-export class Gig extends AggregateRoot<GigProps> {
+export class Gig extends BaseAggregateRoot {
   private props: GigProps;
-
+  private id: EntityId;
   constructor(id: EntityId, props: GigProps) {
-    super(id);
-    this.props = props;
+    super();
+    this.id = id;    this.props = props;
   }
 
   static create(

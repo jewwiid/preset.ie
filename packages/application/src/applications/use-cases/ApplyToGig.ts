@@ -129,7 +129,7 @@ export class ApplyToGigUseCase {
     application.markEventsAsCommitted();
 
     return {
-      applicationId: application.id,
+      applicationId: application.getId(),
       status: 'success',
       message: 'Application submitted successfully'
     };

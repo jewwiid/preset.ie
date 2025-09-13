@@ -1,4 +1,4 @@
-import { ApplicationRepository, GigRepository, EventBus } from '@preset/domain';
+import { ApplicationRepository, GigRepository, EventBus, EntityId } from '@preset/domain';
 
 export interface ReviewApplicationCommand {
   applicationId: string;
@@ -56,7 +56,7 @@ export class ReviewApplicationUseCase {
           application.accept();
           
           // Mark the gig as booked
-          gig.book(application.getApplicantId());
+          gig.book([EntityId.from(application.getApplicantId())]);
           await this.gigRepo.save(gig);
           
           // Optionally decline other pending applications

@@ -86,7 +86,7 @@ export class SendMessageUseCase {
     if (!conversation) {
       // Create new conversation
       conversation = Conversation.create({
-        id: this.idGenerator.generate(),
+        id: IdGenerator.generate(),
         gigId: command.gigId,
         contributorId: isGigOwner ? command.fromUserId : command.toUserId,
         talentId: isGigOwner ? command.toUserId : command.fromUserId
@@ -133,7 +133,7 @@ export class SendMessageUseCase {
     ) || [];
 
     // Generate message ID first for moderation queue reference
-    const messageId = this.idGenerator.generate();
+    const messageId = IdGenerator.generate();
 
     // Send the message
     const message = conversation.sendMessage({

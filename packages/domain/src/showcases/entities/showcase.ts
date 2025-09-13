@@ -213,6 +213,10 @@ export class Showcase extends BaseAggregateRoot {
   getViewCount(): number { return this.props.viewCount; }
   getLikeCount(): number { return this.props.likeCount; }
 
+  get id(): string {
+    return this.props.id;
+  }
+
   toJSON() {
     return {
       id: this.props.id,

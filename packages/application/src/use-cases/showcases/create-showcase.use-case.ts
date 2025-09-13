@@ -1,4 +1,4 @@
-import { Showcase, EntityId } from '@preset/domain';
+import { Showcase, EntityId, IdGenerator } from '@preset/domain';
 import { ShowcaseRepository } from '../../ports/repositories/showcase-repository';
 import { GigRepository } from '../../ports/repositories/gig-repository';
 import { UserRepository } from '../../ports/repositories/user-repository';
@@ -73,15 +73,16 @@ export class CreateShowcaseUseCase {
     const palette: string[] = [];
 
     // Create showcase
-    const showcase = Showcase.create(
-      EntityId.from(command.gigId),
-      EntityId.from(creator.id.toString()),
-      EntityId.from(talent.id.toString()),
-      command.mediaIds.map(id => EntityId.from(id)),
-      command.caption,
-      command.tags || [],
-      palette
-    );
+    const showcase = Showcase.create({
+      id: IdGenerator.generate(),
+      gigId: command.gigId,
+      creatorId: creator.id.toString(),
+      talentId: talent.id.toString(),
+      mediaIds: command.mediaIds,
+      caption: command.caption || '',
+      tags: command.tags || [],
+      palette: palette
+    });
 
     // Save showcase
     await this.showcaseRepository.save(showcase);

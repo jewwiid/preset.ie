@@ -62,7 +62,7 @@ export class GetBlockedUsersUseCase {
           blockId: block.getId(),
           blockedUserId: block.getBlockedUserId(),
           blockedUserDisplayName: blockedUserProfile?.getDisplayName(),
-          blockedUserHandle: blockedUserProfile?.getHandle()?.getValue(),
+          blockedUserHandle: blockedUserProfile?.getHandle()?.toString(),
           blockedUserAvatarUrl: blockedUserProfile?.getAvatarUrl(),
           reasonDetails: {
             reason: block.getReasonDetails().getReason(),

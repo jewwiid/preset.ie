@@ -5,8 +5,9 @@ import {
   NotificationFilters,
   NotificationRepository,
   NotificationPreferencesRepository,
-  NotificationType,
-  NotificationCategory
+  NotificationType as AppNotificationType,
+  NotificationCategory,
+  NotificationPreferences
 } from '@preset/types'
 
 export class PresetNotificationService implements NotificationService {
@@ -17,7 +18,7 @@ export class PresetNotificationService implements NotificationService {
 
   async send(payload: NotificationPayload): Promise<Notification> {
     // Check user preferences before sending
-    const category = this.getCategoryFromType(payload.type)
+    const category = this.getCategoryFromType(payload.type as AppNotificationType)
     const preferences = await this.preferencesRepository.getByUserId(payload.recipient_id)
 
     if (!preferences?.in_app_enabled) {
@@ -68,13 +69,13 @@ export class PresetNotificationService implements NotificationService {
 
   // Platform Event Handlers
   async onGigCreated(gig: any): Promise<void> {
-    console.log('📢 Processing gig creation notification:', gig.id)
+    console.log('📢 Processing gig creation notification:', gig.getId())
     
     // Find talent who might be interested in this gig
     const matchingTalent = await this.findMatchingTalent(gig)
     
     if (matchingTalent.length === 0) {
-      console.log('No matching talent found for gig:', gig.id)
+      console.log('No matching talent found for gig:', gig.getId())
       return
     }
 
@@ -83,15 +84,15 @@ export class PresetNotificationService implements NotificationService {
       type: 'new_gig_match',
       title: `New ${gig.style} gig in ${gig.location || gig.city}`,
       message: `"${gig.title}" - ${gig.description?.substring(0, 100) || ''}${gig.description?.length > 100 ? '...' : ''}`,
-      action_url: `/gigs/${gig.id}`,
+      action_url: `/gigs/${gig.getId()}`,
       action_data: {
-        gig_id: gig.id,
+        gig_id: gig.getId(),
         gig_title: gig.title,
         location: gig.location || gig.city,
         style: gig.style
       },
       sender_id: gig.creator_id,
-      related_gig_id: gig.id
+      related_gig_id: gig.getId()
     }))
 
     await this.sendBulk(notifications)
@@ -99,7 +100,7 @@ export class PresetNotificationService implements NotificationService {
   }
 
   async onApplicationSubmitted(application: any): Promise<void> {
-    console.log('📝 Processing application submission notification:', application.id)
+    console.log('📝 Processing application submission notification:', application.getId())
     
     // Notify the gig creator
     const notification: NotificationPayload = {
@@ -110,13 +111,13 @@ export class PresetNotificationService implements NotificationService {
       avatar_url: application.talent.profile_image_url,
       action_url: `/gigs/${application.gig_id}/applications`,
       action_data: {
-        application_id: application.id,
+        application_id: application.getId(),
         gig_id: application.gig_id,
         talent_name: application.talent.display_name
       },
       sender_id: application.talent_id,
       related_gig_id: application.gig_id,
-      related_application_id: application.id
+      related_application_id: application.getId()
     }
 
     await this.send(notification)
@@ -231,8 +232,8 @@ export class PresetNotificationService implements NotificationService {
   }
 
   // Helper Methods
-  private getCategoryFromType(type: NotificationType): NotificationCategory {
-    const categoryMap: Record<NotificationType, NotificationCategory> = {
+  private getCategoryFromType(type: AppNotificationType): NotificationCategory {
+    const categoryMap: Record<string, NotificationCategory> = {
       // Gig events
       'gig_published': 'gig',
       'gig_expiring_soon': 'gig',

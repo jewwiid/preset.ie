@@ -60,7 +60,7 @@ export class ReportMessageUseCase {
     const priority = this.calculatePriority(command.reason, command.description);
 
     // Generate report ID
-    const reportId = this.idGenerator.generate();
+    const reportId = IdGenerator.generate();
 
     // Submit the report
     await this.reportRepository.submitReport({

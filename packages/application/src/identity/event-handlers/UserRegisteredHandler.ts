@@ -33,7 +33,7 @@ export class UserRegisteredHandler implements EventHandler<UserRegisteredEvent> 
     }
 
     // Generate a unique handle from email
-    const baseHandle = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    const baseHandle = email.split('@')[0]?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
     let handle = baseHandle;
     let suffix = 1;
 

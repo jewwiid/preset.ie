@@ -41,7 +41,7 @@ export class BookTalentUseCase {
     if (gig.status === GigStatus.BOOKED) {
       return {
         success: false,
-        gigId: gig.id.toString(),
+        gigId: gig.getId(),
         talentId: '',
         message: 'This gig already has talent booked'
       };
@@ -51,7 +51,7 @@ export class BookTalentUseCase {
     if (gig.status !== GigStatus.PUBLISHED && gig.status !== GigStatus.CLOSED) {
       return {
         success: false,
-        gigId: gig.id.toString(),
+        gigId: gig.getId(),
         talentId: '',
         message: `Cannot book talent for a gig with status: ${gig.status}`
       };
@@ -61,7 +61,7 @@ export class BookTalentUseCase {
     if (application.isFinalized()) {
       return {
         success: false,
-        gigId: gig.id.toString(),
+        gigId: gig.getId(),
         talentId: application.getApplicantId(),
         message: `Application is already ${application.getStatus()}`
       };
@@ -77,7 +77,7 @@ export class BookTalentUseCase {
       await this.gigRepo.save(gig);
 
       // Auto-decline all other pending/shortlisted applications
-      const otherApplications = await this.applicationRepo.findByGigId(gig.id.toString());
+      const otherApplications = await this.applicationRepo.findByGigId(gig.getId());
       
       for (const otherApp of otherApplications) {
         if (otherApp.getId() !== application.getId() && !otherApp.isFinalized()) {
@@ -109,14 +109,14 @@ export class BookTalentUseCase {
 
       return {
         success: true,
-        gigId: gig.id.toString(),
+        gigId: gig.getId(),
         talentId: application.getApplicantId(),
         message: 'Talent booked successfully'
       };
     } catch (error) {
       return {
         success: false,
-        gigId: gig.id.toString(),
+        gigId: gig.getId(),
         talentId: application.getApplicantId(),
         message: error instanceof Error ? error.message : 'Failed to book talent'
       };

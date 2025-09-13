@@ -42,4 +42,18 @@ export abstract class BaseAggregateRoot implements AggregateRoot {
   protected raise(event: DomainEvent): void {
     this.addDomainEvent(event);
   }
+
+  /**
+   * Get all events (alias for getUncommittedEvents for backward compatibility)
+   */
+  getEvents(): DomainEvent[] {
+    return this.getUncommittedEvents();
+  }
+
+  /**
+   * Clear all events (alias for markEventsAsCommitted for backward compatibility)
+   */
+  clearEvents(): void {
+    this.markEventsAsCommitted();
+  }
 }

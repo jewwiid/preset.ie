@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportMessageUseCase = void 0;
+const domain_1 = require("@preset/domain");
 class ReportMessageUseCase {
     constructor(reportRepository, eventBus, idGenerator) {
         this.reportRepository = reportRepository;
@@ -24,7 +25,7 @@ class ReportMessageUseCase {
         // Calculate priority based on reason
         const priority = this.calculatePriority(command.reason, command.description);
         // Generate report ID
-        const reportId = this.idGenerator.generate();
+        const reportId = domain_1.IdGenerator.generate();
         // Submit the report
         await this.reportRepository.submitReport({
             id: reportId,

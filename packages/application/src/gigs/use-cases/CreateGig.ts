@@ -1,4 +1,4 @@
-import { Gig, GigRepository, UserRepository, CompensationType, EventBus, EntityId } from '@preset/domain';
+import { Gig, GigRepository, UserRepository, CompensationType, Compensation, Location, EventBus, EntityId } from '@preset/domain';
 import { SubscriptionEnforcer } from '../../shared/SubscriptionEnforcer';
 
 export interface CreateGigCommand {
@@ -77,8 +77,8 @@ export class CreateGigUseCase {
       EntityId.from(command.ownerId),
       command.title,
       command.description,
-      command.compensationType,
-      command.locationText,
+      new Compensation(command.compensationType),
+      new Location(command.locationText),
       command.startTime,
       command.endTime,
       command.applicationDeadline,
@@ -97,6 +97,6 @@ export class CreateGigUseCase {
       gig.markEventsAsCommitted();
     }
 
-    return { gigId: gig.id.toString() };
+    return { gigId: gig.getId() };
   }
 }

@@ -39,7 +39,7 @@ export class CreateMoodboardUseCase {
         }
         
         return MoodboardItem.create({
-          source: item.source,
+          source: item.source === 'url' ? 'user-upload' : item.source as 'pexels' | 'user-upload' | 'ai-enhanced' | 'ai-generated',
           url: finalUrl,
           attribution: item.caption || '',
           position: 0,
