@@ -1,46 +1,223 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
-import MoodboardBuilder from '../../components/MoodboardBuilder'
-
-type CompType = 'TFP' | 'PAID' | 'EXPENSES' | 'OTHER'
-type PurposeType = 'PORTFOLIO' | 'COMMERCIAL' | 'EDITORIAL' | 'FASHION' | 'BEAUTY' | 'LIFESTYLE' | 'WEDDING' | 'EVENT' | 'PRODUCT' | 'ARCHITECTURE' | 'STREET' | 'CONCEPTUAL' | 'OTHER'
+import { CompType, PurposeType, StatusType, GigFormData } from '../../../lib/gig-form-persistence'
+import StepIndicator, { GigEditStep } from '../../components/gig-edit-steps/StepIndicator'
+import BasicDetailsStep from '../../components/gig-edit-steps/BasicDetailsStep'
+import LocationScheduleStep from '../../components/gig-edit-steps/LocationScheduleStep'
+import RequirementsStep from '../../components/gig-edit-steps/RequirementsStep'
+import MoodboardStep from '../../components/gig-edit-steps/MoodboardStep'
+import ReviewPublishStep from '../../components/gig-edit-steps/ReviewPublishStep'
 
 export default function CreateGigPage() {
   const router = useRouter()
   const { user } = useAuth()
   
+  // Step management
+  const [currentStep, setCurrentStep] = useState<GigEditStep>('basic')
+  const [completedSteps, setCompletedSteps] = useState<GigEditStep[]>([])
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false)
+  
+  // Form state
   const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   
-  // Basic gig details
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [purpose, setPurpose] = useState<PurposeType>('PORTFOLIO')
-  const [compType, setCompType] = useState<CompType>('TFP')
-  const [usageRights, setUsageRights] = useState('')
-  const [location, setLocation] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [showMoodboard, setShowMoodboard] = useState(false)
-  const [moodboardId, setMoodboardId] = useState<string | null>(null)
+  // Form data
+  const [formData, setFormData] = useState<GigFormData>({
+    title: '',
+    description: '',
+    purpose: 'PORTFOLIO',
+    compType: 'TFP',
+    usageRights: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+    applicationDeadline: '',
+    maxApplicants: 10,
+    status: 'DRAFT',
+    moodboardId: undefined
+  })
   
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Temporary gig ID for moodboard creation
+  const [tempGigId, setTempGigId] = useState<string | null>(null)
+  
+  // Check for unsaved data on mount
+  useEffect(() => {
+    const checkUnsavedData = () => {
+      try {
+        const savedData = localStorage.getItem('gig-create-draft')
+        if (savedData) {
+          const parsed = JSON.parse(savedData)
+          if (Object.keys(parsed).length > 1) { // More than just timestamp
+            setShowRestorePrompt(true)
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to check for unsaved data:', error)
+      }
+    }
     
+    checkUnsavedData()
+  }, [])
+  
+  // Create temporary gig when entering moodboard step
+  useEffect(() => {
+    if (currentStep === 'moodboard' && !tempGigId) {
+      createTempGig().catch(err => {
+        console.error('Failed to create temp gig:', err)
+        setError('Failed to prepare moodboard creation. Please try again.')
+      })
+    }
+  }, [currentStep, tempGigId])
+  
+  // Save form data to localStorage
+  const saveFormData = (data: Partial<GigFormData>) => {
+    try {
+      const updated = { ...formData, ...data }
+      setFormData(updated)
+      localStorage.setItem('gig-create-draft', JSON.stringify({
+        ...updated,
+        lastSaved: new Date().toISOString()
+      }))
+    } catch (error) {
+      console.warn('Failed to save form data:', error)
+    }
+  }
+  
+  // Restore unsaved data
+  const restoreUnsavedData = () => {
+    try {
+      const savedData = localStorage.getItem('gig-create-draft')
+      if (savedData) {
+        const parsed = JSON.parse(savedData)
+        setFormData(prev => ({ ...prev, ...parsed }))
+        setShowRestorePrompt(false)
+      }
+    } catch (error) {
+      console.warn('Failed to restore data:', error)
+    }
+  }
+  
+  // Clear unsaved data
+  const clearUnsavedData = () => {
+    try {
+      localStorage.removeItem('gig-create-draft')
+      setShowRestorePrompt(false)
+    } catch (error) {
+      console.warn('Failed to clear data:', error)
+    }
+  }
+  
+  // Step navigation
+  const goToStep = (step: GigEditStep) => {
+    setCurrentStep(step)
+  }
+  
+  const goToNextStep = () => {
+    const steps: GigEditStep[] = ['basic', 'schedule', 'requirements', 'moodboard', 'review']
+    const currentIndex = steps.indexOf(currentStep)
+    if (currentIndex < steps.length - 1) {
+      const nextStep = steps[currentIndex + 1]
+      setCurrentStep(nextStep)
+      
+      // Mark current step as completed
+      if (!completedSteps.includes(currentStep)) {
+        setCompletedSteps(prev => [...prev, currentStep])
+      }
+    }
+  }
+  
+  const goToPreviousStep = () => {
+    const steps: GigEditStep[] = ['basic', 'schedule', 'requirements', 'moodboard', 'review']
+    const currentIndex = steps.indexOf(currentStep)
+    if (currentIndex > 0) {
+      setCurrentStep(steps[currentIndex - 1])
+    }
+  }
+  
+  // Validation functions
+  const validateBasicDetails = () => {
+    return formData.title.trim() !== '' && formData.description.trim() !== ''
+  }
+  
+  const validateSchedule = () => {
+    if (!formData.location.trim()) return false
+    if (!formData.startDate || !formData.endDate) return false
+    
+    const startTime = new Date(formData.startDate)
+    const endTime = new Date(formData.endDate)
+    const deadline = formData.applicationDeadline ? new Date(formData.applicationDeadline) : null
+    
+    if (endTime <= startTime) return false
+    if (deadline && deadline >= startTime) return false
+    
+    return true
+  }
+  
+  const validateRequirements = () => {
+    return formData.usageRights.trim() !== '' && formData.maxApplicants > 0
+  }
+  
+  // Create temporary gig for moodboard
+  const createTempGig = async () => {
+    if (tempGigId) return tempGigId
+    
+    if (!user) throw new Error('User not authenticated')
+    
+    const { data: profile, error: profileError } = await supabase
+      .from('users_profile')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+    
+    if (profileError || !profile) {
+      throw new Error('Profile not found')
+    }
+    
+    const gigData = {
+      owner_user_id: profile.id,
+      title: formData.title || 'Temporary Gig',
+      description: formData.description || 'Temporary gig for moodboard creation',
+      purpose: formData.purpose,
+      comp_type: formData.compType,
+      usage_rights: formData.usageRights || 'Portfolio use only',
+      start_time: formData.startDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      end_time: formData.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 3600000).toISOString(),
+      status: 'DRAFT',
+      location_text: formData.location || 'Location TBD',
+      application_deadline: formData.applicationDeadline || new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+      max_applicants: formData.maxApplicants
+    }
+    
+    const { data, error } = await supabase
+      .from('gigs')
+      .insert(gigData)
+      .select()
+      .single()
+    
+    if (error) throw error
+    
+    setTempGigId(data.id)
+    return data.id
+  }
+  
+  // Final save function
+  const handleSaveGig = async () => {
     if (!user) {
       setError('You must be logged in to create a gig')
       return
     }
     
-    setLoading(true)
+    setSaving(true)
     setError(null)
     
     try {
-      // First, get the user's profile ID
+      // Get user profile
       const { data: profile, error: profileError } = await supabase
         .from('users_profile')
         .select('id')
@@ -51,300 +228,243 @@ export default function CreateGigPage() {
         throw new Error('Profile not found. Please complete your profile first.')
       }
       
-      // Convert dates to ISO strings
-      const startDateTime = startDate ? new Date(startDate).toISOString() : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      const endDateTime = endDate ? new Date(endDate).toISOString() : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 3600000).toISOString()
+      // Use temp gig ID if we have one, otherwise create new gig
+      let gigId = tempGigId
       
-      // Calculate application deadline - must be BEFORE the start time (constraint: valid_deadline)
-      // Default to 2 days before the shoot starts
-      const startTime = new Date(startDateTime)
-      const applicationDeadline = new Date(startTime.getTime() - (2 * 24 * 60 * 60 * 1000)).toISOString()
-      
-      // Validate dates
-      if (new Date(endDateTime) <= new Date(startDateTime)) {
-        setError('End time must be after start time')
-        setLoading(false)
-        return
+      if (!gigId) {
+        // Create new gig
+        const gigData = {
+          owner_user_id: profile.id,
+          title: formData.title,
+          description: formData.description,
+          purpose: formData.purpose,
+          comp_type: formData.compType,
+          usage_rights: formData.usageRights,
+          start_time: formData.startDate,
+          end_time: formData.endDate,
+          status: formData.status,
+          location_text: formData.location,
+          application_deadline: formData.applicationDeadline,
+          max_applicants: formData.maxApplicants
+        }
+        
+        const { data, error: insertError } = await supabase
+          .from('gigs')
+          .insert(gigData)
+          .select()
+          .single()
+        
+        if (insertError) throw insertError
+        gigId = data.id
+      } else {
+        // Update existing temp gig
+        const { error: updateError } = await supabase
+          .from('gigs')
+          .update({
+            title: formData.title,
+            description: formData.description,
+            purpose: formData.purpose,
+            comp_type: formData.compType,
+            usage_rights: formData.usageRights,
+            start_time: formData.startDate,
+            end_time: formData.endDate,
+            status: formData.status,
+            location_text: formData.location,
+            application_deadline: formData.applicationDeadline,
+            max_applicants: formData.maxApplicants
+          })
+          .eq('id', gigId)
+        
+        if (updateError) throw updateError
       }
       
-      // Build the gig object with purpose field
-      const gigData: any = {
-          owner_user_id: profile.id,  // Use profile ID, not auth user ID
-          title,
-          description,
-          purpose, // Now include the purpose field
-          comp_type: compType,
-          usage_rights: usageRights || 'Portfolio use only',
-          start_time: startDateTime,
-          end_time: endDateTime,
-          status: 'DRAFT',
-          location_text: location || 'Location TBD',
-          application_deadline: applicationDeadline, // 2 days before start
-          max_applicants: 10
-      };
+      // Clear saved data
+      clearUnsavedData()
       
-      const { data, error: insertError } = await supabase
-        .from('gigs')
-        .insert(gigData)
-        .select()
-        .single()
-      
-      if (insertError) {
-        console.error('Insert error details:', insertError)
-        throw insertError
-      }
-      
-      // Redirect to the gig detail page
-      router.push(`/gigs/${data.id}`)
+      // Redirect to gig detail page
+      router.push(`/gigs/${gigId}`)
     } catch (err: any) {
-      console.error('Error creating gig:', err)
-      const errorMessage = err?.message || err?.details || 'Failed to create gig'
-      setError(errorMessage)
-      setLoading(false)
+      console.error('Error saving gig:', err)
+      setError(err?.message || err?.details || 'Failed to save gig')
+      setSaving(false)
+    }
+  }
+  
+  // Render current step
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 'basic':
+        return (
+          <BasicDetailsStep
+            title={formData.title}
+            description={formData.description}
+            purpose={formData.purpose!}
+            compType={formData.compType}
+            onTitleChange={(value) => saveFormData({ title: value })}
+            onDescriptionChange={(value) => saveFormData({ description: value })}
+            onPurposeChange={(value) => saveFormData({ purpose: value })}
+            onCompTypeChange={(value) => saveFormData({ compType: value })}
+            onNext={goToNextStep}
+            isValid={validateBasicDetails()}
+          />
+        )
+      
+      case 'schedule':
+        return (
+          <LocationScheduleStep
+            location={formData.location}
+            startDate={formData.startDate}
+            endDate={formData.endDate}
+            applicationDeadline={formData.applicationDeadline}
+            onLocationChange={(value) => saveFormData({ location: value })}
+            onStartDateChange={(value) => saveFormData({ startDate: value })}
+            onEndDateChange={(value) => saveFormData({ endDate: value })}
+            onApplicationDeadlineChange={(value) => saveFormData({ applicationDeadline: value })}
+            onNext={goToNextStep}
+            onBack={goToPreviousStep}
+            isValid={validateSchedule()}
+            validationErrors={[]}
+          />
+        )
+      
+      case 'requirements':
+        return (
+          <RequirementsStep
+            usageRights={formData.usageRights}
+            maxApplicants={formData.maxApplicants}
+            onUsageRightsChange={(value) => saveFormData({ usageRights: value })}
+            onMaxApplicantsChange={(value) => saveFormData({ maxApplicants: value })}
+            onNext={goToNextStep}
+            onBack={goToPreviousStep}
+            isValid={validateRequirements()}
+            applicationCount={0}
+          />
+        )
+      
+      case 'moodboard':
+        return (
+          <MoodboardStep
+            gigId={tempGigId || 'temp'}
+            moodboardId={formData.moodboardId}
+            onMoodboardSave={(id) => {
+              saveFormData({ moodboardId: id })
+              goToNextStep()
+            }}
+            onNext={goToNextStep}
+            onBack={goToPreviousStep}
+          />
+        )
+      
+      case 'review':
+        return (
+          <ReviewPublishStep
+            title={formData.title}
+            description={formData.description}
+            purpose={formData.purpose!}
+            compType={formData.compType}
+            location={formData.location}
+            startDate={formData.startDate}
+            endDate={formData.endDate}
+            applicationDeadline={formData.applicationDeadline}
+            usageRights={formData.usageRights}
+            maxApplicants={formData.maxApplicants}
+            status={formData.status}
+            moodboardId={formData.moodboardId}
+            onStatusChange={(value) => saveFormData({ status: value })}
+            onBack={goToPreviousStep}
+            onSave={handleSaveGig}
+            saving={saving}
+            applicationCount={0}
+            warnings={[]}
+          />
+        )
+      
+      default:
+        return null
     }
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Create a New Gig</h1>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
-            
-            {/* Title */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Gig Title *
-              </label>
-              <input
-                type="text"
-                id="title"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                placeholder="e.g., Fashion Editorial Shoot in Dublin"
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Make it clear and appealing - this is what talent will see first
-              </p>
-            </div>
-            
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description *
-              </label>
-              <textarea
-                id="description"
-                required
-                rows={4}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                placeholder="Describe the shoot concept, what you're looking for, and what makes this opportunity special..."
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Be specific about the creative vision and what you hope to achieve
-              </p>
-            </div>
-            
-            {/* Purpose */}
-            <div>
-              <label htmlFor="purpose" className="block text-sm font-medium text-gray-700">
-                Purpose of Shoot *
-              </label>
-              <select
-                id="purpose"
-                required
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value as PurposeType)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-              >
-                <option value="PORTFOLIO">Portfolio Building</option>
-                <option value="COMMERCIAL">Commercial</option>
-                <option value="EDITORIAL">Editorial</option>
-                <option value="FASHION">Fashion</option>
-                <option value="BEAUTY">Beauty</option>
-                <option value="LIFESTYLE">Lifestyle</option>
-                <option value="WEDDING">Wedding</option>
-                <option value="EVENT">Event</option>
-                <option value="PRODUCT">Product</option>
-                <option value="ARCHITECTURE">Architecture</option>
-                <option value="STREET">Street</option>
-                <option value="CONCEPTUAL">Conceptual</option>
-                <option value="OTHER">Other</option>
-              </select>
-              <p className="mt-1 text-sm text-gray-500">
-                Let talent know what type of shoot this is
-              </p>
-            </div>
-            
-            {/* Compensation Type */}
-            <div>
-              <label htmlFor="comp-type" className="block text-sm font-medium text-gray-700">
-                Compensation Type *
-              </label>
-              <select
-                id="comp-type"
-                value={compType}
-                onChange={(e) => setCompType(e.target.value as CompType)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-              >
-                <option value="TFP">TFP (Time for Prints/Portfolio)</option>
-                <option value="PAID">Paid</option>
-                <option value="EXPENSES">Expenses Covered</option>
-                <option value="OTHER">Other (specify in description)</option>
-              </select>
-              <p className="mt-1 text-sm text-gray-500">
-                Be transparent about compensation to attract the right talent
-              </p>
-            </div>
-            
-            {/* Usage Rights */}
-            <div>
-              <label htmlFor="usage-rights" className="block text-sm font-medium text-gray-700">
-                Usage Rights *
-              </label>
-              <input
-                type="text"
-                id="usage-rights"
-                required
-                value={usageRights}
-                onChange={(e) => setUsageRights(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                placeholder="e.g., Portfolio use only, Commercial use, Social media"
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Specify how the content can be used by both parties
-              </p>
-            </div>
-            
-            {/* Location */}
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                Shoot Location *
-              </label>
-              <input
-                type="text"
-                id="location"
-                required
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                placeholder="e.g., Dublin City Center, Phoenix Park, Studio in Temple Bar"
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Where will the shoot take place?
-              </p>
-            </div>
-            
-            {/* Date Range */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Shoot Schedule</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="start-date" className="block text-sm font-medium text-gray-700">
-                    Start Date/Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="start-date"
-                    required
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    min={new Date().toISOString().slice(0, 16)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    When the shoot begins
-                  </p>
-                </div>
-                <div>
-                  <label htmlFor="end-date" className="block text-sm font-medium text-gray-700">
-                    End Date/Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    id="end-date"
-                    required
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    min={startDate || new Date().toISOString().slice(0, 16)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Must be after start time
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 p-3 bg-blue-50 rounded-md">
-                <p className="text-sm text-blue-800">
-                  <span className="font-medium">📅 Application deadline:</span> Applications will automatically close 2 days before the shoot starts to give you time to review and prepare.
-                </p>
-              </div>
-            </div>
-            
-            {/* Moodboard Section */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Visual Inspiration</h3>
-              {!showMoodboard && !moodboardId ? (
-                <button
-                  type="button"
-                  onClick={() => setShowMoodboard(true)}
-                  className="px-4 py-2 border-2 border-dashed border-gray-300 rounded-md text-gray-600 hover:border-emerald-500 hover:text-emerald-600 transition-colors"
-                >
-                  + Add Moodboard (Optional)
-                </button>
-              ) : showMoodboard ? (
-                <MoodboardBuilder
-                  onSave={(id) => {
-                    setMoodboardId(id)
-                    setShowMoodboard(false)
-                  }}
-                  onCancel={() => setShowMoodboard(false)}
-                />
-              ) : (
-                <div className="p-4 bg-emerald-50 rounded-md">
-                  <p className="text-emerald-800">
-                    ✅ Moodboard added
-                    <button
-                      type="button"
-                      onClick={() => setShowMoodboard(true)}
-                      className="ml-2 text-emerald-600 underline"
-                    >
-                      Edit
-                    </button>
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            {/* Submit Buttons */}
-            <div className="flex justify-between pt-4">
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard')}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Creating...' : 'Create Gig'}
-              </button>
-            </div>
-          </form>
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create a New Gig</h1>
+          <p className="text-gray-600">Follow the steps below to create your gig and attract the right talent</p>
         </div>
+        
+        {/* Restore Prompt */}
+        {showRestorePrompt && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-blue-800">Unsaved Changes Detected</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  We found unsaved changes from a previous session. Would you like to restore them?
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={restoreUnsavedData}
+                    className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                  >
+                    Restore Changes
+                  </button>
+                  <button
+                    onClick={clearUnsavedData}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    Start Fresh
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-medium text-red-800">Error</h3>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Success Display */}
+        {success && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-medium text-green-800">Success</h3>
+                <p className="text-sm text-green-700 mt-1">{success}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Step Indicator */}
+        <StepIndicator
+          currentStep={currentStep}
+          completedSteps={completedSteps}
+          onStepClick={goToStep}
+        />
+        
+        {/* Current Step Content */}
+        {renderCurrentStep()}
       </div>
     </div>
   )
