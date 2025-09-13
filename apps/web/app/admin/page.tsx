@@ -331,21 +331,21 @@ export default function AdminDashboard() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 gap-4">
             <div className="flex items-center">
               <Shield className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Link 
                 href="/dashboard"
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors text-sm sm:text-base"
               >
                 User Dashboard
               </Link>
               <button
                 onClick={handleSignOut}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md text-sm font-medium"
+                className="px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md text-sm font-medium"
               >
                 Sign Out
               </button>
@@ -357,23 +357,26 @@ export default function AdminDashboard() {
       {/* Tabs */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                  ${activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }
-                `}
-              >
-                <tab.icon className="h-5 w-5" />
-                {tab.label}
-              </button>
-            ))}
+          <nav className="flex overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitScrollbar: { display: 'none' } }}>
+            <div className="flex space-x-2 sm:space-x-8 min-w-max">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    flex items-center gap-1 sm:gap-2 py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap
+                    ${activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }
+                  `}
+                >
+                  <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                </button>
+              ))}
+            </div>
           </nav>
         </div>
       </div>
