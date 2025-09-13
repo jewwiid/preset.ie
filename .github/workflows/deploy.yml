@@ -39,13 +39,13 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN" --project="$VERCEL_PROJECT_ID" --org="$VERCEL_ORG_ID"
 
       - name: Build Project Artifacts
-        run: vercel build --prod --token="$VERCEL_TOKEN"
+        run: vercel build --prod --token="$VERCEL_TOKEN" --project="$VERCEL_PROJECT_ID" --org="$VERCEL_ORG_ID"
 
       - name: Deploy Project Artifacts to Vercel
-        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" --project="$VERCEL_PROJECT_ID" --org="$VERCEL_ORG_ID"
 
   deploy-edge-functions:
     name: Deploy Edge Functions to Supabase
