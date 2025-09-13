@@ -64,7 +64,8 @@ jobs:
       - name: Install Supabase CLI
         run: |
           if ! command -v supabase &> /dev/null; then
-            curl -fsSL https://github.com/supabase/cli/releases/download/v1.200.3/supabase_linux_amd64.tar.gz | tar -xz --overwrite
+            rm -rf supabase
+            curl -fsSL https://github.com/supabase/cli/releases/download/v1.200.3/supabase_linux_amd64.tar.gz | tar -xz
             sudo mv supabase /usr/local/bin/
           else
             echo "Supabase CLI already installed"
@@ -97,7 +98,8 @@ jobs:
       - name: Install Supabase CLI
         run: |
           if ! command -v supabase &> /dev/null; then
-            curl -fsSL https://github.com/supabase/cli/releases/download/v1.200.3/supabase_linux_amd64.tar.gz | tar -xz --overwrite
+            rm -rf supabase
+            curl -fsSL https://github.com/supabase/cli/releases/download/v1.200.3/supabase_linux_amd64.tar.gz | tar -xz
             sudo mv supabase /usr/local/bin/
           else
             echo "Supabase CLI already installed"
