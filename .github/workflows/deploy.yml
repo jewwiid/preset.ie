@@ -73,7 +73,7 @@ jobs:
 
       - name: Deploy Edge Functions
         run: |
-          supabase functions deploy --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          cd supabase && supabase functions deploy --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
@@ -107,7 +107,7 @@ jobs:
 
       - name: Run Migrations
         run: |
-          supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          cd supabase && supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
