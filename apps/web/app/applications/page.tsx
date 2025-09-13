@@ -530,9 +530,9 @@ export default function ApplicationsPage() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                 {viewMode === 'admin' ? 'Platform Applications - Admin View' :
                  viewMode === 'contributor' ? 'Manage Applications' : 'My Applications'}
               </h1>
@@ -547,44 +547,47 @@ export default function ApplicationsPage() {
             
             {/* View Mode Toggle */}
             {(userRole?.isAdmin || (userRole?.isContributor && userRole?.isTalent)) && (
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                {userRole?.isAdmin && (
-                  <button
-                    onClick={() => setViewMode('admin')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      viewMode === 'admin'
-                        ? 'bg-red-600 text-white shadow'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <Shield className="w-4 h-4 mr-1 inline" />
-                    Admin
-                  </button>
-                )}
-                {userRole?.isContributor && (
-                  <button
-                    onClick={() => setViewMode('contributor')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      viewMode === 'contributor'
-                        ? 'bg-white text-gray-900 shadow'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    As Contributor
-                  </button>
-                )}
-                {userRole?.isTalent && (
-                  <button
-                    onClick={() => setViewMode('talent')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      viewMode === 'talent'
-                        ? 'bg-white text-gray-900 shadow'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    As Talent
-                  </button>
-                )}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-0">
+                <span className="text-sm font-medium text-gray-700 sm:hidden">View As:</span>
+                <div className="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
+                  {userRole?.isAdmin && (
+                    <button
+                      onClick={() => setViewMode('admin')}
+                      className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        viewMode === 'admin'
+                          ? 'bg-red-600 text-white shadow'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Shield className="w-4 h-4 mr-1 inline" />
+                      Admin
+                    </button>
+                  )}
+                  {userRole?.isContributor && (
+                    <button
+                      onClick={() => setViewMode('contributor')}
+                      className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        viewMode === 'contributor'
+                          ? 'bg-white text-gray-900 shadow'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <span className="hidden sm:inline">As </span>Contributor
+                    </button>
+                  )}
+                  {userRole?.isTalent && (
+                    <button
+                      onClick={() => setViewMode('talent')}
+                      className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        viewMode === 'talent'
+                          ? 'bg-white text-gray-900 shadow'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <span className="hidden sm:inline">As </span>Talent
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
