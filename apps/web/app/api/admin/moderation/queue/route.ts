@@ -67,35 +67,32 @@ export async function GET(request: NextRequest) {
     }
 
     // Get basic statistics
-    const { data: stats } = await supabase
+    const { data: statsData, error: statsError } = await supabase
       .from('content_moderation_queue')
-      .select('status')
-      .then(({ data }: any) => {
-        const counts = data?.reduce((acc: any, item: any) => {
-          acc[item.status] = (acc[item.status] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>) || {};
-        
-        return {
-          data: {
-            pending: counts.pending || 0,
-            reviewing: counts.reviewing || 0,
-            approved: counts.approved || 0,
-            rejected: counts.rejected || 0,
-            escalated: counts.escalated || 0,
-            total: data?.length || 0
-          }
-        };
-      });
+      .select('status');
+
+    const stats = statsData?.reduce((acc: any, item: any) => {
+      acc[item.status] = (acc[item.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>) || {};
+    
+    const statsResult = {
+      pending: stats.pending || 0,
+      reviewing: stats.reviewing || 0,
+      approved: stats.approved || 0,
+      rejected: stats.rejected || 0,
+      escalated: stats.escalated || 0,
+      total: statsData?.length || 0
+    };
 
     return NextResponse.json({
-      items: queueItems,
+      items: queueItems || [],
       pagination: {
         limit: filters.limit,
         offset: filters.offset,
-        hasMore: queueItems.length === filters.limit
+        hasMore: (queueItems?.length || 0) === filters.limit
       },
-      stats
+      stats: statsResult
     });
 
   } catch (error) {
