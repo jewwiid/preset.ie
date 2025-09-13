@@ -81,47 +81,11 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-  migrate-database:
-    name: Run Database Migrations
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-    needs: [deploy-web, deploy-edge-functions]
-    env:
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install Supabase CLI
-        run: |
-          if ! command -v supabase &> /dev/null; then
-            rm -rf supabase
-            curl -fsSL https://github.com/supabase/cli/releases/download/v1.200.3/supabase_linux_amd64.tar.gz | tar -xz
-            sudo mv supabase /usr/local/bin/
-          else
-            echo "Supabase CLI already installed"
-          fi
-
-      - name: Run Migrations
-        run: |
-          git checkout HEAD -- supabase/
-          cd supabase && supabase db push --db-url "postgresql://postgres:${{ secrets.SUPABASE_DB_PASSWORD }}@db.${{ secrets.SUPABASE_PROJECT_REF }}.supabase.co:5432/postgres?sslmode=require"
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
   notify:
     name: Notify Deployment
     runs-on: ubuntu-latest
-    needs: [deploy-web, deploy-edge-functions, migrate-database]
+    needs: [deploy-web, deploy-edge-functions]
     if: always()
     steps:
       - name: Send Slack notification
