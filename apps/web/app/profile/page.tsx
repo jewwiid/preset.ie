@@ -344,6 +344,18 @@ function UserSettingsTab() {
 
     setSaving(true)
     try {
+      // For now, just update the local state for new messaging fields
+      // TODO: Add these fields to the database schema
+      const newMessagingFields = ['message_notifications', 'message_read_receipts', 'allow_stranger_messages']
+      
+      if (newMessagingFields.includes(key)) {
+        // Update local state only for new fields
+        setSettings({ ...settings, [key]: value })
+        setError(null)
+        setSaving(false)
+        return
+      }
+
       const { error } = await supabase
         .from('user_settings')
         .update({ [key]: value })
