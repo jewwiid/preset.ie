@@ -5,8 +5,10 @@ import { ChevronLeft, ChevronRight, FileText, Users, AlertCircle } from 'lucide-
 interface RequirementsStepProps {
   usageRights: string
   maxApplicants: number
+  safetyNotes: string
   onUsageRightsChange: (value: string) => void
   onMaxApplicantsChange: (value: number) => void
+  onSafetyNotesChange: (value: string) => void
   onNext: () => void
   onBack: () => void
   isValid: boolean
@@ -16,8 +18,10 @@ interface RequirementsStepProps {
 export default function RequirementsStep({
   usageRights,
   maxApplicants,
+  safetyNotes,
   onUsageRightsChange,
   onMaxApplicantsChange,
+  onSafetyNotesChange,
   onNext,
   onBack,
   isValid,
@@ -130,6 +134,27 @@ export default function RequirementsStep({
           
           <p className="mt-1 text-xs text-gray-500">
             Limit the number of applications to make selection easier
+          </p>
+        </div>
+
+        {/* Safety Notes */}
+        <div>
+          <label htmlFor="safety-notes" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              Safety Notes (Optional)
+            </div>
+          </label>
+          <textarea
+            id="safety-notes"
+            rows={3}
+            value={safetyNotes}
+            onChange={(e) => onSafetyNotesChange(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
+            placeholder="e.g., Location has stairs, bring comfortable shoes, weather-dependent shoot..."
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Important safety information, accessibility notes, or special requirements for talent
           </p>
         </div>
 

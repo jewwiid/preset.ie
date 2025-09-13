@@ -25,12 +25,14 @@ interface ReviewPublishStepProps {
   description: string
   purpose: PurposeType
   compType: CompType
+  compDetails?: string
   location: string
   startDate: string
   endDate: string
   applicationDeadline: string
   usageRights: string
   maxApplicants: number
+  safetyNotes?: string
   status: StatusType
   moodboardId?: string
   
@@ -48,12 +50,14 @@ export default function ReviewPublishStep({
   description,
   purpose,
   compType,
+  compDetails,
   location,
   startDate,
   endDate,
   applicationDeadline,
   usageRights,
   maxApplicants,
+  safetyNotes,
   status,
   moodboardId,
   onStatusChange,
@@ -310,6 +314,12 @@ export default function ReviewPublishStep({
                 <div className="space-y-2 text-sm text-gray-600">
                   <div><span className="font-medium text-gray-900">Usage:</span> {usageRights}</div>
                   <div><span className="font-medium text-gray-900">Max Applicants:</span> {maxApplicants}</div>
+                  {compDetails && (
+                    <div><span className="font-medium text-gray-900">Compensation:</span> {compDetails}</div>
+                  )}
+                  {safetyNotes && (
+                    <div><span className="font-medium text-gray-900">Safety Notes:</span> {safetyNotes}</div>
+                  )}
                   {applicationCount > 0 && (
                     <div className="text-blue-600 text-xs bg-blue-50 px-2 py-1 rounded">
                       <span className="font-medium">Current: {applicationCount} applications</span>

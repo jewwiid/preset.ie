@@ -33,12 +33,14 @@ export default function CreateGigPage() {
     description: '',
     purpose: 'PORTFOLIO',
     compType: 'TFP',
+    compDetails: '',
     usageRights: '',
     location: '',
     startDate: '',
     endDate: '',
     applicationDeadline: '',
     maxApplicants: 10,
+    safetyNotes: '',
     status: 'DRAFT',
     moodboardId: undefined
   })
@@ -142,7 +144,13 @@ export default function CreateGigPage() {
   
   // Validation functions
   const validateBasicDetails = () => {
-    return formData.title.trim() !== '' && formData.description.trim() !== ''
+    const titleValid = formData.title.trim() !== ''
+    const descriptionValid = formData.description.trim().length >= 50
+    const compDetailsValid = formData.compType === 'TFP' || formData.compType === 'OTHER' || 
+                            (formData.compType === 'PAID' && formData.compDetails?.trim() !== '') ||
+                            (formData.compType === 'EXPENSES' && formData.compDetails?.trim() !== '')
+    
+    return titleValid && descriptionValid && compDetailsValid
   }
   
   const validateSchedule = () => {
@@ -239,13 +247,15 @@ export default function CreateGigPage() {
           description: formData.description,
           purpose: formData.purpose,
           comp_type: formData.compType,
+          comp_details: formData.compDetails,
           usage_rights: formData.usageRights,
           start_time: formData.startDate,
           end_time: formData.endDate,
           status: formData.status,
           location_text: formData.location,
           application_deadline: formData.applicationDeadline,
-          max_applicants: formData.maxApplicants
+          max_applicants: formData.maxApplicants,
+          safety_notes: formData.safetyNotes
         }
         
         const { data, error: insertError } = await supabase
@@ -300,10 +310,12 @@ export default function CreateGigPage() {
             description={formData.description}
             purpose={formData.purpose!}
             compType={formData.compType}
+            compDetails={formData.compDetails || ''}
             onTitleChange={(value) => saveFormData({ title: value })}
             onDescriptionChange={(value) => saveFormData({ description: value })}
             onPurposeChange={(value) => saveFormData({ purpose: value })}
             onCompTypeChange={(value) => saveFormData({ compType: value })}
+            onCompDetailsChange={(value) => saveFormData({ compDetails: value })}
             onNext={goToNextStep}
             isValid={validateBasicDetails()}
           />
@@ -332,8 +344,10 @@ export default function CreateGigPage() {
           <RequirementsStep
             usageRights={formData.usageRights}
             maxApplicants={formData.maxApplicants}
+            safetyNotes={formData.safetyNotes || ''}
             onUsageRightsChange={(value) => saveFormData({ usageRights: value })}
             onMaxApplicantsChange={(value) => saveFormData({ maxApplicants: value })}
+            onSafetyNotesChange={(value) => saveFormData({ safetyNotes: value })}
             onNext={goToNextStep}
             onBack={goToPreviousStep}
             isValid={validateRequirements()}
@@ -362,12 +376,14 @@ export default function CreateGigPage() {
             description={formData.description}
             purpose={formData.purpose!}
             compType={formData.compType}
+            compDetails={formData.compDetails}
             location={formData.location}
             startDate={formData.startDate}
             endDate={formData.endDate}
             applicationDeadline={formData.applicationDeadline}
             usageRights={formData.usageRights}
             maxApplicants={formData.maxApplicants}
+            safetyNotes={formData.safetyNotes}
             status={formData.status}
             moodboardId={formData.moodboardId}
             onStatusChange={(value) => saveFormData({ status: value })}

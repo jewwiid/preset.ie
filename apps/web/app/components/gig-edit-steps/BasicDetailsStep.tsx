@@ -8,10 +8,12 @@ interface BasicDetailsStepProps {
   description: string
   purpose: PurposeType
   compType: CompType
+  compDetails: string
   onTitleChange: (value: string) => void
   onDescriptionChange: (value: string) => void
   onPurposeChange: (value: PurposeType) => void
   onCompTypeChange: (value: CompType) => void
+  onCompDetailsChange: (value: string) => void
   onNext: () => void
   isValid: boolean
 }
@@ -21,10 +23,12 @@ export default function BasicDetailsStep({
   description,
   purpose,
   compType,
+  compDetails,
   onTitleChange,
   onDescriptionChange,
   onPurposeChange,
   onCompTypeChange,
+  onCompDetailsChange,
   onNext,
   isValid
 }: BasicDetailsStepProps) {
@@ -84,8 +88,13 @@ export default function BasicDetailsStep({
             placeholder="Describe your shoot concept, what you're looking for, and any specific requirements..."
           />
           <p className="mt-1 text-xs text-gray-500">
-            Provide details about the concept, style, and what talent should expect
+            Provide details about the concept, style, and what talent should expect (minimum 50 characters)
           </p>
+          {description.length > 0 && description.length < 50 && (
+            <p className="mt-1 text-xs text-red-500">
+              {50 - description.length} more characters needed
+            </p>
+          )}
         </div>
 
         {/* Purpose and Compensation Row */}
@@ -142,6 +151,37 @@ export default function BasicDetailsStep({
             </select>
           </div>
         </div>
+
+        {/* Compensation Details - Conditional */}
+        {(compType === 'PAID' || compType === 'EXPENSES') && (
+          <div>
+            <label htmlFor="comp-details" className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4" />
+                Compensation Details <span className="text-red-500">*</span>
+              </div>
+            </label>
+            <textarea
+              id="comp-details"
+              required
+              rows={3}
+              value={compDetails}
+              onChange={(e) => onCompDetailsChange(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
+              placeholder={
+                compType === 'PAID' 
+                  ? "e.g., €150 per hour, €500 flat rate, includes 10 edited images..."
+                  : "e.g., Travel expenses covered, lunch provided, parking reimbursed..."
+              }
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {compType === 'PAID' 
+                ? "Specify the payment amount, rate, and what's included"
+                : "Detail what expenses will be covered and any limits"
+              }
+            </p>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="flex justify-end pt-6 border-t border-gray-100">

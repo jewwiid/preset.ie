@@ -10,12 +10,14 @@ export interface GigFormData {
   description: string
   purpose?: PurposeType
   compType: CompType
+  compDetails?: string
   usageRights: string
   location: string
   startDate: string
   endDate: string
   applicationDeadline: string
   maxApplicants: number
+  safetyNotes?: string
   status: StatusType
   moodboardId?: string
   lastSaved?: string
