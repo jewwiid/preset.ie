@@ -182,3 +182,4 @@ To run from source:
 go run . help
 ```
 # Trigger deployment with secrets configured
+# Test deployment with Production environment secrets
