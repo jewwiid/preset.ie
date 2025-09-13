@@ -9,17 +9,34 @@
       "env": [
         "SUPABASE_SERVICE_ROLE_KEY",
         "NANOBANANA_API_KEY",
+        "NANOBANAN_API_KEY",
         "PEXELS_API_KEY",
         "OPENAI_API_KEY",
         "NANOBANANA_CALLBACK_URL",
         "NEXT_PUBLIC_SUPABASE_URL",
         "NEXT_PUBLIC_SUPABASE_ANON_KEY",
         "STRIPE_WEBHOOK_SECRET",
-        "NODE_ENV"
+        "STRIPE_SECRET_KEY",
+        "NODE_ENV",
+        "IMAGE_PROVIDER"
       ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^lint"],
+      "env": [
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "NANOBANANA_API_KEY",
+        "NANOBANAN_API_KEY",
+        "PEXELS_API_KEY",
+        "OPENAI_API_KEY",
+        "NANOBANANA_CALLBACK_URL",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "STRIPE_SECRET_KEY",
+        "NODE_ENV",
+        "IMAGE_PROVIDER"
+      ]
     },
     "check-types": {
       "dependsOn": ["^build"]
