@@ -90,7 +90,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
       // Get top tags
       const tagCounts = reviews.reduce((counts, review) => {
         if (review.tags) {
-          review.tags.forEach(tag => {
+          review.tags.forEach((tag: string) => {
             counts[tag] = (counts[tag] || 0) + 1
           })
         }

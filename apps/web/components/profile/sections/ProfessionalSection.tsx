@@ -267,7 +267,6 @@ export function ProfessionalSection() {
           onRemoveTag={removeLanguage}
           placeholder="Add a language..."
           predefinedOptions={predefinedLanguages}
-          validationType="specialization"
           className={isEditing ? '' : 'pointer-events-none'}
         />
       </div>
@@ -288,7 +287,6 @@ export function ProfessionalSection() {
             'ON1 Photo RAW', 'Corel PaintShop Pro', 'GIMP', 'Darktable',
             'Affinity Photo', 'Pixelmator Pro', 'Canva', 'Figma'
           ]}
-          validationType="specialization"
           className={isEditing ? '' : 'pointer-events-none'}
         />
       </div>
