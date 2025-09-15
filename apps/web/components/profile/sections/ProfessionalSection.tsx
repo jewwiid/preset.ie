@@ -122,7 +122,6 @@ export function ProfessionalSection() {
           onRemoveTag={removeSpecialization}
           placeholder="Add a specialization..."
           predefinedOptions={predefinedSpecializations}
-          validationType="specialization"
           className={isEditing ? '' : 'pointer-events-none'}
         />
       </div>
