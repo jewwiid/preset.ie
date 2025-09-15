@@ -4,8 +4,8 @@ import * as React from "react"
 import { cn } from "../../lib/utils"
 
 interface SliderProps {
-  value: number
-  onValueChange: (value: number) => void
+  value: number | number[]
+  onValueChange: (value: number | number[]) => void
   min?: number
   max?: number
   step?: number
@@ -14,8 +14,10 @@ interface SliderProps {
 
 const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
   ({ value, onValueChange, min = 0, max = 100, step = 1, className, ...props }, ref) => {
-    // Calculate percentage for track fill
-    const percentage = ((value - min) / (max - min)) * 100
+    // Handle both single value and range values
+    const isRange = Array.isArray(value)
+    const currentValue = isRange ? value[0] : value
+    const percentage = ((currentValue - min) / (max - min)) * 100
 
     return (
       <div className={cn("relative w-full", className)}>
@@ -25,8 +27,15 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
           min={min}
           max={max}
           step={step}
-          value={value}
-          onChange={(e) => onValueChange(Number(e.target.value))}
+          value={currentValue}
+          onChange={(e) => {
+            const newValue = Number(e.target.value)
+            if (isRange) {
+              onValueChange([newValue, value[1]])
+            } else {
+              onValueChange(newValue)
+            }
+          }}
           className={cn(
             "w-full h-2 rounded-lg appearance-none cursor-pointer",
             "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2",

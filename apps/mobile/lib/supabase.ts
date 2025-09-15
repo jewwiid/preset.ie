@@ -2,7 +2,7 @@ import 'react-native-url-polyfill/auto'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createClient } from '@supabase/supabase-js'
 import * as SecureStore from 'expo-secure-store'
-import * as aesjs from 'aes-js'
+const aesjs = require('aes-js')
 import 'react-native-get-random-values'
 import { Platform } from 'react-native'
 

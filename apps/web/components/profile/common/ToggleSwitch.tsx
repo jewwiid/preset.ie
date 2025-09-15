@@ -1,0 +1,58 @@
+'use client'
+
+import React from 'react'
+import { ToggleSwitchProps } from '../types/profile'
+
+export function ToggleSwitch({
+  label,
+  checked,
+  onChange,
+  disabled = false,
+  className = ''
+}: ToggleSwitchProps) {
+  return (
+    <div className={`flex items-center justify-between ${className}`}>
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label}
+      </label>
+      
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        disabled={disabled}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+          checked 
+            ? 'bg-blue-600' 
+            : 'bg-gray-200 dark:bg-gray-700'
+        } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            checked ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    </div>
+  )
+}
+
+// Specialized toggle components for common use cases
+export function LocationToggle(props: Omit<ToggleSwitchProps, 'label'>) {
+  return <ToggleSwitch {...props} label="Show location" />
+}
+
+export function TravelToggle(props: Omit<ToggleSwitchProps, 'label'>) {
+  return <ToggleSwitch {...props} label="Available for travel" />
+}
+
+export function StudioToggle(props: Omit<ToggleSwitchProps, 'label'>) {
+  return <ToggleSwitch {...props} label="Has studio" />
+}
+
+export function TattoosToggle(props: Omit<ToggleSwitchProps, 'label'>) {
+  return <ToggleSwitch {...props} label="Has tattoos" />
+}
+
+export function PiercingsToggle(props: Omit<ToggleSwitchProps, 'label'>) {
+  return <ToggleSwitch {...props} label="Has piercings" />
+}

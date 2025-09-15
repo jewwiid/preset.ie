@@ -1,0 +1,265 @@
+'use client'
+
+import React, { useState, useRef } from 'react'
+import { useProfile, useProfileUI, useProfileEditing, useProfileForm } from '../context/ProfileContext'
+import { Edit3, Globe, Lock, User, Camera, X } from 'lucide-react'
+import { supabase } from '../../../lib/supabase'
+import { useAuth } from '../../../lib/auth-context'
+
+export function ProfileHeaderSimple() {
+  const { profile } = useProfile()
+  const { showLocation } = useProfileUI()
+  const { isEditing, setEditing } = useProfileEditing()
+  const { handleSave, handleCancel, saving, updateField } = useProfileForm()
+  const { user } = useAuth()
+  
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // If already editing, we could show a cancel option
+      return
+    } else {
+      setEditing(true)
+    }
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user || !supabase) return
+
+    try {
+      setIsUploadingAvatar(true)
+      
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+      
+      if (uploadError) throw uploadError
+      
+      const { data } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(filePath)
+      
+      updateField('avatar_url', data.publicUrl)
+    } catch (error) {
+      console.error('Avatar upload error:', error)
+      alert('Failed to upload avatar. Please try again.')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
+  const handleBannerUpload = async (file: File) => {
+    if (!user || !supabase) return
+
+    try {
+      setIsUploadingBanner(true)
+      
+      const fileExt = file.name.split('.').pop()
+      const fileName = `banner_${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+      
+      if (uploadError) throw uploadError
+      
+      const { data } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(filePath)
+      
+      updateField('header_banner_url', data.publicUrl)
+    } catch (error) {
+      console.error('Banner upload error:', error)
+      alert('Failed to upload banner. Please try again.')
+    } finally {
+      setIsUploadingBanner(false)
+    }
+  }
+
+  return (
+    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+      {/* Header Banner */}
+      <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
+        {profile?.header_banner_url ? (
+          <img
+            src={profile.header_banner_url}
+            alt="Header banner"
+            className="w-full h-full object-cover"
+            style={{
+              objectPosition: profile.header_banner_position || 'center'
+            }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600" />
+        )}
+        <div className="absolute inset-0 bg-black bg-opacity-20" />
+        
+        {/* Banner edit button */}
+        {isEditing ? (
+          <button 
+            onClick={() => bannerInputRef.current?.click()}
+            disabled={isUploadingBanner}
+            className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 disabled:opacity-50"
+          >
+            {isUploadingBanner ? (
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Camera className="w-4 h-4" />
+            )}
+          </button>
+        ) : (
+          <button className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200">
+            <Edit3 className="w-4 h-4" />
+          </button>
+        )}
+        
+        {/* Hidden file input for banner */}
+        <input
+          ref={bannerInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) {
+              handleBannerUpload(file)
+            }
+          }}
+        />
+      </div>
+
+      {/* Profile Info */}
+      <div className="relative px-6 pb-6">
+        {/* Avatar */}
+        <div className="flex items-start gap-4 -mt-16 relative z-10">
+          <div className="relative group">
+            <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 overflow-hidden">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="Profile picture"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                  <User className="w-16 h-16 text-gray-500 dark:text-gray-400" />
+                </div>
+              )}
+            </div>
+            
+            {/* Avatar upload button */}
+            {isEditing && (
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors shadow-lg disabled:opacity-50"
+              >
+                {isUploadingAvatar ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
+              </button>
+            )}
+            
+            {/* Hidden file input for avatar */}
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  handleAvatarUpload(file)
+                }
+              }}
+            />
+          </div>
+
+          {/* Profile Details */}
+          <div className="flex-1 pt-16">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                  {profile?.display_name || 'Display Name'}
+                </h1>
+                
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  @{profile?.handle || 'handle'}
+                </div>
+                
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+                  {profile?.bio || 'No bio provided'}
+                </p>
+
+                {/* Location */}
+                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-1">
+                    {showLocation ? (
+                      <>
+                        <Globe className="w-4 h-4" />
+                        <span>
+                          {profile?.city || 'City'}, {profile?.country || 'Country'}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4" />
+                        <span>Location hidden</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                {!isEditing ? (
+                  <button 
+                    onClick={handleEditToggle}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Edit Profile
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleCancel}
+                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                    >
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

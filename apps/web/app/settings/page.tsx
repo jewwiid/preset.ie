@@ -57,7 +57,7 @@ export default function SettingsPage() {
       const { data, error } = await supabase!
         .from('user_settings')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id)
         .single()
 
       if (error) {
@@ -107,7 +107,7 @@ export default function SettingsPage() {
       const { data, error } = await supabase!
         .from('user_settings')
         .upsert({
-          user_id: user.id,
+          profile_id: user.id,
           email_notifications: settings.email_notifications,
           push_notifications: settings.push_notifications,
           marketing_emails: settings.marketing_emails,

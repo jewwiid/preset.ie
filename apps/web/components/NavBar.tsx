@@ -29,7 +29,8 @@ import {
   Shield,
   Settings,
   Heart,
-  ChevronDown
+  ChevronDown,
+  Target
 } from 'lucide-react'
 import { NotificationBell } from './NotificationBell'
 
@@ -63,6 +64,7 @@ export function NavBar() {
 
     // Base items for all authenticated users
     const baseItems = [
+      { label: 'Matchmaking', href: '/matchmaking', icon: Target, requiresAuth: true },
       { label: 'Messages', href: '/messages', icon: MessageSquare, requiresAuth: true },
     ]
 

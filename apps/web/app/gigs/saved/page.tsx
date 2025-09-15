@@ -25,7 +25,6 @@ interface SavedGig {
     application_deadline: string;
     max_applicants: number;
     current_applicants?: number;
-    moodboard_urls?: string[];
     status: string;
     created_at: string;
     owner_user_id: string;
@@ -38,6 +37,12 @@ interface SavedGig {
     palette_colors?: string[];
     style_tags?: string[];
     vibe_tags?: string[];
+    moodboards?: Array<{
+      id: string;
+      title: string;
+      items: any[];
+      palette: any;
+    }>;
   };
 }
 
@@ -95,7 +100,7 @@ export default function SavedGigsPage() {
               handle,
               verified_id
             ),
-            moodboards (
+            moodboards!gig_id (
               id,
               title,
               items,
@@ -272,9 +277,9 @@ export default function SavedGigsPage() {
               <div key={savedGig.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow relative">
                 {/* Gig Image/Moodboard Preview */}
                 <div className="relative h-48 bg-gray-200 rounded-t-lg overflow-hidden">
-                  {savedGig.gig.moodboard_urls && savedGig.gig.moodboard_urls.length > 0 ? (
+                  {savedGig.gig.moodboards && savedGig.gig.moodboards.length > 0 && savedGig.gig.moodboards[0].items && savedGig.gig.moodboards[0].items.length > 0 ? (
                     <img
-                      src={savedGig.gig.moodboard_urls[0]}
+                      src={savedGig.gig.moodboards[0].items[0].url || savedGig.gig.moodboards[0].items[0].thumbnail_url}
                       alt={savedGig.gig.title}
                       className="w-full h-full object-cover"
                     />

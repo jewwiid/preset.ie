@@ -4,8 +4,73 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
+import { User, Target, TrendingUp, Users } from 'lucide-react'
+import CompatibilityScore from '../components/matchmaking/CompatibilityScore'
+import MatchmakingCard from '../components/matchmaking/MatchmakingCard'
+import { CompatibilityData, Recommendation } from '../../lib/types/matchmaking'
 // Simplified credit calculation
 const calculateCreditValue = (credits: number) => credits * 0.01; // Mock calculation
+
+// Profile completion calculation
+const calculateProfileCompletion = (profile: UserProfile): { percentage: number; missingFields: string[] } => {
+  const fields = [
+    { key: 'bio', label: 'Bio', weight: 5 },
+    { key: 'city', label: 'Location', weight: 5 },
+    { key: 'country', label: 'Country', weight: 3 },
+    { key: 'phone_number', label: 'Phone Number', weight: 3 },
+    { key: 'instagram_handle', label: 'Instagram', weight: 2 },
+    { key: 'tiktok_handle', label: 'TikTok', weight: 2 },
+    { key: 'website_url', label: 'Website', weight: 3 },
+    { key: 'portfolio_url', label: 'Portfolio', weight: 5 },
+    { key: 'years_experience', label: 'Experience', weight: 8 },
+    { key: 'specializations', label: 'Specializations', weight: 10 },
+    { key: 'equipment_list', label: 'Equipment', weight: 5 },
+    { key: 'editing_software', label: 'Software', weight: 5 },
+    { key: 'languages', label: 'Languages', weight: 3 },
+    { key: 'hourly_rate_min', label: 'Rate Range', weight: 8 },
+    { key: 'available_for_travel', label: 'Travel Availability', weight: 3 },
+    { key: 'has_studio', label: 'Studio Info', weight: 3 },
+    { key: 'typical_turnaround_days', label: 'Turnaround Time', weight: 3 },
+    
+    // New demographic fields
+    { key: 'gender_identity', label: 'Gender Identity', weight: 3 },
+    { key: 'ethnicity', label: 'Ethnicity', weight: 2 },
+    { key: 'nationality', label: 'Nationality', weight: 2 },
+    { key: 'body_type', label: 'Body Type', weight: 3 },
+    { key: 'experience_level', label: 'Experience Level', weight: 5 },
+    { key: 'state_province', label: 'State/Province', weight: 2 },
+    { key: 'availability_status', label: 'Availability Status', weight: 4 },
+    
+    // Work preferences
+    { key: 'accepts_tfp', label: 'TFP Acceptance', weight: 3 },
+    { key: 'prefers_studio', label: 'Studio Preference', weight: 2 },
+    { key: 'prefers_outdoor', label: 'Outdoor Preference', weight: 2 },
+    { key: 'available_weekdays', label: 'Weekday Availability', weight: 2 },
+    { key: 'available_weekends', label: 'Weekend Availability', weight: 2 },
+    { key: 'works_with_teams', label: 'Team Work Preference', weight: 2 }
+  ];
+
+  let completedWeight = 0;
+  let totalWeight = 0;
+  const missingFields: string[] = [];
+
+  fields.forEach(field => {
+    totalWeight += field.weight;
+    const value = profile[field.key as keyof UserProfile];
+    
+    if (value !== undefined && value !== null && value !== '' && 
+        (!Array.isArray(value) || value.length > 0)) {
+      completedWeight += field.weight;
+    } else {
+      missingFields.push(field.label);
+    }
+  });
+
+  return {
+    percentage: Math.round((completedWeight / totalWeight) * 100),
+    missingFields
+  };
+};
 
 interface UserProfile {
   id: string
@@ -13,6 +78,36 @@ interface UserProfile {
   handle: string
   bio?: string
   city?: string
+  country?: string
+  age_verified?: boolean
+  account_status?: string
+  phone_number?: string
+  instagram_handle?: string
+  tiktok_handle?: string
+  website_url?: string
+  portfolio_url?: string
+  years_experience?: number
+  specializations?: string[]
+  equipment_list?: string[]
+  editing_software?: string[]
+  languages?: string[]
+  hourly_rate_min?: number
+  hourly_rate_max?: number
+  available_for_travel?: boolean
+  travel_radius_km?: number
+  studio_name?: string
+  has_studio?: boolean
+  studio_address?: string
+  typical_turnaround_days?: number
+  height_cm?: number
+  measurements?: string
+  eye_color?: string
+  hair_color?: string
+  shoe_size?: string
+  clothing_sizes?: string
+  tattoos?: boolean
+  piercings?: boolean
+  talent_categories?: string[]
   role_flags: string[]
   style_tags: string[]
   subscription_tier: string
@@ -20,6 +115,42 @@ interface UserProfile {
   avatar_url?: string
   header_banner_url?: string
   header_banner_position?: string // JSON string of BannerPosition
+  
+  // New demographic fields from migration
+  gender_identity?: 'male' | 'female' | 'non_binary' | 'genderfluid' | 'agender' | 'transgender_male' | 'transgender_female' | 'prefer_not_to_say' | 'other'
+  ethnicity?: 'african_american' | 'asian' | 'caucasian' | 'hispanic_latino' | 'middle_eastern' | 'native_american' | 'pacific_islander' | 'mixed_race' | 'other' | 'prefer_not_to_say'
+  nationality?: string
+  weight_kg?: number
+  body_type?: 'petite' | 'slim' | 'athletic' | 'average' | 'curvy' | 'plus_size' | 'muscular' | 'tall' | 'short' | 'other'
+  hair_length?: string
+  skin_tone?: string
+  experience_level?: 'beginner' | 'intermediate' | 'advanced' | 'professional' | 'expert'
+  state_province?: string
+  timezone?: string
+  passport_valid?: boolean
+  availability_status?: 'available' | 'busy' | 'unavailable' | 'limited' | 'weekends_only' | 'weekdays_only'
+  preferred_working_hours?: string
+  blackout_dates?: string[]
+  
+  // Privacy controls
+  show_age?: boolean
+  show_location?: boolean
+  show_physical_attributes?: boolean
+  
+  // Work preferences
+  accepts_tfp?: boolean
+  accepts_expenses_only?: boolean
+  prefers_studio?: boolean
+  prefers_outdoor?: boolean
+  available_weekdays?: boolean
+  available_weekends?: boolean
+  available_evenings?: boolean
+  available_overnight?: boolean
+  works_with_teams?: boolean
+  prefers_solo_work?: boolean
+  comfortable_with_nudity?: boolean
+  comfortable_with_intimate_content?: boolean
+  requires_model_release?: boolean
 }
 
 interface BannerPosition {
@@ -54,6 +185,16 @@ export default function Dashboard() {
     consumed_this_month: 0
   })
   const [isRecentGigsExpanded, setIsRecentGigsExpanded] = useState(false)
+  
+  // Matchmaking state
+  const [matchmakingData, setMatchmakingData] = useState({
+    topCompatibleGigs: [] as Recommendation[],
+    topCompatibleUsers: [] as Recommendation[],
+    averageCompatibility: 0,
+    totalMatches: 0
+  })
+  const [matchmakingLoading, setMatchmakingLoading] = useState(false)
+  
   const router = useRouter()
 
   useEffect(() => {
@@ -293,9 +434,136 @@ export default function Dashboard() {
         })
       }
 
-      console.log('✅ Dashboard data loaded successfully with real database results')
+        console.log('✅ Dashboard data loaded successfully with real database results')
+        
+        // Load matchmaking data
+        await loadMatchmakingData(currentProfile)
     } catch (err) {
       console.error('Error loading dashboard data:', err)
+    }
+  }
+
+  const loadMatchmakingData = async (profileData: UserProfile) => {
+    if (!user || !profileData || !supabase) return
+
+    try {
+      setMatchmakingLoading(true)
+      const isTalent = userRole?.isTalent || profileData.role_flags?.includes('TALENT') || profileData.role_flags?.includes('BOTH')
+      const isContributor = userRole?.isContributor || profileData.role_flags?.includes('CONTRIBUTOR') || profileData.role_flags?.includes('BOTH')
+
+      // For talent users, get compatible gigs
+      if (isTalent) {
+        const { data: compatibleGigs, error: gigsError } = await supabase
+          .rpc('find_compatible_gigs_for_user', {
+            p_profile_id: profileData.id,
+            p_limit: 3
+          })
+
+        if (!gigsError && compatibleGigs) {
+          const gigRecommendations = compatibleGigs.map((gig: any) => ({
+            id: gig.gig_id,
+            type: 'gig' as const,
+            data: {
+              id: gig.gig_id,
+              title: gig.title,
+              description: 'Compatible gig based on your profile',
+              location_text: gig.location_text,
+              start_time: gig.start_time,
+              end_time: gig.start_time,
+              comp_type: 'TFP',
+              owner_user_id: 'unknown',
+              status: 'PUBLISHED',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            },
+            compatibility_score: gig.compatibility_score,
+            compatibility_breakdown: {
+              gender: gig.match_factors.gender_match ? 20 : 0,
+              age: gig.match_factors.age_match ? 20 : 0,
+              height: gig.match_factors.height_match ? 15 : 0,
+              experience: gig.match_factors.experience_match ? 25 : 0,
+              specialization: typeof gig.match_factors.specialization_match === 'number' ? 
+                (gig.match_factors.specialization_match / gig.match_factors.total_required) * 20 : 
+                gig.match_factors.specialization_match ? 20 : 0,
+              total: gig.compatibility_score
+            },
+            reason: 'Matches your profile',
+            priority: gig.compatibility_score >= 80 ? 'high' as const : 
+                     gig.compatibility_score >= 60 ? 'medium' as const : 'low' as const
+          }))
+
+          setMatchmakingData(prev => ({
+            ...prev,
+            topCompatibleGigs: gigRecommendations,
+            averageCompatibility: gigRecommendations.length > 0 ? 
+              gigRecommendations.reduce((sum: number, gig: Recommendation) => sum + gig.compatibility_score, 0) / gigRecommendations.length : 0,
+            totalMatches: gigRecommendations.length
+          }))
+        }
+      }
+
+      // For contributors, get compatible users
+      if (isContributor) {
+        // Get compatible users for recent gigs
+        const { data: recentGigs } = await supabase
+          .from('gigs')
+          .select('id')
+          .eq('owner_user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (recentGigs && recentGigs.length > 0) {
+          const { data: compatibleUsers, error: usersError } = await supabase
+            .rpc('find_compatible_users_for_gig', {
+              p_gig_id: recentGigs[0].id,
+              p_limit: 3
+            })
+
+          if (!usersError && compatibleUsers) {
+            const userRecommendations = compatibleUsers.map((user: any) => ({
+              id: user.profile_id,
+              type: 'user' as const,
+              data: {
+                id: user.profile_id,
+                user_id: user.profile_id,
+                display_name: user.display_name,
+                handle: user.display_name.toLowerCase().replace(/\s+/g, ''),
+                city: user.city,
+                country: 'Unknown',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              },
+              compatibility_score: user.compatibility_score,
+              compatibility_breakdown: {
+                gender: user.match_factors.gender_match ? 20 : 0,
+                age: user.match_factors.age_match ? 20 : 0,
+                height: user.match_factors.height_match ? 15 : 0,
+                experience: user.match_factors.experience_match ? 25 : 0,
+                specialization: typeof user.match_factors.specialization_match === 'number' ? 
+                  (user.match_factors.specialization_match / user.match_factors.total_required) * 20 : 
+                  user.match_factors.specialization_match ? 20 : 0,
+                total: user.compatibility_score
+              },
+              reason: 'Matches gig requirements',
+              priority: user.compatibility_score >= 80 ? 'high' as const : 
+                       user.compatibility_score >= 60 ? 'medium' as const : 'low' as const
+            }))
+
+            setMatchmakingData(prev => ({
+              ...prev,
+              topCompatibleUsers: userRecommendations,
+              averageCompatibility: userRecommendations.length > 0 ? 
+                userRecommendations.reduce((sum: number, user: Recommendation) => sum + user.compatibility_score, 0) / userRecommendations.length : 0,
+              totalMatches: userRecommendations.length
+            }))
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('Error loading matchmaking data:', error)
+    } finally {
+      setMatchmakingLoading(false)
     }
   }
 
@@ -503,6 +771,65 @@ export default function Dashboard() {
                 </button>
               </div>
 
+              {/* Profile Completion Progress */}
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800/50">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">Profile Completion</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-xs">Complete your profile to get more gigs</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-900 dark:text-white text-xl font-bold">{calculateProfileCompletion(profile).percentage}%</p>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="mb-3">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div 
+                        className="bg-gradient-to-r from-blue-400 to-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${calculateProfileCompletion(profile).percentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Missing Fields */}
+                  {calculateProfileCompletion(profile).missingFields.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Missing information:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {calculateProfileCompletion(profile).missingFields.slice(0, 4).map((field, index) => (
+                          <span 
+                            key={index}
+                            className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full"
+                          >
+                            {field}
+                          </span>
+                        ))}
+                        {calculateProfileCompletion(profile).missingFields.length > 4 && (
+                          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full">
+                            +{calculateProfileCompletion(profile).missingFields.length - 4} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={() => router.push('/profile')}
+                    className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                  >
+                    Complete Profile
+                  </button>
+                </div>
+              </div>
+
               {/* Location Row */}
               {profile.city && (
                 <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
@@ -607,6 +934,228 @@ export default function Dashboard() {
           </div>
             </div>
           </div>
+
+          {/* Experience-Based Suggestions */}
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Smart Suggestions</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Based on your experience and profile</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {/* Experience-based suggestions */}
+              {profile.years_experience && profile.years_experience >= 3 && (
+                <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-100 dark:border-green-800/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                        Premium Creator Status
+                      </p>
+                      <p className="text-xs text-green-600 dark:text-green-300 mt-1">
+                        With {profile.years_experience} years of experience, consider applying for premium creator status to access higher-paying gigs.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Specialization suggestions */}
+              {profile.specializations && profile.specializations.length > 0 && (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        Specialization Opportunities
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                        Your specializations in {profile.specializations.slice(0, 2).join(', ')} are in high demand. Consider creating targeted gigs.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Rate optimization suggestions */}
+              {profile.hourly_rate_min && profile.hourly_rate_max && (
+                <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-100 dark:border-yellow-800/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                        Rate Optimization
+                      </p>
+                      <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
+                        Your rate range (€{profile.hourly_rate_min}-{profile.hourly_rate_max}/hour) is competitive. Consider adjusting based on project complexity.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Travel availability suggestions */}
+              {profile.available_for_travel && (
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                        Travel Opportunities
+                      </p>
+                      <p className="text-xs text-purple-600 dark:text-purple-300 mt-1">
+                        Your travel availability (up to {profile.travel_radius_km || 'unlimited'}km) opens up more gig opportunities. Highlight this in your profile.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Default suggestion for new users */}
+              {(!profile.years_experience || !profile.specializations || profile.specializations.length === 0) && (
+                <div className="p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 rounded-xl border border-gray-100 dark:border-gray-800/50">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        Complete Your Profile
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                        Add your experience, specializations, and rate information to get personalized suggestions and more gig opportunities.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Matchmaking Widgets */}
+          {(matchmakingData.topCompatibleGigs.length > 0 || matchmakingData.topCompatibleUsers.length > 0) && (
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center">
+                  <Target className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Smart Matches</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {matchmakingData.totalMatches > 0 
+                      ? `${matchmakingData.totalMatches} compatible ${matchmakingData.totalMatches === 1 ? 'match' : 'matches'} found`
+                      : 'Finding compatible opportunities...'
+                    }
+                  </p>
+                </div>
+                <div className="ml-auto">
+                  <button
+                    onClick={() => router.push('/matchmaking')}
+                    className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                  >
+                    View All →
+                  </button>
+                </div>
+              </div>
+
+              {/* Matchmaking Summary */}
+              {matchmakingData.averageCompatibility > 0 && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="w-5 h-5 text-emerald-600" />
+                      <div>
+                        <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                          Average Compatibility Score
+                        </p>
+                        <p className="text-xs text-emerald-600 dark:text-emerald-300">
+                          Based on your profile and available opportunities
+                        </p>
+                      </div>
+                    </div>
+                    <CompatibilityScore 
+                      score={Math.round(matchmakingData.averageCompatibility)}
+                      size="md"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Compatible Gigs for Talent */}
+              {matchmakingData.topCompatibleGigs.length > 0 && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-white">
+                      Recommended Gigs
+                    </h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {matchmakingData.topCompatibleGigs.map((gig) => (
+                      <MatchmakingCard
+                        key={gig.id}
+                        type={gig.type}
+                        data={gig.data}
+                        compatibilityScore={gig.compatibility_score}
+                        compatibilityBreakdown={gig.compatibility_breakdown}
+                        onViewDetails={() => router.push(`/gigs/${gig.id}`)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Compatible Users for Contributors */}
+              {matchmakingData.topCompatibleUsers.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-md font-semibold text-gray-900 dark:text-white">
+                      Recommended Talent
+                    </h4>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {matchmakingData.topCompatibleUsers.map((user) => (
+                      <MatchmakingCard
+                        key={user.id}
+                        type={user.type}
+                        data={user.data}
+                        compatibilityScore={user.compatibility_score}
+                        compatibilityBreakdown={user.compatibility_breakdown}
+                        onViewDetails={() => router.push(`/profile/${user.id}`)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
         {/* Stats Overview - Clickable Navigation Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

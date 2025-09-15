@@ -6,39 +6,33 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
-  ActivityIndicator,
   Image,
+  TextInput,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
-import { supabase } from '../../lib/supabase'
+import { databaseService } from '../../lib/database-service'
 import { useNavigation } from '@react-navigation/native'
+import { StackNavigationProp } from '@react-navigation/stack'
+import { colors } from '../../styles/colors'
+import { typography } from '../../styles/typography'
+import { spacing, borderRadius, shadows } from '../../styles/spacing'
+import { Card, Badge, Input } from '../../components/ui'
+import { RootStackParamList } from '../../navigation'
+import { GigWithProfile, GigFilters } from '../../lib/database-types'
 
-interface Gig {
-  id: string
-  title: string
-  description: string
-  comp_type: string
-  location_text: string
-  city: string
-  country: string
-  start_time: string
-  application_deadline: string
-  max_applicants: number
-  moodboard_urls: string[]
-  users_profile: {
-    display_name: string
-    avatar_url: string
-    handle: string
-    verified_id: boolean
-  }
-}
+type GigsScreenNavigationProp = StackNavigationProp<RootStackParamList>
+
+// Use the proper database type
+type Gig = GigWithProfile
 
 export default function GigsScreen() {
-  const navigation = useNavigation()
+  const navigation = useNavigation<GigsScreenNavigationProp>()
   const [gigs, setGigs] = useState<Gig[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedFilter, setSelectedFilter] = useState<string>('all')
 
   useEffect(() => {
     fetchGigs()
@@ -46,20 +40,21 @@ export default function GigsScreen() {
 
   const fetchGigs = async () => {
     try {
-      const { data, error } = await supabase
-        .from('gigs')
-        .select(`
-          *,
-          users_profile!owner_user_id (
-            display_name,
-            avatar_url,
-            handle,
-            verified_id
-          )
-        `)
-        .eq('status', 'PUBLISHED')
-        .gte('application_deadline', new Date().toISOString())
-        .order('created_at', { ascending: false })
+      const filters: GigFilters = {
+        status: 'PUBLISHED'
+      }
+
+      // Apply filters
+      if (selectedFilter !== 'all') {
+        filters.comp_type = selectedFilter.toUpperCase() as any
+      }
+
+      // Apply search
+      if (searchQuery.trim()) {
+        filters.search = searchQuery
+      }
+
+      const { data, error } = await databaseService.gig.getGigs(filters)
 
       if (error) throw error
       setGigs(data || [])
@@ -76,6 +71,21 @@ export default function GigsScreen() {
     fetchGigs()
   }
 
+  const handleSearch = (text: string) => {
+    setSearchQuery(text)
+    // Debounce search
+    setTimeout(() => {
+      if (text === searchQuery) {
+        fetchGigs()
+      }
+    }, 500)
+  }
+
+  const handleFilterChange = (filter: string) => {
+    setSelectedFilter(filter)
+    fetchGigs()
+  }
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -84,75 +94,113 @@ export default function GigsScreen() {
   const getCompTypeColor = (type: string) => {
     switch (type) {
       case 'PAID':
-        return '#10B981'
+        return colors.success
       case 'TFP':
-        return '#3B82F6'
+        return colors.info
       case 'EXPENSES':
-        return '#8B5CF6'
+        return colors.warning
       default:
-        return '#6B7280'
+        return colors.gray[500]
     }
   }
+
+  const getCompTypeVariant = (type: string): 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning' => {
+    switch (type) {
+      case 'PAID':
+        return 'success'
+      case 'TFP':
+        return 'default'
+      case 'EXPENSES':
+        return 'warning'
+      default:
+        return 'secondary'
+    }
+  }
+
+  const renderFilterChip = (filter: string, label: string) => (
+    <TouchableOpacity
+      key={filter}
+      style={[
+        styles.filterChip,
+        selectedFilter === filter && styles.filterChipActive
+      ]}
+      onPress={() => handleFilterChange(filter)}
+    >
+      <Text style={[
+        styles.filterChipText,
+        selectedFilter === filter && styles.filterChipTextActive
+      ]}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  )
 
   const renderGigCard = ({ item }: { item: Gig }) => (
     <TouchableOpacity
       style={styles.gigCard}
-      onPress={() => navigation.navigate('GigDetail' as never, { gigId: item.id } as never)}
+      onPress={() => navigation.navigate('GigDetail', { gigId: item.id })}
     >
-      {/* Gig Image or Placeholder */}
-      <View style={styles.imageContainer}>
-        {item.moodboard_urls && item.moodboard_urls.length > 0 ? (
-          <Image source={{ uri: item.moodboard_urls[0] }} style={styles.gigImage} />
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            <Ionicons name="camera" size={40} color="#9CA3AF" />
-          </View>
-        )}
-        <View style={[styles.compTypeBadge, { backgroundColor: getCompTypeColor(item.comp_type) }]}>
-          <Text style={styles.compTypeText}>{item.comp_type}</Text>
-        </View>
-      </View>
-
-      {/* Gig Details */}
-      <View style={styles.gigContent}>
-        <Text style={styles.gigTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-
-        {/* Creator Info */}
-        <View style={styles.creatorInfo}>
-          <Image
-            source={{ uri: item.users_profile.avatar_url || 'https://via.placeholder.com/30' }}
-            style={styles.avatar}
-          />
-          <Text style={styles.creatorName}>{item.users_profile.display_name}</Text>
-          {item.users_profile.verified_id && (
-            <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-circle" size={14} color="#3B82F6" />
+      <Card style={styles.gigCardContent} variant="elevated">
+        {/* Gig Image or Placeholder */}
+        <View style={styles.imageContainer}>
+          {(item.moodboard_url || (item.moodboard_urls && item.moodboard_urls.length > 0)) ? (
+            <Image 
+              source={{ uri: item.moodboard_url || item.moodboard_urls?.[0] }} 
+              style={styles.gigImage} 
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="camera-outline" size={40} color={colors.text.tertiary} />
             </View>
           )}
-        </View>
-
-        {/* Location & Date */}
-        <View style={styles.metaInfo}>
-          <View style={styles.metaItem}>
-            <Ionicons name="location-outline" size={14} color="#6B7280" />
-            <Text style={styles.metaText}>
-              {item.city}, {item.country}
-            </Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Ionicons name="calendar-outline" size={14} color="#6B7280" />
-            <Text style={styles.metaText}>{formatDate(item.start_time)}</Text>
+          <View style={styles.compTypeBadge}>
+            <Badge variant={getCompTypeVariant(item.comp_type)} size="sm">
+              {item.comp_type}
+            </Badge>
           </View>
         </View>
 
-        {/* Apply Button */}
-        <TouchableOpacity style={styles.applyButton}>
-          <Text style={styles.applyButtonText}>View Details</Text>
-          <Ionicons name="arrow-forward" size={16} color="#4F46E5" />
-        </TouchableOpacity>
-      </View>
+        {/* Gig Details */}
+        <View style={styles.gigContent}>
+          <Text style={styles.gigTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+
+          {/* Creator Info */}
+          <View style={styles.creatorInfo}>
+            <Image
+              source={{ uri: item.users_profile.avatar_url || 'https://via.placeholder.com/30' }}
+              style={styles.avatar}
+            />
+            <Text style={styles.creatorName}>{item.users_profile.display_name}</Text>
+            {item.users_profile.verified_id && (
+              <View style={styles.verifiedBadge}>
+                <Ionicons name="checkmark-circle" size={14} color={colors.info} />
+              </View>
+            )}
+          </View>
+
+          {/* Location & Date */}
+          <View style={styles.metaInfo}>
+            <View style={styles.metaItem}>
+              <Ionicons name="location-outline" size={14} color={colors.text.tertiary} />
+              <Text style={styles.metaText}>
+                {item.city}, {item.country}
+              </Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Ionicons name="calendar-outline" size={14} color={colors.text.tertiary} />
+              <Text style={styles.metaText}>{formatDate(item.start_time)}</Text>
+            </View>
+          </View>
+
+          {/* Apply Button */}
+          <TouchableOpacity style={styles.applyButton}>
+            <Text style={styles.applyButtonText}>View Details</Text>
+            <Ionicons name="arrow-forward" size={16} color={colors.preset[500]} />
+          </TouchableOpacity>
+        </View>
+      </Card>
     </TouchableOpacity>
   )
 
@@ -160,7 +208,10 @@ export default function GigsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4F46E5" />
+          <View style={styles.loadingSpinner}>
+            <View style={styles.spinnerOuter} />
+            <View style={styles.spinnerInner} />
+          </View>
         </View>
       </SafeAreaView>
     )
@@ -168,19 +219,41 @@ export default function GigsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Search and Filters */}
+      <View style={styles.searchSection}>
+        <Input
+          placeholder="Search gigs..."
+          value={searchQuery}
+          onChangeText={handleSearch}
+          leftIcon={<Ionicons name="search-outline" size={20} color={colors.text.tertiary} />}
+          style={styles.searchInput}
+        />
+        
+        <View style={styles.filtersContainer}>
+          {renderFilterChip('all', 'All')}
+          {renderFilterChip('paid', 'Paid')}
+          {renderFilterChip('tfp', 'TFP')}
+          {renderFilterChip('expenses', 'Expenses')}
+        </View>
+      </View>
+
       <FlatList
         data={gigs}
         renderItem={renderGigCard}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.preset[500]} />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="search-outline" size={64} color="#9CA3AF" />
+            <View style={styles.emptyIcon}>
+              <Ionicons name="search-outline" size={48} color={colors.text.tertiary} />
+            </View>
             <Text style={styles.emptyTitle}>No Gigs Available</Text>
-            <Text style={styles.emptyText}>Check back later for new opportunities</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery ? 'No gigs match your search criteria' : 'Check back later for new opportunities'}
+            </Text>
           </View>
         }
       />
@@ -191,35 +264,82 @@ export default function GigsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.background.primary,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingSpinner: {
+    position: 'relative',
+  },
+  spinnerOuter: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 4,
+    borderColor: colors.preset[200],
+  },
+  spinnerInner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 4,
+    borderColor: colors.preset[500],
+    borderTopColor: 'transparent',
+  },
+  searchSection: {
+    padding: spacing.lg,
+    backgroundColor: colors.background.secondary,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.primary,
+  },
+  searchInput: {
+    marginBottom: spacing.md,
+  },
+  filtersContainer: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  filterChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.background.primary,
+    borderWidth: 1,
+    borderColor: colors.border.primary,
+  },
+  filterChipActive: {
+    backgroundColor: colors.preset[500],
+    borderColor: colors.preset[500],
+  },
+  filterChipText: {
+    ...typography.bodySmall,
+    color: colors.text.secondary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  filterChipTextActive: {
+    color: colors.text.inverse,
+  },
   listContent: {
-    padding: 16,
+    padding: spacing.lg,
+    paddingBottom: spacing['2xl'],
   },
   gigCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: spacing.lg,
+  },
+  gigCardContent: {
+    padding: 0,
+    overflow: 'hidden',
   },
   imageContainer: {
     position: 'relative',
     height: 200,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    overflow: 'hidden',
   },
   gigImage: {
     width: '100%',
@@ -229,95 +349,95 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.background.secondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   compTypeBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  compTypeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
+    top: spacing.md,
+    left: spacing.md,
   },
   gigContent: {
-    padding: 16,
+    padding: spacing.lg,
   },
   gigTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 8,
+    ...typography.h5,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   creatorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   avatar: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    marginRight: 8,
+    marginRight: spacing.sm,
   },
   creatorName: {
-    fontSize: 14,
-    color: '#6B7280',
+    ...typography.bodySmall,
+    color: colors.text.secondary,
   },
   verifiedBadge: {
-    marginLeft: 4,
+    marginLeft: spacing.xs,
   },
   metaInfo: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: spacing.lg,
   },
   metaText: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginLeft: 4,
+    ...typography.caption,
+    color: colors.text.tertiary,
+    marginLeft: spacing.xs,
   },
   applyButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    marginTop: 8,
-    marginHorizontal: -16,
+    borderTopColor: colors.border.primary,
+    marginTop: spacing.sm,
+    marginHorizontal: -spacing.lg,
   },
   applyButtonText: {
-    color: '#4F46E5',
-    fontSize: 14,
-    fontWeight: '600',
-    marginRight: 4,
+    ...typography.bodySmall,
+    color: colors.preset[500],
+    fontWeight: typography.fontWeight.medium,
+    marginRight: spacing.xs,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 100,
+    paddingVertical: spacing['5xl'],
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.background.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-    marginTop: 16,
-    marginBottom: 8,
+    ...typography.h4,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
   },
   emptyText: {
-    fontSize: 14,
-    color: '#6B7280',
+    ...typography.body,
+    color: colors.text.secondary,
+    textAlign: 'center',
   },
 })

@@ -11,8 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { supabase } from '../../lib/supabase'
+import { ApplicationWithGig } from '../../lib/database-types'
 
-interface Application {
+// Type that matches the actual query result
+type Application = {
   id: string
   status: string
   updated_at: string
@@ -27,8 +29,8 @@ interface Application {
     users_profile: {
       display_name: string
       handle: string
-    }
-  }
+    }[]
+  }[]
 }
 
 export default function ApplicationsScreen() {
@@ -117,7 +119,7 @@ export default function ApplicationsScreen() {
     <TouchableOpacity style={styles.applicationCard}>
       <View style={styles.cardHeader}>
         <Text style={styles.gigTitle} numberOfLines={2}>
-          {item.gigs.title}
+          {item.gigs[0]?.title}
         </Text>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
           <Ionicons 
@@ -130,24 +132,24 @@ export default function ApplicationsScreen() {
       </View>
       
       <Text style={styles.gigDescription} numberOfLines={2}>
-        {item.gigs.description}
+        {item.gigs[0]?.description}
       </Text>
       
       <View style={styles.gigDetails}>
         <View style={styles.detailItem}>
           <Ionicons name="briefcase" size={16} color="#6B7280" />
-          <Text style={styles.detailText}>{item.gigs.comp_type}</Text>
+          <Text style={styles.detailText}>{item.gigs[0]?.comp_type}</Text>
         </View>
         
         <View style={styles.detailItem}>
           <Ionicons name="location" size={16} color="#6B7280" />
-          <Text style={styles.detailText}>{item.gigs.location_text}</Text>
+          <Text style={styles.detailText}>{item.gigs[0]?.location_text}</Text>
         </View>
         
         <View style={styles.detailItem}>
           <Ionicons name="calendar" size={16} color="#6B7280" />
           <Text style={styles.detailText}>
-            {new Date(item.gigs.start_time).toLocaleDateString()}
+            {new Date(item.gigs[0]?.start_time || '').toLocaleDateString()}
           </Text>
         </View>
       </View>
@@ -157,7 +159,7 @@ export default function ApplicationsScreen() {
           Applied {new Date(item.updated_at).toLocaleDateString()}
         </Text>
         <Text style={styles.clientName}>
-          by {item.gigs.users_profile.display_name}
+          by {item.gigs[0]?.users_profile[0]?.display_name}
         </Text>
       </View>
     </TouchableOpacity>

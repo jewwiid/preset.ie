@@ -299,6 +299,39 @@ export default function CreateGigPage() {
       // Clear saved data
       clearUnsavedData()
       
+      // Send notifications if gig is being published
+      if (formData.status === 'PUBLISHED') {
+        try {
+          console.log('📢 Sending gig creation notifications...')
+          
+          // Get session for the API call
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            const response = await fetch('/api/notifications/gig-created', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                gigId,
+                publishNow: true
+              }),
+            })
+
+            const data = await response.json()
+            console.log('📦 Notification API response:', data)
+            
+            if (data.success && data.notificationsSent > 0) {
+              console.log(`✅ Successfully sent ${data.notificationsSent} notifications`)
+            }
+          }
+        } catch (notificationError) {
+          console.warn('Failed to send gig notifications:', notificationError)
+          // Don't fail the gig creation if notifications fail
+        }
+      }
+      
       // Redirect to gig detail page
       router.push(`/gigs/${gigId}`)
     } catch (err: any) {

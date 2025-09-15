@@ -1,0 +1,640 @@
+'use client'
+
+import React, { useState, useRef } from 'react'
+import { useProfile, useProfileUI, useProfileEditing, useProfileForm } from '../context/ProfileContext'
+import { 
+  Edit3, 
+  Globe, 
+  Lock, 
+  User, 
+  Camera, 
+  X, 
+  Instagram, 
+  ExternalLink, 
+  MapPin, 
+  Calendar, 
+  Award, 
+  ChevronDown, 
+  ChevronUp,
+  Mail,
+  Phone,
+  Briefcase,
+  Star,
+  Users,
+  Eye,
+  Heart,
+  CheckCircle,
+  Clock,
+  Settings,
+  Palette
+} from 'lucide-react'
+import { supabase } from '../../../lib/supabase'
+import { useAuth } from '../../../lib/auth-context'
+import { UserRatingDisplay } from '../sections/UserRatingDisplay'
+
+// Profile completion calculation
+const calculateProfileCompletion = (profile: any): number => {
+  const fields = [
+    { key: 'bio', weight: 5 },
+    { key: 'city', weight: 5 },
+    { key: 'country', weight: 3 },
+    { key: 'phone_number', weight: 3 },
+    { key: 'instagram_handle', weight: 2 },
+    { key: 'tiktok_handle', weight: 2 },
+    { key: 'website_url', weight: 3 },
+    { key: 'portfolio_url', weight: 5 },
+    { key: 'years_experience', weight: 8 },
+    { key: 'specializations', weight: 10 },
+    { key: 'equipment_list', weight: 5 },
+    { key: 'editing_software', weight: 5 },
+    { key: 'languages', weight: 3 },
+    { key: 'hourly_rate_min', weight: 8 },
+    { key: 'available_for_travel', weight: 3 },
+    { key: 'has_studio', weight: 3 },
+    { key: 'typical_turnaround_days', weight: 3 }
+  ];
+
+  let completedWeight = 0;
+  let totalWeight = 0;
+
+  fields.forEach(field => {
+    totalWeight += field.weight;
+    const value = profile[field.key];
+    
+    if (value !== undefined && value !== null && value !== '' && 
+        (!Array.isArray(value) || value.length > 0)) {
+      completedWeight += field.weight;
+    }
+  });
+
+  return Math.round((completedWeight / totalWeight) * 100);
+};
+
+export function ProfileHeaderEnhanced() {
+  const { profile } = useProfile()
+  const { showLocation } = useProfileUI()
+  const { isEditing, setEditing } = useProfileEditing()
+  const { handleSave, handleCancel, saving, updateField } = useProfileForm()
+  const { user } = useAuth()
+  
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [activeTab, setActiveTab] = useState('professional')
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
+
+  const profileCompletion = profile ? calculateProfileCompletion(profile) : 0
+  const isProfileComplete = profileCompletion === 100
+
+  // Tab configuration
+  const tabs = [
+    { id: 'professional', label: 'Professional', icon: Briefcase },
+    { id: 'contact', label: 'Contact', icon: Mail },
+    { id: 'equipment', label: 'Equipment & Software', icon: Camera },
+    { id: 'physical', label: 'Physical Attributes', icon: Users }
+  ]
+
+  // Professional Information
+  const professionalInfo = [
+    {
+      label: 'Years of Experience',
+      value: profile?.years_experience ? `${profile.years_experience} years` : 'Not specified',
+      icon: Calendar
+    },
+    {
+      label: 'Specializations',
+      value: profile?.specializations && profile.specializations.length > 0 ? profile.specializations.join(', ') : 'Not specified',
+      icon: Award
+    },
+    {
+      label: 'Hourly Rate',
+      value: profile?.hourly_rate_min ? `€${profile.hourly_rate_min} - €${profile.hourly_rate_max || 'N/A'}` : 'Not specified',
+      icon: Star
+    },
+    {
+      label: 'Turnaround Time',
+      value: profile?.typical_turnaround_days ? `${profile.typical_turnaround_days} days` : 'Not specified',
+      icon: Clock
+    }
+  ]
+
+  // Contact Information
+  const contactInfo = [
+    {
+      label: 'Phone',
+      value: profile?.phone_number || 'Not provided',
+      icon: Phone
+    },
+    {
+      label: 'Email',
+      value: 'Contact via profile', // Email is handled by auth system
+      icon: Mail
+    },
+    {
+      label: 'Location',
+      value: profile?.city && profile?.country ? `${profile.city}, ${profile.country}` : 'Not specified',
+      icon: MapPin
+    },
+    {
+      label: 'Languages',
+      value: profile?.languages && profile.languages.length > 0 ? profile.languages.join(', ') : 'Not specified',
+      icon: Globe
+    }
+  ]
+
+  // Equipment & Software
+  const equipmentInfo = [
+    {
+      label: 'Equipment',
+      value: profile?.equipment_list && profile.equipment_list.length > 0 ? profile.equipment_list.slice(0, 3).join(', ') + (profile.equipment_list.length > 3 ? ` +${profile.equipment_list.length - 3} more` : '') : 'Not specified',
+      icon: Camera
+    },
+    {
+      label: 'Editing Software',
+      value: profile?.editing_software && profile.editing_software.length > 0 ? profile.editing_software.slice(0, 3).join(', ') + (profile.editing_software.length > 3 ? ` +${profile.editing_software.length - 3} more` : '') : 'Not specified',
+      icon: Settings
+    },
+    {
+      label: 'Travel Availability',
+      value: profile?.available_for_travel ? `Yes (${profile.travel_radius_km}km radius)` : 'No',
+      icon: Globe
+    },
+    {
+      label: 'Studio',
+      value: profile?.has_studio ? profile.studio_name || 'Yes' : 'No',
+      icon: Briefcase
+    }
+  ]
+
+  // Physical Attributes (for talent)
+  const physicalInfo = profile?.talent_categories && profile.talent_categories.length > 0 ? [
+    {
+      label: 'Height',
+      value: profile?.height_cm ? `${profile.height_cm}cm` : 'Not specified',
+      icon: Users
+    },
+    {
+      label: 'Measurements',
+      value: profile?.measurements || 'Not specified',
+      icon: Users
+    },
+    {
+      label: 'Eye Color',
+      value: profile?.eye_color || 'Not specified',
+      icon: Eye
+    },
+    {
+      label: 'Hair Color',
+      value: profile?.hair_color || 'Not specified',
+      icon: Palette
+    }
+  ] : []
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'professional':
+        return (
+          <div className="space-y-4">
+            {professionalInfo.map((item, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <item.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</label>
+                  <div className="mt-1">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">{item.value}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      case 'contact':
+        return (
+          <div className="space-y-4">
+            {contactInfo.map((item, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <item.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</label>
+                  <div className="mt-1">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">{item.value}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      case 'equipment':
+        return (
+          <div className="space-y-4">
+            {equipmentInfo.map((item, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <item.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</label>
+                  <div className="mt-1">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">{item.value}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      case 'physical':
+        return (
+          <div className="space-y-4">
+            {physicalInfo.length > 0 ? (
+              physicalInfo.map((item, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <item.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</label>
+                    <div className="mt-1">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{item.value}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500 dark:text-gray-400">Physical attributes are only shown for talent profiles</p>
+              </div>
+            )}
+          </div>
+        )
+      default:
+        return null
+    }
+  }
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      return
+    } else {
+      setEditing(true)
+    }
+  }
+
+  const handleAvatarUpload = async (file: File) => {
+    if (!user || !supabase) return
+
+    try {
+      setIsUploadingAvatar(true)
+      
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+      
+      if (uploadError) throw uploadError
+      
+      const { data } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(filePath)
+      
+      updateField('avatar_url', data.publicUrl)
+    } catch (error) {
+      console.error('Avatar upload error:', error)
+      alert('Failed to upload avatar. Please try again.')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
+  const handleBannerUpload = async (file: File) => {
+    if (!user || !supabase) return
+
+    try {
+      setIsUploadingBanner(true)
+      
+      const fileExt = file.name.split('.').pop()
+      const fileName = `banner_${Date.now()}.${fileExt}`
+      const filePath = `${user.id}/${fileName}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+      
+      if (uploadError) throw uploadError
+      
+      const { data } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(filePath)
+      
+      updateField('header_banner_url', data.publicUrl)
+    } catch (error) {
+      console.error('Banner upload error:', error)
+      alert('Failed to upload banner. Please try again.')
+    } finally {
+      setIsUploadingBanner(false)
+    }
+  }
+
+  // Social links data
+  const socialLinks = [
+    {
+      name: 'Instagram',
+      handle: profile?.instagram_handle,
+      icon: Instagram,
+      color: 'from-pink-500 to-purple-600',
+      url: profile?.instagram_handle ? `https://instagram.com/${profile.instagram_handle}` : null
+    },
+    {
+      name: 'TikTok',
+      handle: profile?.tiktok_handle,
+      icon: ExternalLink,
+      color: 'from-black to-gray-800',
+      url: profile?.tiktok_handle ? `https://tiktok.com/@${profile.tiktok_handle}` : null
+    },
+    {
+      name: 'Website',
+      handle: profile?.website_url,
+      icon: ExternalLink,
+      color: 'from-blue-500 to-blue-600',
+      url: profile?.website_url || null
+    },
+    {
+      name: 'Portfolio',
+      handle: profile?.portfolio_url,
+      icon: Briefcase,
+      color: 'from-green-500 to-green-600',
+      url: profile?.portfolio_url || null
+    }
+  ].filter(link => link.handle && link.url)
+
+  return (
+    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+      {/* Header Banner */}
+      <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
+        {profile?.header_banner_url ? (
+          <img
+            src={profile.header_banner_url}
+            alt="Header banner"
+            className="w-full h-full object-cover"
+            style={{
+              objectPosition: profile.header_banner_position || 'center'
+            }}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600" />
+        )}
+        <div className="absolute inset-0 bg-black bg-opacity-20" />
+        
+        {/* Banner action buttons */}
+        <div className="absolute top-4 right-4 flex gap-2">
+          {isEditing ? (
+            <>
+              <button 
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={isUploadingBanner}
+                className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 disabled:opacity-50"
+              >
+                {isUploadingBanner ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
+              </button>
+              <button 
+                onClick={handleCancel}
+                className="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled={saving}
+                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </>
+          ) : (
+            <button 
+              onClick={handleEditToggle}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+            >
+              <Edit3 className="w-4 h-4" />
+              Edit Profile
+            </button>
+          )}
+        </div>
+        
+        {/* Hidden file input for banner */}
+        <input
+          ref={bannerInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) {
+              handleBannerUpload(file)
+            }
+          }}
+        />
+      </div>
+
+      {/* Profile Info */}
+      <div className="relative px-6 pb-6">
+        {/* Avatar */}
+        <div className="flex items-start gap-4 -mt-16 relative z-10">
+          <div className="relative group">
+            <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 overflow-hidden">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="Profile picture"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                  <User className="w-16 h-16 text-gray-500 dark:text-gray-400" />
+                </div>
+              )}
+            </div>
+            
+            {/* Avatar upload button */}
+            {isEditing && (
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors shadow-lg disabled:opacity-50"
+              >
+                {isUploadingAvatar ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
+              </button>
+            )}
+            
+            {/* Hidden file input for avatar */}
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  handleAvatarUpload(file)
+                }
+              }}
+            />
+          </div>
+
+          {/* Profile Details */}
+          <div className="flex-1 pt-16">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {profile?.display_name || 'Display Name'}
+                  </h1>
+                  {profile?.verification_status === 'fully_verified' && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
+                      <Award className="w-3 h-3" />
+                      Verified
+                    </div>
+                  )}
+                  {isProfileComplete && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full text-xs font-medium">
+                      <CheckCircle className="w-3 h-3" />
+                      Complete Profile
+                    </div>
+                  )}
+                </div>
+                
+                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  @{profile?.handle || 'handle'}
+                </div>
+                
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-4 max-w-md">
+                  {profile?.bio || 'No bio provided'}
+                </p>
+
+                {/* Social Links */}
+                {socialLinks.length > 0 && (
+                  <div className="flex items-center gap-3 mb-4">
+                    {socialLinks.map((link, index) => (
+                      <a
+                        key={index}
+                        href={link.url || '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-lg hover:shadow-md transition-all duration-200 group"
+                      >
+                        <div className={`w-6 h-6 bg-gradient-to-r ${link.color} rounded-full flex items-center justify-center`}>
+                          <link.icon className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {link.name}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {/* Professional Info */}
+                {professionalInfo.length > 0 && (
+                  <div className="flex flex-wrap gap-4 mb-4">
+                    {professionalInfo.map((info, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <info.icon className="w-4 h-4" />
+                        <span>{info.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* User Rating */}
+                {profile && (
+                  <div className="mb-4">
+                    <UserRatingDisplay userId={profile.id} compact={true} />
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* Expandable Additional Information */}
+        <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Additional Information
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  View detailed profile information
+                </p>
+              </div>
+            </div>
+            {isExpanded ? (
+              <ChevronUp className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            )}
+          </button>
+
+          {/* Expanded Content */}
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            isExpanded ? 'max-h-screen opacity-100 mt-4' : 'max-h-0 opacity-0'
+          }`}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600">
+              {/* Tabs */}
+              <div className="border-b border-gray-200 dark:border-gray-600">
+                <div className="flex overflow-x-auto">
+                  {tabs.map((tab) => {
+                    const Icon = tab.icon
+                    const isActive = activeTab === tab.id
+                    
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                          isActive
+                            ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {tab.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Tab Content */}
+              <div className="p-6">
+                {renderTabContent()}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

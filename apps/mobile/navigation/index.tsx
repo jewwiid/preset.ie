@@ -3,14 +3,19 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Ionicons } from '@expo/vector-icons'
-import { supabase } from '../lib/supabase'
+import { Platform } from 'react-native'
+import { useAuth } from '../lib/auth-context'
+import { colors } from '../styles/colors'
 
-// Import screens (we'll create these next)
+// Import screens
+import HomeScreen from '../screens/HomeScreen'
+import DashboardScreen from '../screens/DashboardScreen'
 import SignInScreen from '../screens/auth/SignInScreen'
 import SignUpScreen from '../screens/auth/SignUpScreen'
 import GigsScreen from '../screens/gigs/GigsScreen'
 import GigDetailScreen from '../screens/gigs/GigDetailScreen'
 import CreateGigScreen from '../screens/gigs/CreateGigScreen'
+import ShowcasesScreen from '../screens/ShowcasesScreen'
 import ProfileScreen from '../screens/profile/ProfileScreen'
 import ApplicationsScreen from '../screens/applications/ApplicationsScreen'
 import MessagesScreen from '../screens/messages/MessagesScreen'
@@ -18,19 +23,23 @@ import MessagesScreen from '../screens/messages/MessagesScreen'
 export type RootStackParamList = {
   Auth: undefined
   Main: undefined
+  Home: undefined
+  Dashboard: undefined
   SignIn: undefined
   SignUp: undefined
+  Gigs: undefined
   GigDetail: { gigId: string }
   CreateGig: undefined
+  Showcases: undefined
   Profile: { userId?: string }
   Applications: undefined
   Messages: undefined
 }
 
 export type MainTabParamList = {
+  Home: undefined
   Gigs: undefined
-  Applications: undefined
-  CreateGig: undefined
+  Showcases: undefined
   Messages: undefined
   Profile: undefined
 }
@@ -45,12 +54,12 @@ function MainTabs() {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home'
 
-          if (route.name === 'Gigs') {
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline'
+          } else if (route.name === 'Gigs') {
             iconName = focused ? 'search' : 'search-outline'
-          } else if (route.name === 'Applications') {
-            iconName = focused ? 'document-text' : 'document-text-outline'
-          } else if (route.name === 'CreateGig') {
-            iconName = focused ? 'add-circle' : 'add-circle-outline'
+          } else if (route.name === 'Showcases') {
+            iconName = focused ? 'images' : 'images-outline'
           } else if (route.name === 'Messages') {
             iconName = focused ? 'chatbubbles' : 'chatbubbles-outline'
           } else if (route.name === 'Profile') {
@@ -59,59 +68,50 @@ function MainTabs() {
 
           return <Ionicons name={iconName} size={size} color={color} />
         },
-        tabBarActiveTintColor: '#4F46E5',
-        tabBarInactiveTintColor: 'gray',
-        headerStyle: {
-          backgroundColor: '#4F46E5',
+        tabBarActiveTintColor: colors.preset[500],
+        tabBarInactiveTintColor: colors.gray[400],
+        tabBarStyle: {
+          backgroundColor: colors.background.primary,
+          borderTopColor: colors.border.primary,
+          borderTopWidth: 1,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 88 : 64,
         },
-        headerTintColor: '#fff',
+        headerStyle: {
+          backgroundColor: colors.preset[500],
+          ...Platform.select({
+            ios: {
+              shadowColor: colors.preset[500],
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+            },
+            android: {
+              elevation: 4,
+            },
+          }),
+        },
+        headerTintColor: colors.text.inverse,
         headerTitleStyle: {
-          fontWeight: 'bold',
+          fontWeight: '600',
+          fontSize: 18,
         },
       })}
     >
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Home' }} />
       <Tab.Screen name="Gigs" component={GigsScreen} options={{ title: 'Browse Gigs' }} />
-      <Tab.Screen name="Applications" component={ApplicationsScreen} />
-      <Tab.Screen name="CreateGig" component={CreateGigScreen} options={{ title: 'Create' }} />
-      <Tab.Screen name="Messages" component={MessagesScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Showcases" component={ShowcasesScreen} options={{ title: 'Showcases' }} />
+      <Tab.Screen name="Messages" component={MessagesScreen} options={{ title: 'Messages' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
     </Tab.Navigator>
   )
 }
 
 export default function Navigation() {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false)
-  const [isLoading, setIsLoading] = React.useState(true)
+  const { user, loading } = useAuth()
 
-  React.useEffect(() => {
-    // Check initial authentication state
-    const checkAuthState = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        setIsAuthenticated(!!session)
-      } catch (error) {
-        console.error('Error checking auth state:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    checkAuthState()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Navigation auth event:', event)
-        setIsAuthenticated(!!session)
-      }
-    )
-
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
-
-  if (isLoading) {
+  if (loading) {
     // You could show a loading screen here
     return null
   }
@@ -119,7 +119,7 @@ export default function Navigation() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
+        {!user ? (
           <>
             <Stack.Screen name="SignIn" component={SignInScreen} />
             <Stack.Screen name="SignUp" component={SignUpScreen} />
@@ -128,9 +128,52 @@ export default function Navigation() {
           <>
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen 
+              name="Dashboard" 
+              component={DashboardScreen}
+              options={{ 
+                headerShown: true, 
+                title: 'Dashboard',
+                headerStyle: {
+                  backgroundColor: colors.preset[500],
+                },
+                headerTintColor: colors.text.inverse,
+              }}
+            />
+            <Stack.Screen 
               name="GigDetail" 
               component={GigDetailScreen}
-              options={{ headerShown: true, title: 'Gig Details' }}
+              options={{ 
+                headerShown: true, 
+                title: 'Gig Details',
+                headerStyle: {
+                  backgroundColor: colors.preset[500],
+                },
+                headerTintColor: colors.text.inverse,
+              }}
+            />
+            <Stack.Screen 
+              name="CreateGig" 
+              component={CreateGigScreen}
+              options={{ 
+                headerShown: true, 
+                title: 'Create Gig',
+                headerStyle: {
+                  backgroundColor: colors.preset[500],
+                },
+                headerTintColor: colors.text.inverse,
+              }}
+            />
+            <Stack.Screen 
+              name="Applications" 
+              component={ApplicationsScreen}
+              options={{ 
+                headerShown: true, 
+                title: 'Applications',
+                headerStyle: {
+                  backgroundColor: colors.preset[500],
+                },
+                headerTintColor: colors.text.inverse,
+              }}
             />
           </>
         )}

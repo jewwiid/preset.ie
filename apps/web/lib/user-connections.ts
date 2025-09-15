@@ -116,7 +116,7 @@ export async function canMessageUser(
     const { data: targetSettings } = await supabase
       .from('user_settings')
       .select('allow_stranger_messages')
-      .eq('user_id', targetUserId)
+      .eq('profile_id', targetUserId)
       .single()
 
     // If no settings found, default to allowing strangers

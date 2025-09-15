@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
 import MoodboardViewer from '../../components/MoodboardViewer'
+import CompatibilityScore from '../../components/matchmaking/CompatibilityScore'
+import MatchmakingCard from '../../components/matchmaking/MatchmakingCard'
+import CompatibilityBreakdownModal from '../../components/matchmaking/CompatibilityBreakdownModal'
+import { CompatibilityData, Recommendation } from '../../../lib/types/matchmaking'
 
 interface GigDetails {
   id: string
@@ -37,6 +41,13 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
   const [error, setError] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
   
+  // Matchmaking state
+  const [compatibilityData, setCompatibilityData] = useState<CompatibilityData | null>(null)
+  const [similarUsers, setSimilarUsers] = useState<Recommendation[]>([])
+  const [similarGigs, setSimilarGigs] = useState<Recommendation[]>([])
+  const [showCompatibilityModal, setShowCompatibilityModal] = useState(false)
+  const [matchmakingLoading, setMatchmakingLoading] = useState(false)
+  
   // Unwrap params with React.use() for Next.js 15
   const resolvedParams = use(params)
   const gigId = resolvedParams.id
@@ -47,6 +58,12 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
       fetchUserProfile()
     }
   }, [gigId, user])
+
+  useEffect(() => {
+    if (gig && userProfile) {
+      fetchMatchmakingData()
+    }
+  }, [gig, userProfile])
 
   const fetchUserProfile = async () => {
     if (!user) return
@@ -64,6 +81,129 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
     
     if (data) {
       setUserProfile(data)
+    }
+  }
+
+  const fetchMatchmakingData = async () => {
+    if (!gig || !userProfile || !supabase) return
+
+    try {
+      setMatchmakingLoading(true)
+
+      // Fetch compatibility score for current user
+      const { data: compatibilityResult, error: compatibilityError } = await supabase
+        .rpc('calculate_gig_compatibility', {
+          p_profile_id: userProfile.id,
+          p_gig_id: gig.id
+        })
+
+      if (compatibilityError) {
+        console.error('Error fetching compatibility:', compatibilityError)
+      } else if (compatibilityResult && compatibilityResult.length > 0) {
+        const result = compatibilityResult[0]
+        setCompatibilityData({
+          score: result.compatibility_score,
+          breakdown: {
+            gender: result.match_factors.gender_match ? 20 : 0,
+            age: result.match_factors.age_match ? 20 : 0,
+            height: result.match_factors.height_match ? 15 : 0,
+            experience: result.match_factors.experience_match ? 25 : 0,
+            specialization: typeof result.match_factors.specialization_match === 'number' ? 
+              (result.match_factors.specialization_match / result.match_factors.total_required) * 20 : 
+              result.match_factors.specialization_match ? 20 : 0,
+            total: result.compatibility_score
+          },
+          factors: result.match_factors
+        })
+      }
+
+      // Fetch similar users (compatible talent for this gig)
+      const { data: usersResult, error: usersError } = await supabase
+        .rpc('find_compatible_users_for_gig', {
+          p_gig_id: gig.id,
+          p_limit: 6
+        })
+
+      if (usersError) {
+        console.error('Error fetching similar users:', usersError)
+      } else if (usersResult) {
+        setSimilarUsers(usersResult.map((user: any) => ({
+          id: user.profile_id,
+          type: 'user' as const,
+          data: {
+            id: user.profile_id,
+            user_id: user.profile_id,
+            display_name: user.display_name,
+            handle: user.display_name.toLowerCase().replace(/\s+/g, ''),
+            city: user.city,
+            country: 'Unknown',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          compatibility_score: user.compatibility_score,
+          compatibility_breakdown: {
+            gender: user.match_factors.gender_match ? 20 : 0,
+            age: user.match_factors.age_match ? 20 : 0,
+            height: user.match_factors.height_match ? 15 : 0,
+            experience: user.match_factors.experience_match ? 25 : 0,
+            specialization: typeof user.match_factors.specialization_match === 'number' ? 
+              (user.match_factors.specialization_match / user.match_factors.total_required) * 20 : 
+              user.match_factors.specialization_match ? 20 : 0,
+            total: user.compatibility_score
+          },
+          reason: 'Matches gig requirements',
+          priority: user.compatibility_score >= 80 ? 'high' as const : 
+                   user.compatibility_score >= 60 ? 'medium' as const : 'low' as const
+        })))
+      }
+
+      // Fetch similar gigs (compatible gigs for current user)
+      const { data: gigsResult, error: gigsError } = await supabase
+        .rpc('find_compatible_gigs_for_user', {
+          p_profile_id: userProfile.id,
+          p_limit: 6
+        })
+
+      if (gigsError) {
+        console.error('Error fetching similar gigs:', gigsError)
+      } else if (gigsResult) {
+        setSimilarGigs(gigsResult.map((gig: any) => ({
+          id: gig.gig_id,
+          type: 'gig' as const,
+          data: {
+            id: gig.gig_id,
+            title: gig.title,
+            description: 'Similar gig based on your profile',
+            location_text: gig.location_text,
+            start_time: gig.start_time,
+            end_time: gig.start_time, // We don't have end_time from the function
+            comp_type: 'TFP', // Default value
+            owner_user_id: 'unknown',
+            status: 'PUBLISHED',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          compatibility_score: gig.compatibility_score,
+          compatibility_breakdown: {
+            gender: gig.match_factors.gender_match ? 20 : 0,
+            age: gig.match_factors.age_match ? 20 : 0,
+            height: gig.match_factors.height_match ? 15 : 0,
+            experience: gig.match_factors.experience_match ? 25 : 0,
+            specialization: typeof gig.match_factors.specialization_match === 'number' ? 
+              (gig.match_factors.specialization_match / gig.match_factors.total_required) * 20 : 
+              gig.match_factors.specialization_match ? 20 : 0,
+            total: gig.compatibility_score
+          },
+          reason: 'Matches your profile',
+          priority: gig.compatibility_score >= 80 ? 'high' as const : 
+                   gig.compatibility_score >= 60 ? 'medium' as const : 'low' as const
+        })))
+      }
+
+    } catch (error) {
+      console.error('Error in fetchMatchmakingData:', error)
+    } finally {
+      setMatchmakingLoading(false)
     }
   }
 
@@ -251,6 +391,37 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
           </div>
         </div>
 
+        {/* Compatibility Score Section */}
+        {user && userProfile && compatibilityData && (
+          <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Your Compatibility</h2>
+              <button
+                onClick={() => setShowCompatibilityModal(true)}
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+              >
+                View Details
+              </button>
+            </div>
+            <div className="flex items-center space-x-4">
+              <CompatibilityScore 
+                score={compatibilityData.score}
+                breakdown={compatibilityData.breakdown}
+                size="lg"
+                showBreakdown={true}
+              />
+              <div className="text-sm text-gray-600">
+                <p>Based on your profile and this gig's requirements</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {compatibilityData.score >= 80 ? 'Excellent match!' :
+                   compatibilityData.score >= 60 ? 'Good match' :
+                   compatibilityData.score >= 40 ? 'Fair match' : 'Consider improving your profile'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Moodboard */}
         <MoodboardViewer gigId={gigId} />
 
@@ -308,6 +479,50 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
           </div>
         )}
 
+        {/* Similar Users Section */}
+        {similarUsers.length > 0 && (
+          <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Similar Talent</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Other users who match this gig's requirements
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {similarUsers.map((user) => (
+                <MatchmakingCard
+                  key={user.id}
+                  type={user.type}
+                  data={user.data}
+                  compatibilityScore={user.compatibility_score}
+                  compatibilityBreakdown={user.compatibility_breakdown}
+                  onViewDetails={() => router.push(`/profile/${user.id}`)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Similar Gigs Section */}
+        {similarGigs.length > 0 && (
+          <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Similar Gigs</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Other gigs that match your profile
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {similarGigs.map((gig) => (
+                <MatchmakingCard
+                  key={gig.id}
+                  type={gig.type}
+                  data={gig.data}
+                  compatibilityScore={gig.compatibility_score}
+                  compatibilityBreakdown={gig.compatibility_breakdown}
+                  onViewDetails={() => router.push(`/gigs/${gig.id}`)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="bg-white shadow rounded-lg p-6">
           <div className="flex justify-between items-center">
@@ -354,6 +569,20 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
           </div>
         </div>
       </div>
+
+      {/* Compatibility Breakdown Modal */}
+      {showCompatibilityModal && compatibilityData && (
+        <CompatibilityBreakdownModal
+          isOpen={showCompatibilityModal}
+          onClose={() => setShowCompatibilityModal(false)}
+          compatibilityData={compatibilityData}
+          userProfile={userProfile}
+          gig={{
+            ...gig,
+            updated_at: gig.created_at // Use created_at as updated_at since we don't have it
+          }}
+        />
+      )}
     </div>
   )
 }

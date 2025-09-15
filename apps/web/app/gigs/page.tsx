@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/auth-context';
 import { supabase } from '../../lib/supabase';
-import { MapPin, Calendar, Users, Search, Filter, Heart, Clock, DollarSign, Camera, Video, Sparkles, ChevronLeft, ChevronRight, X, Tag, Eye, Shield } from 'lucide-react';
+import { MapPin, Calendar, Users, Search, Filter, Heart, Clock, DollarSign, Camera, Video, Sparkles, ChevronLeft, ChevronRight, X, Tag, Eye, Shield, TrendingUp, Radius, Building } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -33,6 +33,18 @@ interface Gig {
     avatar_url?: string;
     handle: string;
     verified_id?: boolean;
+    years_experience?: number;
+    specializations?: string[];
+    hourly_rate_min?: number;
+    hourly_rate_max?: number;
+    available_for_travel?: boolean;
+    travel_radius_km?: number;
+    has_studio?: boolean;
+    studio_name?: string;
+    instagram_handle?: string;
+    tiktok_handle?: string;
+    website_url?: string;
+    portfolio_url?: string;
   };
   is_saved?: boolean;
   applications_count?: number;
@@ -65,6 +77,16 @@ export default function GigDiscoveryPage() {
   const [selectedVibeTags, setSelectedVibeTags] = useState<string[]>([]);
   const [availableStyleTags, setAvailableStyleTags] = useState<string[]>([]);
   const [availableVibeTags, setAvailableVibeTags] = useState<string[]>([]);
+  
+  // New filters for creator profile data
+  const [minExperienceFilter, setMinExperienceFilter] = useState<number | null>(null);
+  const [maxExperienceFilter, setMaxExperienceFilter] = useState<number | null>(null);
+  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+  const [availableSpecializations, setAvailableSpecializations] = useState<string[]>([]);
+  const [minRateFilter, setMinRateFilter] = useState<number | null>(null);
+  const [maxRateFilter, setMaxRateFilter] = useState<number | null>(null);
+  const [travelOnlyFilter, setTravelOnlyFilter] = useState(false);
+  const [studioOnlyFilter, setStudioOnlyFilter] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [savedGigs, setSavedGigs] = useState<Set<string>>(new Set());
@@ -74,12 +96,13 @@ export default function GigDiscoveryPage() {
     fetchGigs();
     fetchSavedGigs(); // Will handle gracefully if table doesn't exist
     fetchAvailablePalettes();
+    fetchAvailableSpecializations();
     initializeSimulatedData();
   }, []);
 
   useEffect(() => {
     filterGigs();
-  }, [searchTerm, selectedCompType, selectedPurpose, selectedUsageRights, locationFilter, selectedPalette, selectedStyleTags, selectedVibeTags, startDateFilter, endDateFilter, maxApplicantsFilter, gigs]);
+  }, [searchTerm, selectedCompType, selectedPurpose, selectedUsageRights, locationFilter, selectedPalette, selectedStyleTags, selectedVibeTags, startDateFilter, endDateFilter, maxApplicantsFilter, minExperienceFilter, maxExperienceFilter, selectedSpecializations, minRateFilter, maxRateFilter, travelOnlyFilter, studioOnlyFilter, gigs]);
 
   const fetchGigs = async () => {
     try {
@@ -96,7 +119,19 @@ export default function GigDiscoveryPage() {
             display_name,
             avatar_url,
             handle,
-            verified_id
+            verified_id,
+            years_experience,
+            specializations,
+            hourly_rate_min,
+            hourly_rate_max,
+            available_for_travel,
+            travel_radius_km,
+            has_studio,
+            studio_name,
+            instagram_handle,
+            tiktok_handle,
+            website_url,
+            portfolio_url
           ),
           moodboards!gig_id (
             id,
@@ -219,6 +254,62 @@ export default function GigDiscoveryPage() {
         '#FF9FF3', '#54A0FF', '#5F27CD', '#00D2D3', '#FF9F43',
         '#EE5A24', '#009432', '#0652DD', '#9C88FF', '#FFC312',
         '#C4E538', '#12CBC4', '#FDA7DF', '#ED4C67', '#F79F1F'
+      ]);
+    }
+  };
+
+  const fetchAvailableSpecializations = async () => {
+    try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
+      // Get unique specializations from all creator profiles
+      const { data, error } = await supabase
+        .from('users_profile')
+        .select('specializations')
+        .not('specializations', 'is', null)
+        .not('specializations', 'eq', '{}');
+
+      if (error) {
+        console.log('Error fetching specializations:', error);
+        // Fallback to common specializations
+        setAvailableSpecializations([
+          'Portrait Photography', 'Fashion Photography', 'Wedding Photography',
+          'Commercial Photography', 'Event Photography', 'Product Photography',
+          'Architecture Photography', 'Street Photography', 'Documentary Photography',
+          'Beauty Photography', 'Lifestyle Photography', 'Editorial Photography',
+          'Fine Art Photography', 'Nature Photography', 'Sports Photography',
+          'Food Photography', 'Real Estate Photography', 'Corporate Photography',
+          'Headshot Photography', 'Family Photography', 'Newborn Photography',
+          'Boudoir Photography', 'Pet Photography', 'Travel Photography'
+        ]);
+      } else {
+        const specializations = new Set<string>();
+        data?.forEach(profile => {
+          if (profile.specializations && Array.isArray(profile.specializations)) {
+            profile.specializations.forEach((spec: string) => {
+              if (spec && spec.trim()) {
+                specializations.add(spec.trim());
+              }
+            });
+          }
+        });
+        setAvailableSpecializations(Array.from(specializations).sort());
+      }
+    } catch (error) {
+      console.log('Error fetching specializations:', error);
+      // Fallback to common specializations
+      setAvailableSpecializations([
+        'Portrait Photography', 'Fashion Photography', 'Wedding Photography',
+        'Commercial Photography', 'Event Photography', 'Product Photography',
+        'Architecture Photography', 'Street Photography', 'Documentary Photography',
+        'Beauty Photography', 'Lifestyle Photography', 'Editorial Photography',
+        'Fine Art Photography', 'Nature Photography', 'Sports Photography',
+        'Food Photography', 'Real Estate Photography', 'Corporate Photography',
+        'Headshot Photography', 'Family Photography', 'Newborn Photography',
+        'Boudoir Photography', 'Pet Photography', 'Travel Photography'
       ]);
     }
   };
@@ -429,6 +520,51 @@ export default function GigDiscoveryPage() {
         gig.vibe_tags && gig.vibe_tags.some(tag => 
           selectedVibeTags.includes(tag)
         )
+      );
+    }
+
+    // New filters for creator profile data
+    if (minExperienceFilter !== null) {
+      filtered = filtered.filter(gig =>
+        gig.users_profile?.years_experience && gig.users_profile.years_experience >= minExperienceFilter
+      );
+    }
+
+    if (maxExperienceFilter !== null) {
+      filtered = filtered.filter(gig =>
+        gig.users_profile?.years_experience && gig.users_profile.years_experience <= maxExperienceFilter
+      );
+    }
+
+    if (selectedSpecializations.length > 0) {
+      filtered = filtered.filter(gig =>
+        gig.users_profile?.specializations && gig.users_profile.specializations.some(spec => 
+          selectedSpecializations.includes(spec)
+        )
+      );
+    }
+
+    if (minRateFilter !== null) {
+      filtered = filtered.filter(gig =>
+        gig.users_profile?.hourly_rate_min && gig.users_profile.hourly_rate_min >= minRateFilter
+      );
+    }
+
+    if (maxRateFilter !== null) {
+      filtered = filtered.filter(gig =>
+        gig.users_profile?.hourly_rate_max && gig.users_profile.hourly_rate_max <= maxRateFilter
+      );
+    }
+
+    if (travelOnlyFilter) {
+      filtered = filtered.filter(gig =>
+        gig.users_profile?.available_for_travel === true
+      );
+    }
+
+    if (studioOnlyFilter) {
+      filtered = filtered.filter(gig =>
+        gig.users_profile?.has_studio === true
       );
     }
 
@@ -851,6 +987,150 @@ export default function GigDiscoveryPage() {
                 </div>
               )}
 
+              {/* Creator Profile Filters */}
+              <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-4">
+                <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Creator Profile Filters</h3>
+                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  
+                  {/* Experience Range Filter */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800/50">
+                    <label className="block text-sm font-medium text-blue-800 dark:text-blue-200 mb-3">
+                      Experience (Years)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        placeholder="Min"
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={minExperienceFilter || ''}
+                        onChange={(e) => setMinExperienceFilter(e.target.value ? parseInt(e.target.value) : null)}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        placeholder="Max"
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        value={maxExperienceFilter || ''}
+                        onChange={(e) => setMaxExperienceFilter(e.target.value ? parseInt(e.target.value) : null)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Rate Range Filter */}
+                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl p-4 border border-yellow-100 dark:border-yellow-800/50">
+                    <label className="block text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-3">
+                      Hourly Rate ($)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Min"
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-yellow-200 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                        value={minRateFilter || ''}
+                        onChange={(e) => setMinRateFilter(e.target.value ? parseInt(e.target.value) : null)}
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Max"
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-yellow-200 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                        value={maxRateFilter || ''}
+                        onChange={(e) => setMaxRateFilter(e.target.value ? parseInt(e.target.value) : null)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Availability Filters */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-green-100 dark:border-green-800/50">
+                    <label className="block text-sm font-medium text-green-800 dark:text-green-200 mb-3">
+                      Availability
+                    </label>
+                    <div className="space-y-3">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={travelOnlyFilter}
+                          onChange={(e) => setTravelOnlyFilter(e.target.checked)}
+                          className="mr-3 w-4 h-4 text-green-600 bg-white dark:bg-gray-700 border-green-300 dark:border-green-600 rounded focus:ring-green-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Available for Travel</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={studioOnlyFilter}
+                          onChange={(e) => setStudioOnlyFilter(e.target.checked)}
+                          className="mr-3 w-4 h-4 text-green-600 bg-white dark:bg-gray-700 border-green-300 dark:border-green-600 rounded focus:ring-green-500"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Has Studio</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Specializations Filter */}
+                {availableSpecializations.length > 0 && (
+                  <div className="mt-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800/50">
+                    <label className="block text-sm font-medium text-purple-800 dark:text-purple-200 mb-3">
+                      Specializations
+                    </label>
+                    <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                      {availableSpecializations.map((spec, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            if (selectedSpecializations.includes(spec)) {
+                              setSelectedSpecializations(prev => prev.filter(s => s !== spec));
+                            } else {
+                              setSelectedSpecializations(prev => [...prev, spec]);
+                            }
+                          }}
+                          className={`px-3 py-1 rounded-full text-sm transition-all hover:scale-105 ${
+                            selectedSpecializations.includes(spec)
+                              ? 'bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 border-2 border-purple-500'
+                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-purple-200 dark:border-purple-600 hover:border-purple-400'
+                          }`}
+                        >
+                          <Tag className="w-3 h-3 inline mr-1" />
+                          {spec}
+                        </button>
+                      ))}
+                    </div>
+                    {selectedSpecializations.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {selectedSpecializations.map((spec, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200 text-xs rounded-full"
+                          >
+                            <Tag className="w-3 h-3" />
+                            {spec}
+                            <button
+                              onClick={() => setSelectedSpecializations(prev => prev.filter(s => s !== spec))}
+                              className="hover:text-purple-900 dark:hover:text-purple-100"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Clear Filters */}
               <div className="mt-4 flex justify-between items-center">
                 <button
@@ -866,6 +1146,13 @@ export default function GigDiscoveryPage() {
                     setSelectedCompType('ALL');
                     setLocationFilter('');
                     setSearchTerm('');
+                    setMinExperienceFilter(null);
+                    setMaxExperienceFilter(null);
+                    setSelectedSpecializations([]);
+                    setMinRateFilter(null);
+                    setMaxRateFilter(null);
+                    setTravelOnlyFilter(false);
+                    setStudioOnlyFilter(false);
                   }}
                   className="text-sm text-gray-600 hover:text-gray-800 underline"
                 >
@@ -878,13 +1165,14 @@ export default function GigDiscoveryPage() {
                   Hide filters
                 </button>
               </div>
-            </div>
+                </div>
+              </div>
           )}
 
           {/* Results Count */}
           <div className="mt-4 text-sm text-gray-600">
             Found {filteredGigs.length} gigs
-            {(selectedPalette.length > 0 || selectedStyleTags.length > 0 || selectedVibeTags.length > 0 || selectedPurpose !== 'ALL' || selectedUsageRights !== 'ALL' || startDateFilter || endDateFilter || maxApplicantsFilter) && (
+            {(selectedPalette.length > 0 || selectedStyleTags.length > 0 || selectedVibeTags.length > 0 || selectedPurpose !== 'ALL' || selectedUsageRights !== 'ALL' || startDateFilter || endDateFilter || maxApplicantsFilter || minExperienceFilter !== null || maxExperienceFilter !== null || selectedSpecializations.length > 0 || minRateFilter !== null || maxRateFilter !== null || travelOnlyFilter || studioOnlyFilter) && (
               <span className="ml-2 text-indigo-600">
                 (filtered)
               </span>
@@ -939,30 +1227,75 @@ export default function GigDiscoveryPage() {
                   </h3>
                 </Link>
 
-                <div className="flex items-center gap-3 mt-3 p-3 bg-gray-50 rounded-lg">
-                  <img
-                    src={gig.users_profile?.avatar_url || '/default-avatar.png'}
-                    alt={gig.users_profile?.display_name || 'User'}
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-gray-900 truncate">
-                        {gig.users_profile?.display_name || 'Unknown User'}
-                      </h4>
-                      {gig.users_profile?.verified_id && (
-                        <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          Verified
-                        </div>
-                      )}
+                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 mb-2">
+                    <img
+                      src={gig.users_profile?.avatar_url || '/default-avatar.png'}
+                      alt={gig.users_profile?.display_name || 'User'}
+                      className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-semibold text-gray-900 truncate">
+                          {gig.users_profile?.display_name || 'Unknown User'}
+                        </h4>
+                        {gig.users_profile?.verified_id && (
+                          <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            Verified
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    {gig.users_profile?.handle && (
-                      <p className="text-xs text-gray-500 mt-0.5">@{gig.users_profile.handle}</p>
+                  </div>
+                  
+                  {/* Enhanced Creator Profile Information */}
+                  <div className="space-y-1 text-xs text-gray-600">
+                    {gig.users_profile?.years_experience && (
+                      <div className="flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" />
+                        <span>{gig.users_profile.years_experience} years experience</span>
+                      </div>
+                    )}
+                    
+                    {(gig.users_profile?.hourly_rate_min || gig.users_profile?.hourly_rate_max) && (
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3" />
+                        <span>
+                          ${gig.users_profile.hourly_rate_min || 0} - ${gig.users_profile.hourly_rate_max || '∞'} / hour
+                        </span>
+                      </div>
+                    )}
+                    
+                    {gig.users_profile?.available_for_travel && (
+                      <div className="flex items-center gap-1">
+                        <Radius className="w-3 h-3" />
+                        <span>Available for travel ({gig.users_profile.travel_radius_km || 50}km)</span>
+                      </div>
+                    )}
+                    
+                    {gig.users_profile?.has_studio && (
+                      <div className="flex items-center gap-1">
+                        <Building className="w-3 h-3" />
+                        <span>Has studio{gig.users_profile.studio_name ? `: ${gig.users_profile.studio_name}` : ''}</span>
+                      </div>
+                    )}
+                    
+                    {gig.users_profile?.specializations && gig.users_profile.specializations.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Tag className="w-3 h-3" />
+                        <span className="truncate">
+                          {gig.users_profile.specializations.slice(0, 2).join(', ')}
+                          {gig.users_profile.specializations.length > 2 && ` +${gig.users_profile.specializations.length - 2} more`}
+                        </span>
+                      </div>
                     )}
                   </div>
+                  {gig.users_profile?.handle && (
+                    <p className="text-xs text-gray-500 mt-0.5">@{gig.users_profile.handle}</p>
+                  )}
                 </div>
 
                 {/* Location and Date */}

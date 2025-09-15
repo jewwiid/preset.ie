@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase'
+import { NextRequest } from 'next/server'
 
 export interface ResendEmailResult {
   success: boolean
@@ -145,5 +146,34 @@ export async function smartSignup(email: string, password: string, options?: any
       error: 'An unexpected error occurred',
       shouldRedirectToSignIn: false
     }
+  }
+}
+
+/**
+ * Extract user from NextRequest headers
+ */
+export async function getUserFromRequest(request: NextRequest) {
+  try {
+    if (!supabase) {
+      return { user: null, error: 'Supabase client not initialized' }
+    }
+    
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader) {
+      return { user: null, error: 'No authorization header' }
+    }
+    
+    const token = authHeader.replace('Bearer ', '')
+    
+    const { data: { user }, error } = await supabase.auth.getUser(token)
+    
+    if (error || !user) {
+      return { user: null, error: 'Invalid token' }
+    }
+    
+    return { user, error: null }
+  } catch (error) {
+    console.error('getUserFromRequest error:', error)
+    return { user: null, error: 'Authentication failed' }
   }
 }

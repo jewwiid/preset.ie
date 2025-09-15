@@ -1,142 +1,247 @@
 # Preset Mobile App
 
-React Native mobile application for Preset - Creative Collaboration Platform
+A native mobile application for Preset, built with Expo and React Native. This app provides the same functionality as the web application but optimized for iOS and Android devices.
 
-## Tech Stack
+## 🚀 Features
 
-- **React Native** with Expo
-- **TypeScript** for type safety
-- **React Navigation** for routing
-- **Supabase** for backend
-- **NativeWind** for styling
-- **Expo modules** for native functionality
+- **Native Mobile Experience**: Optimized for iOS and Android with platform-specific design patterns
+- **Full Feature Parity**: All web app functionality available on mobile
+- **Real-time Data**: Live updates using Supabase real-time subscriptions
+- **Offline Support**: Core features work offline with data synchronization
+- **Push Notifications**: Real-time notifications for messages, applications, and gigs
+- **Camera Integration**: Built-in camera for capturing photos and creating moodboards
+- **Location Services**: Location-based gig discovery and filtering
+- **Secure Storage**: Encrypted local storage for sensitive data
 
-## Setup
+## 📱 Screens
 
-### Prerequisites
+### Core Screens
+- **Home**: Landing page with featured gigs and showcases
+- **Dashboard**: User overview with stats and recent activity
+- **Gigs**: Browse and search creative gigs
+- **Showcases**: Portfolio gallery with filtering
+- **Messages**: Real-time chat system
+- **Profile**: User settings and account management
 
-- Node.js 18+
-- iOS Simulator (Mac) or Android Emulator
-- Expo CLI (`npm install -g expo-cli`)
+### Additional Screens
+- **Gig Detail**: Detailed view of individual gigs
+- **Create Gig**: Form for contributors to post new gigs
+- **Applications**: Manage job applications
+- **Sign In/Sign Up**: Authentication flows
 
-### Installation
+## 🛠 Technology Stack
 
-1. Install dependencies:
-```bash
-npm install
-```
+- **Framework**: Expo SDK 54
+- **Language**: TypeScript
+- **Navigation**: React Navigation 6
+- **State Management**: React Context + Hooks
+- **Database**: Supabase
+- **Authentication**: Supabase Auth
+- **Styling**: React Native StyleSheet with design system
+- **Icons**: Expo Vector Icons (Ionicons)
+- **Storage**: Expo SecureStore + AsyncStorage
+- **Camera**: Expo Camera
+- **Image Picker**: Expo Image Picker
+- **Location**: Expo Location
 
-2. Create `.env` file from example:
-```bash
-cp .env.example .env
-```
+## 🎨 Design System
 
-3. Add your Supabase credentials to `.env`:
-```
+The mobile app uses a comprehensive design system that matches the web application:
+
+### Colors
+- **Primary**: Preset brand colors (#00876f)
+- **Semantic**: Success, warning, error, info colors
+- **Platform**: iOS and Android system colors
+- **Dark Mode**: Full dark mode support
+
+### Typography
+- **iOS**: System font family
+- **Android**: Roboto font family
+- **Responsive**: Scales based on device size
+- **Hierarchy**: H1-H6, body, caption, button text styles
+
+### Components
+- **Button**: Multiple variants (default, outline, ghost, link, destructive)
+- **Card**: Elevated cards with shadows/elevation
+- **Input**: Form inputs with validation states
+- **Badge**: Status indicators and tags
+- **Navigation**: Bottom tabs with platform-specific styling
+
+## 📦 Installation
+
+1. **Prerequisites**
+   ```bash
+   npm install -g @expo/cli
+   npm install -g eas-cli
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   cd apps/mobile
+   npm install
+   ```
+
+3. **Environment Setup**
+   ```bash
+   cp .env.example .env.local
+   # Add your Supabase credentials
+   ```
+
+4. **Start Development Server**
+   ```bash
+   npm start
+   ```
+
+5. **Run on Device**
+   ```bash
+   # iOS
+   npm run ios
+   
+   # Android
+   npm run android
+   ```
+
+## 🔧 Configuration
+
+### Environment Variables
+```env
 EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### Running the App
+### Platform Configuration
+- **iOS**: Configured for App Store submission
+- **Android**: Configured for Google Play Store
+- **Deep Linking**: Supports preset.ie links
+- **Permissions**: Camera, location, storage access
 
-#### iOS
-```bash
-npm run ios
-```
+## 🏗 Architecture
 
-#### Android
-```bash
-npm run android
-```
-
-#### Expo Go (Development)
-```bash
-npm start
-```
-Then scan the QR code with Expo Go app on your phone.
-
-## Project Structure
-
+### File Structure
 ```
 apps/mobile/
-├── screens/           # Screen components
-│   ├── auth/         # Authentication screens
-│   ├── gigs/         # Gig browsing and details
-│   ├── applications/ # Application management
-│   ├── messages/     # Messaging screens
-│   └── profile/      # User profile screens
-├── navigation/       # Navigation configuration
-├── lib/             # Utilities and services
-│   └── supabase.ts  # Supabase client setup
-├── components/      # Reusable components
-└── assets/         # Images and static assets
+├── components/
+│   └── ui/                 # Design system components
+├── screens/                # Screen components
+├── navigation/             # Navigation configuration
+├── lib/                    # Utilities and services
+│   ├── supabase.ts         # Database client
+│   ├── auth-context.tsx    # Authentication context
+│   ├── platform.ts         # Platform utilities
+│   └── responsive.ts       # Responsive utilities
+├── styles/                 # Design system tokens
+│   ├── colors.ts           # Color definitions
+│   ├── typography.ts       # Typography system
+│   └── spacing.ts          # Spacing and layout
+└── assets/                 # Images and icons
 ```
 
-## Features
+### State Management
+- **Authentication**: Context-based auth state
+- **User Data**: React hooks with Supabase
+- **Navigation**: React Navigation state
+- **Local Storage**: Secure encrypted storage
 
-### Authentication
-- Email/password sign in
-- Secure token storage with Expo SecureStore
-- Auto session refresh
+### Data Flow
+1. **Authentication**: Supabase Auth with encrypted storage
+2. **API Calls**: Direct Supabase client calls
+3. **Real-time**: Supabase subscriptions for live updates
+4. **Caching**: Local storage for offline support
 
-### Gig Discovery
-- Browse available gigs
-- Filter by compensation type
-- Location-based search
-- Real-time updates
+## 🚀 Deployment
 
-### Applications
-- Apply to gigs
-- Track application status
-- Manage shortlists
+### Development Build
+```bash
+eas build --platform ios --profile development
+eas build --platform android --profile development
+```
 
-### Messaging
-- Per-gig chat threads
-- Push notifications
-- Media attachments
+### Production Build
+```bash
+eas build --platform ios --profile production
+eas build --platform android --profile production
+```
 
-### Profile
-- View and edit profile
-- Portfolio showcase
-- Verification badges
+### App Store Submission
+```bash
+eas submit --platform ios
+eas submit --platform android
+```
 
-## Building for Production
+## 📱 Platform Optimizations
 
 ### iOS
-```bash
-expo build:ios
-```
+- **Design**: iOS Human Interface Guidelines
+- **Navigation**: Native iOS navigation patterns
+- **Gestures**: Swipe gestures and haptic feedback
+- **Performance**: Optimized for iOS rendering
 
 ### Android
+- **Design**: Material Design principles
+- **Navigation**: Android navigation patterns
+- **Back Button**: Hardware back button support
+- **Performance**: Optimized for Android rendering
+
+## 🔒 Security
+
+- **Authentication**: Secure token-based auth
+- **Storage**: Encrypted local storage
+- **Network**: HTTPS-only communication
+- **Permissions**: Minimal required permissions
+- **Data**: Client-side data validation
+
+## 🧪 Testing
+
 ```bash
-expo build:android
+# Run tests
+npm test
+
+# Run linting
+npm run lint
+
+# Type checking
+npx tsc --noEmit
 ```
 
-## Environment Variables
+## 📈 Performance
 
-| Variable | Description |
-|----------|-------------|
-| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
-| `EXPO_PUBLIC_API_URL` | Backend API URL |
+- **Bundle Size**: Optimized with tree shaking
+- **Images**: Lazy loading and caching
+- **Navigation**: Optimized screen transitions
+- **Memory**: Efficient component lifecycle
+- **Network**: Request batching and caching
 
-## Troubleshooting
+## 🐛 Debugging
 
-### Metro bundler issues
-```bash
-npx expo start --clear
-```
+### Development Tools
+- **Expo Dev Tools**: Built-in debugging
+- **React Native Debugger**: Advanced debugging
+- **Flipper**: Platform-specific debugging
+- **Console Logs**: Comprehensive logging
 
-### iOS build errors
-```bash
-cd ios && pod install
-```
+### Common Issues
+- **Metro Bundler**: Clear cache with `npx expo start --clear`
+- **Dependencies**: Use `npm install --legacy-peer-deps` if needed
+- **iOS Simulator**: Reset simulator if issues persist
+- **Android Emulator**: Clear emulator data if needed
 
-### Android build errors
-```bash
-cd android && ./gradlew clean
-```
+## 🤝 Contributing
 
-## License
+1. Follow the existing code style
+2. Use TypeScript for all new code
+3. Add proper error handling
+4. Include loading states
+5. Test on both iOS and Android
+6. Update documentation as needed
 
-Proprietary - Preset.ie
+## 📄 License
+
+This project is licensed under the same license as the main Preset project.
+
+## 🆘 Support
+
+For issues and questions:
+- Check the [Expo documentation](https://docs.expo.dev/)
+- Review [React Navigation docs](https://reactnavigation.org/)
+- Consult [Supabase docs](https://supabase.com/docs)
+- Open an issue in the main repository

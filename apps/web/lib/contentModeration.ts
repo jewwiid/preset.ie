@@ -158,7 +158,7 @@ export async function checkTagDuplicate(
  */
 export async function validateAndCheckTag(
   tag: string,
-  tagType: 'style' | 'vibe'
+  tagType: 'style' | 'vibe' | 'talent_category' | 'specialization' | 'eye_color' | 'hair_color' | 'brand' | 'model'
 ): Promise<ValidationResult> {
   // First check content validation
   const contentValidation = validateCustomTag(tag)
@@ -166,10 +166,12 @@ export async function validateAndCheckTag(
     return contentValidation
   }
   
-  // Then check for duplicates
-  const duplicateCheck = await checkTagDuplicate(tag, tagType)
-  if (!duplicateCheck.isValid) {
-    return duplicateCheck
+  // Then check for duplicates (only for style and vibe tags)
+  if (tagType === 'style' || tagType === 'vibe') {
+    const duplicateCheck = await checkTagDuplicate(tag, tagType)
+    if (!duplicateCheck.isValid) {
+      return duplicateCheck
+    }
   }
   
   return { isValid: true }
