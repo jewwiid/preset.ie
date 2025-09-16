@@ -313,9 +313,6 @@ export default function TabbedPlaygroundLayout({
     <div className="space-y-6">
       {/* Performance Monitor */}
       <PerformanceMonitor 
-        onMetricsUpdate={(metrics) => {
-          console.log('📊 Performance Metrics:', metrics)
-        }}
         enabled={process.env.NODE_ENV === 'development'}
       />
       

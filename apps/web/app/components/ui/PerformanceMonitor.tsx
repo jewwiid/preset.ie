@@ -170,7 +170,7 @@ export default function PerformanceMonitor({
         onMetricsUpdate(metrics)
       }
     }
-  }, [metrics, onMetricsUpdate])
+  }, [metrics])
 
   // Format bytes to human readable format
   const formatBytes = (bytes: number): string => {
