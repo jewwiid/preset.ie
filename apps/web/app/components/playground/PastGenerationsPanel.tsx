@@ -43,7 +43,6 @@ interface PastGenerationsPanelProps {
 }
 
 export default function PastGenerationsPanel({ onImportProject }: PastGenerationsPanelProps) {
-  console.log('🎯 PastGenerationsPanel component rendered')
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
   
@@ -184,51 +183,34 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
   }
 
   useEffect(() => {
-    console.log('🔄 PastGenerationsPanel useEffect triggered:', { user: !!user, session: !!session?.access_token })
     if (user && session?.access_token) {
       fetchPastGenerations()
-    } else {
-      console.log('❌ PastGenerationsPanel: Missing user or session token')
     }
-  }, [user, session])
+  }, [user, session?.access_token])
 
   const fetchPastGenerations = async () => {
-    console.log('🚀 fetchPastGenerations called')
     try {
       setLoading(true)
       
       if (!session?.access_token) {
-        console.error('❌ No session token available')
         throw new Error('No authentication token available')
       }
 
-      console.log('🔄 Fetching past generations...')
       const response = await fetch('/api/playground/past-generations', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
       })
 
-      console.log('📡 Past generations response status:', response.status)
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('❌ Past generations API error:', errorData)
-        console.error('❌ Full response:', response)
         throw new Error(`Failed to fetch past generations: ${response.status} ${errorData.error || response.statusText}`)
       }
 
       const data = await response.json()
-      console.log('✅ Past generations fetched:', data.generations?.length || 0)
-      console.log('📊 Past Generations Analysis:', {
-        total: data.generations?.length || 0,
-        videos: data.generations?.filter((g: any) => g.is_video).length || 0,
-        images: data.generations?.filter((g: any) => !g.is_video).length || 0,
-        videoTypes: data.generations?.filter((g: any) => g.generated_images?.[0]?.type === 'video').length || 0
-      })
       setGenerations(data.generations || [])
     } catch (error) {
-      console.error('❌ Error fetching past generations:', error)
+      console.error('Error fetching past generations:', error)
       showFeedback({
         type: 'error',
         title: 'Failed to Load',
@@ -362,10 +344,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
     }
   }
 
-  console.log('📊 PastGenerationsPanel render state:', { loading, generationsCount: generations.length })
-
   if (loading) {
-    console.log('⏳ PastGenerationsPanel: Showing loading state')
     return (
       <Card className="border-t-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
         <CardHeader className="pb-3">
