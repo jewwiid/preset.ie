@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 
 interface PreloadOptions {
   priority?: 'high' | 'medium' | 'low'
@@ -25,6 +25,9 @@ export function useSmartPreloading(
   const preloadItemsRef = useRef<PreloadItem[]>([])
   const currentlyLoadingRef = useRef<Set<string>>(new Set())
 
+  // Create stable reference for URLs
+  const urlsKey = useMemo(() => urls.join('|'), [urls])
+  
   // Initialize preload items
   useEffect(() => {
     const items: PreloadItem[] = urls.map(url => ({
@@ -34,9 +37,10 @@ export function useSmartPreloading(
       loaded: false,
       loading: false
     }))
+    
     setPreloadItems(items)
     preloadItemsRef.current = items
-  }, [urls, priority])
+  }, [urlsKey, priority])
 
   const preloadImage = useCallback((url: string): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -116,7 +120,7 @@ export function useSmartPreloading(
       }, delay)
       return () => clearTimeout(timeout)
     }
-  }, [urls.length, delay, processQueue])
+  }, [urlsKey, delay, processQueue])
 
   // Cleanup timeouts on unmount
   useEffect(() => {
