@@ -260,25 +260,43 @@ export default function PlaygroundPage() {
       
       // Add edited image to project
       if (currentProject) {
+        const newImageEntry = {
+          url: editedImage,
+          width: 1024,
+          height: 1024,
+          generated_at: new Date().toISOString(),
+          type: 'edit'
+        }
+        
         const updatedProject = {
           ...currentProject,
           generated_images: [
             ...currentProject.generated_images,
-            {
-              url: editedImage,
-              width: 1024,
-              height: 1024,
-              generated_at: new Date().toISOString()
-            }
+            newImageEntry
           ]
         }
-        console.log('Updated project with edited image:', updatedProject)
+        
+        console.log('🔍 Advanced Edit Debug - Before Update:', {
+          currentProjectImages: currentProject.generated_images.length,
+          editedImageUrl: editedImage,
+          newImageEntry,
+          updatedProjectImages: updatedProject.generated_images.length
+        })
+        
         setCurrentProject(updatedProject)
         setUserCredits(prev => prev - creditsUsed)
         
         // Update selected image to the newly edited image
-        console.log('Setting selected image to:', editedImage)
+        console.log('🔍 Setting selected image to:', editedImage)
         setSelectedImage(editedImage)
+        
+        // Force a re-render by updating the project state again
+        setTimeout(() => {
+          console.log('🔍 Advanced Edit Debug - After Update:', {
+            currentProjectImages: currentProject.generated_images.length,
+            selectedImage: editedImage
+          })
+        }, 100)
       }
       
       showFeedback({

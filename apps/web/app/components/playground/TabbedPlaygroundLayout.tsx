@@ -415,15 +415,26 @@ export default function TabbedPlaygroundLayout({
                 const currentImages = currentProject?.generated_images || []
                 const allImages = [...currentImages, ...additionalPreviewImages]
                 
+                console.log('🔍 Edit Tab Images Debug:', {
+                  currentImagesCount: currentImages.length,
+                  additionalPreviewImagesCount: additionalPreviewImages.length,
+                  allImagesCount: allImages.length,
+                  selectedImage,
+                  currentImages: currentImages.map(img => ({ url: img.url, type: img.type })),
+                  allImages: allImages.map(img => ({ url: img.url, type: img.type }))
+                })
+                
                 // If selectedImage is not in all images, add it as a single-item array
                 if (selectedImage && !allImages.some(img => img.url === selectedImage)) {
-                  return [...allImages, {
+                  const result = [...allImages, {
                     url: selectedImage,
                     width: 1024, // Default dimensions for saved images
                     height: 1024,
                     generated_at: new Date().toISOString(),
                     type: 'saved'
                   }]
+                  console.log('🔍 Added selectedImage to images:', result.length)
+                  return result
                 }
                 return allImages
               })()}
