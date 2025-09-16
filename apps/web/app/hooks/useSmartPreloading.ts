@@ -110,13 +110,13 @@ export function useSmartPreloading(
 
   // Start processing when items are initialized
   useEffect(() => {
-    if (preloadItems.length > 0) {
+    if (preloadItemsRef.current.length > 0) {
       const timeout = setTimeout(() => {
         processQueue()
       }, delay)
       return () => clearTimeout(timeout)
     }
-  }, [preloadItems.length, delay, processQueue])
+  }, [urls.length, delay, processQueue])
 
   // Cleanup timeouts on unmount
   useEffect(() => {

@@ -45,9 +45,12 @@ export default function PerformanceMonitor({
     if (!enabled) return
 
     const startTime = performance.now()
+    let isActive = true
     
     // Monitor image loading performance
     const imageObserver = new PerformanceObserver((list) => {
+      if (!isActive) return
+      
       const entries = list.getEntries()
       let totalImageSize = 0
       let imageCount = 0
@@ -62,16 +65,20 @@ export default function PerformanceMonitor({
         }
       })
       
-      setMetrics(prev => ({
-        ...prev,
-        imageCount: prev.imageCount + imageCount,
-        totalSize: prev.totalSize + totalImageSize,
-        averageImageSize: prev.imageCount > 0 ? prev.totalSize / prev.imageCount : 0
-      }))
+      if (imageCount > 0) {
+        setMetrics(prev => ({
+          ...prev,
+          imageCount: prev.imageCount + imageCount,
+          totalSize: prev.totalSize + totalImageSize,
+          averageImageSize: prev.imageCount > 0 ? prev.totalSize / prev.imageCount : 0
+        }))
+      }
     })
 
     // Monitor video loading performance
     const videoObserver = new PerformanceObserver((list) => {
+      if (!isActive) return
+      
       const entries = list.getEntries()
       let totalVideoSize = 0
       let videoCount = 0
@@ -85,12 +92,14 @@ export default function PerformanceMonitor({
         }
       })
       
-      setMetrics(prev => ({
-        ...prev,
-        videoCount: prev.videoCount + videoCount,
-        totalSize: prev.totalSize + totalVideoSize,
-        averageVideoSize: prev.videoCount > 0 ? prev.totalSize / prev.videoCount : 0
-      }))
+      if (videoCount > 0) {
+        setMetrics(prev => ({
+          ...prev,
+          videoCount: prev.videoCount + videoCount,
+          totalSize: prev.totalSize + totalVideoSize,
+          averageVideoSize: prev.videoCount > 0 ? prev.totalSize / prev.videoCount : 0
+        }))
+      }
     })
 
     try {
@@ -149,6 +158,7 @@ export default function PerformanceMonitor({
     const timeout = setTimeout(calculateMetrics, 5000)
     
     return () => {
+      isActive = false
       clearTimeout(timeout)
       imageObserver.disconnect()
       videoObserver.disconnect()
@@ -156,21 +166,7 @@ export default function PerformanceMonitor({
     }
   }, [enabled])
 
-  // Notify parent component of metrics updates
-  useEffect(() => {
-    if (onMetricsUpdate && metrics.loadTime > 0) {
-      // Only update if metrics have changed significantly
-      const lastUpdate = lastUpdateRef.current
-      if (!lastUpdate || 
-          Math.abs(metrics.loadTime - lastUpdate.loadTime) > 100 ||
-          metrics.imageCount !== lastUpdate.imageCount ||
-          metrics.videoCount !== lastUpdate.videoCount ||
-          metrics.domNodes !== lastUpdate.domNodes) {
-        lastUpdateRef.current = metrics
-        onMetricsUpdate(metrics)
-      }
-    }
-  }, [metrics])
+  // Metrics are now only updated internally, no external callbacks
 
   // Format bytes to human readable format
   const formatBytes = (bytes: number): string => {
