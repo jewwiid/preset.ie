@@ -98,6 +98,10 @@ export default function VideoGenerationPanel({
     setImageYPosition(0) // Reset Y position when changing image
   }
 
+  const handleSaveFraming = (framing: { yPosition: number; dimensions: { width: number; height: number } }) => {
+    console.log('Framing saved:', framing)
+  }
+
   const handleImageSourceChange = (source: 'selected' | 'uploaded' | 'saved') => {
     setActiveImageSource(source)
     setImageYPosition(0) // Reset Y position when changing image source
@@ -168,6 +172,7 @@ export default function VideoGenerationPanel({
               aspectRatio={selectedAspectRatio}
               resolution={videoResolution}
               onPositionChange={setImageYPosition}
+              onSaveFraming={handleSaveFraming}
               className="mb-2"
             />
             <div className="text-xs text-gray-500">
@@ -306,6 +311,9 @@ export default function VideoGenerationPanel({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Select from Saved Images
             </label>
+            <p className="text-xs text-gray-500 mb-3">
+              Click on any image or the + button to add it to the video preview
+            </p>
             <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
               {savedImages.length === 0 ? (
                 <div className="col-span-3 text-center py-8">
@@ -317,7 +325,9 @@ export default function VideoGenerationPanel({
                 savedImages.map((image) => (
                   <div
                     key={image.id}
-                    className="group relative border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
+                    className={`group relative border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer ${
+                      selectedImage === image.image_url ? 'ring-2 ring-purple-500 border-purple-500' : 'border-gray-200'
+                    }`}
                     onClick={() => selectSavedImage(image.image_url)}
                   >
                     <div className="aspect-square bg-gray-100">
@@ -332,10 +342,20 @@ export default function VideoGenerationPanel({
                       <p className="text-white text-xs font-medium truncate">{image.title}</p>
                     </div>
                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <Button size="sm" variant="secondary" className="h-5 px-1 text-xs">
-                        Select
+                      <Button 
+                        size="sm" 
+                        variant={selectedImage === image.image_url ? "default" : "secondary"} 
+                        className="h-6 w-6 p-0"
+                        title="Add to preview"
+                      >
+                        <span className="text-sm font-bold">+</span>
                       </Button>
                     </div>
+                    {selectedImage === image.image_url && (
+                      <div className="absolute top-1 left-1 bg-purple-500 text-white text-xs px-2 py-1 rounded">
+                        Selected
+                      </div>
+                    )}
                   </div>
                 ))
               )}

@@ -95,10 +95,22 @@ export async function GET(request: NextRequest) {
     ]
 
     // Remove duplicates and sort by creation date
+    // Prioritize saved videos over generated videos when URLs match
     const uniqueVideos = allVideos
-      .filter((video, index, self) => 
-        index === self.findIndex(v => v.url === video.url)
-      )
+      .filter((video, index, self) => {
+        const firstIndex = self.findIndex(v => v.url === video.url)
+        if (firstIndex === index) return true // First occurrence, keep it
+        
+        // If this is a duplicate, prefer the saved version
+        const firstVideo = self[firstIndex]
+        if (video.is_saved && !firstVideo.is_saved) {
+          // Replace the unsaved version with the saved version
+          self[firstIndex] = video
+          return false // Remove this duplicate
+        }
+        
+        return false // Remove this duplicate
+      })
       .sort((a, b) => new Date(b.generated_at).getTime() - new Date(a.generated_at).getTime())
 
     console.log(`✅ Found ${uniqueVideos.length} videos for user ${user.id}`)

@@ -1,10 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Download, Trash2, Info, ChevronDown, ChevronUp, Play, Pause, Maximize2 } from 'lucide-react'
+import { Plus, Download, Trash2, Info, ChevronDown, ChevronUp, Play, Pause, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import ProgressiveImage from '../ui/ProgressiveImage'
+import ProgressiveVideo from '../ui/ProgressiveVideo'
+import { usePagination } from '../../hooks/usePagination'
 
 interface SavedMedia {
   id: string
@@ -55,6 +58,7 @@ interface SavedMediaMasonryProps {
   deletingImage?: string | null
   selectedImageUrl?: string | null
   onExpandMedia?: (media: SavedMedia) => void
+  currentTab?: string
 }
 
 export default function SavedMediaMasonry({
@@ -67,7 +71,8 @@ export default function SavedMediaMasonry({
   onAddImageToPreview,
   deletingImage,
   selectedImageUrl,
-  onExpandMedia
+  onExpandMedia,
+  currentTab = 'generate'
 }: SavedMediaMasonryProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [imagesLoaded, setImagesLoaded] = useState<Map<string, boolean>>(new Map())
@@ -75,6 +80,21 @@ export default function SavedMediaMasonry({
   const [isExpanded, setIsExpanded] = useState(false)
   const [imagesPerRow, setImagesPerRow] = useState(4)
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set())
+  
+  // Pagination for performance optimization
+  const {
+    currentPage,
+    totalPages,
+    pageSize,
+    paginatedItems: paginatedImages,
+    hasNextPage,
+    hasPreviousPage,
+    nextPage,
+    previousPage,
+    goToPage,
+    isLoading: paginationLoading,
+    setIsLoading: setPaginationLoading
+  } = usePagination(images, { pageSize: 16, initialPage: 1 })
 
   // Handle image loading
   const handleImageLoad = (imageId: string) => {
@@ -139,15 +159,17 @@ export default function SavedMediaMasonry({
   const getAspectRatioLabel = (width: number, height: number): string => {
     const aspectRatio = width / height
     
-    // Common aspect ratios
-    if (Math.abs(aspectRatio - 1) < 0.01) return '1:1'
-    if (Math.abs(aspectRatio - 16/9) < 0.01) return '16:9'
-    if (Math.abs(aspectRatio - 9/16) < 0.01) return '9:16'
-    if (Math.abs(aspectRatio - 4/3) < 0.01) return '4:3'
-    if (Math.abs(aspectRatio - 3/4) < 0.01) return '3:4'
-    if (Math.abs(aspectRatio - 21/9) < 0.01) return '21:9'
-    if (Math.abs(aspectRatio - 3/2) < 0.01) return '3:2'
-    if (Math.abs(aspectRatio - 2/3) < 0.01) return '2:3'
+    // Common aspect ratios with more generous tolerance
+    if (Math.abs(aspectRatio - 1) < 0.05) return '1:1'
+    if (Math.abs(aspectRatio - 16/9) < 0.05) return '16:9'
+    if (Math.abs(aspectRatio - 9/16) < 0.05) return '9:16'
+    if (Math.abs(aspectRatio - 4/3) < 0.05) return '4:3'
+    if (Math.abs(aspectRatio - 3/4) < 0.05) return '3:4'
+    if (Math.abs(aspectRatio - 21/9) < 0.05) return '21:9'
+    if (Math.abs(aspectRatio - 3/2) < 0.05) return '3:2'
+    if (Math.abs(aspectRatio - 2/3) < 0.05) return '2:3'
+    if (Math.abs(aspectRatio - 5/4) < 0.05) return '5:4'
+    if (Math.abs(aspectRatio - 4/5) < 0.05) return '4:5'
     
     // For other ratios, find the closest simple ratio
     const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b)
@@ -163,16 +185,45 @@ export default function SavedMediaMasonry({
     return `${w}:${h}`
   }
 
-  // Show all images in masonry layout
-  const visibleImages = images
-
   return (
     <div className="space-y-4">
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={previousPage}
+              disabled={!hasPreviousPage || paginationLoading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={nextPage}
+              disabled={!hasNextPage || paginationLoading}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="text-sm text-gray-500">
+            Showing {paginatedImages.length} of {images.length} items
+          </div>
+        </div>
+      )}
+      
       <div 
         ref={containerRef}
         className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]"
       >
-        {visibleImages.map((image) => {
+        {paginatedImages.map((image: SavedMedia) => {
         const isLoaded = imagesLoaded.get(image.id)
         const style = getImageStyle(image)
         
@@ -190,45 +241,27 @@ export default function SavedMediaMasonry({
             {/* Media */}
             <div className="relative w-full h-full">
               {image.media_type === 'video' ? (
-                <video
-                  ref={(video) => {
-                    if (video) {
-                      // Store video ref for play button access
-                      video.setAttribute('data-video-id', image.id)
-                    }
-                  }}
-                  src={image.video_url}
+                <ProgressiveVideo
+                  src={image.video_url || ''}
                   poster={image.thumbnail_url}
-                  className={`w-full h-full object-cover transition-opacity duration-300 ${
-                    isLoaded ? 'opacity-100' : 'opacity-0'
-                  }`}
-                  onLoadedData={() => handleImageLoad(image.id)}
+                  className="w-full h-full"
+                  onLoad={() => handleImageLoad(image.id)}
                   onError={() => handleImageLoad(image.id)}
                   onPlay={() => handleVideoPlay(image.id)}
                   onPause={() => handleVideoPause(image.id)}
                   onEnded={() => handleVideoPause(image.id)}
                   preload="metadata"
                   muted
-                >
-                  <source src={image.video_url} type="video/mp4" />
-                </video>
+                />
               ) : (
-                <img
-                  src={image.thumbnail_url || image.image_url}
+                <ProgressiveImage
+                  src={image.thumbnail_url || image.image_url || ''}
                   alt={image.title}
-                  className={`w-full h-full object-cover transition-opacity duration-300 ${
-                    isLoaded ? 'opacity-100' : 'opacity-0'
-                  }`}
+                  className="w-full h-full"
                   onLoad={() => handleImageLoad(image.id)}
                   loading="lazy"
+                  quality={75}
                 />
-              )}
-              
-              {/* Loading placeholder */}
-              {!isLoaded && (
-                <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-gray-300 border-t-purple-500 rounded-full animate-spin"></div>
-                </div>
               )}
               
               {/* Playing indicator */}
@@ -305,7 +338,7 @@ export default function SavedMediaMasonry({
                         e.stopPropagation()
                         onAddImageToPreview(image.image_url || image.video_url || '')
                       }}
-                      title="Add to preview"
+                      title={currentTab === 'video' ? 'Add to video preview' : 'Add to preview'}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>

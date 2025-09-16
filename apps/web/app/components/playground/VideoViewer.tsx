@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Play, Pause, Volume2, VolumeX, Maximize2, Download, Heart, Share2 } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, Maximize2, Download, Heart, Share2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface VideoViewerProps {
@@ -19,7 +19,9 @@ interface VideoViewerProps {
   onSelectVideo: (url: string | null) => void
   onSaveToGallery?: (url: string) => Promise<void>
   onDownloadVideo?: (url: string, filename: string) => Promise<void>
+  onDeleteVideo?: (url: string) => Promise<void>
   savingVideo?: string | null
+  deletingVideo?: string | null
   loading?: boolean
   emptyStateMessage?: string
 }
@@ -32,7 +34,9 @@ export default function VideoViewer({
   onSelectVideo,
   onSaveToGallery,
   onDownloadVideo,
+  onDeleteVideo,
   savingVideo,
+  deletingVideo,
   loading = false,
   emptyStateMessage = "No videos available. Generate some videos first!"
 }: VideoViewerProps) {
@@ -41,6 +45,8 @@ export default function VideoViewer({
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [volume, setVolume] = useState(1)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [videoToDelete, setVideoToDelete] = useState<string | null>(null)
 
   const selectedVideoData = videos.find(video => video.url === selectedVideo)
 
@@ -97,6 +103,30 @@ export default function VideoViewer({
     }
   }
 
+  const handleDeleteClick = (videoUrl: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent video selection
+    setVideoToDelete(videoUrl)
+    setShowDeleteConfirm(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (videoToDelete && onDeleteVideo) {
+      await onDeleteVideo(videoToDelete)
+      setShowDeleteConfirm(false)
+      setVideoToDelete(null)
+      
+      // If the deleted video was selected, clear selection
+      if (selectedVideo === videoToDelete) {
+        onSelectVideo(null)
+      }
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false)
+    setVideoToDelete(null)
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-4">
@@ -129,10 +159,13 @@ export default function VideoViewer({
           {/* Main Video Player */}
           {selectedVideo && selectedVideoData ? (
             <div className="space-y-4">
-              <div className="relative bg-black rounded-lg overflow-hidden">
+              <div 
+                className="relative bg-black rounded-lg overflow-hidden"
+                style={{ aspectRatio: convertAspectRatio(selectedVideoData.aspectRatio || '16:9') }}
+              >
                 <video
                   src={selectedVideo}
-                  className="w-full h-auto max-h-96"
+                  className="w-full h-full object-cover"
                   controls={false}
                   ref={(video) => {
                     if (video) {
@@ -247,6 +280,23 @@ export default function VideoViewer({
                       <Download className="h-4 w-4" />
                     </Button>
                   )}
+                  
+                  {onDeleteVideo && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-600 shadow-md"
+                      onClick={(e) => handleDeleteClick(selectedVideo, e)}
+                      disabled={deletingVideo === selectedVideo}
+                      title="Remove Video"
+                    >
+                      {deletingVideo === selectedVideo ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -323,12 +373,79 @@ export default function VideoViewer({
                           {video.aspectRatio || '16:9'}
                         </span>
                       </div>
+                      
+                      {/* Delete Button */}
+                      {onDeleteVideo && (
+                        <div className="absolute top-1 right-1 mt-6">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-6 w-6 p-0 bg-red-500/80 hover:bg-red-600 shadow-md"
+                            onClick={(e) => handleDeleteClick(video.url, e)}
+                            disabled={deletingVideo === video.url}
+                            title="Remove Video"
+                          >
+                            {deletingVideo === video.url ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            ) : (
+                              <X className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Remove Video Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Remove Video</h3>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDeleteCancel}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Remove this video from your generated videos list? You can always restore it from Past Generations if needed.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={handleDeleteCancel}
+                disabled={deletingVideo === videoToDelete}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+                disabled={deletingVideo === videoToDelete}
+              >
+                {deletingVideo === videoToDelete ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Removing...
+                  </>
+                ) : (
+                  'Remove Video'
+                )}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

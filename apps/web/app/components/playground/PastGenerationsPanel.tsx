@@ -1,9 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Clock, Download, Trash2, AlertCircle, Image as ImageIcon, CheckCircle, Edit3, Eye, X, Save, Video } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Clock, Download, Trash2, AlertCircle, Image as ImageIcon, CheckCircle, Edit3, Eye, X, Save, Video, Play, Pause, Maximize2, Info, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useAuth } from '../../../lib/auth-context'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
+import ProgressiveImage from '../ui/ProgressiveImage'
+import ProgressiveVideo from '../ui/ProgressiveVideo'
+import { usePagination } from '../../hooks/usePagination'
+import { useSmartPreloading } from '../../hooks/useSmartPreloading'
 
 interface PastGeneration {
   id: string
@@ -36,6 +43,7 @@ interface PastGenerationsPanelProps {
 }
 
 export default function PastGenerationsPanel({ onImportProject }: PastGenerationsPanelProps) {
+  console.log('🎯 PastGenerationsPanel component rendered')
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
   
@@ -44,29 +52,183 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [viewingImages, setViewingImages] = useState<PastGeneration | null>(null)
   const [savingImage, setSavingImage] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null)
+  const [requiresPermanent, setRequiresPermanent] = useState(false)
+  
+  // Masonry layout state
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [imagesLoaded, setImagesLoaded] = useState<Map<string, boolean>>(new Map())
+  const [selectedImageForInfo, setSelectedImageForInfo] = useState<PastGeneration | null>(null)
+  const [imagesPerRow, setImagesPerRow] = useState(4)
+  const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set())
+  
+  // Pagination for performance optimization
+  const {
+    currentPage,
+    totalPages,
+    pageSize,
+    paginatedItems: paginatedGenerations,
+    hasNextPage,
+    hasPreviousPage,
+    nextPage,
+    previousPage,
+    goToPage,
+    isLoading: paginationLoading,
+    setIsLoading: setPaginationLoading
+  } = usePagination(generations, { pageSize: 12, initialPage: 1 })
+
+  // Smart preloading for visible media
+  const mediaUrls = paginatedGenerations
+    .flatMap(gen => gen.generated_images.map(img => img.url))
+    .filter(Boolean)
+  
+  const { preloadStatus } = useSmartPreloading(mediaUrls, {
+    priority: 'high',
+    delay: 500, // 500ms delay to prioritize initial render
+    maxConcurrent: 2 // Limit concurrent preloads
+  })
+
+  // Handle image loading
+  const handleImageLoad = (imageId: string) => {
+    setImagesLoaded(prev => {
+      const newMap = new Map(prev)
+      newMap.set(imageId, true)
+      return newMap
+    })
+  }
+
+  // Handle video play/pause
+  const handleVideoPlay = (imageId: string) => {
+    setPlayingVideos(prev => new Set(prev).add(imageId))
+  }
+
+  const handleVideoPause = (imageId: string) => {
+    setPlayingVideos(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(imageId)
+      return newSet
+    })
+  }
+
+  // Update images per row based on screen size
+  useEffect(() => {
+    const updateImagesPerRow = () => {
+      if (window.innerWidth >= 1024) {
+        setImagesPerRow(4) // lg:grid-cols-4
+      } else if (window.innerWidth >= 768) {
+        setImagesPerRow(3) // md:grid-cols-3
+      } else {
+        setImagesPerRow(2) // grid-cols-2
+      }
+    }
+
+    updateImagesPerRow()
+    window.addEventListener('resize', updateImagesPerRow)
+    return () => window.removeEventListener('resize', updateImagesPerRow)
+  }, [])
+
+  // Calculate aspect ratio and determine column span
+  const getImageStyle = (generation: PastGeneration) => {
+    if (generation.generated_images.length === 0) {
+      return { gridColumn: 'span 1', aspectRatio: '1' }
+    }
+    
+    const image = generation.generated_images[0]
+    const aspectRatio = image.width / image.height
+    
+    // Determine column span based on aspect ratio
+    let colSpan = 1
+    if (aspectRatio > 1.5) {
+      colSpan = 2 // Wide images span 2 columns
+    } else if (aspectRatio < 0.7) {
+      colSpan = 1 // Tall images span 1 column
+    } else {
+      colSpan = 1 // Square images span 1 column
+    }
+    
+    return {
+      gridColumn: `span ${colSpan}`,
+      aspectRatio: aspectRatio.toString()
+    }
+  }
+
+  // Convert aspect ratio to readable format
+  const getAspectRatioLabel = (width: number, height: number): string => {
+    const aspectRatio = width / height
+    
+    // Common aspect ratios with more generous tolerance
+    if (Math.abs(aspectRatio - 1) < 0.05) return '1:1'
+    if (Math.abs(aspectRatio - 16/9) < 0.05) return '16:9'
+    if (Math.abs(aspectRatio - 9/16) < 0.05) return '9:16'
+    if (Math.abs(aspectRatio - 4/3) < 0.05) return '4:3'
+    if (Math.abs(aspectRatio - 3/4) < 0.05) return '3:4'
+    if (Math.abs(aspectRatio - 21/9) < 0.05) return '21:9'
+    if (Math.abs(aspectRatio - 3/2) < 0.05) return '3:2'
+    if (Math.abs(aspectRatio - 2/3) < 0.05) return '2:3'
+    if (Math.abs(aspectRatio - 5/4) < 0.05) return '5:4'
+    if (Math.abs(aspectRatio - 4/5) < 0.05) return '4:5'
+    
+    // For other ratios, find the closest simple ratio
+    const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b)
+    const divisor = gcd(width, height)
+    const w = Math.round(width / divisor)
+    const h = Math.round(height / divisor)
+    
+    // If the ratio is too complex, show decimal
+    if (w > 32 || h > 32) {
+      return aspectRatio.toFixed(2) + ':1'
+    }
+    
+    return `${w}:${h}`
+  }
 
   useEffect(() => {
-    if (user) {
+    console.log('🔄 PastGenerationsPanel useEffect triggered:', { user: !!user, session: !!session?.access_token })
+    if (user && session?.access_token) {
       fetchPastGenerations()
+    } else {
+      console.log('❌ PastGenerationsPanel: Missing user or session token')
     }
-  }, [user])
+  }, [user, session])
 
   const fetchPastGenerations = async () => {
+    console.log('🚀 fetchPastGenerations called')
     try {
+      setLoading(true)
+      
+      if (!session?.access_token) {
+        console.error('❌ No session token available')
+        throw new Error('No authentication token available')
+      }
+
+      console.log('🔄 Fetching past generations...')
       const response = await fetch('/api/playground/past-generations', {
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         }
       })
 
+      console.log('📡 Past generations response status:', response.status)
+
       if (!response.ok) {
-        throw new Error('Failed to fetch past generations')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('❌ Past generations API error:', errorData)
+        console.error('❌ Full response:', response)
+        throw new Error(`Failed to fetch past generations: ${response.status} ${errorData.error || response.statusText}`)
       }
 
       const data = await response.json()
+      console.log('✅ Past generations fetched:', data.generations?.length || 0)
+      console.log('📊 Past Generations Analysis:', {
+        total: data.generations?.length || 0,
+        videos: data.generations?.filter((g: any) => g.is_video).length || 0,
+        images: data.generations?.filter((g: any) => !g.is_video).length || 0,
+        videoTypes: data.generations?.filter((g: any) => g.generated_images?.[0]?.type === 'video').length || 0
+      })
       setGenerations(data.generations || [])
     } catch (error) {
-      console.error('Error fetching past generations:', error)
+      console.error('❌ Error fetching past generations:', error)
       showFeedback({
         type: 'error',
         title: 'Failed to Load',
@@ -77,36 +239,69 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
     }
   }
 
-  const deleteGeneration = async (id: string) => {
-    setDeletingId(id)
+  const handleDeleteClick = (id: string) => {
+    setItemToDelete(id)
+    setShowDeleteConfirm(true)
+    setRequiresPermanent(false)
+  }
+
+  const handleDeleteConfirm = async (permanent: boolean = false) => {
+    if (!itemToDelete) return
+
+    setDeletingId(itemToDelete)
     try {
-      const response = await fetch(`/api/playground/past-generations/${id}`, {
+      const response = await fetch(`/api/playground/past-generations/${itemToDelete}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${session?.access_token}`
-        }
+          'Authorization': `Bearer ${session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ permanent })
       })
 
       if (!response.ok) {
-        throw new Error('Failed to delete generation')
+        const errorData = await response.json()
+        
+        if (errorData.requiresPermanent) {
+          setRequiresPermanent(true)
+          return // Don't close dialog, show permanent option
+        }
+        
+        // Provide more detailed error information
+        const errorMessage = errorData.details 
+          ? `${errorData.error}: ${errorData.details}`
+          : errorData.error || 'Failed to delete generation'
+        
+        throw new Error(errorMessage)
       }
 
-      setGenerations(prev => prev.filter(gen => gen.id !== id))
+      setGenerations(prev => prev.filter(gen => gen.id !== itemToDelete))
       showFeedback({
         type: 'success',
         title: 'Deleted',
-        message: 'Generation deleted successfully'
+        message: permanent ? 'Generation permanently deleted' : 'Generation deleted successfully'
       })
+      
+      setShowDeleteConfirm(false)
+      setItemToDelete(null)
+      setRequiresPermanent(false)
     } catch (error) {
       console.error('Error deleting generation:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Could not delete generation'
       showFeedback({
         type: 'error',
         title: 'Delete Failed',
-        message: 'Could not delete generation'
+        message: errorMessage
       })
     } finally {
       setDeletingId(null)
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false)
+    setItemToDelete(null)
+    setRequiresPermanent(false)
   }
 
   const getDaysRemaining = (createdAt: string) => {
@@ -167,196 +362,518 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
     }
   }
 
+  console.log('📊 PastGenerationsPanel render state:', { loading, generationsCount: generations.length })
+
   if (loading) {
+    console.log('⏳ PastGenerationsPanel: Showing loading state')
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center space-x-2 mb-4">
-          <Clock className="h-5 w-5 text-gray-500" />
-          <h3 className="text-lg font-semibold text-gray-900">Past Generations</h3>
-        </div>
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-20 bg-gray-200 rounded-lg"></div>
+      <Card className="border-t-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-purple-600" />
+                Past Generations
+              </CardTitle>
+              <CardDescription>
+                Your recent AI generations (Last 6 days)
+              </CardDescription>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+            <span className="ml-2 text-gray-600">Loading past generations...</span>
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <div className="flex items-center space-x-2 mb-4">
-        <Clock className="h-5 w-5 text-gray-500" />
-        <h3 className="text-lg font-semibold text-gray-900">Past Generations</h3>
-        <span className="text-sm text-gray-500">(Last 6 days)</span>
-      </div>
-
-      {generations.length === 0 ? (
-        <div className="text-center py-8">
-          <ImageIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 text-sm">No recent generations found</p>
-          <p className="text-gray-400 text-xs mt-1">Generate some images to see them here</p>
-        </div>
-      ) : (
-        <div className="space-y-3 max-h-96 overflow-y-auto">
-          {generations.map((generation) => {
-            const daysRemaining = getDaysRemaining(generation.created_at)
-            const isUrgent = daysRemaining <= 1
-            
-            return (
-              <div
-                key={generation.id}
-                className={`border rounded-lg p-4 transition-all hover:shadow-md ${
-                  isUrgent ? 'border-red-200 bg-red-50' : 'border-gray-200'
-                }`}
-              >
-                <div className="flex items-start space-x-3 mb-3">
-                  {/* Thumbnail Preview */}
-                  <div className="flex-shrink-0">
-                    <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
-                      {generation.generated_images.length > 0 ? (
-                        <>
-                          {generation.generated_images[0].type === 'video' ? (
-                            <video
-                              src={generation.generated_images[0].url}
-                              className="w-full h-full object-cover"
-                              controls
-                              preload="metadata"
-                              poster={generation.generated_images[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
-                            >
-                              <source src={generation.generated_images[0].url} type="video/mp4" />
-                              Your browser does not support the video tag.
-                            </video>
-                          ) : (
-                            <img
-                              src={generation.generated_images[0].url}
-                              alt={generation.title}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          )}
-                          {generation.generated_images.length > 1 && (
-                            <div className="absolute top-1 right-1 bg-black bg-opacity-70 text-white text-xs px-1 py-0.5 rounded">
-                              +{generation.generated_images.length - 1}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ImageIcon className="h-6 w-6 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
+    <>
+      <Card className="border-t-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-purple-600" />
+                Past Generations
+              </CardTitle>
+              <CardDescription>
+                Your recent AI generations ({generations.length}) - Last 6 days
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchPastGenerations}
+              disabled={loading}
+            >
+              {loading ? 'Loading...' : 'Refresh'}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {generations.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <ImageIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p className="font-medium">No recent generations found</p>
+              <p className="text-sm">Generate some images or videos to see them here</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={previousPage}
+                      disabled={!hasPreviousPage || paginationLoading}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <span className="text-sm text-gray-600">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={nextPage}
+                      disabled={!hasNextPage || paginationLoading}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <h4 className="text-sm font-medium text-gray-900 truncate">
-                            {generation.title}
-                          </h4>
-                          {generation.is_saved && (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          )}
-                          {generation.is_edit && (
-                            <Edit3 className="h-4 w-4 text-blue-500" />
-                          )}
-                          {generation.is_video && (
-                            <Video className="h-4 w-4 text-purple-500" />
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                          {generation.prompt}
-                        </p>
-                      </div>
-                      {isUrgent && !generation.is_saved && (
-                        <div className="flex items-center space-x-1 ml-2">
-                          <AlertCircle className="h-4 w-4 text-red-500" />
-                          <span className="text-xs text-red-600 font-medium">
-                            {daysRemaining === 0 ? 'Expires today' : '1 day left'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                  <div className="flex items-center space-x-4">
-                    <span>{generation.generated_images.length} image(s)</span>
-                    <span>{generation.credits_used} credits</span>
-                    {generation.style && (
-                      <span className="text-blue-600 font-medium">
-                        {generation.style === 'realistic' ? '📸' : 
-                         generation.style === 'artistic' ? '🎨' :
-                         generation.style === 'cartoon' ? '🎭' :
-                         generation.style === 'anime' ? '🌸' :
-                         generation.style === 'fantasy' ? '✨' : 
-                         generation.is_edit ? '✏️' : ''} {generation.style}
+                  <div className="text-sm text-gray-500">
+                    Showing {paginatedGenerations.length} of {generations.length} generations
+                    {preloadStatus.loading > 0 && (
+                      <span className="ml-2 text-blue-500">
+                        • Preloading {preloadStatus.loading}/{preloadStatus.total}
                       </span>
                     )}
-                    <span>{formatDate(generation.last_generated_at)}</span>
                   </div>
-                  {daysRemaining > 1 && !generation.is_saved && (
-                    <span className="text-gray-400">
-                      {daysRemaining} days left
-                    </span>
-                  )}
-                  {generation.is_saved && (
-                    <span className="text-green-600 font-medium">
-                      Saved
-                    </span>
-                  )}
+                </div>
+              )}
+              
+              <div 
+                ref={containerRef}
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]"
+              >
+                {paginatedGenerations.map((generation: PastGeneration) => {
+                  const isLoaded = imagesLoaded.get(generation.id)
+                  const style = getImageStyle(generation)
+                  const daysRemaining = getDaysRemaining(generation.created_at)
+                  const isUrgent = daysRemaining <= 1
+                  
+                  return (
+                    <div
+                      key={generation.id}
+                      className={`group relative rounded-lg overflow-hidden border transition-all duration-200 cursor-pointer ${
+                        isUrgent && !generation.is_saved ? 'border-red-300 ring-2 ring-red-200' : 'border-gray-200 hover:border-purple-300'
+                      }`}
+                      style={style}
+                      onClick={() => onImportProject(generation)}
+                    >
+                      {/* Media */}
+                      <div className="relative w-full h-full">
+                        {generation.generated_images.length > 0 ? (
+                          <>
+                            {generation.generated_images[0].type === 'video' ? (
+                              <ProgressiveVideo
+                                src={generation.generated_images[0].url}
+                                poster={generation.generated_images[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
+                                className="w-full h-full"
+                                onLoad={() => handleImageLoad(generation.id)}
+                                onError={() => handleImageLoad(generation.id)}
+                                onPlay={() => handleVideoPlay(generation.id)}
+                                onPause={() => handleVideoPause(generation.id)}
+                                onEnded={() => handleVideoPause(generation.id)}
+                                preload="metadata"
+                                muted
+                              />
+                            ) : (
+                              <ProgressiveImage
+                                src={generation.generated_images[0].url}
+                                alt={generation.title}
+                                className="w-full h-full"
+                                onLoad={() => handleImageLoad(generation.id)}
+                                loading="lazy"
+                                quality={75}
+                              />
+                            )}
+                          </>
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <ImageIcon className="h-8 w-8 text-gray-400" />
+                          </div>
+                        )}
+                        
+                        {/* Playing indicator */}
+                        {generation.generated_images.length > 0 && 
+                         generation.generated_images[0].type === 'video' && 
+                         playingVideos.has(generation.id) && (
+                          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                            <span>Playing</span>
+                          </div>
+                        )}
+                        
+                        {/* Status badges */}
+                        <div className="absolute top-2 right-2 flex flex-col gap-1">
+                          {generation.generated_images.length > 0 && (
+                            <div className="bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                              <span>{getAspectRatioLabel(generation.generated_images[0].width, generation.generated_images[0].height)}</span>
+                              {generation.is_video && (
+                                <span className="text-blue-300">🎬</span>
+                              )}
+                            </div>
+                          )}
+                          {generation.is_saved && (
+                            <div className="bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              <span>Saved</span>
+                            </div>
+                          )}
+                          {isUrgent && !generation.is_saved && (
+                            <div className="bg-red-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              <span>{daysRemaining === 0 ? 'Expires today' : '1 day left'}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Multiple images indicator */}
+                        {generation.generated_images.length > 1 && (
+                          <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                            +{generation.generated_images.length - 1} more
+                          </div>
+                        )}
+                        
+                        {/* Overlay with actions */}
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                            {/* Play button for videos */}
+                            {generation.generated_images.length > 0 && 
+                             generation.generated_images[0].type === 'video' && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="h-10 w-10 p-0 bg-white/90 hover:bg-white"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const video = e.currentTarget.closest('.group')?.querySelector('video') as HTMLVideoElement
+                                  if (video) {
+                                    if (video.paused) {
+                                      video.play().catch(error => {
+                                        console.error('Error playing video:', error)
+                                      })
+                                    } else {
+                                      video.pause()
+                                    }
+                                  }
+                                }}
+                                title={playingVideos.has(generation.id) ? "Pause video" : "Play video"}
+                              >
+                                {playingVideos.has(generation.id) ? (
+                                  <Pause className="h-5 w-5 fill-current" />
+                                ) : (
+                                  <Play className="h-5 w-5 fill-current" />
+                                )}
+                              </Button>
+                            )}
+                            
+                            {/* View all images button */}
+                            {generation.generated_images.length > 1 && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setViewingImages(generation)
+                                }}
+                                title="View all images"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            )}
+                            
+                            {/* Info button */}
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedImageForInfo(generation)
+                              }}
+                              title="View metadata"
+                            >
+                              <Info className="h-4 w-4" />
+                            </Button>
+                            
+                            {/* Import button */}
+                            {!generation.is_edit && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onImportProject(generation)
+                                }}
+                                title={generation.is_video ? "Import to Video" : "Import to Edit"}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                            
+                            {/* Delete button */}
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteClick(generation.id)
+                              }}
+                              disabled={deletingId === generation.id}
+                              title="Delete generation"
+                            >
+                              {deletingId === generation.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Media info overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-white text-sm font-medium truncate">{generation.title}</h4>
+                            <p className="text-white/80 text-xs truncate">{generation.prompt}</p>
+                          </div>
+                          <div className="flex items-center gap-1 ml-2">
+                            <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
+                              {generation.generated_images.length} {generation.is_video ? 'video(s)' : 'image(s)'}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-200 border-purple-400/30">
+                              {generation.credits_used} credits
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 text-center">
+                  Images auto-delete after 6 days unless saved to gallery. 
+                  <span className="text-green-600">●</span> Saved items are permanent.
+                </p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Metadata Popup Modal */}
+      {selectedImageForInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Generation Metadata</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedImageForInfo(null)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Image Preview */}
+              <div className="aspect-square rounded-lg overflow-hidden border">
+                {selectedImageForInfo.generated_images.length > 0 ? (
+                  <>
+                    {selectedImageForInfo.generated_images[0].type === 'video' ? (
+                      <video
+                        src={selectedImageForInfo.generated_images[0].url}
+                        poster={selectedImageForInfo.generated_images[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
+                        className="w-full h-full object-cover"
+                        controls
+                        preload="metadata"
+                      />
+                    ) : (
+                      <img
+                        src={selectedImageForInfo.generated_images[0].url}
+                        alt={selectedImageForInfo.title}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <ImageIcon className="h-12 w-12 text-gray-400" />
+                  </div>
+                )}
+              </div>
+              
+              {/* Metadata */}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Title</label>
+                  <p className="text-sm">{selectedImageForInfo.title}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Prompt</label>
+                  <p className="text-sm">{selectedImageForInfo.prompt}</p>
+                </div>
+                
+                {selectedImageForInfo.generated_images.length > 0 && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Dimensions</label>
+                    <p className="text-sm">{selectedImageForInfo.generated_images[0].width} × {selectedImageForInfo.generated_images[0].height}</p>
+                  </div>
+                )}
+                
+                {selectedImageForInfo.generated_images.length > 0 && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Aspect Ratio</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary" className="text-sm">
+                        {getAspectRatioLabel(selectedImageForInfo.generated_images[0].width, selectedImageForInfo.generated_images[0].height)}
+                      </Badge>
+                      <span className="text-sm text-gray-500">
+                        ({selectedImageForInfo.is_video ? 'Video' : 'Image'})
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Created</label>
+                  <p className="text-sm">{new Date(selectedImageForInfo.created_at).toLocaleString()}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Credits Used</label>
+                  <p className="text-sm">{selectedImageForInfo.credits_used}</p>
+                </div>
+                
+                {selectedImageForInfo.style && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Style</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="secondary" className="text-sm">
+                        {selectedImageForInfo.style === 'realistic' ? '📸' : 
+                         selectedImageForInfo.style === 'artistic' ? '🎨' :
+                         selectedImageForInfo.style === 'cartoon' ? '🎭' :
+                         selectedImageForInfo.style === 'anime' ? '🌸' :
+                         selectedImageForInfo.style === 'fantasy' ? '✨' : 
+                         selectedImageForInfo.is_edit ? '✏️' : ''} {selectedImageForInfo.style}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status indicators */}
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Status</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    {selectedImageForInfo.is_saved && (
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Saved
+                      </Badge>
+                    )}
+                    {selectedImageForInfo.is_edit && (
+                      <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                        <Edit3 className="h-3 w-3 mr-1" />
+                        Edit
+                      </Badge>
+                    )}
+                    {selectedImageForInfo.is_video && (
+                      <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                        <Video className="h-3 w-3 mr-1" />
+                        Video
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  {generation.generated_images.length > 1 && (
-                    <button
-                      onClick={() => setViewingImages(generation)}
-                      className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 transition-colors"
-                    >
-                      <Eye className="h-3 w-3" />
-                      <span>View All ({generation.generated_images.length})</span>
-                    </button>
-                  )}
-                  
-                  {!generation.is_edit && (
-                    <button
-                      onClick={() => onImportProject(generation)}
-                      className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
-                    >
-                      <Download className="h-3 w-3" />
-                      <span>Import</span>
-                    </button>
-                  )}
-                  
-                  {!generation.is_saved && (
-                    <button
-                      onClick={() => deleteGeneration(generation.id)}
-                      disabled={deletingId === generation.id}
-                      className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors disabled:opacity-50"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      <span>{deletingId === generation.id ? 'Deleting...' : 'Delete'}</span>
-                    </button>
-                  )}
-                </div>
+                {/* Generation Metadata */}
+                {selectedImageForInfo.metadata && (
+                  <div className="border-t pt-3">
+                    <label className="text-sm font-medium text-gray-600 mb-2 block">Additional Metadata</label>
+                    <div className="space-y-2 text-sm">
+                      {selectedImageForInfo.metadata.enhanced_prompt && (
+                        <div>
+                          <span className="font-medium">Enhanced Prompt:</span>
+                          <p className="text-gray-700 mt-1">{selectedImageForInfo.metadata.enhanced_prompt}</p>
+                        </div>
+                      )}
+                      {selectedImageForInfo.metadata.style_applied && (
+                        <div>
+                          <span className="font-medium">Style Applied:</span>
+                          <p className="text-gray-700">{selectedImageForInfo.metadata.style_applied}</p>
+                        </div>
+                      )}
+                      {selectedImageForInfo.metadata.style_prompt && (
+                        <div>
+                          <span className="font-medium">Style Prompt:</span>
+                          <p className="text-gray-700">{selectedImageForInfo.metadata.style_prompt}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )
-          })}
+              
+              {/* Actions */}
+              <div className="flex gap-2 pt-4 border-t">
+                <Button
+                  onClick={() => {
+                    onImportProject(selectedImageForInfo)
+                    setSelectedImageForInfo(null)
+                  }}
+                  className="flex-1"
+                >
+                  {selectedImageForInfo.is_video ? 'Import to Video' : 'Import to Edit'}
+                </Button>
+                {selectedImageForInfo.generated_images.length > 1 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setViewingImages(selectedImageForInfo)
+                      setSelectedImageForInfo(null)
+                    }}
+                    className="flex-1"
+                  >
+                    View All Images
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
-
-      <div className="mt-4 pt-4 border-t border-gray-200">
-        <p className="text-xs text-gray-500 text-center">
-          Images auto-delete after 6 days unless saved to gallery. 
-          <span className="text-green-600">●</span> Saved items are permanent.
-        </p>
-      </div>
 
       {/* Image Viewing Modal */}
       {viewingImages && (
@@ -399,7 +916,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center space-y-2">
                         <span className="text-white text-sm font-medium bg-black bg-opacity-70 px-2 py-1 rounded">
-                          Image {index + 1}
+                          {image.type === 'video' ? 'Video' : 'Image'} {index + 1}
                         </span>
                         <button
                           onClick={() => saveImageToGallery(image.url, viewingImages.title)}
@@ -419,7 +936,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
             <div className="p-4 border-t bg-gray-50">
               <div className="flex items-center justify-between text-sm text-gray-600">
                 <div className="flex items-center space-x-4">
-                  <span>{viewingImages.generated_images.length} image(s)</span>
+                  <span>{viewingImages.generated_images.length} {viewingImages.is_video ? 'video(s)' : 'image(s)'}</span>
                   <span>{viewingImages.credits_used} credits</span>
                   {viewingImages.style && (
                     <span className="text-blue-600 font-medium">
@@ -450,7 +967,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                     className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
                   >
                     <Download className="h-4 w-4" />
-                    <span>Import Project</span>
+                    <span>{viewingImages?.is_video ? 'Import to Video' : 'Import to Edit'}</span>
                   </button>
                 </div>
               </div>
@@ -458,6 +975,90 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
           </div>
         </div>
       )}
-    </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {requiresPermanent ? 'Permanent Delete Required' : 'Delete Generation'}
+              </h3>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDeleteCancel}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              {requiresPermanent ? (
+                <>
+                  This generation has been saved to your gallery and cannot be deleted normally. 
+                  <strong className="text-red-600"> Permanent deletion will remove it completely</strong> from both Past Generations and Saved Media. This action cannot be undone.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to delete this generation? It will be removed from Past Generations but can be restored from Saved Media if needed.
+                </>
+              )}
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={handleDeleteCancel}
+                disabled={deletingId === itemToDelete}
+              >
+                Cancel
+              </Button>
+              {requiresPermanent ? (
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDeleteConfirm(true)}
+                  disabled={deletingId === itemToDelete}
+                >
+                  {deletingId === itemToDelete ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    'Permanent Delete'
+                  )}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleDeleteConfirm(false)}
+                    disabled={deletingId === itemToDelete}
+                  >
+                    {deletingId === itemToDelete ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete'
+                    )}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDeleteConfirm(true)}
+                    disabled={deletingId === itemToDelete}
+                  >
+                    Permanent Delete
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

@@ -3,6 +3,30 @@
 ## Overview
 This document outlines the implementation plan for bringing our codebase to full compliance with CLAUDE.md specifications. We'll tackle each area systematically, starting with Bounded Contexts.
 
+## 🛠️ CLI Tools & Development Workflow
+
+### ✅ Completed Infrastructure
+- **Build & Deploy Script** (`build-deploy.sh`) - Comprehensive automation for clean builds, dependency management, testing, linting, and Vercel deployment
+- **Monitoring Script** (`monitor.sh`) - Real-time project health monitoring including git status, build health, deployment status, and system resources
+- **Documentation** - Complete usage guides and implementation summaries
+
+### Quick Commands
+```bash
+# Full pipeline
+./build-deploy.sh --all
+
+# Continuous monitoring
+./monitor.sh --continuous
+
+# Status checks
+./build-deploy.sh --status
+./build-deploy.sh --monitor
+```
+
+### Documentation Files
+- `CLI_TOOLS_README.md` - Complete usage guide and examples
+- `BUILD_DEPLOY_SUMMARY.md` - Implementation summary and current status
+
 ---
 
 ## 📦 1. Bounded Contexts Implementation

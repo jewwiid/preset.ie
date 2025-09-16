@@ -166,14 +166,20 @@ export default function ImagePreviewArea({
 
   // Open image manipulator
   const openImageManipulator = (imageUrl: string) => {
-    if (!selectedImage) return
+    console.log('openImageManipulator called', { imageUrl, selectedImage, aspectRatio, displayAspectRatio })
+    if (!selectedImage) {
+      console.log('No selectedImage, returning')
+      return
+    }
     
-    setImageManipulator({
+    const manipulatorData = {
       isOpen: true,
       imageUrl: selectedImage,
       originalAspectRatio: aspectRatio || '1:1',
       targetAspectRatio: displayAspectRatio
-    })
+    }
+    console.log('Setting imageManipulator state', manipulatorData)
+    setImageManipulator(manipulatorData)
   }
 
   // Handle cropped image save
@@ -496,12 +502,24 @@ export default function ImagePreviewArea({
                         <Maximize2 className="h-4 w-4" />
                       </Button>
                       {/* Crop button - only show if aspect ratios differ */}
-                      {needsManipulation(aspectRatio || '1:1', displayAspectRatio) && (
+                      {(() => {
+                        const needsManip = needsManipulation(aspectRatio || '1:1', displayAspectRatio)
+                        console.log('Crop button check', { 
+                          aspectRatio: aspectRatio || '1:1', 
+                          displayAspectRatio, 
+                          needsManip,
+                          selectedImage 
+                        })
+                        return needsManip
+                      })() && (
                         <Button
                           size="sm"
                           variant="secondary"
                           className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
-                          onClick={() => openImageManipulator(selectedImage)}
+                          onClick={() => {
+                            console.log('Crop button clicked')
+                            openImageManipulator(selectedImage)
+                          }}
                           title="Crop & Adjust Image"
                         >
                           <Crop className="h-4 w-4" />

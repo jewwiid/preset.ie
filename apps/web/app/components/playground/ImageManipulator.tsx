@@ -32,6 +32,7 @@ export default function ImageManipulator({
   onCancel,
   isOpen
 }: ImageManipulatorProps) {
+  console.log('ImageManipulator rendered', { imageUrl, originalAspectRatio, targetAspectRatio, isOpen })
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -61,7 +62,9 @@ export default function ImageManipulator({
 
   // Handle mouse events for dragging
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!needsManipulation) return
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('Mouse down detected', { needsManipulation, isDragging })
     setIsDragging(true)
     setDragStart({
       x: e.clientX - transform.translateX,
@@ -70,7 +73,9 @@ export default function ImageManipulator({
   }
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging || !needsManipulation) return
+    if (!isDragging) return
+    e.preventDefault()
+    console.log('Mouse move detected', { clientX: e.clientX, clientY: e.clientY, dragStart })
     
     setTransform(prev => ({
       ...prev,
@@ -79,7 +84,40 @@ export default function ImageManipulator({
     }))
   }, [isDragging, dragStart])
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: MouseEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }, [])
+
+  // Touch handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('Touch start detected', { needsManipulation, isDragging })
+    
+    const touch = e.touches[0]
+    setIsDragging(true)
+    setDragStart({
+      x: touch.clientX - transform.translateX,
+      y: touch.clientY - transform.translateY
+    })
+  }
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging) return
+    e.preventDefault()
+    console.log('Touch move detected', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY, dragStart })
+    
+    const touch = e.touches[0]
+    setTransform(prev => ({
+      ...prev,
+      translateX: touch.clientX - dragStart.x,
+      translateY: touch.clientY - dragStart.y
+    }))
+  }, [isDragging, dragStart])
+
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
+    e.preventDefault()
     setIsDragging(false)
   }, [])
 
@@ -87,17 +125,23 @@ export default function ImageManipulator({
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove)
       document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('touchmove', handleTouchMove, { passive: false })
+      document.addEventListener('touchend', handleTouchEnd, { passive: false })
       return () => {
         document.removeEventListener('mousemove', handleMouseMove)
         document.removeEventListener('mouseup', handleMouseUp)
+        document.removeEventListener('touchmove', handleTouchMove)
+        document.removeEventListener('touchend', handleTouchEnd)
       }
     }
-  }, [isDragging, handleMouseMove, handleMouseUp])
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd])
 
   // Handle wheel for zooming
   const handleWheel = (e: React.WheelEvent) => {
-    if (!needsManipulation) return
+    if (isDragging) return
     e.preventDefault()
+    e.stopPropagation()
+    console.log('Wheel event detected', { deltaY: e.deltaY })
     
     const delta = e.deltaY > 0 ? -0.1 : 0.1
     setTransform(prev => ({
@@ -239,8 +283,12 @@ export default function ImageManipulator({
     }
   }
 
-  if (!isOpen) return null
+  if (!isOpen) {
+    console.log('ImageManipulator not open, returning null')
+    return null
+  }
 
+  console.log('ImageManipulator rendering modal', { needsManipulation })
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-6xl max-h-[90vh] overflow-hidden">
@@ -369,14 +417,16 @@ export default function ImageManipulator({
               <div className="p-6 flex items-center justify-center bg-gray-50">
                 <div className="relative bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
                   <div
-                    className="relative cursor-move"
+                    className={`relative ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} select-none`}
                     style={{
                       width: Math.min(containerWidth, 400),
                       height: Math.min(containerHeight, 400),
                       margin: '0 auto',
-                      aspectRatio: currentAspectRatio.replace(':', '/')
+                      aspectRatio: currentAspectRatio.replace(':', '/'),
+                      pointerEvents: 'auto'
                     }}
                     onMouseDown={handleMouseDown}
+                    onTouchStart={handleTouchStart}
                     onWheel={handleWheel}
                   >
                     {/* Target aspect ratio frame */}
@@ -392,14 +442,15 @@ export default function ImageManipulator({
                       style={{
                         transform: `scale(${transform.scale}) translate(${transform.translateX}px, ${transform.translateY}px) rotate(${transform.rotation}deg)`,
                         transformOrigin: 'center center',
-                        transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                        transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                        pointerEvents: 'none'
                       }}
                       draggable={false}
                     />
                     
                     {/* Overlay instructions */}
-                    <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                      Drag to move • Scroll to zoom
+                    <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded pointer-events-none">
+                      {isDragging ? 'Dragging...' : 'Drag to move • Scroll to zoom • Touch to drag on mobile'}
                     </div>
                   </div>
                 </div>

@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'duplicate',
-        message: 'This image is already saved in your gallery',
+        message: 'This media is already saved in your gallery',
         existingImage: {
           id: existingImage.id,
           title: existingImage.title,
@@ -126,8 +126,51 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    // For now, save the original image URL directly to avoid storage bucket issues
-    // TODO: Implement proper image storage and thumbnail generation
+    // Extract image dimensions
+    let imageWidth = 1024 // Default fallback
+    let imageHeight = 1024 // Default fallback
+    
+    try {
+      // Try to extract dimensions from generation metadata first
+      if (generationMetadata?.resolution) {
+        const resolutionMatch = generationMetadata.resolution.match(/(\d+)x(\d+)/)
+        if (resolutionMatch) {
+          imageWidth = parseInt(resolutionMatch[1])
+          imageHeight = parseInt(resolutionMatch[2])
+          console.log('Extracted dimensions from metadata:', { imageWidth, imageHeight })
+        }
+      }
+      
+      // If metadata doesn't have resolution, try to get it from the image URL
+      if (imageWidth === 1024 && imageHeight === 1024) {
+        // For Seedream URLs, we can sometimes extract dimensions from the URL
+        // or we could make a HEAD request to get image dimensions
+        // For now, we'll use the metadata if available
+        if (generationMetadata?.aspect_ratio) {
+          const aspectRatio = generationMetadata.aspect_ratio
+          if (aspectRatio === '16:9') {
+            imageWidth = 1920
+            imageHeight = 1080
+          } else if (aspectRatio === '9:16') {
+            imageWidth = 1080
+            imageHeight = 1920
+          } else if (aspectRatio === '21:9') {
+            imageWidth = 2560
+            imageHeight = 1080
+          } else if (aspectRatio === '4:3') {
+            imageWidth = 1024
+            imageHeight = 768
+          } else if (aspectRatio === '3:4') {
+            imageWidth = 768
+            imageHeight = 1024
+          }
+          console.log('Extracted dimensions from aspect ratio:', { imageWidth, imageHeight, aspectRatio })
+        }
+      }
+    } catch (error) {
+      console.error('Error extracting image dimensions:', error)
+      // Keep default values
+    }
     
     console.log('Attempting to insert into playground_gallery table')
     
@@ -143,8 +186,8 @@ export async function POST(request: NextRequest) {
         title: title || 'Untitled',
         description,
         tags: tags || [],
-        width: 1024, // Default, could extract from image
-        height: 1024,
+        width: imageWidth,
+        height: imageHeight,
         file_size: 0, // Unknown size for external URLs
         format: 'jpg',
         generation_metadata: generationMetadata || {}

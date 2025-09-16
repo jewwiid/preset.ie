@@ -87,12 +87,40 @@ export async function POST(request: NextRequest) {
     if (existingVideo && overrideExisting) {
       console.log('🔄 Updating existing video:', existingVideo.id)
       
+      // Extract actual video dimensions from the video URL
+      let actualWidth = resolution === '720p' ? 1280 : 854
+      let actualHeight = resolution === '720p' ? 720 : 480
+      
+      try {
+        // Try to extract dimensions from the video URL or metadata
+        if (generationMetadata?.width && generationMetadata?.height) {
+          actualWidth = generationMetadata.width
+          actualHeight = generationMetadata.height
+        } else if (generationMetadata?.aspect_ratio) {
+          // Calculate dimensions from aspect ratio
+          const dimensions = calculateDimensionsFromAspectRatio(generationMetadata.aspect_ratio, resolution)
+          actualWidth = dimensions.width
+          actualHeight = dimensions.height
+        } else if (resolution) {
+          // Parse resolution string like "854x480" or "1280x720"
+          const resolutionMatch = resolution.match(/(\d+)x(\d+)/i)
+          if (resolutionMatch) {
+            actualWidth = parseInt(resolutionMatch[1])
+            actualHeight = parseInt(resolutionMatch[2])
+          }
+        }
+      } catch (error) {
+        console.warn('Could not extract video dimensions, using defaults:', error)
+      }
+      
       const { data: updatedVideo, error: updateError } = await supabaseAdmin
         .from('playground_gallery')
         .update({
           title: title || existingVideo.title,
           description,
           tags: tags || [],
+          width: actualWidth,
+          height: actualHeight,
           generation_metadata: generationMetadata || {},
           video_duration: duration,
           video_resolution: resolution,
@@ -119,6 +147,32 @@ export async function POST(request: NextRequest) {
     
     console.log('💾 Attempting to insert video into playground_gallery table')
     
+    // Extract actual video dimensions from the video URL
+    let actualWidth = resolution === '720p' ? 1280 : 854
+    let actualHeight = resolution === '720p' ? 720 : 480
+    
+    try {
+      // Try to extract dimensions from the video URL or metadata
+      if (generationMetadata?.width && generationMetadata?.height) {
+        actualWidth = generationMetadata.width
+        actualHeight = generationMetadata.height
+      } else if (generationMetadata?.aspect_ratio) {
+        // Calculate dimensions from aspect ratio
+        const dimensions = calculateDimensionsFromAspectRatio(generationMetadata.aspect_ratio, resolution)
+        actualWidth = dimensions.width
+        actualHeight = dimensions.height
+      } else if (resolution) {
+        // Parse resolution string like "854x480" or "1280x720"
+        const resolutionMatch = resolution.match(/(\d+)x(\d+)/i)
+        if (resolutionMatch) {
+          actualWidth = parseInt(resolutionMatch[1])
+          actualHeight = parseInt(resolutionMatch[2])
+        }
+      }
+    } catch (error) {
+      console.warn('Could not extract video dimensions, using defaults:', error)
+    }
+
     // Save video to gallery
     const insertData = {
       user_id: user.id,
@@ -130,8 +184,8 @@ export async function POST(request: NextRequest) {
       title: title || 'Untitled Video',
       description,
       tags: tags || [],
-      width: resolution === '720p' ? 1280 : 854,
-      height: resolution === '720p' ? 720 : 480,
+      width: actualWidth,
+      height: actualHeight,
       file_size: 0, // Unknown size for external URLs
       video_duration: duration,
       video_resolution: resolution,
@@ -175,5 +229,40 @@ export async function POST(request: NextRequest) {
       code: (error as any)?.code,
       hint: (error as any)?.hint
     }, { status: 500 })
+  }
+}
+
+function calculateDimensionsFromAspectRatio(aspectRatio: string, resolution: string): { width: number; height: number } {
+  // Define target dimensions based on aspect ratio and resolution
+  const resolutionMap = {
+    '480p': { baseWidth: 854, baseHeight: 480 },
+    '720p': { baseWidth: 1280, baseHeight: 720 }
+  }
+  
+  const baseDimensions = resolutionMap[resolution as keyof typeof resolutionMap] || resolutionMap['480p']
+  
+  switch (aspectRatio) {
+    case '1:1':
+      const size = Math.min(baseDimensions.baseWidth, baseDimensions.baseHeight)
+      return { width: size, height: size }
+    case '16:9':
+      return { width: baseDimensions.baseWidth, height: baseDimensions.baseHeight }
+    case '9:16':
+      return { width: baseDimensions.baseHeight, height: baseDimensions.baseWidth }
+    case '21:9':
+      // Ultra-wide aspect ratio
+      const width219 = baseDimensions.baseWidth
+      const height219 = Math.round(width219 * 9 / 21)
+      return { width: width219, height: height219 }
+    case '4:3':
+      const width43 = baseDimensions.baseWidth
+      const height43 = Math.round(width43 * 3 / 4)
+      return { width: width43, height: height43 }
+    case '3:4':
+      const height34 = baseDimensions.baseHeight
+      const width34 = Math.round(height34 * 3 / 4)
+      return { width: width34, height: height34 }
+    default:
+      return { width: baseDimensions.baseWidth, height: baseDimensions.baseHeight }
   }
 }

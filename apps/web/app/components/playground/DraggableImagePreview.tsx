@@ -8,6 +8,7 @@ interface DraggableImagePreviewProps {
   aspectRatio: string
   resolution: string
   onPositionChange?: (yPosition: number) => void
+  onSaveFraming?: (framing: { yPosition: number; dimensions: { width: number; height: number } }) => void
   className?: string
 }
 
@@ -16,11 +17,13 @@ export default function DraggableImagePreview({
   aspectRatio,
   resolution,
   onPositionChange,
+  onSaveFraming,
   className = ''
 }: DraggableImagePreviewProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [yPosition, setYPosition] = useState(0)
   const [dragStart, setDragStart] = useState({ y: 0, initialPosition: 0 })
+  const [isFramingSaved, setIsFramingSaved] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
@@ -75,48 +78,39 @@ export default function DraggableImagePreview({
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging || !containerRef.current || !imageRef.current) return
 
-    const containerHeight = containerRef.current.clientHeight
-    const containerWidth = containerRef.current.clientWidth
-    
-    // Get the actual image dimensions after it's loaded
-    const img = imageRef.current
-    if (!img.naturalWidth || !img.naturalHeight) return
-    
-    // Calculate how the image is displayed within the container
-    const imageAspectRatio = img.naturalWidth / img.naturalHeight
-    const containerAspectRatio = containerWidth / containerHeight
-    
-    let displayedImageHeight: number
-    let displayedImageWidth: number
-    
-    if (imageAspectRatio > containerAspectRatio) {
-      // Image is wider than container - image fills width, height is constrained
-      displayedImageWidth = containerWidth
-      displayedImageHeight = containerWidth / imageAspectRatio
-    } else {
-      // Image is taller than container - image fills height, width is constrained
-      displayedImageHeight = containerHeight
-      displayedImageWidth = containerHeight * imageAspectRatio
-    }
-    
     const deltaY = e.clientY - dragStart.y
     const newPosition = dragStart.initialPosition + deltaY
 
-    // Calculate the maximum range to ensure entire image height is reachable
-    // When image is taller than container, allow full range of image movement
-    if (displayedImageHeight > containerHeight) {
-      const maxPosition = 0 // Can't move above the top of the container
-      const minPosition = containerHeight - displayedImageHeight // Can move down to show bottom of image
+    // Calculate the actual effective image height based on natural dimensions
+    const containerWidth = containerRef.current?.offsetWidth || 0
+    const containerHeight = containerRef.current?.offsetHeight || 0
+    const imageNaturalWidth = imageRef.current?.naturalWidth || 0
+    const imageNaturalHeight = imageRef.current?.naturalHeight || 0
+
+    let effectiveImageHeight = 0
+    if (imageNaturalWidth > 0 && imageNaturalHeight > 0 && containerWidth > 0) {
+      effectiveImageHeight = containerWidth * (imageNaturalHeight / imageNaturalWidth)
+    } else {
+      // Fallback if natural dimensions or container width are not available.
+      effectiveImageHeight = containerHeight
+    }
+
+
+    if (effectiveImageHeight > containerHeight) {
+      const maxMovement = effectiveImageHeight - containerHeight
+      const maxPosition = 0 // Cannot move above the top of the container
+      const minPosition = -maxMovement // Can move down to show the bottom of the image
       const constrainedPosition = Math.max(minPosition, Math.min(maxPosition, newPosition))
-      
+
       setYPosition(constrainedPosition)
       onPositionChange?.(constrainedPosition)
     } else {
-      // When image is shorter than container, allow some movement for fine-tuning
-      const maxPosition = (containerHeight - displayedImageHeight) / 2 // Center position
-      const minPosition = -(containerHeight - displayedImageHeight) / 2 // Opposite center
+      // If the image is shorter or perfectly fits, allow a small fixed range for fine-tuning
+      const movementRange = containerHeight * 0.2 // Allow 20% movement in each direction
+      const maxPosition = movementRange
+      const minPosition = -movementRange
       const constrainedPosition = Math.max(minPosition, Math.min(maxPosition, newPosition))
-      
+
       setYPosition(constrainedPosition)
       onPositionChange?.(constrainedPosition)
     }
@@ -126,9 +120,24 @@ export default function DraggableImagePreview({
     setIsDragging(false)
   }, [])
 
+  const saveFraming = useCallback(() => {
+    const dimensions = calculateDimensions(aspectRatio, resolution)
+    setIsFramingSaved(true)
+    onSaveFraming?.({
+      yPosition,
+      dimensions
+    })
+  }, [yPosition, aspectRatio, resolution, onSaveFraming])
+
+  const resetFraming = useCallback(() => {
+    setIsFramingSaved(false)
+    // Don't reset position - keep the saved framing and allow further adjustment
+  }, [])
+
   const resetPosition = useCallback(() => {
     setYPosition(0)
     onPositionChange?.(0)
+    setIsFramingSaved(false)
   }, [onPositionChange])
 
   useEffect(() => {
@@ -149,25 +158,29 @@ export default function DraggableImagePreview({
 
   const dimensions = calculateDimensions(aspectRatio, resolution)
 
+
   return (
     <div className={`relative ${className}`}>
       {/* Container with fixed aspect ratio */}
       <div 
         ref={containerRef}
-        className="w-full bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300 relative"
+        className={`w-full bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300 relative group ${
+          isFramingSaved ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
+        }`}
         style={{ 
           aspectRatio: convertAspectRatio(aspectRatio),
           maxWidth: '100%'
         }}
+        onMouseDown={isFramingSaved ? undefined : handleMouseDown}
       >
         {/* Draggable Image */}
         <div
-          className="absolute inset-0 cursor-grab active:cursor-grabbing transition-transform duration-100"
+          className="absolute inset-0 transition-transform duration-100"
           style={{
             transform: `translateY(${yPosition}px)`,
-            transformOrigin: 'center'
+            transformOrigin: 'center',
+            pointerEvents: 'none'
           }}
-          onMouseDown={handleMouseDown}
         >
           <img
             ref={imageRef}
@@ -178,60 +191,73 @@ export default function DraggableImagePreview({
             style={{
               objectFit: 'cover',
               minHeight: '100%',
-              width: '100%'
+              width: '100%',
+              pointerEvents: 'none'
             }}
           />
         </div>
 
-        {/* Overlay indicators */}
+        {/* Simple overlay */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Center line indicator */}
           <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500 opacity-50 transform -translate-y-1/2" />
           
-          {/* Top and bottom boundary indicators (only show when image is taller than container) */}
-          {(() => {
-            const containerHeight = containerRef.current?.clientHeight || 0
-            const containerWidth = containerRef.current?.clientWidth || 0
-            const img = imageRef.current
-            
-            if (img && img.naturalWidth && img.naturalHeight && containerHeight > 0) {
-              const imageAspectRatio = img.naturalWidth / img.naturalHeight
-              const containerAspectRatio = containerWidth / containerHeight
+          {/* State-based UI */}
+          {isFramingSaved ? (
+            <>
+              {/* Saved state - show confirmation and options */}
+              <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                ✓ Framing saved
+              </div>
+              <div className="absolute bottom-2 right-2 flex gap-2 pointer-events-auto">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    resetPosition()
+                  }}
+                  className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-2 rounded transition-colors shadow-lg"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    resetFraming()
+                  }}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-2 rounded transition-colors shadow-lg"
+                >
+                  Adjust More
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Default state - show drag instruction */}
+              <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                <Move className="h-3 w-3" />
+                Click & drag to adjust
+              </div>
               
-              if (imageAspectRatio <= containerAspectRatio) {
-                // Image is taller than container - show boundary indicators
-                return (
-                  <>
-                    <div className="absolute top-0 left-0 right-0 h-0.5 bg-red-400 opacity-60" />
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-400 opacity-60" />
-                  </>
-                )
-              }
-            }
-            return null
-          })()}
-          
-          {/* Drag handle indicator */}
-          <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-            <Move className="h-3 w-3" />
-            Drag to adjust
-          </div>
-          
-          {/* Position indicator */}
-          <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-            {aspectRatio}
-          </div>
+              {/* Save button - only show if position has changed */}
+              {yPosition !== 0 && (
+                <div className="absolute bottom-2 right-2 pointer-events-auto">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      saveFraming()
+                    }}
+                    className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-2 rounded transition-colors shadow-lg"
+                  >
+                    Save Framing
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
-
-        {/* Reset button */}
-        {yPosition !== 0 && (
-          <button
-            onClick={resetPosition}
-            className="absolute bottom-2 right-2 bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded transition-colors"
-          >
-            Reset Position
-          </button>
-        )}
       </div>
 
       {/* Info display */}
@@ -244,7 +270,7 @@ export default function DraggableImagePreview({
 
       {/* Instructions */}
       <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
-        <strong>💡 Tip:</strong> Drag the image up or down to adjust the framing. You can reach the entire height of the image - drag to show the top or bottom of the original image within the preview frame. This determines which part will be used as the reference frame for video generation.
+        <strong>💡 Tip:</strong> Hover over the image to see the drag option, then drag to adjust framing. Click "Save Framing" when ready.
       </div>
     </div>
   )

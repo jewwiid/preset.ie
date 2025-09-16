@@ -221,36 +221,45 @@ async function processImageForAspectRatio(imageUrl: string, aspectRatio: string,
     const targetDimensions = getTargetDimensions(aspectRatio, resolution)
     console.log(`📐 Target dimensions: ${targetDimensions.width}x${targetDimensions.height}`)
     
-    // For now, we'll use a simple approach:
-    // 1. If the aspect ratio matches, return original URL
-    // 2. If not, we'll use a cropping service or return original with a note
+    // Call the image processing service
+    const processingResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/playground/image-processor`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        imageUrl,
+        aspectRatio,
+        resolution,
+        yPosition: yPosition || 0
+      })
+    })
     
-    // Check if we need to process the image
-    const needsProcessing = shouldProcessImage(imageUrl, aspectRatio)
-    
-    if (!needsProcessing) {
-      console.log(`✅ Image aspect ratio already matches ${aspectRatio}, using original`)
-      return imageUrl
+    if (!processingResponse.ok) {
+      const errorData = await processingResponse.json()
+      console.error('❌ Image processing service error:', errorData)
+      throw new Error(`Image processing failed: ${errorData.error}`)
     }
     
-    // For now, return the original URL but log that processing would be needed
-    // In a full implementation, you would:
-    // 1. Download the image from imageUrl
-    // 2. Calculate crop dimensions to achieve target aspect ratio
-    // 3. Apply Y position offset for framing
-    // 4. Crop the image using a library like sharp
-    // 5. Upload the cropped image to storage
-    // 6. Return the new URL
+    const processingResult = await processingResponse.json()
     
-    console.log(`⚠️ Image processing needed for aspect ratio ${aspectRatio}, but using original for now`)
-    console.log(`💡 Target dimensions would be: ${targetDimensions.width}x${targetDimensions.height}`)
-    if (yPosition !== undefined && yPosition !== 0) {
-      console.log(`💡 Y position offset would be applied: ${yPosition}px`)
+    if (!processingResult.success) {
+      throw new Error(`Image processing failed: ${processingResult.error}`)
     }
     
-    return imageUrl
+    console.log('✅ Image processed successfully:', {
+      originalUrl: imageUrl,
+      processedUrl: processingResult.processedImageUrl,
+      originalDimensions: processingResult.originalDimensions,
+      targetDimensions: processingResult.targetDimensions,
+      cropInfo: processingResult.cropInfo
+    })
+    
+    return processingResult.processedImageUrl
+    
   } catch (error) {
     console.error('❌ Error processing image for aspect ratio:', error)
+    console.log('⚠️ Falling back to original image URL')
     return imageUrl // Fallback to original
   }
 }
@@ -272,6 +281,11 @@ function getTargetDimensions(aspectRatio: string, resolution: string): { width: 
       return { width: baseDimensions.baseWidth, height: baseDimensions.baseHeight }
     case '9:16':
       return { width: baseDimensions.baseHeight, height: baseDimensions.baseWidth }
+    case '21:9':
+      // Ultra-wide aspect ratio
+      const width219 = baseDimensions.baseWidth
+      const height219 = Math.round(width219 * 9 / 21)
+      return { width: width219, height: height219 }
     case '4:3':
       const width43 = baseDimensions.baseWidth
       const height43 = Math.round(width43 * 3 / 4)
@@ -285,17 +299,6 @@ function getTargetDimensions(aspectRatio: string, resolution: string): { width: 
   }
 }
 
-function shouldProcessImage(imageUrl: string, aspectRatio: string): boolean {
-  // For now, we'll assume all images need processing
-  // In a real implementation, you would:
-  // 1. Fetch the image metadata to get current dimensions
-  // 2. Calculate current aspect ratio
-  // 3. Compare with target aspect ratio
-  // 4. Return true if they don't match
-  
-  console.log(`🔍 Checking if image needs processing for aspect ratio ${aspectRatio}`)
-  return true // For now, always process
-}
 
 async function generateVideoWithWaveSpeed(imageUrl: string, duration: number, resolution: string, motionType: string, prompt?: string): Promise<{ videoUrl: string; taskId: string }> {
   try {

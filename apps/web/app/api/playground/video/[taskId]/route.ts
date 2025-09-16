@@ -82,56 +82,9 @@ export async function GET(
               .eq('id', taskId)
           }
 
-          // Auto-save to gallery with actual parameters
-          const authHeader = request.headers.get('Authorization')
-          if (authHeader) {
-            const metadata = generationData?.generation_metadata || {}
-            
-            // Use the same base URL as the current request
-            const baseUrl = request.headers.get('host') ? `https://${request.headers.get('host')}` : 'http://localhost:3000'
-            
-            console.log('Auto-saving video to gallery:', { baseUrl, videoUrl, taskId })
-            
-            const saveResponse = await fetch(`${baseUrl}/api/playground/save-video-to-gallery`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': authHeader
-              },
-              body: JSON.stringify({
-                videoUrl,
-                title: 'Generated Video',
-                description: 'AI-generated video from playground',
-                tags: ['ai-generated', 'video'],
-                duration: generationData?.duration || 5,
-                resolution: generationData?.resolution || '480p',
-                aspectRatio: metadata.aspect_ratio || '1:1',
-                motionType: metadata.motion_type || 'moderate',
-                prompt: metadata.prompt || 'AI-generated video',
-                generationMetadata: {
-                  generated_at: new Date().toISOString(),
-                  credits_used: 8,
-                  duration: generationData?.duration || 5,
-                  resolution: generationData?.resolution || '480p',
-                  aspect_ratio: metadata.aspect_ratio || '1:1',
-                  motion_type: metadata.motion_type || 'moderate',
-                  image_url: metadata.image_url,
-                  task_id: taskId
-                }
-              })
-            })
-
-            if (saveResponse.ok) {
-              const saveResult = await saveResponse.json()
-              console.log('✅ Video automatically saved to gallery:', saveResult)
-            } else {
-              const errorText = await saveResponse.text()
-              console.log('❌ Failed to auto-save video to gallery:', { 
-                status: saveResponse.status, 
-                error: errorText 
-              })
-            }
-          }
+          // Note: Videos are now only stored in playground_video_generations table
+          // Users can manually save to gallery if they want to keep them permanently
+          console.log('✅ Video generation completed and stored in playground_video_generations table')
         }
       } catch (error) {
         console.error('Error auto-saving video to gallery:', error)

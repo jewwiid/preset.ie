@@ -3,7 +3,7 @@
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ImageIcon } from 'lucide-react'
+import { ImageIcon, X } from 'lucide-react'
 import { useAuth } from '../../../lib/auth-context'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import { downloadImageWithWatermark } from '../../../lib/watermark-utils'
@@ -52,6 +52,7 @@ interface SavedMediaGalleryProps {
   onAddMediaToPreview?: (mediaUrl: string) => void
   onExpandMedia?: (media: SavedMedia) => void
   selectedMediaUrl?: string | null
+  currentTab?: string
   className?: string
 }
 
@@ -60,13 +61,15 @@ export interface SavedMediaGalleryRef {
 }
 
 const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProps>(
-  ({ onMediaSelect, onReusePrompt, onReuseGenerationSettings, onMediaUpdated, onAddMediaToPreview, onExpandMedia, selectedMediaUrl, className = '' }, ref) => {
+  ({ onMediaSelect, onReusePrompt, onReuseGenerationSettings, onMediaUpdated, onAddMediaToPreview, onExpandMedia, selectedMediaUrl, currentTab = 'generate', className = '' }, ref) => {
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
   const [savedMedia, setSavedMedia] = useState<SavedMedia[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingMedia, setDeletingMedia] = useState<string | null>(null)
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'plus' | 'pro'>('free')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [mediaToDelete, setMediaToDelete] = useState<string | null>(null)
 
   const fetchSubscriptionTier = async () => {
     if (!session?.access_token || !user) return
@@ -151,12 +154,17 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
     }
   }
 
-  const deleteMedia = async (mediaId: string) => {
-    if (!session?.access_token) return
+  const handleDeleteClick = (mediaId: string) => {
+    setMediaToDelete(mediaId)
+    setShowDeleteConfirm(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!mediaToDelete || !session?.access_token) return
 
     try {
-      setDeletingMedia(mediaId)
-      const response = await fetch(`/api/playground/gallery/${mediaId}`, {
+      setDeletingMedia(mediaToDelete)
+      const response = await fetch(`/api/playground/gallery/${mediaToDelete}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.access_token}`
@@ -164,27 +172,34 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
       })
 
       if (!response.ok) {
-        throw new Error('Failed to delete image')
+        throw new Error('Failed to delete media')
       }
 
-      const updatedMedia = savedMedia.filter(img => img.id !== mediaId)
+      const updatedMedia = savedMedia.filter(img => img.id !== mediaToDelete)
       setSavedMedia(updatedMedia)
       onMediaUpdated?.(updatedMedia)
       showFeedback({
         type: 'success',
         title: 'Success',
-        message: 'Image deleted successfully'
+        message: 'Media deleted successfully'
       })
     } catch (error) {
-      console.error('Error deleting image:', error)
+      console.error('Error deleting media:', error)
       showFeedback({
         type: 'error',
         title: 'Error',
-        message: 'Failed to delete image'
+        message: 'Failed to delete media'
       })
     } finally {
       setDeletingMedia(null)
+      setShowDeleteConfirm(false)
+      setMediaToDelete(null)
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false)
+    setMediaToDelete(null)
   }
 
   const downloadImage = async (imageUrl: string, title: string) => {
@@ -235,6 +250,7 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
   }
 
   return (
+    <>
     <Card className={`border-t-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 ${className}`} data-saved-gallery>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -274,17 +290,66 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
                 images={savedMedia}
                 onImageSelect={onMediaSelect}
                 onDownload={downloadImage}
-                onDelete={deleteMedia}
+                onDelete={handleDeleteClick}
                 onReusePrompt={onReusePrompt}
                 onReuseGenerationSettings={onReuseGenerationSettings}
                 onAddImageToPreview={onAddMediaToPreview}
                 onExpandMedia={onExpandMedia}
                 deletingImage={deletingMedia}
                 selectedImageUrl={selectedMediaUrl}
+                currentTab={currentTab}
               />
         )}
       </CardContent>
     </Card>
+
+    {/* Delete Confirmation Dialog */}
+    {showDeleteConfirm && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Delete Media</h3>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleDeleteCancel}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <p className="text-gray-600 mb-6">
+            Are you sure you want to delete this media? This action cannot be undone.
+          </p>
+          
+          <div className="flex gap-3 justify-end">
+            <Button
+              variant="outline"
+              onClick={handleDeleteCancel}
+              disabled={deletingMedia === mediaToDelete}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deletingMedia === mediaToDelete}
+            >
+              {deletingMedia === mediaToDelete ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Deleting...
+                </>
+              ) : (
+                'Delete Media'
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   )
 })
 

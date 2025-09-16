@@ -883,6 +883,10 @@ export default function PlaygroundPage() {
           onPerformBatchEdit={performBatchEdit}
           onGenerateVideo={generateVideo}
           onImportProject={handleImportProject}
+          onSettingsUpdate={(settings) => {
+            console.log('📐 Settings updated from import:', settings)
+            // Settings are managed internally by TabbedPlaygroundLayout
+          }}
           loading={loading}
           userCredits={userCredits}
           userSubscriptionTier={userSubscriptionTier}
@@ -898,6 +902,10 @@ export default function PlaygroundPage() {
           videoGenerationStatus={videoGenerationStatus}
           generatedVideoUrl={generatedVideoUrl}
           onExpandMedia={handleExpandMedia}
+          onVideoGenerated={() => {
+            console.log('🎬 Video generation callback triggered')
+            // Additional actions can be added here if needed
+          }}
         />
       </div>
       

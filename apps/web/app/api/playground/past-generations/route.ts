@@ -137,7 +137,8 @@ export async function GET(request: NextRequest) {
       project.generated_images.length > 0
     ).map(project => ({
       ...project,
-      is_saved: savedProjectIds.has(project.id)
+      is_saved: savedProjectIds.has(project.id),
+      is_video: false
     })) || []
 
     // Add individual edits as separate items
@@ -158,7 +159,8 @@ export async function GET(request: NextRequest) {
       last_generated_at: edit.created_at,
       status: 'completed',
       is_saved: false, // Individual edits are not saved to gallery
-      is_edit: true
+      is_edit: true,
+      is_video: false
     })) || []
 
     // Add video generations as separate items
@@ -207,13 +209,42 @@ export async function GET(request: NextRequest) {
       is_video: true
     })) || []
 
-    // Combine projects, edits, videos, and video generations, sort by date
+    // Combine projects, edits, videos, and video generations
     const allGenerations = [...filteredProjects, ...editItems, ...videoItems, ...videoGenerationItems]
+    
+    // Deduplicate videos by URL to prevent duplicates between gallery and generations tables
+    const seenVideoUrls = new Set()
+    const deduplicatedGenerations = allGenerations.filter(generation => {
+      if (generation.is_video && generation.generated_images?.[0]?.url) {
+        const videoUrl = generation.generated_images[0].url
+        if (seenVideoUrls.has(videoUrl)) {
+          console.log('Removing duplicate video:', videoUrl)
+          return false
+        }
+        seenVideoUrls.add(videoUrl)
+      }
+      return true
+    })
+    
+    // Sort by date
+    const sortedGenerations = deduplicatedGenerations
       .sort((a, b) => new Date(b.last_generated_at).getTime() - new Date(a.last_generated_at).getTime())
 
+    // Debug logging
+    console.log('📊 Past Generations Debug:', {
+      totalProjects: projects?.length || 0,
+      totalEdits: edits?.length || 0,
+      totalVideos: videos?.length || 0,
+      totalVideoGenerations: videoGenerations?.length || 0,
+      totalCombined: allGenerations.length,
+      totalDeduplicated: deduplicatedGenerations.length,
+      videos: deduplicatedGenerations.filter(g => g.is_video).length,
+      images: deduplicatedGenerations.filter(g => !g.is_video).length
+    })
+
     return NextResponse.json({
-      generations: allGenerations,
-      total: allGenerations.length
+      generations: sortedGenerations,
+      total: sortedGenerations.length
     })
 
   } catch (error) {
