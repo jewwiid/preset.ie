@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '../../../../lib/supabase'
+import { supabaseAdmin } from '../../../../lib/supabase'
 import { getUserFromRequest } from '../../../../lib/auth-utils'
+
+// Manually load environment variables
+import dotenv from 'dotenv'
+import path from 'path'
+
+// Load environment variables from .env.local (from project root)
+dotenv.config({ path: path.join(process.cwd(), '../../.env.local') })
 
 export async function POST(request: NextRequest) {
   const { user } = await getUserFromRequest(request)
@@ -13,7 +20,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  if (!supabase) {
+  if (!supabaseAdmin) {
     return NextResponse.json(
       { error: 'Database connection failed' },
       { status: 500 }
@@ -21,45 +28,33 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Get image metadata
-    const imageResponse = await fetch(imageUrl)
-    const imageBlob = await imageResponse.blob()
-    
-    // Upload to Supabase storage
-    const fileName = `${user.id}/${crypto.randomUUID()}.jpg`
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('playground-gallery')
-      .upload(fileName, imageBlob, {
-        contentType: 'image/jpeg',
-        cacheControl: '3600'
-      })
-    
-    if (uploadError) throw uploadError
-    
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('playground-gallery')
-      .getPublicUrl(fileName)
+    // For now, save the original image URL directly to avoid storage bucket issues
+    // TODO: Implement proper image storage and thumbnail generation
     
     // Save to gallery
-    const { data: galleryItem } = await supabase
+    const { data: galleryItem, error: insertError } = await supabaseAdmin
       .from('playground_gallery')
       .insert({
         user_id: user.id,
         project_id: projectId,
         edit_id: editId,
-        image_url: publicUrl,
-        thumbnail_url: publicUrl, // Could generate thumbnail
+        image_url: imageUrl,
+        thumbnail_url: imageUrl, // Use original URL as thumbnail for now
         title: title || 'Untitled',
         description,
         tags: tags || [],
         width: 1024, // Default, could extract from image
         height: 1024,
-        file_size: imageBlob.size,
+        file_size: 0, // Unknown size for external URLs
         format: 'jpg'
       })
       .select()
       .single()
+    
+    if (insertError) {
+      console.error('Gallery insert error:', insertError)
+      throw insertError
+    }
     
     return NextResponse.json({ 
       success: true, 
@@ -67,6 +62,14 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Failed to save to gallery:', error)
-    return NextResponse.json({ error: 'Failed to save to gallery' }, { status: 500 })
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Failed to save to gallery',
+      details: error instanceof Error ? error.stack : undefined
+    }, { status: 500 })
   }
 }

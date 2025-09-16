@@ -60,6 +60,9 @@ export async function POST(request: NextRequest) {
     })
     
     // Call appropriate Seedream API
+    console.log(`Performing ${editType} edit with prompt:`, requestBody.prompt)
+    console.log('Request body:', JSON.stringify(requestBody, null, 2))
+    
     const editResponse = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
@@ -69,16 +72,24 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(requestBody)
     })
     
+    console.log(`Seedream ${editType} API response status:`, editResponse.status)
+    
     if (!editResponse.ok) {
-      throw new Error(`Seedream ${editType} API error`)
+      const errorText = await editResponse.text()
+      console.error(`Seedream ${editType} API error:`, errorText)
+      throw new Error(`Seedream ${editType} API error: ${editResponse.status} - ${errorText}`)
     }
     
     const editData = await editResponse.json()
+    console.log(`Seedream ${editType} API response:`, editData)
     
     // Check if edit was successful
     if (editData.code !== 200 || !editData.data.outputs || editData.data.outputs.length === 0) {
+      console.error(`Edit failed for ${editType}:`, editData)
       throw new Error(editData.message || `Failed to perform ${editType}`)
     }
+    
+    console.log(`Successfully completed ${editType} edit. Output:`, editData.data.outputs[0])
     
     // Deduct credits
     await supabase

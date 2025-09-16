@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '../../../../lib/supabase'
+import { supabaseAdmin } from '../../../../lib/supabase'
 import { getUserFromRequest } from '../../../../lib/auth-utils'
+
+// Manually load environment variables
+import dotenv from 'dotenv'
+import path from 'path'
+
+// Load environment variables from .env.local (from project root)
+dotenv.config({ path: path.join(process.cwd(), '../../.env.local') })
 
 export async function GET(request: NextRequest) {
   const { user } = await getUserFromRequest(request)
@@ -12,7 +19,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  if (!supabase) {
+  if (!supabaseAdmin) {
     return NextResponse.json(
       { error: 'Database connection failed' },
       { status: 500 }
@@ -20,7 +27,7 @@ export async function GET(request: NextRequest) {
   }
   
   try {
-    const { data: userCredits, error } = await supabase
+    const { data: userCredits, error } = await supabaseAdmin
       .from('user_credits')
       .select('current_balance, consumed_this_month, monthly_allowance')
       .eq('user_id', user.id)
@@ -29,7 +36,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       // If user doesn't have credits record, create one
       if (error.code === 'PGRST116') {
-        const { data: newCredits, error: createError } = await supabase
+        const { data: newCredits, error: createError } = await supabaseAdmin
           .from('user_credits')
           .insert({
             user_id: user.id,

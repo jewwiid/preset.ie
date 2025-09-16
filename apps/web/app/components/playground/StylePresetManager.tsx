@@ -9,6 +9,7 @@ import { Badge } from '../../../components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog'
 import { Plus, Edit, Trash2, Star, Users } from 'lucide-react'
+import { useFeedback } from '../../../components/feedback/FeedbackContext'
 
 interface StylePreset {
   id: string
@@ -25,12 +26,15 @@ interface StylePreset {
 interface StylePresetManagerProps {
   onSelectPreset?: (preset: StylePreset) => void
   selectedPreset?: StylePreset | null
+  sessionToken?: string
 }
 
 const StylePresetManager: React.FC<StylePresetManagerProps> = ({
   onSelectPreset,
-  selectedPreset
+  selectedPreset,
+  sessionToken
 }) => {
+  const { showFeedback } = useFeedback()
   const [presets, setPresets] = useState<StylePreset[]>([])
   const [loading, setLoading] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -47,34 +51,70 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
   })
 
   useEffect(() => {
-    fetchPresets()
-  }, [])
+    if (sessionToken) {
+      fetchPresets()
+    }
+  }, [sessionToken])
 
   const fetchPresets = async () => {
+    if (!sessionToken) {
+      showFeedback({
+        type: 'warning',
+        title: 'Authentication Required',
+        message: 'Please sign in to load style presets.'
+      })
+      return
+    }
+
     setLoading(true)
     try {
-      const response = await fetch('/api/playground/style-presets?includePublic=true')
+      const response = await fetch('/api/playground/style-presets?includePublic=true', {
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`
+        }
+      })
       if (!response.ok) throw new Error('Failed to fetch presets')
       
       const { presets: fetchedPresets } = await response.json()
       setPresets(fetchedPresets)
     } catch (error) {
       console.error('Failed to fetch presets:', error)
+      showFeedback({
+        type: 'error',
+        title: 'Failed to Load Presets',
+        message: 'Could not load style presets. Please try again.'
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const handleCreatePreset = async () => {
+    if (!sessionToken) {
+      showFeedback({
+        type: 'warning',
+        title: 'Authentication Required',
+        message: 'Please sign in to create style presets.'
+      })
+      return
+    }
+
     if (!formData.name || !formData.styleType || !formData.promptTemplate) {
-      alert('Please fill in all required fields')
+      showFeedback({
+        type: 'warning',
+        title: 'Missing Fields',
+        message: 'Please fill in all required fields (Name, Style Type, Prompt Template).'
+      })
       return
     }
 
     try {
       const response = await fetch('/api/playground/style-presets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`
+        },
         body: JSON.stringify(formData)
       })
 
@@ -83,19 +123,40 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
       setShowCreateDialog(false)
       resetForm()
       fetchPresets()
+      showFeedback({
+        type: 'success',
+        title: 'Preset Created',
+        message: 'Style preset created successfully!'
+      })
     } catch (error) {
       console.error('Failed to create preset:', error)
-      alert('Failed to create preset')
+      showFeedback({
+        type: 'error',
+        title: 'Failed to Create Preset',
+        message: 'Could not create the style preset. Please try again.'
+      })
     }
   }
 
   const handleUpdatePreset = async () => {
     if (!editingPreset) return
 
+    if (!sessionToken) {
+      showFeedback({
+        type: 'warning',
+        title: 'Authentication Required',
+        message: 'Please sign in to update style presets.'
+      })
+      return
+    }
+
     try {
       const response = await fetch('/api/playground/style-presets', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`
+        },
         body: JSON.stringify({
           presetId: editingPreset.id,
           ...formData
@@ -107,26 +168,56 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
       setEditingPreset(null)
       resetForm()
       fetchPresets()
+      showFeedback({
+        type: 'success',
+        title: 'Preset Updated',
+        message: 'Style preset updated successfully!'
+      })
     } catch (error) {
       console.error('Failed to update preset:', error)
-      alert('Failed to update preset')
+      showFeedback({
+        type: 'error',
+        title: 'Failed to Update Preset',
+        message: 'Could not update the style preset. Please try again.'
+      })
     }
   }
 
   const handleDeletePreset = async (presetId: string) => {
     if (!confirm('Are you sure you want to delete this preset?')) return
 
+    if (!sessionToken) {
+      showFeedback({
+        type: 'warning',
+        title: 'Authentication Required',
+        message: 'Please sign in to delete style presets.'
+      })
+      return
+    }
+
     try {
       const response = await fetch(`/api/playground/style-presets?presetId=${presetId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${sessionToken}`
+        }
       })
 
       if (!response.ok) throw new Error('Failed to delete preset')
       
       fetchPresets()
+      showFeedback({
+        type: 'success',
+        title: 'Preset Deleted',
+        message: 'Style preset deleted successfully!'
+      })
     } catch (error) {
       console.error('Failed to delete preset:', error)
-      alert('Failed to delete preset')
+      showFeedback({
+        type: 'error',
+        title: 'Failed to Delete Preset',
+        message: 'Could not delete the style preset. Please try again.'
+      })
     }
   }
 

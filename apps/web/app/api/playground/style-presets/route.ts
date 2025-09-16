@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '../../../../lib/supabase'
+import { supabaseAdmin } from '../../../../lib/supabase'
 import { getUserFromRequest } from '../../../../lib/auth-utils'
+
+// Manually load environment variables
+import dotenv from 'dotenv'
+import path from 'path'
+
+// Load environment variables from .env.local (from project root)
+dotenv.config({ path: path.join(process.cwd(), '../../.env.local') })
 
 export async function GET(request: NextRequest) {
   const { user } = await getUserFromRequest(request)
@@ -14,7 +21,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  if (!supabase) {
+  if (!supabaseAdmin) {
     return NextResponse.json(
       { error: 'Database connection failed' },
       { status: 500 }
@@ -22,7 +29,7 @@ export async function GET(request: NextRequest) {
   }
   
   try {
-    let query = supabase
+    let query = supabaseAdmin
       .from('playground_style_presets')
       .select('*')
       .order('usage_count', { ascending: false })
@@ -67,7 +74,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  if (!supabase) {
+  if (!supabaseAdmin) {
     return NextResponse.json(
       { error: 'Database connection failed' },
       { status: 500 }
@@ -82,7 +89,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { data: preset, error } = await supabase
+    const { data: preset, error } = await supabaseAdmin
       .from('playground_style_presets')
       .insert({
         user_id: user.id,
@@ -129,7 +136,7 @@ export async function PUT(request: NextRequest) {
     )
   }
 
-  if (!supabase) {
+  if (!supabaseAdmin) {
     return NextResponse.json(
       { error: 'Database connection failed' },
       { status: 500 }
@@ -149,7 +156,7 @@ export async function PUT(request: NextRequest) {
     if (intensity !== undefined) updateData.intensity = intensity
     if (isPublic !== undefined) updateData.is_public = isPublic
 
-    const { data: preset, error } = await supabase
+    const { data: preset, error } = await supabaseAdmin
       .from('playground_style_presets')
       .update(updateData)
       .eq('id', presetId)
@@ -183,7 +190,7 @@ export async function DELETE(request: NextRequest) {
     )
   }
 
-  if (!supabase) {
+  if (!supabaseAdmin) {
     return NextResponse.json(
       { error: 'Database connection failed' },
       { status: 500 }
@@ -195,7 +202,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Preset ID is required' }, { status: 400 })
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('playground_style_presets')
       .delete()
       .eq('id', presetId)
