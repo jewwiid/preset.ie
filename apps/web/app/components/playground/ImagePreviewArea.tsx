@@ -479,6 +479,15 @@ export default function ImagePreviewArea({
                           src={selectedImage}
                           alt="Selected image"
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Selected image load error:', e)
+                            console.error('Selected image URL:', selectedImage)
+                            // Try proxy-image API as fallback
+                            const target = e.target as HTMLImageElement
+                            if (!target.src.includes('/api/proxy-image')) {
+                              target.src = '/api/proxy-image?url=' + encodeURIComponent(selectedImage)
+                            }
+                          }}
                         />
                       )
                     })()}
@@ -634,6 +643,15 @@ export default function ImagePreviewArea({
                         src={image.url}
                         alt={`Generated ${index + 1}`}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error('Image load error:', e)
+                          console.error('Image URL:', image.url)
+                          // Try proxy-image API as fallback
+                          const target = e.target as HTMLImageElement
+                          if (!target.src.includes('/api/proxy-image')) {
+                            target.src = '/api/proxy-image?url=' + encodeURIComponent(image.url)
+                          }
+                        }}
                       />
                     )}
                     

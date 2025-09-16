@@ -690,18 +690,18 @@ export default function PlaygroundPage() {
       // Use current session token (no refresh to avoid interrupting function execution)
       console.log('🔄 Using current session token for save process...')
       
-      // Check if this is a video URL (contains .mp4, .webm, .mov or cloudfront.net)
+      // Check if this is a video URL (contains .mp4, .webm, .mov)
+      // Note: cloudfront.net URLs can be images or videos, so we check file extension instead
       console.log('🔍 Starting media type detection...')
       const isVideo = imageUrl.includes('.mp4') || imageUrl.includes('.webm') || 
-                     imageUrl.includes('.mov') || imageUrl.includes('cloudfront.net')
+                     imageUrl.includes('.mov')
       
       console.log('🔍 Media type detection:', { 
         imageUrl, 
         isVideo, 
         hasMp4: imageUrl.includes('.mp4'),
         hasWebm: imageUrl.includes('.webm'),
-        hasMov: imageUrl.includes('.mov'),
-        hasCloudfront: imageUrl.includes('cloudfront.net')
+        hasMov: imageUrl.includes('.mov')
       })
       
       console.log('🔍 Media type detection completed, proceeding to save logic...')
