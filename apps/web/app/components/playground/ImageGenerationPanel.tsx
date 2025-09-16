@@ -46,7 +46,7 @@ export default function ImageGenerationPanel({
   const [prompt, setPrompt] = useState('')
   const [style, setStyle] = useState('realistic')
   const [aspectRatio, setAspectRatio] = useState('1:1')
-  const [resolution, setResolution] = useState('1024*1024')
+  const [resolution, setResolution] = useState('1024')
   const [consistencyLevel, setConsistencyLevel] = useState('high')
   const [stylePresets, setStylePresets] = useState<StylePreset[]>([])
   const [selectedCustomPreset, setSelectedCustomPreset] = useState<StylePreset | null>(null)
@@ -74,16 +74,40 @@ export default function ImageGenerationPanel({
     }
   }
 
+  const calculateResolution = (aspectRatio: string, baseResolution: string) => {
+    const [widthRatio, heightRatio] = aspectRatio.split(':').map(Number)
+    const baseSize = parseInt(baseResolution)
+    
+    // Calculate dimensions maintaining the aspect ratio
+    const aspectRatioValue = widthRatio / heightRatio
+    
+    let width: number, height: number
+    
+    if (aspectRatioValue >= 1) {
+      // Landscape or square
+      width = baseSize
+      height = Math.round(baseSize / aspectRatioValue)
+    } else {
+      // Portrait
+      height = baseSize
+      width = Math.round(baseSize * aspectRatioValue)
+    }
+    
+    return `${width}*${height}`
+  }
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       return
     }
     
+    const calculatedResolution = calculateResolution(aspectRatio, resolution)
+    
     await onGenerate({
       prompt,
       style: selectedCustomPreset ? selectedCustomPreset.style_type : style,
       aspectRatio,
-      resolution,
+      resolution: calculatedResolution,
       consistencyLevel,
       customStylePreset: selectedCustomPreset || undefined
     })
@@ -126,7 +150,7 @@ export default function ImageGenerationPanel({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="style">Style</Label>
@@ -201,19 +225,49 @@ export default function ImageGenerationPanel({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="resolution">Resolution</Label>
-            <Select value={resolution} onValueChange={setResolution}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select resolution" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1024*1024">1024×1024</SelectItem>
-                <SelectItem value="2048*2048">2048×2048</SelectItem>
-                <SelectItem value="1024*2048">1024×2048</SelectItem>
-                <SelectItem value="2048*1024">2048×1024</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="aspectRatio">Aspect Ratio</Label>
+              <Select value={aspectRatio} onValueChange={setAspectRatio}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select aspect ratio" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1:1">1:1 (Square)</SelectItem>
+                  <SelectItem value="4:3">4:3 (Standard)</SelectItem>
+                  <SelectItem value="3:4">3:4 (Portrait)</SelectItem>
+                  <SelectItem value="16:9">16:9 (Widescreen)</SelectItem>
+                  <SelectItem value="9:16">9:16 (Vertical)</SelectItem>
+                  <SelectItem value="3:2">3:2 (Photo)</SelectItem>
+                  <SelectItem value="2:3">2:3 (Portrait Photo)</SelectItem>
+                  <SelectItem value="21:9">21:9 (Ultrawide)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="resolution">Resolution</Label>
+              <Select value={resolution} onValueChange={setResolution}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select resolution" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1024">1024px</SelectItem>
+                  <SelectItem value="1536">1536px</SelectItem>
+                  <SelectItem value="2048">2048px</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Resolution Preview */}
+          <div className="p-3 bg-gray-50 rounded-md border">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Generated size:</span>
+              <Badge variant="outline" className="font-mono">
+                {calculateResolution(aspectRatio, resolution).replace('*', ' × ')}
+              </Badge>
+            </div>
           </div>
         </div>
 

@@ -56,51 +56,18 @@ export async function POST(request: NextRequest) {
       const creditsAmount = parseInt(credits);
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-      // Start a transaction to add credits
-      const { data: userCredits, error: creditsError } = await supabase
-        .from('user_credits')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (creditsError) {
-        console.error('❌ Error fetching user credits:', creditsError);
-        return NextResponse.json({ error: 'User credits not found' }, { status: 404 });
-      }
-
-      const newBalance = (userCredits.balance || 0) + creditsAmount;
-
-      // Update user credits
-      const { error: updateError } = await supabase
-        .from('user_credits')
-        .update({
-          balance: newBalance,
-          last_purchase_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId);
+      // Use the database function to safely update credits
+      const { data: updatedCredits, error: updateError } = await supabase
+        .rpc('update_user_credits_from_purchase', {
+          p_user_id: userId,
+          p_amount: creditsAmount,
+          p_description: `Purchased ${creditsAmount} credits via ${packageId} package`,
+          p_reference_id: session.id
+        });
 
       if (updateError) {
         console.error('❌ Error updating user credits:', updateError);
         return NextResponse.json({ error: 'Failed to update credits' }, { status: 500 });
-      }
-
-      // Record the transaction
-      const { error: transactionError } = await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: userId,
-          type: 'purchase',
-          amount: creditsAmount,
-          balance_before: userCredits.balance || 0,
-          balance_after: newBalance,
-          description: `Purchased ${creditsAmount} credits via ${packageId} package`,
-          reference_id: session.id,
-          cost_usd: session.amount_total ? session.amount_total / 100 : 0,
-          status: 'completed',
-        });
-
-      if (transactionError) {
-        console.error('❌ Error recording transaction:', transactionError);
       }
 
       // Record the purchase
@@ -124,7 +91,7 @@ export async function POST(request: NextRequest) {
       console.log('✅ Credits added successfully:', {
         userId,
         creditsAdded: creditsAmount,
-        newBalance,
+        newBalance: updatedCredits?.current_balance || 'unknown',
       });
     }
 

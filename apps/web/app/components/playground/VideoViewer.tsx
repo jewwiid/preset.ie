@@ -1,0 +1,336 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Play, Pause, Volume2, VolumeX, Maximize2, Download, Heart, Share2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+interface VideoViewerProps {
+  title?: string
+  description?: string
+  videos: Array<{
+    url: string
+    title?: string
+    duration?: number
+    resolution?: string
+    aspectRatio?: string
+    generated_at?: string
+  }>
+  selectedVideo: string | null
+  onSelectVideo: (url: string | null) => void
+  onSaveToGallery?: (url: string) => Promise<void>
+  onDownloadVideo?: (url: string, filename: string) => Promise<void>
+  savingVideo?: string | null
+  loading?: boolean
+  emptyStateMessage?: string
+}
+
+export default function VideoViewer({
+  title = "Generated Videos",
+  description = "View and manage your generated videos",
+  videos,
+  selectedVideo,
+  onSelectVideo,
+  onSaveToGallery,
+  onDownloadVideo,
+  savingVideo,
+  loading = false,
+  emptyStateMessage = "No videos available. Generate some videos first!"
+}: VideoViewerProps) {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [volume, setVolume] = useState(1)
+
+  const selectedVideoData = videos.find(video => video.url === selectedVideo)
+
+  const handlePlayPause = () => {
+    setIsPlaying(!isPlaying)
+  }
+
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted)
+  }
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value)
+    setVolume(newVolume)
+    setIsMuted(newVolume === 0)
+  }
+
+  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    setCurrentTime(e.currentTarget.currentTime)
+  }
+
+  const handleLoadedMetadata = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+    setDuration(e.currentTarget.duration)
+  }
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+
+  const convertAspectRatio = (ratio: string): string => {
+    switch (ratio) {
+      case '1:1': return '1'
+      case '16:9': return '16/9'
+      case '9:16': return '9/16'
+      case '4:3': return '4/3'
+      case '3:4': return '3/4'
+      case '21:9': return '21/9'
+      default: return '16/9' // Default to widescreen
+    }
+  }
+
+  const handleDownload = async (videoUrl: string) => {
+    if (onDownloadVideo) {
+      const filename = `generated-video-${Date.now()}.mp4`
+      await onDownloadVideo(videoUrl, filename)
+    }
+  }
+
+  const handleSave = async (videoUrl: string) => {
+    if (onSaveToGallery) {
+      await onSaveToGallery(videoUrl)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          {description && (
+            <p className="text-sm text-gray-600 mt-1">{description}</p>
+          )}
+        </div>
+        <div className="text-sm text-gray-500">
+          {videos.length} video{videos.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <span className="ml-2 text-gray-600">Loading videos...</span>
+        </div>
+      ) : videos.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+            <Play className="h-8 w-8 text-gray-400" />
+          </div>
+          <p className="text-lg font-medium mb-2">No Videos Yet</p>
+          <p className="text-sm">{emptyStateMessage}</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Main Video Player */}
+          {selectedVideo && selectedVideoData ? (
+            <div className="space-y-4">
+              <div className="relative bg-black rounded-lg overflow-hidden">
+                <video
+                  src={selectedVideo}
+                  className="w-full h-auto max-h-96"
+                  controls={false}
+                  ref={(video) => {
+                    if (video) {
+                      video.muted = isMuted
+                      video.volume = volume
+                      if (isPlaying) {
+                        video.play()
+                      } else {
+                        video.pause()
+                      }
+                    }
+                  }}
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                />
+                
+                {/* Custom Controls Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <div className="flex items-center justify-between text-white">
+                    <div className="flex items-center space-x-3">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-white hover:bg-white/20"
+                        onClick={handlePlayPause}
+                      >
+                        {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      </Button>
+                      
+                      <span className="text-sm">
+                        {formatTime(currentTime)} / {formatTime(duration)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-white hover:bg-white/20"
+                        onClick={handleMuteToggle}
+                      >
+                        {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                      </Button>
+                      
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={volume}
+                        onChange={handleVolumeChange}
+                        className="w-16 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="mt-2">
+                    <div className="w-full bg-white/30 rounded-full h-1">
+                      <div 
+                        className="bg-white h-1 rounded-full transition-all duration-300"
+                        style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                    onClick={() => {
+                      const video = document.querySelector('video')
+                      if (video) {
+                        video.requestFullscreen()
+                      }
+                    }}
+                    title="Fullscreen"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                  
+                  {onSaveToGallery && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                      onClick={() => handleSave(selectedVideo)}
+                      disabled={savingVideo === selectedVideo}
+                      title="Save to Gallery"
+                    >
+                      {savingVideo === selectedVideo ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                      ) : (
+                        <Heart className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                  
+                  {onDownloadVideo && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                      onClick={() => handleDownload(selectedVideo)}
+                      title="Download Video"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Video Info */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-2">
+                  {selectedVideoData.title || 'Generated Video'}
+                </h4>
+                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                  <div>
+                    <span className="font-medium">Duration:</span> {selectedVideoData.duration ? `${selectedVideoData.duration}s` : 'Unknown'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Resolution:</span> {selectedVideoData.resolution || 'Unknown'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Aspect Ratio:</span> {selectedVideoData.aspectRatio || 'Unknown'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Generated:</span> {selectedVideoData.generated_at ? new Date(selectedVideoData.generated_at).toLocaleDateString() : 'Unknown'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Play className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+              <p>Select a video to view</p>
+            </div>
+          )}
+
+          {/* Video Thumbnails */}
+          {videos.length > 1 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-3">All Videos</h4>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[minmax(100px,auto)]">
+                {videos.map((video, index) => {
+                  const aspectRatio = convertAspectRatio(video.aspectRatio || '16:9')
+                  
+                  return (
+                    <div
+                      key={video.url}
+                      className={`relative border rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${
+                        selectedVideo === video.url 
+                          ? 'border-purple-500 ring-2 ring-purple-200' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      style={{ aspectRatio }}
+                      onClick={() => onSelectVideo(video.url)}
+                    >
+                      <video
+                        src={video.url}
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                        muted
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                        <p className="text-white text-xs font-medium truncate">
+                          {video.title || `Video ${index + 1}`}
+                        </p>
+                        {video.duration && (
+                          <p className="text-white text-xs opacity-75">
+                            {video.duration}s
+                          </p>
+                        )}
+                      </div>
+                      <div className="absolute top-1 left-1">
+                        <span className="bg-black/50 text-white text-xs px-1 py-0.5 rounded">
+                          {video.resolution || 'Unknown'}
+                        </span>
+                      </div>
+                      <div className="absolute top-1 right-1">
+                        <span className="bg-black/50 text-white text-xs px-1 py-0.5 rounded">
+                          {video.aspectRatio || '16:9'}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}

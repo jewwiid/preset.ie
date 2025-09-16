@@ -3,7 +3,7 @@
  * Helper functions for auth-related operations
  */
 
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
 import { NextRequest } from 'next/server'
 
 export interface ResendEmailResult {
@@ -154,26 +154,42 @@ export async function smartSignup(email: string, password: string, options?: any
  */
 export async function getUserFromRequest(request: NextRequest) {
   try {
-    if (!supabase) {
-      return { user: null, error: 'Supabase client not initialized' }
+    console.log('🔍 getUserFromRequest Debug:', {
+      supabaseAdmin: !!supabaseAdmin,
+      supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      serviceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    })
+    
+    if (!supabaseAdmin) {
+      console.log('❌ Supabase admin client not initialized')
+      return { user: null, error: 'Supabase admin client not initialized' }
     }
     
     const authHeader = request.headers.get('Authorization')
     if (!authHeader) {
+      console.log('❌ No authorization header')
       return { user: null, error: 'No authorization header' }
     }
     
     const token = authHeader.replace('Bearer ', '')
+    console.log('🔍 Token length:', token.length)
     
-    const { data: { user }, error } = await supabase.auth.getUser(token)
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
     
-    if (error || !user) {
-      return { user: null, error: 'Invalid token' }
+    if (error) {
+      console.log('❌ Token validation error:', error.message)
+      return { user: null, error: `Token validation failed: ${error.message}` }
     }
     
+    if (!user) {
+      console.log('❌ No user returned from token')
+      return { user: null, error: 'No user found for token' }
+    }
+    
+    console.log('✅ User authenticated successfully:', user.id)
     return { user, error: null }
   } catch (error) {
-    console.error('getUserFromRequest error:', error)
+    console.error('❌ getUserFromRequest error:', error)
     return { user: null, error: 'Authentication failed' }
   }
 }

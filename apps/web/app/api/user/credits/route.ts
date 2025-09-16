@@ -27,6 +27,21 @@ export async function GET(request: NextRequest) {
   }
   
   try {
+    // First get user profile to get subscription tier
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from('users_profile')
+      .select('subscription_tier')
+      .eq('user_id', user.id)
+      .single()
+    
+    if (profileError) {
+      console.error('Failed to fetch user profile:', profileError)
+      return NextResponse.json({ error: 'Failed to fetch user profile' }, { status: 500 })
+    }
+    
+    const subscriptionTier = userProfile?.subscription_tier || 'FREE'
+    
+    // Then get user credits
     const { data: userCredits, error } = await supabaseAdmin
       .from('user_credits')
       .select('current_balance, consumed_this_month, monthly_allowance')
@@ -40,9 +55,9 @@ export async function GET(request: NextRequest) {
           .from('user_credits')
           .insert({
             user_id: user.id,
-            subscription_tier: 'FREE',
-            monthly_allowance: 10,
-            current_balance: 10
+            subscription_tier: subscriptionTier,
+            monthly_allowance: subscriptionTier === 'PRO' ? 25 : subscriptionTier === 'PLUS' ? 10 : 0,
+            current_balance: subscriptionTier === 'PRO' ? 25 : subscriptionTier === 'PLUS' ? 10 : 0
           })
           .select()
           .single()
@@ -52,7 +67,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
           current_balance: newCredits.current_balance,
           consumed_this_month: newCredits.consumed_this_month,
-          monthly_allowance: newCredits.monthly_allowance
+          monthly_allowance: newCredits.monthly_allowance,
+          subscription_tier: subscriptionTier
         })
       }
       throw error
@@ -61,7 +77,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       current_balance: userCredits.current_balance,
       consumed_this_month: userCredits.consumed_this_month,
-      monthly_allowance: userCredits.monthly_allowance
+      monthly_allowance: userCredits.monthly_allowance,
+      subscription_tier: subscriptionTier
     })
   } catch (error) {
     console.error('Failed to fetch user credits:', error)

@@ -8,6 +8,7 @@ import { User, Target, TrendingUp, Users } from 'lucide-react'
 import CompatibilityScore from '../components/matchmaking/CompatibilityScore'
 import MatchmakingCard from '../components/matchmaking/MatchmakingCard'
 import { CompatibilityData, Recommendation } from '../../lib/types/matchmaking'
+import SavedMediaGallery from '../components/playground/SavedImagesGallery'
 // Simplified credit calculation
 const calculateCreditValue = (credits: number) => credits * 0.01; // Mock calculation
 
@@ -1156,6 +1157,36 @@ export default function Dashboard() {
               )}
             </div>
           )}
+
+          {/* Saved Images Gallery */}
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">My Saved Images</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Images saved from the playground for use in moodboards, showcases, and profiles</p>
+                </div>
+              </div>
+              <button
+                onClick={() => router.push('/playground')}
+                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+              >
+                Generate More →
+              </button>
+            </div>
+            
+            <SavedMediaGallery
+              onMediaSelect={(media) => {
+                // Future: Could open a modal to use the media in moodboards, showcases, etc.
+                console.log('Selected media for use:', media)
+              }}
+            />
+          </div>
 
         {/* Stats Overview - Clickable Navigation Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

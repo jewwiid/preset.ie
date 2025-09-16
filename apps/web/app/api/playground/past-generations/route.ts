@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Database error' }, { status: 500 })
     }
 
-    // Filter out projects that have been saved to gallery
+    // Get saved projects to mark them as saved
     const { data: savedProjects, error: savedError } = await supabaseAdmin
       .from('playground_gallery')
       .select('project_id')
@@ -63,17 +63,157 @@ export async function GET(request: NextRequest) {
 
     const savedProjectIds = new Set(savedProjects?.map(p => p.project_id) || [])
     
-    // Filter out saved projects and projects with no images
+    // Also fetch individual image edits
+    const { data: edits, error: editsError } = await supabaseAdmin
+      .from('playground_image_edits')
+      .select(`
+        id,
+        project_id,
+        edit_type,
+        edit_prompt,
+        original_image_url,
+        edited_image_url,
+        credits_used,
+        created_at
+      `)
+      .eq('user_id', user.id)
+      .gte('created_at', sixDaysAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (editsError) {
+      console.error('Error fetching edits:', editsError)
+    }
+
+    // Also fetch video generations from gallery
+    const { data: videos, error: videosError } = await supabaseAdmin
+      .from('playground_gallery')
+      .select(`
+        id,
+        title,
+        description,
+        video_url,
+        thumbnail_url,
+        video_duration,
+        video_resolution,
+        video_format,
+        generation_metadata,
+        created_at
+      `)
+      .eq('user_id', user.id)
+      .eq('media_type', 'video')
+      .gte('created_at', sixDaysAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (videosError) {
+      console.error('Error fetching videos:', videosError)
+    }
+
+    // Also fetch video generations from playground_video_generations table
+    const { data: videoGenerations, error: videoGenerationsError } = await supabaseAdmin
+      .from('playground_video_generations')
+      .select(`
+        id,
+        video_url,
+        duration,
+        resolution,
+        generation_metadata,
+        created_at
+      `)
+      .eq('user_id', user.id)
+      .gte('created_at', sixDaysAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (videoGenerationsError) {
+      console.error('Error fetching video generations:', videoGenerationsError)
+    }
+
+    // Filter projects with images and add saved status
     const filteredProjects = projects?.filter(project => 
-      !savedProjectIds.has(project.id) && 
       project.generated_images && 
       Array.isArray(project.generated_images) && 
       project.generated_images.length > 0
-    ) || []
+    ).map(project => ({
+      ...project,
+      is_saved: savedProjectIds.has(project.id)
+    })) || []
+
+    // Add individual edits as separate items
+    const editItems = edits?.map(edit => ({
+      id: `edit_${edit.id}`,
+      title: `${edit.edit_type} Edit`,
+      prompt: edit.edit_prompt,
+      style: edit.edit_type,
+      generated_images: [{
+        url: edit.edited_image_url,
+        width: 1024,
+        height: 1024,
+        generated_at: edit.created_at,
+        type: 'edit'
+      }],
+      credits_used: edit.credits_used,
+      created_at: edit.created_at,
+      last_generated_at: edit.created_at,
+      status: 'completed',
+      is_saved: false, // Individual edits are not saved to gallery
+      is_edit: true
+    })) || []
+
+    // Add video generations as separate items
+    const videoItems = videos?.map(video => ({
+      id: `video_${video.id}`,
+      title: video.title || 'Generated Video',
+      prompt: video.generation_metadata?.prompt || 'AI-generated video',
+      style: 'video',
+      generated_images: [{
+        url: video.video_url,
+        width: video.video_resolution === '720p' ? 1280 : 854,
+        height: video.video_resolution === '720p' ? 720 : 480,
+        generated_at: video.created_at,
+        type: 'video',
+        duration: video.video_duration,
+        resolution: video.video_resolution
+      }],
+      credits_used: video.generation_metadata?.credits_used || 8,
+      created_at: video.created_at,
+      last_generated_at: video.created_at,
+      status: 'completed',
+      is_saved: true, // Videos are automatically saved to gallery
+      is_video: true
+    })) || []
+
+    // Add video generations from playground_video_generations table
+    const videoGenerationItems = videoGenerations?.map(videoGen => ({
+      id: `video_gen_${videoGen.id}`,
+      title: 'Generated Video',
+      prompt: videoGen.generation_metadata?.prompt || 'AI-generated video',
+      style: 'video',
+      generated_images: [{
+        url: videoGen.video_url || 'pending',
+        width: videoGen.resolution === '720p' ? 1280 : 854,
+        height: videoGen.resolution === '720p' ? 720 : 480,
+        generated_at: videoGen.created_at,
+        type: 'video',
+        duration: videoGen.duration,
+        resolution: videoGen.resolution
+      }],
+      credits_used: 8, // Default credits for video generation
+      created_at: videoGen.created_at,
+      last_generated_at: videoGen.created_at,
+      status: videoGen.video_url === 'pending' ? 'processing' : 'completed',
+      is_saved: false, // Not yet saved to gallery
+      is_video: true
+    })) || []
+
+    // Combine projects, edits, videos, and video generations, sort by date
+    const allGenerations = [...filteredProjects, ...editItems, ...videoItems, ...videoGenerationItems]
+      .sort((a, b) => new Date(b.last_generated_at).getTime() - new Date(a.last_generated_at).getTime())
 
     return NextResponse.json({
-      generations: filteredProjects,
-      total: filteredProjects.length
+      generations: allGenerations,
+      total: allGenerations.length
     })
 
   } catch (error) {

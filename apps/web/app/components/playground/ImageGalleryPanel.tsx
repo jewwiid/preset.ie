@@ -14,7 +14,7 @@ interface GeneratedImage {
 interface ImageGalleryPanelProps {
   images: GeneratedImage[]
   selectedImage: string | null
-  onSelectImage: (url: string) => void
+  onSelectImage: (url: string | null) => void
   onSaveToGallery: (imageUrl: string) => Promise<void>
   savingImage: string | null
 }

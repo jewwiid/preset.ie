@@ -3,11 +3,23 @@ import { supabase } from '../../../../lib/supabase'
 import { getUserFromRequest } from '../../../../lib/auth-utils'
 
 export async function POST(request: NextRequest) {
-  const { user } = await getUserFromRequest(request)
+  console.log('🔍 Advanced Edit API Debug:', {
+    authHeader: request.headers.get('Authorization') ? 'Present' : 'Missing',
+    contentType: request.headers.get('Content-Type')
+  })
+  
+  const { user, error: authError } = await getUserFromRequest(request)
+  
+  console.log('🔍 Auth Result:', {
+    user: !!user,
+    userId: user?.id,
+    authError
+  })
   
   if (!user) {
+    console.log('❌ Unauthorized - no user found')
     return NextResponse.json(
-      { error: 'Unauthorized' },
+      { error: `Unauthorized: ${authError || 'Authentication failed'}` },
       { status: 401 }
     )
   }
@@ -27,7 +39,8 @@ export async function POST(request: NextRequest) {
     strength,
     style,
     maskImage,
-    targetSize
+    targetSize,
+    referenceImage
   } = await request.json()
   
   try {
@@ -56,7 +69,8 @@ export async function POST(request: NextRequest) {
       strength,
       style,
       maskImage,
-      targetSize
+      targetSize,
+      referenceImage
     })
     
     // Call appropriate Seedream API
@@ -83,13 +97,14 @@ export async function POST(request: NextRequest) {
     const editData = await editResponse.json()
     console.log(`Seedream ${editType} API response:`, editData)
     
-    // Check if edit was successful
-    if (editData.code !== 200 || !editData.data.outputs || editData.data.outputs.length === 0) {
+    // Check if edit was successful - handle both response formats
+    const outputs = editData.outputs || editData.data?.outputs
+    if (!outputs || outputs.length === 0) {
       console.error(`Edit failed for ${editType}:`, editData)
-      throw new Error(editData.message || `Failed to perform ${editType}`)
+      throw new Error(editData.message || editData.error || `Failed to perform ${editType}`)
     }
     
-    console.log(`Successfully completed ${editType} edit. Output:`, editData.data.outputs[0])
+    console.log(`Successfully completed ${editType} edit. Output:`, outputs[0])
     
     // Deduct credits
     await supabase
@@ -109,7 +124,7 @@ export async function POST(request: NextRequest) {
         edit_type: editType,
         edit_prompt: editPrompt,
         original_image_url: imageUrl,
-        edited_image_url: editData.data.outputs[0],
+        edited_image_url: outputs[0],
         strength,
         credits_used: creditsNeeded,
         processing_time_ms: Date.now() - new Date().getTime()
@@ -120,7 +135,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       editRecord,
-      editedImage: editData.data.outputs[0],
+      editedImage: outputs[0],
       editType,
       creditsUsed: creditsNeeded
     })
@@ -132,6 +147,7 @@ export async function POST(request: NextRequest) {
 
 function getCreditsForEditType(editType: string): number {
   const creditMap: { [key: string]: number } = {
+    'enhance': 2,
     'inpaint': 3,
     'outpaint': 3,
     'style_transfer': 2,
@@ -140,7 +156,14 @@ function getCreditsForEditType(editType: string): number {
     'background_removal': 2,
     'upscale': 1,
     'color_adjustment': 2,
-    'enhance': 2
+    'texture_change': 2,
+    'lighting_adjustment': 2,
+    'perspective_change': 3,
+    'composition_change': 3,
+    'artistic_filter': 2,
+    'age_progression': 3,
+    'gender_swap': 4,
+    'expression_change': 2
   }
   return creditMap[editType] || 2
 }
@@ -155,48 +178,85 @@ function buildRequestBody(editType: string, params: any) {
   const baseBody = {
     images: [params.imageUrl],
     enable_base64_output: false,
-    enable_sync_mode: true,
+    enable_sync_mode: true, // Enable for immediate results
     size: "2048*2048"
   }
+
+  // Add reference image for edit types that require it
+  if (params.referenceImage && ['face_swap', 'style_transfer', 'gender_swap', 'age_progression'].includes(editType)) {
+    baseBody.images.push(params.referenceImage)
+  }
   
-  // Build appropriate prompt based on edit type
+  // Build optimized prompts for Seedream V4 based on edit type
   let prompt = params.editPrompt
   
   switch (editType) {
+    case 'enhance':
+      prompt = `Enhance this image by improving sharpness, contrast, and overall visual quality: ${params.editPrompt}. Focus on clarity, detail preservation, and professional appearance.`
+      break
+    
     case 'inpaint':
-      prompt = `Inpaint the following: ${params.editPrompt}. Focus on the specific area mentioned.`
+      prompt = `Inpaint the following changes: ${params.editPrompt}. Focus on the specific area mentioned, maintain visual consistency, and ensure seamless integration with the existing image.`
       break
     
     case 'outpaint':
-      prompt = `Extend the image beyond its current boundaries: ${params.editPrompt}. Maintain visual consistency.`
+      prompt = `Extend the image beyond its current boundaries: ${params.editPrompt}. Maintain visual consistency, lighting, and style. Extend naturally without artifacts.`
       break
     
     case 'style_transfer':
-      prompt = `Apply ${params.style} style to this image: ${params.editPrompt}`
+      prompt = `Apply ${params.style || 'artistic'} style to this image: ${params.editPrompt}. Transform the visual style while preserving the original composition and subject matter.`
       break
     
     case 'face_swap':
-      prompt = `Replace the face in this image with: ${params.editPrompt}. Maintain natural lighting and proportions.`
+      prompt = `Replace the face in this image with: ${params.editPrompt}. Maintain natural lighting, proportions, and facial features. Ensure realistic skin tone and expression.`
       break
     
     case 'object_removal':
-      prompt = `Remove the following objects from the image: ${params.editPrompt}. Fill the area naturally.`
+      prompt = `Remove the following objects from the image: ${params.editPrompt}. Fill the area naturally with appropriate background elements. Maintain lighting and perspective.`
       break
     
     case 'background_removal':
-      prompt = `Remove the background from this image, making it transparent or replacing with a simple background.`
+      prompt = `Remove the background from this image, making it transparent or replacing with a clean, simple background. Preserve the main subject perfectly.`
       break
     
     case 'upscale':
-      prompt = `Enhance the resolution and quality of this image while maintaining all details and visual fidelity.`
+      prompt = `Enhance the resolution and quality of this image while maintaining all details and visual fidelity. Improve sharpness and reduce noise.`
       break
     
     case 'color_adjustment':
-      prompt = `Adjust the colors of this image: ${params.editPrompt}. Maintain natural appearance.`
+      prompt = `Adjust the colors of this image: ${params.editPrompt}. Maintain natural appearance and skin tones. Apply color grading professionally.`
       break
     
-    case 'enhance':
-      prompt = `Enhance this image by improving sharpness, contrast, and overall visual quality: ${params.editPrompt}`
+    case 'texture_change':
+      prompt = `Modify the surface textures and materials: ${params.editPrompt}. Change textures while maintaining realistic lighting and material properties.`
+      break
+    
+    case 'lighting_adjustment':
+      prompt = `Adjust lighting conditions and atmosphere: ${params.editPrompt}. Modify lighting direction, intensity, and color temperature naturally.`
+      break
+    
+    case 'perspective_change':
+      prompt = `Change viewing angle and perspective: ${params.editPrompt}. Modify the camera angle while maintaining realistic proportions and depth.`
+      break
+    
+    case 'composition_change':
+      prompt = `Modify image composition and framing: ${params.editPrompt}. Adjust the composition following photographic principles like rule of thirds.`
+      break
+    
+    case 'artistic_filter':
+      prompt = `Apply artistic filter and effects: ${params.editPrompt}. Transform the image with artistic style while preserving the main subject.`
+      break
+    
+    case 'age_progression':
+      prompt = `Change age appearance realistically: ${params.editPrompt}. Modify facial features, skin texture, and hair while maintaining identity.`
+      break
+    
+    case 'gender_swap':
+      prompt = `Transform gender while maintaining identity: ${params.editPrompt}. Change gender characteristics while preserving facial structure and identity.`
+      break
+    
+    case 'expression_change':
+      prompt = `Modify facial expressions and emotions: ${params.editPrompt}. Change facial expression while maintaining natural appearance and lighting.`
       break
     
     default:

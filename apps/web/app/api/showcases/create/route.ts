@@ -6,9 +6,12 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 Showcase creation API called')
+    
     // Get auth token from header
     const authHeader = request.headers.get('Authorization')
     if (!authHeader) {
+      console.error('❌ No authorization header provided')
       return NextResponse.json(
         { success: false, error: 'Unauthorized - No token provided' },
         { status: 401 }
@@ -16,6 +19,7 @@ export async function POST(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '')
+    console.log('🔑 Token received:', token.substring(0, 20) + '...')
     
     // Create Supabase client
     const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
@@ -24,12 +28,18 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
+      console.error('❌ Authentication failed:', authError)
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
       )
     }
+    
+    console.log('✅ User authenticated:', user.id)
 
+    const requestBody = await request.json()
+    console.log('📝 Request body received:', requestBody)
+    
     const { 
       title, 
       description, 
@@ -40,10 +50,13 @@ export async function POST(request: NextRequest) {
       showcaseType = 'moodboard',
       visibility = 'public',
       tags = []
-    } = await request.json()
+    } = requestBody
 
     // Validate required fields based on showcase type
+    console.log('🔍 Validating fields:', { title, showcaseType, moodboardId, individualImageUrl })
+    
     if (!title) {
+      console.error('❌ Title is required')
       return NextResponse.json(
         { success: false, error: 'Title is required' },
         { status: 400 }
@@ -51,6 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (showcaseType === 'moodboard' && !moodboardId) {
+      console.error('❌ MoodboardId is required for moodboard showcases')
       return NextResponse.json(
         { success: false, error: 'MoodboardId is required for moodboard showcases' },
         { status: 400 }
@@ -58,11 +72,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (showcaseType === 'individual_image' && !individualImageUrl) {
+      console.error('❌ IndividualImageUrl is required for individual image showcases')
       return NextResponse.json(
         { success: false, error: 'IndividualImageUrl is required for individual image showcases' },
         { status: 400 }
       )
     }
+    
+    console.log('✅ Validation passed')
 
     // Check if user has permission to create showcases (subscription tier check)
     const { data: userProfile } = await supabase
@@ -152,6 +169,8 @@ export async function POST(request: NextRequest) {
       showcaseData.individual_image_description = individualImageDescription
     }
 
+    console.log('💾 Creating showcase with data:', showcaseData)
+    
     const { data: newShowcase, error: showcaseError } = await supabase
       .from('showcases')
       .insert(showcaseData)
@@ -159,12 +178,20 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (showcaseError) {
-      console.error('Error creating showcase:', showcaseError)
+      console.error('❌ Error creating showcase:', showcaseError)
+      console.error('Error details:', {
+        message: showcaseError.message,
+        details: showcaseError.details,
+        hint: showcaseError.hint,
+        code: showcaseError.code
+      })
       return NextResponse.json(
         { success: false, error: 'Failed to create showcase' },
         { status: 500 }
       )
     }
+    
+    console.log('✅ Showcase created successfully:', newShowcase.id)
 
     // Create showcase media entries for moodboard showcases
     if (showcaseType === 'moodboard' && moodboard && moodboard.items && moodboard.items.length > 0) {
@@ -204,7 +231,8 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Create showcase API error:', error)
+    console.error('❌ Create showcase API error:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

@@ -1,121 +1,382 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '../../../../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '../../../../lib/auth-utils'
 
-export async function POST(request: NextRequest) {
-  const { user } = await getUserFromRequest(request)
-  const { 
-    imageUrl, 
-    duration, 
-    resolution, 
-    motionType,
-    projectId
-  } = await request.json()
-
-  if (!user) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
-
-  if (!supabase) {
-    return NextResponse.json(
-      { error: 'Database connection failed' },
-      { status: 500 }
-    )
-  }
-  
+// Manually load environment variables if not available
+if (!process.env.WAVESPEED_API_KEY) {
   try {
-    // Check user credits for video generation (expensive)
-    const creditsNeeded = resolution === '720p' ? 10 : 8 // 8 credits for 480p, 10 for 720p
-    const { data: userCredits } = await supabase
-      .from('user_credits')
-      .select('current_balance, consumed_this_month')
-      .eq('user_id', user.id)
-      .single()
+    require('dotenv').config({ path: '.env.local' })
+  } catch (e) {
+    console.log('Could not load .env.local:', e)
+  }
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const wavespeedApiKey = process.env.WAVESPEED_API_KEY!
+
+// Debug environment variables
+console.log('🔧 Environment check:', {
+  hasSupabaseUrl: !!supabaseUrl,
+  hasServiceKey: !!supabaseServiceKey,
+  hasWavespeedKey: !!wavespeedApiKey,
+  wavespeedKeyPrefix: wavespeedApiKey?.substring(0, 10) + '...',
+  nodeEnv: process.env.NODE_ENV,
+  allEnvKeys: Object.keys(process.env).filter(key => key.includes('WAVE'))
+})
+
+export async function POST(request: NextRequest) {
+  console.log('🎬 Video generation API called')
+  try {
+    // Get auth token from header
+    const authHeader = request.headers.get('Authorization')
+    console.log('🔑 Auth header present:', !!authHeader)
     
-    if (!userCredits || userCredits.current_balance < creditsNeeded) {
+    if (!authHeader) {
+      console.log('❌ No authorization header provided')
       return NextResponse.json(
-        { error: `Insufficient credits. Need ${creditsNeeded} credits for video generation.` },
-        { status: 403 }
+        { success: false, error: 'Unauthorized - No token provided' },
+        { status: 401 }
       )
     }
     
-    // Determine API endpoint based on resolution
-    const apiEndpoint = resolution === '720p' 
-      ? 'https://api.wavespeed.ai/api/v3/bytedance/seedance-v1-pro-i2v-720p'
-      : 'https://api.wavespeed.ai/api/v3/bytedance/seedance-v1-pro-i2v-480p'
+    const token = authHeader.replace('Bearer ', '')
     
-    // Call Seedance Video API
-    const videoResponse = await fetch(apiEndpoint, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        image_url: imageUrl,
-        duration: duration || 3, // Default 3 seconds
-        motion_type: motionType || 'subtle',
-        enable_base64_output: false,
-        enable_sync_mode: true
-      })
-    })
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     
-    if (!videoResponse.ok) {
-      throw new Error('Seedance Video API error')
+    // Verify user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid token' },
+        { status: 401 }
+      )
     }
+
+    // Parse request body
+    const requestBody = await request.json()
+    console.log('📝 Request body:', requestBody)
     
-    const videoData = await videoResponse.json()
-    
-    // Check if generation was successful
-    if (videoData.code !== 200 || !videoData.data.outputs || videoData.data.outputs.length === 0) {
-      throw new Error(videoData.message || 'Failed to generate video')
+    const { 
+      imageUrl, 
+      duration, 
+      resolution, 
+      motionType, 
+      aspectRatio,
+      prompt,
+      yPosition,
+      projectId 
+    } = requestBody
+
+    // Validate required fields
+    if (!imageUrl || !duration || !resolution || !motionType || !aspectRatio) {
+      console.log('❌ Missing required fields:', { imageUrl: !!imageUrl, duration: !!duration, resolution: !!resolution, motionType: !!motionType, aspectRatio: !!aspectRatio })
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields: imageUrl, duration, resolution, motionType, aspectRatio' },
+        { status: 400 }
+      )
     }
-    
+
+    // Calculate credits based on duration and resolution
+    const baseCredits = 8
+    const durationMultiplier = duration > 5 ? 2 : 1
+    const resolutionMultiplier = resolution === '720p' ? 2 : 1
+    const creditsRequired = baseCredits + (durationMultiplier * resolutionMultiplier)
+
+    // Check user credits
+    console.log('💰 Checking user credits for user:', user.id)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+    const { data: userCredits, error: creditsError } = await supabaseAdmin
+      .from('user_credits')
+      .select('current_balance')
+      .eq('user_id', user.id)
+      .single()
+
+    console.log('💰 Credits check result:', { userCredits, creditsError })
+
+    if (creditsError || !userCredits) {
+      console.log('❌ Credits check failed:', creditsError)
+      return NextResponse.json(
+        { success: false, error: 'Failed to check user credits' },
+        { status: 500 }
+      )
+    }
+
+    if (userCredits.current_balance < creditsRequired) {
+      return NextResponse.json(
+        { success: false, error: `Insufficient credits. Required: ${creditsRequired}, Available: ${userCredits.current_balance}` },
+        { status: 400 }
+      )
+    }
+
+    // Process image based on aspect ratio and Y position
+    const processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
+
+    // Call WaveSpeed API for video generation
+    console.log('🚀 Calling WaveSpeed API...')
+    const videoResult = await generateVideoWithWaveSpeed(processedImageUrl, duration, resolution, motionType, prompt)
+    console.log('✅ WaveSpeed API response:', videoResult)
+
+    // Store generation parameters in database for later retrieval
+    try {
+      const insertData = {
+        id: videoResult.taskId,
+        user_id: user.id,
+        video_url: 'pending', // Placeholder - will be updated when task completes
+        duration: duration,
+        resolution: resolution,
+        generation_metadata: {
+          aspect_ratio: aspectRatio,
+          motion_type: motionType,
+          prompt: prompt,
+          image_url: imageUrl,
+          processed_image_url: processedImageUrl,
+          y_position: yPosition || 0,
+          created_at: new Date().toISOString(),
+          task_id: videoResult.taskId
+        }
+      }
+      
+      console.log('📝 Storing video generation parameters:', insertData)
+      
+      const { data: insertResult, error: insertError } = await supabaseAdmin
+        .from('playground_video_generations')
+        .insert(insertData)
+        .select()
+      
+      if (insertError) {
+        console.error('❌ Database insert error:', insertError)
+        throw insertError
+      }
+      
+      console.log('✅ Video generation parameters stored in database:', insertResult)
+    } catch (error) {
+      console.error('❌ Failed to store video generation parameters:', error)
+      // Don't fail the request if database storage fails
+    }
+
     // Deduct credits
-    await supabase
+    await supabaseAdmin
       .from('user_credits')
       .update({ 
-        current_balance: userCredits.current_balance - creditsNeeded,
-        consumed_this_month: userCredits.consumed_this_month + creditsNeeded
+        current_balance: userCredits.current_balance - creditsRequired,
+        consumed_this_month: userCredits.current_balance - creditsRequired,
+        last_consumed_at: new Date().toISOString()
       })
       .eq('user_id', user.id)
-    
-    // Save video record
-    const { data: videoRecord } = await supabase
-      .from('playground_image_edits')
+
+    // Log the transaction
+    await supabaseAdmin
+      .from('credit_transactions')
       .insert({
-        project_id: projectId,
         user_id: user.id,
-        edit_type: 'video_generation',
-        edit_prompt: `Generate ${duration}s video from image`,
-        original_image_url: imageUrl,
-        edited_image_url: videoData.data.outputs[0], // Video URL
-        strength: 1.0,
-        credits_used: creditsNeeded,
-        processing_time_ms: Date.now() - new Date().getTime(),
-        metadata: {
-          duration,
-          resolution,
-          motion_type: motionType,
-          video_url: videoData.data.outputs[0]
-        }
+        transaction_type: 'video_generation',
+        credits_used: creditsRequired,
+        balance_before: userCredits.current_balance,
+        balance_after: userCredits.current_balance - creditsRequired,
+        description: `Video generation: ${duration}s ${resolution} ${motionType} motion`,
+        reference_id: projectId || null,
+        cost_usd: creditsRequired * 0.01, // Assuming $0.01 per credit
+        status: 'completed'
       })
-      .select()
-      .single()
-    
-    return NextResponse.json({ 
-      success: true, 
-      videoRecord,
-      videoUrl: videoData.data.outputs[0],
-      duration,
+
+    return NextResponse.json({
+      success: true,
+      videoUrl: videoResult.videoUrl,
+      taskId: videoResult.taskId,
+      creditsUsed: creditsRequired,
+      processedImageUrl,
+      aspectRatio,
       resolution,
-      creditsUsed: creditsNeeded
+      duration,
+      motionType
     })
+
   } catch (error) {
-    console.error('Failed to generate video:', error)
-    return NextResponse.json({ error: 'Failed to generate video' }, { status: 500 })
+    console.error('❌ Video generation error:', error)
+    console.error('❌ Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Video generation failed',
+        details: error instanceof Error ? error.stack : undefined
+      },
+      { status: 500 }
+    )
   }
+}
+
+async function processImageForAspectRatio(imageUrl: string, aspectRatio: string, resolution: string, yPosition?: number): Promise<string> {
+  try {
+    console.log(`🖼️ Processing image for aspect ratio ${aspectRatio} and resolution ${resolution}`)
+    if (yPosition !== undefined) {
+      console.log(`📍 Y position adjustment: ${yPosition}px`)
+    }
+    
+    // Calculate target dimensions based on aspect ratio and resolution
+    const targetDimensions = getTargetDimensions(aspectRatio, resolution)
+    console.log(`📐 Target dimensions: ${targetDimensions.width}x${targetDimensions.height}`)
+    
+    // For now, we'll use a simple approach:
+    // 1. If the aspect ratio matches, return original URL
+    // 2. If not, we'll use a cropping service or return original with a note
+    
+    // Check if we need to process the image
+    const needsProcessing = shouldProcessImage(imageUrl, aspectRatio)
+    
+    if (!needsProcessing) {
+      console.log(`✅ Image aspect ratio already matches ${aspectRatio}, using original`)
+      return imageUrl
+    }
+    
+    // For now, return the original URL but log that processing would be needed
+    // In a full implementation, you would:
+    // 1. Download the image from imageUrl
+    // 2. Calculate crop dimensions to achieve target aspect ratio
+    // 3. Apply Y position offset for framing
+    // 4. Crop the image using a library like sharp
+    // 5. Upload the cropped image to storage
+    // 6. Return the new URL
+    
+    console.log(`⚠️ Image processing needed for aspect ratio ${aspectRatio}, but using original for now`)
+    console.log(`💡 Target dimensions would be: ${targetDimensions.width}x${targetDimensions.height}`)
+    if (yPosition !== undefined && yPosition !== 0) {
+      console.log(`💡 Y position offset would be applied: ${yPosition}px`)
+    }
+    
+    return imageUrl
+  } catch (error) {
+    console.error('❌ Error processing image for aspect ratio:', error)
+    return imageUrl // Fallback to original
+  }
+}
+
+function getTargetDimensions(aspectRatio: string, resolution: string): { width: number; height: number } {
+  // Define target dimensions based on aspect ratio and resolution
+  const resolutionMap = {
+    '480p': { baseWidth: 854, baseHeight: 480 },
+    '720p': { baseWidth: 1280, baseHeight: 720 }
+  }
+  
+  const baseDimensions = resolutionMap[resolution as keyof typeof resolutionMap] || resolutionMap['480p']
+  
+  switch (aspectRatio) {
+    case '1:1':
+      const size = Math.min(baseDimensions.baseWidth, baseDimensions.baseHeight)
+      return { width: size, height: size }
+    case '16:9':
+      return { width: baseDimensions.baseWidth, height: baseDimensions.baseHeight }
+    case '9:16':
+      return { width: baseDimensions.baseHeight, height: baseDimensions.baseWidth }
+    case '4:3':
+      const width43 = baseDimensions.baseWidth
+      const height43 = Math.round(width43 * 3 / 4)
+      return { width: width43, height: height43 }
+    case '3:4':
+      const height34 = baseDimensions.baseHeight
+      const width34 = Math.round(height34 * 3 / 4)
+      return { width: width34, height: height34 }
+    default:
+      return { width: baseDimensions.baseWidth, height: baseDimensions.baseHeight }
+  }
+}
+
+function shouldProcessImage(imageUrl: string, aspectRatio: string): boolean {
+  // For now, we'll assume all images need processing
+  // In a real implementation, you would:
+  // 1. Fetch the image metadata to get current dimensions
+  // 2. Calculate current aspect ratio
+  // 3. Compare with target aspect ratio
+  // 4. Return true if they don't match
+  
+  console.log(`🔍 Checking if image needs processing for aspect ratio ${aspectRatio}`)
+  return true // For now, always process
+}
+
+async function generateVideoWithWaveSpeed(imageUrl: string, duration: number, resolution: string, motionType: string, prompt?: string): Promise<{ videoUrl: string; taskId: string }> {
+  try {
+    // Choose the appropriate WaveSpeed model based on resolution
+    const modelEndpoint = resolution === '720p' 
+      ? 'https://api.wavespeed.ai/api/v3/bytedance/seedance-v1-pro-i2v-720p'
+      : 'https://api.wavespeed.ai/api/v3/bytedance/seedance-v1-pro-i2v-480p'
+
+    // Create motion prompt based on motionType and user input
+    const motionPrompt = prompt && prompt.trim() ? prompt.trim() : getMotionPrompt(motionType)
+
+    const requestBody = {
+      image: imageUrl,
+      prompt: motionPrompt,
+      duration: duration,
+      camera_fixed: false,
+      seed: -1
+    }
+
+    console.log('🌊 WaveSpeed request:', {
+      endpoint: modelEndpoint,
+      body: requestBody,
+      hasApiKey: !!wavespeedApiKey
+    })
+
+    // Call WaveSpeed API
+    const response = await fetch(modelEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${wavespeedApiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    })
+
+    console.log('📡 WaveSpeed response status:', response.status)
+    
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.log('❌ WaveSpeed API error:', errorData)
+        
+        // Provide more specific error messages
+        if (response.status === 401) {
+          throw new Error('WaveSpeed API key is invalid or expired. Please contact support.')
+        } else if (response.status === 400) {
+          throw new Error(`Invalid request: ${errorData.message || 'Check your input parameters'}`)
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again later.')
+        } else {
+          throw new Error(`WaveSpeed API error: ${errorData.message || 'Unknown error'}`)
+        }
+      }
+
+    const result = await response.json()
+    console.log('📋 WaveSpeed API result:', result)
+    
+    if (result.code !== 200) {
+      console.log('❌ WaveSpeed API failed:', result.message)
+      throw new Error(`WaveSpeed API error: ${result.message}`)
+    }
+
+
+    // Return the task ID and a placeholder URL (will be updated when task completes)
+    console.log('✅ Video generation task created:', { taskId: result.data.id })
+    return {
+      videoUrl: '', // Will be populated when task completes
+      taskId: result.data.id
+    }
+
+  } catch (error) {
+    console.error('WaveSpeed video generation error:', error)
+    throw error
+  }
+}
+
+function getMotionPrompt(motionType: string): string {
+  const motionPrompts = {
+    'subtle': 'Gentle, subtle movement with soft camera motion',
+    'moderate': 'Smooth, moderate movement with natural camera transitions',
+    'dynamic': 'Dynamic, energetic movement with dramatic camera work'
+  }
+  
+  return motionPrompts[motionType as keyof typeof motionPrompts] || motionPrompts.moderate
 }

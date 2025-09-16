@@ -1,32 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+import { supabaseAdmin } from '../../../../lib/supabase'
+import { getUserFromRequest } from '../../../../lib/auth-utils'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get auth token from header
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader) {
+    const { user } = await getUserFromRequest(request)
+    
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized - No token provided' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       )
     }
-    
-    const token = authHeader.replace('Bearer ', '')
-    
-    // Create Supabase client
-    const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-    
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
+
+    if (!supabaseAdmin) {
       return NextResponse.json(
-        { success: false, error: 'Invalid token' },
-        { status: 401 }
+        { success: false, error: 'Database connection failed' },
+        { status: 500 }
       )
     }
 
@@ -36,39 +26,48 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
 
-    // Get user's playground gallery images
-    const { data: galleryImages, error: galleryError } = await supabase
+    // Get user's playground gallery media (images and videos)
+    const { data: galleryMedia, error: galleryError } = await supabaseAdmin
       .from('playground_gallery')
       .select(`
         id,
+        media_type,
         image_url,
+        video_url,
+        thumbnail_url,
         title,
         description,
         tags,
         created_at,
-        updated_at
+        width,
+        height,
+        video_duration,
+        video_resolution,
+        video_format,
+        generation_metadata,
+        project_id
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (galleryError) {
-      console.error('Error fetching gallery images:', galleryError)
+      console.error('Error fetching gallery media:', galleryError)
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch gallery images' },
+        { success: false, error: 'Failed to fetch gallery media' },
         { status: 500 }
       )
     }
 
     // Get total count for pagination
-    const { count } = await supabase
+    const { count } = await supabaseAdmin
       .from('playground_gallery')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
 
     return NextResponse.json({
       success: true,
-      images: galleryImages || [],
+      media: galleryMedia || [],
       pagination: {
         page,
         limit,

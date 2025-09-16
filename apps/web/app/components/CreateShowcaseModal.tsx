@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Image, Tag, Eye, EyeOff } from 'lucide-react'
+import { X, Image, Tag, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { useAuth } from '../../lib/auth-context'
+import { useRouter } from 'next/navigation'
 
 interface Moodboard {
   id: string
@@ -29,6 +30,7 @@ interface CreateShowcaseModalProps {
 
 export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: CreateShowcaseModalProps) {
   const { user, session } = useAuth()
+  const router = useRouter()
   const [moodboards, setMoodboards] = useState<Moodboard[]>([])
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([])
   const [loading, setLoading] = useState(false)
@@ -142,6 +144,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
         })
       }
 
+      console.log('🚀 Sending showcase creation request:', requestData)
+      console.log('🔑 Session token:', session.access_token ? 'Present' : 'Missing')
+
       const response = await fetch('/api/showcases/create', {
         method: 'POST',
         headers: {
@@ -151,14 +156,41 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
         body: JSON.stringify(requestData)
       })
 
+      console.log('📡 Response status:', response.status)
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()))
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create showcase')
+        let errorData = {}
+        try {
+          const responseText = await response.text()
+          console.error('❌ Raw response text:', responseText)
+          
+          if (responseText) {
+            errorData = JSON.parse(responseText)
+          }
+        } catch (parseError) {
+          console.error('❌ Failed to parse error response:', parseError)
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
+        }
+        
+        console.error('❌ API Error Response:', errorData)
+        console.error('❌ Response status:', response.status)
+        console.error('❌ Response statusText:', response.statusText)
+        
+        // Try to get more details about the error
+        const errorMessage = (errorData as any).error || (errorData as any).message || `HTTP ${response.status}: ${response.statusText}`
+        throw new Error(errorMessage)
       }
 
+      const successData = await response.json()
+      console.log('✅ Showcase created successfully:', successData)
       onSuccess()
     } catch (error) {
-      console.error('Error creating showcase:', error)
+      console.error('❌ Error creating showcase:', error)
+      console.error('Error details:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack
+      })
       alert((error as Error).message || 'Failed to create showcase')
     } finally {
       setLoading(false)
@@ -197,6 +229,11 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
       individualImageTitle: image.title,
       individualImageDescription: image.description || ''
     }))
+  }
+
+  const handleGoToPlayground = () => {
+    onClose() // Close the modal first
+    router.push('/playground') // Navigate to playground
   }
 
   if (!isOpen) return null
@@ -301,9 +338,20 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 </select>
               )}
               {moodboards.length === 0 && !fetchingMoodboards && (
-                <p className="text-sm text-gray-500 mt-1">
-                  No moodboards found. Create a moodboard first.
-                </p>
+                <div className="text-center py-8 px-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                  <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-sm text-gray-500 mb-4">
+                    No moodboards found. Create a moodboard first.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleGoToPlayground}
+                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
+                  >
+                    Go to Playground
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -350,9 +398,20 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 </div>
               )}
               {galleryImages.length === 0 && !fetchingGallery && (
-                <p className="text-sm text-gray-500 mt-1">
-                  No images found in your gallery. Generate some images in the playground first.
-                </p>
+                <div className="text-center py-8 px-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                  <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-sm text-gray-500 mb-4">
+                    No images found in your gallery. Generate some images in the playground first.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleGoToPlayground}
+                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
+                  >
+                    Go to Playground
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -443,7 +502,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
             </button>
             <button
               type="submit"
-              disabled={loading || !formData.title || !formData.moodboardId}
+              disabled={loading || !formData.title || (formData.showcaseType === 'moodboard' && !formData.moodboardId) || (formData.showcaseType === 'individual_image' && !formData.individualImageId)}
               className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
             >
               {loading ? (
