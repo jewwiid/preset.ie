@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 import { 
@@ -12,7 +12,7 @@ import {
   RefreshCw
 } from 'lucide-react'
 
-export default function SignupSuccessPage() {
+function SignupSuccessContent() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -207,5 +207,13 @@ export default function SignupSuccessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignupSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignupSuccessContent />
+    </Suspense>
   )
 }

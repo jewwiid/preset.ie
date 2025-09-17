@@ -115,7 +115,10 @@ export type DirectorStyle =
   | 'robert-richardson'    // Bold colors, dramatic lighting, wide compositions
   | 'darius-khondji'       // Moody lighting, rich colors, atmospheric
   | 'bruno-delbonnel'      // Warm colors, soft lighting, romantic atmosphere
-  | 'seamus-mcgarvey';     // Natural lighting, handheld camera, intimate feel
+  | 'seamus-mcgarvey'      // Natural lighting, handheld camera, intimate feel
+  | 'christopher-nolan'    // Dark, complex narratives with intricate cinematography
+  | 'greta-gerwig'         // Naturalistic, intimate storytelling with warm tones
+  | 'jordan-peele';        // Psychological horror with social commentary
 
 // Era or Film Stock Emulation
 export type EraEmulation = 
@@ -156,7 +159,12 @@ export type SceneMood =
   | 'baroque'               // Ornate, complex compositions, rich details
   | 'industrial'            // Harsh lighting, metallic surfaces, urban decay
   | 'natural'               // Organic shapes, natural lighting, earthy tones
-  | 'ethereal';             // Soft, otherworldly, luminous
+  | 'ethereal'              // Soft, otherworldly, luminous
+  | 'cyberpunk-neon'        // Neon lights, dark urban environments, high-tech aesthetic
+  | 'cozy-autumn'           // Warm, comfortable autumn atmosphere
+  | 'melancholic-rain'      // Sad, contemplative rainy atmosphere
+  | 'ethereal-dream'       // Dreamlike, otherworldly quality
+  | 'industrial-grit';     // Industrial, gritty aesthetic
 
 // Camera Movement
 export type CameraMovement = 
@@ -322,7 +330,24 @@ export type ForegroundElement =
   | 'color-fringe'          // Chromatic aberration
   | 'lens-distortion'      // Optical distortion
   | 'focus-breathing'       // Focus shift effect
-  | 'motion-blur';          // Movement blur
+  | 'motion-blur'           // Movement blur
+  | 'flowers'               // Flowers in foreground
+  | 'branches'              // Tree branches in foreground
+  | 'fence'                 // Fence in foreground
+  | 'window'                // Window in foreground
+  | 'door'                  // Door in foreground
+  | 'vehicle'               // Vehicle in foreground
+  | 'person'                // Person in foreground
+  | 'animal'                // Animal in foreground
+  | 'object'                // Object in foreground
+  | 'texture'               // Textured foreground
+  | 'pattern'               // Patterned foreground
+  | 'shadow'                // Shadow in foreground
+  | 'reflection'            // Reflection in foreground
+  | 'silhouette'            // Silhouette in foreground
+  | 'blur'                  // Blurred foreground
+  | 'bokeh'                 // Bokeh foreground
+  | 'none';                 // Clean foreground
 
 export type SubjectCount = 
   | 'solo'                  // Single subject
@@ -334,7 +359,13 @@ export type SubjectCount =
   | 'empty'                 // No visible subjects
   | 'multiple'               // Several subjects
   | 'duo'                    // Two people
-  | 'ensemble';              // Group of people
+  | 'ensemble'              // Group of people
+  | 'single'                // Single subject (alternative to solo)
+  | 'couple'                // Two people (alternative to pair)
+  | 'group-small'           // Small group (alternative to small-group)
+  | 'group-medium'          // Medium group (alternative to medium-group)
+  | 'group-large'           // Large group (alternative to large-group)
+  | 'none';                 // No subjects
 
 export type EyeContact = 
   | 'direct-gaze'           // Looking directly at camera
@@ -346,7 +377,12 @@ export type EyeContact =
   | 'looking-right'         // Subject looking right
   | 'eyes-closed'           // Subject's eyes are closed
   | 'partial-face'          // Only part of face visible
-  | 'back-of-head';         // Subject facing away
+  | 'back-of-head'          // Subject facing away
+  | 'direct'                // Direct eye contact (alternative to direct-gaze)
+  | 'closed-eyes'           // Subject's eyes are closed (alternative to eyes-closed)
+  | 'profile'               // Profile view (alternative to profile-view)
+  | 'back-view'             // Back view (alternative to back-of-head)
+  | 'none';                 // No eye contact
 
 // Main Cinematic Parameters Interface
 export interface CinematicParameters {
@@ -455,7 +491,8 @@ export const CINEMATIC_PARAMETERS = {
     'wes-anderson', 'roger-deakins', 'christopher-doyle', 'david-fincher',
     'sofia-coppola', 'stanley-kubrick', 'terrence-malick', 'paul-thomas-anderson',
     'denis-villeneuve', 'emmanuel-lubezki', 'janusz-kaminski', 'robert-richardson',
-    'darius-khondji', 'bruno-delbonnel', 'seamus-mcgarvey'
+    'darius-khondji', 'bruno-delbonnel', 'seamus-mcgarvey', 'christopher-nolan',
+    'greta-gerwig', 'jordan-peele'
   ] as const,
   
   COLOR_PALETTES: [
@@ -469,7 +506,8 @@ export const CINEMATIC_PARAMETERS = {
     'gritty', 'dreamlike', 'futuristic', 'romantic', 'action-packed',
     'film-noir', 'melancholic', 'mysterious', 'nostalgic', 'dramatic',
     'peaceful', 'tense', 'epic', 'intimate', 'surreal', 'minimalist',
-    'baroque', 'industrial', 'natural', 'ethereal'
+    'baroque', 'industrial', 'natural', 'ethereal', 'cyberpunk-neon',
+    'cozy-autumn', 'melancholic-rain', 'ethereal-dream', 'industrial-grit'
   ] as const
 } as const;
 

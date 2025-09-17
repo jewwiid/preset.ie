@@ -253,10 +253,12 @@ export class CinematicPromptBuilder {
       cinematicTags.push(`color-palette:${params.colorPalette}`);
     }
 
-    if (params.foregroundElements) {
-      const foregroundDescription = this.getForegroundElementDescription(params.foregroundElements);
-      technicalDetails.push(foregroundDescription);
-      cinematicTags.push(`foreground-elements:${params.foregroundElements}`);
+    if (params.foregroundElements && params.foregroundElements.length > 0) {
+      const foregroundDescriptions = params.foregroundElements.map(element => 
+        this.getForegroundElementDescription(element)
+      );
+      technicalDetails.push(...foregroundDescriptions);
+      cinematicTags.push(`foreground-elements:${params.foregroundElements.join(',')}`);
     }
 
     if (params.subjectCount) {
@@ -689,8 +691,37 @@ export class CinematicPromptBuilder {
 
   private getForegroundElementDescription(element: ForegroundElement): string {
     const descriptions: Record<ForegroundElement, string> = {
+      'raindrops-on-window': 'raindrops on window',
+      'tree-branches': 'tree branches',
+      'lens-flare': 'lens flare',
+      'smoke': 'smoke',
+      'dust-particles': 'dust particles',
+      'snowflakes': 'snowflakes',
+      'leaves': 'leaves',
+      'insects': 'insects',
+      'birds': 'birds',
+      'shadows': 'shadows',
+      'reflections': 'reflections',
+      'steam': 'steam',
+      'fog': 'fog',
+      'mist': 'mist',
+      'haze': 'haze',
+      'glare': 'glare',
+      'bloom': 'bloom',
+      'vignette': 'vignette',
+      'grain': 'grain',
+      'scratches': 'scratches',
+      'water-drops': 'water drops',
+      'sparkles': 'sparkles',
+      'bokeh-lights': 'bokeh lights',
+      'light-streaks': 'light streaks',
+      'particles': 'particles',
+      'texture-overlay': 'texture overlay',
+      'color-fringe': 'color fringe',
+      'lens-distortion': 'lens distortion',
+      'focus-breathing': 'focus breathing',
+      'motion-blur': 'motion blur',
       'flowers': 'flowers in foreground',
-      'leaves': 'leaves in foreground',
       'branches': 'branches in foreground',
       'fence': 'fence in foreground',
       'window': 'window in foreground',
@@ -713,13 +744,21 @@ export class CinematicPromptBuilder {
 
   private getSubjectCountDescription(count: SubjectCount): string {
     const descriptions: Record<SubjectCount, string> = {
+      'solo': 'single subject',
+      'pair': 'pair of subjects',
+      'small-group': 'small group',
+      'medium-group': 'medium group',
+      'large-group': 'large group',
+      'crowd': 'crowd',
+      'empty': 'empty scene',
+      'multiple': 'multiple subjects',
+      'duo': 'duo',
+      'ensemble': 'ensemble',
       'single': 'single subject',
       'couple': 'couple',
       'group-small': 'small group',
       'group-medium': 'medium group',
       'group-large': 'large group',
-      'crowd': 'crowd',
-      'multiple': 'multiple subjects',
       'none': 'no subjects'
     };
     return descriptions[count];
@@ -727,12 +766,17 @@ export class CinematicPromptBuilder {
 
   private getEyeContactDescription(contact: EyeContact): string {
     const descriptions: Record<EyeContact, string> = {
-      'direct': 'direct eye contact',
+      'direct-gaze': 'direct eye contact',
+      'profile-view': 'profile view',
       'looking-away': 'looking away',
-      'looking-up': 'looking up',
       'looking-down': 'looking down',
+      'looking-up': 'looking up',
       'looking-left': 'looking left',
       'looking-right': 'looking right',
+      'eyes-closed': 'eyes closed',
+      'partial-face': 'partial face visible',
+      'back-of-head': 'back of head',
+      'direct': 'direct eye contact',
       'closed-eyes': 'closed eyes',
       'profile': 'profile view',
       'back-view': 'back view',
