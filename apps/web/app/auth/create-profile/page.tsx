@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
+import LocationPicker from '../../../components/location-picker'
+import type { ParsedLocation } from '../../../lib/location-service'
+import { uploadProfilePhoto, compressImage, fileToDataUrl } from '../../../lib/storage'
 
 // Style/vibe tags available for users
 const STYLE_TAGS = [
@@ -15,6 +18,8 @@ const STYLE_TAGS = [
 
 export default function CreateProfilePage() {
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     displayName: '',
     handle: '',
     bio: '',
@@ -22,6 +27,10 @@ export default function CreateProfilePage() {
     role: '',
     styleTags: [] as string[]
   })
+  const [parsedLocation, setParsedLocation] = useState<ParsedLocation | null>(null)
+  const [profilePicture, setProfilePicture] = useState<File | null>(null)
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null)
+  const [uploadingPicture, setUploadingPicture] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { user, loading: authLoading } = useAuth()
@@ -32,6 +41,63 @@ export default function CreateProfilePage() {
       router.push('/auth/signin')
     }
   }, [user, authLoading, router])
+
+  // Auto-generate display name from first and last name
+  useEffect(() => {
+    if (formData.firstName || formData.lastName) {
+      const displayName = `${formData.firstName} ${formData.lastName}`.trim()
+      setFormData(prev => ({ ...prev, displayName }))
+    }
+  }, [formData.firstName, formData.lastName])
+
+  // Handle location selection
+  const handleLocationChange = (location: string, parsed?: ParsedLocation) => {
+    setFormData(prev => ({ ...prev, city: location }))
+    setParsedLocation(parsed || null)
+  }
+
+  // Handle profile picture upload
+  const handleProfilePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file')
+      return
+    }
+
+    // Validate file size (5MB limit)
+    const MAX_SIZE = 5 * 1024 * 1024 // 5MB
+    if (file.size > MAX_SIZE) {
+      setError('Image must be less than 5MB')
+      return
+    }
+
+    setUploadingPicture(true)
+    setError(null)
+
+    try {
+      // Compress image if needed
+      const compressedFile = await compressImage(file, 800, 0.85)
+      
+      // Create preview
+      const preview = await fileToDataUrl(compressedFile)
+      setProfilePicturePreview(preview)
+      setProfilePicture(compressedFile)
+    } catch (error) {
+      console.error('Error processing image:', error)
+      setError('Failed to process image')
+    } finally {
+      setUploadingPicture(false)
+    }
+  }
+
+  // Remove profile picture
+  const removeProfilePicture = () => {
+    setProfilePicture(null)
+    setProfilePicturePreview(null)
+  }
 
   const handleStyleTagToggle = (tag: string) => {
     setFormData(prev => ({
@@ -55,14 +121,29 @@ export default function CreateProfilePage() {
         setError('Database service not available')
         return
       }
+      // Upload profile picture if provided
+      let avatarUrl = null
+      if (profilePicture && user) {
+        avatarUrl = await uploadProfilePhoto(profilePicture, user.id)
+        if (!avatarUrl) {
+          setError('Failed to upload profile picture')
+          setLoading(false)
+          return
+        }
+      }
+
       const { error } = await supabase
         .from('users_profile')
         .insert({
           user_id: user.id,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
           display_name: formData.displayName,
           handle: formData.handle,
           bio: formData.bio || null,
           city: formData.city || null,
+          country: parsedLocation?.country || null,
+          avatar_url: avatarUrl,
           role_flags: [formData.role],
           style_tags: formData.styleTags,
           subscription_tier: 'FREE'
@@ -153,7 +234,123 @@ export default function CreateProfilePage() {
             </div>
           </div>
 
+          {/* Profile Picture */}
+          <div className="mb-8">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Profile Picture
+            </label>
+            <div className="flex items-start space-x-4">
+              {/* Preview */}
+              <div className="flex-shrink-0">
+                {profilePicturePreview ? (
+                  <div className="relative">
+                    <img
+                      src={profilePicturePreview}
+                      alt="Profile preview"
+                      className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeProfilePicture}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Controls */}
+              <div className="flex-1">
+                <div className="flex items-center space-x-3">
+                  <label
+                    htmlFor="profilePicture"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploadingPicture ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        {profilePicture ? 'Change Photo' : 'Upload Photo'}
+                      </>
+                    )}
+                  </label>
+                  
+                  {profilePicture && (
+                    <button
+                      type="button"
+                      onClick={removeProfilePicture}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+                
+                <input
+                  id="profilePicture"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePictureChange}
+                  className="hidden"
+                  disabled={uploadingPicture}
+                />
+                
+                <p className="text-xs text-gray-500 mt-2">
+                  JPG, PNG, or WebP. Max 5MB. Recommended: 400x400px or larger.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Basic Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                First Name *
+              </label>
+              <input
+                id="firstName"
+                type="text"
+                required
+                value={formData.firstName}
+                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="Your first name"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                Last Name *
+              </label>
+              <input
+                id="lastName"
+                type="text"
+                required
+                value={formData.lastName}
+                onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                placeholder="Your last name"
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">
@@ -168,6 +365,7 @@ export default function CreateProfilePage() {
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
                 placeholder="Your full name"
               />
+              <p className="text-xs text-gray-500 mt-1">Auto-generated from first and last name</p>
             </div>
 
             <div>
@@ -191,14 +389,23 @@ export default function CreateProfilePage() {
             <label htmlFor="city" className="block text-sm font-medium text-gray-700">
               City
             </label>
-            <input
-              id="city"
-              type="text"
+            <LocationPicker
               value={formData.city}
-              onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+              onChange={handleLocationChange}
               placeholder="Where you're based"
+              className="mt-1"
+              showCurrentLocation={true}
             />
+            {parsedLocation && (
+              <p className="text-xs text-gray-500 mt-1">
+                📍 {parsedLocation.city}, {parsedLocation.country}
+                {parsedLocation.lat && parsedLocation.lng && (
+                  <span className="ml-2">
+                    ({parsedLocation.lat.toFixed(4)}, {parsedLocation.lng.toFixed(4)})
+                  </span>
+                )}
+              </p>
+            )}
           </div>
 
           <div>

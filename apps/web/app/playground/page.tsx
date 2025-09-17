@@ -19,6 +19,8 @@ import VideoGenerationPanel from '../components/playground/VideoGenerationPanel'
 import ImageGalleryPanel from '../components/playground/ImageGalleryPanel'
 import PastGenerationsPanel from '../components/playground/PastGenerationsPanel'
 import TabbedPlaygroundLayout from '../components/playground/TabbedPlaygroundLayout'
+import EnhancedPlaygroundHeader from '../components/playground/EnhancedPlaygroundHeader'
+// import { PlaygroundAuthGuard } from '../components/auth/AuthGuard'
 
 interface PlaygroundProject {
   id: string
@@ -47,7 +49,8 @@ interface PlaygroundProject {
   selected_image_url?: string
   status: string
   credits_used: number
-  last_generated_at?: string
+  created_at: string
+  last_generated_at: string
 }
 
 export default function PlaygroundPage() {
@@ -77,6 +80,9 @@ export default function PlaygroundPage() {
   // Batch job tracking states
   const [activeBatchJobId, setActiveBatchJobId] = useState<string | null>(null)
   const [batchResults, setBatchResults] = useState<any[]>([])
+  
+  // Active tab state for header
+  const [activeTab, setActiveTab] = useState('generate')
 
   useEffect(() => {
     if (user && session?.access_token) {
@@ -140,6 +146,11 @@ export default function PlaygroundPage() {
     customStylePreset?: any
     baseImage?: string
     generationMode?: 'text-to-image' | 'image-to-image'
+    intensity?: number
+    cinematicParameters?: any
+    enhancedPrompt?: string
+    includeTechnicalDetails?: boolean
+    includeStyleReferences?: boolean
   }) => {
     setCurrentPrompt(params.prompt)
     setLoading(true)
@@ -156,7 +167,12 @@ export default function PlaygroundPage() {
           projectId: currentProject?.id,
           baseImage: params.baseImage,
           generationMode: params.generationMode,
-          customStylePreset: params.customStylePreset
+          customStylePreset: params.customStylePreset,
+          intensity: params.intensity,
+          cinematicParameters: params.cinematicParameters,
+          enhancedPrompt: params.enhancedPrompt,
+          includeTechnicalDetails: params.includeTechnicalDetails,
+          includeStyleReferences: params.includeStyleReferences
         })
       })
 
@@ -166,6 +182,13 @@ export default function PlaygroundPage() {
       }
 
       const { project, images, creditsUsed, warning } = await response.json()
+      console.log('🔍 Generated Images Debug:', {
+        projectId: project.id,
+        generatedImages: project.generated_images,
+        imagesLength: project.generated_images?.length,
+        images: images,
+        responseImagesLength: images?.length
+      })
       setCurrentProject(project)
       setUserCredits(prev => prev - creditsUsed)
       
@@ -535,6 +558,9 @@ export default function PlaygroundPage() {
     aspectRatio: string
     prompt: string
     yPosition?: number
+    cinematicParameters?: any
+    includeTechnicalDetails?: boolean
+    includeStyleReferences?: boolean
   }) => {
     setLoading(true)
     setVideoGenerationStatus('generating')
@@ -674,16 +700,29 @@ export default function PlaygroundPage() {
     throw new Error('Video generation timed out')
   }
 
-  const saveToGallery = async (imageUrl: string) => {
+  // Helper function to safely extract URL from image object
+  const getImageUrl = (imageUrl: any): string => {
+    if (typeof imageUrl === 'string') return imageUrl
+    if (typeof imageUrl === 'object' && imageUrl !== null) {
+      return imageUrl.url || imageUrl.image_url || ''
+    }
+    return ''
+  }
+
+  const saveToGallery = async (imageUrl: any) => {
     console.log('🎯 saveToGallery function called with URL:', imageUrl)
     
+    // Extract the actual URL string
+    const actualImageUrl = getImageUrl(imageUrl)
+    console.log('🎯 Extracted URL:', actualImageUrl)
+    
     // Prevent multiple simultaneous calls
-    if (savingImage === imageUrl) {
+    if (savingImage === actualImageUrl) {
       console.log('⚠️ Save already in progress for this URL, skipping...')
       return
     }
     
-    setSavingImage(imageUrl)
+    setSavingImage(actualImageUrl)
     try {
       console.log('🔄 Starting save process...')
       
@@ -693,15 +732,16 @@ export default function PlaygroundPage() {
       // Check if this is a video URL (contains .mp4, .webm, .mov)
       // Note: cloudfront.net URLs can be images or videos, so we check file extension instead
       console.log('🔍 Starting media type detection...')
-      const isVideo = imageUrl.includes('.mp4') || imageUrl.includes('.webm') || 
-                     imageUrl.includes('.mov')
+      const isVideo = actualImageUrl.includes('.mp4') || actualImageUrl.includes('.webm') || 
+                     actualImageUrl.includes('.mov')
       
       console.log('🔍 Media type detection:', { 
         imageUrl, 
+        actualImageUrl,
         isVideo, 
-        hasMp4: imageUrl.includes('.mp4'),
-        hasWebm: imageUrl.includes('.webm'),
-        hasMov: imageUrl.includes('.mov')
+        hasMp4: actualImageUrl.includes('.mp4'),
+        hasWebm: actualImageUrl.includes('.webm'),
+        hasMov: actualImageUrl.includes('.mov')
       })
       
       console.log('🔍 Media type detection completed, proceeding to save logic...')
@@ -711,16 +751,16 @@ export default function PlaygroundPage() {
         // Save video to gallery with actual metadata
         // Try to get metadata from current project or use defaults
         const projectMetadata = currentProject?.metadata || {}
-        const videoMetadata = currentProject?.generated_images?.find(img => img.url === imageUrl) || {}
+        const videoMetadata = currentProject?.generated_images?.find(img => getImageUrl(img.url) === actualImageUrl) || {}
         
         const videoData = {
-          videoUrl: imageUrl,
+          videoUrl: actualImageUrl,
           title: 'Generated Video',
           description: `AI-generated video: ${currentProject?.prompt || 'AI-generated video'}`,
           tags: ['ai-generated', 'video'],
           duration: (videoMetadata as any)?.duration || 5,
           resolution: (videoMetadata as any)?.resolution || '480p',
-          aspectRatio: (videoMetadata as any)?.aspect_ratio || '1:1',
+          aspectRatio: currentProject?.aspect_ratio || '1:1', // Use current project's aspect ratio
           motionType: (videoMetadata as any)?.motion_type || 'subtle',
           prompt: currentProject?.prompt || 'AI-generated video',
           generationMetadata: {
@@ -728,7 +768,7 @@ export default function PlaygroundPage() {
             credits_used: 8,
             duration: (videoMetadata as any)?.duration || 5,
             resolution: (videoMetadata as any)?.resolution || '480p',
-            aspect_ratio: (videoMetadata as any)?.aspect_ratio || '1:1',
+            aspect_ratio: currentProject?.aspect_ratio || '1:1', // Use current project's aspect ratio
             motion_type: (videoMetadata as any)?.motion_type || 'subtle',
             image_url: null,
             task_id: null,
@@ -768,7 +808,7 @@ export default function PlaygroundPage() {
             status: response.status,
             statusText: response.statusText,
             errorData,
-            videoUrl: imageUrl
+            videoUrl: actualImageUrl
           })
           throw new Error(errorData.error || 'Failed to save video')
         }
@@ -798,7 +838,7 @@ export default function PlaygroundPage() {
             'Authorization': `Bearer ${session?.access_token}`
           },
           body: JSON.stringify({
-            imageUrl,
+            imageUrl: actualImageUrl,
             title: currentProject?.title || 'Generated Image',
             description: `Generated from: ${currentProject?.prompt || 'Unknown prompt'}`,
             tags: ['ai-generated'],
@@ -815,6 +855,17 @@ export default function PlaygroundPage() {
           })
         } else {
           const errorData = await response.json()
+          
+          // Handle duplicate images gracefully
+          if (response.status === 409 && errorData.error === 'duplicate') {
+            showFeedback({
+              type: 'info',
+              title: 'Already Saved',
+              message: errorData.message || 'This image is already saved in your gallery.'
+            })
+            return // Don't throw error for duplicates
+          }
+          
           throw new Error(errorData.error || 'Failed to save image')
         }
       }
@@ -865,20 +916,13 @@ export default function PlaygroundPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Preset Playground</h1>
-          <p className="text-gray-600">Create and edit AI-generated images with Seedream</p>
-          <div className="flex items-center space-x-4 mt-4">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Sparkles className="h-4 w-4 text-purple-500" />
-              <span>Credits: {userCredits}</span>
-            </div>
-            <div className="text-sm text-gray-500">
-              Generation: 2 credits | Basic Edit: 2 credits | Advanced Edit: 1-4 credits | Sequential: 3/image | Style Variations: 2/style | Batch: 3/image | Video: 8-10 credits
-            </div>
-          </div>
-        </div>
+        {/* Enhanced Header */}
+        <EnhancedPlaygroundHeader
+          userCredits={userCredits}
+          userSubscriptionTier={userSubscriptionTier}
+          activeTab={activeTab}
+          loading={loading}
+        />
 
         {/* Batch Progress Tracker */}
         {activeBatchJobId && (
@@ -905,6 +949,7 @@ export default function PlaygroundPage() {
             console.log('📐 Settings updated from import:', settings)
             // Settings are managed internally by TabbedPlaygroundLayout
           }}
+          onTabChange={setActiveTab}
           loading={loading}
           userCredits={userCredits}
           userSubscriptionTier={userSubscriptionTier}

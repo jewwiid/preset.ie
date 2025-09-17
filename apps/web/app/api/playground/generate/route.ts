@@ -45,7 +45,7 @@ async function generateSingleImageToImage({
         images: [baseImage],
         size,
         enable_base64_output: enableBase64Output,
-        enable_sync_mode: enableSyncMode
+        enable_sync_mode: false // Use async mode for better reliability
       })
     })
     
@@ -56,16 +56,17 @@ async function generateSingleImageToImage({
     
     const responseData = await response.json()
     
-    // Handle async response if needed
-    if (responseData.status === 'created' && responseData.urls?.get) {
-      console.log(`Polling for image-to-image ${imageIndex}...`)
+    // Handle async response using official API pattern
+    if (responseData.data?.id) {
+      const requestId = responseData.data.id
+      console.log(`Polling for image-to-image ${imageIndex} using official API pattern...`)
       let attempts = 0
-      const maxAttempts = 30
+      const maxAttempts = 60
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-        const resultResponse = await fetch(responseData.urls.get, {
+        const resultResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${requestId}/result`, {
           headers: {
             'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`
           }
@@ -77,14 +78,15 @@ async function generateSingleImageToImage({
         
         const resultData = await resultResponse.json()
         
-        if (resultData.status === 'succeeded' && resultData.outputs && resultData.outputs.length > 0) {
+        if (resultData.data?.status === 'completed' && resultData.data?.outputs && resultData.data.outputs.length > 0) {
           console.log(`Image-to-image ${imageIndex} generated successfully`)
+          const output = resultData.data.outputs[0]
           return {
-            url: resultData.outputs[0].url || resultData.outputs[0].image_url || resultData.outputs[0],
+            url: typeof output === 'string' ? output : (output.url || output.image_url || output),
             index: imageIndex
           }
-        } else if (resultData.status === 'failed') {
-          throw new Error(resultData.error || 'Image-to-image generation failed')
+        } else if (resultData.data?.status === 'failed') {
+          throw new Error(resultData.data?.error || 'Image-to-image generation failed')
         }
         
         attempts++
@@ -141,7 +143,7 @@ async function generateSingleImage({
         size,
         max_images: 1,
         enable_base64_output: enableBase64Output,
-        enable_sync_mode: enableSyncMode,
+        enable_sync_mode: false, // Use async mode for better reliability
         consistency_level: consistencyLevel
       })
     })
@@ -153,16 +155,17 @@ async function generateSingleImage({
     
     const responseData = await response.json()
     
-    // Handle async response if needed
-    if (responseData.status === 'created' && responseData.urls?.get) {
-      console.log(`Polling for image ${imageIndex}...`)
+    // Handle async response using official API pattern
+    if (responseData.data?.id) {
+      const requestId = responseData.data.id
+      console.log(`Polling for image ${imageIndex} using official API pattern...`)
       let attempts = 0
-      const maxAttempts = 30
+      const maxAttempts = 60
       
       while (attempts < maxAttempts) {
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-        const resultResponse = await fetch(responseData.urls.get, {
+        const resultResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${requestId}/result`, {
           headers: {
             'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`
           }
@@ -174,14 +177,15 @@ async function generateSingleImage({
         
         const resultData = await resultResponse.json()
         
-        if (resultData.status === 'succeeded' && resultData.outputs && resultData.outputs.length > 0) {
+        if (resultData.data?.status === 'completed' && resultData.data?.outputs && resultData.data.outputs.length > 0) {
           console.log(`Image ${imageIndex} generated successfully`)
+          const output = resultData.data.outputs[0]
           return {
-            url: resultData.outputs[0].url || resultData.outputs[0].image_url || resultData.outputs[0],
+            url: typeof output === 'string' ? output : (output.url || output.image_url || output),
             index: imageIndex
           }
-        } else if (resultData.status === 'failed') {
-          throw new Error(resultData.error || 'Generation failed')
+        } else if (resultData.data?.status === 'failed') {
+          throw new Error(resultData.data?.error || 'Generation failed')
         }
         
         attempts++
@@ -208,30 +212,48 @@ async function generateSingleImage({
 
 export async function POST(request: NextRequest) {
   const { user } = await getUserFromRequest(request)
-  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode } = await request.json()
+  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences } = await request.json()
   
-  // Always use 1:1 aspect ratio for generation since Seedream supports it best
-  const aspectRatio = '1:1'
+  // Parse resolution from frontend (format: "1024*576" or "1024")
+  let finalResolution: string
+  let resolutionForValidation: string
+  
+  if (resolution && resolution.includes('*')) {
+    // Resolution is in format "1024*576" - keep original format for API
+    finalResolution = resolution
+    resolutionForValidation = resolution.replace('*', 'x')
+  } else {
+    // Resolution is a single number - create square dimensions
+    const baseResolution = parseInt(resolution || '1024')
+    finalResolution = `${baseResolution}*${baseResolution}`
+    resolutionForValidation = `${baseResolution}x${baseResolution}`
+  }
+  
+  // Parse dimensions for validation using x format
+  const [width, height] = resolutionForValidation.split('x').map(Number)
+  const aspectRatio = `${width}:${height}`
   
   // Check for known Seedream API limitations
   const isSquareAspectRatio = aspectRatio === '1:1'
   const isMultipleImages = (maxImages || 1) > 1
   
   // Seedream API requires minimum 921600 pixels (960×960) and supports up to 4K resolution
-  // Convert resolution to proper format for Seedream API
-  const baseResolution = parseInt(resolution || '1024')
-  let finalResolution = `${baseResolution}x${baseResolution}` // Use 'x' format instead of '*'
-  
-  // Ensure minimum size requirement (921600 pixels = 960×960)
   const minSize = 960
   const maxSize = 4096 // 4K resolution limit
   
-  if (baseResolution < minSize) {
-    console.log(`Adjusting resolution from ${baseResolution} to ${minSize} to meet Seedream minimum requirements`)
-    finalResolution = `${minSize}x${minSize}`
-  } else if (baseResolution > maxSize) {
-    console.log(`Adjusting resolution from ${baseResolution} to ${maxSize} to meet Seedream maximum requirements (4K limit)`)
-    finalResolution = `${maxSize}x${maxSize}`
+  // Ensure minimum size requirement
+  if (width < minSize || height < minSize) {
+    const scaleFactor = minSize / Math.min(width, height)
+    const newWidth = Math.round(width * scaleFactor)
+    const newHeight = Math.round(height * scaleFactor)
+    console.log(`Adjusting resolution from ${width}x${height} to ${newWidth}x${newHeight} to meet Seedream minimum requirements`)
+    finalResolution = `${newWidth}*${newHeight}`
+  } else if (width > maxSize || height > maxSize) {
+    const scaleFactor = maxSize / Math.max(width, height)
+    const newWidth = Math.round(width * scaleFactor)
+    const newHeight = Math.round(height * scaleFactor)
+    console.log(`Adjusting resolution from ${width}x${height} to ${newWidth}x${newHeight} to meet Seedream maximum requirements (4K limit)`)
+    finalResolution = `${newWidth}*${newHeight}`
   }
   
   console.log(`Final resolution for Seedream API: ${finalResolution}`)
@@ -275,7 +297,12 @@ export async function POST(request: NextRequest) {
     if (customStylePreset) {
       // Use custom style preset
       stylePrompt = customStylePreset.prompt_template.replace('{style_type}', customStylePreset.style_type)
-      enhancedPrompt = `${prompt}, ${stylePrompt}`
+      
+      // Apply intensity to the style prompt
+      const intensityValue = intensity || customStylePreset.intensity || 1.0
+      const intensityModifier = intensityValue !== 1.0 ? ` (intensity: ${intensityValue})` : ''
+      
+      enhancedPrompt = `${prompt}, ${stylePrompt}${intensityModifier}`
       
       // Update usage count for the preset
       await supabaseAdmin
@@ -283,17 +310,54 @@ export async function POST(request: NextRequest) {
         .update({ usage_count: customStylePreset.usage_count + 1 })
         .eq('id', customStylePreset.id)
     } else {
-      // Use default style prompts
-      const stylePrompts = {
-        'realistic': 'photorealistic, high quality, detailed, natural lighting',
-        'artistic': 'artistic style, creative interpretation, painterly, expressive',
-        'cartoon': 'cartoon style, animated, colorful, simplified features',
-        'anime': 'anime style, manga art, Japanese animation, stylized',
-        'fantasy': 'fantasy art, magical, mystical, ethereal, otherworldly'
+      // Use context-aware style prompts based on generation mode
+      const getContextAwareStylePrompt = (styleType: string, mode: 'text-to-image' | 'image-to-image') => {
+        const prompts = {
+          'photorealistic': {
+            'text-to-image': 'photorealistic, high quality, detailed, natural lighting',
+            'image-to-image': 'photorealistic rendering, natural lighting, detailed textures'
+          },
+          'artistic': {
+            'text-to-image': 'artistic style, creative interpretation, painterly, expressive',
+            'image-to-image': 'artistic painting style, creative brushstrokes, expressive'
+          },
+          'cartoon': {
+            'text-to-image': 'cartoon style, animated, colorful, simplified features',
+            'image-to-image': 'cartoon-style illustration, bold outlines, bright colors'
+          },
+          'vintage': {
+            'text-to-image': 'vintage aesthetic, retro colors, nostalgic atmosphere',
+            'image-to-image': 'vintage aesthetic, retro colors, nostalgic atmosphere'
+          },
+          'cyberpunk': {
+            'text-to-image': 'cyberpunk style, neon lights, futuristic, high-tech',
+            'image-to-image': 'cyberpunk style, neon lights, futuristic elements'
+          },
+          'watercolor': {
+            'text-to-image': 'watercolor painting, soft flowing colors, translucent effects',
+            'image-to-image': 'watercolor painting technique, soft flowing colors, translucent'
+          },
+          'sketch': {
+            'text-to-image': 'pencil sketch, detailed line work, shading',
+            'image-to-image': 'pencil sketch style, detailed line work, shading'
+          },
+          'oil_painting': {
+            'text-to-image': 'oil painting, rich textures, classical art style',
+            'image-to-image': 'oil painting technique, rich textures, classical style'
+          }
+        }
+        
+        return prompts[styleType as keyof typeof prompts]?.[mode] || prompts.photorealistic[mode]
       }
       
-      stylePrompt = stylePrompts[style as keyof typeof stylePrompts] || stylePrompts.realistic
-      enhancedPrompt = `${prompt}, ${stylePrompt}`
+      const currentMode = generationMode || 'text-to-image'
+      stylePrompt = getContextAwareStylePrompt(style, currentMode)
+      
+      // Apply intensity to the style prompt
+      const intensityValue = intensity || 1.0
+      const intensityModifier = intensityValue !== 1.0 ? ` (intensity: ${intensityValue})` : ''
+      
+      enhancedPrompt = `${prompt}, ${stylePrompt}${intensityModifier}`
     }
     
     // Determine generation mode and call appropriate API
@@ -305,6 +369,7 @@ export async function POST(request: NextRequest) {
     console.log(`Calling Seedream API (${isImageToImage ? 'image-to-image' : 'text-to-image'}) with enhanced prompt:`, enhancedPrompt)
     console.log('Style applied:', style, '->', stylePrompt)
     console.log('Consistency level:', consistencyLevel)
+    console.log('Intensity:', intensity || 1.0)
     if (isImageToImage) {
       console.log('Base image provided for image-to-image generation')
     }
@@ -326,29 +391,30 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Calculate dimensions for logging
-      const [width, height] = finalResolution.split('x').map(Number)
+      const [width, height] = finalResolution.split('*').map(Number)
       const calculatedAspectRatio = width / height
       console.log(`Aspect ratio: ${calculatedAspectRatio.toFixed(2)} (${width}:${height})`)
       console.log(`Using Seedream resolution format: ${finalResolution}`)
       
       // Seedream API limitations:
       // 1. Multiple images only work with 1:1 aspect ratio
-      // 2. Non-square aspect ratios don't work at all
+      // 2. Non-square aspect ratios are supported for single images
       if (!isSquareAspectRatio) {
-        console.log('WARNING: Non-square aspect ratios are not supported by Seedream API')
-        console.log('Falling back to 1:1 aspect ratio for compatibility')
-        finalResolution = '1024*1024'
+        console.log(`Using non-square aspect ratio: ${finalResolution}`)
       }
       
-      if (!isSquareAspectRatio && isMultipleImages) {
+      // For multiple images, we need to use square aspect ratio
+      let resolutionForGeneration = finalResolution
+      if (isMultipleImages && !isSquareAspectRatio) {
         console.log('WARNING: Multiple images with non-square aspect ratios are not supported')
-        console.log('Falling back to 1 image with 1:1 aspect ratio')
-        // This will be handled in the response processing
+        console.log('Using square aspect ratio for multiple image generation')
+        const baseSize = Math.min(width, height) // Use the smaller dimension for square
+        resolutionForGeneration = `${baseSize}*${baseSize}`
       }
       
       // For multiple images, generate them individually in the background
       if (isMultipleImages) {
-        console.log(`Generating ${maxImages} images individually using 1:1 aspect ratio`)
+        console.log(`Generating ${maxImages} images individually using resolution: ${resolutionForGeneration}`)
         
         const imagePromises = []
         for (let i = 0; i < (maxImages || 1); i++) {
@@ -357,7 +423,7 @@ export async function POST(request: NextRequest) {
               generateSingleImageToImage({
                 prompt: enhancedPrompt,
                 baseImage: baseImage!,
-                size: finalResolution,
+                size: resolutionForGeneration,
                 enableBase64Output: enableBase64Output || false,
                 enableSyncMode: enableSyncMode !== false,
                 consistencyLevel: consistencyLevel || 'high',
@@ -369,7 +435,7 @@ export async function POST(request: NextRequest) {
             imagePromises.push(
               generateSingleImage({
                 prompt: enhancedPrompt,
-                size: finalResolution,
+                size: resolutionForGeneration,
                 enableBase64Output: enableBase64Output || false,
                 enableSyncMode: enableSyncMode !== false,
                 consistencyLevel: consistencyLevel || 'high',
@@ -445,14 +511,14 @@ export async function POST(request: NextRequest) {
               images: [baseImage!],
               size: finalResolution,
               enable_base64_output: enableBase64Output || false,
-              enable_sync_mode: enableSyncMode !== false
+              enable_sync_mode: false // Use async mode for better reliability
             }
           : {
               prompt: enhancedPrompt,
               size: finalResolution,
               max_images: 1,
               enable_base64_output: enableBase64Output || false,
-              enable_sync_mode: enableSyncMode !== false,
+              enable_sync_mode: false, // Use async mode for better reliability
               consistency_level: consistencyLevel || 'high'
             }
 
@@ -470,26 +536,34 @@ export async function POST(request: NextRequest) {
         if (!seedreamResponse.ok) {
           const errorText = await seedreamResponse.text()
           console.error('Seedream API error response:', errorText)
+          
+          // Handle platform credit issues gracefully
+          if (errorText.includes('Insufficient credits') || errorText.includes('top up')) {
+            throw new Error('Image generation service is temporarily unavailable. Please try again in a few minutes.')
+          }
+          
           throw new Error(`Seedream API error: ${seedreamResponse.status} - ${errorText}`)
         }
         
         const seedreamResponseData = await seedreamResponse.json()
         console.log('Seedream API response data:', seedreamResponseData)
         
-        // Handle async response - poll for results
-        if (seedreamResponseData.status === 'created' && seedreamResponseData.urls?.get) {
-          console.log('Polling for async results...', {
+        // Handle async response - poll for results using official API pattern
+        if (seedreamResponseData.data?.id) {
+          const requestId = seedreamResponseData.data.id
+          console.log('Polling for async results using official API pattern...', {
+            requestId,
             requestedImages: 1,
-            mode: 'async',
-            pollUrl: seedreamResponseData.urls.get
+            mode: 'async'
           })
+          
           let attempts = 0
-          const maxAttempts = 30 // 30 seconds timeout
+          const maxAttempts = 60 // 60 seconds timeout (increased for reliability)
           
           while (attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
             
-            const resultResponse = await fetch(seedreamResponseData.urls.get, {
+            const resultResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${requestId}/result`, {
               headers: {
                 'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`
               }
@@ -501,28 +575,38 @@ export async function POST(request: NextRequest) {
             
             const resultData = await resultResponse.json()
             console.log(`Polling attempt ${attempts + 1}:`, {
-              status: resultData.status,
-              outputsCount: resultData.outputs?.length || 0,
+              status: resultData.data?.status,
+              outputsCount: resultData.data?.outputs?.length || 0,
               requestedImages: 1,
-              hasOutputs: !!resultData.outputs,
+              hasOutputs: !!resultData.data?.outputs,
               fullResponse: resultData
             })
             
-            if (resultData.status === 'succeeded' && resultData.outputs && resultData.outputs.length > 0) {
-              console.log(`Async generation succeeded with ${resultData.outputs.length} images (requested: 1)`)
+            if (resultData.data?.status === 'completed' && resultData.data?.outputs && resultData.data.outputs.length > 0) {
+              console.log(`Async generation succeeded with ${resultData.data.outputs.length} images (requested: 1)`)
+              console.log('Raw outputs from Seedream API:', resultData.data.outputs)
               // Transform the response to match expected format
               seedreamData = {
                 code: 200,
                 data: {
-                  outputs: resultData.outputs.map((output: any) => ({
-                    url: output.url || output.image_url || output
-                  }))
+                  outputs: resultData.data.outputs.map((output: any) => {
+                    // Handle different response formats
+                    if (typeof output === 'string') {
+                      return output // Direct URL string
+                    } else if (output.url) {
+                      return output.url // Object with url property
+                    } else if (output.image_url) {
+                      return output.image_url // Object with image_url property
+                    } else {
+                      return output // Fallback to original
+                    }
+                  })
                 }
               }
               break
-            } else if (resultData.status === 'failed') {
-              console.error('Async generation failed:', resultData.error)
-              throw new Error(resultData.error || 'Generation failed')
+            } else if (resultData.data?.status === 'failed') {
+              console.error('Async generation failed:', resultData.data?.error)
+              throw new Error(resultData.data?.error || 'Generation failed')
             }
             
             attempts++
@@ -641,8 +725,8 @@ export async function POST(request: NextRequest) {
       resolution,
       generated_images: seedreamData.data.outputs.map((imgUrl: string, index: number) => ({
         url: imgUrl,
-        width: parseInt(finalResolution.split('x')[0] || '1024'),
-        height: parseInt(finalResolution.split('x')[1] || '1024'),
+        width: parseInt(finalResolution.split('*')[0] || '1024'),
+        height: parseInt(finalResolution.split('*')[1] || '1024'),
         generated_at: new Date().toISOString()
       })),
       credits_used: creditsNeeded,
@@ -653,14 +737,19 @@ export async function POST(request: NextRequest) {
         style_applied: style,
         style_prompt: stylePrompt,
         consistency_level: consistencyLevel || 'high',
+        intensity: intensity || (customStylePreset ? customStylePreset.intensity : 1.0),
         custom_style_preset: customStylePreset ? {
           id: customStylePreset.id,
           name: customStylePreset.name,
-          style_type: customStylePreset.style_type
+          style_type: customStylePreset.style_type,
+          intensity: customStylePreset.intensity
         } : null,
         generation_mode: generationMode || 'text-to-image',
         base_image: baseImage || null,
-        api_endpoint: isImageToImage ? 'seedream-v4/edit' : 'seedream-v4'
+        api_endpoint: isImageToImage ? 'seedream-v4/edit' : 'seedream-v4',
+        cinematic_parameters: cinematicParameters || null,
+        include_technical_details: includeTechnicalDetails ?? true,
+        include_style_references: includeStyleReferences ?? true
       }
     }
     
@@ -700,7 +789,12 @@ export async function POST(request: NextRequest) {
     // Generate appropriate warnings based on limitations
     let warning = null
     
-    if (!isSquareAspectRatio && aspectRatio !== '1:1') {
+    // Check if we converted the resolution to square format
+    const [finalWidth, finalHeight] = finalResolution.split('*').map(Number)
+    const finalAspectRatio = `${finalWidth}:${finalHeight}`
+    const wasConvertedToSquare = !isSquareAspectRatio && finalAspectRatio === '1:1'
+    
+    if (wasConvertedToSquare) {
       warning = `Note: The ${aspectRatio} aspect ratio was automatically converted to 1:1 (square) as it's not supported by the image generation service.`
     } else if ((maxImages || 1) > 1 && seedreamData.data.outputs.length === 1) {
       warning = `Note: Only 1 image was generated instead of ${maxImages} requested. Multiple images are only supported with 1:1 aspect ratio. Credits have been adjusted accordingly.`
@@ -708,14 +802,18 @@ export async function POST(request: NextRequest) {
       warning = `Note: Multiple images with ${aspectRatio} aspect ratio are not supported. Generated 1 image with 1:1 aspect ratio instead.`
     }
     
+    const responseImages = seedreamData.data.outputs.map((imgUrl: string) => ({
+      url: imgUrl,
+      width: parseInt(finalResolution.split('*')[0] || '1024'),
+      height: parseInt(finalResolution.split('*')[1] || '1024')
+    }))
+    
+    console.log('Final API response images:', responseImages)
+    
     return NextResponse.json({ 
       success: true, 
       project,
-      images: seedreamData.data.outputs.map((imgUrl: string) => ({
-        url: imgUrl,
-        width: parseInt(finalResolution.split('x')[0] || '1024'),
-        height: parseInt(finalResolution.split('x')[1] || '1024')
-      })),
+      images: responseImages,
       creditsUsed: creditsNeeded,
       warning: warning
     })
@@ -726,9 +824,25 @@ export async function POST(request: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined,
       name: error instanceof Error ? error.name : undefined
     })
+    
+    // Provide user-friendly error messages
+    let userMessage = 'Failed to generate images'
+    let statusCode = 500
+    
+    if (error instanceof Error) {
+      if (error.message.includes('temporarily unavailable')) {
+        userMessage = error.message
+        statusCode = 503 // Service Unavailable
+      } else if (error.message.includes('Seedream API error')) {
+        userMessage = 'Image generation service is experiencing issues. Please try again later.'
+        statusCode = 503
+      } else {
+        userMessage = error.message
+      }
+    }
+    
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Failed to generate images',
-      details: error instanceof Error ? error.stack : undefined
-    }, { status: 500 })
+      error: userMessage
+    }, { status: statusCode })
   }
 }

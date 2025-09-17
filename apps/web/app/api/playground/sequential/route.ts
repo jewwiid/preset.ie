@@ -13,6 +13,19 @@ export async function POST(request: NextRequest) {
     consistencyLevel
   } = await request.json()
   
+  // Parse resolution from frontend (format: "1024*576" or "1024")
+  let finalResolution: string
+  if (resolution && resolution.includes('*')) {
+    // Resolution is in format "1024*576" - use it directly
+    finalResolution = resolution
+  } else {
+    // Resolution is a single number - create square dimensions
+    const baseResolution = parseInt(resolution || '1024')
+    finalResolution = `${baseResolution}*${baseResolution}`
+  }
+  
+  console.log(`Sequential API using resolution: ${finalResolution}`)
+  
   if (!user) {
     return NextResponse.json(
       { error: 'Unauthorized' },
@@ -56,7 +69,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         prompt: enhancedPrompt,
         max_images: numImages || 4,
-        size: resolution || '2048*2048',
+        size: finalResolution,
         enable_base64_output: false,
         enable_sync_mode: true
       })

@@ -11,9 +11,10 @@ export interface AuthContextType {
   session: Session | null
   userRole: UserRole | null
   loading: boolean
-  signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signUp: (email: string, password: string) => Promise<{ error: AuthError | null; needsEmailConfirmation?: boolean }>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null; redirectPath?: string }>
   signOut: () => Promise<{ error: AuthError | null }>
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -100,11 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: null }
     }
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     })
-    return { error }
+    
+    // Check if email confirmation is required
+    const needsEmailConfirmation = !error && data.user && !data.session ? true : undefined
+    
+    return { error, needsEmailConfirmation }
   }
 
   const signIn = async (email: string, password: string) => {
@@ -166,6 +171,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const resetPassword = async (email: string) => {
+    if (!supabase) {
+      return { error: null }
+    }
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`,
+    })
+    
+    return { error }
+  }
+
   const value: AuthContextType = {
     user,
     session,
@@ -174,6 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signIn,
     signOut,
+    resetPassword,
   }
 
   return (

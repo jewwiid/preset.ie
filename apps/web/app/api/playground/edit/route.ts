@@ -4,7 +4,20 @@ import { getUserFromRequest } from '../../../../lib/auth-utils'
 
 export async function POST(request: NextRequest) {
   const { user } = await getUserFromRequest(request)
-  const { projectId, imageUrl, editType, editPrompt, strength } = await request.json()
+  const { projectId, imageUrl, editType, editPrompt, strength, resolution } = await request.json()
+  
+  // Parse resolution from frontend (format: "1024*576" or "1024")
+  let finalResolution: string
+  if (resolution && resolution.includes('*')) {
+    // Resolution is in format "1024*576" - use it directly
+    finalResolution = resolution
+  } else {
+    // Resolution is a single number - create square dimensions
+    const baseResolution = parseInt(resolution || '1024')
+    finalResolution = `${baseResolution}*${baseResolution}`
+  }
+  
+  console.log(`Edit API using resolution: ${finalResolution}`)
   
   if (!user) {
     return NextResponse.json(
@@ -46,13 +59,21 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         images: [imageUrl],
         prompt: editPrompt,
-        size: "2048*2048",
+        size: finalResolution,
         enable_base64_output: false,
         enable_sync_mode: true
       })
     })
     
     if (!editResponse.ok) {
+      const errorText = await editResponse.text()
+      console.error('Edit API error:', editResponse.status, errorText)
+      
+      // Handle platform credit issues gracefully
+      if (errorText.includes('Insufficient credits') || errorText.includes('top up')) {
+        throw new Error('Image editing service is temporarily unavailable. Please try again in a few minutes.')
+      }
+      
       throw new Error('Seedream edit API error')
     }
     

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   try {
     let finalImageUrl = imageUrl
     
-    // Handle data URLs by uploading to Supabase Storage
+    // Handle data URLs and external URLs by uploading to Supabase Storage
     if (imageUrl.startsWith('data:image/')) {
       console.log('Processing data URL image')
       
@@ -66,6 +66,53 @@ export async function POST(request: NextRequest) {
       
       finalImageUrl = urlData.publicUrl
       console.log('Successfully uploaded image to storage:', finalImageUrl)
+    } else if (imageUrl.startsWith('http')) {
+      // Handle external URLs (like Seedream URLs) by downloading and storing them
+      console.log('Processing external URL image:', imageUrl)
+      
+      try {
+        // Download the image from the external URL
+        const response = await fetch(imageUrl)
+        if (!response.ok) {
+          throw new Error(`Failed to download image: ${response.status} ${response.statusText}`)
+        }
+        
+        const imageBuffer = await response.arrayBuffer()
+        const contentType = response.headers.get('content-type') || 'image/jpeg'
+        const fileExtension = contentType.split('/')[1] || 'jpg'
+        
+        // Generate unique filename
+        const timestamp = Date.now()
+        const randomId = Math.random().toString(36).substring(2, 15)
+        const fileName = `saved-image-${timestamp}-${randomId}.${fileExtension}`
+        
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+          .from('playground-gallery')
+          .upload(fileName, imageBuffer, {
+            contentType: contentType,
+            upsert: false
+          })
+        
+        if (uploadError) {
+          console.error('Error uploading external image to storage:', uploadError)
+          throw new Error(`Failed to upload external image: ${uploadError.message}`)
+        }
+        
+        // Get public URL
+        const { data: urlData } = supabaseAdmin.storage
+          .from('playground-gallery')
+          .getPublicUrl(fileName)
+        
+        finalImageUrl = urlData.publicUrl
+        console.log('Successfully downloaded and uploaded external image to storage:', finalImageUrl)
+        
+      } catch (downloadError) {
+        console.error('Error downloading external image:', downloadError)
+        // If download fails, store the original URL but warn about expiration
+        console.warn('Failed to download external image, storing original URL (may expire)')
+        finalImageUrl = imageUrl
+      }
     }
     
     // Check if image already exists in user's gallery
@@ -190,10 +237,54 @@ export async function POST(request: NextRequest) {
         height: imageHeight,
         file_size: 0, // Unknown size for external URLs
         format: 'jpg',
-        generation_metadata: generationMetadata || {}
+        generation_metadata: {
+          ...generationMetadata,
+          original_url: imageUrl, // Store original URL for reference
+          permanently_stored: finalImageUrl !== imageUrl, // Track if image was downloaded and stored
+          storage_method: imageUrl.startsWith('data:') ? 'base64' : 
+                        imageUrl.startsWith('http') ? 'downloaded' : 'external_reference'
+        }
       })
       .select()
       .single()
+
+    // Also create a media entry with cinematic metadata
+    if (galleryItem && !insertError) {
+      try {
+        const cinematicMetadata = generationMetadata?.cinematic_parameters || {}
+        
+        const { data: mediaItem, error: mediaError } = await supabaseAdmin
+          .from('media')
+          .insert({
+            owner_user_id: user.id,
+            type: 'image',
+            bucket: 'playground-gallery',
+            path: finalImageUrl,
+            width: imageWidth,
+            height: imageHeight,
+            ai_metadata: {
+              ...cinematicMetadata,
+              generation_metadata: generationMetadata,
+              enhanced_prompt: generationMetadata?.enhanced_prompt,
+              include_technical_details: generationMetadata?.include_technical_details,
+              include_style_references: generationMetadata?.include_style_references,
+              saved_at: new Date().toISOString()
+            }
+          })
+          .select()
+          .single()
+
+        if (mediaError) {
+          console.error('Error creating media entry:', mediaError)
+          // Don't fail the whole operation if media creation fails
+        } else {
+          console.log('Successfully created media entry with cinematic metadata:', mediaItem)
+        }
+      } catch (mediaError) {
+        console.error('Error creating media entry:', mediaError)
+        // Don't fail the whole operation if media creation fails
+      }
+    }
     
     if (insertError) {
       console.error('Gallery insert error:', insertError)

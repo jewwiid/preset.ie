@@ -24,8 +24,22 @@ export async function POST(request: NextRequest) {
     images, // Array of multiple reference images
     editType,
     style,
-    projectId
+    projectId,
+    resolution
   } = await request.json()
+  
+  // Parse resolution from frontend (format: "1024*576" or "1024")
+  let finalResolution: string
+  if (resolution && resolution.includes('*')) {
+    // Resolution is in format "1024*576" - use it directly
+    finalResolution = resolution
+  } else {
+    // Resolution is a single number - create square dimensions
+    const baseResolution = parseInt(resolution || '1024')
+    finalResolution = `${baseResolution}*${baseResolution}`
+  }
+  
+  console.log(`Batch Edit API using resolution: ${finalResolution}`)
   
   try {
     // Validate inputs
@@ -98,13 +112,21 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             images: [imageUrl],
             prompt: enhancedPrompt,
-            size: "2048*2048",
+            size: finalResolution,
             enable_base64_output: false,
             enable_sync_mode: true
           })
         })
         
         if (!editResponse.ok) {
+          const errorText = await editResponse.text()
+          console.error(`API error for image ${i + 1}:`, editResponse.status, errorText)
+          
+          // Handle platform credit issues gracefully
+          if (errorText.includes('Insufficient credits') || errorText.includes('top up')) {
+            throw new Error('Image editing service is temporarily unavailable. Please try again in a few minutes.')
+          }
+          
           throw new Error(`API request failed for image ${i + 1}`)
         }
         
@@ -202,6 +224,23 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Failed to perform batch editing:', error)
-    return NextResponse.json({ error: 'Failed to perform batch editing' }, { status: 500 })
+    
+    // Provide user-friendly error messages
+    let userMessage = 'Failed to perform batch editing'
+    let statusCode = 500
+    
+    if (error instanceof Error) {
+      if (error.message.includes('temporarily unavailable')) {
+        userMessage = error.message
+        statusCode = 503 // Service Unavailable
+      } else if (error.message.includes('API request failed')) {
+        userMessage = 'Image editing service is experiencing issues. Please try again later.'
+        statusCode = 503
+      } else {
+        userMessage = error.message
+      }
+    }
+    
+    return NextResponse.json({ error: userMessage }, { status: statusCode })
   }
 }

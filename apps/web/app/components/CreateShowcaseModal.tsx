@@ -15,11 +15,16 @@ interface Moodboard {
 
 interface GalleryImage {
   id: string
-  image_url: string
+  image_url?: string
+  video_url?: string
+  thumbnail_url: string
   title: string
   description?: string
   tags: string[]
   created_at: string
+  media_type: 'image' | 'video'
+  width: number
+  height: number
 }
 
 interface CreateShowcaseModalProps {
@@ -94,7 +99,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
 
       if (response.ok) {
         const data = await response.json()
-        setGalleryImages(data.images || [])
+        setGalleryImages(data.media || [])
       }
     } catch (error) {
       console.error('Error fetching gallery images:', error)
@@ -225,7 +230,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
     setFormData(prev => ({
       ...prev,
       individualImageId: image.id,
-      individualImageUrl: image.image_url,
+      individualImageUrl: image.image_url || image.video_url || image.thumbnail_url,
       individualImageTitle: image.title,
       individualImageDescription: image.description || ''
     }))
@@ -379,7 +384,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                       onClick={() => handleImageSelect(image)}
                     >
                       <img
-                        src={image.image_url}
+                        src={image.image_url || image.video_url || image.thumbnail_url}
                         alt={image.title}
                         className="w-full h-32 object-cover"
                       />

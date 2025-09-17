@@ -1,140 +1,209 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Mail, CheckCircle2, ArrowRight } from 'lucide-react'
-import { resendConfirmationEmail } from '../../../lib/auth-utils'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { supabase } from '../../../lib/supabase'
+import { 
+  Mail, 
+  CheckCircle2, 
+  AlertCircle,
+  Camera,
+  ArrowRight,
+  RefreshCw
+} from 'lucide-react'
 
 export default function SignupSuccessPage() {
   const [email, setEmail] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [resending, setResending] = useState(false)
-  const [resendMessage, setResendMessage] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Get email from localStorage if it was saved during signup
-    const savedEmail = localStorage.getItem('signup-email')
-    if (savedEmail) {
-      setEmail(savedEmail)
-      localStorage.removeItem('signup-email') // Clean up
+    // Get email from URL params
+    const emailParam = searchParams.get('email')
+    if (emailParam) {
+      setEmail(emailParam)
+    } else {
+      // If no email in URL, redirect to signup
+      router.push('/auth/signup')
     }
-  }, [])
+  }, [searchParams, router])
+
+  const handleResendEmail = async () => {
+    if (!email) return
+    
+    setResending(true)
+    setError(null)
+
+    try {
+      if (!supabase) {
+        setError('Authentication service not available')
+        return
+      }
+      
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      })
+
+      if (error) {
+        setError(error.message)
+      } else {
+        // Show success message briefly
+        setError(null)
+        setTimeout(() => {
+          setError(null)
+        }, 3000)
+      }
+    } catch (err) {
+      setError('Failed to resend email. Please try again.')
+    } finally {
+      setResending(false)
+    }
+  }
+
+  const handleCheckEmail = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      if (!supabase) {
+        setError('Authentication service not available')
+        return
+      }
+      
+      // Check if user has confirmed their email
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session) {
+        // User is confirmed, redirect to profile completion
+        router.push('/auth/complete-profile')
+      } else {
+        setError('Email not confirmed yet. Please check your inbox and click the confirmation link.')
+      }
+    } catch (err) {
+      setError('Failed to check email status. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
-        <div className="flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-full mx-auto mb-6">
-          <Mail className="w-8 h-8 text-emerald-600" />
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        {/* Logo Section */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mb-4">
+            <Camera className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Check your email
+          </h1>
+          <p className="mt-2 text-gray-600">
+            We've sent a confirmation link to your email address
+          </p>
         </div>
-        
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Check Your Email
-        </h1>
-        
-        <p className="text-gray-600 mb-6">
-          We've sent a confirmation link to{' '}
-          {email && (
-            <span className="font-medium text-gray-900">{email}</span>
-          )}
-          {!email && 'your email address'}.
-        </p>
 
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6">
-          <div className="flex items-start">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 mr-3 flex-shrink-0" />
-            <div className="text-sm text-emerald-800">
-              <p className="font-medium mb-1">Next steps:</p>
-              <ol className="list-decimal list-inside space-y-1 text-left">
-                <li>Check your email inbox</li>
-                <li>Click the confirmation link</li>
-                <li>Complete your profile setup</li>
-                <li>Start connecting with creatives!</li>
-              </ol>
+        {/* Email Display */}
+        {email && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
+            <div className="flex items-center">
+              <Mail className="w-5 h-5 mr-2 flex-shrink-0" />
+              <span className="text-sm font-medium">{email}</span>
             </div>
           </div>
-        </div>
+        )}
 
-        <p className="text-sm text-gray-500 mb-6">
-          Didn't receive the email? Check your spam folder or try signing up again.
-        </p>
+        {/* Alert Messages */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
+            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+            <span className="text-sm">{error}</span>
+          </div>
+        )}
 
-        <div className="space-y-4">
-          {/* Resend Email Button - Primary action */}
-          <button
-            onClick={async () => {
-              if (!email) {
-                setResendMessage('No email address found. Please try signing up again.')
-                return
-              }
-              
-              setResending(true)
-              setResendMessage('')
-              
-              const result = await resendConfirmationEmail(email)
-              
-              if (result.success) {
-                setResendMessage('✅ Confirmation email sent! Check your inbox.')
-              } else {
-                setResendMessage(`❌ ${result.error || 'Failed to send email. Please try again.'}`)
-              }
-              
-              setResending(false)
-            }}
-            disabled={resending || !email}
-            className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {resending ? 'Sending...' : 'Resend Confirmation Email'}
-          </button>
-          
-          {/* Resend Message */}
-          {resendMessage && (
-            <div className={`text-sm p-3 rounded-lg ${
-              resendMessage.includes('✅') 
-                ? 'bg-green-100 text-green-700' 
-                : 'bg-red-100 text-red-700'
-            }`}>
-              {resendMessage}
+        {/* Main Card */}
+        <div className="bg-white shadow-xl rounded-2xl p-8">
+          <div className="text-center space-y-6">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              </div>
             </div>
-          )}
-          
-          {/* Secondary Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <button
-              onClick={() => {
-                // Clear any saved signup data for fresh start
-                localStorage.removeItem('preset_signup_form_data')
-                localStorage.removeItem('signup-email')
-                router.push('/auth/signup')
-              }}
-              className="w-full py-2 px-4 border border-emerald-300 text-emerald-700 rounded-lg hover:bg-emerald-50 transition-colors"
-            >
-              Different Email?
-            </button>
             
-            <Link
-              href="/auth/signin"
-              className="w-full inline-flex items-center justify-center py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Already Confirmed?
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                Almost there!
+              </h2>
+              <p className="text-gray-600 text-sm">
+                Click the link in your email to confirm your account, then you can complete your profile.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleCheckEmail}
+                disabled={loading}
+                className="w-full flex items-center justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+              >
+                {loading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Checking...
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    I've confirmed my email
+                    <ArrowRight className="ml-2 w-4 h-4" />
+                  </div>
+                )}
+              </button>
+
+              <button
+                onClick={handleResendEmail}
+                disabled={resending || !email}
+                className="w-full flex items-center justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {resending ? (
+                  <div className="flex items-center">
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Resending...
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <Mail className="w-4 h-4 mr-2" />
+                    Resend confirmation email
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
-          
-          {/* Help Text */}
-          <div className="text-center text-sm text-gray-500 mt-6">
-            <p>Still having trouble?</p>
+        </div>
+
+        {/* Help Text */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-600">
+            Didn't receive the email? Check your spam folder or{' '}
             <button
-              onClick={() => {
-                // Clear saved data and start fresh
-                localStorage.clear()
-                router.push('/auth/signup')
-              }}
-              className="text-emerald-600 hover:text-emerald-700 underline"
+              onClick={handleResendEmail}
+              disabled={resending || !email}
+              className="font-medium text-emerald-600 hover:text-emerald-500 transition-colors disabled:opacity-50"
             >
-              Start completely fresh
+              resend it
             </button>
-          </div>
+          </p>
+        </div>
+
+        {/* Back to Sign In */}
+        <div className="text-center mt-6">
+          <button
+            onClick={() => router.push('/auth/signin')}
+            className="text-sm text-gray-600 hover:text-emerald-600 transition-colors"
+          >
+            Back to sign in
+          </button>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { Wand2, Edit3, Layers, Video, History, Sparkles } from 'lucide-react'
+import { Wand2, Edit3, Layers, Video, History, Sparkles, BookOpen } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,12 +16,26 @@ import SavedMediaGallery, { SavedMediaGalleryRef } from './SavedImagesGallery'
 import EditImageSelector from './EditImageSelector'
 import ImagePreviewArea from './ImagePreviewArea'
 import VideoViewer from './VideoViewer'
-import PerformanceMonitor from '../ui/PerformanceMonitor'
+import PromptManagementPanel from './PromptManagementPanel'
 
+// Import PlaygroundProject type from the main playground page
 interface PlaygroundProject {
   id: string
   title: string
   prompt: string
+  style?: string
+  aspect_ratio?: string
+  resolution?: string
+  metadata?: {
+    enhanced_prompt?: string
+    style_applied?: string
+    style_prompt?: string
+    consistency_level?: string
+    custom_style_preset?: any
+    generation_mode?: string
+    base_image?: string
+    api_endpoint?: string
+  }
   generated_images: Array<{
     url: string
     width: number
@@ -30,8 +44,10 @@ interface PlaygroundProject {
     type?: string
   }>
   selected_image_url?: string
-  status: string
   credits_used: number
+  created_at: string
+  last_generated_at: string
+  status: string
 }
 
 interface TabbedPlaygroundLayoutProps {
@@ -44,6 +60,9 @@ interface TabbedPlaygroundLayoutProps {
     numImages: number
     customStylePreset?: any
   }) => Promise<void>
+  
+  // Tab change callback
+  onTabChange?: (tab: string) => void
   
   // Editing props
   onEdit: (params: {
@@ -103,6 +122,7 @@ export default function TabbedPlaygroundLayout({
   onGenerateVideo,
   onImportProject,
   onSettingsUpdate,
+  onTabChange,
   loading,
   userCredits,
   userSubscriptionTier,
@@ -121,15 +141,19 @@ export default function TabbedPlaygroundLayout({
   onVideoGenerated
 }: TabbedPlaygroundLayoutProps) {
   const [activeTab, setActiveTab] = useState('generate')
+  const [selectedPreset, setSelectedPreset] = useState<any>(null)
   const [currentSettings, setCurrentSettings] = useState({
     aspectRatio: '1:1',
     resolution: '1024',
-    baseImageAspectRatio: undefined as string | undefined
+    baseImageAspectRatio: undefined as string | undefined,
+    baseImageUrl: undefined as string | undefined
   })
   const [savedImages, setSavedImages] = useState<Array<{
     id: string
     image_url: string
     title: string
+    width: number
+    height: number
   }>>([])
   const [additionalPreviewImages, setAdditionalPreviewImages] = useState<Array<{
     url: string
@@ -153,12 +177,17 @@ export default function TabbedPlaygroundLayout({
   const [deletingVideo, setDeletingVideo] = useState<string | null>(null)
   const savedGalleryRef = useRef<SavedMediaGalleryRef>(null)
 
-  const handleSettingsChange = useCallback((settings: { resolution: string; baseImageAspectRatio?: string }) => {
+  const [removeBaseImageCallback, setRemoveBaseImageCallback] = useState<(() => void) | undefined>(undefined)
+
+  const handleSettingsChange = useCallback((settings: { resolution: string; aspectRatio?: string; baseImageAspectRatio?: string; baseImageUrl?: string; onRemoveBaseImage?: () => void }) => {
     setCurrentSettings(prev => ({
       ...prev,
       resolution: settings.resolution,
-      baseImageAspectRatio: settings.baseImageAspectRatio
+      aspectRatio: settings.aspectRatio || prev.aspectRatio,
+      baseImageAspectRatio: settings.baseImageAspectRatio,
+      baseImageUrl: settings.baseImageUrl
     }))
+    setRemoveBaseImageCallback(() => settings.onRemoveBaseImage)
   }, [])
 
   const updateSettings = useCallback((settings: { aspectRatio?: string; baseImageAspectRatio?: string }) => {
@@ -261,12 +290,72 @@ export default function TabbedPlaygroundLayout({
   }, [videoGenerationStatus, generatedVideoUrl, refreshVideos, onVideoGenerated])
 
   const handleSaveToGallery = useCallback(async (url: string) => {
-    await onSaveToGallery(url)
+    // Check if this is a video URL by looking in savedVideos
+    const videoData = savedVideos.find(video => video.url === url)
+    
+    console.log('🎬 Video data found:', videoData)
+    console.log('🎬 Aspect ratio:', videoData?.aspectRatio)
+    
+    if (videoData && videoData.aspectRatio) {
+      // This is a video with aspect ratio metadata, use the video save API directly
+      console.log('🎬 Saving video with aspect ratio:', videoData.aspectRatio)
+      
+      try {
+        const response = await fetch('/api/playground/save-video-to-gallery', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`
+          },
+          body: JSON.stringify({
+            videoUrl: url,
+            title: videoData.title || 'Generated Video',
+            description: `AI-generated video: ${videoData.title || 'Generated Video'}`,
+            tags: ['ai-generated', 'video'],
+            duration: videoData.duration || 5,
+            resolution: videoData.resolution || '480p',
+            aspectRatio: videoData.aspectRatio, // Use the actual aspect ratio from video data
+            motionType: 'subtle',
+            prompt: videoData.title || 'AI-generated video',
+            generationMetadata: {
+              generated_at: videoData.generated_at || new Date().toISOString(),
+              credits_used: 8,
+              duration: videoData.duration || 5,
+              resolution: videoData.resolution || '480p',
+              aspect_ratio: videoData.aspectRatio, // Use the actual aspect ratio
+              motion_type: 'subtle',
+              image_url: null,
+              task_id: null,
+              prompt: videoData.title || 'AI-generated video',
+              style: 'realistic',
+              consistency_level: 'high'
+            }
+          })
+        })
+        
+        if (response.ok) {
+          console.log('✅ Video saved with correct aspect ratio:', videoData.aspectRatio)
+        } else {
+          const errorData = await response.json()
+          console.error('❌ Video save failed:', errorData)
+          // Fallback to regular save
+          await onSaveToGallery(url)
+        }
+      } catch (error) {
+        console.error('❌ Video save error:', error)
+        // Fallback to regular save
+        await onSaveToGallery(url)
+      }
+    } else {
+      // Regular image or video without aspect ratio metadata
+      await onSaveToGallery(url)
+    }
+    
     // Refresh the saved gallery after saving
     if (savedGalleryRef.current) {
       savedGalleryRef.current.refresh()
     }
-  }, [onSaveToGallery])
+  }, [onSaveToGallery, savedVideos, sessionToken])
 
   const handleDeleteVideo = useCallback(async (videoUrl: string) => {
     if (!sessionToken) return
@@ -311,25 +400,13 @@ export default function TabbedPlaygroundLayout({
 
   return (
     <div className="space-y-6">
-      {/* Performance Monitor */}
-      <PerformanceMonitor 
-        enabled={process.env.NODE_ENV === 'development'}
-      />
-      
-      {/* Header with Credits */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Sparkles className="h-4 w-4 text-purple-500" />
-          <span>Credits: {userCredits}</span>
-        </div>
-        <div className="text-sm text-gray-500">
-          Generation: 2 credits | Edit: 2 credits | Batch: 3/image | Video: 8-10 credits
-        </div>
-      </div>
 
       {/* Main Tabbed Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value)
+        onTabChange?.(value)
+      }} className="w-full">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="generate" className="flex items-center gap-2">
             <Wand2 className="h-4 w-4" />
             Generate
@@ -345,6 +422,10 @@ export default function TabbedPlaygroundLayout({
           <TabsTrigger value="video" className="flex items-center gap-2">
             <Video className="h-4 w-4" />
             Video
+          </TabsTrigger>
+          <TabsTrigger value="prompts" className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            Prompts
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="h-4 w-4" />
@@ -364,25 +445,46 @@ export default function TabbedPlaygroundLayout({
               userSubscriptionTier={userSubscriptionTier}
               savedImages={savedImages}
               onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
+              selectedPreset={selectedPreset}
             />
 
             {/* Dynamic Generated Content Preview */}
             <DynamicPreviewArea
-              aspectRatio={currentSettings.baseImageAspectRatio || currentSettings.aspectRatio}
+              aspectRatio={currentSettings.aspectRatio || currentSettings.baseImageAspectRatio || '1:1'}
               resolution={currentSettings.resolution}
               images={(() => {
                 const currentImages = currentProject?.generated_images || []
+                console.log('🔍 Preview Images Debug:', {
+                  currentProject: currentProject?.id,
+                  currentImages: currentImages,
+                  currentImagesLength: currentImages.length,
+                  selectedImage: selectedImage
+                })
+                const imagesToShow = [...currentImages]
+                
+                // Add base image if it exists and is not already in the images
+                if (currentSettings.baseImageUrl && !imagesToShow.some(img => img.url === currentSettings.baseImageUrl)) {
+                  imagesToShow.unshift({
+                    url: currentSettings.baseImageUrl,
+                    width: 1024, // Default dimensions for base images
+                    height: 1024,
+                    generated_at: new Date().toISOString(),
+                    type: 'base'
+                  })
+                }
+                
                 // If selectedImage is not in current images, add it as a single-item array
-                if (selectedImage && !currentImages.some(img => img.url === selectedImage)) {
-                  return [{
+                if (selectedImage && !imagesToShow.some(img => img.url === selectedImage)) {
+                  imagesToShow.push({
                     url: selectedImage,
                     width: 1024, // Default dimensions for saved images
                     height: 1024,
                     generated_at: new Date().toISOString(),
                     type: 'saved'
-                  }]
+                  })
                 }
-                return currentImages
+                
+                return imagesToShow
               })()}
               selectedImage={selectedImage}
               onSelectImage={onSelectImage}
@@ -390,6 +492,7 @@ export default function TabbedPlaygroundLayout({
               savingImage={savingImage}
               loading={loading}
               subscriptionTier={userSubscriptionTier as 'free' | 'plus' | 'pro'}
+              onRemoveBaseImage={removeBaseImageCallback}
             />
           </div>
         </TabsContent>
@@ -403,6 +506,15 @@ export default function TabbedPlaygroundLayout({
               selectedImage={selectedImage}
               savedImages={savedImages}
               onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
+              onImageUpload={async (file: File) => {
+                // Upload image to temporary storage or convert to data URL
+                // For now, we'll use a simple approach with data URLs
+                return new Promise((resolve) => {
+                  const reader = new FileReader()
+                  reader.onload = () => resolve(reader.result as string)
+                  reader.readAsDataURL(file)
+                })
+              }}
             />
 
             {/* Image Preview for Editing */}
@@ -426,10 +538,12 @@ export default function TabbedPlaygroundLayout({
                 
                 // If selectedImage is not in all images, add it as a single-item array
                 if (selectedImage && !allImages.some(img => img.url === selectedImage)) {
+                  // Try to find the image in savedImages to get actual dimensions
+                  const savedImageData = savedImages.find(img => img.image_url === selectedImage)
                   const result = [...allImages, {
                     url: selectedImage,
-                    width: 1024, // Default dimensions for saved images
-                    height: 1024,
+                    width: savedImageData?.width || 1024, // Use actual dimensions if available
+                    height: savedImageData?.height || 1024,
                     generated_at: new Date().toISOString(),
                     type: 'saved'
                   }]
@@ -562,6 +676,19 @@ export default function TabbedPlaygroundLayout({
           </div>
         </TabsContent>
 
+        {/* Prompts Tab */}
+        <TabsContent value="prompts" className="mt-6">
+          <PromptManagementPanel
+            onSelectPreset={(preset) => {
+              // When a preset is selected, switch to generate tab and pre-fill the form
+              setSelectedPreset(preset)
+              setActiveTab('generate')
+              // Clear the preset after a short delay to allow the useEffect to run
+              setTimeout(() => setSelectedPreset(null), 100)
+            }}
+          />
+        </TabsContent>
+
         {/* History Tab */}
         <TabsContent value="history" className="mt-6">
         <PastGenerationsPanel
@@ -626,8 +753,35 @@ export default function TabbedPlaygroundLayout({
               if (metadata) {
                 // Set the prompt
                 onSetPrompt(metadata.prompt)
-                // TODO: Set other generation parameters like style, resolution, etc.
-                // This would require updating the playground state management
+                
+                // Update the current project with all generation parameters
+                if (currentProject) {
+                  // Create metadata object with all properties
+                  const updatedMetadata: any = {
+                    ...currentProject.metadata,
+                    enhanced_prompt: metadata.enhanced_prompt || metadata.prompt,
+                    style_applied: metadata.style_applied || metadata.style || 'realistic',
+                    style_prompt: metadata.style_prompt || '',
+                    consistency_level: metadata.consistency_level || 'high',
+                    custom_style_preset: metadata.custom_style_preset || null,
+                    generation_mode: (metadata as any).generation_mode || 'text-to-image',
+                    base_image: (metadata as any).base_image || null,
+                    api_endpoint: (metadata as any).api_endpoint || 'seedream-v4'
+                  }
+                  
+                  const updatedProject = {
+                    ...currentProject,
+                    prompt: metadata.prompt,
+                    style: metadata.style || metadata.style_applied || 'realistic',
+                    aspect_ratio: metadata.aspect_ratio || '1:1',
+                    resolution: metadata.resolution || '1024',
+                    metadata: updatedMetadata
+                  } as PlaygroundProject
+                  
+                  onUpdateProject(updatedProject)
+                  console.log('Updated project with reused settings:', updatedProject)
+                }
+                
                 console.log('Reusing generation settings:', metadata)
               }
               // Switch to the generate tab
@@ -640,7 +794,9 @@ export default function TabbedPlaygroundLayout({
                 .map(img => ({
                   id: img.id,
                   image_url: img.image_url || '',
-                  title: img.title
+                  title: img.title,
+                  width: img.width,
+                  height: img.height
                 })))
             }}
             onAddMediaToPreview={handleAddImageToPreview}

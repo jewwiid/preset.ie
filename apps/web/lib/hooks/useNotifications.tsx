@@ -118,6 +118,13 @@ export function useNotifications(): UseNotificationsResult {
       const { data, error: fetchError } = await query
 
       if (fetchError) {
+        // Handle table not found gracefully
+        if (fetchError.code === 'PGRST205' || fetchError.message.includes('Could not find the table')) {
+          console.log('Notifications table not found, returning empty array')
+          setNotifications([])
+          setUnreadCount(0)
+          return
+        }
         throw new Error(`Failed to fetch notifications: ${fetchError.message}`)
       }
 
@@ -131,7 +138,13 @@ export function useNotifications(): UseNotificationsResult {
         .is('read_at', null)
 
       if (countError) {
-        console.warn('Failed to get unread count:', countError.message)
+        // Handle table not found gracefully
+        if (countError.code === 'PGRST205' || countError.message.includes('Could not find the table')) {
+          console.log('Notifications table not found for count, setting to 0')
+          setUnreadCount(0)
+        } else {
+          console.warn('Failed to get unread count:', countError.message)
+        }
       } else {
         setUnreadCount(count || 0)
       }
@@ -188,8 +201,31 @@ export function useNotifications(): UseNotificationsResult {
 
         data = newPrefs
       } else if (error) {
-        console.error('Failed to fetch preferences:', error)
-        return
+        // Handle table not found gracefully
+        if (error.code === 'PGRST205' || error.message.includes('Could not find the table')) {
+          console.log('Notification preferences table not found, using defaults')
+          // Set default preferences in memory
+          data = {
+            user_id: user.id,
+            email_enabled: true,
+            push_enabled: true,
+            in_app_enabled: true,
+            gig_notifications: true,
+            application_notifications: true,
+            message_notifications: true,
+            booking_notifications: true,
+            system_notifications: true,
+            marketing_notifications: false,
+            digest_frequency: 'real-time' as const,
+            timezone: 'UTC',
+            badge_count_enabled: true,
+            sound_enabled: true,
+            vibration_enabled: true
+          }
+        } else {
+          console.error('Failed to fetch preferences:', error)
+          return
+        }
       }
 
       setPreferences(data)

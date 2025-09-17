@@ -823,7 +823,7 @@ export default function Dashboard() {
                   )}
 
                   <button 
-                    onClick={() => router.push('/profile')}
+                    onClick={() => router.push('/auth/complete-profile')}
                     className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                   >
                     Complete Profile

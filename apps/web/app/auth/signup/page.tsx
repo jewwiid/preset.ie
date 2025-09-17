@@ -4,8 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '../../../lib/auth-context'
-import { supabase } from '../../../lib/supabase'
-import { uploadProfilePhoto } from '../../../lib/storage'
 import { 
   Camera, 
   Users, 
@@ -13,31 +11,16 @@ import {
   ChevronRight, 
   Mail, 
   Lock, 
-  User,
-  MapPin,
-  Briefcase,
   Sparkles,
   AlertCircle,
   X,
   CheckCircle2
 } from 'lucide-react'
-import ProfileSetupForm from '../../../components/ProfileSetupForm'
 import { DatePicker } from '../../../components/ui/date-picker'
 
-type SignupStep = 'role' | 'credentials' | 'profile' | 'styles'
+type SignupStep = 'role' | 'credentials'
 type UserRole = 'CONTRIBUTOR' | 'TALENT' | 'BOTH'
 
-const STYLE_TAGS = [
-  'Portrait', 'Fashion', 'Editorial', 'Commercial', 'Lifestyle',
-  'Beauty', 'Street', 'Fine Art', 'Documentary', 'Product',
-  'Food', 'Architecture', 'Nature', 'Wedding', 'Event',
-  'Minimalist', 'Moody', 'Vintage', 'Modern', 'Candid'
-]
-
-const VIBES = [
-  'Professional', 'Creative', 'Experimental', 'Classic',
-  'Bold', 'Natural', 'Dramatic', 'Soft', 'Edgy', 'Timeless'
-]
 
 export default function SignUpPage() {
   const router = useRouter()
@@ -53,15 +36,6 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [displayName, setDisplayName] = useState('')
-  const [handle, setHandle] = useState('')
-  const [city, setCity] = useState('')
-  const [bio, setBio] = useState('')
-  const [selectedStyles, setSelectedStyles] = useState<string[]>([])
-  const [selectedVibes, setSelectedVibes] = useState<string[]>([])
-  
-  // Additional profile fields
-  const [profileData, setProfileData] = useState<any>({})
   
   // Age verification
   const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined)
@@ -155,55 +129,18 @@ export default function SignUpPage() {
       return
     }
 
-    setCurrentStep('profile')
+    // Submit the signup
+    handleFinalSubmit()
   }
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-
-    // Validation
-    if (!displayName.trim() || !handle.trim()) {
-      setError('Display name and handle are required')
-      return
-    }
-
-    if (handle.length < 3) {
-      setError('Handle must be at least 3 characters')
-      return
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(handle)) {
-      setError('Handle can only contain letters, numbers, and underscores')
-      return
-    }
-
-    setCurrentStep('styles')
-  }
-
-  const toggleStyle = (style: string) => {
-    setSelectedStyles(prev => 
-      prev.includes(style) 
-        ? prev.filter(s => s !== style)
-        : [...prev, style].slice(0, 5) // Max 5 styles
-    )
-  }
-
-  const toggleVibe = (vibe: string) => {
-    setSelectedVibes(prev => 
-      prev.includes(vibe) 
-        ? prev.filter(v => v !== vibe)
-        : [...prev, vibe].slice(0, 3) // Max 3 vibes
-    )
-  }
 
   const handleFinalSubmit = async () => {
     setLoading(true)
     setError(null)
 
     try {
-      // Step 1: Create auth account
-      const { error: signUpError } = await signUp(email, password)
+      // Create auth account
+      const { error: signUpError, needsEmailConfirmation } = await signUp(email, password)
       
       if (signUpError) {
         setError(signUpError.message)
@@ -211,106 +148,13 @@ export default function SignUpPage() {
         return
       }
 
-      // Step 2: Get the newly created user
-      if (!supabase) {
-        setError('Database connection not available. Please try again.')
-        setLoading(false)
-        return
+      if (needsEmailConfirmation) {
+        // Redirect to email confirmation page
+        router.push(`/auth/signup-success?email=${encodeURIComponent(email)}`)
+      } else {
+        // User is already confirmed, redirect to profile completion
+        router.push('/auth/complete-profile')
       }
-      
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        setError('Failed to create account. Please try again.')
-        setLoading(false)
-        return
-      }
-
-      // Step 3: Upload profile photo if provided
-      let avatarUrl = null
-      if (profileData.avatarFile) {
-        console.log('Uploading profile photo...')
-        avatarUrl = await uploadProfilePhoto(profileData.avatarFile, user.id)
-        if (!avatarUrl) {
-          console.warn('Failed to upload profile photo, continuing without it')
-        }
-      }
-
-      // Step 4: Create user profile with enhanced fields
-      const roleFlags = selectedRole === 'BOTH' 
-        ? ['CONTRIBUTOR', 'TALENT'] 
-        : [selectedRole!]
-
-      const { error: profileError } = await supabase
-        .from('users_profile')
-        .insert({
-          user_id: user.id,
-          display_name: displayName,
-          handle: handle.toLowerCase(),
-          bio: bio || null,
-          city: city || null,
-          country: profileData.country || null,
-          avatar_url: avatarUrl, // Use the uploaded photo URL
-          date_of_birth: dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : null,
-          age_verified: false, // Will be verified by admin
-          account_status: 'pending_verification',
-          role_flags: roleFlags,
-          style_tags: selectedStyles,
-          // Social media
-          instagram_handle: profileData.instagramHandle || null,
-          tiktok_handle: profileData.tiktokHandle || null,
-          website_url: profileData.websiteUrl || null,
-          portfolio_url: profileData.portfolioUrl || null,
-          phone_number: profileData.phoneNumber || null,
-          // Contributor-specific fields
-          years_experience: profileData.yearsExperience || 0,
-          specializations: profileData.specializations || [],
-          equipment_list: profileData.equipment || [],
-          editing_software: profileData.editingSoftware || [],
-          languages: profileData.languages || [],
-          hourly_rate_min: profileData.hourlyRateMin || null,
-          hourly_rate_max: profileData.hourlyRateMax || null,
-          available_for_travel: profileData.availableForTravel || false,
-          travel_radius_km: profileData.travelRadius || 50,
-          studio_name: profileData.studioName || null,
-          has_studio: profileData.hasStudio || false,
-          studio_address: profileData.studioAddress || null,
-          typical_turnaround_days: profileData.typicalTurnaroundDays || null,
-          // Talent-specific fields
-          height_cm: profileData.heightCm || null,
-          measurements: profileData.measurements || null,
-          eye_color: profileData.eyeColor || null,
-          hair_color: profileData.hairColor || null,
-          shoe_size: profileData.shoeSize || null,
-          clothing_sizes: profileData.clothingSizes || null,
-          tattoos: profileData.tattoos || false,
-          piercings: profileData.piercings || false,
-          talent_categories: profileData.talentCategories || [],
-          // Subscription
-          subscription_tier: 'FREE',
-          subscription_status: 'ACTIVE',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-      
-      // Trigger age verification
-      if (dateOfBirth) {
-        await supabase.rpc('verify_user_age', {
-          p_user_id: user.id,
-          p_date_of_birth: dateOfBirth.toISOString().split('T')[0],
-          p_method: 'self_attestation'
-        })
-      }
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError)
-        setError('Failed to create profile. Please try again.')
-        setLoading(false)
-        return
-      }
-
-      // Success! Redirect to dashboard
-      router.push('/dashboard')
     } catch (err) {
       console.error('Signup error:', err)
       setError('An unexpected error occurred. Please try again.')
@@ -321,9 +165,7 @@ export default function SignUpPage() {
   const renderStepIndicator = () => {
     const steps = [
       { key: 'role', label: 'Choose Role' },
-      { key: 'credentials', label: 'Create Account' },
-      { key: 'profile', label: 'Your Profile' },
-      { key: 'styles', label: 'Your Style' }
+      { key: 'credentials', label: 'Create Account' }
     ]
 
     const currentIndex = steps.findIndex(s => s.key === currentStep)
@@ -679,126 +521,22 @@ export default function SignUpPage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep('role')}
-                  className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                >
-                  Continue
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Profile Step */}
-          {currentStep === 'profile' && (
-            <ProfileSetupForm
-              role={selectedRole || 'BOTH'}
-              currentData={{
-                displayName,
-                handle,
-                bio,
-                city,
-                ...profileData
-              }}
-              onUpdate={(data) => {
-                // Update basic fields
-                if (data.displayName !== undefined) setDisplayName(data.displayName)
-                if (data.handle !== undefined) setHandle(data.handle)
-                if (data.bio !== undefined) setBio(data.bio)
-                if (data.city !== undefined) setCity(data.city)
-                
-                // Store all additional fields
-                setProfileData(data)
-              }}
-              onNext={() => setCurrentStep('styles')}
-              onBack={() => setCurrentStep('credentials')}
-            />
-          )}
-
-          {/* Styles Step */}
-          {currentStep === 'styles' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                  Define your style
-                </h2>
-                <p className="text-gray-600">
-                  Choose tags that best describe your creative style
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  Style tags (select up to 5)
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {STYLE_TAGS.map((style) => (
-                    <button
-                      key={style}
-                      type="button"
-                      onClick={() => toggleStyle(style)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                        selectedStyles.includes(style)
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {style}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-3">
-                  Your vibe (select up to 3)
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {VIBES.map((vibe) => (
-                    <button
-                      key={vibe}
-                      type="button"
-                      onClick={() => toggleVibe(vibe)}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                        selectedVibes.includes(vibe)
-                          ? 'bg-teal-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {vibe}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setCurrentStep('profile')}
                   disabled={loading}
                   className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
                   Back
                 </button>
                 <button
-                  type="button"
-                  onClick={handleFinalSubmit}
+                  type="submit"
                   disabled={loading}
                   className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
                 >
-                  {loading ? 'Creating account...' : 'Complete signup'}
+                  {loading ? 'Creating account...' : 'Create account'}
                 </button>
               </div>
-
-              <p className="text-xs text-center text-gray-500">
-                You can always update these preferences later in your settings
-              </p>
-            </div>
+            </form>
           )}
+
         </div>
 
         {/* Sign In Link */}

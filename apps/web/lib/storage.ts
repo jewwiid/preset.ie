@@ -29,7 +29,7 @@ export async function uploadProfilePhoto(file: File, userId: string): Promise<st
 
     // Upload to storage
     const { data, error } = await supabase.storage
-      .from('profile-photos')
+      .from('avatars')
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: false
@@ -42,7 +42,7 @@ export async function uploadProfilePhoto(file: File, userId: string): Promise<st
 
     // Get public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('profile-photos')
+      .from('avatars')
       .getPublicUrl(fileName)
 
     return publicUrl
@@ -64,7 +64,7 @@ export async function deleteProfilePhoto(photoUrl: string, userId: string): Prom
     }
 
     // Extract file path from URL
-    const urlParts = photoUrl.split('/storage/v1/object/public/profile-photos/')
+    const urlParts = photoUrl.split('/storage/v1/object/public/avatars/')
     if (urlParts.length !== 2) {
       throw new Error('Invalid photo URL')
     }
@@ -78,7 +78,7 @@ export async function deleteProfilePhoto(photoUrl: string, userId: string): Prom
 
     // Delete from storage
     const { error } = await supabase.storage
-      .from('profile-photos')
+      .from('avatars')
       .remove([filePath])
 
     if (error) {
@@ -118,7 +118,7 @@ export async function updateProfilePhoto(
     }
 
     // Delete old photo if it exists
-    if (oldPhotoUrl && oldPhotoUrl.includes('profile-photos')) {
+    if (oldPhotoUrl && oldPhotoUrl.includes('avatars')) {
       await deleteProfilePhoto(oldPhotoUrl, userId)
     }
 

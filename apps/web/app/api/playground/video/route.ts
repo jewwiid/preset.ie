@@ -66,7 +66,10 @@ export async function POST(request: NextRequest) {
       aspectRatio,
       prompt,
       yPosition,
-      projectId 
+      projectId,
+      cinematicParameters,
+      includeTechnicalDetails,
+      includeStyleReferences
     } = requestBody
 
     // Validate required fields
@@ -112,10 +115,26 @@ export async function POST(request: NextRequest) {
 
     // Process image based on aspect ratio and Y position
     const processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
+    
+    console.log('🖼️ Image processing completed:', {
+      originalImageUrl: imageUrl,
+      processedImageUrl: processedImageUrl,
+      aspectRatio: aspectRatio,
+      resolution: resolution,
+      yPosition: yPosition,
+      customDimensions: getTargetDimensions(aspectRatio, resolution)
+    })
+
+    // Enhance prompt with cinematic parameters if provided
+    let enhancedPrompt = prompt
+    if (cinematicParameters && Object.keys(cinematicParameters).length > 0) {
+      enhancedPrompt = await enhancePromptWithCinematicParameters(prompt, cinematicParameters, includeTechnicalDetails, includeStyleReferences)
+      console.log('🎬 Enhanced prompt with cinematic parameters:', enhancedPrompt)
+    }
 
     // Call WaveSpeed API for video generation
-    console.log('🚀 Calling WaveSpeed API...')
-    const videoResult = await generateVideoWithWaveSpeed(processedImageUrl, duration, resolution, motionType, prompt)
+    console.log('🚀 Calling WaveSpeed API with processed image...')
+    const videoResult = await generateVideoWithWaveSpeed(processedImageUrl, duration, resolution, motionType, enhancedPrompt)
     console.log('✅ WaveSpeed API response:', videoResult)
 
     // Store generation parameters in database for later retrieval
@@ -130,11 +149,18 @@ export async function POST(request: NextRequest) {
           aspect_ratio: aspectRatio,
           motion_type: motionType,
           prompt: prompt,
+          enhanced_prompt: enhancedPrompt,
           image_url: imageUrl,
           processed_image_url: processedImageUrl,
           y_position: yPosition || 0,
+          custom_dimensions: getTargetDimensions(aspectRatio, resolution),
+          resolution: resolution,
+          duration: duration,
           created_at: new Date().toISOString(),
-          task_id: videoResult.taskId
+          task_id: videoResult.taskId,
+          cinematic_parameters: cinematicParameters || null,
+          include_technical_details: includeTechnicalDetails ?? true,
+          include_style_references: includeStyleReferences ?? true
         }
       }
       
@@ -309,6 +335,9 @@ async function generateVideoWithWaveSpeed(imageUrl: string, duration: number, re
 
     // Create motion prompt based on motionType and user input
     const motionPrompt = prompt && prompt.trim() ? prompt.trim() : getMotionPrompt(motionType)
+    
+    console.log('🎬 Final motion prompt being sent to WaveSpeed:', motionPrompt)
+    console.log('🎬 Original prompt parameter:', prompt)
 
     const requestBody = {
       image: imageUrl,
@@ -321,7 +350,9 @@ async function generateVideoWithWaveSpeed(imageUrl: string, duration: number, re
     console.log('🌊 WaveSpeed request:', {
       endpoint: modelEndpoint,
       body: requestBody,
-      hasApiKey: !!wavespeedApiKey
+      hasApiKey: !!wavespeedApiKey,
+      processedImageUrl: imageUrl,
+      note: 'Using processed image with custom dimensions and framing'
     })
 
     // Call WaveSpeed API
@@ -382,4 +413,34 @@ function getMotionPrompt(motionType: string): string {
   }
   
   return motionPrompts[motionType as keyof typeof motionPrompts] || motionPrompts.moderate
+}
+
+async function enhancePromptWithCinematicParameters(
+  basePrompt: string, 
+  cinematicParameters: any, 
+  includeTechnicalDetails: boolean = true, 
+  includeStyleReferences: boolean = true
+): Promise<string> {
+  try {
+    // Import the CinematicPromptBuilder
+    const { CinematicPromptBuilder } = await import('../../../../../../packages/services/src/cinematic-prompt-builder')
+    
+    const promptBuilder = new CinematicPromptBuilder()
+    
+    // Construct enhanced prompt using the same logic as image generation
+    const constructedPrompt = promptBuilder.constructPrompt({
+      basePrompt,
+      cinematicParameters,
+      enhancementType: 'cinematic',
+      includeTechnicalDetails,
+      includeStyleReferences
+    })
+    
+    const enhancedPrompt = constructedPrompt.fullPrompt
+    
+    return enhancedPrompt
+  } catch (error) {
+    console.error('Error enhancing prompt with cinematic parameters:', error)
+    return basePrompt // Fallback to original prompt
+  }
 }

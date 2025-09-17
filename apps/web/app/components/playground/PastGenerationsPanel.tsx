@@ -303,7 +303,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
     })
   }
 
-  const saveImageToGallery = async (imageUrl: string, projectTitle: string) => {
+  const saveImageToGallery = async (imageUrl: string, projectTitle: string, generation: any) => {
     setSavingImage(imageUrl)
     try {
       const response = await fetch('/api/playground/save-to-gallery', {
@@ -316,28 +316,41 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
           imageUrl,
           title: projectTitle,
           description: `Generated from: ${projectTitle}`,
-          tags: ['ai-generated']
+          tags: ['ai-generated'],
+          generationMetadata: generation.metadata || {}
         })
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to save image')
+      if (response.ok) {
+        showFeedback({
+          type: 'success',
+          title: 'Saved!',
+          message: 'Image saved to gallery successfully'
+        })
+
+        // Refresh the generations list to update save status
+        fetchPastGenerations()
+      } else {
+        const errorData = await response.json()
+        
+        // Handle duplicate images gracefully
+        if (response.status === 409 && errorData.error === 'duplicate') {
+          showFeedback({
+            type: 'info',
+            title: 'Already Saved',
+            message: errorData.message || 'This image is already saved in your gallery.'
+          })
+          return // Don't throw error for duplicates
+        }
+        
+        throw new Error(errorData.error || 'Failed to save image')
       }
-
-      showFeedback({
-        type: 'success',
-        title: 'Saved!',
-        message: 'Image saved to gallery successfully'
-      })
-
-      // Refresh the generations list to update save status
-      fetchPastGenerations()
     } catch (error) {
       console.error('Error saving image:', error)
       showFeedback({
         type: 'error',
         title: 'Save Failed',
-        message: 'Could not save image to gallery'
+        message: error instanceof Error ? error.message : 'Could not save image to gallery'
       })
     } finally {
       setSavingImage(null)
@@ -478,7 +491,14 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                               />
                             ) : (
                               <ProgressiveImage
-                                src={generation.generated_images[0].url}
+                                src={(() => {
+                                  const url = generation.generated_images[0].url
+                                  if (typeof url === 'string') return url
+                                  if (typeof url === 'object' && url !== null) {
+                                    return (url as any).url || (url as any).image_url || ''
+                                  }
+                                  return ''
+                                })()}
                                 alt={generation.title}
                                 className="w-full h-full"
                                 onLoad={() => handleImageLoad(generation.id)}
@@ -697,6 +717,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                         className="w-full h-full object-cover"
                         controls
                         preload="metadata"
+                        loop
                       />
                     ) : (
                       <img
@@ -820,6 +841,33 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                           <p className="text-gray-700">{selectedImageForInfo.metadata.style_prompt}</p>
                         </div>
                       )}
+                      {(selectedImageForInfo.metadata as any).cinematic_parameters && (
+                        <div>
+                          <span className="font-medium">Cinematic Parameters:</span>
+                          <div className="mt-2 space-y-1">
+                            {Object.entries((selectedImageForInfo.metadata as any).cinematic_parameters).map(([key, value]) => (
+                              value ? (
+                                <div key={key} className="flex justify-between text-xs">
+                                  <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                                  <span className="text-gray-800 font-medium">{String(value).replace(/-/g, ' ')}</span>
+                                </div>
+                              ) : null
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(selectedImageForInfo.metadata as any).include_technical_details !== undefined && (
+                        <div>
+                          <span className="font-medium">Technical Details:</span>
+                          <span className="text-gray-700 ml-2">{(selectedImageForInfo.metadata as any).include_technical_details ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                      )}
+                      {(selectedImageForInfo.metadata as any).include_style_references !== undefined && (
+                        <div>
+                          <span className="font-medium">Style References:</span>
+                          <span className="text-gray-700 ml-2">{(selectedImageForInfo.metadata as any).include_style_references ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -880,6 +928,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                         className="w-full h-64 object-cover rounded-lg border border-gray-200"
                         controls
                         preload="metadata"
+                        loop
                         poster={image.url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
                       >
                         Your browser does not support the video tag.
@@ -898,7 +947,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                           {image.type === 'video' ? 'Video' : 'Image'} {index + 1}
                         </span>
                         <button
-                          onClick={() => saveImageToGallery(image.url, viewingImages.title)}
+                          onClick={() => saveImageToGallery(image.url, viewingImages.title, viewingImages)}
                           disabled={savingImage === image.url}
                           className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors disabled:opacity-50"
                         >
@@ -932,7 +981,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                   <button
                     onClick={() => {
                       viewingImages.generated_images.forEach(image => {
-                        saveImageToGallery(image.url, viewingImages.title)
+                        saveImageToGallery(image.url, viewingImages.title, viewingImages)
                       })
                     }}
                     disabled={savingImage !== null}

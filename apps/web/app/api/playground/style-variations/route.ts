@@ -7,8 +7,22 @@ export async function POST(request: NextRequest) {
   const { 
     imageUrl, 
     styles, // Array of style names
-    projectId
+    projectId,
+    resolution
   } = await request.json()
+  
+  // Parse resolution from frontend (format: "1024*576" or "1024")
+  let finalResolution: string
+  if (resolution && resolution.includes('*')) {
+    // Resolution is in format "1024*576" - use it directly
+    finalResolution = resolution
+  } else {
+    // Resolution is a single number - create square dimensions
+    const baseResolution = parseInt(resolution || '1024')
+    finalResolution = `${baseResolution}*${baseResolution}`
+  }
+  
+  console.log(`Style Variations API using resolution: ${finalResolution}`)
 
   if (!user) {
     return NextResponse.json(
@@ -105,7 +119,7 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             images: [imageUrl],
             prompt: stylePrompt,
-            size: "2048*2048",
+            size: finalResolution,
             enable_base64_output: false,
             enable_sync_mode: true
           })

@@ -64,7 +64,9 @@ export async function POST(request: NextRequest) {
     styleType, 
     promptTemplate, 
     intensity, 
-    isPublic 
+    isPublic,
+    generationMode,
+    checkOnly
   } = await request.json()
   
   if (!user) {
@@ -89,16 +91,73 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check for duplicate presets (same user, same name, same style type, same prompt)
+    const { data: existingPresets, error: checkError } = await supabaseAdmin
+      .from('playground_style_presets')
+      .select('id, name, style_type, prompt_template')
+      .eq('user_id', user.id)
+      .eq('name', name.trim())
+      .eq('style_type', styleType)
+      .eq('prompt_template', promptTemplate.trim())
+
+    if (checkError) {
+      throw new Error('Failed to check for duplicate presets')
+    }
+
+    // If exact duplicate exists, return the existing preset instead of creating new one
+    if (existingPresets && existingPresets.length > 0) {
+      const existingPreset = existingPresets[0]
+      return NextResponse.json({ 
+        success: true, 
+        preset: existingPreset,
+        message: 'Style preset already exists',
+        isDuplicate: true
+      })
+    }
+
+    // Check for similar presets (same user, same name, different prompt/style)
+    const { data: similarPresets, error: similarError } = await supabaseAdmin
+      .from('playground_style_presets')
+      .select('id, name, style_type, prompt_template')
+      .eq('user_id', user.id)
+      .eq('name', name.trim())
+
+    if (similarError) {
+      throw new Error('Failed to check for similar presets')
+    }
+
+    // If similar preset exists (same name), suggest updating instead
+    if (similarPresets && similarPresets.length > 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'A style preset with this name already exists',
+        suggestion: 'Please choose a different name or update the existing preset',
+        existingPreset: similarPresets[0],
+        isNameConflict: true
+      }, { status: 409 })
+    }
+
+    // If this is just a check, return success without creating
+    if (checkOnly) {
+      return NextResponse.json({
+        success: true,
+        message: 'No duplicates found',
+        isDuplicate: false,
+        isNameConflict: false
+      })
+    }
+
     const { data: preset, error } = await supabaseAdmin
       .from('playground_style_presets')
       .insert({
         user_id: user.id,
-        name,
-        description,
+        name: name.trim(),
+        description: description?.trim() || null,
         style_type: styleType,
-        prompt_template: promptTemplate,
+        prompt_template: promptTemplate.trim(),
         intensity: intensity || 1.0,
-        is_public: isPublic || false
+        is_public: isPublic || false,
+        generation_mode: generationMode || 'text-to-image'
       })
       .select()
       .single()
@@ -126,7 +185,8 @@ export async function PUT(request: NextRequest) {
     styleType, 
     promptTemplate, 
     intensity, 
-    isPublic 
+    isPublic,
+    generationMode
   } = await request.json()
   
   if (!user) {
@@ -148,13 +208,82 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Preset ID is required' }, { status: 400 })
     }
 
+    // Check for duplicate presets if name, style type, or prompt template is being updated
+    if (name !== undefined || styleType !== undefined || promptTemplate !== undefined) {
+      const checkName = name !== undefined ? name.trim() : undefined
+      const checkStyleType = styleType !== undefined ? styleType : undefined
+      const checkPromptTemplate = promptTemplate !== undefined ? promptTemplate.trim() : undefined
+
+      // Get current preset to compare
+      const { data: currentPreset, error: currentError } = await supabaseAdmin
+        .from('playground_style_presets')
+        .select('name, style_type, prompt_template')
+        .eq('id', presetId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (currentError) {
+        throw new Error('Failed to fetch current preset')
+      }
+
+      // Check for exact duplicates (excluding the current preset being updated)
+      const { data: existingPresets, error: checkError } = await supabaseAdmin
+        .from('playground_style_presets')
+        .select('id, name, style_type, prompt_template')
+        .eq('user_id', user.id)
+        .neq('id', presetId) // Exclude current preset
+        .eq('name', checkName || currentPreset.name)
+        .eq('style_type', checkStyleType || currentPreset.style_type)
+        .eq('prompt_template', checkPromptTemplate || currentPreset.prompt_template)
+
+      if (checkError) {
+        throw new Error('Failed to check for duplicate presets')
+      }
+
+      // If exact duplicate exists, return the existing preset
+      if (existingPresets && existingPresets.length > 0) {
+        const existingPreset = existingPresets[0]
+        return NextResponse.json({ 
+          success: true, 
+          preset: existingPreset,
+          message: 'Style preset already exists',
+          isDuplicate: true
+        })
+      }
+
+      // Check for name conflicts (same name, different content)
+      if (checkName && checkName !== currentPreset.name) {
+        const { data: nameConflicts, error: nameError } = await supabaseAdmin
+          .from('playground_style_presets')
+          .select('id, name, style_type, prompt_template')
+          .eq('user_id', user.id)
+          .neq('id', presetId)
+          .eq('name', checkName)
+
+        if (nameError) {
+          throw new Error('Failed to check for name conflicts')
+        }
+
+        if (nameConflicts && nameConflicts.length > 0) {
+          return NextResponse.json({
+            success: false,
+            error: 'A style preset with this name already exists',
+            suggestion: 'Please choose a different name or update the existing preset',
+            existingPreset: nameConflicts[0],
+            isNameConflict: true
+          }, { status: 409 })
+        }
+      }
+    }
+
     const updateData: any = {}
-    if (name !== undefined) updateData.name = name
-    if (description !== undefined) updateData.description = description
+    if (name !== undefined) updateData.name = name.trim()
+    if (description !== undefined) updateData.description = description?.trim() || null
     if (styleType !== undefined) updateData.style_type = styleType
-    if (promptTemplate !== undefined) updateData.prompt_template = promptTemplate
+    if (promptTemplate !== undefined) updateData.prompt_template = promptTemplate.trim()
     if (intensity !== undefined) updateData.intensity = intensity
     if (isPublic !== undefined) updateData.is_public = isPublic
+    if (generationMode !== undefined) updateData.generation_mode = generationMode
 
     const { data: preset, error } = await supabaseAdmin
       .from('playground_style_presets')

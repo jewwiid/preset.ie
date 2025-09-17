@@ -167,6 +167,7 @@ export default function VideoViewer({
                   src={selectedVideo}
                   className="w-full h-full object-cover"
                   controls={false}
+                  loop
                   ref={(video) => {
                     if (video) {
                       video.muted = isMuted
@@ -352,6 +353,7 @@ export default function VideoViewer({
                         className="w-full h-full object-cover"
                         preload="metadata"
                         muted
+                        loop
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
                         <p className="text-white text-xs font-medium truncate">

@@ -40,8 +40,34 @@ export async function POST(request: NextRequest) {
     style,
     maskImage,
     targetSize,
-    referenceImage
+    referenceImage,
+    resolution
   } = await request.json()
+  
+  // Parse resolution from frontend (format: "1024*576" or "1024")
+  let finalResolution: string
+  if (resolution && resolution.includes('*')) {
+    // Resolution is in format "1024*576" - use it directly
+    finalResolution = resolution
+  } else {
+    // Resolution is a single number - create square dimensions
+    const baseResolution = parseInt(resolution || '1024')
+    finalResolution = `${baseResolution}*${baseResolution}`
+  }
+  
+  console.log(`Advanced Edit API using resolution: ${finalResolution}`)
+
+  // Handle data URLs by converting them to proper URLs if needed
+  const processImageUrl = (url: string) => {
+    if (url.startsWith('data:')) {
+      // For data URLs, we'll use them directly as Seedream supports them
+      return url
+    }
+    return url
+  }
+
+  const processedImageUrl = processImageUrl(imageUrl)
+  const processedReferenceImage = referenceImage ? processImageUrl(referenceImage) : undefined
   
   try {
     // Check credits for advanced editing
@@ -64,14 +90,14 @@ export async function POST(request: NextRequest) {
     
     // Prepare request body based on edit type
     const requestBody = buildRequestBody(editType, {
-      imageUrl,
+      imageUrl: processedImageUrl,
       editPrompt,
       strength,
       style,
       maskImage,
       targetSize,
-      referenceImage
-    })
+      referenceImage: processedReferenceImage
+    }, finalResolution)
     
     // Call appropriate Seedream API
     console.log(`Performing ${editType} edit with prompt:`, requestBody.prompt)
@@ -174,12 +200,12 @@ function getApiEndpointForEditType(editType: string): string {
   return 'https://api.wavespeed.ai/api/v3/bytedance/seedream-v4/edit'
 }
 
-function buildRequestBody(editType: string, params: any) {
+function buildRequestBody(editType: string, params: any, resolution: string) {
   const baseBody = {
     images: [params.imageUrl],
     enable_base64_output: false,
     enable_sync_mode: true, // Enable for immediate results
-    size: "2048*2048"
+    size: resolution
   }
 
   // Add reference image for edit types that require it

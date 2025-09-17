@@ -1,11 +1,15 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Wand2, Upload, Image as ImageIcon, X, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import DraggableImagePreview from './DraggableImagePreview'
+import CinematicParameterSelector from '../cinematic/CinematicParameterSelector'
+import { CinematicParameters } from '../../../../../packages/types/src/cinematic-parameters'
 
 interface VideoGenerationPanelProps {
   onGenerateVideo: (params: {
@@ -16,6 +20,9 @@ interface VideoGenerationPanelProps {
     aspectRatio: string
     prompt: string
     yPosition?: number
+    cinematicParameters?: Partial<CinematicParameters>
+    includeTechnicalDetails?: boolean
+    includeStyleReferences?: boolean
   }) => Promise<void>
   loading: boolean
   selectedImage: string | null
@@ -45,6 +52,47 @@ export default function VideoGenerationPanel({
   const [selectedAspectRatio, setSelectedAspectRatio] = useState(aspectRatio)
   const [imageYPosition, setImageYPosition] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Cinematic parameters state
+  const [enableCinematicMode, setEnableCinematicMode] = useState(false)
+  const [cinematicParameters, setCinematicParameters] = useState<Partial<CinematicParameters>>({})
+  const [includeTechnicalDetails, setIncludeTechnicalDetails] = useState(true)
+  const [includeStyleReferences, setIncludeStyleReferences] = useState(true)
+  const [enhancedPrompt, setEnhancedPrompt] = useState('')
+
+  // Generate enhanced prompt based on cinematic parameters
+  const generateEnhancedPrompt = () => {
+    if (!enableCinematicMode || !cinematicParameters || Object.keys(cinematicParameters).length === 0) {
+      setEnhancedPrompt(videoPrompt)
+      return
+    }
+
+    try {
+      // Import and use CinematicPromptBuilder
+      import('../../../../../packages/services/src/cinematic-prompt-builder').then(({ CinematicPromptBuilder }) => {
+        const promptBuilder = new CinematicPromptBuilder()
+        const enhanced = promptBuilder.constructPrompt({
+          basePrompt: videoPrompt,
+          cinematicParameters,
+          enhancementType: 'generate',
+          includeTechnicalDetails,
+          includeStyleReferences
+        })
+        setEnhancedPrompt(enhanced.fullPrompt)
+      }).catch(() => {
+        // Fallback if import fails
+        setEnhancedPrompt(videoPrompt)
+      })
+    } catch (error) {
+      console.error('Error generating enhanced prompt:', error)
+      setEnhancedPrompt(videoPrompt)
+    }
+  }
+
+  // Update enhanced prompt when parameters change
+  useEffect(() => {
+    generateEnhancedPrompt()
+  }, [videoPrompt, cinematicParameters, includeTechnicalDetails, includeStyleReferences, enableCinematicMode])
 
   const handleGenerateVideo = async () => {
     const imageToUse = getCurrentImage()
@@ -59,7 +107,10 @@ export default function VideoGenerationPanel({
       motionType,
       aspectRatio: selectedAspectRatio,
       prompt: videoPrompt,
-      yPosition: imageYPosition
+      yPosition: imageYPosition,
+      cinematicParameters: enableCinematicMode ? cinematicParameters : undefined,
+      includeTechnicalDetails,
+      includeStyleReferences
     })
   }
 
@@ -424,7 +475,58 @@ export default function VideoGenerationPanel({
           <div className="text-xs text-gray-400 mt-2">
             <strong>Tips:</strong> Describe motion, camera movement, or actions. Examples: "Gentle zoom in", "Camera rotates around subject", "Slow pan left", "Dramatic zoom out"
           </div>
+          
+          {/* Enhanced Prompt Preview */}
+          {enableCinematicMode && enhancedPrompt && enhancedPrompt !== videoPrompt && (
+            <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-md">
+              <div className="flex items-center gap-2 mb-2">
+                <Wand2 className="h-4 w-4 text-purple-600" />
+                <label className="text-sm font-medium text-purple-700">
+                  Enhanced Prompt Preview
+                </label>
+              </div>
+              <div className="text-sm text-gray-700 bg-white p-2 rounded border">
+                {enhancedPrompt}
+              </div>
+              <div className="text-xs text-purple-600 mt-1">
+                This enhanced prompt will be sent to the video generation API
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Cinematic Mode Toggle */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wand2 className="h-5 w-5" />
+                <CardTitle className="text-lg">Cinematic Mode</CardTitle>
+              </div>
+              <Switch
+                checked={enableCinematicMode}
+                onCheckedChange={setEnableCinematicMode}
+              />
+            </div>
+            <CardDescription>
+              Enable professional cinematic parameters for enhanced video generation
+            </CardDescription>
+          </CardHeader>
+          {enableCinematicMode && (
+            <CardContent>
+              <CinematicParameterSelector
+                parameters={cinematicParameters}
+                onParametersChange={setCinematicParameters}
+                onToggleChange={(includeTechnicalDetails, includeStyleReferences) => {
+                  setIncludeTechnicalDetails(includeTechnicalDetails)
+                  setIncludeStyleReferences(includeStyleReferences)
+                }}
+                compact={false}
+                showAdvanced={true}
+              />
+            </CardContent>
+          )}
+        </Card>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">

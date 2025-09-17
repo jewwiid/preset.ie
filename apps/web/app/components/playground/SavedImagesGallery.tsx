@@ -37,6 +37,10 @@ interface SavedMedia {
     custom_style_preset?: any
     credits_used: number
     generated_at: string
+    // Cinematic parameters
+    cinematic_parameters?: any
+    include_technical_details?: boolean
+    include_style_references?: boolean
     // Video-specific metadata
     duration?: number
     motion_type?: string

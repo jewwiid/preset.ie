@@ -40,6 +40,10 @@ interface SavedMedia {
     api_endpoint?: string
     credits_used: number
     generated_at: string
+    // Cinematic parameters
+    cinematic_parameters?: any
+    include_technical_details?: boolean
+    include_style_references?: boolean
     // Video-specific metadata
     duration?: number
     motion_type?: string
@@ -444,6 +448,7 @@ export default function SavedMediaMasonry({
                     className="w-full h-full object-cover"
                     controls
                     preload="metadata"
+                    loop
                   />
                 ) : (
                   <img
@@ -510,55 +515,82 @@ export default function SavedMediaMasonry({
                     <div className="space-y-2 text-sm">
                       <div>
                         <span className="font-medium">Prompt:</span>
-                        <p className="text-gray-700 mt-1">{selectedImageForInfo.generation_metadata.prompt || 'Not available'}</p>
+                        <p className="text-gray-700 mt-1">{(selectedImageForInfo.generation_metadata as any).prompt || 'Not available'}</p>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <span className="font-medium">Style:</span>
-                          <p className="text-gray-700">{selectedImageForInfo.generation_metadata.style || 'Not available'}</p>
+                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).style || 'Not available'}</p>
                         </div>
                         <div>
                           <span className="font-medium">Resolution:</span>
-                          <p className="text-gray-700">{selectedImageForInfo.generation_metadata.resolution || 'Not available'}</p>
+                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).resolution || 'Not available'}</p>
                         </div>
                         <div>
                           <span className="font-medium">Aspect Ratio:</span>
-                          <p className="text-gray-700">{selectedImageForInfo.generation_metadata.aspect_ratio || 'Not available'}</p>
+                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).aspect_ratio || 'Not available'}</p>
                         </div>
                         <div>
                           <span className="font-medium">Consistency:</span>
-                          <p className="text-gray-700">{selectedImageForInfo.generation_metadata.consistency_level || 'Not available'}</p>
+                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).consistency_level || 'Not available'}</p>
                         </div>
                       </div>
-                      {selectedImageForInfo.generation_metadata.custom_style_preset && (
+                      {(selectedImageForInfo.generation_metadata as any).custom_style_preset && (
                         <div>
                           <span className="font-medium">Style Preset:</span>
-                          <p className="text-gray-700">{selectedImageForInfo.generation_metadata.custom_style_preset.name}</p>
+                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).custom_style_preset.name}</p>
                         </div>
                       )}
-                      {selectedImageForInfo.generation_metadata.generation_mode && (
+                      {(selectedImageForInfo.generation_metadata as any).generation_mode && (
                         <div>
                           <span className="font-medium">Generation Mode:</span>
                           <p className="text-gray-700">
-                            {selectedImageForInfo.generation_metadata.generation_mode === 'image-to-image' ? '🖼️ Image-to-Image' : '📝 Text-to-Image'}
+                            {(selectedImageForInfo.generation_metadata as any).generation_mode === 'image-to-image' ? '🖼️ Image-to-Image' : '📝 Text-to-Image'}
                           </p>
                         </div>
                       )}
-                      {selectedImageForInfo.generation_metadata.base_image && (
+                      {(selectedImageForInfo.generation_metadata as any).base_image && (
                         <div>
                           <span className="font-medium">Base Image:</span>
                           <div className="mt-1">
                             <img 
-                              src={selectedImageForInfo.generation_metadata.base_image} 
+                              src={(selectedImageForInfo.generation_metadata as any).base_image} 
                               alt="Base image" 
                               className="w-16 h-16 object-cover rounded border"
                             />
                           </div>
                         </div>
                       )}
+                      {(selectedImageForInfo.generation_metadata as any).cinematic_parameters && (
+                        <div>
+                          <span className="font-medium">Cinematic Parameters:</span>
+                          <div className="mt-2 space-y-1">
+                            {Object.entries((selectedImageForInfo.generation_metadata as any).cinematic_parameters).map(([key, value]) => (
+                              value ? (
+                                <div key={key} className="flex justify-between text-xs">
+                                  <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                                  <span className="text-gray-800 font-medium">{String(value).replace(/-/g, ' ')}</span>
+                                </div>
+                              ) : null
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {(selectedImageForInfo.generation_metadata as any).include_technical_details !== undefined && (
+                        <div>
+                          <span className="font-medium">Technical Details:</span>
+                          <span className="text-gray-700 ml-2">{(selectedImageForInfo.generation_metadata as any).include_technical_details ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                      )}
+                      {(selectedImageForInfo.generation_metadata as any).include_style_references !== undefined && (
+                        <div>
+                          <span className="font-medium">Style References:</span>
+                          <span className="text-gray-700 ml-2">{(selectedImageForInfo.generation_metadata as any).include_style_references ? 'Enabled' : 'Disabled'}</span>
+                        </div>
+                      )}
                       <div className="text-xs text-gray-500">
-                        Generated: {selectedImageForInfo.generation_metadata.generated_at 
-                          ? new Date(selectedImageForInfo.generation_metadata.generated_at).toLocaleString()
+                        Generated: {(selectedImageForInfo.generation_metadata as any).generated_at 
+                          ? new Date((selectedImageForInfo.generation_metadata as any).generated_at).toLocaleString()
                           : 'Unknown'
                         }
                       </div>

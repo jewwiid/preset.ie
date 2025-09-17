@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Wand2, Download, Heart, Settings, X } from 'lucide-react'
+import { Wand2, Download, Heart, Settings, X, Sparkles } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/components/ui/toast'
 import { downloadImageWithWatermark } from '../../../lib/watermark-utils'
+import DraggableImagePreview from './DraggableImagePreview'
 
 interface DynamicPreviewAreaProps {
   aspectRatio: string
@@ -26,6 +26,7 @@ interface DynamicPreviewAreaProps {
   savingImage: string | null
   loading?: boolean
   subscriptionTier?: 'free' | 'plus' | 'pro'
+  onRemoveBaseImage?: () => void
 }
 
 export default function DynamicPreviewArea({
@@ -37,11 +38,20 @@ export default function DynamicPreviewArea({
   onSaveToGallery,
   savingImage,
   loading = false,
-  subscriptionTier = 'free'
+  subscriptionTier = 'free',
+  onRemoveBaseImage
 }: DynamicPreviewAreaProps) {
-  const [previewAspectRatio, setPreviewAspectRatio] = useState('1/1')
-  const [displayAspectRatio, setDisplayAspectRatio] = useState('1:1')
   const { showSuccess, showError } = useToast()
+  const [showBaseImage, setShowBaseImage] = useState(true)
+  
+  // Use the aspect ratio from parent instead of local state
+  const displayAspectRatio = aspectRatio || '1:1'
+  const previewAspectRatio = displayAspectRatio.replace(':', '/')
+  
+  // Separate base images from generated images
+  const baseImages = images.filter(img => img.type === 'base')
+  const generatedImages = images.filter(img => img.type !== 'base')
+  const imagesToDisplay = showBaseImage ? baseImages : generatedImages
 
   const handleSaveToGallery = async (imageUrl: string) => {
     try {
@@ -72,24 +82,6 @@ export default function DynamicPreviewArea({
     }
   }
 
-  // Convert aspect ratio from "1:1" format to "1/1" format for CSS
-  const convertAspectRatio = (ratio: string) => {
-    return ratio.replace(':', '/')
-  }
-
-  // Handle aspect ratio change
-  const handleAspectRatioChange = (newRatio: string) => {
-    setDisplayAspectRatio(newRatio)
-    setPreviewAspectRatio(convertAspectRatio(newRatio))
-  }
-
-  useEffect(() => {
-    // Calculate the aspect ratio for the preview area
-    const safeAspectRatio = aspectRatio || '1:1'
-    const [widthRatio, heightRatio] = safeAspectRatio.split(':').map(Number)
-    const aspectRatioValue = widthRatio / heightRatio
-    setPreviewAspectRatio(`${aspectRatioValue}`)
-  }, [aspectRatio])
 
   const calculateDimensions = (aspectRatio: string, baseResolution: string) => {
     // Default to 1:1 if aspectRatio is undefined or invalid
@@ -173,6 +165,7 @@ export default function DynamicPreviewArea({
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div>
@@ -186,59 +179,68 @@ export default function DynamicPreviewArea({
         </div>
       </CardHeader>
       <CardContent>
-        {images.length > 0 ? (
+        {imagesToDisplay.length > 0 ? (
           <div className="space-y-4">
+            {/* Toggle between Base Image and Generated Images */}
+            {baseImages.length > 0 && generatedImages.length > 0 && (
+              <div className="flex items-center justify-end gap-2">
+                <Label className="text-sm font-medium">View:</Label>
+                <div className="flex bg-gray-100 rounded-lg p-1">
+                  <Button
+                    size="sm"
+                    variant={showBaseImage ? "default" : "ghost"}
+                    onClick={() => setShowBaseImage(true)}
+                    className="text-xs px-3 py-1"
+                  >
+                    Base Image
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={!showBaseImage ? "default" : "ghost"}
+                    onClick={() => setShowBaseImage(false)}
+                    className="text-xs px-3 py-1"
+                  >
+                    Generated
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             {/* Dynamic Preview Container */}
-            {images.length === 1 ? (
+            {imagesToDisplay.length === 1 ? (
               // Single image - full size
-              <div 
-                className="relative w-full bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300"
-                style={{ 
-                  aspectRatio: previewAspectRatio,
-                  minHeight: '300px',
-                  maxHeight: '500px'
-                }}
-              >
-                <div
-                  className={`absolute inset-0 cursor-pointer transition-all duration-200 ${
-                    selectedImage === images[0].url 
-                      ? 'ring-2 ring-purple-500 ring-offset-2' 
-                      : 'hover:ring-1 hover:ring-gray-400'
-                  }`}
-                  onClick={() => onSelectImage(images[0].url)}
-                >
-                  {images[0].type === 'video' ? (
-                    <video
-                      src={images[0].url}
-                      className="w-full h-full object-cover"
-                      controls
-                      preload="metadata"
-                      poster={images[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  ) : (
-                    <img
-                      src={images[0].url}
-                      alt="Generated image"
-                      className="w-full h-full object-cover"
-                    />
-                  )}
+              imagesToDisplay[0].type === 'base' ? (
+                // Base image - use draggable preview
+                <div className="relative">
+                  <DraggableImagePreview
+                    imageUrl={imagesToDisplay[0].url}
+                    aspectRatio={aspectRatio}
+                    resolution={resolution}
+                    onPositionChange={(yPosition) => {
+                      // Store the position for potential use in generation
+                      console.log('Base image position changed:', yPosition)
+                    }}
+                    onSaveFraming={(framing) => {
+                      // Store the framing data for potential use in generation
+                      console.log('Base image framing saved:', framing)
+                    }}
+                    className="w-full"
+                  />
                   
-                  {/* Action buttons - always visible */}
-                  <div className="absolute top-2 right-2 flex gap-1">
+                  {/* Action buttons overlay for base image */}
+                  <div className="absolute top-2 right-2 flex gap-1 z-10">
                     <Button
                       size="sm"
                       variant="secondary"
                       className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleSaveToGallery(images[0].url)
+                        handleSaveToGallery(imagesToDisplay[0].url)
                       }}
-                      disabled={savingImage === images[0].url}
+                      disabled={savingImage === imagesToDisplay[0].url}
                       title="Save to Gallery"
                     >
-                      {savingImage === images[0].url ? (
+                      {savingImage === imagesToDisplay[0].url ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
                       ) : (
                         <Heart className="h-4 w-4" />
@@ -250,44 +252,129 @@ export default function DynamicPreviewArea({
                       className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (images[0].type === 'video') {
-                          handleDownloadVideo(images[0].url, `generated-video.mp4`)
-                        } else {
-                          handleDownloadImage(images[0].url, `generated-image.png`)
-                        }
+                        handleDownloadImage(imagesToDisplay[0].url, `base-image.png`)
                       }}
-                      title={images[0].type === 'video' ? "Download Video" : "Download Image"}
+                      title="Download Base Image"
                     >
                       <Download className="h-4 w-4" />
                     </Button>
-                    {selectedImage === images[0].url && (
+                    {onRemoveBaseImage && (
                       <Button
                         size="sm"
                         variant="secondary"
                         className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 text-white shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
-                          onSelectImage(null)
+                          onRemoveBaseImage()
                         }}
-                        title="Deselect Image"
+                        title="Remove Base Image"
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
-
-                  {/* Selection indicator */}
-                  {selectedImage === images[0].url && (
-                    <div className="absolute top-2 left-2">
-                      <Badge variant="default" className="bg-green-500">Selected</Badge>
-                    </div>
-                  )}
                 </div>
-              </div>
+              ) : (
+                // Generated image or video - regular display
+                <div 
+                  className="relative w-full bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300"
+                  style={{ 
+                    aspectRatio: previewAspectRatio,
+                    minHeight: '300px',
+                    maxHeight: '500px'
+                  }}
+                >
+                  <div
+                    className={`absolute inset-0 cursor-pointer transition-all duration-200 ${
+                      selectedImage === imagesToDisplay[0].url 
+                        ? 'ring-2 ring-purple-500 ring-offset-2' 
+                        : 'hover:ring-1 hover:ring-gray-400'
+                    }`}
+                    onClick={() => onSelectImage(imagesToDisplay[0].url)}
+                  >
+                    {imagesToDisplay[0].type === 'video' ? (
+                      <video
+                        src={imagesToDisplay[0].url}
+                        className="w-full h-full object-cover"
+                        controls
+                        preload="metadata"
+                        loop
+                        poster={imagesToDisplay[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    ) : (
+                      <img
+                        src={imagesToDisplay[0].url}
+                        alt="Generated image"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    
+                    {/* Action buttons - always visible */}
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleSaveToGallery(imagesToDisplay[0].url)
+                        }}
+                        disabled={savingImage === imagesToDisplay[0].url}
+                        title="Save to Gallery"
+                      >
+                        {savingImage === imagesToDisplay[0].url ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                        ) : (
+                          <Heart className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (imagesToDisplay[0].type === 'video') {
+                            handleDownloadVideo(imagesToDisplay[0].url, `generated-video.mp4`)
+                          } else {
+                            handleDownloadImage(imagesToDisplay[0].url, `generated-image.png`)
+                          }
+                        }}
+                        title={imagesToDisplay[0].type === 'video' ? "Download Video" : "Download Image"}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      {selectedImage === imagesToDisplay[0].url ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 text-white shadow-md"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onSelectImage(null)
+                          }}
+                          title="Deselect Image"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                    </div>
+
+                    {/* Selection indicator */}
+                    {selectedImage === imagesToDisplay[0].url && (
+                      <div className="absolute top-2 left-2">
+                        <Badge variant="default" className="bg-green-500">Selected</Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
             ) : (
               // Multiple images - grid layout
               <div className="grid grid-cols-2 gap-4">
-                {images.map((image, index) => (
+                {imagesToDisplay.map((image, index) => (
                   <div
                     key={index}
                     className={`relative bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-200 cursor-pointer ${
@@ -307,6 +394,7 @@ export default function DynamicPreviewArea({
                         className="w-full h-full object-cover"
                         controls
                         preload="metadata"
+                        loop
                         poster={image.url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
                       >
                         Your browser does not support the video tag.
@@ -359,7 +447,20 @@ export default function DynamicPreviewArea({
                       >
                         <Download className="h-4 w-4" />
                       </Button>
-                      {selectedImage === image.url && (
+                      {image.type === 'base' && onRemoveBaseImage ? (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 text-white shadow-md"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onRemoveBaseImage()
+                          }}
+                          title="Remove Base Image"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      ) : selectedImage === image.url ? (
                         <Button
                           size="sm"
                           variant="secondary"
@@ -372,13 +473,20 @@ export default function DynamicPreviewArea({
                         >
                           <X className="h-4 w-4" />
                         </Button>
-                      )}
+                      ) : null}
                     </div>
 
                     {/* Selection indicator */}
                     {selectedImage === image.url && (
                       <div className="absolute bottom-2 left-2">
                         <Badge variant="default" className="bg-green-500">Selected</Badge>
+                      </div>
+                    )}
+                    
+                    {/* Base image indicator */}
+                    {image.type === 'base' && (
+                      <div className="absolute bottom-2 left-2">
+                        <Badge variant="default" className="bg-blue-500">Base Image</Badge>
                       </div>
                     )}
                   </div>
@@ -391,28 +499,16 @@ export default function DynamicPreviewArea({
               <div className="text-sm text-gray-600">
                 <span>Dimensions: {dimensions.width} × {dimensions.height}</span>
                 <span className="mx-2 text-gray-400">|</span>
-                <span>{images.length} image{images.length > 1 ? 's' : ''}</span>
+                <span>{imagesToDisplay.length} {showBaseImage ? 'base' : 'generated'} image{imagesToDisplay.length > 1 ? 's' : ''}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Label htmlFor="previewAspectRatio" className="text-sm font-medium text-gray-700">
+                <Label className="text-sm font-medium text-gray-700">
                   <Settings className="h-4 w-4 inline mr-1" />
                   Aspect Ratio:
                 </Label>
-                <Select value={displayAspectRatio} onValueChange={handleAspectRatioChange}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1:1">1:1 (Square)</SelectItem>
-                    <SelectItem value="4:3">4:3 (Standard)</SelectItem>
-                    <SelectItem value="3:4">3:4 (Portrait)</SelectItem>
-                    <SelectItem value="16:9">16:9 (Widescreen)</SelectItem>
-                    <SelectItem value="9:16">9:16 (Vertical)</SelectItem>
-                    <SelectItem value="3:2">3:2 (Photo)</SelectItem>
-                    <SelectItem value="2:3">2:3 (Portrait Photo)</SelectItem>
-                    <SelectItem value="21:9">21:9 (Ultrawide)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Badge variant="outline" className="text-xs">
+                  {displayAspectRatio}
+                </Badge>
               </div>
             </div>
           </div>
@@ -437,8 +533,12 @@ export default function DynamicPreviewArea({
             ) : (
               <div className="text-center text-gray-500">
                 <Wand2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="font-medium">No images generated yet</p>
-                <p className="text-sm">Create your first image!</p>
+                <p className="font-medium">
+                  {showBaseImage ? 'No base image selected' : 'No images generated yet'}
+                </p>
+                <p className="text-sm">
+                  {showBaseImage ? 'Select a base image to get started' : 'Create your first image!'}
+                </p>
                 <div className="mt-2 text-xs text-gray-400">
                   Preview area: {aspectRatio} ({dimensions.width} × {dimensions.height})
                 </div>
@@ -448,5 +548,7 @@ export default function DynamicPreviewArea({
         )}
       </CardContent>
     </Card>
+
+    </>
   )
 }

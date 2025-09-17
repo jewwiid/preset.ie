@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Heart, Eye, MessageCircle, Share2, MoreHorizontal } from 'lucide-react'
 import { useAuth } from '../../lib/auth-context'
+import CinematicShowcaseFilters from './CinematicShowcaseFilters'
+import CinematicMetadataDisplay from './CinematicMetadataDisplay'
 
 interface ShowcaseMedia {
   id: string
@@ -11,6 +13,10 @@ interface ShowcaseMedia {
   description?: string
   tags?: string[]
   order_index: number
+  cinematic_metadata?: {
+    ai_metadata?: any
+    cinematic_tags?: string[]
+  } | null
 }
 
 interface ShowcaseCreator {
@@ -41,25 +47,37 @@ interface Showcase {
   is_liked: boolean
 }
 
+interface CinematicFilters {
+  cinematic_query?: string
+  director_style?: string
+  camera_angle?: string
+  lighting_style?: string
+  color_palette?: string
+}
+
 interface ShowcaseFeedProps {
   className?: string
   showcaseType?: 'moodboard' | 'individual_image' | 'all'
+  showCinematicFilters?: boolean
 }
 
-export default function ShowcaseFeed({ className = '', showcaseType = 'all' }: ShowcaseFeedProps) {
+export default function ShowcaseFeed({ className = '', showcaseType = 'all', showCinematicFilters = true }: ShowcaseFeedProps) {
   const { user, session } = useAuth()
   const [showcases, setShowcases] = useState<Showcase[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [likingShowcase, setLikingShowcase] = useState<string | null>(null)
+  const [cinematicFilters, setCinematicFilters] = useState<CinematicFilters>({})
 
   useEffect(() => {
     fetchShowcases()
-  }, [showcaseType])
+  }, [showcaseType, cinematicFilters])
 
   const fetchShowcases = async () => {
     try {
       setLoading(true)
+      setError(null) // Clear any previous errors
+      console.log('=== FETCHING SHOWCASES ===') // Debug log
       const headers: HeadersInit = {
         'Content-Type': 'application/json'
       }
@@ -68,16 +86,31 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all' }: S
         headers['Authorization'] = `Bearer ${session.access_token}`
       }
 
-      const url = showcaseType === 'all' 
-        ? '/api/showcases/feed'
-        : `/api/showcases/feed?type=${showcaseType}`
+      // Build URL with cinematic filters
+      const params = new URLSearchParams()
+      if (showcaseType !== 'all') {
+        params.append('type', showcaseType)
+      }
+      
+      // Add cinematic filters
+      Object.entries(cinematicFilters).forEach(([key, value]) => {
+        if (value) {
+          params.append(key, value)
+        }
+      })
+      
+      const url = `/api/showcases/feed?${params.toString()}&_t=${Date.now()}`
 
+      console.log('Fetching showcases from:', url)
       const response = await fetch(url, {
         headers
       })
 
+      console.log('Response status:', response.status, response.ok)
       if (!response.ok) {
-        throw new Error('Failed to fetch showcases')
+        const errorText = await response.text()
+        console.error('API Error:', errorText)
+        throw new Error(`Failed to fetch showcases: ${response.status} ${errorText}`)
       }
 
       const data = await response.json()
@@ -147,6 +180,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all' }: S
     return (
       <div className={`flex justify-center items-center py-12 ${className}`}>
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+        <span className="ml-2 text-sm text-gray-500">Loading showcases...</span>
       </div>
     )
   }
@@ -176,6 +210,15 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all' }: S
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* Cinematic Filters */}
+      {showCinematicFilters && (
+        <CinematicShowcaseFilters
+          onFiltersChange={setCinematicFilters}
+          onClearFilters={() => setCinematicFilters({})}
+          activeFilters={cinematicFilters}
+        />
+      )}
+
       {showcases.map((showcase) => (
         <div key={showcase.id} className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Header */}
@@ -267,6 +310,24 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all' }: S
               </div>
             )}
           </div>
+
+          {/* Cinematic Metadata */}
+          {showcase.media.some(media => media.cinematic_metadata?.ai_metadata) && (
+            <div className="px-4 pb-4">
+              <div className="space-y-2">
+                {showcase.media
+                  .filter(media => media.cinematic_metadata?.ai_metadata)
+                  .slice(0, 2) // Show metadata for first 2 images
+                  .map(media => (
+                    <CinematicMetadataDisplay
+                      key={media.id}
+                      metadata={media.cinematic_metadata || null}
+                      compact={true}
+                    />
+                  ))}
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="px-4 py-3 border-t">

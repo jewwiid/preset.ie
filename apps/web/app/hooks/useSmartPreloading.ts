@@ -15,7 +15,7 @@ interface PreloadItem {
 }
 
 export function useSmartPreloading(
-  urls: string[],
+  urls: (string | object)[],
   options: PreloadOptions = {}
 ) {
   const { priority = 'medium', delay = 0, maxConcurrent = 3 } = options
@@ -30,13 +30,27 @@ export function useSmartPreloading(
   
   // Initialize preload items
   useEffect(() => {
-    const items: PreloadItem[] = urls.map(url => ({
-      url,
-      type: url.includes('.mp4') || url.includes('.webm') || url.includes('.mov') ? 'video' : 'image',
-      priority,
-      loaded: false,
-      loading: false
-    }))
+    const items: PreloadItem[] = urls.map(url => {
+      // Handle both string URLs and object URLs
+      let urlString: string
+      if (typeof url === 'string') {
+        urlString = url
+      } else if (typeof url === 'object' && url !== null) {
+        urlString = (url as any).url || (url as any).image_url || ''
+        console.warn('useSmartPreloading received object URL:', url, 'extracted:', urlString)
+      } else {
+        urlString = ''
+        console.warn('useSmartPreloading received invalid URL:', url, typeof url)
+      }
+      
+      return {
+        url: urlString,
+        type: urlString.includes('.mp4') || urlString.includes('.webm') || urlString.includes('.mov') ? 'video' : 'image',
+        priority,
+        loaded: false,
+        loading: false
+      }
+    })
     
     setPreloadItems(items)
     preloadItemsRef.current = items

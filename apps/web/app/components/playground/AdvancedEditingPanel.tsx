@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Wand2, Upload, X, Image as ImageIcon } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Wand2, Upload, X, Image as ImageIcon, Search, Loader2 } from 'lucide-react'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface AdvancedEditingPanelProps {
   onEdit: (params: {
@@ -19,8 +21,11 @@ interface AdvancedEditingPanelProps {
     id: string
     image_url: string
     title: string
+    width: number
+    height: number
   }>
   onSelectSavedImage?: (imageUrl: string) => void
+  onImageUpload?: (file: File) => Promise<string>
 }
 
 export default function AdvancedEditingPanel({ 
@@ -28,22 +33,48 @@ export default function AdvancedEditingPanel({
   loading, 
   selectedImage,
   savedImages = [],
-  onSelectSavedImage
+  onSelectSavedImage,
+  onImageUpload
 }: AdvancedEditingPanelProps) {
   const [editType, setEditType] = useState('enhance')
+  
+  // Clear reference image when edit type changes to one that doesn't require it
+  const handleEditTypeChange = (newEditType: string) => {
+    setEditType(newEditType)
+    if (!requiresReferenceImage(newEditType) && referenceImage) {
+      removeReferenceImage()
+    }
+  }
   const [editPrompt, setEditPrompt] = useState('')
   const [editStrength, setEditStrength] = useState(0.8)
   const [referenceImage, setReferenceImage] = useState<string | null>(null)
   const [referenceImageSource, setReferenceImageSource] = useState<'upload' | 'saved'>('upload')
+  const [imageSource, setImageSource] = useState<'upload' | 'saved' | 'pexels'>('saved')
+  
+  // Pexels state
+  const [pexelsQuery, setPexelsQuery] = useState('')
+  const [pexelsResults, setPexelsResults] = useState<any[]>([])
+  const [pexelsPage, setPexelsPage] = useState(1)
+  const [pexelsLoading, setPexelsLoading] = useState(false)
+  const [pexelsTotalResults, setPexelsTotalResults] = useState(0)
+  const [pexelsFilters, setPexelsFilters] = useState({
+    orientation: '',
+    size: '',
+    color: ''
+  })
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const baseImageInputRef = useRef<HTMLInputElement>(null)
 
   const handleEdit = async () => {
-    if (!selectedImage || !editPrompt.trim()) {
+    const imageToEdit = imageSource === 'upload' ? uploadedImage : selectedImage
+    if (!imageToEdit || !editPrompt.trim()) {
       return
     }
     
     await onEdit({
-      imageUrl: selectedImage,
+      imageUrl: imageToEdit,
       editType,
       editPrompt,
       strength: editStrength,
@@ -59,6 +90,31 @@ export default function AdvancedEditingPanel({
     }
   }
 
+  const handleBaseImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !file.type.startsWith('image/')) return
+
+    if (!onImageUpload) {
+      // Fallback to local URL if no upload handler provided
+      const url = URL.createObjectURL(file)
+      setUploadedImage(url)
+      return
+    }
+
+    try {
+      setUploadingImage(true)
+      const uploadedUrl = await onImageUpload(file)
+      setUploadedImage(uploadedUrl)
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      // Fallback to local URL
+      const url = URL.createObjectURL(file)
+      setUploadedImage(url)
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
   const removeReferenceImage = () => {
     if (referenceImage) {
       if (referenceImageSource === 'upload') {
@@ -71,6 +127,15 @@ export default function AdvancedEditingPanel({
   const selectSavedReferenceImage = (imageUrl: string) => {
     setReferenceImage(imageUrl)
     setReferenceImageSource('saved')
+  }
+
+  const removeUploadedImage = () => {
+    if (uploadedImage) {
+      if (uploadedImage.startsWith('blob:')) {
+        URL.revokeObjectURL(uploadedImage)
+      }
+      setUploadedImage(null)
+    }
   }
 
   const requiresReferenceImage = (type: string) => {
@@ -169,6 +234,88 @@ export default function AdvancedEditingPanel({
     return texts[type] || 'Edit'
   }
 
+  // Pexels search functions
+  const searchPexels = async (page = 1, append = false) => {
+    if (!pexelsQuery.trim()) return
+
+    setPexelsLoading(true)
+    try {
+      const response = await fetch('/api/moodboard/pexels/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: pexelsQuery,
+          page: page,
+          per_page: 20,
+          ...(pexelsFilters.orientation && { orientation: pexelsFilters.orientation }),
+          ...(pexelsFilters.size && { size: pexelsFilters.size }),
+          ...(pexelsFilters.color && { color: pexelsFilters.color })
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to search Pexels')
+      const data = await response.json()
+
+      if (append) {
+        setPexelsResults(prev => [...prev, ...data.photos])
+        setPexelsPage(prev => prev + 1)
+      } else {
+        setPexelsResults(data.photos)
+        setPexelsPage(1)
+      }
+      setPexelsTotalResults(data.total_results)
+    } catch (error) {
+      console.error('Pexels search error:', error)
+    } finally {
+      setPexelsLoading(false)
+    }
+  }
+
+  // Auto-search with debounce
+  useEffect(() => {
+    if (!pexelsQuery.trim()) {
+      setPexelsResults([])
+      setPexelsTotalResults(0)
+      return
+    }
+
+    const timeoutId = setTimeout(() => {
+      searchPexels(1, false)
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [pexelsQuery, pexelsFilters])
+
+  const loadMorePexels = () => {
+    if (!pexelsLoading && pexelsResults.length < pexelsTotalResults && pexelsQuery.trim()) {
+      searchPexels(pexelsPage + 1, true)
+    }
+  }
+
+  const selectPexelsImage = async (photo: any) => {
+    const imageUrl = photo.src.large2x || photo.src.large || photo.src.medium
+    setReferenceImage(imageUrl)
+    setImageSource('pexels')
+    
+    try {
+      const dimensions = await getImageDimensions(imageUrl)
+      console.log('Pexels image dimensions:', dimensions)
+    } catch (error) {
+      console.error('Failed to get Pexels image dimensions:', error)
+    }
+  }
+
+  const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
+      img.onerror = reject
+      img.src = url
+    })
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 flex items-center">
@@ -176,20 +323,355 @@ export default function AdvancedEditingPanel({
         Advanced Editing
       </h2>
       
-      {selectedImage && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-          <div className="flex items-center text-sm text-green-800">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-            Image selected for editing
+      {/* Image Source Selection */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Image Source
+        </label>
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <Button
+            variant={imageSource === 'saved' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setImageSource('saved')}
+          >
+            Saved Images
+          </Button>
+          <Button
+            variant={imageSource === 'upload' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setImageSource('upload')}
+          >
+            Upload Image
+          </Button>
+          <Button
+            variant={imageSource === 'pexels' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setImageSource('pexels')}
+          >
+            Pexels
+          </Button>
+        </div>
+
+        {/* Image Status */}
+        {imageSource === 'saved' && selectedImage && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+            <div className="flex items-center text-sm text-green-800">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              Image selected from gallery
+            </div>
+            <div className="mt-1 text-xs text-green-700">
+              {savedImages.find(img => img.image_url === selectedImage)?.title || 'Selected image'}
+            </div>
           </div>
+        )}
+        
+        {imageSource === 'saved' && !selectedImage && (
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <div className="flex items-center text-sm text-yellow-800">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+              Select an image from the gallery to edit
+            </div>
+          </div>
+        )}
+
+        {/* Saved Images Selection */}
+        {imageSource === 'saved' && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select from Saved Images
+            </label>
+            {savedImages.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-lg">
+                <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-sm font-medium">No saved images available</p>
+                <p className="text-xs text-gray-400 mt-1">Save images from your generations to see them here</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                {savedImages.map((image) => (
+                  <div
+                    key={image.id}
+                    className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all group ${
+                      selectedImage === image.image_url 
+                        ? 'border-purple-500 ring-2 ring-purple-200 shadow-lg' 
+                        : 'border-gray-200 hover:border-purple-300 hover:shadow-md'
+                    }`}
+                    onClick={() => onSelectSavedImage?.(image.image_url)}
+                  >
+                    <div className="relative aspect-square">
+                      <img
+                        src={image.image_url}
+                        alt={image.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute bottom-0 left-0 right-0 p-2 text-white">
+                          <p className="text-xs font-medium truncate">{image.title}</p>
+                          <p className="text-xs text-gray-300">{image.width} × {image.height}</p>
+                        </div>
+                      </div>
+                      {selectedImage === image.image_url && (
+                        <div className="absolute top-2 right-2 bg-purple-500 text-white rounded-full p-1">
+                          <ImageIcon className="h-3 w-3" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {imageSource === 'upload' && uploadedImage && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+            <div className="flex items-center text-sm text-green-800">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              Image uploaded successfully
+            </div>
+          </div>
+        )}
+
+        {imageSource === 'upload' && !uploadedImage && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center text-sm text-blue-800">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+              Upload an image to edit
+            </div>
+          </div>
+        )}
+
+        {imageSource === 'pexels' && selectedImage && (
+          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+            <div className="flex items-center text-sm text-green-800">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              Image selected from Pexels
+            </div>
+            <div className="mt-1 text-xs text-green-700">
+              Selected image
+            </div>
+          </div>
+        )}
+        
+        {imageSource === 'pexels' && !selectedImage && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center text-sm text-blue-800">
+              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+              Search and select an image from Pexels to edit
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Image Upload Section */}
+      {imageSource === 'upload' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Upload Image to Edit
+          </label>
+          
+          {!uploadedImage ? (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+              <input
+                ref={baseImageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleBaseImageUpload}
+                className="hidden"
+              />
+              <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+              <p className="text-sm text-gray-600 mb-2">
+                Upload an image to apply editing functions like background removal, upscale, etc.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => baseImageInputRef.current?.click()}
+                className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                disabled={uploadingImage}
+              >
+                {uploadingImage ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Choose Image to Edit
+                  </>
+                )}
+              </Button>
+            </div>
+          ) : (
+            <div className="relative">
+              <img
+                src={uploadedImage}
+                alt="Uploaded image for editing"
+                className="w-full h-48 object-cover rounded-lg border"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="absolute top-2 right-2 h-8 w-8 p-0"
+                onClick={removeUploadedImage}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <div className="absolute top-2 left-2">
+                <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
+                  Uploaded Image
+                </span>
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                Image uploaded successfully and ready for editing
+              </div>
+            </div>
+          )}
         </div>
       )}
-      
-      {!selectedImage && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-          <div className="flex items-center text-sm text-yellow-800">
-            <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-            Select an image from the gallery to edit
+
+      {/* Pexels Section */}
+      {imageSource === 'pexels' && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Search Pexels Images
+          </label>
+          
+          <div className="space-y-3">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search for images..."
+                value={pexelsQuery}
+                onChange={(e) => setPexelsQuery(e.target.value)}
+                className="pl-10"
+              />
+              {pexelsLoading && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
+              )}
+            </div>
+
+            {/* Filters */}
+            <div className="grid grid-cols-3 gap-2">
+              <Select
+                value={pexelsFilters.orientation}
+                onValueChange={(value) => setPexelsFilters(prev => ({ ...prev, orientation: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Orientation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="landscape">Landscape</SelectItem>
+                  <SelectItem value="portrait">Portrait</SelectItem>
+                  <SelectItem value="square">Square</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={pexelsFilters.size}
+                onValueChange={(value) => setPexelsFilters(prev => ({ ...prev, size: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="large">Large</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="small">Small</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={pexelsFilters.color}
+                onValueChange={(value) => setPexelsFilters(prev => ({ ...prev, color: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Color" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="red">Red</SelectItem>
+                  <SelectItem value="orange">Orange</SelectItem>
+                  <SelectItem value="yellow">Yellow</SelectItem>
+                  <SelectItem value="green">Green</SelectItem>
+                  <SelectItem value="turquoise">Turquoise</SelectItem>
+                  <SelectItem value="blue">Blue</SelectItem>
+                  <SelectItem value="pink">Pink</SelectItem>
+                  <SelectItem value="white">White</SelectItem>
+                  <SelectItem value="gray">Gray</SelectItem>
+                  <SelectItem value="black">Black</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Results */}
+            {pexelsResults.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  Showing {pexelsResults.length} of {pexelsTotalResults.toLocaleString()} results for "{pexelsQuery}"
+                </p>
+                <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                  {pexelsResults.map((photo) => (
+                    <div key={photo.id} className="relative group cursor-pointer" onClick={() => selectPexelsImage(photo)}>
+                      <img
+                        src={photo.src.medium}
+                        alt={photo.alt}
+                        className="w-full h-32 object-cover rounded-lg border-2 border-transparent group-hover:border-purple-300 transition-colors"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="bg-white rounded-full p-2">
+                            <ImageIcon className="h-4 w-4 text-purple-600" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {pexelsResults.length < pexelsTotalResults && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadMorePexels}
+                    disabled={pexelsLoading}
+                    className="w-full"
+                  >
+                    {pexelsLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Loading...
+                      </>
+                    ) : (
+                      `Load more (${(pexelsTotalResults - pexelsResults.length).toLocaleString()} remaining)`
+                    )}
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {pexelsQuery && pexelsResults.length === 0 && !pexelsLoading && (
+              <div className="text-center py-8 text-gray-500">
+                <ImageIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No images found for "{pexelsQuery}"</p>
+                <p className="text-xs">Try different keywords or filters</p>
+              </div>
+            )}
+
+            {!pexelsQuery && (
+              <div className="text-center py-8 text-gray-500">
+                <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">Search for images to edit</p>
+                <p className="text-xs">Enter keywords to find stock photos</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -201,7 +683,7 @@ export default function AdvancedEditingPanel({
           </label>
           <select
             value={editType}
-            onChange={(e) => setEditType(e.target.value)}
+            onChange={(e) => handleEditTypeChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="enhance">✨ Enhance (2 credits)</option>
@@ -244,8 +726,14 @@ export default function AdvancedEditingPanel({
         {requiresReferenceImage(editType) && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Reference Image {requiresReferenceImage(editType) && <span className="text-red-500">*</span>}
+              Reference Image <span className="text-red-500">*</span>
             </label>
+            <p className="text-xs text-gray-600 mb-3">
+              {editType === 'face_swap' && 'Upload a face image to swap with the main image (different from the image you selected above)'}
+              {editType === 'style_transfer' && 'Upload an image with the desired artistic style to apply (different from the image you selected above)'}
+              {editType === 'gender_swap' && 'Upload an image showing the target gender appearance (different from the image you selected above)'}
+              {editType === 'age_progression' && 'Upload an image showing the target age appearance (different from the image you selected above)'}
+            </p>
             
             {/* Reference Image Source Selection */}
             <div className="mb-3">
@@ -283,10 +771,10 @@ export default function AdvancedEditingPanel({
                       />
                       <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
                       <p className="text-sm text-gray-600 mb-2">
-                        {editType === 'face_swap' && 'Upload a face image to swap with'}
-                        {editType === 'style_transfer' && 'Upload an image with the desired style'}
-                        {editType === 'gender_swap' && 'Upload an image of the target gender'}
-                        {editType === 'age_progression' && 'Upload an image showing the target age'}
+                        {editType === 'face_swap' && 'Upload a clear face image to swap with the main image. Ensure good lighting and frontal view.'}
+                        {editType === 'style_transfer' && 'Upload an image with the artistic style you want to apply. This could be a painting, artwork, or styled photo.'}
+                        {editType === 'gender_swap' && 'Upload an image showing the target gender appearance you want to achieve.'}
+                        {editType === 'age_progression' && 'Upload an image showing the target age appearance (younger or older).'}
                       </p>
                       <Button
                         type="button"
@@ -382,9 +870,10 @@ export default function AdvancedEditingPanel({
           />
         </div>
 
+
         <button
           onClick={handleEdit}
-          disabled={loading || !selectedImage || !editPrompt.trim() || (requiresReferenceImage(editType) && !referenceImage)}
+          disabled={loading || !editPrompt.trim() || (requiresReferenceImage(editType) && !referenceImage) || (imageSource === 'saved' && !selectedImage) || (imageSource === 'upload' && !uploadedImage) || (imageSource === 'pexels' && !selectedImage)}
           className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {loading ? (

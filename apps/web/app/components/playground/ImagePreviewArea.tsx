@@ -71,6 +71,15 @@ export default function ImagePreviewArea({
   videoGenerationStatus = 'idle',
   generatedVideoUrl = null
 }: ImagePreviewAreaProps) {
+  // Helper function to safely extract URL from image object
+  const getImageUrl = (imageUrl: any): string => {
+    if (typeof imageUrl === 'string') return imageUrl
+    if (typeof imageUrl === 'object' && imageUrl !== null) {
+      return imageUrl.url || imageUrl.image_url || ''
+    }
+    return ''
+  }
+  
   const [previewAspectRatio, setPreviewAspectRatio] = useState('1/1')
   const [displayAspectRatio, setDisplayAspectRatio] = useState('1:1')
   const [fullScreenImage, setFullScreenImage] = useState<{
@@ -380,6 +389,7 @@ export default function ImagePreviewArea({
                         className="w-full h-full object-cover"
                         controls
                         preload="metadata"
+                        loop
                         poster={generatedVideoUrl.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
                         onError={(e) => {
                           console.error('Video load error:', e);
@@ -455,7 +465,7 @@ export default function ImagePreviewArea({
                 </div>
               ) : selectedImage ? (
                 <div 
-                  className="relative w-full bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300"
+                  className="relative w-full bg-white border-2 border-solid border-gray-300 rounded-lg overflow-hidden transition-all duration-300 shadow-sm"
                   style={{ 
                     aspectRatio: previewAspectRatio,
                     maxWidth: '100%'
@@ -463,29 +473,33 @@ export default function ImagePreviewArea({
                 >
                   <div className="absolute inset-0">
                     {(() => {
-                      const selectedImageData = images.find(img => img.url === selectedImage)
+                      const selectedImageData = images.find(img => getImageUrl(img.url) === getImageUrl(selectedImage))
+                      const isSavedImage = selectedImageData?.type === 'saved'
+                      
                       return selectedImageData?.type === 'video' ? (
                         <video
-                          src={selectedImage}
+                          src={getImageUrl(selectedImage)}
                           className="w-full h-full object-cover"
                           controls
                           preload="metadata"
-                          poster={selectedImage.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
+                          loop
+                          poster={getImageUrl(selectedImage).replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
                         >
                           Your browser does not support the video tag.
                         </video>
                       ) : (
                         <img
-                          src={selectedImage}
+                          src={getImageUrl(selectedImage)}
                           alt="Selected image"
-                          className="w-full h-full object-cover"
+                          className={isSavedImage ? "w-full h-full object-contain" : "w-full h-full object-cover"}
                           onError={(e) => {
                             console.error('Selected image load error:', e)
-                            console.error('Selected image URL:', selectedImage)
+                            const imageUrl = getImageUrl(selectedImage)
+                            console.error('Selected image URL:', imageUrl)
                             // Try proxy-image API as fallback
                             const target = e.target as HTMLImageElement
-                            if (!target.src.includes('/api/proxy-image')) {
-                              target.src = '/api/proxy-image?url=' + encodeURIComponent(selectedImage)
+                            if (imageUrl && !target.src.includes('/api/proxy-image')) {
+                              target.src = '/api/proxy-image?url=' + encodeURIComponent(imageUrl)
                             }
                           }}
                         />
@@ -499,7 +513,7 @@ export default function ImagePreviewArea({
                         variant="secondary"
                         className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
                         onClick={() => {
-                          const imageIndex = images.findIndex(img => img.url === selectedImage)
+                          const imageIndex = images.findIndex(img => getImageUrl(img.url) === getImageUrl(selectedImage))
                           setFullScreenImage({
                             url: selectedImage,
                             title: `Generated Image ${imageIndex + 1}`,
@@ -559,7 +573,7 @@ export default function ImagePreviewArea({
                           variant="secondary"
                           className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
                           onClick={() => {
-                            const selectedImageData = images.find(img => img.url === selectedImage)
+                            const selectedImageData = images.find(img => getImageUrl(img.url) === getImageUrl(selectedImage))
                             if (selectedImageData?.type === 'video') {
                               handleDownloadVideo(selectedImage, `generated-video-${Date.now()}.mp4`)
                             } else {
@@ -567,7 +581,7 @@ export default function ImagePreviewArea({
                             }
                           }}
                           title={(() => {
-                            const selectedImageData = images.find(img => img.url === selectedImage)
+                            const selectedImageData = images.find(img => getImageUrl(img.url) === getImageUrl(selectedImage))
                             return selectedImageData?.type === 'video' ? "Download Video" : "Download Image"
                           })()}
                         >
@@ -593,7 +607,7 @@ export default function ImagePreviewArea({
                 </div>
               ) : (
                 <div 
-                  className="w-full bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center"
+                  className="w-full bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center"
                   style={{ 
                     aspectRatio: previewAspectRatio,
                     maxWidth: '100%'
@@ -617,7 +631,7 @@ export default function ImagePreviewArea({
                   <div
                     key={index}
                     className={`relative flex-shrink-0 cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 bg-gray-100 ${
-                      selectedImage === image.url 
+                      selectedImage === getImageUrl(image.url) 
                         ? 'border-purple-500 ring-2 ring-purple-200' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
@@ -626,30 +640,32 @@ export default function ImagePreviewArea({
                       width: '80px',
                       height: '80px'
                     }}
-                    onClick={() => onSelectImage(image.url)}
+                    onClick={() => onSelectImage(getImageUrl(image.url))}
                   >
                     {image.type === 'video' ? (
                       <video
-                        src={image.url}
+                        src={getImageUrl(image.url)}
                         className="w-full h-full object-cover"
                         controls
                         preload="metadata"
-                        poster={image.url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
+                        loop
+                        poster={getImageUrl(image.url).replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
                       >
                         Your browser does not support the video tag.
                       </video>
                     ) : (
                       <img
-                        src={image.url}
+                        src={getImageUrl(image.url)}
                         alt={`Generated ${index + 1}`}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           console.error('Image load error:', e)
-                          console.error('Image URL:', image.url)
+                          const imageUrl = getImageUrl(image.url)
+                          console.error('Image URL:', imageUrl)
                           // Try proxy-image API as fallback
                           const target = e.target as HTMLImageElement
-                          if (!target.src.includes('/api/proxy-image')) {
-                            target.src = '/api/proxy-image?url=' + encodeURIComponent(image.url)
+                          if (imageUrl && !target.src.includes('/api/proxy-image')) {
+                            target.src = '/api/proxy-image?url=' + encodeURIComponent(imageUrl)
                           }
                         }}
                       />
@@ -661,7 +677,7 @@ export default function ImagePreviewArea({
                     </div>
                     
                     {/* Selection indicator */}
-                    {selectedImage === image.url && (
+                    {selectedImage === getImageUrl(image.url) && (
                       <div className="absolute bottom-1 left-1">
                         <Badge variant="default" className="bg-green-500 text-[10px] px-1 py-0.5">✓</Badge>
                       </div>
@@ -676,7 +692,7 @@ export default function ImagePreviewArea({
                           className="h-5 w-5 p-0 bg-red-500 hover:bg-red-600"
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleRemoveImage(image.url)
+                            handleRemoveImage(getImageUrl(image.url))
                           }}
                           title="Remove image"
                         >
@@ -694,9 +710,27 @@ export default function ImagePreviewArea({
               <div className="text-sm text-gray-600">
                 {showDimensions && (
                   <>
-                    <span>Dimensions: {dimensions.width} × {dimensions.height}</span>
-                    <span className="mx-2 text-gray-400">|</span>
-                    <span>{images.length} image{images.length > 1 ? 's' : ''}</span>
+                    {selectedImage ? (
+                      (() => {
+                        const selectedImageData = images.find(img => getImageUrl(img.url) === getImageUrl(selectedImage))
+                        const actualDimensions = selectedImageData ? 
+                          `${selectedImageData.width} × ${selectedImageData.height}` : 
+                          `${dimensions.width} × ${dimensions.height}`
+                        return (
+                          <>
+                            <span>Dimensions: {actualDimensions}</span>
+                            <span className="mx-2 text-gray-400">|</span>
+                            <span>{images.length} image{images.length > 1 ? 's' : ''}</span>
+                          </>
+                        )
+                      })()
+                    ) : (
+                      <>
+                        <span>Dimensions: {dimensions.width} × {dimensions.height}</span>
+                        <span className="mx-2 text-gray-400">|</span>
+                        <span>{images.length} image{images.length > 1 ? 's' : ''}</span>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -704,7 +738,7 @@ export default function ImagePreviewArea({
           </div>
         ) : (
           <div 
-            className="flex flex-col items-center justify-center py-12 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg"
+            className="flex flex-col items-center justify-center py-12 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg bg-white"
             style={{ 
               aspectRatio: previewAspectRatio,
               maxWidth: '100%'
@@ -749,6 +783,7 @@ export default function ImagePreviewArea({
                 controls
                 autoPlay
                 preload="metadata"
+                loop
                 poster={fullScreenImage.url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
               >
                 Your browser does not support the video tag.

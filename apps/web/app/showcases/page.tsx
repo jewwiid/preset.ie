@@ -96,6 +96,7 @@ export default function ShowcasesPage() {
         <ShowcaseFeed 
           className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : ''} 
           showcaseType={filterType}
+          showCinematicFilters={true}
         />
 
         {/* Create Showcase Modal */}

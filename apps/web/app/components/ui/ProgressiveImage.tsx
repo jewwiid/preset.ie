@@ -39,8 +39,11 @@ export default function ProgressiveImage({
   })
 
   // Generate optimized image URL with quality parameter
-  const getOptimizedSrc = (originalSrc: string) => {
-    if (!originalSrc) return originalSrc
+  const getOptimizedSrc = (originalSrc: string | null | undefined) => {
+    if (!originalSrc || typeof originalSrc !== 'string') {
+      console.warn('ProgressiveImage received non-string src:', originalSrc, typeof originalSrc)
+      return originalSrc || ''
+    }
     
     // If it's already an optimized URL or external URL, return as is
     if (originalSrc.includes('?') || originalSrc.startsWith('http')) {

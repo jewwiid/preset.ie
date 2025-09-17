@@ -20,6 +20,7 @@ interface StylePreset {
   intensity: number
   usage_count: number
   is_public: boolean
+  user_id?: string
   created_at: string
 }
 
@@ -375,26 +376,32 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
                   <span>{preset.usage_count} uses</span>
                 </div>
                 <div className="flex space-x-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      openEditDialog(preset)
-                    }}
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeletePreset(preset.id)
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+                  {/* Only show edit button for user-created presets */}
+                  {preset.user_id && !preset.is_public && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openEditDialog(preset)
+                      }}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                  )}
+                  {/* Only show delete button for user-created presets */}
+                  {preset.user_id && !preset.is_public && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeletePreset(preset.id)
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
