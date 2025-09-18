@@ -24485,3 +24485,391 @@ web:dev:  GET /api/playground/gallery 500 in 248ms
 @preset/adapters:dev: src/storage/SupabaseImageStorage.ts(2,37): error TS2307: Cannot find module '@preset/domain/moodboards/ports/ImageStorageService' or its corresponding type declarations.
 @preset/adapters:dev: 
 @preset/adapters:dev: 7:47:43 AM - Found 140 errors. Watching for file changes.
+@preset/application:dev: [2J[3J[H7:57:31 AM - File change detected. Starting incremental compilation...
+@preset/application:dev: 
+@preset/adapters:dev: [2J[3J[H7:57:31 AM - File change detected. Starting incremental compilation...
+@preset/adapters:dev: 
+@preset/application:dev: src/applications/use-cases/GetApplications.ts(2,35): error TS7016: Could not find a declaration file for module '@preset/types'. '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/types/dist/index.js' implicitly has an 'any' type.
+@preset/application:dev:   Try `npm i --save-dev @types/preset__types` if it exists or add a new declaration (.d.ts) file containing `declare module '@preset/types';`
+@preset/application:dev: src/notifications/NotificationService.ts(11,8): error TS7016: Could not find a declaration file for module '@preset/types'. '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/types/dist/index.js' implicitly has an 'any' type.
+@preset/application:dev:   Try `npm i --save-dev @types/preset__types` if it exists or add a new declaration (.d.ts) file containing `declare module '@preset/types';`
+@preset/application:dev: 
+@preset/application:dev: 7:57:31 AM - Found 2 errors. Watching for file changes.
+@preset/adapters:dev: src/auth/auth.adapter.ts(1,10): error TS2305: Module '"@preset/application"' has no exported member 'AuthService'.
+@preset/adapters:dev: src/auth/auth.adapter.ts(2,16): error TS2724: '"@preset/domain"' has no exported member named 'UserId'. Did you mean 'User'?
+@preset/adapters:dev: src/auth/auth.adapter.ts(4,26): error TS2307: Cannot find module '../database/database.types' or its corresponding type declarations.
+@preset/adapters:dev: src/auth/auth.adapter.ts(84,9): error TS2322: Type 'Email' is not assignable to type 'string'.
+@preset/adapters:dev: src/auth/auth.adapter.ts(129,9): error TS2322: Type 'Email' is not assignable to type 'string'.
+@preset/adapters:dev: src/auth/auth.adapter.ts(173,9): error TS2322: Type 'Email' is not assignable to type 'string'.
+@preset/adapters:dev: src/auth/auth.adapter.ts(382,59): error TS2345: Argument of type '{ factorId: string; code: string; }' is not assignable to parameter of type 'MFAVerifyParams'.
+@preset/adapters:dev:   Property 'challengeId' is missing in type '{ factorId: string; code: string; }' but required in type 'MFAVerifyParams'.
+@preset/adapters:dev: src/events/InMemoryEventBus.ts(1,40): error TS2307: Cannot find module '@preset/domain/shared/ports/EventBus' or its corresponding type declarations.
+@preset/adapters:dev: src/events/InMemoryEventBus.ts(2,29): error TS2307: Cannot find module '@preset/domain/shared/DomainEvent' or its corresponding type declarations.
+@preset/adapters:dev: src/events/realtime-event-bus.adapter.ts(1,20): error TS2305: Module '"@preset/application"' has no exported member 'DomainEvent'.
+@preset/adapters:dev: src/events/realtime-event-bus.adapter.ts(3,26): error TS2307: Cannot find module '../database/database.types' or its corresponding type declarations.
+@preset/adapters:dev: src/events/realtime-event-bus.adapter.ts(10,14): error TS2420: Class 'SupabaseRealtimeEventBus' incorrectly implements interface 'EventBus'.
+@preset/adapters:dev:   Type 'SupabaseRealtimeEventBus' is missing the following properties from type 'EventBus': publishMany, unsubscribe
+@preset/adapters:dev: src/events/SupabaseEventBus.ts(2,40): error TS2307: Cannot find module '@preset/domain/shared/ports/EventBus' or its corresponding type declarations.
+@preset/adapters:dev: src/events/SupabaseEventBus.ts(3,29): error TS2307: Cannot find module '@preset/domain/shared/DomainEvent' or its corresponding type declarations.
+@preset/adapters:dev: src/events/SupabaseEventBus.ts(128,37): error TS7006: Parameter 'error' implicitly has an 'any' type.
+@preset/adapters:dev: src/external/AIProviderManager.ts(1,71): error TS2307: Cannot find module '../../domain/moodboards/ports/AIImageService' or its corresponding type declarations.
+@preset/adapters:dev: src/external/AIProviderManager.ts(2,31): error TS2307: Cannot find module '../../application/credits/CreditManager' or its corresponding type declarations.
+@preset/adapters:dev: src/external/AIProviderManager.ts(105,52): error TS18046: 'error' is of type 'unknown'.
+@preset/adapters:dev: src/external/AIProviderManager.ts(117,63): error TS18046: 'error' is of type 'unknown'.
+@preset/adapters:dev: src/external/AIProviderManager.ts(208,66): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Error'.
+@preset/adapters:dev: src/external/AsyncTaskManager.ts(2,29): error TS2305: Module '"./NanoBananaService"' has no exported member 'NanoBananaTask'.
+@preset/adapters:dev: src/external/AsyncTaskManager.ts(3,31): error TS2307: Cannot find module '../../application/credits/CreditManager' or its corresponding type declarations.
+@preset/adapters:dev: src/external/AsyncTaskManager.ts(31,30): error TS2554: Expected 2 arguments, but got 1.
+@preset/adapters:dev: src/external/AsyncTaskManager.ts(148,26): error TS18046: 'error' is of type 'unknown'.
+@preset/adapters:dev: src/external/NanoBananaService.ts(1,71): error TS2307: Cannot find module '@preset/domain/moodboards/ports/AIImageService' or its corresponding type declarations.
+@preset/adapters:dev: src/external/PexelsService.ts(2,62): error TS2307: Cannot find module '../../domain/moodboards/ports/StockPhotoService' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseProfileRepository.ts(2,25): error TS2307: Cannot find module '@preset/domain/identity/entities/Profile' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseProfileRepository.ts(3,35): error TS2307: Cannot find module '@preset/domain/identity/ports/ProfileRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseProfileRepository.ts(4,24): error TS2307: Cannot find module '@preset/domain/identity/value-objects/Handle' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(2,22): error TS2307: Cannot find module '@preset/domain/identity/entities/User' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(3,32): error TS2307: Cannot find module '@preset/domain/identity/ports/UserRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(4,23): error TS2307: Cannot find module '@preset/domain/identity/value-objects/Email' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(5,36): error TS2307: Cannot find module '@preset/domain/identity/value-objects/VerificationStatus' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(6,26): error TS2307: Cannot find module '@preset/domain/identity/value-objects/UserRole' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(7,34): error TS2307: Cannot find module '@preset/domain/subscriptions/SubscriptionTier' or its corresponding type declarations.
+@preset/adapters:dev: src/imagegen/ImageGenProviderFactory.ts(1,38): error TS2307: Cannot find module '@preset/application/ports/ImageGenService' or its corresponding type declarations.
+@preset/adapters:dev: src/imagegen/NanoBananaAdapter.ts(1,63): error TS2307: Cannot find module '@preset/application/ports/ImageGenService' or its corresponding type declarations.
+@preset/adapters:dev: src/imagegen/SeedreamWaveSpeedAdapter.ts(1,63): error TS2307: Cannot find module '@preset/application/ports/ImageGenService' or its corresponding type declarations.
+@preset/adapters:dev: src/infrastructure/supabase-event-bus.ts(1,26): error TS2307: Cannot find module '@preset/domain/shared/EventBus' or its corresponding type declarations.
+@preset/adapters:dev: src/infrastructure/supabase-event-bus.ts(2,29): error TS2307: Cannot find module '@preset/domain/shared/DomainEvent' or its corresponding type declarations.
+@preset/adapters:dev: src/infrastructure/supabase-event-bus.ts(53,17): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "domain_events", never, "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'EventRow' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "domain_events", never, "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'EventRow' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type 'EventRow' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/mappers/user-mapper.ts(2,3): error TS2724: '"@preset/domain"' has no exported member named 'UserProfile'. Did you mean 'UserRole'?
+@preset/adapters:dev: src/mappers/user-mapper.ts(5,3): error TS2724: '"@preset/domain"' has no exported member named 'UserRoles'. Did you mean 'UserRole'?
+@preset/adapters:dev: src/mappers/user-mapper.ts(6,3): error TS2724: '"@preset/domain"' has no exported member named 'Subscription'. Did you mean 'SubscriptionTier'?
+@preset/adapters:dev: src/mappers/user-mapper.ts(8,3): error TS2305: Module '"@preset/domain"' has no exported member 'SubscriptionStatus'.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(3,10): error TS2305: Module '"@preset/domain"' has no exported member 'Media'.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(3,17): error TS2305: Module '"@preset/domain"' has no exported member 'MediaId'.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(4,26): error TS2307: Cannot find module '../database/database.types' or its corresponding type declarations.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(5,29): error TS7016: Could not find a declaration file for module 'exif-parser'. '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/node_modules/exif-parser/index.js' implicitly has an 'any' type.
+@preset/adapters:dev:   Try `npm i --save-dev @types/exif-parser` if it exists or add a new declaration (.d.ts) file containing `declare module 'exif-parser';`
+@preset/adapters:dev: src/media/media-storage.adapter.ts(7,30): error TS7016: Could not find a declaration file for module 'uuid'. '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/node_modules/uuid/dist/index.js' implicitly has an 'any' type.
+@preset/adapters:dev:   Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+@preset/adapters:dev: src/media/media-storage.adapter.ts(102,9): error TS2416: Property 'getPublicUrl' in type 'SupabaseMediaStorage' is not assignable to the same property in base type 'MediaStorage'.
+@preset/adapters:dev:   Type '(path: string, bucket: string) => Promise<string>' is not assignable to type '(bucket: string, path: string) => string'.
+@preset/adapters:dev:     Type 'Promise<string>' is not assignable to type 'string'.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(217,17): error TS2416: Property 'stripExifData' in type 'SupabaseMediaStorage' is not assignable to the same property in base type 'MediaStorage'.
+@preset/adapters:dev:   Type '(imageBuffer: Buffer<ArrayBufferLike>) => Promise<{ buffer: Buffer<ArrayBufferLike>; metadata: any; }>' is not assignable to type '(imageBuffer: Buffer<ArrayBufferLike>) => Promise<Buffer<ArrayBufferLike>>'.
+@preset/adapters:dev:     Type 'Promise<{ buffer: Buffer<ArrayBufferLike>; metadata: any; }>' is not assignable to type 'Promise<Buffer<ArrayBufferLike>>'.
+@preset/adapters:dev:       Type '{ buffer: Buffer<ArrayBufferLike>; metadata: any; }' is missing the following properties from type 'Buffer<ArrayBufferLike>': slice, subarray, write, toJSON, and 96 more.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(228,10): error TS2339: Property 'removeMetadata' does not exist on type 'Sharp'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(6,8): error TS6059: File '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/application/src/collaboration/services/ContentModerationService.ts' is not under 'rootDir' '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/adapters/src'. 'rootDir' is expected to contain all source files.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(37,5): error TS2322: Type 'unknown' is not assignable to type 'string'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(60,5): error TS2322: Type 'unknown' is not assignable to type 'boolean'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(153,21): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(154,26): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(155,27): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(156,25): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(191,19): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(192,23): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(193,22): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/notifications/notification.adapter.ts(3,26): error TS2307: Cannot find module '../database/database.types' or its corresponding type declarations.
+@preset/adapters:dev: src/notifications/notification.adapter.ts(29,9): error TS2416: Property 'sendEmail' in type 'SupabaseNotificationService' is not assignable to the same property in base type 'NotificationService'.
+@preset/adapters:dev:   Type '(to: string, templateId: string, data: Record<string, any>) => Promise<void>' is not assignable to type '(to: string, subject: string, body: string, html?: string | undefined) => Promise<void>'.
+@preset/adapters:dev:     Types of parameters 'data' and 'body' are incompatible.
+@preset/adapters:dev:       Type 'string' is not assignable to type 'Record<string, any>'.
+@preset/adapters:dev: src/notifications/supabase-notification-preferences-repository.ts(7,8): error TS7016: Could not find a declaration file for module '@preset/types'. '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/types/dist/index.js' implicitly has an 'any' type.
+@preset/adapters:dev:   Try `npm i --save-dev @types/preset__types` if it exists or add a new declaration (.d.ts) file containing `declare module '@preset/types';`
+@preset/adapters:dev: src/notifications/supabase-notification-preferences-repository.ts(88,20): error TS7053: Element implicitly has an 'any' type because expression of type 'NotificationCategory' can't be used to index type '{ gig: string; application: string; message: string; booking: string; system: string; marketing: string; }'.
+@preset/adapters:dev: src/notifications/supabase-notification-preferences-repository.ts(184,29): error TS7053: Element implicitly has an 'any' type because expression of type 'NotificationCategory' can't be used to index type '{ gig: any; application: any; message: any; booking: any; system: any; marketing: any; }'.
+@preset/adapters:dev: src/notifications/supabase-notification-repository.ts(7,8): error TS7016: Could not find a declaration file for module '@preset/types'. '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/types/dist/index.js' implicitly has an 'any' type.
+@preset/adapters:dev:   Try `npm i --save-dev @types/preset__types` if it exists or add a new declaration (.d.ts) file containing `declare module '@preset/types';`
+@preset/adapters:dev: src/persistence/SupabaseMoodboardRepository.ts(2,43): error TS2307: Cannot find module '@preset/domain/moodboards/entities/Moodboard' or its corresponding type declarations.
+@preset/adapters:dev: src/persistence/SupabaseMoodboardRepository.ts(3,37): error TS2307: Cannot find module '@preset/domain/moodboards/ports/MoodboardRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/reports/SupabaseMessageReportRepository.ts(2,41): error TS6059: File '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/application/src/collaboration/use-cases/ReportMessage.ts' is not under 'rootDir' '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/adapters/src'. 'rootDir' is expected to contain all source files.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(23,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<ApplicationRow>' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<ApplicationRow>' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type 'Partial<ApplicationRow>' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(134,23): error TS2339: Property 'id' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(135,27): error TS2339: Property 'gigId' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(136,38): error TS2339: Property 'applicantUserId' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(137,25): error TS2339: Property 'note' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(138,27): error TS2339: Property 'status' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(139,31): error TS2551: Property 'appliedAt' does not exist on type 'Application'. Did you mean 'getAppliedAt'?
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(140,31): error TS2551: Property 'updatedAt' does not exist on type 'Application'. Did you mean 'getUpdatedAt'?
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(1,40): error TS2307: Cannot find module '@preset/domain/collaboration/ports/ConversationRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(2,30): error TS2307: Cannot find module '@preset/domain/collaboration/entities/Conversation' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(3,36): error TS2307: Cannot find module '@preset/domain/collaboration/value-objects/ConversationStatus' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(4,25): error TS2307: Cannot find module '@preset/domain/collaboration/entities/Message' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(5,29): error TS2307: Cannot find module '@preset/domain/collaboration/value-objects/MessageBody' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(6,44): error TS2307: Cannot find module '@preset/domain/collaboration/value-objects/Attachment' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(10,48): error TS2339: Property 'messages' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(66,24): error TS2339: Property 'from_user_id' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(66,42): error TS2339: Property 'to_user_id' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(68,39): error TS2339: Property 'from_user_id' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(68,57): error TS2339: Property 'to_user_id' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(155,51): error TS7006: Parameter 'a' implicitly has an 'any' type.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(162,17): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type '{ id: any; conversation_id: any; gig_id: any; from_user_id: any; to_user_id: any; body: any; attachments: any; created_at: any; read_at: any; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type '{ id: any; conversation_id: any; gig_id: any; from_user_id: any; to_user_id: any; body: any; attachments: any; created_at: any; read_at: any; }' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type '{ id: any; conversation_id: any; gig_id: any; from_user_id: any; to_user_id: any; body: any; attachments: any; created_at: any; read_at: any; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(200,15): error TS2345: Argument of type '{ read_at: string; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/repositories/supabase-gig-repository.ts(35,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<GigRow>' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<GigRow>' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type 'Partial<GigRow>' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/repositories/supabase-gig-repository.ts(150,15): error TS2341: Property 'id' is private and only accessible within class 'Gig'.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(1,35): error TS2307: Cannot find module '@preset/domain/identity/ports/ProfileRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(2,25): error TS2307: Cannot find module '@preset/domain/identity/entities/Profile' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(6,48): error TS2339: Property 'profiles' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(7,51): error TS2339: Property 'profiles' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(8,51): error TS2339: Property 'profiles' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(1,24): error TS2307: Cannot find module '@preset/domain/showcases/entities/Review' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(2,35): error TS2307: Cannot find module '@preset/domain/showcases/value-objects/ReviewTag' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(6,47): error TS2339: Property 'reviews' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(7,50): error TS2339: Property 'reviews' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(135,53): error TS2339: Property 'rating' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(162,45): error TS2339: Property 'rating' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(168,30): error TS2339: Property 'rating' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(168,64): error TS2339: Property 'rating' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(174,15): error TS2339: Property 'tags' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(174,41): error TS2339: Property 'tags' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(175,13): error TS2339: Property 'tags' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(28,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<ShowcaseRow>' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<ShowcaseRow>' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type 'Partial<ShowcaseRow>' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(127,24): error TS2339: Property 'gigId' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(128,33): error TS2339: Property 'creatorUserId' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(129,32): error TS2339: Property 'talentUserId' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(130,25): error TS2339: Property 'caption' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(131,22): error TS2339: Property 'tags' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(132,25): error TS2339: Property 'palette' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(133,40): error TS2339: Property 'approvedByCreatorAt' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(134,39): error TS2339: Property 'approvedByTalentAt' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(135,28): error TS2551: Property 'visibility' does not exist on type 'Showcase'. Did you mean 'getVisibility'?
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(136,28): error TS2551: Property 'createdAt' does not exist on type 'Showcase'. Did you mean 'getCreatedAt'?
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(137,28): error TS2339: Property 'updatedAt' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-user-block-repository.ts(2,27): error TS2307: Cannot find module '@preset/domain/collaboration/entities/UserBlock' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-user-block-repository.ts(3,37): error TS2307: Cannot find module '@preset/domain/collaboration/ports/UserBlockRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-user-block-repository.ts(4,49): error TS2307: Cannot find module '@preset/domain/collaboration/value-objects/BlockReason' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-user-repository.ts(2,10): error TS2724: '"@preset/domain"' has no exported member named 'UserProfile'. Did you mean 'UserRole'?
+@preset/adapters:dev: src/repositories/supabase-user-repository.ts(18,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type '{ id?: string | undefined; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags?: string[] | undefined; ... 7 more ...; updated_at?: string | undefined; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type '{ id?: string | undefined; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags?: string[] | undefined; ... 7 more ...; updated_at?: string | undefined; }' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type '{ id?: string | undefined; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags?: string[] | undefined; ... 7 more ...; updated_at?: string | undefined; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/services/enhanced-moodboard.service.ts(2,80): error TS2307: Cannot find module '../../domain/moodboards/entities/Moodboard' or its corresponding type declarations.
+@preset/adapters:dev: src/services/enhanced-moodboard.service.ts(55,24): error TS2554: Expected 2 arguments, but got 1.
+@preset/adapters:dev: src/storage/SupabaseImageStorage.ts(2,37): error TS2307: Cannot find module '@preset/domain/moodboards/ports/ImageStorageService' or its corresponding type declarations.
+@preset/adapters:dev: 
+@preset/adapters:dev: 7:57:31 AM - Found 132 errors. Watching for file changes.
+@preset/application:dev: [2J[3J[H7:57:32 AM - File change detected. Starting incremental compilation...
+@preset/application:dev: 
+@preset/adapters:dev: [2J[3J[H7:57:32 AM - File change detected. Starting incremental compilation...
+@preset/adapters:dev: 
+@preset/adapters:dev: src/auth/auth.adapter.ts(1,10): error TS2305: Module '"@preset/application"' has no exported member 'AuthService'.
+@preset/adapters:dev: src/auth/auth.adapter.ts(2,16): error TS2724: '"@preset/domain"' has no exported member named 'UserId'. Did you mean 'User'?
+@preset/adapters:dev: src/auth/auth.adapter.ts(4,26): error TS2307: Cannot find module '../database/database.types' or its corresponding type declarations.
+@preset/adapters:dev: src/auth/auth.adapter.ts(84,9): error TS2322: Type 'Email' is not assignable to type 'string'.
+@preset/adapters:dev: src/auth/auth.adapter.ts(129,9): error TS2322: Type 'Email' is not assignable to type 'string'.
+@preset/adapters:dev: src/auth/auth.adapter.ts(173,9): error TS2322: Type 'Email' is not assignable to type 'string'.
+@preset/adapters:dev: src/auth/auth.adapter.ts(382,59): error TS2345: Argument of type '{ factorId: string; code: string; }' is not assignable to parameter of type 'MFAVerifyParams'.
+@preset/adapters:dev:   Property 'challengeId' is missing in type '{ factorId: string; code: string; }' but required in type 'MFAVerifyParams'.
+@preset/adapters:dev: src/events/InMemoryEventBus.ts(1,40): error TS2307: Cannot find module '@preset/domain/shared/ports/EventBus' or its corresponding type declarations.
+@preset/adapters:dev: src/events/InMemoryEventBus.ts(2,29): error TS2307: Cannot find module '@preset/domain/shared/DomainEvent' or its corresponding type declarations.
+@preset/adapters:dev: src/events/realtime-event-bus.adapter.ts(1,20): error TS2305: Module '"@preset/application"' has no exported member 'DomainEvent'.
+@preset/adapters:dev: src/events/realtime-event-bus.adapter.ts(3,26): error TS2307: Cannot find module '../database/database.types' or its corresponding type declarations.
+@preset/adapters:dev: src/events/realtime-event-bus.adapter.ts(10,14): error TS2420: Class 'SupabaseRealtimeEventBus' incorrectly implements interface 'EventBus'.
+@preset/adapters:dev:   Type 'SupabaseRealtimeEventBus' is missing the following properties from type 'EventBus': publishMany, unsubscribe
+@preset/adapters:dev: src/events/SupabaseEventBus.ts(2,40): error TS2307: Cannot find module '@preset/domain/shared/ports/EventBus' or its corresponding type declarations.
+@preset/adapters:dev: src/events/SupabaseEventBus.ts(3,29): error TS2307: Cannot find module '@preset/domain/shared/DomainEvent' or its corresponding type declarations.
+@preset/adapters:dev: src/events/SupabaseEventBus.ts(128,37): error TS7006: Parameter 'error' implicitly has an 'any' type.
+@preset/adapters:dev: src/external/AIProviderManager.ts(1,71): error TS2307: Cannot find module '../../domain/moodboards/ports/AIImageService' or its corresponding type declarations.
+@preset/adapters:dev: src/external/AIProviderManager.ts(2,31): error TS2307: Cannot find module '../../application/credits/CreditManager' or its corresponding type declarations.
+@preset/adapters:dev: src/external/AIProviderManager.ts(105,52): error TS18046: 'error' is of type 'unknown'.
+@preset/adapters:dev: src/external/AIProviderManager.ts(117,63): error TS18046: 'error' is of type 'unknown'.
+@preset/adapters:dev: src/external/AIProviderManager.ts(208,66): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'Error'.
+@preset/adapters:dev: src/external/AsyncTaskManager.ts(2,29): error TS2305: Module '"./NanoBananaService"' has no exported member 'NanoBananaTask'.
+@preset/adapters:dev: src/external/AsyncTaskManager.ts(3,31): error TS2307: Cannot find module '../../application/credits/CreditManager' or its corresponding type declarations.
+@preset/adapters:dev: src/external/AsyncTaskManager.ts(31,30): error TS2554: Expected 2 arguments, but got 1.
+@preset/adapters:dev: src/external/AsyncTaskManager.ts(148,26): error TS18046: 'error' is of type 'unknown'.
+@preset/adapters:dev: src/external/NanoBananaService.ts(1,71): error TS2307: Cannot find module '@preset/domain/moodboards/ports/AIImageService' or its corresponding type declarations.
+@preset/adapters:dev: src/external/PexelsService.ts(2,62): error TS2307: Cannot find module '../../domain/moodboards/ports/StockPhotoService' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseProfileRepository.ts(2,25): error TS2307: Cannot find module '@preset/domain/identity/entities/Profile' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseProfileRepository.ts(3,35): error TS2307: Cannot find module '@preset/domain/identity/ports/ProfileRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseProfileRepository.ts(4,24): error TS2307: Cannot find module '@preset/domain/identity/value-objects/Handle' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(2,22): error TS2307: Cannot find module '@preset/domain/identity/entities/User' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(3,32): error TS2307: Cannot find module '@preset/domain/identity/ports/UserRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(4,23): error TS2307: Cannot find module '@preset/domain/identity/value-objects/Email' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(5,36): error TS2307: Cannot find module '@preset/domain/identity/value-objects/VerificationStatus' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(6,26): error TS2307: Cannot find module '@preset/domain/identity/value-objects/UserRole' or its corresponding type declarations.
+@preset/adapters:dev: src/identity/SupabaseUserRepository.ts(7,34): error TS2307: Cannot find module '@preset/domain/subscriptions/SubscriptionTier' or its corresponding type declarations.
+@preset/adapters:dev: src/imagegen/ImageGenProviderFactory.ts(1,38): error TS2307: Cannot find module '@preset/application/ports/ImageGenService' or its corresponding type declarations.
+@preset/adapters:dev: src/imagegen/NanoBananaAdapter.ts(1,63): error TS2307: Cannot find module '@preset/application/ports/ImageGenService' or its corresponding type declarations.
+@preset/adapters:dev: src/imagegen/SeedreamWaveSpeedAdapter.ts(1,63): error TS2307: Cannot find module '@preset/application/ports/ImageGenService' or its corresponding type declarations.
+@preset/adapters:dev: src/infrastructure/supabase-event-bus.ts(1,26): error TS2307: Cannot find module '@preset/domain/shared/EventBus' or its corresponding type declarations.
+@preset/adapters:dev: src/infrastructure/supabase-event-bus.ts(2,29): error TS2307: Cannot find module '@preset/domain/shared/DomainEvent' or its corresponding type declarations.
+@preset/adapters:dev: src/infrastructure/supabase-event-bus.ts(53,17): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "domain_events", never, "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'EventRow' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "domain_events", never, "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'EventRow' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type 'EventRow' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/mappers/user-mapper.ts(2,3): error TS2724: '"@preset/domain"' has no exported member named 'UserProfile'. Did you mean 'UserRole'?
+@preset/adapters:dev: src/mappers/user-mapper.ts(5,3): error TS2724: '"@preset/domain"' has no exported member named 'UserRoles'. Did you mean 'UserRole'?
+@preset/adapters:dev: src/mappers/user-mapper.ts(6,3): error TS2724: '"@preset/domain"' has no exported member named 'Subscription'. Did you mean 'SubscriptionTier'?
+@preset/adapters:dev: src/mappers/user-mapper.ts(8,3): error TS2305: Module '"@preset/domain"' has no exported member 'SubscriptionStatus'.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(3,10): error TS2305: Module '"@preset/domain"' has no exported member 'Media'.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(3,17): error TS2305: Module '"@preset/domain"' has no exported member 'MediaId'.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(4,26): error TS2307: Cannot find module '../database/database.types' or its corresponding type declarations.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(5,29): error TS7016: Could not find a declaration file for module 'exif-parser'. '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/node_modules/exif-parser/index.js' implicitly has an 'any' type.
+@preset/adapters:dev:   Try `npm i --save-dev @types/exif-parser` if it exists or add a new declaration (.d.ts) file containing `declare module 'exif-parser';`
+@preset/adapters:dev: src/media/media-storage.adapter.ts(7,30): error TS7016: Could not find a declaration file for module 'uuid'. '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/node_modules/uuid/dist/index.js' implicitly has an 'any' type.
+@preset/adapters:dev:   Try `npm i --save-dev @types/uuid` if it exists or add a new declaration (.d.ts) file containing `declare module 'uuid';`
+@preset/adapters:dev: src/media/media-storage.adapter.ts(102,9): error TS2416: Property 'getPublicUrl' in type 'SupabaseMediaStorage' is not assignable to the same property in base type 'MediaStorage'.
+@preset/adapters:dev:   Type '(path: string, bucket: string) => Promise<string>' is not assignable to type '(bucket: string, path: string) => string'.
+@preset/adapters:dev:     Type 'Promise<string>' is not assignable to type 'string'.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(217,17): error TS2416: Property 'stripExifData' in type 'SupabaseMediaStorage' is not assignable to the same property in base type 'MediaStorage'.
+@preset/adapters:dev:   Type '(imageBuffer: Buffer<ArrayBufferLike>) => Promise<{ buffer: Buffer<ArrayBufferLike>; metadata: any; }>' is not assignable to type '(imageBuffer: Buffer<ArrayBufferLike>) => Promise<Buffer<ArrayBufferLike>>'.
+@preset/adapters:dev:     Type 'Promise<{ buffer: Buffer<ArrayBufferLike>; metadata: any; }>' is not assignable to type 'Promise<Buffer<ArrayBufferLike>>'.
+@preset/adapters:dev:       Type '{ buffer: Buffer<ArrayBufferLike>; metadata: any; }' is missing the following properties from type 'Buffer<ArrayBufferLike>': slice, subarray, write, toJSON, and 96 more.
+@preset/adapters:dev: src/media/media-storage.adapter.ts(228,10): error TS2339: Property 'removeMetadata' does not exist on type 'Sharp'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(6,8): error TS6059: File '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/application/src/collaboration/services/ContentModerationService.ts' is not under 'rootDir' '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/adapters/src'. 'rootDir' is expected to contain all source files.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(37,5): error TS2322: Type 'unknown' is not assignable to type 'string'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(60,5): error TS2322: Type 'unknown' is not assignable to type 'boolean'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(153,21): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(154,26): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(155,27): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(156,25): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(191,19): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(192,23): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/moderation/SupabaseContentModerationRepository.ts(193,22): error TS18046: 'data' is of type 'unknown'.
+@preset/adapters:dev: src/notifications/notification.adapter.ts(3,26): error TS2307: Cannot find module '../database/database.types' or its corresponding type declarations.
+@preset/adapters:dev: src/notifications/notification.adapter.ts(29,9): error TS2416: Property 'sendEmail' in type 'SupabaseNotificationService' is not assignable to the same property in base type 'NotificationService'.
+@preset/adapters:dev:   Type '(to: string, templateId: string, data: Record<string, any>) => Promise<void>' is not assignable to type '(to: string, subject: string, body: string, html?: string | undefined) => Promise<void>'.
+@preset/adapters:dev:     Types of parameters 'data' and 'body' are incompatible.
+@preset/adapters:dev:       Type 'string' is not assignable to type 'Record<string, any>'.
+@preset/adapters:dev: src/notifications/supabase-notification-preferences-repository.ts(48,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "notification_preferences", never, "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type '{ user_id: string; email_enabled: boolean; push_enabled: boolean; in_app_enabled: boolean; gig_notifications: boolean; application_notifications: boolean; message_notifications: boolean; ... 7 more ...; vibration_enabled: boolean; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "notification_preferences", never, "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type '{ user_id: string; email_enabled: boolean; push_enabled: boolean; in_app_enabled: boolean; gig_notifications: boolean; application_notifications: boolean; message_notifications: boolean; ... 7 more ...; vibration_enabled: boolean; }' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type '{ user_id: string; email_enabled: boolean; push_enabled: boolean; in_app_enabled: boolean; gig_notifications: boolean; application_notifications: boolean; message_notifications: boolean; ... 7 more ...; vibration_enabled: boolean; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/notifications/supabase-notification-preferences-repository.ts(62,15): error TS2345: Argument of type 'Partial<NotificationPreferences>' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/notifications/supabase-notification-preferences-repository.ts(95,15): error TS2345: Argument of type '{ [x: string]: boolean; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/notifications/supabase-notification-preferences-repository.ts(118,15): error TS2345: Argument of type '{ [x: string]: boolean; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/notifications/supabase-notification-preferences-repository.ts(142,15): error TS2345: Argument of type '{ digest_frequency: DigestFrequency; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/notifications/supabase-notification-preferences-repository.ts(163,33): error TS2339: Property 'user_id' does not exist on type 'never'.
+@preset/adapters:dev: src/notifications/supabase-notification-repository.ts(15,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "notifications", never, "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'Omit<Notification, "id" | "created_at" | "updated_at">' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "notifications", never, "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'Omit<Notification, "id" | "created_at" | "updated_at">' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type 'Omit<Notification, "id" | "created_at" | "updated_at">' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/notifications/supabase-notification-repository.ts(92,15): error TS2345: Argument of type 'Partial<Notification>' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/notifications/supabase-notification-repository.ts(118,15): error TS2345: Argument of type '{ read_at: string; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/notifications/supabase-notification-repository.ts(143,15): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/notifications/supabase-notification-repository.ts(154,15): error TS2345: Argument of type '{ dismissed_at: string; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/notifications/supabase-notification-repository.ts(165,15): error TS2345: Argument of type '{ read_at: string; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/persistence/SupabaseMoodboardRepository.ts(2,43): error TS2307: Cannot find module '@preset/domain/moodboards/entities/Moodboard' or its corresponding type declarations.
+@preset/adapters:dev: src/persistence/SupabaseMoodboardRepository.ts(3,37): error TS2307: Cannot find module '@preset/domain/moodboards/ports/MoodboardRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/reports/SupabaseMessageReportRepository.ts(2,41): error TS6059: File '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/application/src/collaboration/use-cases/ReportMessage.ts' is not under 'rootDir' '/Users/judeokun/Documents/GitHub/preset/preset.ie/preset/packages/adapters/src'. 'rootDir' is expected to contain all source files.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(23,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<ApplicationRow>' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<ApplicationRow>' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type 'Partial<ApplicationRow>' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(134,23): error TS2339: Property 'id' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(135,27): error TS2339: Property 'gigId' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(136,38): error TS2339: Property 'applicantUserId' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(137,25): error TS2339: Property 'note' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(138,27): error TS2339: Property 'status' does not exist on type 'Application'.
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(139,31): error TS2551: Property 'appliedAt' does not exist on type 'Application'. Did you mean 'getAppliedAt'?
+@preset/adapters:dev: src/repositories/supabase-application-repository.ts(140,31): error TS2551: Property 'updatedAt' does not exist on type 'Application'. Did you mean 'getUpdatedAt'?
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(1,40): error TS2307: Cannot find module '@preset/domain/collaboration/ports/ConversationRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(2,30): error TS2307: Cannot find module '@preset/domain/collaboration/entities/Conversation' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(3,36): error TS2307: Cannot find module '@preset/domain/collaboration/value-objects/ConversationStatus' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(4,25): error TS2307: Cannot find module '@preset/domain/collaboration/entities/Message' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(5,29): error TS2307: Cannot find module '@preset/domain/collaboration/value-objects/MessageBody' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(6,44): error TS2307: Cannot find module '@preset/domain/collaboration/value-objects/Attachment' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(10,48): error TS2339: Property 'messages' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(66,24): error TS2339: Property 'from_user_id' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(66,42): error TS2339: Property 'to_user_id' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(68,39): error TS2339: Property 'from_user_id' does not exist on type 'never'.
+@preset/application:dev: 
+@preset/application:dev: 7:57:33 AM - Found 0 errors. Watching for file changes.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(68,57): error TS2339: Property 'to_user_id' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(155,51): error TS7006: Parameter 'a' implicitly has an 'any' type.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(162,17): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type '{ id: any; conversation_id: any; gig_id: any; from_user_id: any; to_user_id: any; body: any; attachments: any; created_at: any; read_at: any; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type '{ id: any; conversation_id: any; gig_id: any; from_user_id: any; to_user_id: any; body: any; attachments: any; created_at: any; read_at: any; }' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type '{ id: any; conversation_id: any; gig_id: any; from_user_id: any; to_user_id: any; body: any; attachments: any; created_at: any; read_at: any; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/repositories/supabase-conversation-repository.ts(200,15): error TS2345: Argument of type '{ read_at: string; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev: src/repositories/supabase-gig-repository.ts(35,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<GigRow>' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<GigRow>' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type 'Partial<GigRow>' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/repositories/supabase-gig-repository.ts(150,15): error TS2341: Property 'id' is private and only accessible within class 'Gig'.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(1,35): error TS2307: Cannot find module '@preset/domain/identity/ports/ProfileRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(2,25): error TS2307: Cannot find module '@preset/domain/identity/entities/Profile' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(6,48): error TS2339: Property 'profiles' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(7,51): error TS2339: Property 'profiles' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-profile-repository.ts(8,51): error TS2339: Property 'profiles' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(1,24): error TS2307: Cannot find module '@preset/domain/showcases/entities/Review' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(2,35): error TS2307: Cannot find module '@preset/domain/showcases/value-objects/ReviewTag' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(6,47): error TS2339: Property 'reviews' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(7,50): error TS2339: Property 'reviews' does not exist on type '{ users_profile: { Row: { id: string; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags: string[]; ... 7 more ...; updated_at: string; }; Insert: { ...; }; Update: { ...; }; }; gigs: { ...; }; applications: { ...; }...'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(135,53): error TS2339: Property 'rating' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(162,45): error TS2339: Property 'rating' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(168,30): error TS2339: Property 'rating' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(168,64): error TS2339: Property 'rating' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(174,15): error TS2339: Property 'tags' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(174,41): error TS2339: Property 'tags' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-review-repository.ts(175,13): error TS2339: Property 'tags' does not exist on type 'never'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(28,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<ShowcaseRow>' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type 'Partial<ShowcaseRow>' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type 'Partial<ShowcaseRow>' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(127,24): error TS2339: Property 'gigId' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(128,33): error TS2339: Property 'creatorUserId' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(129,32): error TS2339: Property 'talentUserId' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(130,25): error TS2339: Property 'caption' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(131,22): error TS2339: Property 'tags' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(132,25): error TS2339: Property 'palette' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(133,40): error TS2339: Property 'approvedByCreatorAt' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(134,39): error TS2339: Property 'approvedByTalentAt' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(135,28): error TS2551: Property 'visibility' does not exist on type 'Showcase'. Did you mean 'getVisibility'?
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(136,28): error TS2551: Property 'createdAt' does not exist on type 'Showcase'. Did you mean 'getCreatedAt'?
+@preset/adapters:dev: src/repositories/supabase-showcase-repository.ts(137,28): error TS2339: Property 'updatedAt' does not exist on type 'Showcase'.
+@preset/adapters:dev: src/repositories/supabase-user-block-repository.ts(2,27): error TS2307: Cannot find module '@preset/domain/collaboration/entities/UserBlock' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-user-block-repository.ts(3,37): error TS2307: Cannot find module '@preset/domain/collaboration/ports/UserBlockRepository' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-user-block-repository.ts(4,49): error TS2307: Cannot find module '@preset/domain/collaboration/value-objects/BlockReason' or its corresponding type declarations.
+@preset/adapters:dev: src/repositories/supabase-user-repository.ts(2,10): error TS2724: '"@preset/domain"' has no exported member named 'UserProfile'. Did you mean 'UserRole'?
+@preset/adapters:dev: src/repositories/supabase-user-repository.ts(18,15): error TS2769: No overload matches this call.
+@preset/adapters:dev:   Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+@preset/adapters:dev:     Argument of type '{ id?: string | undefined; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags?: string[] | undefined; ... 7 more ...; updated_at?: string | undefined; }' is not assignable to parameter of type 'never'.
+@preset/adapters:dev:   Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+@preset/adapters:dev:     Argument of type '{ id?: string | undefined; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags?: string[] | undefined; ... 7 more ...; updated_at?: string | undefined; }' is not assignable to parameter of type 'never[]'.
+@preset/adapters:dev:       Type '{ id?: string | undefined; user_id: string; display_name: string; handle: string; avatar_url?: string | undefined; bio?: string | undefined; city?: string | undefined; role_flags?: string[] | undefined; ... 7 more ...; updated_at?: string | undefined; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+@preset/adapters:dev: src/services/enhanced-moodboard.service.ts(2,80): error TS2307: Cannot find module '../../domain/moodboards/entities/Moodboard' or its corresponding type declarations.
+@preset/adapters:dev: src/services/enhanced-moodboard.service.ts(55,24): error TS2554: Expected 2 arguments, but got 1.
+@preset/adapters:dev: src/storage/SupabaseImageStorage.ts(2,37): error TS2307: Cannot find module '@preset/domain/moodboards/ports/ImageStorageService' or its corresponding type declarations.
+@preset/adapters:dev: 
+@preset/adapters:dev: 7:57:33 AM - Found 140 errors. Watching for file changes.

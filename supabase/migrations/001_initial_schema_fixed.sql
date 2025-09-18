@@ -1,0 +1,599 @@
+-- Fixed Initial Schema - Consolidated and Conflict-Free
+-- This migration consolidates all core types, tables, and functions without conflicts
+
+-- Enable necessary extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "postgis";
+
+-- Core Custom Types (consolidated from all migrations)
+DO $$ 
+BEGIN
+    -- User role enum
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE user_role AS ENUM ('CONTRIBUTOR', 'TALENT', 'ADMIN');
+    END IF;
+    
+    -- Subscription tier enum
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_tier') THEN
+        CREATE TYPE subscription_tier AS ENUM ('FREE', 'PLUS', 'PRO');
+    END IF;
+    
+    -- Subscription status enum
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_status') THEN
+        CREATE TYPE subscription_status AS ENUM ('ACTIVE', 'CANCELLED', 'EXPIRED', 'TRIAL');
+    END IF;
+    
+    -- Gig status enum
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'gig_status') THEN
+        CREATE TYPE gig_status AS ENUM ('DRAFT', 'PUBLISHED', 'APPLICATIONS_CLOSED', 'BOOKED', 'COMPLETED', 'CANCELLED');
+    END IF;
+    
+    -- Compensation type enum
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'compensation_type') THEN
+        CREATE TYPE compensation_type AS ENUM ('TFP', 'PAID', 'EXPENSES');
+    END IF;
+    
+    -- Application status enum (using uppercase values for consistency)
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'application_status') THEN
+        CREATE TYPE application_status AS ENUM ('PENDING', 'SHORTLISTED', 'ACCEPTED', 'DECLINED', 'WITHDRAWN');
+    END IF;
+    
+    -- Showcase visibility enum (using uppercase values for consistency)
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'showcase_visibility') THEN
+        CREATE TYPE showcase_visibility AS ENUM ('DRAFT', 'PUBLIC', 'PRIVATE');
+    END IF;
+    
+    -- Media type enum
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'media_type') THEN
+        CREATE TYPE media_type AS ENUM ('IMAGE', 'VIDEO', 'PDF');
+    END IF;
+    
+    -- Gig purpose enum
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'gig_purpose') THEN
+        CREATE TYPE gig_purpose AS ENUM (
+            'PORTFOLIO',
+            'COMMERCIAL',
+            'EDITORIAL',
+            'FASHION',
+            'BEAUTY',
+            'LIFESTYLE',
+            'WEDDING',
+            'EVENT',
+            'PRODUCT',
+            'ARCHITECTURE',
+            'STREET',
+            'CONCEPTUAL',
+            'OTHER'
+        );
+    END IF;
+    
+    -- Verification status enum
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'verification_status') THEN
+        CREATE TYPE verification_status AS ENUM ('UNVERIFIED', 'EMAIL_VERIFIED', 'ID_VERIFIED');
+    END IF;
+END $$;
+
+-- Core Tables (consolidated and conflict-free)
+
+-- Users table (extends Supabase auth.users)
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    role user_role NOT NULL DEFAULT 'TALENT',
+    subscription_tier subscription_tier NOT NULL DEFAULT 'FREE',
+    subscription_expires_at TIMESTAMPTZ,
+    stripe_customer_id VARCHAR(255),
+    stripe_subscription_id VARCHAR(255),
+    verification_status verification_status NOT NULL DEFAULT 'UNVERIFIED',
+    email_verified_at TIMESTAMPTZ,
+    id_verified_at TIMESTAMPTZ,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Users profile table (main profile information)
+CREATE TABLE IF NOT EXISTS users_profile (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    display_name VARCHAR(255) NOT NULL,
+    handle VARCHAR(50) UNIQUE NOT NULL,
+    avatar_url TEXT,
+    bio TEXT,
+    city VARCHAR(255),
+    country VARCHAR(100),
+    state_province VARCHAR(100),
+    role_flags user_role[] DEFAULT '{}',
+    style_tags TEXT[] DEFAULT '{}',
+    vibe_tags TEXT[] DEFAULT '{}',
+    subscription_tier subscription_tier DEFAULT 'FREE',
+    subscription_status subscription_status DEFAULT 'ACTIVE',
+    subscription_started_at TIMESTAMPTZ DEFAULT NOW(),
+    subscription_expires_at TIMESTAMPTZ,
+    verified_id BOOLEAN DEFAULT FALSE,
+    account_status VARCHAR(50) DEFAULT 'active',
+    age_verified BOOLEAN DEFAULT FALSE,
+    date_of_birth DATE,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    header_banner_url TEXT,
+    header_banner_position TEXT DEFAULT '{"y":0,"scale":1}',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT handle_format CHECK (handle ~ '^[a-z0-9_]+$')
+);
+
+-- Profiles table (alternative profile structure - keeping for compatibility)
+CREATE TABLE IF NOT EXISTS profiles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    handle VARCHAR(50) UNIQUE NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    avatar_url TEXT,
+    bio TEXT,
+    city VARCHAR(100),
+    style_tags TEXT[] DEFAULT '{}',
+    showcase_ids TEXT[] DEFAULT '{}',
+    website_url TEXT,
+    instagram_handle VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT handle_format_profiles CHECK (handle ~ '^[a-z0-9_]{3,50}$')
+);
+
+-- Gigs table
+CREATE TABLE IF NOT EXISTS gigs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    owner_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    purpose gig_purpose DEFAULT 'PORTFOLIO',
+    comp_type compensation_type NOT NULL,
+    comp_details TEXT,
+    location_text VARCHAR(255) NOT NULL,
+    city VARCHAR(255),
+    country VARCHAR(100),
+    location GEOGRAPHY(POINT),
+    radius_meters INTEGER,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
+    application_deadline TIMESTAMPTZ NOT NULL,
+    max_applicants INTEGER NOT NULL DEFAULT 20,
+    usage_rights TEXT NOT NULL,
+    safety_notes TEXT,
+    status gig_status DEFAULT 'DRAFT',
+    boost_level INTEGER DEFAULT 0,
+    style_tags TEXT[] DEFAULT '{}',
+    vibe_tags TEXT[] DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT valid_time_range CHECK (end_time > start_time),
+    CONSTRAINT valid_deadline CHECK (application_deadline <= start_time),
+    CONSTRAINT valid_boost CHECK (boost_level >= 0)
+);
+
+-- Applications table
+CREATE TABLE IF NOT EXISTS applications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    gig_id UUID NOT NULL REFERENCES gigs(id) ON DELETE CASCADE,
+    applicant_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    note TEXT,
+    status application_status DEFAULT 'PENDING',
+    applied_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(gig_id, applicant_user_id)
+);
+
+-- Media table
+CREATE TABLE IF NOT EXISTS media (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    owner_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    gig_id UUID REFERENCES gigs(id) ON DELETE SET NULL,
+    type media_type NOT NULL,
+    bucket VARCHAR(255) NOT NULL,
+    path TEXT NOT NULL,
+    width INTEGER,
+    height INTEGER,
+    duration INTEGER,
+    palette JSONB,
+    blurhash VARCHAR(255),
+    exif_json JSONB,
+    ai_metadata JSONB,
+    visibility showcase_visibility DEFAULT 'PRIVATE',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Moodboards table
+CREATE TABLE IF NOT EXISTS moodboards (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    gig_id UUID NOT NULL REFERENCES gigs(id) ON DELETE CASCADE,
+    owner_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    title VARCHAR(255),
+    summary TEXT,
+    palette JSONB,
+    items JSONB NOT NULL DEFAULT '[]',
+    vibe_ids UUID[] DEFAULT '{}',
+    vibe_summary TEXT,
+    mood_descriptors TEXT[] DEFAULT '{}',
+    tags TEXT[] DEFAULT '{}',
+    ai_analysis_status VARCHAR(50) DEFAULT 'pending',
+    ai_analyzed_at TIMESTAMPTZ,
+    is_public BOOLEAN DEFAULT false,
+    source_breakdown JSONB DEFAULT '{
+      "pexels": 0,
+      "user_uploads": 0,
+      "ai_enhanced": 0,
+      "ai_generated": 0
+    }',
+    enhancement_log JSONB DEFAULT '[]',
+    total_cost DECIMAL(10,4) DEFAULT 0,
+    generated_prompts TEXT[] DEFAULT '{}',
+    ai_provider VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Moodboard items table
+CREATE TABLE IF NOT EXISTS moodboard_items (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    moodboard_id UUID REFERENCES moodboards(id) ON DELETE CASCADE,
+    source VARCHAR(20) NOT NULL CHECK (source IN ('pexels', 'user-upload', 'ai-enhanced', 'ai-generated')),
+    url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    attribution TEXT,
+    width INTEGER,
+    height INTEGER,
+    palette TEXT[] DEFAULT '{}',
+    blurhash VARCHAR(50),
+    enhancement_prompt TEXT,
+    original_image_id UUID,
+    position INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Showcases table
+CREATE TABLE IF NOT EXISTS showcases (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    gig_id UUID NOT NULL REFERENCES gigs(id) ON DELETE CASCADE,
+    creator_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    talent_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    media_ids UUID[] NOT NULL,
+    caption TEXT,
+    tags TEXT[] DEFAULT '{}',
+    palette JSONB,
+    approved_by_creator_at TIMESTAMPTZ,
+    approved_by_talent_at TIMESTAMPTZ,
+    visibility showcase_visibility DEFAULT 'DRAFT',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT media_count CHECK (array_length(media_ids, 1) BETWEEN 3 AND 6)
+);
+
+-- Showcase media table
+CREATE TABLE IF NOT EXISTS showcase_media (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    showcase_id UUID NOT NULL REFERENCES showcases(id) ON DELETE CASCADE,
+    media_id UUID NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+    moodboard_item_id UUID REFERENCES moodboard_items(id) ON DELETE SET NULL,
+    position INTEGER NOT NULL DEFAULT 0,
+    showcase_type VARCHAR(50) DEFAULT 'individual',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Messages table
+CREATE TABLE IF NOT EXISTS messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    gig_id UUID NOT NULL REFERENCES gigs(id) ON DELETE CASCADE,
+    from_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    to_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    attachments JSONB DEFAULT '[]',
+    conversation_id UUID,
+    status VARCHAR(50) DEFAULT 'sent',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    read_at TIMESTAMPTZ
+);
+
+-- Reviews table
+CREATE TABLE IF NOT EXISTS reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    gig_id UUID NOT NULL REFERENCES gigs(id) ON DELETE CASCADE,
+    reviewer_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    reviewed_user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    tags TEXT[] DEFAULT '{}',
+    comment TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(gig_id, reviewer_user_id, reviewed_user_id)
+);
+
+-- Reports table
+CREATE TABLE IF NOT EXISTS reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reporter_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    reported_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    reported_content_id UUID,
+    content_type TEXT CHECK (content_type IN ('user', 'gig', 'showcase', 'message', 'image', 'moodboard')) NOT NULL,
+    reason TEXT CHECK (reason IN ('spam', 'inappropriate', 'harassment', 'scam', 'copyright', 'other', 'underage', 'safety')) NOT NULL,
+    description TEXT NOT NULL,
+    status TEXT CHECK (status IN ('pending', 'reviewing', 'resolved', 'dismissed')) DEFAULT 'pending',
+    priority TEXT CHECK (priority IN ('low', 'medium', 'high', 'critical')) DEFAULT 'medium',
+    resolved_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    resolution_notes TEXT,
+    resolution_action TEXT CHECK (resolution_action IN ('warning', 'content_removed', 'user_suspended', 'user_banned', 'dismissed', 'no_action')),
+    evidence_urls TEXT[],
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    resolved_at TIMESTAMPTZ,
+    CONSTRAINT valid_content_reference CHECK (
+        (content_type = 'user' AND reported_user_id IS NOT NULL) OR
+        (content_type != 'user' AND reported_content_id IS NOT NULL)
+    )
+);
+
+-- Subscriptions table (for Stripe integration)
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
+    stripe_customer_id VARCHAR(255) UNIQUE,
+    stripe_subscription_id VARCHAR(255) UNIQUE,
+    tier subscription_tier NOT NULL,
+    status subscription_status NOT NULL,
+    started_at TIMESTAMPTZ NOT NULL,
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- User credits table
+CREATE TABLE IF NOT EXISTS user_credits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    subscription_tier VARCHAR(20) NOT NULL,
+    monthly_allowance INTEGER DEFAULT 0,
+    current_balance INTEGER DEFAULT 0,
+    consumed_this_month INTEGER DEFAULT 0,
+    last_reset_at TIMESTAMPTZ DEFAULT DATE_TRUNC('month', NOW()),
+    lifetime_consumed INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
+-- User settings table
+CREATE TABLE IF NOT EXISTS user_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    profile_id UUID REFERENCES users_profile(id) ON DELETE CASCADE,
+    email_notifications BOOLEAN DEFAULT true,
+    push_notifications BOOLEAN DEFAULT true,
+    message_notifications BOOLEAN DEFAULT true,
+    allow_stranger_messages BOOLEAN DEFAULT false,
+    privacy_level VARCHAR(20) DEFAULT 'standard',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id),
+    UNIQUE(profile_id)
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_subscription_tier ON users(subscription_tier);
+CREATE INDEX IF NOT EXISTS idx_users_stripe_customer_id ON users(stripe_customer_id);
+
+CREATE INDEX IF NOT EXISTS idx_users_profile_user_id ON users_profile(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_profile_handle ON users_profile(handle);
+CREATE INDEX IF NOT EXISTS idx_users_profile_role_flags ON users_profile USING GIN(role_flags);
+CREATE INDEX IF NOT EXISTS idx_users_profile_style_tags ON users_profile USING GIN(style_tags);
+CREATE INDEX IF NOT EXISTS idx_users_profile_vibe_tags ON users_profile USING GIN(vibe_tags);
+CREATE INDEX IF NOT EXISTS idx_users_profile_subscription_tier ON users_profile(subscription_tier);
+CREATE INDEX IF NOT EXISTS idx_users_profile_country ON users_profile(country);
+CREATE INDEX IF NOT EXISTS idx_users_profile_account_status ON users_profile(account_status);
+CREATE INDEX IF NOT EXISTS idx_users_profile_age_verified ON users_profile(age_verified);
+CREATE INDEX IF NOT EXISTS idx_users_profile_date_of_birth ON users_profile(date_of_birth);
+CREATE INDEX IF NOT EXISTS idx_users_profile_first_name ON users_profile(first_name);
+CREATE INDEX IF NOT EXISTS idx_users_profile_last_name ON users_profile(last_name);
+CREATE INDEX IF NOT EXISTS idx_users_profile_header_banner_url ON users_profile(header_banner_url) WHERE header_banner_url IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_handle ON profiles(handle);
+CREATE INDEX IF NOT EXISTS idx_profiles_style_tags ON profiles USING GIN(style_tags);
+
+CREATE INDEX IF NOT EXISTS idx_gigs_owner ON gigs(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_gigs_status ON gigs(status);
+CREATE INDEX IF NOT EXISTS idx_gigs_location ON gigs USING GIST(location);
+CREATE INDEX IF NOT EXISTS idx_gigs_dates ON gigs(start_time, end_time);
+CREATE INDEX IF NOT EXISTS idx_gigs_purpose ON gigs(purpose);
+CREATE INDEX IF NOT EXISTS idx_gigs_style_tags ON gigs USING GIN(style_tags);
+CREATE INDEX IF NOT EXISTS idx_gigs_vibe_tags ON gigs USING GIN(vibe_tags);
+CREATE INDEX IF NOT EXISTS idx_gigs_city ON gigs(city);
+CREATE INDEX IF NOT EXISTS idx_gigs_country ON gigs(country);
+
+CREATE INDEX IF NOT EXISTS idx_applications_gig ON applications(gig_id);
+CREATE INDEX IF NOT EXISTS idx_applications_applicant ON applications(applicant_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_media_owner ON media(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_media_gig ON media(gig_id);
+CREATE INDEX IF NOT EXISTS idx_media_type ON media(type);
+CREATE INDEX IF NOT EXISTS idx_media_visibility ON media(visibility);
+CREATE INDEX IF NOT EXISTS idx_media_ai_metadata_gin ON media USING GIN(ai_metadata);
+
+CREATE INDEX IF NOT EXISTS idx_moodboards_gig ON moodboards(gig_id);
+CREATE INDEX IF NOT EXISTS idx_moodboards_owner ON moodboards(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_moodboards_vibe_ids ON moodboards USING GIN(vibe_ids);
+CREATE INDEX IF NOT EXISTS idx_moodboards_tags ON moodboards USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_moodboards_mood ON moodboards USING GIN(mood_descriptors);
+CREATE INDEX IF NOT EXISTS idx_moodboards_vibe_search ON moodboards USING GIN(to_tsvector('english', COALESCE(vibe_summary, '')));
+
+CREATE INDEX IF NOT EXISTS idx_moodboard_items_moodboard_id ON moodboard_items(moodboard_id);
+CREATE INDEX IF NOT EXISTS idx_moodboard_items_position ON moodboard_items(moodboard_id, position);
+
+CREATE INDEX IF NOT EXISTS idx_showcases_creator ON showcases(creator_user_id);
+CREATE INDEX IF NOT EXISTS idx_showcases_talent ON showcases(talent_user_id);
+CREATE INDEX IF NOT EXISTS idx_showcases_gig ON showcases(gig_id);
+CREATE INDEX IF NOT EXISTS idx_showcases_visibility ON showcases(visibility);
+
+CREATE INDEX IF NOT EXISTS idx_showcase_media_showcase_id ON showcase_media(showcase_id);
+CREATE INDEX IF NOT EXISTS idx_showcase_media_moodboard_item ON showcase_media(moodboard_item_id);
+CREATE INDEX IF NOT EXISTS idx_showcase_media_position ON showcase_media(showcase_id, position);
+
+CREATE INDEX IF NOT EXISTS idx_messages_gig ON messages(gig_id);
+CREATE INDEX IF NOT EXISTS idx_messages_users ON messages(from_user_id, to_user_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status);
+
+CREATE INDEX IF NOT EXISTS idx_reports_reporter ON reports(reporter_user_id);
+CREATE INDEX IF NOT EXISTS idx_reports_reported_user ON reports(reported_user_id) WHERE reported_user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status) WHERE status != 'resolved';
+CREATE INDEX IF NOT EXISTS idx_reports_priority ON reports(priority, created_at DESC) WHERE status IN ('pending', 'reviewing');
+CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reports_content ON reports(content_type, reported_content_id) WHERE reported_content_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer ON subscriptions(stripe_customer_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_subscription ON subscriptions(stripe_subscription_id);
+
+CREATE INDEX IF NOT EXISTS idx_user_credits_user_id ON user_credits(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_settings_profile_id ON user_settings(profile_id);
+
+-- Core Functions (consolidated and conflict-free)
+
+-- Update timestamp function
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Handle new user function
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (id, email, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(
+      (NEW.raw_user_meta_data->>'role')::user_role,
+      'TALENT'
+    )
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create default user settings function
+CREATE OR REPLACE FUNCTION create_default_user_settings()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO user_settings (user_id, profile_id)
+  VALUES (NEW.id, NEW.id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Initialize user credits function
+CREATE OR REPLACE FUNCTION initialize_user_credits()
+RETURNS TRIGGER AS $$
+DECLARE
+  monthly_allowance INTEGER;
+BEGIN
+  -- Set monthly allowance based on subscription tier
+  CASE NEW.subscription_tier
+    WHEN 'FREE' THEN monthly_allowance := 0;
+    WHEN 'PLUS' THEN monthly_allowance := 100;
+    WHEN 'PRO' THEN monthly_allowance := 500;
+    ELSE monthly_allowance := 0;
+  END CASE;
+  
+  INSERT INTO user_credits (
+    user_id,
+    subscription_tier,
+    monthly_allowance,
+    current_balance,
+    consumed_this_month,
+    last_reset_at
+  ) VALUES (
+    NEW.id,
+    NEW.subscription_tier,
+    monthly_allowance,
+    monthly_allowance,
+    0,
+    DATE_TRUNC('month', NOW())
+  );
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Triggers
+
+-- Update timestamp triggers
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_users_profile_updated_at BEFORE UPDATE ON users_profile
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_gigs_updated_at BEFORE UPDATE ON gigs
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_applications_updated_at BEFORE UPDATE ON applications
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_moodboards_updated_at BEFORE UPDATE ON moodboards
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_showcases_updated_at BEFORE UPDATE ON showcases
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON subscriptions
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_user_credits_updated_at BEFORE UPDATE ON user_credits
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_reports_updated_at BEFORE UPDATE ON reports
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- User creation triggers
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+CREATE TRIGGER create_user_settings_trigger
+    AFTER INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION create_default_user_settings();
+
+CREATE TRIGGER init_user_credits_on_profile_create
+AFTER INSERT ON users_profile
+FOR EACH ROW
+EXECUTE FUNCTION initialize_user_credits();
+
+-- Comments
+COMMENT ON TABLE users IS 'Core user table extending Supabase auth with subscription and verification';
+COMMENT ON TABLE users_profile IS 'Main user profiles with display information and preferences';
+COMMENT ON TABLE profiles IS 'Alternative profile structure for compatibility';
+COMMENT ON TABLE gigs IS 'Photography gig postings and opportunities';
+COMMENT ON TABLE applications IS 'User applications to gigs';
+COMMENT ON TABLE media IS 'Media files and metadata';
+COMMENT ON TABLE moodboards IS 'Gig mood boards and inspiration collections';
+COMMENT ON TABLE showcases IS 'Portfolio showcases from completed gigs';
+COMMENT ON TABLE messages IS 'Direct messaging between users';
+COMMENT ON TABLE reviews IS 'User reviews and ratings';
+COMMENT ON TABLE reports IS 'Content and user reports for moderation';
+COMMENT ON TABLE subscriptions IS 'User subscription management';
+COMMENT ON TABLE user_credits IS 'User credit balance and usage tracking';
+COMMENT ON TABLE user_settings IS 'User preferences and settings';
