@@ -32,7 +32,8 @@ import {
   ChevronDown,
   Target,
   ShoppingBag,
-  Store
+  Store,
+  Calendar
 } from 'lucide-react'
 import { NotificationBell } from './NotificationBell'
 
@@ -77,6 +78,7 @@ export function NavBar() {
     // Contributor-specific items
     if (profile?.role_flags?.includes('CONTRIBUTOR')) {
       roleSpecificItems.push(
+        { label: 'My Gigs', href: '/gigs/my-gigs', icon: Calendar, requiresAuth: true },
         { label: 'Applications', href: '/applications', icon: Briefcase, requiresAuth: true },
         { label: 'Showcases', href: '/showcases', icon: Image, requiresAuth: true }
       )
