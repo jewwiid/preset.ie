@@ -321,7 +321,13 @@ export default function Dashboard() {
       const { data: gigs, error: gigsError } = await gigsQuery
 
       if (gigsError) {
-        console.error('❌ Error fetching gigs:', gigsError)
+        console.error('❌ Error fetching gigs:', {
+          message: gigsError.message,
+          code: gigsError.code,
+          details: gigsError.details,
+          hint: gigsError.hint,
+          fullError: gigsError
+        })
       } else {
         console.log('✅ Fetched filtered gigs:', gigs)
         setRecentGigs(gigs || [])
@@ -461,7 +467,42 @@ export default function Dashboard() {
             p_limit: 3
           })
 
-        if (!gigsError && compatibleGigs) {
+        if (gigsError && gigsError.code === 'PGRST202') {
+          // Function doesn't exist, use fallback query
+          console.log('⚠️ Matchmaking function not found, using fallback query')
+          const { data: fallbackGigs, error: fallbackError } = await supabase
+            .from('gigs')
+            .select('*')
+            .eq('status', 'PUBLISHED')
+            .order('created_at', { ascending: false })
+            .limit(3)
+
+          if (!fallbackError && fallbackGigs) {
+            const gigRecommendations = fallbackGigs.map((gig: any) => ({
+              id: gig.id,
+              type: 'gig' as const,
+              data: gig,
+              compatibility_score: 75, // Default score
+              compatibility_breakdown: {
+                gender: 20,
+                age: 20,
+                height: 15,
+                experience: 25,
+                specialization: 20,
+                total: 75
+              },
+              reason: 'Recent gigs (fallback)',
+              priority: 'medium' as const
+            }))
+
+            setMatchmakingData(prev => ({
+              ...prev,
+              topCompatibleGigs: gigRecommendations,
+              averageCompatibility: 75,
+              totalMatches: gigRecommendations.length
+            }))
+          }
+        } else if (!gigsError && compatibleGigs) {
           const gigRecommendations = compatibleGigs.map((gig: any) => ({
             id: gig.gig_id,
             type: 'gig' as const,
@@ -562,8 +603,14 @@ export default function Dashboard() {
         }
       }
 
-    } catch (error) {
-      console.error('Error loading matchmaking data:', error)
+    } catch (error: any) {
+      console.error('Error loading matchmaking data:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        fullError: error
+      })
     } finally {
       setMatchmakingLoading(false)
     }
