@@ -37,7 +37,6 @@ CREATE POLICY "Users can unsave gigs" ON public.saved_gigs
 
 -- Grant necessary permissions
 GRANT SELECT, INSERT, DELETE ON public.saved_gigs TO authenticated;
-GRANT USAGE ON SEQUENCE saved_gigs_id_seq TO authenticated;
 
 -- Add comments for documentation
 COMMENT ON TABLE public.saved_gigs IS 'Table for storing user-saved/bookmarked gigs';
