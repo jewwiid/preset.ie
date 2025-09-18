@@ -188,37 +188,53 @@ async function syncClothingDataWithProfile(userId: string, profileId: string) {
   if (!supabase) return
 
   try {
-        // Fetch user's detailed clothing sizes
-        const { data: clothingSizes, error: clothingError } = await supabase
-          .from('user_clothing_sizes')
-          .select('clothing_type, size_value, size_system_id')
-          .eq('profile_id', profileId)
+        // Fetch user's profile data (clothing sizes and measurements are stored directly in users_profile)
+        const { data: profileData, error: profileError } = await supabase
+          .from('users_profile')
+          .select('clothing_sizes, measurements, height_cm, shoe_size')
+          .eq('id', profileId)
+          .single()
 
-    if (clothingError) {
-      console.error('Error fetching clothing sizes:', clothingError)
+    if (profileError) {
+      console.error('Error fetching profile data:', {
+        message: profileError?.message || 'No message',
+        code: profileError?.code || 'No code',
+        details: profileError?.details || 'No details',
+        hint: profileError?.hint || 'No hint',
+        fullError: profileError,
+        errorType: typeof profileError,
+        errorKeys: profileError ? Object.keys(profileError) : 'No keys',
+        errorStringified: JSON.stringify(profileError)
+      })
       return
     }
 
-        // Fetch user's measurements
-        const { data: measurements, error: measurementError } = await supabase
-          .from('user_measurements')
-          .select('measurement_type, measurement_value, unit')
-          .eq('profile_id', profileId)
-
-    if (measurementError) {
-      console.error('Error fetching measurements:', measurementError)
-      return
-    }
+    // Extract clothing sizes from the profile data
+    const clothingSizes = profileData?.clothing_sizes || []
+    
+    // Extract measurements from the profile data
+    const measurements = profileData?.measurements || {}
+    const heightCm = profileData?.height_cm
+    const shoeSize = profileData?.shoe_size
 
     // Format clothing sizes for display
-    const clothingSizeStrings = clothingSizes?.map(size => {
-      return `${size.clothing_type}: ${size.size_value}`
-    }) || []
+    const clothingSizeStrings = Array.isArray(clothingSizes) ? clothingSizes : []
 
     // Format measurements for display
-    const measurementStrings = measurements?.map(measurement => {
-      return `${measurement.measurement_type}: ${measurement.measurement_value} ${measurement.unit}`
-    }) || []
+    const measurementStrings = []
+    if (heightCm) {
+      measurementStrings.push(`Height: ${heightCm}cm`)
+    }
+    if (shoeSize) {
+      measurementStrings.push(`Shoe Size: ${shoeSize}`)
+    }
+    if (measurements && typeof measurements === 'object') {
+      Object.entries(measurements).forEach(([key, value]) => {
+        if (value) {
+          measurementStrings.push(`${key}: ${value}`)
+        }
+      })
+    }
 
     // Combine measurements into a single string
     const measurementsString = measurementStrings.length > 0 ? measurementStrings.join(', ') : undefined

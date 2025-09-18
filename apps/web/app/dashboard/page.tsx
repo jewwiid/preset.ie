@@ -314,8 +314,8 @@ export default function Dashboard() {
         gigsQuery = gigsQuery.eq('owner_user_id', user.id)
         console.log('🔍 Filtering gigs for contributor with user.id:', user.id)
       } else {
-        gigsQuery = gigsQuery.eq('status', 'published')
-        console.log('🔍 Filtering gigs for talent with status: published')
+        gigsQuery = gigsQuery.eq('status', 'PUBLISHED')
+        console.log('🔍 Filtering gigs for talent with status: PUBLISHED')
       }
 
       const { data: gigs, error: gigsError } = await gigsQuery
@@ -961,7 +961,7 @@ export default function Dashboard() {
                         {new Date(gig.created_at).toLocaleDateString()}
                       </span>
                       <span className={`text-xs px-2 py-1 rounded-full ${
-                        gig.status === 'published' 
+                        gig.status === 'PUBLISHED' 
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                           : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
                       }`}>
