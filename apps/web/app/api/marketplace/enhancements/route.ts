@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { EnhancementService } from '@/lib/services/enhancement.service';
+import { SubscriptionBenefitsService } from '@/lib/services/subscription-benefits.service';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,88 +55,25 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Get user's subscription tier
-    const { data: profile, error: profileError } = await supabase
-      .from('users_profile')
-      .select('subscription_tier')
-      .eq('id', userId)
-      .single();
+    // Try to apply enhancement using subscription benefits first
+    const result = await EnhancementService.applyEnhancementWithSubscription(
+      listingId, 
+      userId, 
+      enhancementType
+    );
 
-    if (profileError || !profile) {
+    if (result.success) {
       return NextResponse.json({ 
-        error: 'User profile not found' 
-      }, { status: 404 });
+        success: true, 
+        message: result.message 
+      });
     }
 
-    // Check if user has subscription benefits
-    if (profile.subscription_tier !== 'FREE') {
-      const { data: canUse, error: bumpError } = await supabase
-        .rpc('can_use_monthly_bump', { p_user_id: userId });
-      
-      if (bumpError) {
-        console.error('Error checking monthly bump eligibility:', bumpError);
-        return NextResponse.json({ 
-          error: 'Failed to check subscription benefits' 
-        }, { status: 500 });
-      }
-
-      if (canUse) {
-        // Use subscription benefit
-        const enhancementType = profile.subscription_tier === 'PLUS' ? 'priority_bump' : 'premium_bump';
-        const durationDays = profile.subscription_tier === 'PLUS' ? 3 : 7;
-        
-        const startsAt = new Date();
-        const expiresAt = new Date(startsAt.getTime() + durationDays * 24 * 60 * 60 * 1000);
-
-        // Create enhancement record
-        const { data: enhancement, error: enhancementError } = await supabase
-          .from('listing_enhancements')
-          .insert({
-            listing_id: listingId,
-            user_id: userId,
-            enhancement_type: enhancementType,
-            payment_intent_id: `subscription_${userId}_${Date.now()}`,
-            amount_cents: 0, // Free for subscribers
-            duration_days: durationDays,
-            starts_at: startsAt.toISOString(),
-            expires_at: expiresAt.toISOString()
-          })
-          .select()
-          .single();
-
-        if (enhancementError) {
-          console.error('Error creating enhancement:', enhancementError);
-          return NextResponse.json({ 
-            error: 'Failed to create enhancement' 
-          }, { status: 500 });
-        }
-
-        // Update subscription benefit usage
-        const { error: updateError } = await supabase
-          .from('subscription_benefits')
-          .update({
-            used_this_month: supabase.sql`used_this_month + 1`
-          })
-          .eq('user_id', userId)
-          .eq('benefit_type', 'monthly_bump');
-
-        if (updateError) {
-          console.error('Error updating subscription benefit usage:', updateError);
-        }
-
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Enhancement applied using subscription benefit',
-          enhancement: enhancement
-        });
-      }
-    }
-
-    // Fall back to paid enhancement
+    // Fall back to requiring payment
     return NextResponse.json({ 
-      error: 'Payment required for enhancement',
-      requiresPayment: true
-    }, { status: 402 });
+      error: result.message,
+      requiresPayment: result.requiresPayment || false
+    }, { status: result.requiresPayment ? 402 : 400 });
     
   } catch (error) {
     console.error('Enhancement API error:', error);

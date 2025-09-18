@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+
+export async function GET(request: NextRequest) {
+  try {
+    // Verify this is a cron request from Vercel
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    console.log('Running enhancement expiration cron job...');
+
+    // Call the database function to expire enhancements
+    const { data, error } = await supabase
+      .rpc('expire_listing_enhancements');
+
+    if (error) {
+      console.error('Error expiring enhancements:', error);
+      return NextResponse.json({ 
+        error: 'Failed to expire enhancements',
+        details: error.message 
+      }, { status: 500 });
+    }
+
+    console.log(`Expired ${data || 0} enhancements successfully`);
+
+    return NextResponse.json({ 
+      success: true, 
+      expired_count: data || 0,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Cron job error:', error);
+    return NextResponse.json({ 
+      error: 'Cron job failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}
+
+// Also support POST for manual triggers
+export async function POST(request: NextRequest) {
+  return GET(request);
+}

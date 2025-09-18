@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/expire-enhancements",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/reset-monthly-benefits", 
+      "schedule": "0 0 1 * *"
+    }
+  ]
+}

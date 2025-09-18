@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { SubscriptionBenefitsService } from './subscription-benefits.service';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -128,5 +129,58 @@ export class EnhancementService {
       PLUS: { monthly_bumps: 1, bump_type: 'priority_bump' },
       PRO: { monthly_bumps: 3, bump_type: 'premium_bump' }
     };
+  }
+
+  /**
+   * Apply enhancement using subscription benefits (free for subscribers)
+   */
+  static async applyEnhancementWithSubscription(
+    listingId: string, 
+    userId: string, 
+    enhancementType: string
+  ): Promise<{ success: boolean; message: string; requiresPayment?: boolean }> {
+    try {
+      // Get user's subscription tier
+      const { data: profile, error: profileError } = await supabase
+        .from('users_profile')
+        .select('subscription_tier')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileError || !profile) {
+        return { success: false, message: 'User profile not found' };
+      }
+
+      // Check if user can use subscription benefits
+      if (profile.subscription_tier !== 'FREE') {
+        const canUseBenefit = await SubscriptionBenefitsService.checkMonthlyBumpEligibility(
+          userId, 
+          profile.subscription_tier
+        );
+
+        if (canUseBenefit && enhancementType === 'basic_bump') {
+          const success = await SubscriptionBenefitsService.useMonthlyBump(userId, listingId);
+          if (success) {
+            return { 
+              success: true, 
+              message: 'Enhancement applied using subscription benefit' 
+            };
+          }
+        }
+      }
+
+      // Fall back to requiring payment
+      return { 
+        success: false, 
+        message: 'Payment required for enhancement', 
+        requiresPayment: true 
+      };
+    } catch (error) {
+      console.error('Error applying enhancement with subscription:', error);
+      return { 
+        success: false, 
+        message: 'Failed to apply enhancement' 
+      };
+    }
   }
 }
