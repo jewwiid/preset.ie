@@ -68,7 +68,7 @@ export function NavBar() {
     const baseItems = [
       { label: 'Matchmaking', href: '/matchmaking', icon: Target, requiresAuth: true },
       { label: 'Messages', href: '/messages', icon: MessageSquare, requiresAuth: true },
-      { label: 'Marketplace', href: '/marketplace', icon: Store, requiresAuth: true },
+      // Marketplace is handled by dropdown, not as a base item
     ]
 
     // Role-specific additions
