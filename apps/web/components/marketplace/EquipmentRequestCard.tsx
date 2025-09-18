@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, MapPin, User, MessageCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import RequestConversationModal from './RequestConversationModal';
 
 interface EquipmentRequestCardProps {
   request: {
@@ -41,6 +42,7 @@ interface EquipmentRequestCardProps {
 }
 
 export default function EquipmentRequestCard({ request, showActions = true }: EquipmentRequestCardProps) {
+  const [isConversationOpen, setIsConversationOpen] = useState(false);
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -248,6 +250,14 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
                 Respond
               </Link>
             </Button>
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setIsConversationOpen(true)}
+              title="Start conversation"
+            >
+              <MessageCircle className="w-4 h-4" />
+            </Button>
           </div>
         )}
 
@@ -259,6 +269,14 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
           </div>
         </div>
       </CardContent>
+
+      {/* Conversation Modal */}
+      <RequestConversationModal
+        requestId={request.id}
+        isOpen={isConversationOpen}
+        onClose={() => setIsConversationOpen(false)}
+        responderId={request.requester.id}
+      />
     </Card>
   );
 }
