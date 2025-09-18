@@ -1,67 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // GET /api/marketplace/listings - Browse listings with filters
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
-    // Parse query parameters
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
-    const offset = (page - 1) * limit;
-    
+    // Extract filter parameters
     const category = searchParams.get('category');
     const mode = searchParams.get('mode'); // 'rent', 'sale', 'both'
-    const condition = searchParams.get('condition');
-    const city = searchParams.get('city');
-    const country = searchParams.get('country');
-    const verifiedOnly = searchParams.get('verified_only') === 'true';
+    const location = searchParams.get('location');
     const minPrice = searchParams.get('min_price');
     const maxPrice = searchParams.get('max_price');
-    const search = searchParams.get('search');
-    const sortBy = searchParams.get('sort_by') || 'created_at';
-    const sortOrder = searchParams.get('sort_order') || 'desc';
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const verifiedOnly = searchParams.get('verified_only') === 'true';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
 
     // Build query
     let query = supabase
       .from('listings')
       .select(`
-        id,
-        title,
-        description,
-        category,
-        condition,
-        mode,
-        rent_day_cents,
-        rent_week_cents,
-        sale_price_cents,
-        retainer_mode,
-        retainer_cents,
-        deposit_cents,
-        borrow_ok,
-        quantity,
-        location_city,
-        location_country,
-        verified_only,
-        status,
-        created_at,
-        updated_at,
-        owner_id,
-        users_profile!listings_owner_id_fkey (
+        *,
+        owner:users_profile!listings_owner_id_fkey(
           id,
+          username,
           display_name,
-          handle,
           avatar_url,
-          verified_id
+          verified,
+          rating
+        ),
+        listing_images(
+          id,
+          path,
+          sort_order,
+          alt_text
         )
       `)
       .eq('status', 'active')
+      .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
     // Apply filters
@@ -73,57 +55,31 @@ export async function GET(request: NextRequest) {
       query = query.eq('mode', mode);
     }
     
-    if (condition) {
-      query = query.eq('condition', condition);
+    if (location) {
+      query = query.ilike('location_city', `%${location}%`);
     }
     
-    if (city) {
-      query = query.ilike('location_city', `%${city}%`);
+    if (minPrice) {
+      query = query.gte('rent_day_cents', parseInt(minPrice) * 100);
     }
     
-    if (country) {
-      query = query.ilike('location_country', `%${country}%`);
+    if (maxPrice) {
+      query = query.lte('rent_day_cents', parseInt(maxPrice) * 100);
     }
     
     if (verifiedOnly) {
       query = query.eq('verified_only', true);
     }
-    
-    if (minPrice) {
-      const minCents = parseInt(minPrice) * 100;
-      query = query.or(`rent_day_cents.gte.${minCents},sale_price_cents.gte.${minCents}`);
-    }
-    
-    if (maxPrice) {
-      const maxCents = parseInt(maxPrice) * 100;
-      query = query.or(`rent_day_cents.lte.${maxCents},sale_price_cents.lte.${maxCents}`);
-    }
-    
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
-    }
 
-    // Apply sorting
-    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-    const { data: listings, error } = await query;
+    const { data: listings, error, count } = await query;
 
     if (error) {
       console.error('Error fetching listings:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch listings' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to fetch listings' }, { status: 500 });
     }
 
-    // Get total count for pagination
-    const { count } = await supabase
-      .from('listings')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'active');
-
     return NextResponse.json({
-      listings,
+      listings: listings || [],
       pagination: {
         page,
         limit,
@@ -134,177 +90,119 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Listings API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 // POST /api/marketplace/listings - Create new listing
 export async function POST(request: NextRequest) {
   try {
-    // Get auth token from header
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No token provided' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Create Supabase client
-    const supabaseAnon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Verify user
-    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    // Get user profile
-    const { data: userProfile, error: profileError } = await supabaseAdmin
-      .from('users_profile')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !userProfile) {
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      );
-    }
-
-    // Parse request body
     const body = await request.json();
     const {
       title,
       description,
       category,
-      condition = 'good',
-      mode = 'rent',
+      condition,
+      mode,
       rent_day_cents,
       rent_week_cents,
       sale_price_cents,
-      retainer_mode = 'none',
-      retainer_cents = 0,
-      deposit_cents = 0,
-      borrow_ok = false,
-      quantity = 1,
+      retainer_mode,
+      retainer_cents,
+      deposit_cents,
+      borrow_ok,
+      quantity,
       location_city,
       location_country,
       latitude,
       longitude,
-      verified_only = false
+      verified_only
     } = body;
 
+    // Get current user
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 });
+    }
+
+    // Get user profile
+    const { data: profile, error: profileError } = await supabase
+      .from('users_profile')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
     // Validate required fields
-    if (!title || !category) {
-      return NextResponse.json(
-        { error: 'Title and category are required' },
-        { status: 400 }
-      );
+    if (!title || !category || !mode) {
+      return NextResponse.json({ 
+        error: 'Missing required fields: title, category, mode' 
+      }, { status: 400 });
     }
 
     // Validate pricing based on mode
-    if (mode === 'rent' && (!rent_day_cents || rent_day_cents <= 0)) {
-      return NextResponse.json(
-        { error: 'Daily rent price is required for rental listings' },
-        { status: 400 }
-      );
+    if (mode === 'rent' || mode === 'both') {
+      if (!rent_day_cents || rent_day_cents <= 0) {
+        return NextResponse.json({ 
+          error: 'Daily rental price is required for rent/both mode' 
+        }, { status: 400 });
+      }
     }
 
-    if (mode === 'sale' && (!sale_price_cents || sale_price_cents <= 0)) {
-      return NextResponse.json(
-        { error: 'Sale price is required for sale listings' },
-        { status: 400 }
-      );
-    }
-
-    if (mode === 'both' && ((!rent_day_cents || rent_day_cents <= 0) || (!sale_price_cents || sale_price_cents <= 0))) {
-      return NextResponse.json(
-        { error: 'Both rent and sale prices are required for dual-mode listings' },
-        { status: 400 }
-      );
+    if (mode === 'sale' || mode === 'both') {
+      if (!sale_price_cents || sale_price_cents <= 0) {
+        return NextResponse.json({ 
+          error: 'Sale price is required for sale/both mode' 
+        }, { status: 400 });
+      }
     }
 
     // Create listing
-    const { data: listing, error: insertError } = await supabaseAdmin
+    const { data: listing, error: insertError } = await supabase
       .from('listings')
       .insert({
-        owner_id: userProfile.id,
+        owner_id: profile.id,
         title,
         description,
         category,
-        condition,
+        condition: condition || 'good',
         mode,
         rent_day_cents,
         rent_week_cents,
         sale_price_cents,
-        retainer_mode,
-        retainer_cents,
-        deposit_cents,
-        borrow_ok,
-        quantity,
+        retainer_mode: retainer_mode || 'none',
+        retainer_cents: retainer_cents || 0,
+        deposit_cents: deposit_cents || 0,
+        borrow_ok: borrow_ok || false,
+        quantity: quantity || 1,
         location_city,
         location_country,
         latitude,
         longitude,
-        verified_only,
-        status: 'active'
+        verified_only: verified_only || false
       })
-      .select(`
-        id,
-        title,
-        description,
-        category,
-        condition,
-        mode,
-        rent_day_cents,
-        rent_week_cents,
-        sale_price_cents,
-        retainer_mode,
-        retainer_cents,
-        deposit_cents,
-        borrow_ok,
-        quantity,
-        location_city,
-        location_country,
-        latitude,
-        longitude,
-        verified_only,
-        status,
-        created_at,
-        updated_at,
-        owner_id
-      `)
+      .select()
       .single();
 
     if (insertError) {
       console.error('Error creating listing:', insertError);
-      return NextResponse.json(
-        { error: 'Failed to create listing' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create listing' }, { status: 500 });
     }
 
-    return NextResponse.json({
-      listing,
-      message: 'Listing created successfully'
-    }, { status: 201 });
+    return NextResponse.json({ listing }, { status: 201 });
 
   } catch (error) {
     console.error('Create listing API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
