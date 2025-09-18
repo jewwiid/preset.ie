@@ -32,6 +32,11 @@ const marketplaceNavItems = [
     description: 'Manage offers'
   },
   {
+    name: 'Requests',
+    href: '/marketplace/requests',
+    description: 'Equipment requests'
+  },
+  {
     name: 'Reviews',
     href: '/marketplace/reviews',
     description: 'View reviews'
