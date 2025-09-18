@@ -61,8 +61,10 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Error fetching equipment requests:', error);
       
-      // Check if it's a table not found error
-      if (error.code === 'PGRST116' || error.message.includes('relation "equipment_requests" does not exist')) {
+      // Check if it's a table not found error (multiple possible error formats)
+      if (error.code === 'PGRST116' || 
+          error.message.includes('relation "equipment_requests" does not exist') ||
+          error.message.includes("Could not find the table 'public.equipment_requests' in the schema cache")) {
         return NextResponse.json({ 
           error: 'Equipment requests feature not yet available. Please apply database migration first.',
           requests: [],
