@@ -62,13 +62,30 @@ ADD COLUMN IF NOT EXISTS premium_badge BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS verified_badge BOOLEAN DEFAULT FALSE;
 
 -- Add constraints for enhancement fields
-ALTER TABLE listings 
-ADD CONSTRAINT IF NOT EXISTS valid_enhancement_type 
-CHECK (current_enhancement_type IS NULL OR current_enhancement_type IN ('basic_bump', 'priority_bump', 'premium_bump'));
-
-ALTER TABLE listings 
-ADD CONSTRAINT IF NOT EXISTS valid_boost_level 
-CHECK (boost_level >= 0 AND boost_level <= 3);
+DO $$
+BEGIN
+    -- Add enhancement type constraint if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'valid_enhancement_type' 
+        AND conrelid = 'listings'::regclass
+    ) THEN
+        ALTER TABLE listings 
+        ADD CONSTRAINT valid_enhancement_type 
+        CHECK (current_enhancement_type IS NULL OR current_enhancement_type IN ('basic_bump', 'priority_bump', 'premium_bump'));
+    END IF;
+    
+    -- Add boost level constraint if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'valid_boost_level' 
+        AND conrelid = 'listings'::regclass
+    ) THEN
+        ALTER TABLE listings 
+        ADD CONSTRAINT valid_boost_level 
+        CHECK (boost_level >= 0 AND boost_level <= 3);
+    END IF;
+END $$;
 
 -- =====================================================
 -- INDEXES FOR PERFORMANCE
