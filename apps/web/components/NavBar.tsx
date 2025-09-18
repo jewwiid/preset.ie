@@ -30,7 +30,9 @@ import {
   Settings,
   Heart,
   ChevronDown,
-  Target
+  Target,
+  ShoppingBag,
+  Store
 } from 'lucide-react'
 import { NotificationBell } from './NotificationBell'
 
@@ -66,6 +68,7 @@ export function NavBar() {
     const baseItems = [
       { label: 'Matchmaking', href: '/matchmaking', icon: Target, requiresAuth: true },
       { label: 'Messages', href: '/messages', icon: MessageSquare, requiresAuth: true },
+      { label: 'Marketplace', href: '/marketplace', icon: Store, requiresAuth: true },
     ]
 
     // Role-specific additions
@@ -263,6 +266,53 @@ export function NavBar() {
                         </Link>
                       </DropdownMenuItem>
                     )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {/* Marketplace Dropdown */}
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={`
+                        inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                        ${(isActive('/marketplace'))
+                          ? 'text-emerald-600 bg-emerald-50'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        }
+                      `}
+                    >
+                      <Store className="w-4 h-4 mr-2" />
+                      Marketplace
+                      <ChevronDown className="w-4 h-4 ml-1" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-48" align="start">
+                    <DropdownMenuItem asChild>
+                      <Link href="/marketplace" className="flex items-center">
+                        <Store className="mr-2 h-4 w-4" />
+                        Browse Marketplace
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/marketplace/create" className="flex items-center">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Listing
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/marketplace/my-listings" className="flex items-center">
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        My Listings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/marketplace/orders" className="flex items-center">
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        My Orders
+                      </Link>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
@@ -527,6 +577,71 @@ export function NavBar() {
                     My Gigs
                   </Link>
                 )}
+              </>
+            )}
+
+            {/* Marketplace Section */}
+            {user && (
+              <>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Marketplace
+                </div>
+                <Link
+                  href="/marketplace"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/marketplace')
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Store className="w-5 h-5 inline mr-3" />
+                  Browse Marketplace
+                </Link>
+                <Link
+                  href="/marketplace/create"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/marketplace/create')
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Plus className="w-5 h-5 inline mr-3" />
+                  Create Listing
+                </Link>
+                <Link
+                  href="/marketplace/my-listings"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/marketplace/my-listings')
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <ShoppingBag className="w-5 h-5 inline mr-3" />
+                  My Listings
+                </Link>
+                <Link
+                  href="/marketplace/orders"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/marketplace/orders')
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Briefcase className="w-5 h-5 inline mr-3" />
+                  My Orders
+                </Link>
               </>
             )}
 

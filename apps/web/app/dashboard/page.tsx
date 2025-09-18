@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { User, Target, TrendingUp, Users } from 'lucide-react'
 import CompatibilityScore from '../components/matchmaking/CompatibilityScore'
 import MatchmakingCard from '../components/matchmaking/MatchmakingCard'
+import MarketplaceNotifications from '@/components/marketplace/MarketplaceNotifications'
 import { CompatibilityData, Recommendation } from '../../lib/types/matchmaking'
 import SavedMediaGallery from '../components/playground/SavedImagesGallery'
 // Simplified credit calculation
@@ -667,7 +668,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
           {/* Enhanced Profile & Recent Gigs - 2 Column Layout */}
           <div className="mb-6 max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* Enhanced Profile & Status Card */}
               <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
@@ -932,6 +933,11 @@ export default function Dashboard() {
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Marketplace Notifications - Third Column */}
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+            <MarketplaceNotifications compact={true} limit={5} />
           </div>
             </div>
           </div>

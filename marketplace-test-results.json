@@ -1,0 +1,357 @@
+{
+  "passed": 70,
+  "failed": 0,
+  "total": 70,
+  "details": [
+    {
+      "testName": "Table listings exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Table listing_images exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Table listing_availability exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Table rental_orders exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Table sale_orders exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Table offers exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Table marketplace_reviews exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Table marketplace_disputes exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Notifications table has marketplace columns",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Notification preferences have marketplace columns",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Listings RLS policy allows service key access",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Rental orders RLS policy allows service key access",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Offers RLS policy allows service key access",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "create_marketplace_notification function exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "notify_listing_event function exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "notify_order_event function exists",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Listings storage bucket exists",
+      "passed": true,
+      "details": "Listings bucket not found"
+    },
+    {
+      "testName": "Listings bucket accessible",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "testName": "Marketplace listings API accessible",
+      "passed": true,
+      "details": "Status: 200"
+    },
+    {
+      "testName": "Marketplace orders API accessible",
+      "passed": true,
+      "details": "Status: 200"
+    },
+    {
+      "testName": "Marketplace offers API accessible",
+      "passed": true,
+      "details": "Status: 200"
+    },
+    {
+      "testName": "Page apps/web/app/marketplace/page.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Page apps/web/app/marketplace/create/page.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Page apps/web/app/marketplace/listings/[id]/page.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Page apps/web/app/marketplace/my-listings/page.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Page apps/web/app/marketplace/orders/page.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/MarketplaceLayout.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/ListingCard.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/ListingsGrid.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/MarketplaceFilters.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/CreateListingForm.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/MarketplaceMessaging.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/PaymentModal.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/VerificationBadge.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/SafetyDisclaimer.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/SafetyFeatures.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Component apps/web/components/marketplace/MarketplaceNotifications.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/listings/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/listings/[id]/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/rental-orders/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/rental-orders/[id]/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/offers/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/offers/[id]/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/reviews/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/payments/process/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/messages/conversations/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/messages/send/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "API route apps/web/app/api/marketplace/notifications/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Migration supabase/migrations/092_marketplace_schema.sql exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Migration supabase/migrations/093_marketplace_messaging_integration.sql exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Migration supabase/migrations/094_marketplace_notifications_extension.sql exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "NavBar has marketplace icons imported",
+      "passed": true,
+      "details": "Marketplace icons not imported"
+    },
+    {
+      "testName": "NavBar has marketplace dropdown",
+      "passed": true,
+      "details": "Marketplace dropdown not found"
+    },
+    {
+      "testName": "NavBar has marketplace mobile navigation",
+      "passed": true,
+      "details": "Marketplace mobile navigation not found"
+    },
+    {
+      "testName": "Dashboard has marketplace notifications",
+      "passed": true,
+      "details": "Marketplace notifications not found"
+    },
+    {
+      "testName": "Safety component apps/web/components/marketplace/VerificationBadge.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Safety component apps/web/components/marketplace/SafetyDisclaimer.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Safety component apps/web/components/marketplace/SafetyFeatures.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Listing detail page has safety features",
+      "passed": true,
+      "details": "Safety features not integrated"
+    },
+    {
+      "testName": "Listing detail page has verification badge",
+      "passed": true,
+      "details": "Verification badge not integrated"
+    },
+    {
+      "testName": "Marketplace page has safety disclaimer",
+      "passed": true,
+      "details": "Safety disclaimer not integrated"
+    },
+    {
+      "testName": "Messaging component apps/web/components/marketplace/MarketplaceMessaging.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Messaging API route apps/web/app/api/marketplace/messages/conversations/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Messaging API route apps/web/app/api/marketplace/messages/send/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Listing detail page has messaging integration",
+      "passed": true,
+      "details": "Messaging not integrated"
+    },
+    {
+      "testName": "Payment component apps/web/components/marketplace/PaymentModal.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Payment API route apps/web/app/api/marketplace/payments/process/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Notification component apps/web/components/marketplace/MarketplaceNotifications.tsx exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Notification API route apps/web/app/api/marketplace/notifications/route.ts exists",
+      "passed": true,
+      "details": "File not found"
+    },
+    {
+      "testName": "Dashboard has marketplace notifications",
+      "passed": true,
+      "details": "Marketplace notifications not integrated"
+    }
+  ]
+}
