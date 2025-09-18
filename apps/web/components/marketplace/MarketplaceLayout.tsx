@@ -35,6 +35,11 @@ const marketplaceNavItems = [
     name: 'Reviews',
     href: '/marketplace/reviews',
     description: 'View reviews'
+  },
+  {
+    name: 'Enhancements Demo',
+    href: '/marketplace/enhancements-demo',
+    description: 'See enhancement system'
   }
 ];
 
