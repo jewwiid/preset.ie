@@ -66,9 +66,9 @@ export function NavBar() {
 
     // Base items for all authenticated users
     const baseItems = [
-      { label: 'Matchmaking', href: '/matchmaking', icon: Target, requiresAuth: true },
       { label: 'Messages', href: '/messages', icon: MessageSquare, requiresAuth: true },
       // Marketplace is handled by dropdown, not as a base item
+      // Matchmaking is accessible via dashboard, not as a main nav item
     ]
 
     // Role-specific additions
