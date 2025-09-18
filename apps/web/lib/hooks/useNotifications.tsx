@@ -195,11 +195,24 @@ export function useNotifications(): UseNotificationsResult {
           .single()
 
         if (createError) {
-          console.error('Failed to create default preferences:', createError)
-          return
+          console.error('Failed to create default preferences:', {
+            message: createError.message,
+            code: createError.code,
+            details: createError.details,
+            hint: createError.hint,
+            fullError: createError
+          })
+          
+          // If table doesn't exist, set default preferences in memory
+          if (createError.code === 'PGRST205' || createError.message.includes('Could not find the table')) {
+            console.log('Notification preferences table not found, using defaults in memory')
+            data = defaultPrefs
+          } else {
+            return
+          }
+        } else {
+          data = newPrefs
         }
-
-        data = newPrefs
       } else if (error) {
         // Handle table not found gracefully
         if (error.code === 'PGRST205' || error.message.includes('Could not find the table')) {
@@ -223,7 +236,13 @@ export function useNotifications(): UseNotificationsResult {
             vibration_enabled: true
           }
         } else {
-          console.error('Failed to fetch preferences:', error)
+          console.error('Failed to fetch preferences:', {
+            message: error.message,
+            code: error.code,
+            details: error.details,
+            hint: error.hint,
+            fullError: error
+          })
           return
         }
       }
