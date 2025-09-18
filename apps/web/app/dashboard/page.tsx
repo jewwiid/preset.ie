@@ -322,11 +322,14 @@ export default function Dashboard() {
 
       if (gigsError) {
         console.error('❌ Error fetching gigs:', {
-          message: gigsError.message,
-          code: gigsError.code,
-          details: gigsError.details,
-          hint: gigsError.hint,
-          fullError: gigsError
+          message: gigsError?.message || 'No message',
+          code: gigsError?.code || 'No code',
+          details: gigsError?.details || 'No details',
+          hint: gigsError?.hint || 'No hint',
+          fullError: gigsError,
+          errorType: typeof gigsError,
+          errorKeys: gigsError ? Object.keys(gigsError) : 'No keys',
+          errorStringified: JSON.stringify(gigsError)
         })
       } else {
         console.log('✅ Fetched filtered gigs:', gigs)
@@ -605,11 +608,14 @@ export default function Dashboard() {
 
     } catch (error: any) {
       console.error('Error loading matchmaking data:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-        fullError: error
+        message: error?.message || 'No message',
+        code: error?.code || 'No code',
+        details: error?.details || 'No details',
+        hint: error?.hint || 'No hint',
+        fullError: error,
+        errorType: typeof error,
+        errorKeys: error ? Object.keys(error) : 'No keys',
+        errorStringified: JSON.stringify(error)
       })
     } finally {
       setMatchmakingLoading(false)
