@@ -185,7 +185,16 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           .limit(50)
 
         if (gigsError) {
-          console.error('Error searching gigs:', gigsError)
+          console.error('Error searching gigs:', {
+            message: gigsError?.message || 'No message',
+            code: gigsError?.code || 'No code',
+            details: gigsError?.details || 'No details',
+            hint: gigsError?.hint || 'No hint',
+            fullError: gigsError,
+            errorType: typeof gigsError,
+            errorKeys: gigsError ? Object.keys(gigsError) : 'No keys',
+            errorStringified: JSON.stringify(gigsError)
+          })
           return
         }
 

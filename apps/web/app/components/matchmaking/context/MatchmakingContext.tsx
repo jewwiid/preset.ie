@@ -100,7 +100,16 @@ export const MatchmakingProvider: React.FC<MatchmakingProviderProps> = ({ childr
       })
 
       if (gigsError) {
-        console.error('Error fetching compatible gigs:', gigsError)
+        console.error('Error fetching compatible gigs:', {
+          message: gigsError?.message || 'No message',
+          code: gigsError?.code || 'No code',
+          details: gigsError?.details || 'No details',
+          hint: gigsError?.hint || 'No hint',
+          fullError: gigsError,
+          errorType: typeof gigsError,
+          errorKeys: gigsError ? Object.keys(gigsError) : 'No keys',
+          errorStringified: JSON.stringify(gigsError)
+        })
         
         // Handle specific schema cache errors gracefully
         if (gigsError.code === 'PGRST200' && gigsError.message?.includes('relationship')) {
