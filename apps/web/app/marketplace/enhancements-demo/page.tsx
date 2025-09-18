@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import ListingEnhancementModal from '@/components/marketplace/ListingEnhancementModal';
 import EnhancedListingCard from '@/components/marketplace/EnhancedListingCard';
-import { Plus, Star, Zap, Crown } from 'lucide-react';
+import { Plus, Star, Zap, Crown, TrendingUp } from 'lucide-react';
 
 // Mock data for demonstration
 const mockListings = [
