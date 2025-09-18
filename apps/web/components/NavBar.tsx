@@ -131,7 +131,7 @@ export function NavBar() {
         .from('users_profile')
         .select('avatar_url, display_name, role_flags, handle')  // Include handle
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle() // Use maybeSingle() instead of single() to handle no results gracefully
 
       if (error) {
         console.warn('❌ NavBar: Simple profile fetch failed:', error.message)
@@ -140,6 +140,9 @@ export function NavBar() {
         console.log('✅ NavBar: Simple profile fetch success:', { hasAvatar: !!data.avatar_url })
         setProfile(data)
         setIsAdmin(data.role_flags?.includes('ADMIN'))
+      } else {
+        console.log('ℹ️ NavBar: No profile found for user, setting profile to null')
+        setProfile(null)
       }
     } catch (error: any) {
       console.error('💥 NavBar: Simple profile fetch error:', error.message)
