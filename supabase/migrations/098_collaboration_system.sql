@@ -89,10 +89,7 @@ CREATE TABLE IF NOT EXISTS collab_applications (
   CONSTRAINT valid_application CHECK (
     (application_type = 'role' AND role_id IS NOT NULL) OR
     (application_type = 'general' AND role_id IS NULL)
-  ),
-  CONSTRAINT different_users CHECK (applicant_id != (
-    SELECT creator_id FROM collab_projects WHERE id = project_id
-  ))
+  )
 );
 
 -- PROJECT GEAR OFFERS TABLE (for equipment offers)
@@ -114,10 +111,7 @@ CREATE TABLE IF NOT EXISTS collab_gear_offers (
   CONSTRAINT valid_gear_offer CHECK (
     (offer_type IN ('rent', 'borrow') AND daily_rate_cents IS NOT NULL AND daily_rate_cents > 0) OR
     (offer_type = 'sell' AND total_price_cents IS NOT NULL AND total_price_cents > 0)
-  ),
-  CONSTRAINT different_users CHECK (offerer_id != (
-    SELECT creator_id FROM collab_projects WHERE id = project_id
-  ))
+  )
 );
 
 -- PROJECT PARTICIPANTS TABLE (track who's involved in projects)
