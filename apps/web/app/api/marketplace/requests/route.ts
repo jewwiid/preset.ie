@@ -60,8 +60,24 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching equipment requests:', error);
+      
+      // Check if it's a table not found error
+      if (error.code === 'PGRST116' || error.message.includes('relation "equipment_requests" does not exist')) {
+        return NextResponse.json({ 
+          error: 'Equipment requests feature not yet available. Please apply database migration first.',
+          requests: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            has_more: false
+          }
+        }, { status: 503 });
+      }
+      
       return NextResponse.json({ 
-        error: 'Failed to fetch equipment requests' 
+        error: 'Failed to fetch equipment requests',
+        details: error.message
       }, { status: 500 });
     }
 

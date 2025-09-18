@@ -79,7 +79,8 @@ export default function EquipmentRequestsPage() {
       const response = await fetch(`/api/marketplace/requests?${params}`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch requests');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch requests');
       }
 
       const data = await response.json();
@@ -279,13 +280,24 @@ export default function EquipmentRequestsPage() {
         <Card className="mb-8 border-red-200 bg-red-50">
           <CardContent className="p-4">
             <p className="text-red-600">{error}</p>
-            <Button 
-              variant="outline" 
-              onClick={() => fetchRequests(1, true)}
-              className="mt-2"
-            >
-              Try Again
-            </Button>
+            {error.includes('migration') ? (
+              <div className="mt-3">
+                <p className="text-sm text-gray-600 mb-2">
+                  To enable the equipment requests feature, please apply the database migration:
+                </p>
+                <code className="block bg-gray-100 p-2 rounded text-sm">
+                  supabase/migrations/096_equipment_requests.sql
+                </code>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={() => fetchRequests(1, true)}
+                className="mt-2"
+              >
+                Try Again
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
