@@ -80,6 +80,15 @@ export default function EquipmentRequestsPage() {
       
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle migration not applied case (503 status)
+        if (response.status === 503) {
+          setError(errorData.error || 'Equipment requests feature not yet available');
+          setRequests([]);
+          setHasMore(false);
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to fetch requests');
       }
 
@@ -280,14 +289,18 @@ export default function EquipmentRequestsPage() {
         <Card className="mb-8 border-red-200 bg-red-50">
           <CardContent className="p-4">
             <p className="text-red-600">{error}</p>
-            {error.includes('migration') ? (
+            {(error.includes('migration') || error.includes('not yet available')) ? (
               <div className="mt-3">
                 <p className="text-sm text-gray-600 mb-2">
                   To enable the equipment requests feature, please apply the database migration:
                 </p>
-                <code className="block bg-gray-100 p-2 rounded text-sm">
-                  supabase/migrations/096_equipment_requests.sql
-                </code>
+                <div className="bg-gray-100 p-3 rounded text-sm">
+                  <p className="font-medium mb-1">Migration File:</p>
+                  <code className="block">supabase/migrations/096_equipment_requests.sql</code>
+                  <p className="mt-2 text-xs text-gray-500">
+                    Copy the contents of this file and run it in your Supabase SQL Editor
+                  </p>
+                </div>
               </div>
             ) : (
               <Button 
