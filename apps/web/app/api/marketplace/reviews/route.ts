@@ -36,14 +36,14 @@ export async function GET(request: NextRequest) {
         comment,
         response,
         created_at,
-        users_profile!marketplace_reviews_author_id_fkey (
+        author:users_profile!marketplace_reviews_author_id_fkey (
           id,
           display_name,
           handle,
           avatar_url,
           verified_id
         ),
-        users_profile!marketplace_reviews_subject_user_id_fkey (
+        subject_user:users_profile!marketplace_reviews_subject_user_id_fkey (
           id,
           display_name,
           handle,
