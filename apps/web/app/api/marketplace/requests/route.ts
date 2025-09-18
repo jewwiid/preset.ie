@@ -26,8 +26,7 @@ export async function GET(request: NextRequest) {
           display_name,
           handle,
           avatar_url,
-          verified_id,
-          rating
+          verified_id
         ),
         responses:request_responses(
           id,
