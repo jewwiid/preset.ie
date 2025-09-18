@@ -213,21 +213,45 @@ export function NavBar() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:ml-8 md:flex md:space-x-1">
-              {/* Dashboard - Always First */}
+              {/* Dashboard Dropdown */}
               {user && (
-                <Link
-                  href="/dashboard"
-                  className={`
-                    inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                    ${(isActive('/dashboard'))
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <Home className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={`
+                        inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                        ${(isActive('/dashboard') || isActive('/profile') || isActive('/matchmaking'))
+                          ? 'text-emerald-600 bg-emerald-50'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        }
+                      `}
+                    >
+                      <Home className="w-4 h-4 mr-2" />
+                      Dashboard
+                      <ChevronDown className="w-4 h-4 ml-1" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-48" align="start">
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" className="flex items-center">
+                        <Home className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/matchmaking" className="flex items-center">
+                        <Target className="mr-2 h-4 w-4" />
+                        Matchmaking
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
 
               {/* Gigs Dropdown */}
@@ -512,22 +536,55 @@ export function NavBar() {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 pb-3 pt-2">
-            {/* Dashboard - Always First */}
+            {/* Dashboard Section */}
             {user && (
-              <Link
-                href="/dashboard"
-                className={`
-                  block px-3 py-2 text-base font-medium rounded-md
-                  ${isActive('/dashboard')
-                    ? 'text-emerald-600 bg-emerald-50'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }
-                `}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Home className="w-5 h-5 inline mr-3" />
-                Dashboard
-              </Link>
+              <>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Dashboard
+                </div>
+                <Link
+                  href="/dashboard"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/dashboard')
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Home className="w-5 h-5 inline mr-3" />
+                  Dashboard
+                </Link>
+                <Link
+                  href="/profile"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/profile')
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <User className="w-5 h-5 inline mr-3" />
+                  Profile
+                </Link>
+                <Link
+                  href="/matchmaking"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/matchmaking')
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Target className="w-5 h-5 inline mr-3" />
+                  Matchmaking
+                </Link>
+              </>
             )}
 
             {/* Gigs Section */}
