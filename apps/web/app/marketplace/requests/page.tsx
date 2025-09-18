@@ -72,7 +72,7 @@ export default function EquipmentRequestsPage() {
         limit: '20'
       });
       
-      if (selectedCategory) params.append('category', selectedCategory);
+      if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
       if (selectedCity) params.append('city', selectedCity);
       if (urgentOnly) params.append('urgent', 'true');
 
@@ -239,7 +239,7 @@ export default function EquipmentRequestsPage() {
                   <SelectValue placeholder="All categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All categories</SelectItem>
+                  <SelectItem value="all">All categories</SelectItem>
                   {CATEGORIES.map(category => (
                     <SelectItem key={category} value={category}>
                       {category.charAt(0).toUpperCase() + category.slice(1)}
