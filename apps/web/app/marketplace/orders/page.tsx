@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { supabase } from '@/lib/supabase';
 import MarketplaceLayout from '@/components/marketplace/MarketplaceLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,22 +75,63 @@ export default function OrdersPage() {
       setLoading(true);
       setError(null);
 
+      // Get the current session to get the access token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Error getting session:', {
+          message: sessionError?.message || 'No message',
+          code: sessionError?.code || 'No code',
+          details: sessionError?.details || 'No details',
+          hint: sessionError?.hint || 'No hint',
+          fullError: sessionError,
+          errorType: typeof sessionError,
+          errorKeys: sessionError ? Object.keys(sessionError) : 'No keys',
+          errorStringified: JSON.stringify(sessionError)
+        });
+        setError('Authentication error: ' + sessionError.message);
+        return;
+      }
+
+      if (!session?.access_token) {
+        console.error('No access token in session:', {
+          session: session,
+          hasAccessToken: !!session?.access_token,
+          hasUser: !!session?.user
+        });
+        setError('No authentication token available');
+        return;
+      }
+
+      console.log('Using access token:', session.access_token.substring(0, 20) + '...');
+
       const response = await fetch('/api/marketplace/rental-orders', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         }
       });
 
+      console.log('API Response status:', response.status);
+      console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
+
       const data = await response.json();
+      console.log('API Response data:', data);
 
       if (response.ok) {
         setOrders(data.orders || []);
       } else {
+        console.error('API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: data,
+          error: data.error
+        });
         setError(data.error || 'Failed to fetch orders');
       }
     } catch (err) {
       console.error('Error fetching orders:', err);
-      setError('An unexpected error occurred');
+      setError('An unexpected error occurred: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setLoading(false);
     }
