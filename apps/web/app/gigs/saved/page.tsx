@@ -112,9 +112,19 @@ export default function SavedGigsPage() {
         .order('saved_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching saved gigs:', error.message || error);
+        console.error('Error fetching saved gigs:', {
+          message: error?.message || 'No message',
+          code: error?.code || 'No code',
+          details: error?.details || 'No details',
+          hint: error?.hint || 'No hint',
+          fullError: error,
+          errorType: typeof error,
+          errorKeys: error ? Object.keys(error) : 'No keys',
+          errorStringified: JSON.stringify(error)
+        });
         // If table doesn't exist, show empty state
-        if (error.code === '42P01') {
+        if (error.code === '42P01' || error.code === 'PGRST205') {
+          console.log('📝 saved_gigs table does not exist, showing empty state');
           setSavedGigs([]);
         }
       } else {
