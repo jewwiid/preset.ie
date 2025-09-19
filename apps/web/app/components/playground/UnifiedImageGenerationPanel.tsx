@@ -22,6 +22,7 @@ import CinematicPromptBuilder from '../../../../../packages/services/src/cinemat
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import { useAuth } from '../../../lib/auth-context'
 import PresetSelector from './PresetSelector'
+import { ImageProviderSelector } from '../ImageProviderSelector'
 
 interface Preset {
   id: string
@@ -81,6 +82,7 @@ interface UnifiedImageGenerationPanelProps {
     enhancedPrompt?: string
     includeTechnicalDetails?: boolean
     includeStyleReferences?: boolean
+    selectedProvider?: 'nanobanana' | 'seedream'
   }) => Promise<void>
   onSettingsChange?: (settings: {
     resolution: string
@@ -122,6 +124,10 @@ export default function UnifiedImageGenerationPanel({
   const [intensity, setIntensity] = useState(1.0)
   const [numImages, setNumImages] = useState(1)
   const [currentPreset, setCurrentPreset] = useState<Preset | null>(null)
+  
+  // Provider selection state
+  const [selectedProvider, setSelectedProvider] = useState<'nanobanana' | 'seedream'>('nanobanana')
+  const [showProviderSelector, setShowProviderSelector] = useState(false)
   
   // Analysis modal state
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
@@ -397,7 +403,8 @@ export default function UnifiedImageGenerationPanel({
       cinematicParameters: enableCinematicMode ? cinematicParameters : undefined,
       enhancedPrompt: enableCinematicMode ? enhancedPrompt : undefined,
       includeTechnicalDetails: enableCinematicMode ? includeTechnicalDetails : undefined,
-      includeStyleReferences: enableCinematicMode ? includeStyleReferences : undefined
+      includeStyleReferences: enableCinematicMode ? includeStyleReferences : undefined,
+      selectedProvider: selectedProvider
     })
   }
 
@@ -554,7 +561,9 @@ export default function UnifiedImageGenerationPanel({
     }
   }
 
-  const totalCredits = numImages * 2
+  // Calculate credits based on selected provider
+  const creditsPerImage = selectedProvider === 'seedream' ? 2 : 1
+  const totalCredits = numImages * creditsPerImage
 
   return (
     <>
@@ -568,7 +577,7 @@ export default function UnifiedImageGenerationPanel({
           Create AI-generated images from text descriptions
         </CardDescription>
         {style && (
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex gap-2 flex-wrap">
             <Badge variant="outline" className="text-xs">
               Style: {currentPreset ? 
                 `🎨 ${currentPreset.name}` :
@@ -586,6 +595,9 @@ export default function UnifiedImageGenerationPanel({
                 Intensity: {intensity}
               </Badge>
             )}
+            <Badge variant="outline" className="text-xs">
+              Provider: {selectedProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌟 Seedream V4'}
+            </Badge>
           </div>
         )}
       </CardHeader>
@@ -605,6 +617,56 @@ export default function UnifiedImageGenerationPanel({
             numImages
           }}
         />
+      </CardContent>
+
+      {/* Provider Selection */}
+      <CardContent className="pb-4">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium">AI Provider</h3>
+              <p className="text-xs text-muted-foreground">
+                Choose your preferred image generation provider
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowProviderSelector(!showProviderSelector)}
+              className="text-purple-600 border-purple-200 hover:bg-purple-50"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              {showProviderSelector ? 'Hide' : 'Change'} Provider
+            </Button>
+          </div>
+          
+          {/* Current Provider Display */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-medium">
+                Using: {selectedProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌟 Seedream V4'}
+              </span>
+            </div>
+            <div className="text-xs text-gray-600">
+              {creditsPerImage} credit{creditsPerImage !== 1 ? 's' : ''} per image
+            </div>
+          </div>
+
+          {/* Provider Selection Modal */}
+          {showProviderSelector && (
+            <div className="p-4 border rounded-lg bg-white">
+              <ImageProviderSelector
+                selectedProvider={selectedProvider}
+                onProviderChange={(provider) => {
+                  setSelectedProvider(provider)
+                  setShowProviderSelector(false)
+                }}
+                userCredits={userCredits}
+              />
+            </div>
+          )}
+        </div>
       </CardContent>
       
       <CardContent className="space-y-4">
@@ -1211,7 +1273,7 @@ export default function UnifiedImageGenerationPanel({
             Credits: {userCredits}
           </Badge>
           <Badge variant="outline" className="text-xs">
-            Cost: {totalCredits} credits ({numImages} × 2)
+            Cost: {totalCredits} credits ({numImages} × {creditsPerImage})
           </Badge>
         </div>
         <div className="flex gap-2">

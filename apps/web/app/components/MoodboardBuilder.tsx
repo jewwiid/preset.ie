@@ -6,9 +6,10 @@ import { useAuth } from '../../lib/auth-context'
 import { Upload, Search, Sparkles, Save, Loader2, X, Palette, Clock, CheckCircle } from 'lucide-react'
 import { extractPaletteFromImages } from '../../lib/color-extractor'
 import { extractAIPaletteFromImages } from '../../lib/ai-color-extractor'
-import EnhancementModal from './EnhancementModal'
+import EnhancedEnhancementModal from './EnhancedEnhancementModal'
 import DraggableMasonryGrid from './DraggableMasonryGrid'
 import { optimizeImageForAPI, preloadImages, estimateProcessingTime, compressImageClientSide } from '../../lib/image-optimizer'
+import { ImageProviderSelector } from './ImageProviderSelector'
 
 interface MoodboardItem {
   id: string
@@ -36,6 +37,7 @@ interface EnhancementRequest {
   imageId: string
   enhancementType: 'lighting' | 'style' | 'background' | 'mood' | 'custom'
   prompt: string
+  selectedProvider?: 'nanobanana' | 'seedream'
 }
 
 interface MoodboardBuilderProps {
@@ -85,6 +87,10 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
   const [isSavingPositions, setIsSavingPositions] = useState(false)
   const [enhancementTasks, setEnhancementTasks] = useState<Map<string, { status: string, progress: number }>>(new Map())
   const [activeEnhancement, setActiveEnhancement] = useState<{ itemId: string, taskId: string, url: string, type: string, prompt: string } | null>(null)
+  
+  // Provider selection state for enhancements
+  const [selectedEnhancementProvider, setSelectedEnhancementProvider] = useState<'nanobanana' | 'seedream'>('nanobanana')
+  const [showEnhancementProviderSelector, setShowEnhancementProviderSelector] = useState(false)
 
   // Debug modal state
   useEffect(() => {
@@ -600,7 +606,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
   }
   
   // Add AI enhancement request
-  const addEnhancementRequest = (imageId: string, enhancementType: string, prompt: string) => {
+  const addEnhancementRequest = (imageId: string, enhancementType: string, prompt: string, provider?: 'nanobanana' | 'seedream') => {
     const maxEnhancements = limits?.aiEnhancements || 0
     if (enhancementRequests.length >= maxEnhancements) {
       setError(`AI enhancements limit reached: ${maxEnhancements}`)
@@ -610,7 +616,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     const newRequest: EnhancementRequest = { 
       imageId, 
       enhancementType: enhancementType as 'lighting' | 'style' | 'background' | 'mood' | 'custom', 
-      prompt 
+      prompt,
+      selectedProvider: provider || selectedEnhancementProvider
     }
     setEnhancementRequests(prev => [...prev, newRequest])
   }
@@ -620,8 +627,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     setEnhancementRequests(prev => prev.filter((_, i) => i !== index))
   }
 
-  // Enhance image with NanoBanana and replace in moodboard
-  const enhanceImage = async (itemId: string, enhancementType: string, prompt: string) => {
+  // Enhance image with selected provider and replace in moodboard
+  const enhanceImage = async (itemId: string, enhancementType: string, prompt: string, provider?: 'nanobanana' | 'seedream') => {
     console.log('enhanceImage called:', { itemId, enhancementType, prompt })
     const item = items.find(i => i.id === itemId)
     if (!item || !user) {
@@ -675,13 +682,15 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
       await preloadImages([item.url]).catch(err => console.log('Preload failed:', err))
 
       // Call enhancement API (production-ready)
-      const USE_MOCK = false; // Using real NanoBanana API
+      const USE_MOCK = false; // Using real API
+      const selectedProviderForEnhancement = provider || selectedEnhancementProvider
       const apiEndpoint = USE_MOCK ? '/api/enhance-image-mock' : '/api/enhance-image';
       console.log('Calling enhancement API:', apiEndpoint, {
         inputImageUrl: optimizedUrl,
         enhancementType,
         prompt,
-        moodboardId
+        moodboardId,
+        selectedProvider: selectedProviderForEnhancement
       })
       
       const response = await fetch(apiEndpoint, {
@@ -695,7 +704,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
           enhancementType,
           prompt: prompt || `Enhance this ${enhancementType} for a fashion moodboard`,
           strength: 0.8,
-          moodboardId
+          moodboardId,
+          selectedProvider: selectedProviderForEnhancement
         })
       }).catch(err => {
         console.error('Fetch error details:', err)
@@ -1499,6 +1509,49 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
               <div className="text-sm text-gray-600">
                 Select images to enhance with AI. Each enhancement costs $0.025.
               </div>
+
+              {/* Provider Selection for Enhancements */}
+              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900">AI Enhancement Provider</h3>
+                    <p className="text-xs text-gray-600">Choose your preferred AI provider for enhancements</p>
+                  </div>
+                  <button
+                    onClick={() => setShowEnhancementProviderSelector(!showEnhancementProviderSelector)}
+                    className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    {showEnhancementProviderSelector ? 'Hide' : 'Change'} Provider
+                  </button>
+                </div>
+                
+                {/* Current Provider Display */}
+                <div className="flex items-center justify-between p-2 bg-white rounded border">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium">
+                      Using: {selectedEnhancementProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌟 Seedream V4'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    {selectedEnhancementProvider === 'seedream' ? '2 credits' : '1 credit'} per enhancement
+                  </div>
+                </div>
+
+                {/* Provider Selection */}
+                {showEnhancementProviderSelector && (
+                  <div className="mt-3 p-3 bg-white rounded border">
+                    <ImageProviderSelector
+                      selectedProvider={selectedEnhancementProvider}
+                      onProviderChange={(provider) => {
+                        setSelectedEnhancementProvider(provider)
+                        setShowEnhancementProviderSelector(false)
+                      }}
+                      userCredits={userCredits?.current || 0}
+                    />
+                  </div>
+                )}
+              </div>
               
               {items.filter(item => item.source !== 'ai-enhanced').map((item, index) => (
                 <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
@@ -1740,18 +1793,18 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
 
       {/* Enhancement Modal */}
       {enhancementModal.isOpen && enhancementModal.itemId && (
-        <EnhancementModal
+        <EnhancedEnhancementModal
           isOpen={enhancementModal.isOpen}
           onClose={() => {
             console.log('Modal close requested')
             setEnhancementModal({ isOpen: false, itemId: null })
           }}
-          onEnhance={async (type, prompt) => {
+          onEnhance={async (type, prompt, provider) => {
             const itemId = enhancementModal.itemId
             if (itemId) {
-              console.log('Starting enhancement for item:', itemId, 'type:', type, 'prompt:', prompt)
+              console.log('Starting enhancement for item:', itemId, 'type:', type, 'prompt:', prompt, 'provider:', provider)
               // Start the enhancement - modal will close automatically
-              await enhanceImage(itemId, type, prompt)
+              await enhanceImage(itemId, type, prompt, provider)
             }
           }}
           itemUrl={items.find(i => i.id === enhancementModal.itemId)?.original_url || items.find(i => i.id === enhancementModal.itemId)?.url || ''}
@@ -1759,6 +1812,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
           credits={userCredits?.current || 0}
           enhancedUrl={items.find(i => i.id === enhancementModal.itemId)?.enhanced_url}
           isEnhancing={enhancingItems.has(enhancementModal.itemId)}
+          userProviderPreference={selectedEnhancementProvider}
         />
       )}
 

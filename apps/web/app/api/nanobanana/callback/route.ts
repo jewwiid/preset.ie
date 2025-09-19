@@ -1,254 +1,153 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-/**
- * NanoBanana Callback Handler
- * Receives async task completion notifications from NanoBanana API
- * Must respond within 15 seconds with HTTP 200
- */
 export async function POST(request: NextRequest) {
-  console.log('NanoBanana callback received');
-  
   try {
-    const payload = await request.json();
-    console.log('Callback payload:', JSON.stringify(payload, null, 2));
+    console.log('🔔 NanoBanana callback received')
     
-    // Quick response to acknowledge receipt (within 15 seconds requirement)
-    // Process heavy operations asynchronously
-    setImmediate(async () => {
-      await processCallback(payload);
-    });
+    const callbackData = await request.json()
+    console.log('Callback data:', callbackData)
     
-    // Respond immediately with 200 to acknowledge
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Callback received and processing' 
-    }, { status: 200 });
+    const { code, msg, data } = callbackData
     
-  } catch (error: any) {
-    console.error('Callback processing error:', error);
-    
-    // Still return 200 to prevent retries if we have parsing issues
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Processing error, but acknowledged' 
-    }, { status: 200 });
-  }
-}
-
-async function processCallback(payload: any) {
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-  
-  try {
-    const { code, data, msg } = payload;
-    console.log('Callback payload structure:', JSON.stringify(payload, null, 2));
-    
-    // According to NanoBanana docs, the structure is:
-    // { code: 200, msg: "success", data: { taskId: "...", info: { resultImageUrl: "..." } } }
-    const taskId = data?.taskId;
-    
-    if (!taskId) {
-      console.error('No taskId in callback payload. Available fields:', Object.keys(data || {}));
-      console.error('Full payload:', JSON.stringify(payload, null, 2));
-      return;
+    if (!data?.taskId) {
+      console.error('Missing taskId in callback data')
+      return NextResponse.json({ error: 'Missing taskId' }, { status: 400 })
     }
     
-    console.log('Using taskId:', taskId);
+    const taskId = data.taskId
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
     
-    // Get the task from our database
-    console.log('Looking for task with api_task_id:', taskId);
-    let { data: task, error: taskError } = await supabaseAdmin
-      .from('enhancement_tasks')
-      .select('*')
-      .eq('api_task_id', taskId)
-      .single();
-    
-    if (taskError) {
-      console.error('Error fetching task:', taskError);
+    if (code === 200) {
+      // Success - image generated
+      const resultImageUrl = data.info?.resultImageUrl
       
-      // Try looking by main id field as fallback
-      console.log('Trying fallback lookup by main id field');
-      const { data: fallbackTask, error: fallbackError } = await supabaseAdmin
+      if (!resultImageUrl) {
+        console.error('Missing resultImageUrl in successful callback')
+        return NextResponse.json({ error: 'Missing resultImageUrl' }, { status: 400 })
+      }
+      
+      console.log('✅ NanoBanana task completed successfully:', {
+        taskId,
+        resultImageUrl
+      })
+      
+      // Update the task status in database
+      const { error: updateError } = await supabaseAdmin
         .from('enhancement_tasks')
+        .update({
+          status: 'completed',
+          result_image_url: resultImageUrl,
+          completed_at: new Date().toISOString(),
+          error_message: null
+        })
+        .eq('id', taskId)
+      
+      if (updateError) {
+        console.error('Error updating task status:', updateError)
+      } else {
+        console.log('Task status updated successfully')
+      }
+      
+      // Also check if this is a playground generation task
+      const { data: playgroundTask, error: playgroundError } = await supabaseAdmin
+        .from('playground_generations')
         .select('*')
         .eq('id', taskId)
-        .single();
+        .single()
       
-      if (fallbackError || !fallbackTask) {
-        console.error('Task not found in either field:', taskId);
-        return;
-      }
-      
-      // Use fallback task
-      task = fallbackTask;
-    }
-    
-    if (!task) {
-      console.error('Task not found:', taskId);
-      return;
-    }
-    
-    console.log('Found task:', task.id, 'Status:', task.status);
-    
-    // Update task based on callback status
-    if (code === 200 && data?.info?.resultImageUrl) {
-      // Success - download and store the image
-      const resultUrl = data.info.resultImageUrl;
-      console.log('Enhancement successful! Result URL:', resultUrl);
-      
-      console.log('Enhancement successful, result URL:', resultUrl);
-      
-      // Download the image promptly (URLs expire in 10 minutes)
-      try {
-        console.log('Downloading image from:', resultUrl);
-        const imageResponse = await fetch(resultUrl);
-        
-        if (!imageResponse.ok) {
-          console.error('Failed to download image:', imageResponse.status);
-          throw new Error(`Failed to download: ${imageResponse.status}`);
-        }
-        
-        const imageBuffer = await imageResponse.arrayBuffer();
-        console.log('Downloaded image size:', imageBuffer.byteLength, 'bytes');
-        
-        // Store in Supabase Storage
-        const fileName = `enhanced_${taskId}_${Date.now()}.jpg`;
-        console.log('Uploading to bucket as:', fileName);
-        
-        const { data: uploadData, error: uploadError } = await supabaseAdmin
-          .storage
-          .from('moodboard-images')
-          .upload(fileName, imageBuffer, {
-            contentType: 'image/jpeg',
-            upsert: true
-          });
-        
-        if (uploadError) {
-          console.error('Failed to store enhanced image:', uploadError);
-          console.error('Upload error details:', JSON.stringify(uploadError, null, 2));
-          throw uploadError;
-        }
-        
-        console.log('Upload successful:', uploadData);
-        
-        // Get public URL
-        const { data: { publicUrl } } = supabaseAdmin
-          .storage
-          .from('moodboard-images')
-          .getPublicUrl(fileName);
-        
-        console.log('Public URL:', publicUrl);
-        
-        // Update task with success
-        await supabaseAdmin
-          .from('enhancement_tasks')
+      if (playgroundTask && !playgroundError) {
+        // Update playground generation with the result
+        const { error: updatePlaygroundError } = await supabaseAdmin
+          .from('playground_generations')
           .update({
-            status: 'completed',
-            result_url: publicUrl || resultUrl,
-            updated_at: new Date().toISOString()
+            generated_images: [{
+              url: resultImageUrl,
+              index: 1,
+              provider: 'nanobanana'
+            }],
+            status: 'completed'
           })
-          .eq('id', task.id);
+          .eq('id', taskId)
         
-        console.log('Task completed successfully:', taskId);
-        
-      } catch (downloadError) {
-        console.error('Failed to download/store image:', downloadError);
-        
-        // Still mark as completed but use original URL
-        await supabaseAdmin
-          .from('enhancement_tasks')
-          .update({
-            status: 'completed',
-            result_url: resultUrl,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', task.id);
+        if (updatePlaygroundError) {
+          console.error('Error updating playground generation:', updatePlaygroundError)
+        } else {
+          console.log('Playground generation updated successfully')
+        }
       }
-      
-    } else if (code === 400) {
-      // Content policy violation
-      await supabaseAdmin
-        .from('enhancement_tasks')
-        .update({
-          status: 'failed',
-          error_message: 'Content policy violation. Please rephrase your prompt.',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', task.id);
-      
-      // Refund the credit
-      await refundCredit(supabaseAdmin, task.user_id);
-      
-    } else if (code === 500 || code === 501) {
-      // Server error or generation failed
-      await supabaseAdmin
-        .from('enhancement_tasks')
-        .update({
-          status: 'failed',
-          error_message: msg || 'Generation failed. Please try again.',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', task.id);
-      
-      // Refund the credit
-      await refundCredit(supabaseAdmin, task.user_id);
       
     } else {
-      // Unknown status
-      console.error('Unknown callback status:', code, msg);
+      // Error - task failed
+      console.error('❌ NanoBanana task failed:', {
+        taskId,
+        code,
+        msg
+      })
       
-      await supabaseAdmin
+      // Update task status to failed
+      const { error: updateError } = await supabaseAdmin
         .from('enhancement_tasks')
         .update({
           status: 'failed',
-          error_message: 'Unknown error occurred',
-          updated_at: new Date().toISOString()
+          error_message: msg || 'Unknown error',
+          completed_at: new Date().toISOString()
         })
-        .eq('id', task.id);
+        .eq('id', taskId)
+      
+      if (updateError) {
+        console.error('Error updating failed task status:', updateError)
+      }
+      
+      // Also check if this is a playground generation task
+      const { data: playgroundTask, error: playgroundError } = await supabaseAdmin
+        .from('playground_generations')
+        .select('*')
+        .eq('id', taskId)
+        .single()
+      
+      if (playgroundTask && !playgroundError) {
+        // Update playground generation with error
+        const { error: updatePlaygroundError } = await supabaseAdmin
+          .from('playground_generations')
+          .update({
+            status: 'failed',
+            error_message: msg || 'Unknown error'
+          })
+          .eq('id', taskId)
+        
+        if (updatePlaygroundError) {
+          console.error('Error updating failed playground generation:', updatePlaygroundError)
+        }
+      }
     }
     
-  } catch (error: any) {
-    console.error('Async callback processing error:', error);
+    // Always return 200 to acknowledge receipt
+    return NextResponse.json({ 
+      status: 'received',
+      taskId,
+      processed: true
+    })
+    
+  } catch (error) {
+    console.error('Error processing NanoBanana callback:', error)
+    return NextResponse.json(
+      { 
+        error: 'Callback processing failed',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
   }
 }
 
-async function refundCredit(supabaseAdmin: any, userId: string) {
-  try {
-    // Get user's current credits
-    const { data: userCredits } = await supabaseAdmin
-      .from('user_credits')
-      .select('current_balance')
-      .eq('user_id', userId)
-      .single();
-    
-    if (userCredits) {
-      // Refund 1 credit
-      await supabaseAdmin
-        .from('user_credits')
-        .update({
-          current_balance: userCredits.current_balance + 1,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-      
-      // Log the refund
-      await supabaseAdmin
-        .from('credit_transactions')
-        .insert({
-          user_id: userId,
-          transaction_type: 'refund',
-          credits_used: -1,
-          provider: 'nanobanana',
-          status: 'completed',
-          created_at: new Date().toISOString()
-        });
-      
-      console.log('Credit refunded for user:', userId);
-    }
-  } catch (error) {
-    console.error('Failed to refund credit:', error);
-  }
+// Handle GET requests (for testing)
+export async function GET(request: NextRequest) {
+  return NextResponse.json({ 
+    message: 'NanoBanana callback endpoint is active',
+    timestamp: new Date().toISOString()
+  })
 }

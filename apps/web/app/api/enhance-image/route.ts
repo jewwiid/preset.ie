@@ -53,7 +53,8 @@ export async function POST(request: NextRequest) {
       enhancementType, 
       prompt, 
       strength = 0.8,
-      moodboardId 
+      moodboardId,
+      selectedProvider = 'nanobanana' // Default to nanobanana for backward compatibility
     } = await request.json();
 
     // Validate required fields
@@ -246,25 +247,99 @@ export async function POST(request: NextRequest) {
       numImages: 1
     };
 
-    console.log('Sending to NanoBanana:', JSON.stringify(enhancementPayload, null, 2));
+    console.log('Enhancement request:', {
+      provider: selectedProvider,
+      enhancementType,
+      prompt: prompt.substring(0, 100) + '...',
+      inputImageUrl: inputImageUrl.substring(0, 50) + '...'
+    });
 
-    // Call NanoBanana API - official endpoint from docs
-    let nanoBananaResponse;
-    let nanoBananaData;
+    let response;
+    let responseData;
+    let providerUsed = selectedProvider;
     
     try {
-      nanoBananaResponse = await fetch('https://api.nanobananaapi.ai/api/v1/nanobanana/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${nanoBananaApiKey}`
-        },
-        body: JSON.stringify(enhancementPayload)
-      });
+      if (selectedProvider === 'seedream') {
+        // Use Seedream for enhancement
+        console.log('Using Seedream for enhancement');
+        response = await fetch('https://api.wavespeed.ai/api/v3/bytedance/seedream-v4/edit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`
+          },
+          body: JSON.stringify({
+            prompt: `${enhancementType}: ${prompt}`,
+            images: [inputImageUrl],
+            size: '1024*1024',
+            enable_base64_output: false,
+            enable_sync_mode: false
+          })
+        });
+        
+        if (response.ok) {
+          responseData = await response.json();
+          // Handle Seedream async response pattern
+          if (responseData.data?.id) {
+            // Poll for results
+            let attempts = 0;
+            const maxAttempts = 30;
+            
+            while (attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              const resultResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${responseData.data.id}/result`, {
+                headers: {
+                  'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`
+                }
+              });
+              
+              if (resultResponse.ok) {
+                const resultData = await resultResponse.json();
+                if (resultData.data?.status === 'completed' && resultData.data?.outputs?.length > 0) {
+                  responseData = {
+                    code: 200,
+                    data: {
+                      generated_url: resultData.data.outputs[0]
+                    }
+                  };
+                  break;
+                }
+              }
+              attempts++;
+            }
+          }
+        }
+      } else {
+        // Use NanoBanana (default) - official API format
+        console.log('Using NanoBanana for enhancement');
+        
+        // Create callback URL for this request
+        const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://preset.ie'}/api/nanobanana/callback`
+        
+        // Build request according to official API spec
+        const nanobananaPayload = {
+          prompt: `${enhancementType}: ${prompt}`,
+          type: 'IMAGETOIAMGE', // Image editing mode
+          callBackUrl: callbackUrl,
+          numImages: 1,
+          watermark: 'Preset',
+          imageUrls: [inputImageUrl]
+        };
+        
+        response = await fetch('https://api.nanobananaapi.ai/api/v1/nanobanana/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${nanoBananaApiKey}`
+          },
+          body: JSON.stringify(nanobananaPayload)
+        });
+      }
 
-      nanoBananaData = await nanoBananaResponse.json();
+      responseData = await response.json();
     } catch (fetchError: any) {
-      console.error('Failed to call NanoBanana API:', fetchError);
+      console.error(`Failed to call ${selectedProvider} API:`, fetchError);
       
       // Check if it's a network error
       if (fetchError.message?.includes('fetch')) {
@@ -291,19 +366,19 @@ export async function POST(request: NextRequest) {
     }
     
     // Debug logging
-    console.log('NanoBanana API response:', JSON.stringify(nanoBananaData, null, 2));
+    console.log(`${providerUsed} API response:`, JSON.stringify(responseData, null, 2));
     
     // Handle different response codes
-    if (!nanoBananaResponse.ok || nanoBananaData.code !== 200) {
-      console.error('NanoBanana API error:', nanoBananaData);
+    if (!response.ok || responseData.code !== 200) {
+      console.error(`${providerUsed} API error:`, responseData);
       
       // Handle specific error cases
-      if (nanoBananaData.code === 402) {
+      if (responseData.code === 402) {
         return NextResponse.json(
           { 
             success: false, 
             error: 'Insufficient credits in enhancement service',
-            details: nanoBananaData.msg || 'Please contact support to add credits to your enhancement service account',
+            details: responseData.msg || 'Please contact support to add credits to your enhancement service account',
             code: 'ENHANCEMENT_SERVICE_CREDITS'
           },
           { status: 402 }
@@ -311,9 +386,9 @@ export async function POST(request: NextRequest) {
       }
       
       // Check if error message indicates URL issue
-      if (nanoBananaData.msg?.toLowerCase().includes('url') || 
-          nanoBananaData.msg?.toLowerCase().includes('image') ||
-          nanoBananaData.msg?.toLowerCase().includes('fetch')) {
+      if (responseData.msg?.toLowerCase().includes('url') || 
+          responseData.msg?.toLowerCase().includes('image') ||
+          responseData.msg?.toLowerCase().includes('fetch')) {
         console.error('URL issue detected:', inputImageUrl);
         return NextResponse.json(
           { 
@@ -328,8 +403,8 @@ export async function POST(request: NextRequest) {
       }
       
       // Check for invalid image format
-      if (nanoBananaData.msg?.toLowerCase().includes('format') || 
-          nanoBananaData.msg?.toLowerCase().includes('invalid')) {
+      if (responseData.msg?.toLowerCase().includes('format') || 
+          responseData.msg?.toLowerCase().includes('invalid')) {
         return NextResponse.json(
           { 
             success: false, 
@@ -345,41 +420,62 @@ export async function POST(request: NextRequest) {
         { 
           success: false, 
           error: 'Enhancement service error',
-          details: nanoBananaData.msg || 'Failed to submit enhancement task',
-          code: nanoBananaData.code || 'ENHANCEMENT_ERROR'
+          details: responseData.msg || 'Failed to submit enhancement task',
+          code: responseData.code || 'ENHANCEMENT_ERROR'
         },
-        { status: nanoBananaResponse.status }
+        { status: response.status }
       );
     }
     
     // Validate response structure for successful responses
-    if (!nanoBananaData || !nanoBananaData.data || !nanoBananaData.data.taskId) {
-      console.error('Invalid NanoBanana response structure:', nanoBananaData);
+    if (!responseData || !responseData.data || (!responseData.data.taskId && !responseData.data.generated_url)) {
+      console.error(`Invalid ${providerUsed} response structure:`, responseData);
       return NextResponse.json(
         { 
           success: false, 
           error: 'Invalid response from enhancement service',
           details: 'Missing taskId in response',
-          response: nanoBananaData
+          response: responseData
         },
         { status: 500 }
       );
+    }
+    
+    // Handle response based on provider
+    let enhancedImageUrl = null;
+    let taskId = null;
+    
+    if (providerUsed === 'seedream') {
+      // Seedream provides immediate results
+      enhancedImageUrl = responseData.data?.generated_url || responseData.data?.outputs?.[0];
+      taskId = responseData.data?.id || `task_${Date.now()}`;
+    } else {
+      // NanoBanana uses callbacks - we get taskId and wait for callback
+      if (responseData.code !== 200) {
+        throw new Error(`NanoBanana API error: ${responseData.msg || 'Unknown error'}`);
+      }
+      taskId = responseData.data?.taskId;
+      if (!taskId) {
+        throw new Error('No taskId received from NanoBanana API');
+      }
+      console.log('NanoBanana task submitted, waiting for callback:', taskId);
     }
     
     // Store task in database using admin client
     const { error: taskError } = await supabaseAdmin
       .from('enhancement_tasks')
       .insert({
-        id: nanoBananaData.data.taskId,
+        id: taskId,
         user_id: user.id,
         moodboard_id: moodboardId,
         input_image_url: inputImageUrl,
         enhancement_type: enhancementType,
         prompt,
         strength,
-        status: 'processing',
-        api_task_id: nanoBananaData.data.taskId,
-        cost_usd: 0.025,
+        status: enhancedImageUrl ? 'completed' : 'processing',
+        api_task_id: taskId,
+        provider: providerUsed,
+        cost_usd: providerUsed === 'seedream' ? 0.05 : 0.025,
         created_at: new Date().toISOString()
       });
 
@@ -405,22 +501,22 @@ export async function POST(request: NextRequest) {
       })
       .eq('user_id', user.id);
     
-    // Consume platform credits (handles the 1:4 ratio internally)
+    // Consume platform credits (handles the provider-specific ratio internally)
     await supabaseAdmin.rpc('consume_platform_credits', {
-      p_provider: PROVIDER,
+      p_provider: providerUsed,
       p_user_id: user.id,
       p_user_credits: USER_CREDITS_PER_ENHANCEMENT,
       p_operation_type: enhancementType,
-      p_task_id: nanoBananaData.data.taskId,
+      p_task_id: taskId,
       p_moodboard_id: moodboardId
     });
 
     // Log transaction (user sees 1 credit, but we track the actual provider cost)
-    // NanoBanana ratio: 1 user credit = 4 provider credits
+    // Provider ratios: NanoBanana 1:4, Seedream 1:2
     const providerCost = {
       userCredits: USER_CREDITS_PER_ENHANCEMENT,
-      providerCredits: USER_CREDITS_PER_ENHANCEMENT * 4,
-      ratio: 4
+      providerCredits: providerUsed === 'seedream' ? USER_CREDITS_PER_ENHANCEMENT * 2 : USER_CREDITS_PER_ENHANCEMENT * 4,
+      ratio: providerUsed === 'seedream' ? 2 : 4
     };
     await supabaseAdmin
       .from('credit_transactions')
@@ -430,22 +526,29 @@ export async function POST(request: NextRequest) {
         transaction_type: 'deduction',
         credits_used: USER_CREDITS_PER_ENHANCEMENT, // User perspective: 1 credit
         cost_usd: 0.10, // Actual cost for 4 NanoBanana credits
-        provider: PROVIDER,
-        api_request_id: nanoBananaData.data.taskId,
+        provider: providerUsed,
+        api_request_id: taskId,
         enhancement_type: enhancementType,
-        status: 'completed',
+        status: enhancedImageUrl ? 'completed' : 'processing',
         metadata: {
           provider_credits_used: providerCost.providerCredits,
-          credit_ratio: providerCost.ratio
+          credit_ratio: providerCost.ratio,
+          provider: providerUsed
         },
         created_at: new Date().toISOString()
       });
 
     return NextResponse.json({
       success: true,
-      taskId: nanoBananaData.data.taskId,
-      status: 'processing',
-      message: 'Enhancement task submitted successfully. This may take 30-60 seconds.'
+      taskId: taskId,
+      status: enhancedImageUrl ? 'completed' : 'processing',
+      enhancedUrl: enhancedImageUrl,
+      provider: providerUsed,
+      message: enhancedImageUrl 
+        ? `Enhancement completed successfully using ${providerUsed}` 
+        : providerUsed === 'nanobanana'
+          ? `Enhancement task submitted to NanoBanana. You will receive the result via callback within 30-60 seconds.`
+          : `Enhancement task submitted successfully using ${providerUsed}. This may take 30-60 seconds.`
     });
 
   } catch (error: any) {

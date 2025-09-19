@@ -9,6 +9,97 @@ import path from 'path'
 // Load environment variables from .env.local (from project root)
 dotenv.config({ path: path.join(process.cwd(), '../../.env.local') })
 
+// Helper function to generate with NanoBanana
+async function generateWithNanoBanana({
+  prompt,
+  baseImage,
+  size,
+  enableBase64Output,
+  enableSyncMode,
+  consistencyLevel,
+  imageIndex,
+  totalImages,
+  generationMode
+}: {
+  prompt: string
+  baseImage?: string
+  size: string
+  enableBase64Output: boolean
+  enableSyncMode: boolean
+  consistencyLevel: string
+  imageIndex: number
+  totalImages: number
+  generationMode: 'text-to-image' | 'image-to-image'
+}) {
+  try {
+    const isImageToImage = generationMode === 'image-to-image' && baseImage
+    
+    // Use official NanoBanana API endpoint
+    const apiEndpoint = 'https://api.nanobananaapi.ai/api/v1/nanobanana/generate'
+    
+    // Create callback URL for this request
+    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://preset.ie'}/api/nanobanana/callback`
+    
+    // Build request body according to official API spec
+    const requestBody = {
+      prompt: prompt,
+      type: isImageToImage ? 'IMAGETOIAMGE' : 'TEXTTOIAMGE',
+      callBackUrl: callbackUrl,
+      numImages: 1, // Generate one image at a time
+      watermark: 'Preset', // Add our watermark
+      ...(isImageToImage && baseImage && {
+        imageUrls: [baseImage]
+      })
+    }
+
+    console.log('NanoBanana API request:', {
+      endpoint: apiEndpoint,
+      type: requestBody.type,
+      prompt: prompt.substring(0, 100) + '...',
+      hasBaseImage: !!baseImage,
+      callbackUrl: callbackUrl
+    })
+
+    const response = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.NANOBANANA_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`NanoBanana API error: ${response.status} - ${errorText}`)
+    }
+    
+    const data = await response.json()
+    console.log('NanoBanana API response:', data)
+    
+    // Check if the response is successful
+    if (data.code !== 200) {
+      throw new Error(`NanoBanana API error: ${data.msg || 'Unknown error'}`)
+    }
+    
+    // Return task info - the actual image will come via callback
+    return {
+      success: true,
+      taskId: data.data.taskId,
+      provider: 'nanobanana',
+      cost: 0.025,
+      message: 'Task submitted successfully, waiting for callback...'
+    }
+  } catch (error) {
+    console.error('NanoBanana generation error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      provider: 'nanobanana'
+    }
+  }
+}
+
 // Helper function to generate a single image-to-image
 async function generateSingleImageToImage({
   prompt,
@@ -219,7 +310,7 @@ export async function POST(request: NextRequest) {
   })
   
   const requestBody = await request.json()
-  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences } = requestBody
+  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences, selectedProvider } = requestBody
   
   console.log('📝 Generation request:', {
     prompt: prompt?.substring(0, 100) + (prompt?.length > 100 ? '...' : ''),
@@ -232,6 +323,7 @@ export async function POST(request: NextRequest) {
     hasBaseImage: !!baseImage,
     hasCustomStylePreset: !!customStylePreset,
     intensity,
+    selectedProvider: selectedProvider || 'seedream', // Default to seedream for backward compatibility
     requestBodyKeys: Object.keys(requestBody)
   })
   
@@ -484,31 +576,51 @@ export async function POST(request: NextRequest) {
         
         const imagePromises = []
         for (let i = 0; i < (maxImages || 1); i++) {
-          if (isImageToImage) {
+          // Use selected provider or default to seedream
+          const provider = selectedProvider || 'seedream'
+          
+          if (provider === 'nanobanana') {
             imagePromises.push(
-              generateSingleImageToImage({
+              generateWithNanoBanana({
                 prompt: enhancedPrompt,
-                baseImage: baseImage!,
+                baseImage: baseImage,
                 size: resolutionForGeneration,
                 enableBase64Output: enableBase64Output || false,
                 enableSyncMode: enableSyncMode !== false,
                 consistencyLevel: consistencyLevel || 'high',
                 imageIndex: i + 1,
-                totalImages: maxImages || 1
+                totalImages: maxImages || 1,
+                generationMode: isImageToImage ? 'image-to-image' : 'text-to-image'
               })
             )
           } else {
-            imagePromises.push(
-              generateSingleImage({
-                prompt: enhancedPrompt,
-                size: resolutionForGeneration,
-                enableBase64Output: enableBase64Output || false,
-                enableSyncMode: enableSyncMode !== false,
-                consistencyLevel: consistencyLevel || 'high',
-                imageIndex: i + 1,
-                totalImages: maxImages || 1
-              })
-            )
+            // Use Seedream (existing logic)
+            if (isImageToImage) {
+              imagePromises.push(
+                generateSingleImageToImage({
+                  prompt: enhancedPrompt,
+                  baseImage: baseImage!,
+                  size: resolutionForGeneration,
+                  enableBase64Output: enableBase64Output || false,
+                  enableSyncMode: enableSyncMode !== false,
+                  consistencyLevel: consistencyLevel || 'high',
+                  imageIndex: i + 1,
+                  totalImages: maxImages || 1
+                })
+              )
+            } else {
+              imagePromises.push(
+                generateSingleImage({
+                  prompt: enhancedPrompt,
+                  size: resolutionForGeneration,
+                  enableBase64Output: enableBase64Output || false,
+                  enableSyncMode: enableSyncMode !== false,
+                  consistencyLevel: consistencyLevel || 'high',
+                  imageIndex: i + 1,
+                  totalImages: maxImages || 1
+                })
+              )
+            }
           }
         }
         
@@ -516,12 +628,40 @@ export async function POST(request: NextRequest) {
         const imageResults = await Promise.allSettled(imagePromises)
         
         // Process results
-        const successfulImages: Array<{ url: string; index: number }> = []
+        const successfulImages: Array<{ url: string; index: number; provider?: string; cost?: number; taskId?: string; isCallback?: boolean }> = []
         const failedImages: Array<{ index: number; error: any }> = []
         
         imageResults.forEach((result, index) => {
           if (result.status === 'fulfilled' && result.value) {
-            successfulImages.push(result.value)
+            // Check if it's a NanoBanana result with taskId (callback-based)
+            if ('success' in result.value && result.value.success && 'taskId' in result.value) {
+              // NanoBanana callback-based result - store task info
+              console.log(`NanoBanana task ${index + 1} submitted:`, result.value.taskId)
+              // For now, we'll handle this differently - the image will come via callback
+              // We need to store the task info and wait for callback
+              successfulImages.push({
+                url: '', // Will be filled by callback
+                index: index + 1,
+                provider: 'nanobanana',
+                cost: result.value.cost || 0.025,
+                taskId: result.value.taskId as string,
+                isCallback: true
+              })
+            } else if ('success' in result.value && result.value.success && 'imageUrl' in result.value) {
+              // NanoBanana immediate result format (legacy)
+              successfulImages.push({
+                url: result.value.imageUrl as string,
+                index: index + 1,
+                provider: 'provider' in result.value ? result.value.provider : undefined,
+                cost: 'cost' in result.value ? result.value.cost : undefined
+              })
+            } else if ('url' in result.value) {
+              // Seedream result format
+              successfulImages.push({
+                url: result.value.url,
+                index: result.value.index || index + 1
+              })
+            }
           } else {
             const error = result.status === 'rejected' ? result.reason : 'Unknown error'
             failedImages.push({ index: index + 1, error })
@@ -535,14 +675,56 @@ export async function POST(request: NextRequest) {
           throw new Error('All image generations failed')
         }
         
+        // Separate immediate results from callback-based results
+        const immediateResults = successfulImages.filter(img => !img.isCallback)
+        const callbackResults = successfulImages.filter(img => img.isCallback)
+        
+        console.log(`Immediate results: ${immediateResults.length}, Callback results: ${callbackResults.length}`)
+        
+        // For callback-based results, we need to handle them differently
+        if (callbackResults.length > 0) {
+          console.log('NanoBanana tasks submitted, images will come via callback')
+          // Store callback task info in database for later processing
+          for (const callbackResult of callbackResults) {
+            if (callbackResult.taskId) {
+              // Store the task info - callback will update this later
+              await supabaseAdmin
+                .from('playground_generations')
+                .insert({
+                  user_id: user.id,
+                  project_id: projectId || null,
+                  prompt: enhancedPrompt,
+                  style: style || 'photorealistic',
+                  resolution: resolutionForGeneration,
+                  aspect_ratio: aspectRatio,
+                  consistency_level: consistencyLevel || 'high',
+                  num_images: 1,
+                  generated_images: [], // Will be filled by callback
+                  generation_metadata: {
+                    provider: 'nanobanana',
+                    taskId: callbackResult.taskId,
+                    generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
+                    cinematic_parameters: cinematicParameters,
+                    enhanced_prompt: enhancedPrompt,
+                    include_technical_details: includeTechnicalDetails,
+                    include_style_references: includeStyleReferences,
+                    base_image: baseImage || null
+                  },
+                  credits_used: 1, // NanoBanana costs 1 credit
+                  status: 'processing'
+                })
+            }
+          }
+        }
+        
         // Adjust credits based on successful generations
         creditsNeeded = successfulImages.length * 2
         
-        // Create mock seedreamData structure
+        // Create mock seedreamData structure for immediate results
         seedreamData = {
           code: 200,
           data: {
-            outputs: successfulImages.map(img => img.url)
+            outputs: immediateResults.map(img => img.url)
           }
         }
         
@@ -552,22 +734,143 @@ export async function POST(request: NextRequest) {
         }
         
       } else {
-        // Single image generation (original logic)
-        const useAsyncMode = false // Always use sync for single images
+        // Single image generation with provider selection
+        const provider = selectedProvider || 'seedream'
+        console.log(`Using provider: ${provider} for single image generation`)
         
-        console.log('Making Seedream API call with:', {
-          prompt: enhancedPrompt.substring(0, 100) + '...',
-          fullPrompt: enhancedPrompt,
-          size: finalResolution,
-          max_images: 1,
-          enable_sync_mode: enableSyncMode !== false,
-          hasApiKey: !!process.env.WAVESPEED_API_KEY,
-          aspectRatio: aspectRatio,
-          originalResolution: resolution,
-          calculatedAspectRatio: calculatedAspectRatio,
-          mode: 'sync (single image)',
-          seedreamFormat: 'x format (e.g., 1024x1024)'
-        })
+        if (provider === 'nanobanana') {
+          // Use NanoBanana for single image generation
+          const result = await generateWithNanoBanana({
+            prompt: enhancedPrompt,
+            baseImage: baseImage,
+            size: finalResolution,
+            enableBase64Output: enableBase64Output || false,
+            enableSyncMode: enableSyncMode !== false,
+            consistencyLevel: consistencyLevel || 'high',
+            imageIndex: 1,
+            totalImages: 1,
+            generationMode: isImageToImage ? 'image-to-image' : 'text-to-image'
+          })
+          
+          if (result.success) {
+            // Handle callback-based response
+            if (result.taskId) {
+              // Store the generation in database with processing status
+              const insertData = {
+                user_id: user.id,
+                project_id: projectId || null,
+                prompt: enhancedPrompt,
+                style: style || 'photorealistic',
+                resolution: finalResolution,
+                aspect_ratio: aspectRatio,
+                consistency_level: consistencyLevel || 'high',
+                num_images: 1,
+                generated_images: [], // Will be filled by callback
+                generation_metadata: {
+                  provider: result.provider,
+                  taskId: result.taskId,
+                  generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
+                  cinematic_parameters: cinematicParameters,
+                  enhanced_prompt: enhancedPrompt,
+                  include_technical_details: includeTechnicalDetails,
+                  include_style_references: includeStyleReferences,
+                  base_image: baseImage || null
+                },
+                credits_used: 1, // NanoBanana costs 1 credit
+                status: 'processing'
+              }
+              
+              const { data: generationData, error: insertError } = await supabaseAdmin
+                .from('playground_generations')
+                .insert(insertData)
+                .select()
+                .single()
+              
+              if (insertError) {
+                console.error('Error storing generation:', insertError)
+                throw new Error('Failed to store generation task')
+              } else {
+                console.log('Generation task stored successfully:', generationData.id)
+              }
+              
+              return NextResponse.json({
+                success: true,
+                taskId: result.taskId,
+                generationId: generationData.id,
+                provider: result.provider,
+                status: 'processing',
+                message: 'NanoBanana task submitted successfully. You will receive the result via callback within 30-60 seconds.'
+              })
+            } else if ('imageUrl' in result && result.imageUrl) {
+              // Legacy immediate response
+              const insertData = {
+                user_id: user.id,
+                project_id: projectId || null,
+                prompt: enhancedPrompt,
+                style: style || 'photorealistic',
+                resolution: finalResolution,
+                aspect_ratio: aspectRatio,
+                consistency_level: consistencyLevel || 'high',
+                num_images: 1,
+                generated_images: [{
+                  url: result.imageUrl,
+                  index: 1,
+                  provider: result.provider
+                }],
+                generation_metadata: {
+                  provider: result.provider,
+                  cost: result.cost,
+                  generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
+                  cinematic_parameters: cinematicParameters,
+                  enhanced_prompt: enhancedPrompt,
+                  include_technical_details: includeTechnicalDetails,
+                  include_style_references: includeStyleReferences,
+                  base_image: baseImage || null
+                },
+                credits_used: 1, // NanoBanana costs 1 credit
+                status: 'completed'
+              }
+              
+              const { data: generationData, error: insertError } = await supabaseAdmin
+                .from('playground_generations')
+                .insert(insertData)
+                .select()
+                .single()
+              
+              if (insertError) {
+                console.error('Error storing generation:', insertError)
+                // Don't throw - we still want to return the image
+              } else {
+                console.log('Generation stored successfully:', generationData.id)
+              }
+              
+              return NextResponse.json({
+                success: true,
+                images: [result.imageUrl],
+                generationId: generationData?.id,
+                provider: result.provider,
+                cost: result.cost,
+                message: 'Image generated successfully with NanoBanana'
+              })
+            }
+          } else {
+            throw new Error(result.error || 'NanoBanana generation failed')
+          }
+        } else {
+          // Use Seedream (existing logic)
+          console.log('Making Seedream API call with:', {
+            prompt: enhancedPrompt.substring(0, 100) + '...',
+            fullPrompt: enhancedPrompt,
+            size: finalResolution,
+            max_images: 1,
+            enable_sync_mode: enableSyncMode !== false,
+            hasApiKey: !!process.env.WAVESPEED_API_KEY,
+            aspectRatio: aspectRatio,
+            originalResolution: resolution,
+            calculatedAspectRatio: calculatedAspectRatio,
+            mode: 'sync (single image)',
+            seedreamFormat: 'x format (e.g., 1024x1024)'
+          })
         
         console.log(`Using final resolution: ${finalResolution}`)
         
@@ -765,6 +1068,7 @@ export async function POST(request: NextRequest) {
       } else {
         throw new Error('Image generation failed: Invalid response from generation service')
       }
+    }
     }
     
     // Deduct credits
