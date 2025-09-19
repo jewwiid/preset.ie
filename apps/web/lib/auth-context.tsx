@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Get initial session
         if (!supabase) {
           console.error('Supabase client not available')
+          setLoading(false)
           return
         }
         
@@ -44,19 +45,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (error) {
           console.error('Error getting session:', error)
+          setSession(null)
+          setUser(null)
+          setUserRole(null)
         } else {
           console.log('Initial session:', session ? 'Found' : 'Not found')
           if (session) {
             console.log('Session expires at:', new Date(session.expires_at! * 1000).toLocaleString())
-            // Fetch user role when session is found
-            const role = await getUserRole(session.user.id)
-            setUserRole(role)
+            // Fetch user role when session is found with error handling
+            try {
+              const role = await getUserRole(session.user.id)
+              setUserRole(role)
+            } catch (roleError) {
+              console.error('Error fetching user role during initialization:', roleError)
+              setUserRole(null)
+            }
+          } else {
+            setUserRole(null)
           }
           setSession(session)
           setUser(session?.user ?? null)
         }
       } catch (err) {
         console.error('Error initializing auth:', err)
+        // Reset all auth state on error
+        setSession(null)
+        setUser(null)
+        setUserRole(null)
       } finally {
         setLoading(false)
       }
@@ -76,11 +91,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session)
         setUser(session?.user ?? null)
         
-        // Update user role on auth state changes
-        if (session?.user) {
-          const role = await getUserRole(session.user.id)
-          setUserRole(role)
-        } else {
+        // Update user role on auth state changes with proper error handling
+        try {
+          if (session?.user) {
+            const role = await getUserRole(session.user.id)
+            setUserRole(role)
+          } else {
+            setUserRole(null)
+          }
+        } catch (error) {
+          console.error('Error fetching user role during auth state change:', error)
           setUserRole(null)
         }
         

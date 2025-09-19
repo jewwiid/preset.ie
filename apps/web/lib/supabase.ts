@@ -30,3 +30,18 @@ export const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
       }
     })
   : null
+
+// Helper function to validate Supabase client availability
+export const getSupabaseClient = () => {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized. Check environment variables.')
+  }
+  return supabase
+}
+
+// Helper function to get auth token consistently
+export const getAuthToken = async () => {
+  const client = getSupabaseClient()
+  const { data: { session } } = await client.auth.getSession()
+  return session?.access_token
+}

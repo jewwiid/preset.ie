@@ -108,7 +108,7 @@ export function NavBar() {
       setIsAdmin(!!userRole?.isAdmin)
       setProfileLoading(false)
     }
-  }, [user, loading])
+  }, [user, loading, userRole])
 
   const fetchProfileSimple = async () => {
     if (!user) return
