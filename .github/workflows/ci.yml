@@ -115,6 +115,7 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           NODE_ENV: production
           IMAGE_PROVIDER: ${{ secrets.IMAGE_PROVIDER }}
+          WAVESPEED_API_KEY: ${{ secrets.WAVESPEED_API_KEY }}
           # Add fallback values for CI build
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
