@@ -763,7 +763,7 @@ export default function TabbedPlaygroundLayout({
                     style_applied: metadata.style_applied || metadata.style || 'realistic',
                     style_prompt: metadata.style_prompt || '',
                     consistency_level: metadata.consistency_level || 'high',
-                    custom_preset: metadata.custom_preset || null,
+                    custom_preset: (metadata as any).custom_preset || null,
                     generation_mode: (metadata as any).generation_mode || 'text-to-image',
                     base_image: (metadata as any).base_image || null,
                     api_endpoint: (metadata as any).api_endpoint || 'seedream-v4'

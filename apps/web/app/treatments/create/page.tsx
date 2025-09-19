@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -114,7 +114,7 @@ interface TreatmentData {
   cta_suggestions: Array<{ label: string; target: string }>;
 }
 
-export default function CreateTreatmentPage() {
+function CreateTreatmentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -1039,5 +1039,13 @@ export default function CreateTreatmentPage() {
         </Tabs>
       </main>
     </div>
+  );
+}
+
+export default function CreateTreatmentPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateTreatmentPageContent />
+    </Suspense>
   );
 }

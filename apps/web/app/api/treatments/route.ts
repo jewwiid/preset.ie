@@ -91,6 +91,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database connection error' }, { status: 500 });
+    }
+
     // Create treatment
     const { data: treatment, error } = await supabase
       .from('treatments')

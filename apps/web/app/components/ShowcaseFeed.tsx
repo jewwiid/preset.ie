@@ -57,11 +57,12 @@ interface CinematicFilters {
 
 interface ShowcaseFeedProps {
   className?: string
-  showcaseType?: 'moodboard' | 'individual_image' | 'all'
+  showcaseType?: 'moodboard' | 'individual_image' | 'all' | 'video' | 'treatment'
   showCinematicFilters?: boolean
+  tabFilter?: 'trending' | 'featured' | 'latest' | 'community'
 }
 
-export default function ShowcaseFeed({ className = '', showcaseType = 'all', showCinematicFilters = true }: ShowcaseFeedProps) {
+export default function ShowcaseFeed({ className = '', showcaseType = 'all', showCinematicFilters = true, tabFilter }: ShowcaseFeedProps) {
   const { user, session } = useAuth()
   const [showcases, setShowcases] = useState<Showcase[]>([])
   const [loading, setLoading] = useState(true)

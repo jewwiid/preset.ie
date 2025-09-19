@@ -180,7 +180,7 @@ export interface ProfileState {
 }
 
 export type ProfileAction = 
-  | { type: 'SET_PROFILE'; payload: UserProfile }
+  | { type: 'SET_PROFILE'; payload: UserProfile | null }
   | { type: 'SET_SETTINGS'; payload: UserSettings | null }
   | { type: 'SET_NOTIFICATION_PREFS'; payload: NotificationPreferences }
   | { type: 'SET_EDITING'; payload: boolean }

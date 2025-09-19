@@ -17,7 +17,11 @@ export default function ShowcasesPage() {
   const [filterType, setFilterType] = useState<'all' | 'moodboard' | 'individual_image' | 'video' | 'treatment'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('popular')
-  const [activeTab, setActiveTab] = useState('trending')
+  const [activeTab, setActiveTab] = useState<'trending' | 'featured' | 'latest' | 'community'>('trending')
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'trending' | 'featured' | 'latest' | 'community')
+  }
 
   const filterOptions = [
     { value: 'all', label: 'All', icon: Filter },
@@ -50,7 +54,7 @@ export default function ShowcasesPage() {
 
           {/* Trending Categories */}
           <div className="flex flex-wrap justify-center gap-3 mb-8">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="grid w-full grid-cols-4 bg-white/50 backdrop-blur-sm">
                 <TabsTrigger value="trending" className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />

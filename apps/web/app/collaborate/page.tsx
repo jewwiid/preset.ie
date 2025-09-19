@@ -106,6 +106,12 @@ function CollaboratePageContent() {
         )
       });
 
+      // Check if supabase is available
+      if (!supabase) {
+        setError('Database connection not available');
+        return;
+      }
+
       // Get the current session token for authentication
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;

@@ -69,7 +69,7 @@ interface ShowcaseData {
     id: string;
     title: string;
     location_text: string;
-  };
+  }[];
 }
 
 // List of existing routes that should take precedence over user handles
@@ -146,6 +146,13 @@ export default function CatchAllPage() {
         // Just set loading to false and let the parent layout handle the 404 if needed
         setIsLoading(false);
         setError(null);
+        return;
+      }
+
+      // Check if supabase is available
+      if (!supabase) {
+        setError('Database connection not available');
+        setIsLoading(false);
         return;
       }
 
@@ -298,7 +305,7 @@ export default function CatchAllPage() {
                 <div className="flex items-center space-x-2 mb-2">
                   <h1 className="text-2xl font-bold text-gray-900">{profile!.display_name}</h1>
                   {profile!.verified_id && (
-                    <CheckCircle className="h-5 w-5 text-blue-600" title="Verified" />
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
                   )}
                 </div>
                 <p className="text-lg text-gray-600">@{profile!.handle}</p>
@@ -522,12 +529,12 @@ export default function CatchAllPage() {
                       <Card key={showcase.id} className="hover:shadow-lg transition-shadow">
                         <CardHeader>
                           <CardTitle className="text-lg">
-                            {showcase.gig?.title || 'Showcase'}
+                            {showcase.gig?.[0]?.title || 'Showcase'}
                           </CardTitle>
-                          {showcase.gig?.location_text && (
+                          {showcase.gig?.[0]?.location_text && (
                             <div className="flex items-center text-sm text-gray-500">
                               <MapPin className="h-4 w-4 mr-1" />
-                              {showcase.gig.location_text}
+                              {showcase.gig[0].location_text}
                             </div>
                           )}
                         </CardHeader>
