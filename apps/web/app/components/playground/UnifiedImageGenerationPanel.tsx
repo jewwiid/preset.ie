@@ -922,33 +922,6 @@ export default function UnifiedImageGenerationPanel({
                 </span>
               )}
             </Label>
-            {isPromptModified && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  // Navigate to preset creation page with current settings
-                  const queryParams = new URLSearchParams({
-                    name: `My Custom Preset ${new Date().toLocaleDateString()}`,
-                    description: 'Saved from playground',
-                    prompt_template: prompt,
-                    style: currentPreset ? currentPreset.style_settings?.style || style : style,
-                    resolution: resolution,
-                    aspect_ratio: aspectRatio,
-                    consistency_level: consistencyLevel,
-                    intensity: intensity.toString(),
-                    num_images: numImages.toString(),
-                    is_public: 'false'
-                  }).toString()
-                  
-                  window.location.href = `/presets/create?${queryParams}`
-                }}
-                className="text-xs"
-              >
-                💾 Save as Preset
-              </Button>
-            )}
           </div>
           <Textarea
             id="prompt"
@@ -969,7 +942,7 @@ export default function UnifiedImageGenerationPanel({
           />
           {isPromptModified && (
             <p className="text-xs text-blue-600">
-              💡 You've modified the prompt. Click "Save as Preset" to create a comprehensive preset.
+              💡 You've modified the prompt. Click "Save" in the Presets section above to create a comprehensive preset.
             </p>
           )}
 
