@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Get user's playground gallery media (images)
-    // Note: generation_metadata column may not exist on all databases, so we'll handle it gracefully
     const { data: galleryMedia, error: galleryError } = await supabaseAdmin
       .from('playground_gallery')
       .select(`
@@ -48,7 +47,8 @@ export async function GET(request: NextRequest) {
         video_url,
         video_duration,
         video_resolution,
-        video_format
+        video_format,
+        generation_metadata
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
