@@ -14,7 +14,9 @@ import {
   Sparkles,
   AlertCircle,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { DatePicker } from '../../../components/ui/date-picker'
 
@@ -40,6 +42,10 @@ export default function SignUpPage() {
   // Age verification
   const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  
+  // Password visibility
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   // Calculate age from date of birth
   const calculateAge = (dob: Date | undefined): number => {
@@ -331,17 +337,29 @@ export default function SignUpPage() {
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setPasswordFocused(true)}
                       onBlur={() => setPasswordFocused(false)}
-                      className={`pl-10 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-gray-900 ${
+                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-gray-900 ${
                         password && !isPasswordValid ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Create a strong password"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
                     {password && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                         {isPasswordValid ? (
@@ -436,17 +454,29 @@ export default function SignUpPage() {
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       id="confirmPassword"
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       onFocus={() => setConfirmPasswordFocused(true)}
                       onBlur={() => setConfirmPasswordFocused(false)}
-                      className={`pl-10 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-gray-900 ${
+                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-gray-900 ${
                         confirmPassword && !passwordsMatch ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Re-enter your password"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
                     {confirmPassword && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                         {passwordsMatch ? (

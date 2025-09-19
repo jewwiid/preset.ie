@@ -189,6 +189,9 @@ export class Application extends BaseAggregateRoot {
     return this.props.profileSnapshot; 
   }
 
+  // Additional getter for application layer compatibility
+  get id(): string { return this.props.id; }
+
   isPending(): boolean { return this.props.status === ApplicationStatus.PENDING; }
   isShortlisted(): boolean { return this.props.status === ApplicationStatus.SHORTLISTED; }
   isAccepted(): boolean { return this.props.status === ApplicationStatus.ACCEPTED; }
