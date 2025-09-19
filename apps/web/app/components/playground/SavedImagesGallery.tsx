@@ -97,15 +97,12 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
   }
 
   const fetchSavedMedia = async () => {
-    console.log('fetchSavedMedia called', { hasToken: !!session?.access_token, hasUser: !!user })
     if (!session?.access_token) {
-      console.log('No access token, skipping fetch')
       setLoading(false)
       return
     }
 
     if (!user) {
-      console.log('No user, skipping fetch')
       setLoading(false)
       return
     }
@@ -124,10 +121,8 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
       }
 
       const data = await response.json()
-      console.log('Gallery API response:', data)
       if (data.success) {
         const media = data.media || []
-        console.log('Gallery media received:', media.length, 'items')
         setSavedMedia(media)
         onMediaUpdated?.(media)
       } else {

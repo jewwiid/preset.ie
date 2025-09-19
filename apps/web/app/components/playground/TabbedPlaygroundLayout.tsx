@@ -454,12 +454,6 @@ export default function TabbedPlaygroundLayout({
               resolution={currentSettings.resolution}
               images={(() => {
                 const currentImages = currentProject?.generated_images || []
-                console.log('🔍 Preview Images Debug:', {
-                  currentProject: currentProject?.id,
-                  currentImages: currentImages,
-                  currentImagesLength: currentImages.length,
-                  selectedImage: selectedImage
-                })
                 const imagesToShow = [...currentImages]
                 
                 // Add base image if it exists and is not already in the images
@@ -526,15 +520,6 @@ export default function TabbedPlaygroundLayout({
               images={(() => {
                 const currentImages = currentProject?.generated_images || []
                 const allImages = [...currentImages, ...additionalPreviewImages]
-                
-                console.log('🔍 Edit Tab Images Debug:', {
-                  currentImagesCount: currentImages.length,
-                  additionalPreviewImagesCount: additionalPreviewImages.length,
-                  allImagesCount: allImages.length,
-                  selectedImage,
-                  currentImages: currentImages.map(img => ({ url: img.url, type: img.type })),
-                  allImages: allImages.map(img => ({ url: img.url, type: img.type }))
-                })
                 
                 // If selectedImage is not in all images, add it as a single-item array
                 if (selectedImage && !allImages.some(img => img.url === selectedImage)) {

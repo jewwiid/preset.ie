@@ -49,18 +49,6 @@ export function NavBar() {
   const [profile, setProfile] = useState<any>(null)
   const [profileLoading, setProfileLoading] = useState(false)
 
-  // Debug logging
-  console.log('🔍 NavBar render - Auth state:', {
-    hasUser: !!user,
-    userId: user?.id,
-    loading,
-    hasProfile: !!profile,
-    profileLoading,
-    profileAvatarUrl: profile?.avatar_url,
-    userRole: !!userRole,
-    isAdmin,
-    shouldShowAvatar: !profileLoading && profile?.avatar_url
-  })
 
   const getNavItemsForRole = () => {
     // Not authenticated - minimal landing page navigation
@@ -409,13 +397,6 @@ export function NavBar() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
                         {(() => {
-                          console.log('🖼️ NavBar: Avatar render decision:', { 
-                            profileLoading, 
-                            hasAvatarUrl: !!profile?.avatar_url, 
-                            avatarUrl: profile?.avatar_url,
-                            profile: !!profile 
-                          })
-                          
                           if (profileLoading) {
                             return (
                               <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">

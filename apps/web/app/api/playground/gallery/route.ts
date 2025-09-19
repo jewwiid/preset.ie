@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Get user's playground gallery media (images)
+    // Note: generation_metadata column may not exist on all databases, so we'll handle it gracefully
     const { data: galleryMedia, error: galleryError } = await supabaseAdmin
       .from('playground_gallery')
       .select(`
@@ -40,10 +41,14 @@ export async function GET(request: NextRequest) {
         width,
         height,
         format,
-        generation_metadata,
         project_id,
         used_in_moodboard,
-        used_in_showcase
+        used_in_showcase,
+        media_type,
+        video_url,
+        video_duration,
+        video_resolution,
+        video_format
       `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
@@ -75,9 +80,15 @@ export async function GET(request: NextRequest) {
     // If count query fails (table doesn't exist), use 0
     const totalCount = countError ? 0 : (count || 0)
 
+    // Add default generation_metadata for items that don't have it
+    const mediaWithDefaults = (galleryMedia || []).map(item => ({
+      ...item,
+      generation_metadata: item.generation_metadata || {}
+    }))
+
     return NextResponse.json({
       success: true,
-      media: galleryMedia || [],
+      media: mediaWithDefaults,
       pagination: {
         page,
         limit,

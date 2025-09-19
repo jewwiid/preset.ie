@@ -29,9 +29,6 @@ async function generateSingleImageToImage({
   imageIndex: number
   totalImages: number
 }) {
-    console.log(`Generating image-to-image ${imageIndex}/${totalImages}...`)
-    console.log('Base image type:', baseImage.startsWith('data:') ? 'base64' : 'url')
-    console.log('Base image length:', baseImage.length)
   
   try {
     const response = await fetch('https://api.wavespeed.ai/api/v3/bytedance/seedream-v4/edit', {
@@ -211,8 +208,32 @@ async function generateSingleImage({
 }
 
 export async function POST(request: NextRequest) {
+  console.log('🚀 === PLAYGROUND GENERATION API STARTED ===')
+  console.log('📅 Timestamp:', new Date().toISOString())
+  
   const { user } = await getUserFromRequest(request)
-  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences } = await request.json()
+  console.log('👤 User authenticated:', { 
+    userId: user?.id, 
+    hasUser: !!user,
+    userEmail: user?.email 
+  })
+  
+  const requestBody = await request.json()
+  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences } = requestBody
+  
+  console.log('📝 Generation request:', {
+    prompt: prompt?.substring(0, 100) + (prompt?.length > 100 ? '...' : ''),
+    style,
+    resolution,
+    consistencyLevel,
+    projectId,
+    maxImages,
+    generationMode,
+    hasBaseImage: !!baseImage,
+    hasCustomStylePreset: !!customStylePreset,
+    intensity,
+    requestBodyKeys: Object.keys(requestBody)
+  })
   
   // Parse resolution from frontend (format: "1024*576" or "1024")
   let finalResolution: string
@@ -275,20 +296,51 @@ export async function POST(request: NextRequest) {
   try {
     // Calculate credits needed (2 credits per image)
     let creditsNeeded = (maxImages || 1) * 2
+    console.log('💰 Credits calculation:', { 
+      maxImages: maxImages || 1, 
+      creditsNeeded,
+      creditsPerImage: 2 
+    })
     
     // Check user credits
-    const { data: userCredits } = await supabaseAdmin
+    console.log('🔍 Checking user credits for user:', user.id)
+    const { data: userCredits, error: creditsQueryError } = await supabaseAdmin
       .from('user_credits')
-      .select('current_balance, consumed_this_month')
+      .select('current_balance, consumed_this_month, subscription_tier')
       .eq('user_id', user.id)
       .single()
     
+    console.log('💳 User credits query result:', { 
+      userCredits, 
+      creditsQueryError,
+      hasCredits: !!userCredits,
+      currentBalance: userCredits?.current_balance,
+      consumedThisMonth: userCredits?.consumed_this_month,
+      subscriptionTier: userCredits?.subscription_tier
+    })
+    
+    if (creditsQueryError) {
+      console.error('❌ Credits query failed:', creditsQueryError)
+      throw new Error(`Failed to check user credits: ${creditsQueryError.message}`)
+    }
+    
     if (!userCredits || userCredits.current_balance < creditsNeeded) {
+      console.log('❌ Insufficient credits:', {
+        currentBalance: userCredits?.current_balance || 0,
+        creditsNeeded,
+        shortfall: creditsNeeded - (userCredits?.current_balance || 0)
+      })
       return NextResponse.json(
         { error: `Insufficient credits. Need ${creditsNeeded} credits for ${maxImages || 1} image(s).` },
         { status: 403 }
       )
     }
+    
+    console.log('✅ Credits check passed:', {
+      currentBalance: userCredits.current_balance,
+      creditsNeeded,
+      remainingAfter: userCredits.current_balance - creditsNeeded
+    })
     
     // Enhance prompt with style information
     let stylePrompt: string
@@ -366,13 +418,27 @@ export async function POST(request: NextRequest) {
       ? 'https://api.wavespeed.ai/api/v3/bytedance/seedream-v4/edit'
       : 'https://api.wavespeed.ai/api/v3/bytedance/seedream-v4'
     
-    console.log(`Calling Seedream API (${isImageToImage ? 'image-to-image' : 'text-to-image'}) with enhanced prompt:`, enhancedPrompt)
-    console.log('Style applied:', style, '->', stylePrompt)
-    console.log('Consistency level:', consistencyLevel)
-    console.log('Intensity:', intensity || 1.0)
-    if (isImageToImage) {
-      console.log('Base image provided for image-to-image generation')
-    }
+    console.log('🎨 Enhanced prompt details:', {
+      originalPrompt: prompt?.substring(0, 100) + '...',
+      enhancedPrompt: enhancedPrompt?.substring(0, 100) + '...',
+      styleApplied: style,
+      stylePrompt: stylePrompt,
+      consistencyLevel,
+      intensity: intensity || 1.0,
+      generationMode: isImageToImage ? 'image-to-image' : 'text-to-image',
+      hasBaseImage: !!baseImage,
+      apiEndpoint
+    })
+    
+    console.log('🔧 API Configuration:', {
+      hasWavespeedApiKey: !!process.env.WAVESPEED_API_KEY,
+      apiKeyPrefix: process.env.WAVESPEED_API_KEY?.substring(0, 10) + '...',
+      finalResolution,
+      aspectRatio,
+      maxImages: maxImages || 1,
+      enableSyncMode,
+      enableBase64Output
+    })
     
     // Temporary mock response for testing
     const isTestMode = process.env.NODE_ENV === 'development' && prompt.includes('test')
@@ -551,10 +617,11 @@ export async function POST(request: NextRequest) {
         // Handle async response - poll for results using official API pattern
         if (seedreamResponseData.data?.id) {
           const requestId = seedreamResponseData.data.id
-          console.log('Polling for async results using official API pattern...', {
+          console.log('🔄 Polling for async results using official API pattern...', {
             requestId,
             requestedImages: 1,
-            mode: 'async'
+            mode: 'async',
+            apiEndpoint: 'https://api.wavespeed.ai/api/v3/predictions/' + requestId + '/result'
           })
           
           let attempts = 0
@@ -574,12 +641,13 @@ export async function POST(request: NextRequest) {
             }
             
             const resultData = await resultResponse.json()
-            console.log(`Polling attempt ${attempts + 1}:`, {
+            console.log(`⏳ Polling attempt ${attempts + 1}/${maxAttempts}:`, {
               status: resultData.data?.status,
               outputsCount: resultData.data?.outputs?.length || 0,
               requestedImages: 1,
               hasOutputs: !!resultData.data?.outputs,
-              fullResponse: resultData
+              requestId,
+              elapsedSeconds: attempts + 1
             })
             
             if (resultData.data?.status === 'completed' && resultData.data?.outputs && resultData.data.outputs.length > 0) {
@@ -700,7 +768,14 @@ export async function POST(request: NextRequest) {
     }
     
     // Deduct credits
-    console.log('Deducting credits for user:', user.id)
+    console.log('💸 Deducting credits:', {
+      userId: user.id,
+      currentBalance: userCredits.current_balance,
+      creditsNeeded,
+      newBalance: userCredits.current_balance - creditsNeeded,
+      newConsumedThisMonth: userCredits.consumed_this_month + creditsNeeded
+    })
+    
     const { error: creditError } = await supabaseAdmin
       .from('user_credits')
       .update({ 
@@ -710,10 +785,10 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
     
     if (creditError) {
-      console.error('Credit deduction failed:', creditError)
+      console.error('❌ Credit deduction failed:', creditError)
       throw new Error(`Credit deduction failed: ${creditError.message}`)
     }
-    console.log('Credits deducted successfully')
+    console.log('✅ Credits deducted successfully')
     
     // Save or update project
     const projectData = {
@@ -754,9 +829,27 @@ export async function POST(request: NextRequest) {
     }
     
     let project
-    console.log('Saving project data:', { projectId, user_id: user.id })
+    console.log('💾 Saving project data:', { 
+      projectId, 
+      userId: user.id,
+      hasProjectId: !!projectId,
+      operation: projectId ? 'UPDATE' : 'INSERT'
+    })
+    
+    console.log('📊 Project data to save:', {
+      title: projectData.title,
+      prompt: projectData.prompt?.substring(0, 50) + '...',
+      style: projectData.style,
+      aspectRatio: projectData.aspect_ratio,
+      resolution: projectData.resolution,
+      generatedImagesCount: projectData.generated_images?.length,
+      creditsUsed: projectData.credits_used,
+      status: projectData.status,
+      hasMetadata: !!projectData.metadata
+    })
     
     if (projectId) {
+      console.log('🔄 Updating existing project:', projectId)
       const { data, error } = await supabaseAdmin
         .from('playground_projects')
         .update(projectData)
@@ -766,12 +859,19 @@ export async function POST(request: NextRequest) {
         .single()
       
       if (error) {
-        console.error('Project update failed:', error)
+        console.error('❌ Project update failed:', error)
+        console.error('❌ Update error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
         throw new Error(`Project update failed: ${error.message}`)
       }
       project = data
-      console.log('Project updated successfully')
+      console.log('✅ Project updated successfully:', { projectId: project.id })
     } else {
+      console.log('🆕 Creating new project')
       const { data, error } = await supabaseAdmin
         .from('playground_projects')
         .insert(projectData)
@@ -779,11 +879,17 @@ export async function POST(request: NextRequest) {
         .single()
       
       if (error) {
-        console.error('Project insert failed:', error)
+        console.error('❌ Project insert failed:', error)
+        console.error('❌ Insert error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        })
         throw new Error(`Project insert failed: ${error.message}`)
       }
       project = data
-      console.log('Project created successfully')
+      console.log('✅ Project created successfully:', { projectId: project.id })
     }
     
     // Generate appropriate warnings based on limitations
@@ -808,21 +914,41 @@ export async function POST(request: NextRequest) {
       height: parseInt(finalResolution.split('*')[1] || '1024')
     }))
     
-    console.log('Final API response images:', responseImages)
+    console.log('🎉 === GENERATION COMPLETED SUCCESSFULLY ===')
+    console.log('📸 Final response images:', responseImages)
+    console.log('💾 Project saved:', { 
+      projectId: project.id,
+      projectTitle: project.title,
+      projectStatus: project.status
+    })
+    console.log('💰 Credits used:', creditsNeeded)
+    console.log('⚠️ Warning:', warning)
     
-    return NextResponse.json({ 
+    const finalResponse = { 
       success: true, 
       project,
       images: responseImages,
       creditsUsed: creditsNeeded,
       warning: warning
+    }
+    
+    console.log('📤 Sending response to client:', {
+      success: finalResponse.success,
+      projectId: finalResponse.project?.id,
+      imagesCount: finalResponse.images?.length,
+      creditsUsed: finalResponse.creditsUsed,
+      hasWarning: !!finalResponse.warning
     })
+    
+    return NextResponse.json(finalResponse)
   } catch (error) {
-    console.error('Failed to generate images:', error)
-    console.error('Error details:', {
+    console.error('💥 === GENERATION FAILED ===')
+    console.error('❌ Error occurred:', error)
+    console.error('🔍 Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined
+      name: error instanceof Error ? error.name : undefined,
+      timestamp: new Date().toISOString()
     })
     
     // Provide user-friendly error messages

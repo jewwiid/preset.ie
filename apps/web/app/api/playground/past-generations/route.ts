@@ -137,6 +137,7 @@ export async function GET(request: NextRequest) {
       project.generated_images.length > 0
     ).map(project => ({
       ...project,
+      metadata: project.metadata || {}, // Ensure metadata exists for preset capture/reuse
       is_saved: savedProjectIds.has(project.id),
       is_video: false
     })) || []
