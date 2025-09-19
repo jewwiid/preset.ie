@@ -1,8 +1,11 @@
 -- RLS policies for profile-images bucket
 -- Note: Bucket already created via API
 
--- Drop existing policy if it exists
+-- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Users can view all profile images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload their own profile images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own profile images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own profile images" ON storage.objects;
 
 -- Create RLS policies for profile-images bucket
 CREATE POLICY "Users can view all profile images" ON storage.objects

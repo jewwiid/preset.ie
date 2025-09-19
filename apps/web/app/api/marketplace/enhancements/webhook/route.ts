@@ -55,20 +55,19 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
 
     // Create the enhancement record
     const enhancementData = {
-      listing_id,
-      user_id,
-      enhancement_type: enhancement_type as 'basic_bump' | 'priority_bump' | 'premium_bump',
-      payment_intent_id: paymentIntent.id,
-      amount_cents: paymentIntent.amount,
-      status: 'active' as const,
-      starts_at: new Date().toISOString(),
-      expires_at: getExpirationDate(enhancement_type).toISOString()
+      listingId: listing_id,
+      userId: user_id,
+      enhancementType: enhancement_type as 'basic_bump' | 'priority_bump' | 'premium_bump',
+      paymentIntentId: paymentIntent.id,
+      amountCents: paymentIntent.amount,
+      durationDays: getDurationDays(enhancement_type)
     };
 
     await EnhancementService.createListingEnhancement(enhancementData);
 
     // Send success notification to user
-    await supabase.functions.invoke('create-notification', {
+    if (supabase) {
+      await supabase.functions.invoke('create-notification', {
       body: {
         user_id,
         type: 'enhancement_applied',
@@ -81,6 +80,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
         }
       }
     });
+    }
 
     console.log(`Enhancement created successfully for listing: ${listing_id}`);
   } catch (error) {
@@ -100,7 +100,8 @@ async function handlePaymentFailure(paymentIntent: Stripe.PaymentIntent) {
     console.log(`Payment failed for enhancement: ${enhancement_type} on listing: ${listing_id}`);
 
     // Send failure notification to user
-    await supabase.functions.invoke('create-notification', {
+    if (supabase) {
+      await supabase.functions.invoke('create-notification', {
       body: {
         user_id,
         type: 'enhancement_failed',
@@ -114,6 +115,7 @@ async function handlePaymentFailure(paymentIntent: Stripe.PaymentIntent) {
         }
       }
     });
+    }
 
     console.log(`Payment failure notification sent for listing: ${listing_id}`);
   } catch (error) {
@@ -121,13 +123,22 @@ async function handlePaymentFailure(paymentIntent: Stripe.PaymentIntent) {
   }
 }
 
+function getDurationDays(enhancementType: string): number {
+  switch (enhancementType) {
+    case 'basic_bump':
+      return 7; // 1 week
+    case 'priority_bump':
+      return 14; // 2 weeks
+    case 'premium_bump':
+      return 30; // 1 month
+    default:
+      return 7;
+  }
+}
+
 function getExpirationDate(enhancementType: string): Date {
   const now = new Date();
-  const durationDays = {
-    'basic_bump': 1,
-    'priority_bump': 3,
-    'premium_bump': 7
-  }[enhancementType] || 1;
+  const durationDays = getDurationDays(enhancementType);
   
   return new Date(now.getTime() + (durationDays * 24 * 60 * 60 * 1000));
 }

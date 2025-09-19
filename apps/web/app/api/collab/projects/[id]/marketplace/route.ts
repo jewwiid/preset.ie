@@ -4,10 +4,10 @@ import { ProjectMarketplaceService } from '@/lib/services/project-marketplace.se
 // GET /api/collab/projects/[id]/marketplace - Get project marketplace integration data
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Get gear requests with matching listings
     const gearRequestsWithMatches = await ProjectMarketplaceService.getGearRequestsWithMatches(id);
@@ -29,10 +29,10 @@ export async function GET(
 // POST /api/collab/projects/[id]/marketplace/convert - Convert gear request to listing
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { gearRequestId, listingData } = body;
 
@@ -67,10 +67,10 @@ export async function POST(
 // PUT /api/collab/projects/[id]/marketplace/link - Link gear request to existing listing
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { gearRequestId, listingId } = body;
 

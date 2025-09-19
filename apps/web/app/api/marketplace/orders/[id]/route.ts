@@ -4,10 +4,10 @@ import { OrderProcessingService } from '@/lib/services/order-processing.service'
 // GET /api/marketplace/orders/[id] - Get order details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const orderType = searchParams.get('type') as 'rental' | 'sale';
 
@@ -36,10 +36,10 @@ export async function GET(
 // PUT /api/marketplace/orders/[id] - Update order status
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { orderType, status, notes } = body;
 

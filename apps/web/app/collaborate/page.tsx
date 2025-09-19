@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Calendar, MapPin, Users, Camera, Plus, Search, Filter } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { supabase } from '../../lib/supabase';
 
 interface Project {
   id: string;
@@ -25,11 +26,10 @@ interface Project {
   created_at: string;
   creator: {
     id: string;
-    username: string;
+    handle: string;
     display_name: string;
     avatar_url?: string;
-    verified?: boolean;
-    rating?: number;
+    verified_id?: boolean;
   };
   collab_roles: Array<{
     id: string;
@@ -52,7 +52,7 @@ interface Project {
     status: string;
     user: {
       id: string;
-      username: string;
+      handle: string;
       display_name: string;
       avatar_url?: string;
     };
@@ -82,7 +82,7 @@ function CollaboratePageContent() {
   });
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
-    status: searchParams.get('status') || '',
+    status: searchParams.get('status') || 'all',
     city: searchParams.get('city') || '',
     country: searchParams.get('country') || '',
     role_type: searchParams.get('role_type') || '',
@@ -101,12 +101,26 @@ function CollaboratePageContent() {
         sort_by: sortBy,
         ...Object.fromEntries(
           Object.entries(filters).filter(([_, value]) => 
-            value !== undefined && value !== ''
+            value !== undefined && value !== '' && value !== 'all'
           )
         )
       });
 
-      const response = await fetch(`/api/collab/projects?${params}`);
+      // Get the current session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        setError('Please sign in to view collaboration projects');
+        return;
+      }
+
+      const response = await fetch(`/api/collab/projects?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       const data: ProjectsResponse = await response.json();
 
       if (response.ok) {
@@ -135,7 +149,7 @@ function CollaboratePageContent() {
   const handleClearFilters = () => {
     setFilters({
       search: '',
-      status: '',
+      status: 'all',
       city: '',
       country: '',
       role_type: '',
@@ -222,7 +236,7 @@ function CollaboratePageContent() {
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All statuses</SelectItem>
+                      <SelectItem value="all">All statuses</SelectItem>
                       <SelectItem value="published">Published</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
@@ -364,7 +378,7 @@ function CollaboratePageContent() {
                           <Badge className={getStatusColor(project.status)}>
                             {project.status.replace('_', ' ')}
                           </Badge>
-                          {project.creator.verified && (
+                          {project.creator.verified_id && (
                             <Badge variant="secondary">Verified</Badge>
                           )}
                         </div>
@@ -425,9 +439,6 @@ function CollaboratePageContent() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center text-sm text-gray-500">
                           <span>by {project.creator.display_name}</span>
-                          {project.creator.rating && (
-                            <span className="ml-2">⭐ {project.creator.rating.toFixed(1)}</span>
-                          )}
                         </div>
                         <span className="text-xs text-gray-400">
                           {formatDate(project.created_at)}

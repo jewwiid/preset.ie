@@ -115,7 +115,7 @@ export class OrderProcessingService {
         success: true,
         orderId: order.id,
         paymentIntentId: paymentIntent.id,
-        clientSecret: paymentIntent.client_secret
+        clientSecret: paymentIntent.client_secret || undefined
       };
 
     } catch (error) {
@@ -187,7 +187,7 @@ export class OrderProcessingService {
         success: true,
         orderId: order.id,
         paymentIntentId: paymentIntent.id,
-        clientSecret: paymentIntent.client_secret
+        clientSecret: paymentIntent.client_secret || undefined
       };
 
     } catch (error) {

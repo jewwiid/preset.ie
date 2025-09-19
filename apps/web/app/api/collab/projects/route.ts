@@ -31,11 +31,10 @@ export async function GET(request: NextRequest) {
         *,
         creator:users_profile!collab_projects_creator_id_fkey(
           id,
-          username,
+          handle,
           display_name,
           avatar_url,
-          verified,
-          rating,
+          verified_id,
           city,
           country
         ),
@@ -63,7 +62,7 @@ export async function GET(request: NextRequest) {
           status,
           user:users_profile!collab_participants_user_id_fkey(
             id,
-            username,
+            handle,
             display_name,
             avatar_url
           )

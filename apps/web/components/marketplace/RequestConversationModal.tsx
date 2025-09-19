@@ -98,9 +98,14 @@ export default function RequestConversationModal({
       setLoading(true);
       setError(null);
 
+      if (!supabase) {
+        setError('Database connection not available');
+        return;
+      }
+
       const response = await fetch(`/api/marketplace/requests/${requestId}/conversation`, {
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Authorization': `Bearer ${(await supabase!.auth.getSession()).data.session?.access_token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -125,12 +130,17 @@ export default function RequestConversationModal({
 
   const createConversation = async () => {
     try {
-      const response = await fetch(`/api/marketplace/requests/${requestId}/conversation`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          'Content-Type': 'application/json'
-        },
+      if (!supabase) {
+        setError('Database connection not available');
+        return;
+      }
+
+        const response = await fetch(`/api/marketplace/requests/${requestId}/conversation`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${(await supabase!.auth.getSession()).data.session?.access_token}`,
+            'Content-Type': 'application/json'
+          },
         body: JSON.stringify({ responder_id: responderId })
       });
 
@@ -149,9 +159,14 @@ export default function RequestConversationModal({
     if (!conversation) return;
 
     try {
+      if (!supabase) {
+        setError('Database connection not available');
+        return;
+      }
+
       const response = await fetch(`/api/marketplace/requests/${requestId}/conversation/messages`, {
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Authorization': `Bearer ${(await supabase!.auth.getSession()).data.session?.access_token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -177,7 +192,7 @@ export default function RequestConversationModal({
       const response = await fetch(`/api/marketplace/requests/${requestId}/conversation/messages`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Authorization': `Bearer ${(await supabase!.auth.getSession()).data.session?.access_token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({

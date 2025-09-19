@@ -107,7 +107,7 @@ export default function GearOfferModal({
     setError(null);
 
     try {
-      const offerData = {
+      const offerData: any = {
         gear_request_id: gearRequest.id,
         listing_id: formData.listing_id || null,
         offer_type: formData.offer_type,
@@ -299,7 +299,7 @@ export default function GearOfferModal({
                   <SelectValue placeholder="Select from your listings or leave blank" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific listing</SelectItem>
+                  <SelectItem value="none">No specific listing</SelectItem>
                   {userListings.map((listing) => (
                     <SelectItem key={listing.id} value={listing.id}>
                       {listing.title} ({listing.condition})

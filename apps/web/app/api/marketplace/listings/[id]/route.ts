@@ -9,10 +9,10 @@ const supabase = createClient(
 // GET /api/marketplace/listings/[id] - Get listing details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const { data: listing, error } = await supabase
       .from('listings')
@@ -84,10 +84,10 @@ export async function GET(
 // PUT /api/marketplace/listings/[id] - Update listing
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Get current user
@@ -156,10 +156,10 @@ export async function PUT(
 // DELETE /api/marketplace/listings/[id] - Delete listing
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Get current user
     const authHeader = request.headers.get('authorization');

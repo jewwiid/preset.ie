@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
           .insert({
             user_id: user.id,
             subscription_tier: subscriptionTier,
-            monthly_allowance: subscriptionTier === 'PRO' ? 25 : subscriptionTier === 'PLUS' ? 10 : 0,
-            current_balance: subscriptionTier === 'PRO' ? 25 : subscriptionTier === 'PLUS' ? 10 : 0
+            monthly_allowance: subscriptionTier === 'PRO' ? 200 : subscriptionTier === 'PLUS' ? 50 : 5,
+            current_balance: subscriptionTier === 'PRO' ? 200 : subscriptionTier === 'PLUS' ? 50 : 5
           })
           .select()
           .single()

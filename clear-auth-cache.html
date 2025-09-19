@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Auth Cache</title>
+</head>
+<body>
+    <h1>Clear Supabase Auth Cache</h1>
+    <button onclick="clearCache()">Clear Cache</button>
+    <div id="result"></div>
+
+    <script>
+        function clearCache() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                // Clear all Supabase-related localStorage items
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.includes('supabase') || key.includes('auth') || key.includes('preset'))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                
+                keysToRemove.forEach(key => {
+                    localStorage.removeItem(key);
+                });
+                
+                // Clear all cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                resultDiv.innerHTML = `
+                    <p style="color: green;">✅ Cache cleared successfully!</p>
+                    <p>Removed ${keysToRemove.length} localStorage items</p>
+                    <p>Cleared all cookies</p>
+                    <p><strong>Next steps:</strong></p>
+                    <ol>
+                        <li>Close this tab</li>
+                        <li>Go to <a href="http://localhost:3000/auth/signin" target="_blank">http://localhost:3000/auth/signin</a></li>
+                        <li>Sign in with: admin@preset.ie / Admin123!</li>
+                    </ol>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

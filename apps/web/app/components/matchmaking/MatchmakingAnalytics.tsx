@@ -70,8 +70,8 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
       // Get basic metrics
       const { data: metrics, error: metricsError } = await supabase
         .rpc('calculate_user_matchmaking_metrics', {
-          p_user_id: userId,
-          p_period: timeRange
+          p_period: timeRange,
+          p_user_id: userId
         })
 
       if (metricsError) {

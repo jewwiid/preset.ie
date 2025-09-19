@@ -33,7 +33,10 @@ import {
   Target,
   ShoppingBag,
   Store,
-  Calendar
+  Calendar,
+  Palette,
+  Users,
+  FileText
 } from 'lucide-react'
 import { NotificationBell } from './NotificationBell'
 
@@ -68,8 +71,12 @@ export function NavBar() {
     // Base items for all authenticated users
     const baseItems = [
       { label: 'Messages', href: '/messages', icon: MessageSquare, requiresAuth: true },
+      { label: 'Presets', href: '/presets', icon: Palette, requiresAuth: true },
+      { label: 'Collaborate', href: '/collaborate', icon: Users, requiresAuth: true },
+      { label: 'Treatments', href: '/treatments', icon: FileText, requiresAuth: true },
       // Marketplace is handled by dropdown, not as a base item
       // Matchmaking is accessible via dashboard, not as a main nav item
+      // Applications moved to Dashboard dropdown
     ]
 
     // Role-specific additions
@@ -79,7 +86,6 @@ export function NavBar() {
     if (profile?.role_flags?.includes('CONTRIBUTOR')) {
       roleSpecificItems.push(
         { label: 'My Gigs', href: '/gigs/my-gigs', icon: Calendar, requiresAuth: true },
-        { label: 'Applications', href: '/applications', icon: Briefcase, requiresAuth: true },
         { label: 'Showcases', href: '/showcases', icon: Image, requiresAuth: true }
       )
     }
@@ -87,7 +93,6 @@ export function NavBar() {
     // Talent-specific items (users who are not contributors)
     if (!profile?.role_flags?.includes('CONTRIBUTOR')) {
       roleSpecificItems.push(
-        { label: 'My Applications', href: '/applications', icon: Briefcase, requiresAuth: true },
         { label: 'Showcases', href: '/showcases', icon: Image, requiresAuth: true }
       )
     }
@@ -199,9 +204,8 @@ export function NavBar() {
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Logo and main nav */}
-          <div className="flex">
-            {/* Logo */}
+          {/* Logo */}
+          <div className="flex items-center">
             <Link href="/" className="flex items-center">
               <div className="flex items-center justify-center w-10 h-10 mr-3">
                 <img 
@@ -212,9 +216,10 @@ export function NavBar() {
               </div>
               <span className="text-xl font-bold text-gray-900">Preset</span>
             </Link>
+          </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:ml-8 md:flex md:space-x-1">
+          {/* Desktop Navigation - Right aligned */}
+          <div className="hidden md:flex md:items-center md:space-x-1">
               {/* Dashboard Dropdown */}
               {user && (
                 <DropdownMenu>
@@ -250,6 +255,12 @@ export function NavBar() {
                       <Link href="/matchmaking" className="flex items-center">
                         <Target className="mr-2 h-4 w-4" />
                         Matchmaking
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/applications" className="flex items-center">
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        My Applications
                       </Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -367,7 +378,6 @@ export function NavBar() {
                 )
               })}
 
-            </div>
           </div>
 
           {/* Right side */}
@@ -585,6 +595,20 @@ export function NavBar() {
                 >
                   <Target className="w-5 h-5 inline mr-3" />
                   Matchmaking
+                </Link>
+                <Link
+                  href="/applications"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/applications')
+                      ? 'text-emerald-600 bg-emerald-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Briefcase className="w-5 h-5 inline mr-3" />
+                  My Applications
                 </Link>
               </>
             )}

@@ -94,9 +94,9 @@ GRANT ALL ON storage.buckets TO authenticated;
 GRANT ALL ON storage.objects TO authenticated;
 GRANT SELECT ON storage.objects TO anon;
 
--- Add index for faster lookups
-CREATE INDEX IF NOT EXISTS idx_storage_objects_bucket_owner 
-ON storage.objects(bucket_id, owner);
+-- Add index for faster lookups (commented out due to permissions)
+-- CREATE INDEX IF NOT EXISTS idx_storage_objects_bucket_owner 
+-- ON storage.objects(bucket_id, owner);
 
--- Add comment
-COMMENT ON SCHEMA storage IS 'Supabase Storage schema for managing file uploads including profile photos';
+-- Add comment (commented out due to permissions)
+-- COMMENT ON SCHEMA storage IS 'Supabase Storage schema for managing file uploads including profile photos';

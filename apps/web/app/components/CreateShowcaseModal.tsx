@@ -1,527 +1,425 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { X, Image, Tag, Eye, EyeOff, ArrowRight } from 'lucide-react'
-import { useAuth } from '../../lib/auth-context'
-import { useRouter } from 'next/navigation'
-
-interface Moodboard {
-  id: string
-  title: string
-  description?: string
-  items_count: number
-  created_at: string
-}
-
-interface GalleryImage {
-  id: string
-  image_url?: string
-  video_url?: string
-  thumbnail_url: string
-  title: string
-  description?: string
-  tags: string[]
-  created_at: string
-  media_type: 'image' | 'video'
-  width: number
-  height: number
-}
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Plus, Image as ImageIcon, Video, FileText, Palette, X, Check, Upload, Eye, EyeOff, Globe, Lock } from 'lucide-react';
+import { useAuth } from '../../lib/auth-context';
+import { Badge } from '../../components/ui/badge';
 
 interface CreateShowcaseModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+interface MediaItem {
+  id: string;
+  url: string;
+  type: 'image' | 'video';
+  thumbnail_url?: string;
 }
 
 export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: CreateShowcaseModalProps) {
-  const { user, session } = useAuth()
-  const router = useRouter()
-  const [moodboards, setMoodboards] = useState<Moodboard[]>([])
-  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([])
-  const [loading, setLoading] = useState(false)
-  const [fetchingMoodboards, setFetchingMoodboards] = useState(false)
-  const [fetchingGallery, setFetchingGallery] = useState(false)
-  
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    moodboardId: '',
-    individualImageId: '',
-    individualImageUrl: '',
-    individualImageTitle: '',
-    individualImageDescription: '',
-    showcaseType: 'moodboard' as 'moodboard' | 'individual_image',
-    visibility: 'public' as 'public' | 'private',
-    tags: [] as string[]
-  })
-  
-  const [tagInput, setTagInput] = useState('')
+  const { user, session } = useAuth();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState<'moodboard' | 'individual_image' | 'treatment' | 'video'>('individual_image');
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [userSubscriptionTier, setUserSubscriptionTier] = useState<string>('FREE');
+  const [availableMedia, setAvailableMedia] = useState<MediaItem[]>([]);
+  const [availableTreatments, setAvailableTreatments] = useState<Array<{ id: string; title: string; }>>([]);
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
+  const [selectedMoodboard, setSelectedMoodboard] = useState<string>('');
 
   useEffect(() => {
-    if (isOpen && user) {
-      fetchMoodboards()
-      fetchGalleryImages()
+    if (user && session) {
+      fetchUserSubscription();
+      fetchAvailableMedia();
+      fetchAvailableTreatments();
     }
-  }, [isOpen, user])
+  }, [user, session]);
 
-  const fetchMoodboards = async () => {
-    if (!user || !session) return
-
+  const fetchUserSubscription = async () => {
     try {
-      setFetchingMoodboards(true)
-      const response = await fetch('/api/moodboards', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      })
-
+      const response = await fetch('/api/user/subscription', {
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
       if (response.ok) {
-        const data = await response.json()
-        setMoodboards(data.moodboards || [])
+        const data = await response.json();
+        setUserSubscriptionTier(data.tier || 'FREE');
       }
-    } catch (error) {
-      console.error('Error fetching moodboards:', error)
-    } finally {
-      setFetchingMoodboards(false)
+    } catch (err) {
+      console.error('Failed to fetch subscription tier:', err);
     }
-  }
+  };
 
-  const fetchGalleryImages = async () => {
-    if (!user || !session) return
-
+  const fetchAvailableMedia = async () => {
     try {
-      setFetchingGallery(true)
-      const response = await fetch('/api/playground/gallery', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      })
-
+      const response = await fetch('/api/media', {
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
       if (response.ok) {
-        const data = await response.json()
-        setGalleryImages(data.media || [])
+        const data = await response.json();
+        setAvailableMedia(data.media.map((m: any) => ({
+          id: m.id,
+          url: m.url,
+          type: m.type,
+          thumbnail_url: m.thumbnail_url || m.url
+        })));
       }
-    } catch (error) {
-      console.error('Error fetching gallery images:', error)
-    } finally {
-      setFetchingGallery(false)
+    } catch (err) {
+      console.error('Failed to fetch available media:', err);
     }
-  }
+  };
+
+  const fetchAvailableTreatments = async () => {
+    try {
+      const response = await fetch('/api/treatments', {
+        headers: { 'Authorization': `Bearer ${session?.access_token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableTreatments(data.treatments.map((t: any) => ({ id: t.id, title: t.title })));
+      }
+    } catch (err) {
+      console.error('Failed to fetch available treatments:', err);
+    }
+  };
+
+  const handleAddTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleMediaSelect = (media: MediaItem) => {
+    setSelectedMedia(prev =>
+      prev.some(item => item.id === media.id)
+        ? prev.filter(item => item.id !== media.id)
+        : [...prev, media]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
     if (!user || !session) {
-      alert('Please sign in to create a showcase')
-      return
+      setError('You must be logged in to create a showcase.');
+      return;
+    }
+    if (userSubscriptionTier === 'FREE') {
+      setError('Free users cannot post to showcase. Please upgrade your plan.');
+      return;
+    }
+    if (!title.trim() || selectedMedia.length === 0) {
+      setError('Title and at least one media item are required.');
+      return;
     }
 
-    if (!formData.title) {
-      alert('Please fill in the title')
-      return
-    }
+    setLoading(true);
+    setError(null);
 
-    if (formData.showcaseType === 'moodboard' && !formData.moodboardId) {
-      alert('Please select a moodboard')
-      return
-    }
-
-    if (formData.showcaseType === 'individual_image' && !formData.individualImageId) {
-      alert('Please select an image')
-      return
-    }
-
-    setLoading(true)
-    
     try {
-      const requestData = {
-        title: formData.title,
-        description: formData.description,
-        showcaseType: formData.showcaseType,
-        visibility: formData.visibility,
-        tags: formData.tags,
-        ...(formData.showcaseType === 'moodboard' ? {
-          moodboardId: formData.moodboardId
-        } : {
-          individualImageUrl: formData.individualImageUrl,
-          individualImageTitle: formData.individualImageTitle,
-          individualImageDescription: formData.individualImageDescription
-        })
-      }
-
-      console.log('🚀 Sending showcase creation request:', requestData)
-      console.log('🔑 Session token:', session.access_token ? 'Present' : 'Missing')
-
-      const response = await fetch('/api/showcases/create', {
+      const response = await fetch('/api/showcases', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify(requestData)
-      })
-
-      console.log('📡 Response status:', response.status)
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()))
+        body: JSON.stringify({
+          title,
+          description,
+          type,
+          media_ids: selectedMedia.map(m => m.id),
+          tags,
+        })
+      });
 
       if (!response.ok) {
-        let errorData = {}
-        try {
-          const responseText = await response.text()
-          console.error('❌ Raw response text:', responseText)
-          
-          if (responseText) {
-            errorData = JSON.parse(responseText)
-          }
-        } catch (parseError) {
-          console.error('❌ Failed to parse error response:', parseError)
-          errorData = { error: `HTTP ${response.status}: ${response.statusText}` }
-        }
-        
-        console.error('❌ API Error Response:', errorData)
-        console.error('❌ Response status:', response.status)
-        console.error('❌ Response statusText:', response.statusText)
-        
-        // Try to get more details about the error
-        const errorMessage = (errorData as any).error || (errorData as any).message || `HTTP ${response.status}: ${response.statusText}`
-        throw new Error(errorMessage)
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create showcase');
       }
 
-      const successData = await response.json()
-      console.log('✅ Showcase created successfully:', successData)
-      onSuccess()
-    } catch (error) {
-      console.error('❌ Error creating showcase:', error)
-      console.error('Error details:', {
-        message: (error as Error).message,
-        stack: (error as Error).stack
-      })
-      alert((error as Error).message || 'Failed to create showcase')
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error('Error creating showcase:', err);
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
-  const addTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tagInput.trim()]
-      }))
-      setTagInput('')
-    }
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
-    }))
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      addTag()
-    }
-  }
-
-  const handleImageSelect = (image: GalleryImage) => {
-    setFormData(prev => ({
-      ...prev,
-      individualImageId: image.id,
-      individualImageUrl: image.image_url || image.video_url || image.thumbnail_url,
-      individualImageTitle: image.title,
-      individualImageDescription: image.description || ''
-    }))
-  }
-
-  const handleGoToPlayground = () => {
-    onClose() // Close the modal first
-    router.push('/playground') // Navigate to playground
-  }
-
-  if (!isOpen) return null
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Create Showcase</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
+        <DialogHeader className="flex-shrink-0 pb-4">
+          <DialogTitle className="text-2xl font-semibold">Create Showcase</DialogTitle>
+          <p className="text-muted-foreground">Share your creative work with the community</p>
+        </DialogHeader>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Title *
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Enter showcase title"
-              required
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Describe your showcase"
-              rows={3}
-            />
-          </div>
-
-          {/* Showcase Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Showcase Type
-            </label>
-            <div className="flex space-x-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="moodboard"
-                  checked={formData.showcaseType === 'moodboard'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, showcaseType: e.target.value as 'moodboard' | 'individual_image' }))}
-                  className="mr-2"
-                />
-                <span className="text-sm">Moodboard</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="individual_image"
-                  checked={formData.showcaseType === 'individual_image'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, showcaseType: e.target.value as 'moodboard' | 'individual_image' }))}
-                  className="mr-2"
-                />
-                <span className="text-sm">Individual Image</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Moodboard Selection */}
-          {formData.showcaseType === 'moodboard' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Moodboard *
-              </label>
-              {fetchingMoodboards ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
-                </div>
-              ) : (
-                <select
-                  value={formData.moodboardId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, moodboardId: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  required
-                >
-                  <option value="">Choose a moodboard</option>
-                  {moodboards.map((moodboard) => (
-                    <option key={moodboard.id} value={moodboard.id}>
-                      {moodboard.title} ({moodboard.items_count} items)
-                    </option>
-                  ))}
-                </select>
-              )}
-              {moodboards.length === 0 && !fetchingMoodboards && (
-                <div className="text-center py-8 px-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                  <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-sm text-gray-500 mb-4">
-                    No moodboards found. Create a moodboard first.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleGoToPlayground}
-                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
-                  >
-                    Go to Playground
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </button>
-                </div>
-              )}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col space-y-4 overflow-hidden">
+          {error && (
+            <div className="p-3 border border-destructive/20 bg-destructive/5 rounded-lg flex-shrink-0">
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          {/* Individual Image Selection */}
-          {formData.showcaseType === 'individual_image' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Image *
-              </label>
-              {fetchingGallery ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
+          {userSubscriptionTier === 'FREE' && (
+            <div className="p-3 border border-amber-200 bg-amber-50 rounded-lg flex-shrink-0">
+              <div className="flex items-center space-x-2">
+                <Lock className="h-4 w-4 text-amber-600" />
+                <div>
+                  <p className="font-medium text-amber-800">Upgrade Required</p>
+                  <p className="text-sm text-amber-700">Free users cannot create showcases. Upgrade your plan to share your work!</p>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto">
-                  {galleryImages.map((image) => (
-                    <div
-                      key={image.id}
-                      className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 ${
-                        formData.individualImageId === image.id 
-                          ? 'border-purple-500' 
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      onClick={() => handleImageSelect(image)}
-                    >
-                      <img
-                        src={image.image_url || image.video_url || image.thumbnail_url}
-                        alt={image.title}
-                        className="w-full h-32 object-cover"
-                      />
-                      <div className="p-2">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {image.title}
-                        </p>
-                        {image.description && (
-                          <p className="text-xs text-gray-500 truncate">
-                            {image.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {galleryImages.length === 0 && !fetchingGallery && (
-                <div className="text-center py-8 px-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                  <Image className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-sm text-gray-500 mb-4">
-                    No images found in your gallery. Generate some images in the playground first.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleGoToPlayground}
-                    className="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700 transition-colors"
-                  >
-                    Go to Playground
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Visibility */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Visibility
-            </label>
-            <div className="flex space-x-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="public"
-                  checked={formData.visibility === 'public'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, visibility: e.target.value as 'public' | 'private' }))}
-                  className="mr-2"
-                />
-                <Eye className="h-4 w-4 mr-1 text-green-500" />
-                <span className="text-sm">Public</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="private"
-                  checked={formData.visibility === 'private'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, visibility: e.target.value as 'public' | 'private' }))}
-                  className="mr-2"
-                />
-                <EyeOff className="h-4 w-4 mr-1 text-gray-500" />
-                <span className="text-sm">Private</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tags
-            </label>
-            <div className="flex space-x-2 mb-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Add a tag"
-              />
-              <button
-                type="button"
-                onClick={addTag}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Add
-              </button>
-            </div>
-            {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {formData.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-sm rounded-md"
-                  >
-                    <Tag className="h-3 w-3 mr-1" />
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => removeTag(tag)}
-                      className="ml-1 hover:text-purple-600"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !formData.title || (formData.showcaseType === 'moodboard' && !formData.moodboardId) || (formData.showcaseType === 'individual_image' && !formData.individualImageId)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Creating...
-                </>
-              ) : (
-                'Create Showcase'
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-2 gap-6 flex-1 min-h-0">
+            {/* Left Column - Form Fields */}
+            <div className="space-y-4 overflow-y-auto pr-2">
+              {/* Title and Description */}
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter a compelling title"
+                    disabled={loading || userSubscriptionTier === 'FREE'}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe your showcase..."
+                    rows={2}
+                    disabled={loading || userSubscriptionTier === 'FREE'}
+                  />
+                </div>
+              </div>
+
+              {/* Showcase Type - Horizontal */}
+              <div className="space-y-2">
+                <Label>Showcase Type</Label>
+                <div className="flex gap-2">
+                  {[
+                    { value: 'individual_image', label: 'Image', icon: ImageIcon },
+                    { value: 'moodboard', label: 'Moodboard', icon: Palette },
+                    { value: 'video', label: 'Video', icon: Video },
+                    { value: 'treatment', label: 'Treatment', icon: FileText }
+                  ].map((option) => {
+                    const Icon = option.icon
+                    return (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={type === option.value ? "default" : "outline"}
+                        onClick={() => setType(option.value as any)}
+                        disabled={loading || userSubscriptionTier === 'FREE'}
+                        className="flex items-center space-x-2"
+                        size="sm"
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{option.label}</span>
+                      </Button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Visibility and Tags Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Visibility</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={visibility === 'public' ? "default" : "outline"}
+                      onClick={() => setVisibility('public')}
+                      disabled={loading || userSubscriptionTier === 'FREE'}
+                      size="sm"
+                      className="flex items-center space-x-1"
+                    >
+                      <Globe className="h-3 w-3" />
+                      <span>Public</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={visibility === 'private' ? "default" : "outline"}
+                      onClick={() => setVisibility('private')}
+                      disabled={loading || userSubscriptionTier === 'FREE'}
+                      size="sm"
+                      className="flex items-center space-x-1"
+                    >
+                      <EyeOff className="h-3 w-3" />
+                      <span>Private</span>
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Tags (Optional)</Label>
+                  <div className="flex space-x-1">
+                    <Input
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      placeholder="Add tag"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddTag();
+                        }
+                      }}
+                      disabled={loading || userSubscriptionTier === 'FREE'}
+                      className="flex-1 text-sm"
+                      size={1}
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={handleAddTag} 
+                      variant="outline"
+                      size="sm"
+                      disabled={loading || userSubscriptionTier === 'FREE'}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="flex items-center gap-1 text-xs">
+                      {tag}
+                      <X 
+                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                        onClick={() => handleRemoveTag(tag)} 
+                      />
+                    </Badge>
+                  ))}
+                </div>
               )}
-            </button>
+            </div>
+
+            {/* Right Column - Media Selection */}
+            <div className="space-y-3 overflow-hidden flex flex-col">
+              <Label>Select Media (Max 6)</Label>
+              <div className="flex-1 min-h-0">
+                <div className="grid grid-cols-3 gap-2 h-full overflow-y-auto border rounded-lg p-3">
+                  {availableMedia.length === 0 ? (
+                    <div className="col-span-3 flex flex-col items-center justify-center py-8 text-center">
+                      <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">No media available</p>
+                      <p className="text-xs text-muted-foreground">Upload media first</p>
+                    </div>
+                  ) : (
+                    availableMedia.map((media) => (
+                      <button
+                        key={media.id}
+                        type="button"
+                        onClick={() => handleMediaSelect(media)}
+                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                          selectedMedia.some(item => item.id === media.id)
+                            ? 'border-primary ring-2 ring-primary/20'
+                            : 'border-border hover:border-border'
+                        }`}
+                        disabled={loading || userSubscriptionTier === 'FREE' || 
+                          (selectedMedia.length >= 6 && !selectedMedia.some(item => item.id === media.id))}
+                      >
+                        {media.type === 'video' ? (
+                          <video 
+                            src={media.thumbnail_url || media.url} 
+                            className="w-full h-full object-cover" 
+                            muted 
+                            playsInline 
+                            preload="metadata" 
+                          />
+                        ) : (
+                          <img 
+                            src={media.url} 
+                            alt="Media" 
+                            className="w-full h-full object-cover" 
+                          />
+                        )}
+                        {selectedMedia.some(item => item.id === media.id) && (
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                            <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                              <Check className="h-3 w-3 text-primary-foreground" />
+                            </div>
+                          </div>
+                        )}
+                        <Badge className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 py-0">
+                          {media.type === 'video' ? <Video className="h-2 w-2" /> : <ImageIcon className="h-2 w-2" />}
+                        </Badge>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+              
+              {selectedMedia.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {selectedMedia.map(media => (
+                    <Badge key={media.id} variant="secondary" className="flex items-center gap-1 text-xs">
+                      {media.type === 'video' ? <Video className="h-2 w-2" /> : <ImageIcon className="h-2 w-2" />}
+                      {media.type}
+                      <X 
+                        className="h-2 w-2 cursor-pointer hover:text-destructive" 
+                        onClick={() => handleMediaSelect(media)} 
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </form>
-      </div>
-    </div>
-  )
+
+        {/* Footer */}
+        <DialogFooter className="flex-shrink-0 pt-4">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={loading || userSubscriptionTier === 'FREE'}
+            onClick={handleSubmit}
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                Creating...
+              </>
+            ) : (
+              'Create Showcase'
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

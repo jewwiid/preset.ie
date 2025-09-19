@@ -140,7 +140,7 @@ export default function MarketplaceFilters({
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All categories</SelectItem>
+                <SelectItem value="all">All categories</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -163,7 +163,7 @@ export default function MarketplaceFilters({
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All types</SelectItem>
+                <SelectItem value="all">All types</SelectItem>
                 {modes.map((mode) => (
                   <SelectItem key={mode.value} value={mode.value}>
                     {mode.label}
@@ -186,7 +186,7 @@ export default function MarketplaceFilters({
                 <SelectValue placeholder="All conditions" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All conditions</SelectItem>
+                <SelectItem value="all">All conditions</SelectItem>
                 {conditions.map((condition) => (
                   <SelectItem key={condition} value={condition}>
                     {condition.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}

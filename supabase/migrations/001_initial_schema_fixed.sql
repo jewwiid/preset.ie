@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS users_profile (
     state_province VARCHAR(100),
     role_flags user_role[] DEFAULT '{}',
     style_tags TEXT[] DEFAULT '{}',
-    vibe_tags TEXT[] DEFAULT '{}',
+    -- vibe_tags TEXT[] DEFAULT '{}', -- Added by later migration
     subscription_tier subscription_tier DEFAULT 'FREE',
     subscription_status subscription_status DEFAULT 'ACTIVE',
     subscription_started_at TIMESTAMPTZ DEFAULT NOW(),
@@ -164,7 +164,7 @@ CREATE TABLE IF NOT EXISTS gigs (
     status gig_status DEFAULT 'DRAFT',
     boost_level INTEGER DEFAULT 0,
     style_tags TEXT[] DEFAULT '{}',
-    vibe_tags TEXT[] DEFAULT '{}',
+    -- vibe_tags TEXT[] DEFAULT '{}', -- Added by later migration
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     CONSTRAINT valid_time_range CHECK (end_time > start_time),
@@ -386,15 +386,15 @@ CREATE INDEX IF NOT EXISTS idx_users_profile_user_id ON users_profile(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_profile_handle ON users_profile(handle);
 CREATE INDEX IF NOT EXISTS idx_users_profile_role_flags ON users_profile USING GIN(role_flags);
 CREATE INDEX IF NOT EXISTS idx_users_profile_style_tags ON users_profile USING GIN(style_tags);
-CREATE INDEX IF NOT EXISTS idx_users_profile_vibe_tags ON users_profile USING GIN(vibe_tags);
+-- CREATE INDEX IF NOT EXISTS idx_users_profile_vibe_tags ON users_profile USING GIN(vibe_tags);
 CREATE INDEX IF NOT EXISTS idx_users_profile_subscription_tier ON users_profile(subscription_tier);
-CREATE INDEX IF NOT EXISTS idx_users_profile_country ON users_profile(country);
-CREATE INDEX IF NOT EXISTS idx_users_profile_account_status ON users_profile(account_status);
-CREATE INDEX IF NOT EXISTS idx_users_profile_age_verified ON users_profile(age_verified);
-CREATE INDEX IF NOT EXISTS idx_users_profile_date_of_birth ON users_profile(date_of_birth);
-CREATE INDEX IF NOT EXISTS idx_users_profile_first_name ON users_profile(first_name);
-CREATE INDEX IF NOT EXISTS idx_users_profile_last_name ON users_profile(last_name);
-CREATE INDEX IF NOT EXISTS idx_users_profile_header_banner_url ON users_profile(header_banner_url) WHERE header_banner_url IS NOT NULL;
+-- CREATE INDEX IF NOT EXISTS idx_users_profile_country ON users_profile(country);
+-- CREATE INDEX IF NOT EXISTS idx_users_profile_account_status ON users_profile(account_status);
+-- CREATE INDEX IF NOT EXISTS idx_users_profile_age_verified ON users_profile(age_verified);
+-- CREATE INDEX IF NOT EXISTS idx_users_profile_date_of_birth ON users_profile(date_of_birth);
+-- CREATE INDEX IF NOT EXISTS idx_users_profile_first_name ON users_profile(first_name);
+-- CREATE INDEX IF NOT EXISTS idx_users_profile_last_name ON users_profile(last_name);
+-- CREATE INDEX IF NOT EXISTS idx_users_profile_header_banner_url ON users_profile(header_banner_url) WHERE header_banner_url IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_profiles_handle ON profiles(handle);
@@ -404,11 +404,11 @@ CREATE INDEX IF NOT EXISTS idx_gigs_owner ON gigs(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_gigs_status ON gigs(status);
 CREATE INDEX IF NOT EXISTS idx_gigs_location ON gigs USING GIST(location);
 CREATE INDEX IF NOT EXISTS idx_gigs_dates ON gigs(start_time, end_time);
-CREATE INDEX IF NOT EXISTS idx_gigs_purpose ON gigs(purpose);
-CREATE INDEX IF NOT EXISTS idx_gigs_style_tags ON gigs USING GIN(style_tags);
-CREATE INDEX IF NOT EXISTS idx_gigs_vibe_tags ON gigs USING GIN(vibe_tags);
-CREATE INDEX IF NOT EXISTS idx_gigs_city ON gigs(city);
-CREATE INDEX IF NOT EXISTS idx_gigs_country ON gigs(country);
+-- CREATE INDEX IF NOT EXISTS idx_gigs_purpose ON gigs(purpose);
+-- CREATE INDEX IF NOT EXISTS idx_gigs_style_tags ON gigs USING GIN(style_tags);
+-- CREATE INDEX IF NOT EXISTS idx_gigs_vibe_tags ON gigs USING GIN(vibe_tags);
+-- CREATE INDEX IF NOT EXISTS idx_gigs_city ON gigs(city);
+-- CREATE INDEX IF NOT EXISTS idx_gigs_country ON gigs(country);
 
 CREATE INDEX IF NOT EXISTS idx_applications_gig ON applications(gig_id);
 CREATE INDEX IF NOT EXISTS idx_applications_applicant ON applications(applicant_user_id);
@@ -417,14 +417,14 @@ CREATE INDEX IF NOT EXISTS idx_media_owner ON media(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_media_gig ON media(gig_id);
 CREATE INDEX IF NOT EXISTS idx_media_type ON media(type);
 CREATE INDEX IF NOT EXISTS idx_media_visibility ON media(visibility);
-CREATE INDEX IF NOT EXISTS idx_media_ai_metadata_gin ON media USING GIN(ai_metadata);
+-- CREATE INDEX IF NOT EXISTS idx_media_ai_metadata_gin ON media USING GIN(ai_metadata);
 
 CREATE INDEX IF NOT EXISTS idx_moodboards_gig ON moodboards(gig_id);
 CREATE INDEX IF NOT EXISTS idx_moodboards_owner ON moodboards(owner_user_id);
-CREATE INDEX IF NOT EXISTS idx_moodboards_vibe_ids ON moodboards USING GIN(vibe_ids);
-CREATE INDEX IF NOT EXISTS idx_moodboards_tags ON moodboards USING GIN(tags);
-CREATE INDEX IF NOT EXISTS idx_moodboards_mood ON moodboards USING GIN(mood_descriptors);
-CREATE INDEX IF NOT EXISTS idx_moodboards_vibe_search ON moodboards USING GIN(to_tsvector('english', COALESCE(vibe_summary, '')));
+-- CREATE INDEX IF NOT EXISTS idx_moodboards_vibe_ids ON moodboards USING GIN(vibe_ids);
+-- CREATE INDEX IF NOT EXISTS idx_moodboards_tags ON moodboards USING GIN(tags);
+-- CREATE INDEX IF NOT EXISTS idx_moodboards_mood ON moodboards USING GIN(mood_descriptors);
+-- CREATE INDEX IF NOT EXISTS idx_moodboards_vibe_search ON moodboards USING GIN(to_tsvector('english', COALESCE(vibe_summary, '')));
 
 CREATE INDEX IF NOT EXISTS idx_moodboard_items_moodboard_id ON moodboard_items(moodboard_id);
 CREATE INDEX IF NOT EXISTS idx_moodboard_items_position ON moodboard_items(moodboard_id, position);
@@ -440,15 +440,15 @@ CREATE INDEX IF NOT EXISTS idx_showcase_media_position ON showcase_media(showcas
 
 CREATE INDEX IF NOT EXISTS idx_messages_gig ON messages(gig_id);
 CREATE INDEX IF NOT EXISTS idx_messages_users ON messages(from_user_id, to_user_id);
-CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
-CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status);
+-- CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id); -- Column doesn't exist
+-- CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status); -- Column doesn't exist
 
 CREATE INDEX IF NOT EXISTS idx_reports_reporter ON reports(reporter_user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_reported_user ON reports(reported_user_id) WHERE reported_user_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status) WHERE status != 'resolved';
-CREATE INDEX IF NOT EXISTS idx_reports_priority ON reports(priority, created_at DESC) WHERE status IN ('pending', 'reviewing');
+-- CREATE INDEX IF NOT EXISTS idx_reports_priority ON reports(priority, created_at DESC) WHERE status IN ('pending', 'reviewing'); -- Column doesn't exist
 CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_reports_content ON reports(content_type, reported_content_id) WHERE reported_content_id IS NOT NULL;
+-- CREATE INDEX IF NOT EXISTS idx_reports_content ON reports(content_type, reported_content_id) WHERE reported_content_id IS NOT NULL; -- Columns don't exist
 
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer ON subscriptions(stripe_customer_id);
@@ -533,36 +533,47 @@ $$ LANGUAGE plpgsql;
 -- Triggers
 
 -- Update timestamp triggers
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_users_profile_updated_at ON users_profile;
 CREATE TRIGGER update_users_profile_updated_at BEFORE UPDATE ON users_profile
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_gigs_updated_at ON gigs;
 CREATE TRIGGER update_gigs_updated_at BEFORE UPDATE ON gigs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_applications_updated_at ON applications;
 CREATE TRIGGER update_applications_updated_at BEFORE UPDATE ON applications
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_moodboards_updated_at ON moodboards;
 CREATE TRIGGER update_moodboards_updated_at BEFORE UPDATE ON moodboards
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_showcases_updated_at ON showcases;
 CREATE TRIGGER update_showcases_updated_at BEFORE UPDATE ON showcases
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_subscriptions_updated_at ON subscriptions;
 CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON subscriptions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_user_credits_updated_at ON user_credits;
 CREATE TRIGGER update_user_credits_updated_at BEFORE UPDATE ON user_credits
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_user_settings_updated_at ON user_settings;
 CREATE TRIGGER update_user_settings_updated_at BEFORE UPDATE ON user_settings
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+DROP TRIGGER IF EXISTS update_reports_updated_at ON reports;
 CREATE TRIGGER update_reports_updated_at BEFORE UPDATE ON reports
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 

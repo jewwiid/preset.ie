@@ -64,6 +64,10 @@ ALTER TABLE user_provider_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE provider_performance ENABLE ROW LEVEL SECURITY;
 
 -- Users can view and update their own provider preferences
+DROP POLICY IF EXISTS "Users can view their own provider preferences" ON user_provider_preferences;
+DROP POLICY IF EXISTS "Users can insert their own provider preferences" ON user_provider_preferences;
+DROP POLICY IF EXISTS "Users can update their own provider preferences" ON user_provider_preferences;
+
 CREATE POLICY "Users can view their own provider preferences" ON user_provider_preferences
   FOR SELECT USING (auth.uid() = user_id);
 
@@ -74,6 +78,7 @@ CREATE POLICY "Users can update their own provider preferences" ON user_provider
   FOR UPDATE USING (auth.uid() = user_id);
 
 -- Only admins can view provider performance
+DROP POLICY IF EXISTS "Admins can view provider performance" ON provider_performance;
 CREATE POLICY "Admins can view provider performance" ON provider_performance
   FOR SELECT USING (
     EXISTS (

@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         created_at,
         updated_at
       `)
-      .eq('visibility', 'public')
+      .eq('visibility', 'PUBLIC')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
     let countQuery = supabase
       .from('showcases')
       .select('*', { count: 'exact', head: true })
-      .eq('visibility', 'public')
+      .eq('visibility', 'PUBLIC')
 
     if (showcaseType && ['moodboard', 'individual_image'].includes(showcaseType)) {
       countQuery = countQuery.eq('showcase_type', showcaseType)

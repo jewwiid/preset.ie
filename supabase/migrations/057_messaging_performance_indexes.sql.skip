@@ -1,0 +1,305 @@
+-- Performance Indexes for Messaging System
+-- Optimizes queries for conversations, messages, user blocking, and moderation
+
+-- =======================
+-- MESSAGES TABLE INDEXES
+-- =======================
+
+-- Primary message lookups by conversation participants
+-- Optimizes: "Get messages between two users for a specific gig"
+CREATE INDEX IF NOT EXISTS idx_messages_gig_participants_created 
+ON messages(gig_id, from_user_id, to_user_id, created_at DESC);
+
+-- Message lookups by conversation (reverse direction)
+CREATE INDEX IF NOT EXISTS idx_messages_gig_participants_reverse_created 
+ON messages(gig_id, to_user_id, from_user_id, created_at DESC);
+
+-- Fast recipient-based queries for notifications
+-- Optimizes: "Get unread messages for a user"
+CREATE INDEX IF NOT EXISTS idx_messages_recipient_unread 
+ON messages(to_user_id, read_at, created_at DESC) WHERE read_at IS NULL;
+
+-- Sender-based queries for user's sent messages
+CREATE INDEX IF NOT EXISTS idx_messages_sender_created 
+ON messages(from_user_id, created_at DESC);
+
+-- Gig-specific message counts and latest message queries
+-- Optimizes: "Get latest message for each gig conversation"
+CREATE INDEX IF NOT EXISTS idx_messages_gig_created 
+ON messages(gig_id, created_at DESC);
+
+-- Full-text search on message content (if needed for search functionality)
+-- Note: This creates a GIN index for text search - only create if search is implemented
+-- CREATE INDEX IF NOT EXISTS idx_messages_body_fulltext 
+-- ON messages USING gin(to_tsvector('english', body));
+
+-- =======================
+-- USER_BLOCKS TABLE INDEXES
+-- =======================
+
+-- Primary blocking lookups
+-- Optimizes: "Check if user A blocked user B"
+CREATE INDEX IF NOT EXISTS idx_user_blocks_blocker_blocked 
+ON user_blocks(blocker_user_id, blocked_user_id);
+
+-- Reverse lookup for blocked status
+-- Optimizes: "Check if user B is blocked by user A"
+CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked_blocker 
+ON user_blocks(blocked_user_id, blocker_user_id);
+
+-- Get all users blocked by a specific user
+CREATE INDEX IF NOT EXISTS idx_user_blocks_blocker_created 
+ON user_blocks(blocker_user_id, created_at DESC);
+
+-- Get all users who blocked a specific user (for admin purposes)
+CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked_created 
+ON user_blocks(blocked_user_id, created_at DESC);
+
+-- =======================
+-- REPORTS TABLE INDEXES (Message Reports)
+-- =======================
+
+-- Message-specific report lookups
+-- Optimizes: "Get all reports for a specific message"
+CREATE INDEX IF NOT EXISTS idx_reports_message_content 
+ON reports(reported_content_id, content_type) WHERE content_type = 'message';
+
+-- Reporter-based lookups for duplicate prevention
+-- Optimizes: "Check if user already reported this message"
+CREATE INDEX IF NOT EXISTS idx_reports_message_reporter 
+ON reports(reporter_user_id, reported_content_id, content_type) WHERE content_type = 'message';
+
+-- Priority-based admin queue
+-- Optimizes: "Get high-priority pending message reports"
+CREATE INDEX IF NOT EXISTS idx_reports_message_priority_status 
+ON reports(priority, status, created_at DESC) WHERE content_type = 'message';
+
+-- =======================
+-- MODERATION_QUEUE TABLE INDEXES
+-- =======================
+
+-- Primary moderation queue lookups (COMMENTED OUT - TABLE NOT CREATED)
+-- Optimizes: "Get pending moderation items by priority"
+-- CREATE INDEX IF NOT EXISTS idx_moderation_queue_priority_status 
+-- ON moderation_queue(severity_score DESC, status, created_at DESC) 
+-- WHERE status IN ('pending', 'reviewing');
+
+-- User-specific moderation history (COMMENTED OUT - TABLE NOT CREATED)
+-- Optimizes: "Get moderation history for a user"
+-- CREATE INDEX IF NOT EXISTS idx_moderation_queue_user_created 
+-- ON moderation_queue(user_id, created_at DESC);
+
+-- Content-specific lookups (COMMENTED OUT - TABLE NOT CREATED)
+-- Optimizes: "Find moderation items for specific messages"
+-- CREATE INDEX IF NOT EXISTS idx_moderation_queue_content 
+-- ON moderation_queue(content_type, content_id) WHERE content_type = 'message';
+
+-- Reviewer workload queries (COMMENTED OUT - TABLE NOT CREATED)
+-- Optimizes: "Get items reviewed by specific admin"
+-- CREATE INDEX IF NOT EXISTS idx_moderation_queue_reviewer_resolved 
+-- ON moderation_queue(reviewer_id, reviewed_at DESC) WHERE reviewer_id IS NOT NULL;
+
+-- =======================
+-- RATE_LIMIT_USAGE TABLE INDEXES (COMMENTED OUT - TABLE NOT CREATED)
+-- =======================
+
+-- Primary rate limiting lookups (COMMENTED OUT - TABLE NOT CREATED)
+-- Optimizes: "Check current rate limit usage for user"
+-- CREATE INDEX IF NOT EXISTS idx_rate_limit_usage_user_resource_window 
+-- ON rate_limit_usage(user_id, resource_type, time_window_start DESC);
+
+-- Cleanup queries for expired time windows (COMMENTED OUT - TABLE NOT CREATED)
+-- Optimizes: Background cleanup of old rate limit records
+-- CREATE INDEX IF NOT EXISTS idx_rate_limit_usage_cleanup 
+-- ON rate_limit_usage(time_window_start) WHERE time_window_start < NOW() - INTERVAL '24 hours';
+
+-- =======================
+-- COMPOSITE CONVERSATION QUERIES
+-- =======================
+
+-- Multi-table conversation optimization
+-- This helps with complex queries that join messages with user profiles
+CREATE INDEX IF NOT EXISTS idx_messages_gig_users_for_conversations 
+ON messages(gig_id, LEAST(from_user_id, to_user_id), GREATEST(from_user_id, to_user_id), created_at DESC);
+
+-- =======================
+-- PERFORMANCE FUNCTIONS
+-- =======================
+
+-- Function to get conversation summary efficiently
+CREATE OR REPLACE FUNCTION get_conversation_summary(
+    p_gig_id UUID,
+    p_user1_id UUID,
+    p_user2_id UUID
+)
+RETURNS TABLE (
+    total_messages BIGINT,
+    last_message_at TIMESTAMPTZ,
+    unread_count_user1 BIGINT,
+    unread_count_user2 BIGINT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(*) as total_messages,
+        MAX(created_at) as last_message_at,
+        COUNT(*) FILTER (WHERE to_user_id = p_user1_id AND read_at IS NULL) as unread_count_user1,
+        COUNT(*) FILTER (WHERE to_user_id = p_user2_id AND read_at IS NULL) as unread_count_user2
+    FROM messages
+    WHERE gig_id = p_gig_id
+    AND ((from_user_id = p_user1_id AND to_user_id = p_user2_id)
+         OR (from_user_id = p_user2_id AND to_user_id = p_user1_id));
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function for efficient user conversation list
+CREATE OR REPLACE FUNCTION get_user_conversations(
+    p_user_id UUID,
+    p_limit INT DEFAULT 20,
+    p_offset INT DEFAULT 0
+)
+RETURNS TABLE (
+    gig_id UUID,
+    other_user_id UUID,
+    last_message_id UUID,
+    last_message_content TEXT,
+    last_message_at TIMESTAMPTZ,
+    unread_count BIGINT,
+    other_user_blocked BOOLEAN
+) AS $$
+BEGIN
+    RETURN QUERY
+    WITH conversation_summary AS (
+        SELECT 
+            m.gig_id,
+            CASE 
+                WHEN m.from_user_id = p_user_id THEN m.to_user_id
+                ELSE m.from_user_id
+            END as other_user_id,
+            m.id as message_id,
+            m.body,
+            m.created_at,
+            ROW_NUMBER() OVER (
+                PARTITION BY m.gig_id, 
+                CASE 
+                    WHEN m.from_user_id = p_user_id THEN m.to_user_id
+                    ELSE m.from_user_id
+                END
+                ORDER BY m.created_at DESC
+            ) as rn
+        FROM messages m
+        WHERE m.from_user_id = p_user_id OR m.to_user_id = p_user_id
+    ),
+    unread_counts AS (
+        SELECT 
+            gig_id,
+            CASE 
+                WHEN from_user_id = p_user_id THEN to_user_id
+                ELSE from_user_id
+            END as other_user_id,
+            COUNT(*) as unread_count
+        FROM messages
+        WHERE to_user_id = p_user_id 
+        AND read_at IS NULL
+        GROUP BY gig_id, CASE WHEN from_user_id = p_user_id THEN to_user_id ELSE from_user_id END
+    ),
+    blocking_status AS (
+        SELECT 
+            blocked_user_id,
+            TRUE as is_blocked
+        FROM user_blocks
+        WHERE blocker_user_id = p_user_id
+    )
+    SELECT 
+        cs.gig_id,
+        cs.other_user_id,
+        cs.message_id as last_message_id,
+        cs.body as last_message_content,
+        cs.created_at as last_message_at,
+        COALESCE(uc.unread_count, 0) as unread_count,
+        COALESCE(bs.is_blocked, FALSE) as other_user_blocked
+    FROM conversation_summary cs
+    LEFT JOIN unread_counts uc ON cs.gig_id = uc.gig_id AND cs.other_user_id = uc.other_user_id
+    LEFT JOIN blocking_status bs ON cs.other_user_id = bs.blocked_user_id
+    WHERE cs.rn = 1
+    ORDER BY cs.created_at DESC
+    LIMIT p_limit OFFSET p_offset;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =======================
+-- PERFORMANCE MONITORING
+-- =======================
+
+-- View for monitoring slow queries related to messaging
+CREATE OR REPLACE VIEW messaging_performance_stats AS
+SELECT 
+    schemaname,
+    tablename,
+    indexname,
+    num_scans,
+    tup_read,
+    tup_fetch
+FROM pg_stat_user_indexes 
+WHERE tablename IN ('messages', 'user_blocks', 'reports')
+ORDER BY num_scans DESC;
+
+-- Grant access to the performance view
+GRANT SELECT ON messaging_performance_stats TO authenticated;
+
+-- =======================
+-- MAINTENANCE FUNCTIONS
+-- =======================
+
+-- Function to analyze index usage and suggest optimizations
+CREATE OR REPLACE FUNCTION analyze_messaging_indexes()
+RETURNS TABLE (
+    table_name TEXT,
+    index_name TEXT,
+    scans BIGINT,
+    efficiency_score NUMERIC,
+    recommendation TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        i.tablename::TEXT,
+        i.indexname::TEXT,
+        i.idx_scan as scans,
+        CASE 
+            WHEN i.idx_scan = 0 THEN 0
+            ELSE ROUND((i.idx_tup_read::NUMERIC / NULLIF(i.idx_scan, 0))::NUMERIC, 2)
+        END as efficiency_score,
+        CASE 
+            WHEN i.idx_scan = 0 THEN 'Consider dropping - unused index'
+            WHEN i.idx_scan < 100 THEN 'Low usage - monitor for removal'
+            WHEN (i.idx_tup_read::NUMERIC / NULLIF(i.idx_scan, 0)) > 1000 THEN 'High efficiency - keep'
+            ELSE 'Normal usage'
+        END::TEXT as recommendation
+    FROM pg_stat_user_indexes i
+    WHERE i.tablename IN ('messages', 'user_blocks', 'reports')
+    ORDER BY i.idx_scan DESC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- =======================
+-- COMMENTS FOR DOCUMENTATION
+-- =======================
+
+COMMENT ON INDEX idx_messages_gig_participants_created IS 
+'Optimizes conversation message retrieval between two users for a specific gig';
+
+COMMENT ON INDEX idx_messages_recipient_unread IS 
+'Fast lookup for unread messages by recipient - critical for notification system';
+
+COMMENT ON INDEX idx_user_blocks_blocker_blocked IS 
+'Primary index for checking if user A has blocked user B - used in message filtering';
+
+COMMENT ON INDEX idx_moderation_queue_priority_status IS 
+'Ensures fast retrieval of high-priority moderation items for admin dashboard';
+
+COMMENT ON FUNCTION get_conversation_summary IS 
+'Efficiently calculates conversation statistics without full table scans';
+
+COMMENT ON FUNCTION get_user_conversations IS 
+'Optimized function for user conversation list with unread counts and blocking status';

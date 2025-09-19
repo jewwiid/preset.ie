@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import EquipmentRequestCard from '@/components/marketplace/EquipmentRequestCard';
 import CreateRequestModal from '@/components/marketplace/CreateRequestModal';
 import { Plus, Search, Filter, AlertCircle } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 
 interface EquipmentRequest {
   id: string;
@@ -76,7 +77,21 @@ export default function EquipmentRequestsPage() {
       if (selectedCity) params.append('city', selectedCity);
       if (urgentOnly) params.append('urgent', 'true');
 
-      const response = await fetch(`/api/marketplace/requests?${params}`);
+      // Get the current session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        setError('Please sign in to view marketplace requests');
+        return;
+      }
+
+      const response = await fetch(`/api/marketplace/requests?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       
       if (!response.ok) {
         const errorData = await response.json();

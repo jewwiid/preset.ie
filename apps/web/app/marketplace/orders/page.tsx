@@ -76,14 +76,18 @@ export default function OrdersPage() {
       setError(null);
 
       // Get the current session to get the access token
+      if (!supabase) {
+        setError('Database connection not available');
+        setLoading(false);
+        return;
+      }
+      
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
         console.error('Error getting session:', {
           message: sessionError?.message || 'No message',
           code: sessionError?.code || 'No code',
-          details: sessionError?.details || 'No details',
-          hint: sessionError?.hint || 'No hint',
           fullError: sessionError,
           errorType: typeof sessionError,
           errorKeys: sessionError ? Object.keys(sessionError) : 'No keys',

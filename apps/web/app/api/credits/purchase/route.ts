@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
+    }
+    
     // Get user from auth
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) {
@@ -13,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
     
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -132,31 +136,53 @@ export async function POST(request: NextRequest) {
 // GET endpoint to check platform capacity before showing packages
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
     // Get platform credits
-    const { data: platformCredit } = await supabase
+    const { data: platformCredit, error: platformError } = await supabase
       .from('credit_pools')
       .select('available_balance')
       .eq('provider', 'nanobanan')
       .single();
     
-    // Get credit packages
-    const { data: packages } = await supabase
+    // Get credit packages from database
+    const { data: packagesData, error: packagesError } = await supabase
       .from('credit_packages')
       .select('*')
       .eq('is_active', true)
       .order('credits');
     
-    if (!platformCredit || !packages) {
-      return NextResponse.json({ error: 'Configuration error' }, { status: 500 });
+    if (packagesError) {
+      console.error('Failed to fetch credit packages:', packagesError);
+      return NextResponse.json({ 
+        error: 'Failed to fetch credit packages',
+        details: packagesError.message
+      }, { status: 500 });
+    }
+    
+    if (!packagesData || packagesData.length === 0) {
+      return NextResponse.json({ 
+        error: 'No credit packages found' 
+      }, { status: 500 });
+    }
+    
+    if (!platformCredit) {
+      console.error('Configuration error:', { platformCredit, platformError });
+      return NextResponse.json({ 
+        error: 'Configuration error',
+        details: { platformCredit, platformError }
+      }, { status: 500 });
     }
     
     // Calculate which packages can be fulfilled
     const creditRatio = 4; // Default 1:4 ratio (1 user credit = 4 nanobanan credits)
     const availableUserCredits = Math.floor(platformCredit.available_balance / creditRatio);
     
-    const packagesWithAvailability = packages.map(pkg => ({
+    const packagesWithAvailability = packagesData.map(pkg => ({
       ...pkg,
       available: pkg.credits <= availableUserCredits,
       warning: pkg.credits > availableUserCredits * 0.5, // Warn if package uses >50% of capacity

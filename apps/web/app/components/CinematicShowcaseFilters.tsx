@@ -156,7 +156,7 @@ export default function CinematicShowcaseFilters({
                     <SelectValue placeholder="Select camera angle" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All angles</SelectItem>
+                    <SelectItem value="all">All angles</SelectItem>
                     {cameraAngles.map(angle => (
                       <SelectItem key={angle} value={angle}>
                         {formatLabel(angle)}
@@ -178,7 +178,7 @@ export default function CinematicShowcaseFilters({
                     <SelectValue placeholder="Select lighting style" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All lighting styles</SelectItem>
+                    <SelectItem value="all">All lighting styles</SelectItem>
                     {lightingStyles.map(lighting => (
                       <SelectItem key={lighting} value={lighting}>
                         {formatLabel(lighting)}
@@ -201,7 +201,7 @@ export default function CinematicShowcaseFilters({
                       <SelectValue placeholder="Select director style" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All directors</SelectItem>
+                      <SelectItem value="all">All directors</SelectItem>
                       {directorStyles.map(director => (
                         <SelectItem key={director} value={director}>
                           {formatLabel(director)}
@@ -221,7 +221,7 @@ export default function CinematicShowcaseFilters({
                       <SelectValue placeholder="Select color palette" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All palettes</SelectItem>
+                      <SelectItem value="all">All palettes</SelectItem>
                       {colorPalettes.map(palette => (
                         <SelectItem key={palette} value={palette}>
                           {formatLabel(palette)}

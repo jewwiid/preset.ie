@@ -9,12 +9,12 @@ const supabase = createClient(
 // POST /api/marketplace/listings/[id]/images - Upload listing images
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const formData = await request.formData();
-    const files = formData.getAll('images') as File[];
+    const files = formData.getAll('images').filter(file => file instanceof File) as File[];
 
     if (!files || files.length === 0) {
       return NextResponse.json({ error: 'No images provided' }, { status: 400 });
@@ -159,10 +159,10 @@ export async function POST(
 // DELETE /api/marketplace/listings/[id]/images/[imageId] - Delete specific image
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const imageId = searchParams.get('imageId');
 

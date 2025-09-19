@@ -38,7 +38,7 @@ export interface UserProfile {
   eye_color?: string
   hair_color?: string
   shoe_size?: string
-  clothing_sizes?: string[]
+  clothing_sizes?: string | null
   tattoos?: boolean
   piercings?: boolean
   talent_categories?: string[]

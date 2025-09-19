@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,8 +11,14 @@ export async function GET(request: NextRequest) {
 
     console.log('Running enhancement expiration cron job...');
 
+    if (!supabaseAdmin) {
+      return NextResponse.json({ 
+        error: 'Database connection not available' 
+      }, { status: 500 });
+    }
+
     // Call the database function to expire enhancements
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .rpc('expire_listing_enhancements');
 
     if (error) {

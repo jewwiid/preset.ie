@@ -289,7 +289,14 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
   }
 
   if (!creditInfo) {
-    return null
+    return (
+      <div className={`${embedded ? '' : 'min-h-screen'} flex items-center justify-center`}>
+        <div className="text-center">
+          <p className="text-gray-500">Loading credit information...</p>
+          {error && <p className="text-red-500 mt-2">{error}</p>}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -301,171 +308,140 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
         </div>
       )}
 
-      {/* Current Balance - Dashboard Style */}
+      {/* Current Balance - Row Layout */}
       <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl mb-6">
-        {/* Profile Header */}
-        {userProfile && (
-          <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
-            {/* User Avatar */}
-            <div className="relative">
-              {userProfile.avatar_url ? (
-                <img 
-                  src={userProfile.avatar_url} 
-                  alt={userProfile.display_name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-preset-200 shadow-lg"
-                />
-              ) : (
-                <div className="w-16 h-16 bg-gradient-to-br from-preset-400 to-preset-600 rounded-full flex items-center justify-center border-2 border-preset-200 shadow-lg">
-                  <span className="text-white font-bold text-xl">
-                    {userProfile.display_name?.charAt(0)?.toUpperCase() || 'U'}
+        {/* Main Row Layout */}
+        <div className="flex items-center gap-6">
+          {/* Left: User Profile */}
+          {userProfile && (
+            <div className="flex items-center gap-4">
+              {/* User Avatar */}
+              <div className="relative">
+                {userProfile.avatar_url ? (
+                  <img 
+                    src={userProfile.avatar_url} 
+                    alt={userProfile.display_name}
+                    className="w-16 h-16 rounded-full object-cover border-2 border-preset-200 shadow-lg"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gradient-to-br from-preset-400 to-preset-600 rounded-full flex items-center justify-center border-2 border-preset-200 shadow-lg">
+                    <span className="text-white font-bold text-xl">
+                      {userProfile.display_name?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                )}
+                {/* Online status indicator */}
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+              </div>
+              
+              {/* User Info */}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xl font-bold text-gray-900">{userProfile.display_name}</h2>
+                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                    {creditInfo?.subscriptionTier || 'FREE'}
                   </span>
                 </div>
-              )}
-              {/* Online status indicator */}
-              <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-            </div>
-            
-            {/* User Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-xl font-bold text-gray-900">{userProfile.display_name}</h2>
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                  {creditInfo?.subscriptionTier || 'FREE'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-sm">@{userProfile.handle}</span>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  <span className="text-gray-500 text-sm">Contributor & Talent</span>
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 text-sm">@{userProfile.handle}</span>
-                <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                <span className="text-gray-500 text-sm">Contributor & Talent</span>
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            </div>
+          )}
+
+          {/* Center: Credit Gauge */}
+          <div className="flex-1 flex justify-center">
+            <div className="relative">
+              {/* Smaller Circular Progress Ring */}
+              <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                {/* Background Circle */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="35"
+                  stroke="#f3f4f6"
+                  strokeWidth="6"
+                  fill="none"
+                  className="drop-shadow-sm"
+                />
+                {/* Progress Circle */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="35"
+                  stroke={(() => {
+                    const totalCredits = creditInfo.currentBalance + creditInfo.consumedThisMonth
+                    const lowThreshold = Math.max(5, Math.floor(totalCredits * 0.15))
+                    const mediumThreshold = Math.max(10, Math.floor(totalCredits * 0.35))
+                    
+                    if (creditInfo.currentBalance >= mediumThreshold) return "#10b981"
+                    if (creditInfo.currentBalance >= lowThreshold) return "#f59e0b"
+                    return "#ef4444"
+                  })()}
+                  strokeWidth="6"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 35}`}
+                  strokeDashoffset={`${2 * Math.PI * 35 * (1 - (creditInfo.currentBalance / (creditInfo.currentBalance + creditInfo.consumedThisMonth)))}`}
+                  className="transition-all duration-700 ease-out drop-shadow-md"
+                />
+              </svg>
+              
+              {/* Center Content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className={`text-2xl font-bold transition-colors duration-500 ${
+                  (() => {
+                    const totalCredits = creditInfo.currentBalance + creditInfo.consumedThisMonth
+                    const lowThreshold = Math.max(5, Math.floor(totalCredits * 0.15))
+                    const mediumThreshold = Math.max(10, Math.floor(totalCredits * 0.35))
+                    
+                    if (creditInfo.currentBalance >= mediumThreshold) return 'text-emerald-600'
+                    if (creditInfo.currentBalance >= lowThreshold) return 'text-amber-600'
+                    return 'text-red-600'
+                  })()
+                }`}>
+                  {creditInfo.currentBalance}
+                </div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">CREDITS</div>
               </div>
             </div>
           </div>
-        )}
 
-
-        {/* Circular Credit Gauge */}
-        <div className="flex justify-center mb-8">
-          <div className="relative">
-            {/* Circular Progress Ring */}
-            <svg className="w-48 h-48 transform -rotate-90" viewBox="0 0 100 100">
-              {/* Background Circle */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                stroke="#f3f4f6"
-                strokeWidth="8"
-                fill="none"
-                className="drop-shadow-sm"
-              />
-              {/* Progress Circle */}
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                stroke={(() => {
-                  const totalCredits = creditInfo.currentBalance + creditInfo.consumedThisMonth
-                  const lowThreshold = Math.max(5, Math.floor(totalCredits * 0.15)) // Dynamic low threshold (15% of total, min 5)
-                  const mediumThreshold = Math.max(10, Math.floor(totalCredits * 0.35)) // Dynamic medium threshold (35% of total, min 10)
-                  
-                  if (creditInfo.currentBalance >= mediumThreshold) return "#10b981" // Green - High
-                  if (creditInfo.currentBalance >= lowThreshold) return "#f59e0b" // Amber - Medium
-                  return "#ef4444" // Red - Low
-                })()}
-                strokeWidth="8"
-                fill="none"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 40}`}
-                strokeDashoffset={`${2 * Math.PI * 40 * (1 - (creditInfo.currentBalance / (creditInfo.currentBalance + creditInfo.consumedThisMonth)))}`}
-                className="transition-all duration-700 ease-out drop-shadow-md"
-              />
-            </svg>
-            
-            {/* Center Content */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className={`text-4xl font-bold transition-colors duration-500 ${
-                (() => {
-                  const totalCredits = creditInfo.currentBalance + creditInfo.consumedThisMonth
-                  const lowThreshold = Math.max(5, Math.floor(totalCredits * 0.15))
-                  const mediumThreshold = Math.max(10, Math.floor(totalCredits * 0.35))
-                  
-                  if (creditInfo.currentBalance >= mediumThreshold) return 'text-emerald-600'
-                  if (creditInfo.currentBalance >= lowThreshold) return 'text-amber-600'
-                  return 'text-red-600'
-                })()
-              }`}>
-                {creditInfo.currentBalance}
-              </div>
-              <div className="text-sm font-medium text-gray-500 uppercase tracking-wide">CREDITS</div>
-            </div>
-            
-            {/* Dynamic Threshold Indicators */}
-            <div className="absolute -right-12 top-1/2 transform -translate-y-1/2 text-center">
-              <div className={`text-lg font-bold transition-colors duration-500 ${
-                (() => {
-                  const totalCredits = creditInfo.currentBalance + creditInfo.consumedThisMonth
-                  const lowThreshold = Math.max(5, Math.floor(totalCredits * 0.15))
-                  
-                  if (creditInfo.currentBalance >= lowThreshold) return 'text-emerald-600'
-                  return 'text-red-600'
-                })()
-              }`}>
-                {(() => {
-                  const totalCredits = creditInfo.currentBalance + creditInfo.consumedThisMonth
-                  return Math.max(5, Math.floor(totalCredits * 0.15))
-                })()}
-              </div>
-              <div className={`text-xs font-medium transition-colors duration-500 ${
-                (() => {
-                  const totalCredits = creditInfo.currentBalance + creditInfo.consumedThisMonth
-                  const lowThreshold = Math.max(5, Math.floor(totalCredits * 0.15))
-                  
-                  if (creditInfo.currentBalance >= lowThreshold) return 'text-emerald-500'
-                  return 'text-red-500'
-                })()
-              }`}>
-                LOW
+          {/* Right: Credit Details Cards */}
+          <div className="flex gap-4">
+            {/* Available Credits Card */}
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-100 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] min-w-[120px]">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center mb-2 shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                </div>
+                <p className="text-emerald-600 text-xs font-semibold mb-1">Available</p>
+                <p className="text-gray-900 text-xl font-bold">{creditInfo.currentBalance}</p>
               </div>
             </div>
-            <div className="absolute -left-12 top-1/2 transform -translate-y-1/2 text-center">
-              <div className="text-lg font-bold text-gray-400">{creditInfo.currentBalance + creditInfo.consumedThisMonth}</div>
-              <div className="text-xs text-gray-400">TOTAL</div>
+
+            {/* Usage Tracking Card */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] min-w-[120px]">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mb-2 shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <p className="text-blue-600 text-xs font-semibold mb-1">Used</p>
+                <p className="text-gray-900 text-xl font-bold">{creditInfo.consumedThisMonth}</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Credit Details Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          {/* Available Credits Card */}
-          <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-100 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center mb-3 shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-              </div>
-              <p className="text-emerald-600 text-sm font-semibold mb-1">Available Credits</p>
-              <p className="text-gray-900 text-2xl font-bold">{creditInfo.currentBalance}</p>
-            </div>
-          </div>
-
-          {/* Usage Tracking Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02]">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mb-3 shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <p className="text-blue-600 text-sm font-semibold mb-1">Used This Month</p>
-              <p className="text-gray-900 text-2xl font-bold">{creditInfo.consumedThisMonth}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Subscription Info */}
-        <div className="mt-4 pt-4 border-t border-gray-100">
+        {/* Bottom Row: Subscription Info */}
+        <div className="mt-6 pt-4 border-t border-gray-100">
           <div className="flex items-center justify-between">
             {/* Monthly Reset with Horizontal Progress */}
             <div className="flex flex-col gap-2">

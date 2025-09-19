@@ -31,7 +31,7 @@ interface PlaygroundProject {
     style_applied?: string
     style_prompt?: string
     consistency_level?: string
-    custom_style_preset?: any
+    custom_preset?: any
     generation_mode?: string
     base_image?: string
     api_endpoint?: string
@@ -58,7 +58,7 @@ interface TabbedPlaygroundLayoutProps {
     resolution: string
     consistencyLevel: string
     numImages: number
-    customStylePreset?: any
+    customPreset?: any
   }) => Promise<void>
   
   // Tab change callback
@@ -763,7 +763,7 @@ export default function TabbedPlaygroundLayout({
                     style_applied: metadata.style_applied || metadata.style || 'realistic',
                     style_prompt: metadata.style_prompt || '',
                     consistency_level: metadata.consistency_level || 'high',
-                    custom_style_preset: metadata.custom_style_preset || null,
+                    custom_preset: metadata.custom_preset || null,
                     generation_mode: (metadata as any).generation_mode || 'text-to-image',
                     base_image: (metadata as any).base_image || null,
                     api_endpoint: (metadata as any).api_endpoint || 'seedream-v4'

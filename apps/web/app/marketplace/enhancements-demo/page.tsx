@@ -67,8 +67,8 @@ const mockListings = [
     description: 'Professional drone with camera for aerial photography and videography.',
     price_cents: 8000, // €80/day
     images: [{ url: '/placeholder-drone.jpg', alt_text: 'Drone equipment' }],
-    current_enhancement_type: null,
-    enhancement_expires_at: null,
+    current_enhancement_type: undefined,
+    enhancement_expires_at: undefined,
     premium_badge: false,
     verified_badge: false,
     boost_level: 0,

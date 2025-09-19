@@ -69,7 +69,7 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
 
     setLoading(true)
     try {
-      const response = await fetch('/api/playground/style-presets?includePublic=true', {
+      const response = await fetch('/api/presets?category=style&sort=popular', {
         headers: {
           'Authorization': `Bearer ${sessionToken}`
         }
@@ -110,7 +110,7 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
     }
 
     try {
-      const response = await fetch('/api/playground/style-presets', {
+      const response = await fetch('/api/presets', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -152,7 +152,7 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
     }
 
     try {
-      const response = await fetch('/api/playground/style-presets', {
+      const response = await fetch('/api/presets', {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -197,7 +197,7 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
     }
 
     try {
-      const response = await fetch(`/api/playground/style-presets?presetId=${presetId}`, {
+      const response = await fetch(`/api/presets/${presetId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${sessionToken}`

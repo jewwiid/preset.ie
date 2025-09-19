@@ -86,7 +86,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     setDuplicateCheck(prev => ({ ...prev, isChecking: true }))
 
     try {
-      const response = await fetch('/api/playground/style-presets', {
+      const response = await fetch('/api/presets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     
     setLoading(true)
     try {
-      const response = await fetch('/api/playground/style-presets?includePublic=true', {
+      const response = await fetch('/api/presets?category=style&sort=popular', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -201,7 +201,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     }
 
     try {
-      const response = await fetch('/api/playground/style-presets', {
+      const response = await fetch('/api/presets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -258,7 +258,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     if (!user || !session?.access_token || !editingPreset) return
 
     try {
-      const response = await fetch('/api/playground/style-presets', {
+      const response = await fetch('/api/presets', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -312,7 +312,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     }
 
     try {
-      const response = await fetch(`/api/playground/style-presets?presetId=${presetId}`, {
+      const response = await fetch(`/api/presets/${presetId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${session.access_token}`

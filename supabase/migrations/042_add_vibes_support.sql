@@ -3,13 +3,13 @@
 
 -- Add vibe_tags column to users_profile table
 ALTER TABLE users_profile 
-ADD COLUMN vibe_tags text[] DEFAULT '{}';
+ADD COLUMN IF NOT EXISTS vibe_tags text[] DEFAULT '{}';
 
 -- Add comment to document the field
 COMMENT ON COLUMN users_profile.vibe_tags IS 'Array of vibe tags that describe user personality/aesthetic (max 3)';
 
 -- Create index for efficient vibe-based queries
-CREATE INDEX idx_users_profile_vibe_tags ON users_profile USING GIN(vibe_tags);
+CREATE INDEX IF NOT EXISTS idx_users_profile_vibe_tags ON users_profile USING GIN(vibe_tags);
 
 -- Update existing profiles to have empty vibe arrays (they're already defaulted but let's be explicit)
 UPDATE users_profile SET vibe_tags = '{}' WHERE vibe_tags IS NULL;

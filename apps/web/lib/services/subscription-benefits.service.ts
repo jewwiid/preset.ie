@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 export interface SubscriptionBenefit {
   id: string;
   user_id: string;
-  subscription_tier: 'FREE' | 'PREMIUM' | 'PRO';
+  subscription_tier: 'FREE' | 'PLUS' | 'PRO';
   benefit_type: 'monthly_bump' | 'priority_support' | 'analytics';
   benefit_value: number;
   used_this_month: number;
@@ -17,6 +17,11 @@ export class SubscriptionBenefitsService {
    */
   static async checkMonthlyBumpEligibility(userId: string, subscriptionTier: string): Promise<boolean> {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return false;
+      }
+      
       const { data: benefit, error } = await supabase
         .from('subscription_benefits')
         .select('*')
@@ -43,6 +48,11 @@ export class SubscriptionBenefitsService {
    */
   static async useMonthlyBump(userId: string, listingId: string): Promise<boolean> {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return false;
+      }
+      
       // Get user's subscription tier
       const { data: profile, error: profileError } = await supabase
         .from('users_profile')
@@ -124,6 +134,11 @@ export class SubscriptionBenefitsService {
    */
   static async getUserBenefits(userId: string): Promise<SubscriptionBenefit[]> {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return [];
+      }
+      
       const { data: benefits, error } = await supabase
         .from('subscription_benefits')
         .select('*')
@@ -146,6 +161,11 @@ export class SubscriptionBenefitsService {
    */
   static async initializeUserBenefits(userId: string, subscriptionTier: string): Promise<void> {
     try {
+      if (!supabase) {
+        console.error('Supabase client not available');
+        return;
+      }
+      
       const benefits = this.getDefaultBenefits(subscriptionTier);
       
       const { error } = await supabase
@@ -186,7 +206,7 @@ export class SubscriptionBenefitsService {
     ];
 
     switch (subscriptionTier) {
-      case 'PREMIUM':
+      case 'PLUS':
         return [
           {
             benefit_type: 'monthly_bump',

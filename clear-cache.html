@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Browser Cache</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 10px 0; }
+        button:hover { background: #0056b3; }
+        .success { color: green; background: #d4edda; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .info { color: #0c5460; background: #d1ecf1; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Clear Browser Cache for Preset</h1>
+    
+    <div class="info">
+        <strong>Current Issue:</strong> Browser is caching old Supabase URL (127.0.0.1:54321) instead of using server URL (https://zbsmgymyfhnwjdnmlelr.supabase.co)
+    </div>
+    
+    <button onclick="clearAllCache()">🧹 Clear All Cache</button>
+    <button onclick="testConnection()">🧪 Test Connection</button>
+    
+    <div id="result"></div>
+    
+    <div class="info">
+        <strong>After clearing cache:</strong>
+        <ol>
+            <li>Go to <a href="http://localhost:3000/auth/signin" target="_blank">http://localhost:3000/auth/signin</a></li>
+            <li>Sign in with: <strong>admin@preset.ie</strong> / <strong>admin123</strong></li>
+            <li>Check Network tab in DevTools to ensure requests go to the server URL</li>
+        </ol>
+    </div>
+
+    <script>
+        function clearAllCache() {
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                // Clear localStorage
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.includes('supabase') || key.includes('auth') || key.includes('preset') || key.includes('sb-'))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                
+                keysToRemove.forEach(key => {
+                    localStorage.removeItem(key);
+                });
+                
+                // Clear sessionStorage
+                const sessionKeysToRemove = [];
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const key = sessionStorage.key(i);
+                    if (key && (key.includes('supabase') || key.includes('auth') || key.includes('preset') || key.includes('sb-'))) {
+                        sessionKeysToRemove.push(key);
+                    }
+                }
+                
+                sessionKeysToRemove.forEach(key => {
+                    sessionStorage.removeItem(key);
+                });
+                
+                // Clear cookies for localhost
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Cache cleared successfully!<br>
+                        • Removed ${keysToRemove.length} localStorage items<br>
+                        • Removed ${sessionKeysToRemove.length} sessionStorage items<br>
+                        • Cleared all cookies<br><br>
+                        <strong>Next:</strong> Go to the signin page and try again!
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color: red;">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="info">🧪 Testing connection...</div>';
+            
+            // Test if we can reach the server Supabase
+            fetch('https://zbsmgymyfhnwjdnmlelr.supabase.co/rest/v1/', {
+                method: 'HEAD',
+                headers: {
+                    'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpic21neW15Zmhud2pkbm1sZWxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxMDg4NTMsImV4cCI6MjA3MjY4NDg1M30.02U7mfQVPhw-zw9oTHnPWF7pRRgz-a_DhQ8dwBDUi2c'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Server connection successful!<br>
+                            Server URL: https://zbsmgymyfhnwjdnmlelr.supabase.co<br>
+                            Status: ${response.status} ${response.statusText}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div style="color: red;">❌ Server connection failed: ${response.status} ${response.statusText}</div>`;
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `<div style="color: red;">❌ Connection error: ${error.message}</div>`;
+            });
+        }
+    </script>
+</body>
+</html>

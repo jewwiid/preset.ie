@@ -22,61 +22,52 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    // Build query
+    // Build query - use gigs table instead of non-existent listings table
     let query = supabase
-      .from('listings')
-      .select(`
-        *,
-        owner:users_profile!listings_owner_id_fkey(
-          id,
-          username,
-          display_name,
-          avatar_url,
-          verified,
-          rating
-        ),
-        listing_images(
-          id,
-          path,
-          sort_order,
-          alt_text
-        )
-      `)
-      .eq('status', 'active')
+      .from('gigs')
+      .select('*')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // Apply filters
-    if (category) {
-      query = query.eq('category', category);
-    }
-    
-    if (mode) {
-      query = query.eq('mode', mode);
-    }
-    
+    // Apply filters - adapted for gigs table structure
     if (location) {
-      query = query.ilike('location_city', `%${location}%`);
+      query = query.ilike('location_text', `%${location}%`);
     }
     
-    if (minPrice) {
-      query = query.gte('rent_day_cents', parseInt(minPrice) * 100);
-    }
-    
-    if (maxPrice) {
-      query = query.lte('rent_day_cents', parseInt(maxPrice) * 100);
-    }
-    
-    if (verifiedOnly) {
-      query = query.eq('verified_only', true);
-    }
+    // Note: gigs table doesn't have category, mode, pricing columns
+    // These filters are disabled for now until the schema is updated
+    // if (category) {
+    //   query = query.eq('category', category);
+    // }
+    // 
+    // if (mode) {
+    //   query = query.eq('mode', mode);
+    // }
+    // 
+    // if (minPrice) {
+    //   query = query.gte('rent_day_cents', parseInt(minPrice) * 100);
+    // }
+    // 
+    // if (maxPrice) {
+    //   query = query.lte('rent_day_cents', parseInt(maxPrice) * 100);
+    // }
+    // 
+    // if (verifiedOnly) {
+    //   query = query.eq('verified_only', true);
+    // }
 
     const { data: listings, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching listings:', error);
-      return NextResponse.json({ error: 'Failed to fetch listings' }, { status: 500 });
+      console.error('❌ Error fetching listings:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      return NextResponse.json({ 
+        error: 'Failed to fetch listings',
+        details: error.message || 'Unknown error'
+      }, { status: 500 });
     }
+
+    console.log('✅ Successfully fetched listings:', listings?.length || 0, 'items');
 
     return NextResponse.json({
       listings: listings || [],

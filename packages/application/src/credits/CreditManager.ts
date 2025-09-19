@@ -34,9 +34,9 @@ export class CreditManager {
 
   async allocateMonthlyCredits(): Promise<void> {
     const creditAllocations = {
-      free: 0,
-      plus: 10,   // 10 AI enhancements per month
-      pro: 25     // 25 AI enhancements per month
+      FREE: 5,    // 5 credits per month
+      PLUS: 50,   // 50 credits per month
+      PRO: 200    // 200 credits per month
     };
 
     // Reset monthly allowances for all users

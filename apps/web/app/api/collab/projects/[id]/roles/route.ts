@@ -9,10 +9,10 @@ const supabase = createClient(
 // GET /api/collab/projects/[id]/roles - Get project roles
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const { data: roles, error } = await supabase
       .from('collab_roles')
@@ -54,10 +54,10 @@ export async function GET(
 // POST /api/collab/projects/[id]/roles - Add role to project
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const {
       role_name,

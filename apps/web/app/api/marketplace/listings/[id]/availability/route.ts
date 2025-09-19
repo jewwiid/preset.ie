@@ -9,10 +9,10 @@ const supabase = createClient(
 // GET /api/marketplace/listings/[id]/availability - Get availability
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('start_date');
     const endDate = searchParams.get('end_date');
@@ -47,10 +47,10 @@ export async function GET(
 // POST /api/marketplace/listings/[id]/availability - Set blackout dates
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { start_date, end_date, notes } = body;
 
@@ -157,10 +157,10 @@ export async function POST(
 // DELETE /api/marketplace/listings/[id]/availability/[blockId] - Remove availability block
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const blockId = searchParams.get('blockId');
 

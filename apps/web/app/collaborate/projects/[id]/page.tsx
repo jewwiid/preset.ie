@@ -286,7 +286,8 @@ export default function ProjectDetailPage() {
                                 {role.status}
                               </Badge>
                               {role.is_paid && (
-                                <Badge variant="secondary">Paid</Badge                              )}
+                                <Badge variant="secondary">Paid</Badge>
+                              )}
                             </div>
                           </div>
                           {role.status === 'open' && (

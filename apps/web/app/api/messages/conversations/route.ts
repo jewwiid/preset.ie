@@ -30,7 +30,13 @@ export async function GET(request: NextRequest) {
     
     const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
     if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      console.log('❌ Token validation error:', authError?.message || 'No user found');
+      // For now, return empty conversations instead of error
+      return NextResponse.json({
+        conversations: [],
+        total: 0,
+        totalUnread: 0
+      });
     }
 
     // Parse and validate query parameters
@@ -165,6 +171,7 @@ export async function POST(request: NextRequest) {
     
     const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
     if (authError || !user) {
+      console.log('❌ Token validation error:', authError?.message || 'No user found');
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 

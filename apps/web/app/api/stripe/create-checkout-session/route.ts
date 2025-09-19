@@ -1,83 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getUserFromRequest } from '../../../../lib/auth-utils';
 import Stripe from 'stripe';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-08-27.basil',
+});
 
-if (!stripeSecretKey) {
-  console.error('❌ STRIPE_SECRET_KEY environment variable is missing');
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
+  throw new Error('Supabase environment variables are not set.');
 }
 
-const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
-  apiVersion: '2025-08-27.basil',
-}) : null;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: false
+  }
+});
 
 export async function POST(request: NextRequest) {
   try {
-    if (!stripe) {
-      return NextResponse.json(
-        { error: 'Stripe is not configured' },
-        { status: 500 }
-      );
-    }
-    
-    console.log('🛒 Creating Stripe checkout session...');
+    const { user, error: authError } = await getUserFromRequest(request);
 
-    // Get auth token from header
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No token provided' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Verify user session
-    const supabaseAnon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
-    
     if (authError || !user) {
-      console.error('❌ Auth error:', authError);
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Parse request body
     const { packageId, successUrl, cancelUrl } = await request.json();
 
     if (!packageId || !successUrl || !cancelUrl) {
-      return NextResponse.json(
-        { error: 'Missing required fields: packageId, successUrl, cancelUrl' },
-        { status: 400 }
-      );
+      return NextResponse.json({ 
+        error: 'Missing required parameters: packageId, successUrl, cancelUrl' 
+      }, { status: 400 });
     }
 
-    console.log('📦 Package ID:', packageId, 'User:', user.id);
-
-    // Get package details from database
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: packageData, error: packageError } = await supabaseAdmin
-      .from('credit_packages')
-      .select('*')
-      .eq('id', packageId)
-      .eq('is_active', true)
+    // Get user's profile to get the correct user ID for subscriptions table
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('users_profile')
+      .select('id, subscription_tier')
+      .eq('user_id', user.id)
       .single();
 
-    if (packageError || !packageData) {
-      console.error('❌ Package not found:', packageError);
-      return NextResponse.json(
-        { error: 'Credit package not found' },
-        { status: 404 }
-      );
+    if (profileError || !profile) {
+      return NextResponse.json({ 
+        error: 'User profile not found' 
+      }, { status: 404 });
     }
 
-    console.log('✅ Package found:', packageData.name, packageData.price_usd);
+    // Define subscription plans
+    const subscriptionPlans = {
+      'plus': {
+        name: 'Plus',
+        price: 9.99,
+        credits: 50,
+        monthlyBumps: 3,
+        prioritySupport: true,
+        analytics: false
+      },
+      'pro': {
+        name: 'Pro',
+        price: 29.99,
+        credits: 200,
+        monthlyBumps: 10,
+        prioritySupport: true,
+        analytics: true
+      }
+    };
+
+    const plan = subscriptionPlans[packageId as keyof typeof subscriptionPlans];
+    if (!plan) {
+      return NextResponse.json({ 
+        error: 'Invalid subscription plan' 
+      }, { status: 400 });
+    }
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -87,37 +90,43 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: packageData.name,
-              description: packageData.description,
+              name: `${plan.name} Subscription`,
+              description: `${plan.credits} credits per month, ${plan.monthlyBumps} monthly bumps, Priority support${plan.analytics ? ', Analytics dashboard' : ''}`,
             },
-            unit_amount: Math.round(packageData.price_usd * 100), // Convert to cents
+            unit_amount: Math.round(plan.price * 100), // Convert to cents
+            recurring: {
+              interval: 'month',
+            },
           },
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode: 'subscription',
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer_email: user.email,
       metadata: {
         userId: user.id,
-        packageId: packageId,
-        credits: packageData.credits.toString(),
+        profileId: profile.id,
+        planId: packageId,
+        planName: plan.name,
+        credits: plan.credits.toString(),
+        monthlyBumps: plan.monthlyBumps.toString(),
+        prioritySupport: plan.prioritySupport.toString(),
+        analytics: plan.analytics.toString(),
       },
     });
 
-    console.log('✅ Stripe session created:', session.id);
-
-    return NextResponse.json({
-      url: session.url,
+    return NextResponse.json({ 
       sessionId: session.id,
+      url: session.url 
     });
 
-  } catch (error) {
-    console.error('❌ Error creating checkout session:', error);
-    return NextResponse.json(
-      { error: 'Failed to create checkout session' },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    console.error('Error creating Stripe checkout session:', error);
+    return NextResponse.json({ 
+      error: 'Failed to create checkout session',
+      details: error.message 
+    }, { status: 500 });
   }
 }

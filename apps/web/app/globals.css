@@ -258,3 +258,124 @@ textarea::placeholder {
     @apply bg-background text-foreground;
   }
 }
+
+/* Showcase-specific styles */
+.showcase-hero {
+  background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.showcase-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.showcase-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  border-color: hsl(var(--primary));
+}
+
+.showcase-masonry {
+  column-count: 4;
+  column-gap: 1.5rem;
+}
+
+.showcase-masonry > * {
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .showcase-masonry {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .showcase-masonry {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .showcase-masonry {
+    column-count: 1;
+  }
+}
+
+.filter-badge {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.5rem 1rem;
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
+}
+
+.filter-badge:hover {
+  background: hsl(var(--accent));
+  transform: translateY(-1px);
+}
+
+.filter-badge.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+
+.hero-button {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--chart-2)) 100%);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.hero-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.create-button {
+  background: linear-gradient(135deg, hsl(var(--chart-2)) 0%, hsl(var(--chart-3)) 100%);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.create-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.like-button {
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: hsl(var(--muted-foreground));
+}
+
+.like-button:hover {
+  background: hsl(var(--accent) / 0.1);
+  color: hsl(var(--destructive));
+}
+
+.like-button.liked {
+  color: hsl(var(--destructive));
+  background: hsl(var(--destructive) / 0.1);
+}

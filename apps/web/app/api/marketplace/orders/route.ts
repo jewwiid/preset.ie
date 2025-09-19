@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const orders = await OrderProcessingService.getUserOrders(userId, orderType, status);
+    const orders = await OrderProcessingService.getUserOrders(userId, orderType, status || undefined);
 
     return NextResponse.json({ orders });
 

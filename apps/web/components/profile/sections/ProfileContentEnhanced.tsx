@@ -40,6 +40,10 @@ export function ProfileContentEnhanced() {
   const { profile } = useProfile()
   const { isEditing } = useProfileEditing()
   const [userRating, setUserRating] = useState<{ average: number; total: number } | null>(null)
+  const [stats, setStats] = useState({
+    totalGigs: 0,
+    totalShowcases: 0
+  })
   
   // Matchmaking state
   const [compatibleGigs, setCompatibleGigs] = useState<Recommendation[]>([])
@@ -49,8 +53,42 @@ export function ProfileContentEnhanced() {
     if (profile?.id) {
       fetchUserRating()
       fetchCompatibleGigs()
+      fetchStats()
     }
   }, [profile?.id])
+
+  const fetchStats = async () => {
+    try {
+      if (!supabase || !profile?.id) return
+
+      // Fetch gig count (gigs where user is owner)
+      const { data: gigsData, error: gigsError } = await supabase
+        .from('gigs')
+        .select('id', { count: 'exact' })
+        .eq('owner_user_id', profile.id)
+
+      if (gigsError) {
+        console.error('Error fetching gigs count:', gigsError)
+      }
+
+      // Fetch showcase count (showcases where user is creator or talent)
+      const { data: showcasesData, error: showcasesError } = await supabase
+        .from('showcases')
+        .select('id', { count: 'exact' })
+        .or(`creator_user_id.eq.${profile.id},talent_user_id.eq.${profile.id}`)
+
+      if (showcasesError) {
+        console.error('Error fetching showcases count:', showcasesError)
+      }
+
+      setStats({
+        totalGigs: gigsData?.length || 0,
+        totalShowcases: showcasesData?.length || 0
+      })
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
+  }
 
   const fetchUserRating = async () => {
     try {
@@ -148,7 +186,7 @@ export function ProfileContentEnhanced() {
   const overviewCards = [
     {
       title: 'Total Gigs',
-      value: '12',
+      value: stats.totalGigs.toString(),
       icon: Briefcase,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20',
@@ -156,7 +194,7 @@ export function ProfileContentEnhanced() {
     },
     {
       title: 'Showcases',
-      value: '8',
+      value: stats.totalShowcases.toString(),
       icon: Camera,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20',

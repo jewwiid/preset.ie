@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation'
 import { User, Target, TrendingUp, Users } from 'lucide-react'
 import CompatibilityScore from '../components/matchmaking/CompatibilityScore'
 import MatchmakingCard from '../components/matchmaking/MatchmakingCard'
-import MarketplaceNotifications from '@/components/marketplace/MarketplaceNotifications'
 import { CompatibilityData, Recommendation } from '../../lib/types/matchmaking'
 import SavedMediaGallery from '../components/playground/SavedImagesGallery'
 // Simplified credit calculation
@@ -197,6 +196,10 @@ export default function Dashboard() {
   })
   const [matchmakingLoading, setMatchmakingLoading] = useState(false)
   
+  // Messages state
+  const [recentMessages, setRecentMessages] = useState<any[]>([])
+  const [messagesLoading, setMessagesLoading] = useState(false)
+  
   const router = useRouter()
 
   useEffect(() => {
@@ -253,11 +256,102 @@ export default function Dashboard() {
         // Load additional data after profile is set
         console.log('📊 Starting dashboard data load...')
         await loadDashboardData(data) // Pass profile directly to avoid state race condition
+        await loadRecentMessages() // Load recent messages
       }
     } catch (err) {
       console.error('💥 fetchProfile exception:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadRecentMessages = async () => {
+    if (!user || !supabase) {
+      console.log('🚫 loadRecentMessages: Missing user or supabase')
+      return
+    }
+
+    setMessagesLoading(true)
+    try {
+      // Get user's profile ID
+      const { data: userProfile } = await supabase
+        .from('users_profile')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!userProfile) {
+        console.log('🚫 No user profile found for messages')
+        return
+      }
+
+      // Fetch recent messages where user is either sender or receiver
+      const { data: messages, error } = await supabase
+        .from('messages')
+        .select(`
+          id,
+          body,
+          created_at,
+          read_at,
+          from_user_id,
+          to_user_id,
+          gig_id,
+          gigs!inner(title),
+          from_user:users_profile!messages_from_user_id_fkey(
+            id,
+            display_name,
+            handle,
+            avatar_url
+          ),
+          to_user:users_profile!messages_to_user_id_fkey(
+            id,
+            display_name,
+            handle,
+            avatar_url
+          )
+        `)
+        .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (error) {
+        console.error('Error fetching messages:', error)
+        return
+      }
+
+      // Group messages by conversation (gig_id + other user)
+      const conversations = new Map()
+      
+      messages?.forEach((message) => {
+        const otherUserId = message.from_user_id === userProfile.id 
+          ? message.to_user_id 
+          : message.from_user_id
+        
+        const otherUser = message.from_user_id === userProfile.id 
+          ? message.to_user 
+          : message.from_user
+
+        const conversationKey = `${message.gig_id}-${otherUserId}`
+        
+        if (!conversations.has(conversationKey)) {
+          conversations.set(conversationKey, {
+            id: message.id,
+            gig_id: message.gig_id,
+            gig_title: Array.isArray(message.gigs) ? message.gigs[0]?.title : (message.gigs as any)?.title || 'Untitled Gig',
+            other_user: otherUser,
+            last_message: message.body,
+            last_message_time: message.created_at,
+            is_read: !!message.read_at,
+            is_from_me: message.from_user_id === userProfile.id
+          })
+        }
+      })
+
+      setRecentMessages(Array.from(conversations.values()))
+    } catch (error) {
+      console.error('Error loading recent messages:', error)
+    } finally {
+      setMessagesLoading(false)
     }
   }
 
@@ -721,7 +815,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
           {/* Enhanced Profile & Recent Gigs - 2 Column Layout */}
           <div className="mb-6 max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Enhanced Profile & Status Card */}
               <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
@@ -988,257 +1082,267 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Marketplace Notifications - Third Column */}
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
-            <MarketplaceNotifications compact={true} limit={5} />
-          </div>
             </div>
           </div>
 
-          {/* Experience-Based Suggestions */}
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Smart Suggestions</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Based on your experience and profile</p>
-              </div>
-            </div>
 
-            <div className="space-y-3">
-              {/* Experience-based suggestions */}
-              {profile.years_experience && profile.years_experience >= 3 && (
-                <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-100 dark:border-green-800/50">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                        Premium Creator Status
-                      </p>
-                      <p className="text-xs text-green-600 dark:text-green-300 mt-1">
-                        With {profile.years_experience} years of experience, consider applying for premium creator status to access higher-paying gigs.
-                      </p>
-                    </div>
+          {/* Recent Messages and Smart Suggestions - 2 Column Layout */}
+          <div className="mb-6 max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Recent Messages */}
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Messages</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Your latest conversations</p>
+                  </div>
+                  <div className="ml-auto">
+                    <button
+                      onClick={() => router.push('/messages')}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      View All →
+                    </button>
                   </div>
                 </div>
-              )}
 
-              {/* Specialization suggestions */}
-              {profile.specializations && profile.specializations.length > 0 && (
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
+                {/* Real Recent Messages */}
+                <div className="space-y-3">
+                  {messagesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                        Specialization Opportunities
-                      </p>
-                      <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
-                        Your specializations in {profile.specializations.slice(0, 2).join(', ')} are in high demand. Consider creating targeted gigs.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  ) : recentMessages.length > 0 ? (
+                    recentMessages.map((conversation, index) => {
+                      const colors = [
+                        'from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-100 dark:border-blue-800/50 hover:bg-blue-100 dark:hover:bg-blue-900/30',
+                        'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-100 dark:border-green-800/50 hover:bg-green-100 dark:hover:bg-green-900/30',
+                        'from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-100 dark:border-purple-800/50 hover:bg-purple-100 dark:hover:bg-purple-900/30',
+                        'from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 border-orange-100 dark:border-orange-800/50 hover:bg-orange-100 dark:hover:bg-orange-900/30',
+                        'from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-teal-100 dark:border-teal-800/50 hover:bg-teal-100 dark:hover:bg-teal-900/30'
+                      ]
+                      const colorClass = colors[index % colors.length]
+                      
+                      const timeAgo = (() => {
+                        const now = new Date()
+                        const messageTime = new Date(conversation.last_message_time)
+                        const diffMs = now.getTime() - messageTime.getTime()
+                        const diffMins = Math.floor(diffMs / (1000 * 60))
+                        const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+                        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+                        
+                        if (diffMins < 60) return `${diffMins}m ago`
+                        if (diffHours < 24) return `${diffHours}h ago`
+                        return `${diffDays}d ago`
+                      })()
 
-              {/* Rate optimization suggestions */}
-              {profile.hourly_rate_min && profile.hourly_rate_max && (
-                <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-100 dark:border-yellow-800/50">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                        Rate Optimization
-                      </p>
-                      <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
-                        Your rate range (€{profile.hourly_rate_min}-{profile.hourly_rate_max}/hour) is competitive. Consider adjusting based on project complexity.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+                      const initials = conversation.other_user?.display_name
+                        ?.split(' ')
+                        .map((n: string) => n[0])
+                        .join('')
+                        .toUpperCase() || 'U'
 
-              {/* Travel availability suggestions */}
-              {profile.available_for_travel && (
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/50">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-purple-800 dark:text-purple-200">
-                        Travel Opportunities
+                      return (
+                        <div 
+                          key={conversation.id}
+                          className={`p-3 bg-gradient-to-r ${colorClass} rounded-xl border transition-colors cursor-pointer`}
+                          onClick={() => router.push(`/messages?gig=${conversation.gig_id}&user=${conversation.other_user?.id}`)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                              {conversation.other_user?.avatar_url ? (
+                                <img 
+                                  src={conversation.other_user.avatar_url} 
+                                  alt={conversation.other_user.display_name}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-white text-sm font-bold">{initials}</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-sm font-medium text-blue-800 dark:text-blue-200 truncate">
+                                  {conversation.other_user?.display_name || 'Unknown User'}
+                                </p>
+                                <span className="text-xs text-blue-600 dark:text-blue-300">
+                                  {timeAgo}
+                                </span>
+                              </div>
+                              <p className="text-xs text-blue-600 dark:text-blue-300 truncate mb-1">
+                                {conversation.gig_title}
+                              </p>
+                              <p className="text-xs text-blue-600 dark:text-blue-300 truncate">
+                                {conversation.is_from_me ? 'You: ' : ''}{conversation.last_message}
+                              </p>
+                              {!conversation.is_read && !conversation.is_from_me && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                  <span className="text-xs text-blue-600 dark:text-blue-300 font-medium">New</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="text-center py-6">
+                      <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">No recent messages</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        Start conversations with other creators
                       </p>
-                      <p className="text-xs text-purple-600 dark:text-purple-300 mt-1">
-                        Your travel availability (up to {profile.travel_radius_km || 'unlimited'}km) opens up more gig opportunities. Highlight this in your profile.
-                      </p>
+                      <button
+                        onClick={() => router.push('/messages')}
+                        className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Start Chat
+                      </button>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Default suggestion for new users */}
-              {(!profile.years_experience || !profile.specializations || profile.specializations.length === 0) && (
-                <div className="p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 rounded-xl border border-gray-100 dark:border-gray-800/50">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                        Complete Your Profile
-                      </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                        Add your experience, specializations, and rate information to get personalized suggestions and more gig opportunities.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Matchmaking Widgets */}
-          {user && (
-            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center">
-                  <Target className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Smart Matches</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {matchmakingData.totalMatches > 0 
-                      ? `${matchmakingData.totalMatches} compatible ${matchmakingData.totalMatches === 1 ? 'match' : 'matches'} found`
-                      : 'Finding compatible opportunities...'
-                    }
-                  </p>
-                </div>
-                <div className="ml-auto">
-                  <button
-                    onClick={() => router.push('/matchmaking')}
-                    className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-                  >
-                    View All →
-                  </button>
+                  )}
                 </div>
               </div>
 
-              {/* Matchmaking Summary */}
-              {matchmakingData.averageCompatibility > 0 && (
-                <div className="mb-6 p-4 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-xl border border-emerald-100 dark:border-emerald-800/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="w-5 h-5 text-emerald-600" />
-                      <div>
-                        <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
-                          Average Compatibility Score
-                        </p>
-                        <p className="text-xs text-emerald-600 dark:text-emerald-300">
-                          Based on your profile and available opportunities
-                        </p>
+              {/* Smart Suggestions - Second Column */}
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Smart Suggestions</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Based on your experience and profile</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {/* Experience-based suggestions */}
+                  {profile.years_experience && profile.years_experience >= 3 && (
+                    <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-100 dark:border-green-800/50">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                            Premium Creator Status
+                          </p>
+                          <p className="text-xs text-green-600 dark:text-green-300 mt-1">
+                            With {profile.years_experience} years of experience, consider applying for premium creator status to access higher-paying gigs.
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <CompatibilityScore 
-                      score={Math.round(matchmakingData.averageCompatibility)}
-                      size="md"
-                    />
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {/* Compatible Gigs for Talent */}
-              {matchmakingData.topCompatibleGigs.length > 0 && (
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Users className="w-4 h-4 text-emerald-600" />
-                    <h4 className="text-md font-semibold text-gray-900 dark:text-white">
-                      Recommended Gigs
-                    </h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {matchmakingData.topCompatibleGigs.map((gig) => (
-                      <MatchmakingCard
-                        key={gig.id}
-                        type={gig.type}
-                        data={gig.data}
-                        compatibilityScore={gig.compatibility_score}
-                        compatibilityBreakdown={gig.compatibility_breakdown}
-                        onViewDetails={() => router.push(`/gigs/${gig.id}`)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+                  {/* Specialization suggestions */}
+                  {profile.specializations && profile.specializations.length > 0 && (
+                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                            Specialization Opportunities
+                          </p>
+                          <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                            Your specializations in {profile.specializations.slice(0, 2).join(', ')} are in high demand. Consider creating targeted gigs.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-              {/* Compatible Users for Contributors */}
-              {matchmakingData.topCompatibleUsers.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Users className="w-4 h-4 text-emerald-600" />
-                    <h4 className="text-md font-semibold text-gray-900 dark:text-white">
-                      Recommended Talent
-                    </h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {matchmakingData.topCompatibleUsers.map((user) => (
-                      <MatchmakingCard
-                        key={user.id}
-                        type={user.type}
-                        data={user.data}
-                        compatibilityScore={user.compatibility_score}
-                        compatibilityBreakdown={user.compatibility_breakdown}
-                        onViewDetails={() => router.push(`/profile/${user.id}`)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+                  {/* Rate optimization suggestions */}
+                  {profile.hourly_rate_min && profile.hourly_rate_max && (
+                    <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-100 dark:border-yellow-800/50">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                            Rate Optimization
+                          </p>
+                          <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
+                            Your rate range (€{profile.hourly_rate_min}-{profile.hourly_rate_max}/hour) is competitive. Consider adjusting based on project complexity.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-              {/* No Matches State */}
-              {matchmakingData.topCompatibleGigs.length === 0 && matchmakingData.topCompatibleUsers.length === 0 && (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Target className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No matches yet</h4>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    Complete your profile to get personalized matches and recommendations
-                  </p>
-                  <button
-                    onClick={() => router.push('/matchmaking')}
-                    className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
-                  >
-                    <Target className="w-4 h-4 mr-2" />
-                    Explore Matchmaking
-                  </button>
+                  {/* Travel availability suggestions */}
+                  {profile.available_for_travel && (
+                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-100 dark:border-purple-800/50">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                            Travel Opportunities
+                          </p>
+                          <p className="text-xs text-purple-600 dark:text-purple-300 mt-1">
+                            Your travel availability (up to {profile.travel_radius_km || 'unlimited'}km) opens up more gig opportunities. Highlight this in your profile.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Default suggestion for new users */}
+                  {(!profile.years_experience || !profile.specializations || profile.specializations.length === 0) && (
+                    <div className="p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 rounded-xl border border-gray-100 dark:border-gray-800/50">
+                      <div className="flex items-start gap-3">
+                        <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                            Complete Your Profile
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                            Add your experience, specializations, and rate information to get personalized suggestions and more gig opportunities.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          )}
+          </div>
 
           {/* Saved Images Gallery */}
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl mb-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">

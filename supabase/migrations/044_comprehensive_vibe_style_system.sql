@@ -66,9 +66,17 @@ ADD COLUMN IF NOT EXISTS vibe_ids UUID[] DEFAULT '{}';
 CREATE INDEX IF NOT EXISTS idx_moodboards_vibe_ids ON public.moodboards USING GIN(vibe_ids);
 
 -- Add constraint to limit vibes per moodboard
-ALTER TABLE public.moodboards 
-ADD CONSTRAINT IF NOT EXISTS check_moodboard_vibe_limit 
-CHECK (array_length(vibe_ids, 1) IS NULL OR array_length(vibe_ids, 1) <= 5);
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'check_moodboard_vibe_limit'
+    ) THEN
+        ALTER TABLE public.moodboards 
+        ADD CONSTRAINT check_moodboard_vibe_limit 
+        CHECK (array_length(vibe_ids, 1) IS NULL OR array_length(vibe_ids, 1) <= 5);
+    END IF;
+END $$;
 
 -- Create user_vibe_analytics table to track user's vibe patterns
 CREATE TABLE IF NOT EXISTS public.user_vibe_analytics (

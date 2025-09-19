@@ -60,7 +60,7 @@ export default function ImageGenerationPanel({
 
   const fetchStylePresets = async () => {
     try {
-      const response = await fetch('/api/playground/style-presets?includePublic=true', {
+      const response = await fetch('/api/presets?category=style&sort=popular', {
         headers: {
           'Authorization': `Bearer ${session?.access_token}`
         }

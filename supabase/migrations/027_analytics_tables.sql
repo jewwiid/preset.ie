@@ -99,7 +99,7 @@ CREATE POLICY "Admin can view all analytics" ON platform_credit_consumption
         EXISTS (
             SELECT 1 FROM users_profile 
             WHERE user_id = auth.uid() 
-            AND role_flags && ARRAY['admin']
+            AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -108,7 +108,7 @@ CREATE POLICY "Admin can view all purchases" ON user_credit_purchases
         EXISTS (
             SELECT 1 FROM users_profile 
             WHERE user_id = auth.uid() 
-            AND role_flags && ARRAY['admin']
+            AND 'ADMIN' = ANY(role_flags)
         )
     );
 
@@ -117,7 +117,7 @@ CREATE POLICY "Admin can view all tasks" ON enhancement_tasks
         EXISTS (
             SELECT 1 FROM users_profile 
             WHERE user_id = auth.uid() 
-            AND role_flags && ARRAY['admin']
+            AND 'ADMIN' = ANY(role_flags)
         )
     );
 

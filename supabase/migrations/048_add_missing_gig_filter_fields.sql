@@ -16,9 +16,17 @@ CREATE INDEX IF NOT EXISTS idx_gigs_city ON gigs(city);
 CREATE INDEX IF NOT EXISTS idx_gigs_country ON gigs(country);
 
 -- Add constraint to limit style tags per gig
-ALTER TABLE gigs 
-ADD CONSTRAINT IF NOT EXISTS check_gig_style_tags_count 
-CHECK (array_length(style_tags, 1) IS NULL OR array_length(style_tags, 1) <= 10);
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'check_gig_style_tags_count'
+    ) THEN
+        ALTER TABLE gigs 
+        ADD CONSTRAINT check_gig_style_tags_count 
+        CHECK (array_length(style_tags, 1) IS NULL OR array_length(style_tags, 1) <= 10);
+    END IF;
+END $$;
 
 -- Add comments
 COMMENT ON COLUMN gigs.style_tags IS 'Array of style/aesthetic tags for this gig (fashion, portrait, etc.)';

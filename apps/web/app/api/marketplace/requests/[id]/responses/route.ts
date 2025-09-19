@@ -9,10 +9,10 @@ const supabase = createClient(
 // GET /api/marketplace/requests/[id]/responses - Get responses to a request
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const requestId = params.id;
+    const requestId = (await params).id;
 
     // Get user from session
     const authHeader = request.headers.get('authorization');
@@ -110,10 +110,10 @@ export async function GET(
 // POST /api/marketplace/requests/[id]/responses - Respond to a request
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const requestId = params.id;
+    const requestId = (await params).id;
     const body = await request.json();
     const {
       response_type,

@@ -1,0 +1,169 @@
+:root {
+  --background: oklch(0.9800 0 0);
+  --foreground: oklch(0.1500 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.1500 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.1500 0 0);
+  --primary: oklch(0.6500 0.2000 280);
+  --primary-foreground: oklch(0.9800 0 0);
+  --secondary: oklch(0.9600 0 0);
+  --secondary-foreground: oklch(0.2000 0 0);
+  --muted: oklch(0.9600 0 0);
+  --muted-foreground: oklch(0.5000 0 0);
+  --accent: oklch(0.9400 0 0);
+  --accent-foreground: oklch(0.2000 0 0);
+  --destructive: oklch(0.6000 0.2200 15);
+  --destructive-foreground: oklch(0.9800 0 0);
+  --border: oklch(0.9000 0 0);
+  --input: oklch(0.9000 0 0);
+  --ring: oklch(0.6500 0.2000 280);
+  --chart-1: oklch(0.6500 0.2000 280);
+  --chart-2: oklch(0.7000 0.1800 120);
+  --chart-3: oklch(0.6000 0.2200 30);
+  --chart-4: oklch(0.5500 0.2000 240);
+  --chart-5: oklch(0.6500 0.1500 60);
+  --sidebar: oklch(0.9700 0 0);
+  --sidebar-foreground: oklch(0.1500 0 0);
+  --sidebar-primary: oklch(0.6500 0.2000 280);
+  --sidebar-primary-foreground: oklch(0.9800 0 0);
+  --sidebar-accent: oklch(0.9400 0 0);
+  --sidebar-accent-foreground: oklch(0.2000 0 0);
+  --sidebar-border: oklch(0.9000 0 0);
+  --sidebar-ring: oklch(0.6500 0.2000 280);
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --radius: 0.75rem;
+  --shadow-2xs: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0 hsl(0 0% 0% / 0.1);
+  --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
+  --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Custom showcase-specific styles */
+.showcase-hero {
+  background: linear-gradient(135deg, oklch(0.9800 0 0) 0%, oklch(0.9700 0 0) 100%);
+  border-bottom: 1px solid oklch(0.9000 0 0);
+}
+
+.showcase-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.showcase-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary);
+}
+
+.showcase-masonry {
+  column-count: 4;
+  column-gap: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .showcase-masonry {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .showcase-masonry {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .showcase-masonry {
+    column-count: 1;
+  }
+}
+
+.filter-badge {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: 1px solid var(--border);
+}
+
+.filter-badge:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+}
+
+.filter-badge.active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.hero-button {
+  background: linear-gradient(135deg, var(--primary) 0%, oklch(0.7000 0.1800 300) 100%);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1.5rem;
+  color: var(--primary-foreground);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.hero-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.create-button {
+  background: linear-gradient(135deg, var(--chart-2) 0%, var(--chart-3) 100%);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1.5rem;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.create-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.like-button {
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+}
+
+.like-button:hover {
+  background: oklch(0.9500 0 0);
+  color: var(--destructive);
+}
+
+.like-button.liked {
+  color: var(--destructive);
+  background: oklch(0.9800 0 0);
+}

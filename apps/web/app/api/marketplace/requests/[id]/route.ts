@@ -9,10 +9,10 @@ const supabase = createClient(
 // GET /api/marketplace/requests/[id] - Get specific equipment request
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const requestId = params.id;
+    const requestId = (await params).id;
 
     const { data: equipmentRequest, error } = await supabase
       .from('equipment_requests')
@@ -80,10 +80,10 @@ export async function GET(
 // PUT /api/marketplace/requests/[id] - Update equipment request
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const requestId = params.id;
+    const requestId = (await params).id;
     const body = await request.json();
 
     // Get user from session
@@ -157,10 +157,10 @@ export async function PUT(
 // DELETE /api/marketplace/requests/[id] - Delete equipment request
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const requestId = params.id;
+    const requestId = (await params).id;
 
     // Get user from session
     const authHeader = request.headers.get('authorization');

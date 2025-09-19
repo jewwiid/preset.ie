@@ -62,7 +62,7 @@ function profileReducer(state: ProfileState, action: ProfileAction): ProfileStat
         formData: action.payload && state.profile ? {
           ...state.profile,
           // Ensure array fields are properly initialized when entering edit mode
-          clothing_sizes: state.profile.clothing_sizes || [],
+          clothing_sizes: state.profile.clothing_sizes || null, // TEXT field, not array
           talent_categories: state.profile.talent_categories || [],
           style_tags: state.profile.style_tags || [],
           vibe_tags: state.profile.vibe_tags || []
@@ -156,7 +156,7 @@ function profileReducer(state: ProfileState, action: ProfileAction): ProfileStat
         formData: state.profile ? {
           ...state.profile,
           // Ensure array fields are properly initialized
-          clothing_sizes: state.profile.clothing_sizes || [],
+          clothing_sizes: state.profile.clothing_sizes || null, // TEXT field, not array
           talent_categories: state.profile.talent_categories || [],
           style_tags: state.profile.style_tags || [],
           vibe_tags: state.profile.vibe_tags || []
@@ -209,16 +209,13 @@ async function syncClothingDataWithProfile(userId: string, profileId: string) {
       return
     }
 
-    // Extract clothing sizes from the profile data
-    const clothingSizes = profileData?.clothing_sizes || []
+    // Extract clothing sizes from the profile data (TEXT field)
+    const clothingSizes = profileData?.clothing_sizes || null
     
-    // Extract measurements from the profile data
-    const measurements = profileData?.measurements || {}
+    // Extract measurements from the profile data (TEXT field)
+    const measurements = profileData?.measurements || null
     const heightCm = profileData?.height_cm
     const shoeSize = profileData?.shoe_size
-
-    // Format clothing sizes for display
-    const clothingSizeStrings = Array.isArray(clothingSizes) ? clothingSizes : []
 
     // Format measurements for display
     const measurementStrings = []
@@ -228,22 +225,18 @@ async function syncClothingDataWithProfile(userId: string, profileId: string) {
     if (shoeSize) {
       measurementStrings.push(`Shoe Size: ${shoeSize}`)
     }
-    if (measurements && typeof measurements === 'object') {
-      Object.entries(measurements).forEach(([key, value]) => {
-        if (value) {
-          measurementStrings.push(`${key}: ${value}`)
-        }
-      })
+    if (measurements && typeof measurements === 'string') {
+      measurementStrings.push(measurements)
     }
 
     // Combine measurements into a single string
-    const measurementsString = measurementStrings.length > 0 ? measurementStrings.join(', ') : undefined
+    const measurementsString = measurementStrings.length > 0 ? measurementStrings.join(', ') : null
 
     // Update the profile with synced data
     const { error: updateError } = await supabase
       .from('users_profile')
       .update({
-        clothing_sizes: clothingSizeStrings,
+        clothing_sizes: clothingSizes,
         measurements: measurementsString
       })
       .eq('id', profileId)
@@ -274,60 +267,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     }
     
     if (!user) {
-      console.log('No user found after auth loaded, creating demo profile for testing')
-      // Create a demo profile for testing when no user is authenticated
-      const demoProfile = {
-        id: 'demo',
-        user_id: 'demo-user-id',
-        display_name: 'Demo User',
-        handle: 'demo_user',
-        bio: 'This is a demo profile for testing the refactored architecture.',
-        city: 'Dublin',
-        country: 'Ireland',
-        avatar_url: undefined,
-        header_banner_url: undefined,
-        header_banner_position: 'center',
-        role_flags: ['TALENT'],
-        style_tags: ['Portrait', 'Fashion'],
-        subscription_tier: 'FREE',
-        subscription_status: 'ACTIVE',
-        verified_id: false,
-        date_of_birth: undefined,
-        phone_number: '+1234567890',
-        instagram_handle: 'demo_user',
-        tiktok_handle: 'demo_user',
-        website_url: 'https://demo.com',
-        portfolio_url: 'https://demo-portfolio.com',
-        years_experience: 5,
-        specializations: ['Portrait Photography', 'Fashion Photography'],
-        equipment_list: [],
-        languages: ['English'],
-        hourly_rate_min: 100,
-        hourly_rate_max: 500,
-        available_for_travel: true,
-        travel_radius_km: 50,
-        studio_name: 'Demo Studio',
-        has_studio: true,
-        studio_address: 'Demo Address',
-        typical_turnaround_days: 7,
-        height_cm: 175,
-        measurements: '34-24-36',
-        eye_color: 'Brown',
-        hair_color: 'Black',
-        shoe_size: '9',
-        clothing_sizes: ['M', 'L'],
-        tattoos: false,
-        piercings: true,
-        talent_categories: ['Model', 'Actor'],
-        vibe_tags: ['Professional', 'Creative'],
-        show_location: true,
-        travel_unit_preference: 'km' as const,
-        turnaround_unit_preference: 'days' as const,
-        editing_software: ['Photoshop', 'Lightroom'],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-      dispatch({ type: 'SET_PROFILE', payload: demoProfile })
+      console.log('No user found after auth loaded, setting profile to null')
+      // No user authenticated, clear profile and stop loading
+      dispatch({ type: 'SET_PROFILE', payload: null })
       dispatch({ type: 'SET_LOADING', payload: false })
       return
     }
@@ -362,6 +304,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             hint: profileError.hint
           })
           
+          // Handle empty error objects
           if (!profileError.code && !profileError.message) {
             console.error('Empty error object detected from Supabase')
             dispatch({ type: 'SET_ERROR', payload: 'Database connection error' })
@@ -369,6 +312,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             return
           }
           
+          // Handle specific error codes
           if (profileError.code === 'PGRST116') {
             console.log('Profile not found, creating default profile...')
             const defaultProfile = {
@@ -384,12 +328,12 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
               subscription_status: 'ACTIVE',
               verified_id: false,
               // Initialize clothing/measurement fields
-              height_cm: undefined,
-              measurements: undefined,
-              eye_color: undefined,
-              hair_color: undefined,
-              shoe_size: undefined,
-              clothing_sizes: [],
+              height_cm: null,
+              measurements: null,
+              eye_color: null,
+              hair_color: null,
+              shoe_size: null,
+              clothing_sizes: null, // TEXT field, not array
               tattoos: false,
               piercings: false,
               talent_categories: [],
@@ -408,19 +352,21 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             }
             dispatch({ type: 'SET_PROFILE', payload: newProfile })
           } else {
+            console.error('Unexpected profile error:', profileError)
             dispatch({ type: 'SET_ERROR', payload: 'Failed to load profile' })
+            dispatch({ type: 'SET_LOADING', payload: false })
             return
           }
         } else {
           // Ensure clothing/measurement fields are properly initialized
           const initializedProfile = {
             ...profile,
-            height_cm: profile.height_cm || undefined,
-            measurements: profile.measurements || undefined,
-            eye_color: profile.eye_color || undefined,
-            hair_color: profile.hair_color || undefined,
-            shoe_size: profile.shoe_size || undefined,
-            clothing_sizes: profile.clothing_sizes || [],
+            height_cm: profile.height_cm || null,
+            measurements: profile.measurements || null,
+            eye_color: profile.eye_color || null,
+            hair_color: profile.hair_color || null,
+            shoe_size: profile.shoe_size || null,
+            clothing_sizes: profile.clothing_sizes || null, // TEXT field, not array
             tattoos: profile.tattoos || false,
             piercings: profile.piercings || false,
             talent_categories: profile.talent_categories || [],
@@ -583,7 +529,7 @@ export function useProfileForm() {
         eye_color: state.formData.eye_color?.trim() || null,
         hair_color: state.formData.hair_color?.trim() || null,
         shoe_size: state.formData.shoe_size?.trim() || null,
-        clothing_sizes: state.formData.clothing_sizes || [],
+        clothing_sizes: state.formData.clothing_sizes?.trim() || null, // TEXT field, not array
         tattoos: state.formData.tattoos || false,
         piercings: state.formData.piercings || false,
         talent_categories: state.formData.talent_categories || [],

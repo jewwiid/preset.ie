@@ -21,17 +21,49 @@ import { CinematicParameters } from '../../../../../packages/types/src/cinematic
 import CinematicPromptBuilder from '../../../../../packages/services/src/cinematic-prompt-builder'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import { useAuth } from '../../../lib/auth-context'
+import PresetSelector from './PresetSelector'
 
-interface StylePreset {
+interface Preset {
   id: string
   name: string
   description?: string
-  style_type: string
+  category: string
   prompt_template: string
-  intensity: number
+  negative_prompt?: string
+  style_settings: {
+    style: string
+    intensity: number
+    consistency_level: string
+    generation_mode?: 'text-to-image' | 'image-to-image'
+  }
+  technical_settings: {
+    resolution: string
+    aspect_ratio: string
+    num_images: number
+    quality?: string
+  }
+  ai_metadata: {
+    model_version?: string
+    generation_mode?: string
+    migrated_from_style_preset?: boolean
+    original_style_preset_id?: string
+  }
+  seedream_config: {
+    model: string
+    steps: number
+    guidance_scale: number
+    scheduler: string
+  }
   usage_count: number
   is_public: boolean
-  generation_mode?: 'text-to-image' | 'image-to-image'
+  is_featured: boolean
+  created_at: string
+  creator: {
+    id: string
+    display_name: string
+    handle: string
+    avatar_url?: string
+  }
 }
 
 interface UnifiedImageGenerationPanelProps {
@@ -41,7 +73,7 @@ interface UnifiedImageGenerationPanelProps {
     resolution: string
     consistencyLevel: string
     numImages: number
-    customStylePreset?: StylePreset
+    customPreset?: Preset
     baseImage?: string
     generationMode?: 'text-to-image' | 'image-to-image'
     intensity?: number
@@ -66,7 +98,7 @@ interface UnifiedImageGenerationPanelProps {
     title: string
   }>
   onSelectSavedImage?: (imageUrl: string) => void
-  selectedPreset?: StylePreset | null
+  selectedPreset?: Preset | null
 }
 
 export default function UnifiedImageGenerationPanel({ 
@@ -89,18 +121,7 @@ export default function UnifiedImageGenerationPanel({
   const [consistencyLevel, setConsistencyLevel] = useState('high')
   const [intensity, setIntensity] = useState(1.0)
   const [numImages, setNumImages] = useState(1)
-  const [stylePresets, setStylePresets] = useState<StylePreset[]>([])
-  const [selectedCustomPreset, setSelectedCustomPreset] = useState<StylePreset | null>(null)
-  const [showCustomStyles, setShowCustomStyles] = useState(false)
-  const [showCreateStyleDialog, setShowCreateStyleDialog] = useState(false)
-  const [customStyleForm, setCustomStyleForm] = useState({
-    name: '',
-    description: '',
-    styleType: '',
-    promptTemplate: '',
-    intensity: 1.0,
-    isPublic: false
-  })
+  const [currentPreset, setCurrentPreset] = useState<Preset | null>(null)
   
   // Analysis modal state
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
@@ -184,8 +205,6 @@ export default function UnifiedImageGenerationPanel({
   const [isPromptModified, setIsPromptModified] = useState(false)
   const [originalPrompt, setOriginalPrompt] = useState('')
   const [baseImageSource, setBaseImageSource] = useState<'upload' | 'saved' | 'pexels'>('upload')
-  const [customStyleSearchQuery, setCustomStyleSearchQuery] = useState('')
-  const [customStyleFilter, setCustomStyleFilter] = useState<'all' | 'photorealistic' | 'artistic' | 'cartoon' | 'vintage' | 'cyberpunk' | 'watercolor' | 'sketch' | 'oil_painting'>('all')
   const [baseImageDimensions, setBaseImageDimensions] = useState<{ width: number; height: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
@@ -212,23 +231,7 @@ export default function UnifiedImageGenerationPanel({
     }
   }, [prompt, originalPrompt])
 
-  // Filter style presets based on search query and filter
-  const filteredStylePresets = stylePresets.filter(preset => {
-    const matchesSearch = customStyleSearchQuery === '' || 
-      preset.name.toLowerCase().includes(customStyleSearchQuery.toLowerCase()) ||
-      preset.description?.toLowerCase().includes(customStyleSearchQuery.toLowerCase()) ||
-      preset.prompt_template.toLowerCase().includes(customStyleSearchQuery.toLowerCase())
-    
-    const matchesFilter = customStyleFilter === 'all' || preset.style_type === customStyleFilter
-    
-    return matchesSearch && matchesFilter
-  })
 
-  useEffect(() => {
-    if (user && session?.access_token) {
-      fetchStylePresets()
-    }
-  }, [user, session])
 
   // Function to get image dimensions
   const getImageDimensions = (imageUrl: string): Promise<{ width: number; height: number }> => {
@@ -282,108 +285,65 @@ export default function UnifiedImageGenerationPanel({
     }
   }, [resolution, userSubscriptionTier, baseImageDimensions, aspectRatio, baseImage])
 
-  // Handle preset selection from Prompt Management panel
+  // Handle preset selection from parent component (comprehensive Preset)
   useEffect(() => {
     if (selectedPreset) {
-      setSelectedCustomPreset(selectedPreset)
-      setStyle(selectedPreset.style_type)
+      setCurrentPreset(selectedPreset)
+      setStyle(selectedPreset.style_settings?.style || 'realistic')
       setPrompt(selectedPreset.prompt_template)
       setOriginalPrompt(selectedPreset.prompt_template)
-      setIntensity(selectedPreset.intensity)
+      setIntensity(selectedPreset.style_settings?.intensity || 1.0)
+      setConsistencyLevel(selectedPreset.style_settings?.consistency_level || 'high')
+      setAspectRatio(selectedPreset.technical_settings?.aspect_ratio || '1:1')
+      setResolution(selectedPreset.technical_settings?.resolution || '1024')
+      setNumImages(selectedPreset.technical_settings?.num_images || 1)
       
       // Set generation mode if the preset specifies one
-      if (selectedPreset.generation_mode) {
-        setGenerationMode(selectedPreset.generation_mode)
+      if (selectedPreset.style_settings?.generation_mode) {
+        setGenerationMode(selectedPreset.style_settings.generation_mode)
       }
       
       setIsPromptModified(false)
-      setShowCustomStyles(true) // Show custom styles section
       
       // Clear the selected preset after applying it to avoid re-applying
       // This will be handled by the parent component
     }
   }, [selectedPreset])
 
+  // Handle preset selection from PresetSelector
+  const handlePresetSelect = (preset: Preset | null) => {
+    setCurrentPreset(preset)
+    
+    if (preset) {
+      // Apply preset settings
+      setPrompt(preset.prompt_template)
+      setStyle(preset.style_settings?.style || 'realistic')
+      setIntensity(preset.style_settings?.intensity || 1.0)
+      setConsistencyLevel(preset.style_settings?.consistency_level || 'high')
+      setAspectRatio(preset.technical_settings?.aspect_ratio || '1:1')
+      setResolution(preset.technical_settings?.resolution || '1024')
+      setNumImages(preset.technical_settings?.num_images || 1)
+
+      // Update settings for parent component
+      if (onSettingsChange) {
+        onSettingsChange({
+          resolution: preset.technical_settings?.resolution || '1024',
+          aspectRatio: preset.technical_settings?.aspect_ratio || '1:1'
+        })
+      }
+    }
+  }
+
   // Update prompt when generation mode changes (for regular styles)
   useEffect(() => {
-    if (!selectedCustomPreset && !isPromptModified) {
+    if (!currentPreset && !isPromptModified) {
       const newPrompt = getStylePrompt(style, generationMode)
       setPrompt(newPrompt)
       setOriginalPrompt(newPrompt)
     }
-  }, [generationMode, style, selectedCustomPreset, isPromptModified])
+  }, [generationMode, style, currentPreset, isPromptModified])
 
-  const fetchStylePresets = async () => {
-    try {
-      const response = await fetch('/api/playground/style-presets?includePublic=true', {
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`
-        }
-      })
-      if (response.ok) {
-        const { presets } = await response.json()
-        setStylePresets(presets || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch style presets:', error)
-    }
-  }
 
-  const handleCreateCustomStyle = async () => {
-    if (!session?.access_token) {
-      showFeedback({
-        type: 'warning',
-        title: 'Authentication Required',
-        message: 'Please sign in to create style presets.'
-      })
-      return
-    }
-
-    if (!customStyleForm.name || !customStyleForm.styleType || !customStyleForm.promptTemplate) {
-      showFeedback({
-        type: 'warning',
-        title: 'Missing Fields',
-        message: 'Please fill in all required fields (Name, Style Type, Prompt Template).'
-      })
-      return
-    }
-
-    try {
-      const response = await fetch('/api/playground/style-presets', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify(customStyleForm)
-      })
-
-      if (!response.ok) throw new Error('Failed to create preset')
-      
-      setShowCreateStyleDialog(false)
-      setCustomStyleForm({
-        name: '',
-        description: '',
-        styleType: '',
-        promptTemplate: '',
-        intensity: 1.0,
-        isPublic: false
-      })
-      fetchStylePresets()
-      showFeedback({
-        type: 'success',
-        title: 'Preset Created',
-        message: 'Style preset created successfully!'
-      })
-    } catch (error) {
-      console.error('Failed to create preset:', error)
-      showFeedback({
-        type: 'error',
-        title: 'Failed to Create Preset',
-        message: 'Could not create the style preset. Please try again.'
-      })
-    }
-  }
 
   const calculateResolution = (aspectRatioValue: string, baseResolution: string) => {
     const [widthRatio, heightRatio] = aspectRatioValue.split(':').map(Number)
@@ -426,11 +386,11 @@ export default function UnifiedImageGenerationPanel({
     
     await onGenerate({
       prompt: enableCinematicMode ? enhancedPrompt : prompt,
-      style: selectedCustomPreset ? selectedCustomPreset.style_type : style,
+      style: currentPreset ? currentPreset.style_settings?.style || style : style,
       resolution: calculatedResolution,
       consistencyLevel,
       numImages,
-      customStylePreset: selectedCustomPreset || undefined,
+      customPreset: currentPreset || undefined,
       baseImage: generationMode === 'image-to-image' ? baseImage || undefined : undefined,
       generationMode,
       intensity: intensity,
@@ -610,8 +570,8 @@ export default function UnifiedImageGenerationPanel({
         {style && (
           <div className="mt-2 flex gap-2">
             <Badge variant="outline" className="text-xs">
-              Style: {selectedCustomPreset ? 
-                `🎨 ${selectedCustomPreset.name}` :
+              Style: {currentPreset ? 
+                `🎨 ${currentPreset.name}` :
                 style === 'photorealistic' ? '📸 Photorealistic' : 
                 style === 'artistic' ? '🎨 Artistic' :
                 style === 'cartoon' ? '🎭 Cartoon' :
@@ -629,6 +589,23 @@ export default function UnifiedImageGenerationPanel({
           </div>
         )}
       </CardHeader>
+      
+      {/* Preset Selector */}
+      <CardContent className="pb-4">
+        <PresetSelector
+          onPresetSelect={handlePresetSelect}
+          selectedPreset={currentPreset}
+          currentSettings={{
+            prompt,
+            style,
+            resolution,
+            aspectRatio,
+            consistencyLevel,
+            intensity,
+            numImages
+          }}
+        />
+      </CardContent>
       
       <CardContent className="space-y-4">
         {/* Generation Mode Selection */}
@@ -951,17 +928,25 @@ export default function UnifiedImageGenerationPanel({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  // Pre-fill the custom style form with current prompt
-                  setCustomStyleForm({
-                    ...customStyleForm,
-                    promptTemplate: prompt,
-                    styleType: selectedCustomPreset ? selectedCustomPreset.style_type : style
-                  })
-                  setShowCreateStyleDialog(true)
+                  // Navigate to preset creation page with current settings
+                  const queryParams = new URLSearchParams({
+                    name: `My Custom Preset ${new Date().toLocaleDateString()}`,
+                    description: 'Saved from playground',
+                    prompt_template: prompt,
+                    style: currentPreset ? currentPreset.style_settings?.style || style : style,
+                    resolution: resolution,
+                    aspect_ratio: aspectRatio,
+                    consistency_level: consistencyLevel,
+                    intensity: intensity.toString(),
+                    num_images: numImages.toString(),
+                    is_public: 'false'
+                  }).toString()
+                  
+                  window.location.href = `/presets/create?${queryParams}`
                 }}
                 className="text-xs"
               >
-                💾 Save Prompt
+                💾 Save as Preset
               </Button>
             )}
           </div>
@@ -984,7 +969,7 @@ export default function UnifiedImageGenerationPanel({
           />
           {isPromptModified && (
             <p className="text-xs text-blue-600">
-              💡 You've modified the prompt. Click "Save Prompt" to create a custom style preset.
+              💡 You've modified the prompt. Click "Save as Preset" to create a comprehensive preset.
             </p>
           )}
 
@@ -1092,265 +1077,35 @@ export default function UnifiedImageGenerationPanel({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="style">Style</Label>
-              <div className="flex gap-2">
-                <Dialog open={showCreateStyleDialog} onOpenChange={setShowCreateStyleDialog}>
-                  {userSubscriptionTier !== 'FREE' && (
-                    <DialogTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Create
-                      </Button>
-                    </DialogTrigger>
-                  )}
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Create Custom Style</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Name *</label>
-                        <Input
-                          value={customStyleForm.name}
-                          onChange={(e) => setCustomStyleForm({ ...customStyleForm, name: e.target.value })}
-                          placeholder="My Custom Style"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Description</label>
-                        <Textarea
-                          value={customStyleForm.description}
-                          onChange={(e) => setCustomStyleForm({ ...customStyleForm, description: e.target.value })}
-                          placeholder="Describe this style..."
-                          rows={2}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Style Type *</label>
-                        <Select value={customStyleForm.styleType} onValueChange={(value) => setCustomStyleForm({ ...customStyleForm, styleType: value })}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select style type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="photorealistic">Photorealistic</SelectItem>
-                            <SelectItem value="artistic">Artistic</SelectItem>
-                            <SelectItem value="cartoon">Cartoon</SelectItem>
-                            <SelectItem value="vintage">Vintage</SelectItem>
-                            <SelectItem value="cyberpunk">Cyberpunk</SelectItem>
-                            <SelectItem value="watercolor">Watercolor</SelectItem>
-                            <SelectItem value="sketch">Sketch</SelectItem>
-                            <SelectItem value="oil_painting">Oil Painting</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Prompt Template *</label>
-                        <Textarea
-                          value={customStyleForm.promptTemplate}
-                          onChange={(e) => setCustomStyleForm({ ...customStyleForm, promptTemplate: e.target.value })}
-                          placeholder="Apply {style_type} style to this image..."
-                          rows={3}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Intensity</label>
-                        <Input
-                          type="number"
-                          min="0.1"
-                          max="2.0"
-                          step="0.1"
-                          value={customStyleForm.intensity}
-                          onChange={(e) => setCustomStyleForm({ ...customStyleForm, intensity: parseFloat(e.target.value) })}
-                        />
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="isPublic"
-                          checked={customStyleForm.isPublic}
-                          onChange={(e) => setCustomStyleForm({ ...customStyleForm, isPublic: e.target.checked })}
-                        />
-                        <label htmlFor="isPublic" className="text-sm">Make public</label>
-                      </div>
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setShowCreateStyleDialog(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleCreateCustomStyle}>
-                          Create Style
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                {userSubscriptionTier === 'FREE' && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => showFeedback({
-                      type: 'info',
-                      title: 'Premium Feature',
-                      message: 'Custom style creation is available for Plus and Pro subscribers. Upgrade to create your own styles!'
-                    })}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Create (Premium)
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCustomStyles(!showCustomStyles)}
-                  className="text-xs"
-                >
-                  {showCustomStyles ? 'Hide' : 'Show'} Custom
-                </Button>
-              </div>
-            </div>
+            <Label htmlFor="style">Style</Label>
+            <Select value={style} onValueChange={(value) => {
+              setStyle(value)
+              setCurrentPreset(null)
+              // Prefill prompt with context-aware style prompt
+              const newPrompt = getStylePrompt(value, generationMode)
+              setPrompt(newPrompt)
+              setOriginalPrompt(newPrompt)
+              setIsPromptModified(false)
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select style" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="photorealistic">📸 Photorealistic</SelectItem>
+                <SelectItem value="artistic">🎨 Artistic</SelectItem>
+                <SelectItem value="cartoon">🎭 Cartoon</SelectItem>
+                <SelectItem value="vintage">📻 Vintage</SelectItem>
+                <SelectItem value="cyberpunk">🤖 Cyberpunk</SelectItem>
+                <SelectItem value="watercolor">🎨 Watercolor</SelectItem>
+                <SelectItem value="sketch">✏️ Sketch</SelectItem>
+                <SelectItem value="oil_painting">🖼️ Oil Painting</SelectItem>
+              </SelectContent>
+            </Select>
             
-            {!showCustomStyles ? (
-              <div className="space-y-2">
-                <Select value={style} onValueChange={(value) => {
-                  setStyle(value)
-                  setSelectedCustomPreset(null)
-                  // Prefill prompt with context-aware style prompt
-                  const newPrompt = getStylePrompt(value, generationMode)
-                  setPrompt(newPrompt)
-                  setOriginalPrompt(newPrompt)
-                  setIsPromptModified(false)
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="photorealistic">📸 Photorealistic</SelectItem>
-                    <SelectItem value="artistic">🎨 Artistic</SelectItem>
-                    <SelectItem value="cartoon">🎭 Cartoon</SelectItem>
-                    <SelectItem value="vintage">📻 Vintage</SelectItem>
-                    <SelectItem value="cyberpunk">🤖 Cyberpunk</SelectItem>
-                    <SelectItem value="watercolor">🎨 Watercolor</SelectItem>
-                    <SelectItem value="sketch">✏️ Sketch</SelectItem>
-                    <SelectItem value="oil_painting">🖼️ Oil Painting</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {/* Display context-aware prompt for regular styles */}
-                <div className="p-2 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-xs text-gray-600">{getStylePrompt(style, generationMode)}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {/* Search and Filter Controls */}
-                <div className="space-y-2">
-                  {/* Search Input */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search presets..."
-                      value={customStyleSearchQuery}
-                      onChange={(e) => setCustomStyleSearchQuery(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    {customStyleSearchQuery && (
-                      <button
-                        onClick={() => setCustomStyleSearchQuery('')}
-                        className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                  
-                  {/* Filter Dropdown */}
-                  <Select value={customStyleFilter} onValueChange={(value: any) => setCustomStyleFilter(value)}>
-                    <SelectTrigger className="text-sm">
-                      <SelectValue placeholder="Filter by style type" />
-                    </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Styles</SelectItem>
-                  <SelectItem value="photorealistic">📸 Photorealistic</SelectItem>
-                  <SelectItem value="artistic">🎨 Artistic</SelectItem>
-                  <SelectItem value="cartoon">🎭 Cartoon</SelectItem>
-                  <SelectItem value="vintage">📻 Vintage</SelectItem>
-                  <SelectItem value="cyberpunk">🤖 Cyberpunk</SelectItem>
-                  <SelectItem value="watercolor">🎨 Watercolor</SelectItem>
-                  <SelectItem value="sketch">✏️ Sketch</SelectItem>
-                  <SelectItem value="oil_painting">🖼️ Oil Painting</SelectItem>
-                </SelectContent>
-                  </Select>
-                  
-                  {/* Results Count */}
-                  <div className="text-xs text-gray-500">
-                    {filteredStylePresets.length} preset{filteredStylePresets.length !== 1 ? 's' : ''} found
-                  </div>
-                </div>
-
-                <Select 
-                  value={selectedCustomPreset?.id || ''} 
-                  onValueChange={(value) => {
-                    const preset = filteredStylePresets.find(p => p.id === value)
-                    setSelectedCustomPreset(preset || null)
-                    if (preset) {
-                      setStyle(preset.style_type)
-                      // Prefill prompt with custom preset template
-                      setPrompt(preset.prompt_template)
-                      setOriginalPrompt(preset.prompt_template)
-                      setIsPromptModified(false)
-                    } else {
-                      // Clear prompt when no preset is selected
-                      setPrompt('')
-                      setOriginalPrompt('')
-                      setIsPromptModified(false)
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select custom style preset" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredStylePresets.length === 0 ? (
-                      <div className="px-3 py-2 text-sm text-gray-500">
-                        {customStyleSearchQuery || customStyleFilter !== 'all' 
-                          ? 'No presets match your search' 
-                          : 'No custom presets available'}
-                      </div>
-                    ) : (
-                      filteredStylePresets.map(preset => (
-                        <SelectItem key={preset.id} value={preset.id}>
-                          <div className="flex items-center space-x-2">
-                            <span>{preset.name}</span>
-                            {preset.is_public && <Users className="h-3 w-3 text-blue-500" />}
-                            <Badge variant="outline" className="text-xs">
-                              {preset.style_type}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                
-                {selectedCustomPreset && (
-                  <div className="p-2 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-xs text-blue-600">{selectedCustomPreset.description}</p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Star className="h-3 w-3 text-yellow-500" />
-                      <span className="text-xs text-blue-600">{selectedCustomPreset.usage_count} uses</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Display context-aware prompt for regular styles */}
+            <div className="p-2 bg-gray-50 border border-gray-200 rounded-md">
+              <p className="text-xs text-gray-600">{getStylePrompt(style, generationMode)}</p>
+            </div>
           </div>
 
           {/* Style Intensity Slider */}
@@ -1533,27 +1288,31 @@ export default function UnifiedImageGenerationPanel({
       onClose={() => setShowAnalysisModal(false)}
       imageUrl={baseImage || undefined}
       originalPrompt={prompt}
-      style={selectedCustomPreset ? selectedCustomPreset.style_type : style}
+      style={currentPreset ? currentPreset.style_settings?.style || style : style}
       resolution={resolution}
       aspectRatio={aspectRatio}
       generationMode={generationMode}
-      customStylePreset={selectedCustomPreset}
       cinematicParameters={enableCinematicMode ? cinematicParameters : undefined}
       onApplyPrompt={(improvedPrompt) => {
         setPrompt(improvedPrompt)
         setShowAnalysisModal(false)
       }}
       onSaveAsPreset={(analysis) => {
-        // Pre-fill the custom style form with analysis data
-        setCustomStyleForm({
+        // Navigate to preset creation page with optimized prompt
+        const queryParams = new URLSearchParams({
           name: `Optimized: ${analysis.recommendedPrompt.substring(0, 30)}...`,
-          description: `AI-optimized prompt based on analysis`,
-          styleType: selectedCustomPreset ? selectedCustomPreset.style_type : style,
-          promptTemplate: analysis.recommendedPrompt,
-          intensity: intensity,
-          isPublic: false
-        })
-        setShowCreateStyleDialog(true)
+          description: 'AI-optimized prompt based on analysis',
+          prompt_template: analysis.recommendedPrompt,
+          style: currentPreset ? currentPreset.style_settings?.style || style : style,
+          resolution: resolution,
+          aspect_ratio: aspectRatio,
+          consistency_level: consistencyLevel,
+          intensity: intensity.toString(),
+          num_images: numImages.toString(),
+          is_public: 'false'
+        }).toString()
+        
+        window.location.href = `/presets/create?${queryParams}`
         setShowAnalysisModal(false)
       }}
       subscriptionTier={userSubscriptionTier as 'free' | 'plus' | 'pro'}

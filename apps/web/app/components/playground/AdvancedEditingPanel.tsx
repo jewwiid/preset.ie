@@ -567,7 +567,7 @@ export default function AdvancedEditingPanel({
                   <SelectValue placeholder="Orientation" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="landscape">Landscape</SelectItem>
                   <SelectItem value="portrait">Portrait</SelectItem>
                   <SelectItem value="square">Square</SelectItem>
@@ -582,7 +582,7 @@ export default function AdvancedEditingPanel({
                   <SelectValue placeholder="Size" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="large">Large</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="small">Small</SelectItem>
@@ -597,7 +597,7 @@ export default function AdvancedEditingPanel({
                   <SelectValue placeholder="Color" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All</SelectItem>
+                  <SelectItem value="all">All</SelectItem>
                   <SelectItem value="red">Red</SelectItem>
                   <SelectItem value="orange">Orange</SelectItem>
                   <SelectItem value="yellow">Yellow</SelectItem>

@@ -9,10 +9,10 @@ const supabase = createClient(
 // GET /api/collab/projects/[id] - Get project details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const { data: project, error } = await supabase
       .from('collab_projects')
@@ -122,10 +122,10 @@ export async function GET(
 // PUT /api/collab/projects/[id] - Update project
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Get current user
@@ -201,10 +201,10 @@ export async function PUT(
 // DELETE /api/collab/projects/[id] - Delete project
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Get current user
     const authHeader = request.headers.get('authorization');

@@ -1,0 +1,34 @@
+STRIPE TEST CARDS - QUICK REFERENCE
+=====================================
+
+Domain: https://web-brown-three-40.vercel.app
+
+SUCCESS CARDS:
+✅ 4242 4242 4242 4242 (Visa - Most Common)
+✅ 5555 5555 5555 4444 (Mastercard)
+✅ 3782 822463 10005 (American Express)
+
+DECLINE CARDS:
+❌ 4000 0000 0000 0002 (Generic Decline)
+❌ 4000 0000 0000 9995 (Insufficient Funds)
+❌ 4000 0000 0000 0069 (Expired Card)
+
+TEST INFO:
+- Expiry: Any future date (e.g., 12/25)
+- CVC: Any 3 digits (e.g., 123)
+- Email: Any email (e.g., test@example.com)
+
+TESTING URLS:
+- Subscription: https://web-brown-three-40.vercel.app/subscription
+- Credits: https://web-brown-three-40.vercel.app/credits/purchase
+
+WEBHOOK URL:
+https://web-brown-three-40.vercel.app/api/stripe/webhook
+
+QUICK TEST:
+1. Go to subscription page
+2. Click "Upgrade to Plus" or "Upgrade to Pro"
+3. Use: 4242 4242 4242 4242
+4. Expiry: 12/25, CVC: 123
+5. Complete payment
+6. Should redirect to success page

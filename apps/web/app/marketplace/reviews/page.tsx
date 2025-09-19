@@ -96,6 +96,12 @@ export default function ReviewsPage() {
       setError(null);
 
       // Get the current session to get the access token
+      if (!supabase) {
+        setError('Database connection not available');
+        setLoading(false);
+        return;
+      }
+      
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -110,6 +116,12 @@ export default function ReviewsPage() {
       }
 
       // Get user profile to get the profile ID
+      if (!user) {
+        setError('User not authenticated');
+        setLoading(false);
+        return;
+      }
+      
       const { data: profile, error: profileError } = await supabase
         .from('users_profile')
         .select('id')
@@ -152,6 +164,10 @@ export default function ReviewsPage() {
   const fetchStats = async () => {
     try {
       // Get user profile to get the profile ID
+      if (!supabase || !user) {
+        return;
+      }
+      
       const { data: profile, error: profileError } = await supabase
         .from('users_profile')
         .select('id')
