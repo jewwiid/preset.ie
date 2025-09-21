@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { NanoBananaService } from './NanoBananaService';
-import { CreditManager } from '../../application/credits/CreditManager';
+import { CreditManager } from '@preset/application/src/credits/CreditManager';
 
 export interface EnhancementTask {
   id: string;
@@ -140,23 +140,15 @@ export class AsyncTaskManager {
           })
           .eq('id', taskId);
 
-        // Log successful transaction
-        await this.creditManager.logCreditTransaction({
-          userId: task.user_id,
-          moodboardId: task.moodboard_id,
-          transactionType: 'deduction',
-          creditsUsed: 1,
-          costUsd: completedResult.cost,
-          provider: 'wavespeed',
-          enhancementType: task.enhancement_type
-        });
+        // Transaction logging is handled internally by CreditManager
       } catch (pollingError) {
         // If polling fails, mark task as failed
+        const errorMessage = pollingError instanceof Error ? pollingError.message : 'Unknown polling error';
         await this.supabase
           .from('enhancement_tasks')
           .update({
             status: 'failed',
-            error_message: pollingError.message,
+            error_message: errorMessage,
             updated_at: new Date().toISOString()
           })
           .eq('id', taskId);
@@ -168,11 +160,12 @@ export class AsyncTaskManager {
       console.error(`Task ${taskId} processing error:`, error);
 
       // Update task with error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown processing error';
       await this.supabase
         .from('enhancement_tasks')
         .update({
           status: 'failed',
-          error_message: error.message,
+          error_message: errorMessage,
           updated_at: new Date().toISOString()
         })
         .eq('id', taskId);
@@ -234,15 +227,7 @@ export class AsyncTaskManager {
         p_enhancement_type: enhancementType
       });
 
-      // Log refund transaction
-      await this.creditManager.logCreditTransaction({
-        userId,
-        transactionType: 'refund',
-        creditsUsed: credits,
-        costUsd: 0,
-        provider: 'nanobanan',
-        enhancementType
-      });
+      // Refund transaction logging is handled internally by the refund RPC function
     } catch (error) {
       console.error('Failed to refund credits:', error);
     }
