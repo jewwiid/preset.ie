@@ -178,23 +178,23 @@ function CollaboratePageContent() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-yellow-100 text-yellow-800';
+      case 'published': return 'bg-primary/10 text-primary';
+      case 'in_progress': return 'bg-secondary/10 text-secondary';
+      case 'completed': return 'bg-muted text-muted-foreground';
+      case 'cancelled': return 'bg-destructive/10 text-destructive';
+      default: return 'bg-accent/10 text-accent';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <h1 className="text-3xl font-bold text-gray-900">Collaborate</h1>
-              <span className="ml-3 px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+              <h1 className="text-3xl font-bold text-foreground">Collaborate</h1>
+              <span className="ml-3 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
                 Beta
               </span>
             </div>
@@ -223,7 +223,7 @@ function CollaboratePageContent() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Search
                   </label>
                   <Input
@@ -234,7 +234,7 @@ function CollaboratePageContent() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Status
                   </label>
                   <Select value={filters.status} onValueChange={(value) => handleFiltersChange({ ...filters, status: value })}>
@@ -252,7 +252,7 @@ function CollaboratePageContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     City
                   </label>
                   <Input
@@ -263,7 +263,7 @@ function CollaboratePageContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Country
                   </label>
                   <Input
@@ -274,7 +274,7 @@ function CollaboratePageContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Role Type
                   </label>
                   <Input
@@ -285,7 +285,7 @@ function CollaboratePageContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Gear Category
                   </label>
                   <Input
@@ -319,11 +319,11 @@ function CollaboratePageContent() {
 
           {/* Results Header */}
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900">
+            <h2 className="text-lg font-medium text-foreground">
               {loading ? 'Loading...' : `${pagination.total} projects found`}
             </h2>
             {!loading && pagination.total > 0 && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 Page {pagination.page} of {pagination.pages}
               </span>
             )}
@@ -335,13 +335,13 @@ function CollaboratePageContent() {
               {[...Array(6)].map((_, i) => (
                 <Card key={i} className="animate-pulse">
                   <CardHeader>
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      <div className="h-3 bg-gray-200 rounded"></div>
-                      <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                      <div className="h-3 bg-muted rounded"></div>
+                      <div className="h-3 bg-muted rounded w-5/6"></div>
                     </div>
                   </CardContent>
                 </Card>
@@ -349,16 +349,16 @@ function CollaboratePageContent() {
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <p className="text-red-600">{error}</p>
+              <p className="text-destructive">{error}</p>
               <Button onClick={() => fetchProjects()} className="mt-4">
                 Try Again
               </Button>
             </div>
           ) : projects.length === 0 ? (
             <div className="text-center py-12">
-              <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No projects found</h3>
-              <p className="text-gray-500 mb-4">
+              <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No projects found</h3>
+              <p className="text-muted-foreground mb-4">
                 No projects match your criteria. Try adjusting your filters or create a new project.
               </p>
               <Link href="/collaborate/create">
@@ -375,7 +375,7 @@ function CollaboratePageContent() {
                         <CardTitle className="text-lg mb-2">
                           <Link 
                             href={`/collaborate/projects/${project.id}`}
-                            className="hover:text-blue-600 transition-colors"
+                            className="hover:text-primary transition-colors"
                           >
                             {project.title}
                           </Link>
@@ -400,7 +400,7 @@ function CollaboratePageContent() {
                   
                   <CardContent>
                     {project.description && (
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                      <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
                         {project.description}
                       </p>
                     )}
@@ -408,7 +408,7 @@ function CollaboratePageContent() {
                     <div className="space-y-3">
                       {/* Location */}
                       {(project.city || project.country) && (
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4 mr-2" />
                           {[project.city, project.country].filter(Boolean).join(', ')}
                         </div>
@@ -416,7 +416,7 @@ function CollaboratePageContent() {
                       
                       {/* Dates */}
                       {(project.start_date || project.end_date) && (
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4 mr-2" />
                           {project.start_date && formatDate(project.start_date)}
                           {project.start_date && project.end_date && ' - '}
@@ -426,7 +426,7 @@ function CollaboratePageContent() {
                       
                       {/* Roles */}
                       {project.collab_roles.length > 0 && (
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <Users className="h-4 w-4 mr-2" />
                           {project.collab_roles.length} role{project.collab_roles.length !== 1 ? 's' : ''} needed
                         </div>
@@ -434,19 +434,19 @@ function CollaboratePageContent() {
                       
                       {/* Gear Requests */}
                       {project.collab_gear_requests.length > 0 && (
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <Camera className="h-4 w-4 mr-2" />
                           {project.collab_gear_requests.length} gear request{project.collab_gear_requests.length !== 1 ? 's' : ''}
                         </div>
                       )}
                     </div>
                     
-                    <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="mt-4 pt-4 border-t border-border">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <span>by {project.creator.display_name}</span>
                         </div>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-muted-foreground">
                           {formatDate(project.created_at)}
                         </span>
                       </div>

@@ -152,20 +152,20 @@ export default function OrdersPage() {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-muted text-muted-foreground';
       case 'accepted':
       case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary/10 text-primary';
       case 'paid':
-        return 'bg-green-100 text-green-800';
+        return 'bg-primary/10 text-primary';
       case 'completed':
-        return 'bg-emerald-100 text-emerald-800';
+        return 'bg-primary/10 text-primary';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/10 text-destructive';
       case 'refunded':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -196,11 +196,11 @@ export default function OrdersPage() {
   if (!user) {
     return (
       <MarketplaceLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
-            <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in to view your orders</h2>
-            <p className="text-gray-600">You need to be signed in to access your marketplace orders.</p>
+            <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">Sign in to view your orders</h2>
+            <p className="text-muted-foreground">You need to be signed in to access your marketplace orders.</p>
           </div>
         </div>
       </MarketplaceLayout>
@@ -209,28 +209,28 @@ export default function OrdersPage() {
 
   return (
     <MarketplaceLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-            <p className="text-gray-600 mt-2">Track your marketplace orders and rentals</p>
+            <h1 className="text-3xl font-bold text-foreground">My Orders</h1>
+            <p className="text-muted-foreground mt-2">Track your marketplace orders and rentals</p>
           </div>
 
           {/* Content */}
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading your orders...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+                <p className="mt-4 text-muted-foreground">Loading your orders...</p>
               </div>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Error loading orders</h2>
-                <p className="text-gray-600 mb-4">{error}</p>
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-foreground mb-2">Error loading orders</h2>
+                <p className="text-muted-foreground mb-4">{error}</p>
                 <Button onClick={fetchOrders}>
                   Try Again
                 </Button>
@@ -252,9 +252,9 @@ export default function OrdersPage() {
               {filteredOrders.length === 0 ? (
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
-                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">No orders found</h2>
-                    <p className="text-gray-600 mb-4">
+                    <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-foreground mb-2">No orders found</h2>
+                    <p className="text-muted-foreground mb-4">
                       {activeTab === 'all' 
                         ? "You haven't placed any orders yet."
                         : `No ${activeTab} orders found.`
@@ -276,7 +276,7 @@ export default function OrdersPage() {
                           {/* Order Info */}
                           <div className="flex-1">
                             <div className="flex items-center space-x-3 mb-3">
-                              <h3 className="text-lg font-semibold text-gray-900">
+                              <h3 className="text-lg font-semibold text-foreground">
                                 {order.listing.title}
                               </h3>
                               <Badge className={`${getStatusColor(order.status)} flex items-center space-x-1`}>
@@ -286,21 +286,21 @@ export default function OrdersPage() {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                              <div className="flex items-center text-sm text-gray-600">
+                              <div className="flex items-center text-sm text-muted-foreground">
                                 <Euro className="h-4 w-4 mr-2" />
                                 <span className="font-medium">{formatPrice(order.total_cents)}</span>
-                                <span className="ml-1 text-gray-500">
+                                <span className="ml-1 text-muted-foreground/70">
                                   {order.type === 'rental' ? '/rental' : 'total'}
                                 </span>
                               </div>
                               
-                              <div className="flex items-center text-sm text-gray-600">
+                              <div className="flex items-center text-sm text-muted-foreground">
                                 <Calendar className="h-4 w-4 mr-2" />
                                 <span>Ordered {formatDate(order.created_at)}</span>
                               </div>
 
                               {order.type === 'rental' && order.start_date && order.end_date && (
-                                <div className="flex items-center text-sm text-gray-600">
+                                <div className="flex items-center text-sm text-muted-foreground">
                                   <Calendar className="h-4 w-4 mr-2" />
                                   <span>
                                     {formatDate(order.start_date)} - {formatDate(order.end_date)}
@@ -310,7 +310,7 @@ export default function OrdersPage() {
                             </div>
 
                             {/* Counterparty Info */}
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-muted-foreground">
                               {order.type === 'rental' ? (
                                 order.renter ? (
                                   <span>Renting from <strong>{order.renter.display_name}</strong></span>

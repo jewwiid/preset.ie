@@ -485,7 +485,7 @@ export default function ApplicationsPage() {
       case 'SHORTLISTED':
         return 'bg-blue-100 text-blue-800';
       case 'ACCEPTED':
-        return 'bg-green-100 text-green-800';
+        return 'bg-primary-100 text-primary-800';
       case 'DECLINED':
         return 'bg-red-100 text-red-800';
       default:
@@ -653,12 +653,12 @@ export default function ApplicationsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="bg-green-50 p-3 rounded-lg">
+                <div className="bg-primary-50 p-3 rounded-lg">
                   <div className="flex items-center">
-                    <TrendingUp className="w-5 h-5 text-green-600 mr-2" />
+                    <TrendingUp className="w-5 h-5 text-primary-600 mr-2" />
                     <div>
-                      <p className="text-green-600 text-sm font-medium">Success Rate</p>
-                      <p className="text-2xl font-bold text-green-800">
+                      <p className="text-primary-600 text-sm font-medium">Success Rate</p>
+                      <p className="text-2xl font-bold text-primary-800">
                         {adminStats.totalApplications > 0 
                           ? Math.round((applications.filter(a => a.status === 'ACCEPTED').length / adminStats.totalApplications) * 100)
                           : 0}%
@@ -688,7 +688,7 @@ export default function ApplicationsPage() {
               </div>
               <div>
                 <span className="text-gray-600">Accepted:</span>
-                <span className="ml-2 font-semibold text-green-600">
+                <span className="ml-2 font-semibold text-primary-600">
                   {applications.filter(a => a.status === 'ACCEPTED').length}
                 </span>
               </div>
@@ -774,7 +774,7 @@ export default function ApplicationsPage() {
                                 </span>
                               )}
                               {application.applicant.role_flags?.includes('VERIFIED_ID') && (
-                                <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                <span className="px-2 py-1 text-xs rounded-full bg-primary-100 text-primary-800">
                                   <UserCheck className="w-3 h-3 inline mr-1" />
                                   VERIFIED
                                 </span>
@@ -847,7 +847,7 @@ export default function ApplicationsPage() {
                               </button>
                               <button
                                 onClick={() => updateApplicationStatus(application.id, 'ACCEPTED')}
-                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                                className="p-2 text-primary-600 hover:bg-primary/10 rounded-lg"
                                 disabled={updating}
                               >
                                 <CheckCircle className="w-5 h-5" />
@@ -866,7 +866,7 @@ export default function ApplicationsPage() {
                             <>
                               <button
                                 onClick={() => updateApplicationStatus(application.id, 'ACCEPTED')}
-                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                                className="p-2 text-primary-600 hover:bg-primary/10 rounded-lg"
                                 disabled={updating}
                               >
                                 <CheckCircle className="w-5 h-5" />
@@ -992,7 +992,7 @@ export default function ApplicationsPage() {
                           updateApplicationStatus(selectedApplication.id, 'ACCEPTED');
                           setShowDetailModal(false);
                         }}
-                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
                         disabled={updating}
                       >
                         Accept Application
@@ -1017,7 +1017,7 @@ export default function ApplicationsPage() {
                           updateApplicationStatus(selectedApplication.id, 'ACCEPTED');
                           setShowDetailModal(false);
                         }}
-                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
                         disabled={updating}
                       >
                         Accept Application

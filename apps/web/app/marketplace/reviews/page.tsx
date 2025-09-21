@@ -217,16 +217,16 @@ export default function ReviewsPage() {
       <Star
         key={i}
         className={`w-4 h-4 ${
-          i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+          i < rating ? 'text-primary fill-current' : 'text-muted-foreground'
         }`}
       />
     ));
   };
 
   const getRatingColor = (rating: number) => {
-    if (rating >= 4) return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    if (rating >= 3) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-    return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+    if (rating >= 4) return 'bg-primary/10 text-primary';
+    if (rating >= 3) return 'bg-primary/10 text-primary';
+    return 'bg-destructive/10 text-destructive';
   };
 
   const getOrderTypeIcon = (orderType: string) => {
@@ -242,9 +242,9 @@ export default function ReviewsPage() {
       <MarketplaceLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in required</h2>
-            <p className="text-gray-600 mb-4">Please sign in to view your reviews</p>
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">Sign in required</h2>
+            <p className="text-muted-foreground mb-4">Please sign in to view your reviews</p>
             <Button asChild>
               <Link href="/auth/signin">Sign In</Link>
             </Button>
@@ -260,8 +260,8 @@ export default function ReviewsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Reviews</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <h1 className="text-3xl font-bold text-foreground">Reviews</h1>
+            <p className="text-muted-foreground mt-2">
               Track your marketplace reviews and ratings
             </p>
           </div>
@@ -273,10 +273,10 @@ export default function ReviewsPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center">
-                  <Star className="h-8 w-8 text-yellow-400" />
+                  <Star className="h-8 w-8 text-primary" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Average Rating</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm font-medium text-muted-foreground">Average Rating</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {stats.average_rating.toFixed(1)}
                     </p>
                   </div>
@@ -287,10 +287,10 @@ export default function ReviewsPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center">
-                  <MessageSquare className="h-8 w-8 text-blue-400" />
+                  <MessageSquare className="h-8 w-8 text-primary" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Reviews</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm font-medium text-muted-foreground">Total Reviews</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {stats.total_reviews}
                     </p>
                   </div>
@@ -301,10 +301,10 @@ export default function ReviewsPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center">
-                  <ThumbsUp className="h-8 w-8 text-green-400" />
+                  <ThumbsUp className="h-8 w-8 text-primary" />
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Positive Reviews</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm font-medium text-muted-foreground">Positive Reviews</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {stats.rating_breakdown[5] + stats.rating_breakdown[4]}
                     </p>
                   </div>
@@ -324,19 +324,19 @@ export default function ReviewsPage() {
               <div className="space-y-3">
                 {[5, 4, 3, 2, 1].map((rating) => (
                   <div key={rating} className="flex items-center space-x-3">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400 w-8">
+                    <span className="text-sm font-medium text-muted-foreground w-8">
                       {rating}
                     </span>
-                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <Star className="w-4 h-4 text-primary fill-current" />
+                    <div className="flex-1 bg-muted rounded-full h-2">
                       <div
-                        className="bg-yellow-400 h-2 rounded-full"
+                        className="bg-primary h-2 rounded-full"
                         style={{
                           width: `${stats.total_reviews > 0 ? (stats.rating_breakdown[rating as keyof typeof stats.rating_breakdown] / stats.total_reviews) * 100 : 0}%`
                         }}
                       />
                     </div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400 w-8 text-right">
+                    <span className="text-sm text-muted-foreground w-8 text-right">
                       {stats.rating_breakdown[rating as keyof typeof stats.rating_breakdown]}
                     </span>
                   </div>
@@ -357,16 +357,16 @@ export default function ReviewsPage() {
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Loading reviews...</p>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-4 text-muted-foreground">Loading reviews...</p>
                 </div>
               </div>
             ) : error ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Error loading reviews</h2>
-                  <p className="text-gray-600 mb-4">{error}</p>
+                  <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-foreground mb-2">Error loading reviews</h2>
+                  <p className="text-muted-foreground mb-4">{error}</p>
                   <Button onClick={fetchReviews}>
                     Try Again
                   </Button>
@@ -375,9 +375,9 @@ export default function ReviewsPage() {
             ) : reviews.length === 0 ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">No reviews yet</h2>
-                  <p className="text-gray-600 mb-4">
+                  <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-foreground mb-2">No reviews yet</h2>
+                  <p className="text-muted-foreground mb-4">
                     You haven't received any reviews yet. Complete some marketplace transactions to start building your reputation.
                   </p>
                   <Button asChild>
@@ -399,14 +399,14 @@ export default function ReviewsPage() {
                               className="w-12 h-12 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                              <User className="w-6 h-6 text-gray-400" />
+                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                              <User className="w-6 h-6 text-muted-foreground" />
                             </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                            <h3 className="text-lg font-medium text-foreground">
                               {review.author.display_name}
                             </h3>
                             {review.author.verified_id && (
@@ -420,27 +420,27 @@ export default function ReviewsPage() {
                           </div>
                           <div className="flex items-center space-x-2 mb-2">
                             {renderStars(review.rating)}
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                            <span className="text-sm text-muted-foreground">
                               {getOrderTypeIcon(review.order_type)}
                               <span className="ml-1">{getOrderTypeLabel(review.order_type)}</span>
                             </span>
                           </div>
                           {review.comment && (
-                            <p className="text-gray-700 dark:text-gray-300 mb-3">
+                            <p className="text-foreground mb-3">
                               {review.comment}
                             </p>
                           )}
                           {review.response && (
-                            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-3">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                            <div className="bg-muted rounded-lg p-3 mb-3">
+                              <p className="text-sm font-medium text-foreground mb-1">
                                 Your Response:
                               </p>
-                              <p className="text-gray-700 dark:text-gray-300">
+                              <p className="text-foreground">
                                 {review.response}
                               </p>
                             </div>
                           )}
-                          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                             <span className="flex items-center">
                               <Calendar className="w-4 h-4 mr-1" />
                               {new Date(review.created_at).toLocaleDateString()}
@@ -463,16 +463,16 @@ export default function ReviewsPage() {
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Loading reviews...</p>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-4 text-muted-foreground">Loading reviews...</p>
                 </div>
               </div>
             ) : error ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Error loading reviews</h2>
-                  <p className="text-gray-600 mb-4">{error}</p>
+                  <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-foreground mb-2">Error loading reviews</h2>
+                  <p className="text-muted-foreground mb-4">{error}</p>
                   <Button onClick={fetchReviews}>
                     Try Again
                   </Button>
@@ -481,9 +481,9 @@ export default function ReviewsPage() {
             ) : reviews.length === 0 ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">No reviews given</h2>
-                  <p className="text-gray-600 mb-4">
+                  <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-foreground mb-2">No reviews given</h2>
+                  <p className="text-muted-foreground mb-4">
                     You haven't given any reviews yet. Complete some marketplace transactions to leave reviews for others.
                   </p>
                   <Button asChild>
@@ -505,14 +505,14 @@ export default function ReviewsPage() {
                               className="w-12 h-12 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                              <User className="w-6 h-6 text-gray-400" />
+                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                              <User className="w-6 h-6 text-muted-foreground" />
                             </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                            <h3 className="text-lg font-medium text-foreground">
                               Review for {review.subject_user.display_name}
                             </h3>
                             {review.subject_user.verified_id && (
@@ -526,27 +526,27 @@ export default function ReviewsPage() {
                           </div>
                           <div className="flex items-center space-x-2 mb-2">
                             {renderStars(review.rating)}
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                            <span className="text-sm text-muted-foreground">
                               {getOrderTypeIcon(review.order_type)}
                               <span className="ml-1">{getOrderTypeLabel(review.order_type)}</span>
                             </span>
                           </div>
                           {review.comment && (
-                            <p className="text-gray-700 dark:text-gray-300 mb-3">
+                            <p className="text-foreground mb-3">
                               {review.comment}
                             </p>
                           )}
                           {review.response && (
-                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-3">
-                              <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                            <div className="bg-primary/10 rounded-lg p-3 mb-3">
+                              <p className="text-sm font-medium text-primary mb-1">
                                 Response from {review.subject_user.display_name}:
                               </p>
-                              <p className="text-blue-700 dark:text-blue-300">
+                              <p className="text-primary">
                                 {review.response}
                               </p>
                             </div>
                           )}
-                          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                             <span className="flex items-center">
                               <Calendar className="w-4 h-4 mr-1" />
                               {new Date(review.created_at).toLocaleDateString()}

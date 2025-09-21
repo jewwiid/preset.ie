@@ -746,7 +746,7 @@ export function TalentSpecificSection() {
               <button
                 onClick={addMeasurement}
                 disabled={!newMeasurementType || !newMeasurementValue}
-                className="flex items-center gap-2 px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm rounded transition-colors"
+                className="flex items-center gap-2 px-3 py-1 bg-primary-600 hover:bg-primary/90 disabled:bg-gray-400 text-white text-sm rounded transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Add Measurement
@@ -921,14 +921,14 @@ export function TalentSpecificSection() {
             <div className="flex gap-4 text-sm">
               <span className={`px-2 py-1 rounded-full text-xs ${
                 profile?.tattoos 
-                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                  ? 'bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200' 
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
               }`}>
                 Tattoos: {profile?.tattoos ? 'Yes' : 'No'}
               </span>
               <span className={`px-2 py-1 rounded-full text-xs ${
                 profile?.piercings 
-                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' 
+                  ? 'bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200' 
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
               }`}>
                 Piercings: {profile?.piercings ? 'Yes' : 'No'}

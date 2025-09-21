@@ -247,7 +247,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
                   onClick={isAdjusting ? handleFinishAdjusting : () => setIsAdjusting(true)}
                   className={`p-2 rounded-lg transition-colors ${
                     isAdjusting 
-                      ? 'bg-emerald-600 text-white' 
+                      ? 'bg-primary-600 text-white' 
                       : 'bg-white bg-opacity-90 text-gray-700 hover:bg-opacity-100'
                   }`}
                   title={isAdjusting ? 'Finish adjusting' : 'Adjust position'}
@@ -308,7 +308,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
             >
               {uploading ? (
                 <>
@@ -327,7 +327,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
           <p className="text-sm text-gray-500">
             Recommended: 1200x600px, max 5MB
             {isAdjusting && (
-              <span className="block mt-1 text-emerald-600">
+              <span className="block mt-1 text-primary-600">
                 💡 Drag up/down to move • Scroll to zoom • Click finish when done
               </span>
             )}
@@ -344,7 +344,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       )}
 
       {success && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
+        <div className="flex items-center gap-2 p-3 bg-primary-50 border border-primary/20 rounded-lg text-primary-700">
           <CheckCircle className="w-4 h-4" />
           <span className="text-sm">Banner updated successfully!</span>
         </div>

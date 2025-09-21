@@ -70,12 +70,12 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
   
   if (loading) {
     return (
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Visual Inspiration</h2>
+      <div className="bg-card shadow rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-bold text-foreground mb-4">Visual Inspiration</h2>
         <div className="animate-pulse">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="bg-gray-200 h-48 rounded"></div>
+              <div key={i} className="bg-muted h-48 rounded"></div>
             ))}
           </div>
         </div>
@@ -89,18 +89,18 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
   
   return (
     <>
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
+      <div className="bg-card shadow rounded-lg p-6 mb-6">
+        <h2 className="text-xl font-bold text-foreground mb-4">
           {moodboard.title || 'Visual Inspiration'}
         </h2>
         
         {moodboard.summary && (
-          <p className="text-gray-600 mb-4">{moodboard.summary}</p>
+          <p className="text-muted-foreground mb-4">{moodboard.summary}</p>
         )}
         
         {moodboard.vibe_summary && (
-          <div className="mb-4 p-3 bg-emerald-50 rounded-md">
-            <p className="text-emerald-800 text-sm">
+          <div className="mb-4 p-3 bg-primary/10 rounded-md">
+            <p className="text-primary text-sm">
               <span className="font-medium">Vibe:</span> {moodboard.vibe_summary}
             </p>
           </div>
@@ -108,12 +108,12 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
         
         {moodboard.palette && moodboard.palette.length > 0 && (
           <div className="mb-4">
-            <p className="text-sm text-gray-600 mb-2">Color Palette:</p>
+            <p className="text-sm text-muted-foreground mb-2">Color Palette:</p>
             <div className="flex gap-2">
               {moodboard.palette.map((color: string, index: number) => (
                 <div
                   key={index}
-                  className="w-10 h-10 rounded shadow-sm border border-gray-200"
+                  className="w-10 h-10 rounded shadow-sm border border-border"
                   style={{ backgroundColor: color }}
                   title={color}
                 />
@@ -135,7 +135,7 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
       {/* Lightbox Modal */}
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
           onClick={() => setSelectedImage(null)}
         >
           <div className="max-w-4xl max-h-[90vh] relative">
@@ -154,7 +154,7 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
               />
             )}
             {selectedImage.photographer && (
-              <div className="absolute bottom-4 left-4 text-white bg-black bg-opacity-60 px-3 py-2 rounded">
+              <div className="absolute bottom-4 left-4 text-foreground bg-backdrop px-3 py-2 rounded">
                 Photo by{' '}
                 {selectedImage.photographer_url ? (
                   <a
@@ -174,7 +174,7 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
             )}
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute top-4 right-4 text-white bg-black bg-opacity-60 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-80"
+              className="absolute top-4 right-4 text-foreground bg-backdrop rounded-full w-10 h-10 flex items-center justify-center hover:bg-backdrop/80"
             >
               ×
             </button>

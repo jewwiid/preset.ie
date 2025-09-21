@@ -178,7 +178,7 @@ export default function RentalOrderFlow({
                 <h3 className="font-medium">{listing.title}</h3>
                 <p className="text-sm text-gray-600 mb-2">{listing.category}</p>
                 <div className="flex items-center space-x-4 text-sm">
-                  <span className="text-green-600 font-medium">
+                  <span className="text-primary-600 font-medium">
                     {formatPrice(listing.rent_day_cents)}/day
                   </span>
                   {(listing.location_city || listing.location_country) && (

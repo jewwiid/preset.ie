@@ -154,7 +154,7 @@ export default function LocationPicker({
             onChange={handleInputChange}
             onFocus={handleFocus}
             placeholder={placeholder}
-            className={`w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${className}`}
+            className={`w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all ${className}`}
           />
         </div>
         
@@ -163,11 +163,11 @@ export default function LocationPicker({
             type="button"
             onClick={handleCurrentLocation}
             disabled={isLoading}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             title="Use current location"
           >
             {isLoading ? (
-              <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-emerald-500 rounded-full"></div>
+              <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-primary-primary rounded-full"></div>
             ) : (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="3" />
@@ -188,7 +188,7 @@ export default function LocationPicker({
           {isLoading && (
             <div className="px-4 py-3 text-gray-500 text-center">
               <div className="inline-flex items-center">
-                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-emerald-500 rounded-full mr-2"></div>
+                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-primary-primary rounded-full mr-2"></div>
                 Searching locations...
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function LocationPicker({
                   key={city.place_id}
                   type="button"
                   onClick={() => handleLocationSelect(city)}
-                  className="w-full px-4 py-3 text-left hover:bg-emerald-50 focus:bg-emerald-50 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 text-left hover:bg-primary/10 focus:bg-primary-50 focus:outline-none transition-colors"
                 >
                   <div className="font-medium text-gray-900">{city.city}</div>
                   <div className="text-sm text-gray-500">{city.country}</div>
@@ -225,7 +225,7 @@ export default function LocationPicker({
                   key={location.place_id}
                   type="button"
                   onClick={() => handleLocationSelect(location)}
-                  className="w-full px-4 py-3 text-left hover:bg-emerald-50 focus:bg-emerald-50 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 text-left hover:bg-primary/10 focus:bg-primary-50 focus:outline-none transition-colors"
                 >
                   <div className="font-medium text-gray-900 truncate">
                     {location.address.city || location.address.town || location.address.village}

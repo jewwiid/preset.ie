@@ -91,8 +91,8 @@ const MatchmakingDashboardContent: React.FC = () => {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Star className="w-6 h-6 text-green-600" />
+                <div className="p-2 bg-primary-100 rounded-lg">
+                  <Star className="w-6 h-6 text-primary-600" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">{highPriorityRecommendations.length}</p>

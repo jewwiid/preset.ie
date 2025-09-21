@@ -534,7 +534,7 @@ export default function VerificationPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <CheckCircle className="w-16 h-16 text-primary-500 mx-auto mb-4" />
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">
             Verification Submitted!
           </h2>
@@ -672,7 +672,7 @@ export default function VerificationPage() {
                   dragOver
                     ? 'border-blue-400 bg-blue-50'
                     : formData.document_file
-                    ? 'border-green-400 bg-green-50'
+                    ? 'border-primary-400 bg-primary-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}
                 onDrop={handleDrop}
@@ -689,7 +689,7 @@ export default function VerificationPage() {
               >
                 {formData.document_file ? (
                   <div className="flex items-center justify-center">
-                    <CheckCircle className="w-8 h-8 text-green-500 mr-3" />
+                    <CheckCircle className="w-8 h-8 text-primary-500 mr-3" />
                     <div className="text-left">
                       <p className="font-medium text-gray-900">{formData.document_file.name}</p>
                       <p className="text-sm text-gray-600">

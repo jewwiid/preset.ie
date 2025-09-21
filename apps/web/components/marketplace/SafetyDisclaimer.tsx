@@ -157,7 +157,7 @@ export default function SafetyDisclaimer({
             </div>
 
             {accepted && (
-              <div className="mt-3 flex items-center space-x-2 text-sm text-green-700">
+              <div className="mt-3 flex items-center space-x-2 text-sm text-primary-700">
                 <CheckCircle className="h-4 w-4" />
                 <span>Safety guidelines acknowledged</span>
               </div>

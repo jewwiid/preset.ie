@@ -320,11 +320,11 @@ export default function MessagesPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in to view messages</h2>
-          <p className="text-gray-600">You need to be signed in to access your messages.</p>
+          <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">Sign in to view messages</h2>
+          <p className="text-muted-foreground">You need to be signed in to access your messages.</p>
         </div>
       </div>
     )
@@ -332,10 +332,10 @@ export default function MessagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading messages...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading messages...</p>
         </div>
       </div>
     )
@@ -343,18 +343,18 @@ export default function MessagesPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error loading messages</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">Error loading messages</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
           <button
             onClick={() => {
               setError(null)
               setLoading(true)
               fetchConversations()
             }}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             Try Again
           </button>
@@ -364,46 +364,46 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 8rem)' }}>
+        <div className="bg-card rounded-lg shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 8rem)' }}>
           {/* Mobile backdrop overlay */}
           {!sidebarCollapsed && (
             <div 
-              className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-5"
+              className="lg:hidden fixed inset-0 bg-backdrop z-5"
               onClick={() => setSidebarCollapsed(true)}
             />
           )}
           <div className="flex h-full">
             {/* Conversations Sidebar */}
-            <div className={`${sidebarCollapsed ? 'w-16' : 'w-1/3'} border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${
+            <div className={`${sidebarCollapsed ? 'w-16' : 'w-1/3'} border-r border-border flex flex-col transition-all duration-300 ease-in-out ${
               sidebarCollapsed ? 'lg:relative absolute lg:translate-x-0 -translate-x-full z-10 lg:z-auto' : 'lg:relative absolute lg:translate-x-0 translate-x-0 z-10 lg:z-auto'
-            } lg:static ${!sidebarCollapsed ? 'lg:bg-transparent bg-white lg:shadow-none shadow-lg' : ''}`}>
+            } lg:static ${!sidebarCollapsed ? 'lg:bg-transparent bg-card lg:shadow-none shadow-lg' : ''}`}>
               {/* Header */}
-              <div className="p-4 border-b border-gray-200">
+              <div className="p-4 border-b border-border">
                 <div className="flex items-center justify-between">
                   {!sidebarCollapsed && (
-                    <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
+                    <h1 className="text-xl font-semibold text-foreground">Messages</h1>
                   )}
                   <button
                     onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-accent rounded-lg transition-colors"
                     title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                   >
                     {sidebarCollapsed ? (
-                      <ChevronRight className="h-5 w-5 text-gray-600" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     ) : (
-                      <ChevronLeft className="h-5 w-5 text-gray-600" />
+                      <ChevronLeft className="h-5 w-5 text-muted-foreground" />
                     )}
                   </button>
                 </div>
                 {!sidebarCollapsed && (
                   <div className="mt-2 relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <input
                       type="text"
                       placeholder="Search conversations..."
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
                     />
                   </div>
                 )}
@@ -412,8 +412,8 @@ export default function MessagesPage() {
               {/* Conversations List */}
               <div className="flex-1 overflow-y-auto">
                 {conversations.length === 0 ? (
-                  <div className={`text-center text-gray-500 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
-                    <MessageSquare className={`mx-auto mb-2 text-gray-400 ${sidebarCollapsed ? 'h-6 w-6' : 'h-8 w-8'}`} />
+                  <div className={`text-center text-muted-foreground ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
+                    <MessageSquare className={`mx-auto mb-2 text-muted-foreground ${sidebarCollapsed ? 'h-6 w-6' : 'h-8 w-8'}`} />
                     {!sidebarCollapsed && <p className="text-sm">No conversations yet</p>}
                   </div>
                 ) : (
@@ -428,20 +428,20 @@ export default function MessagesPage() {
                       <div
                         key={conversation.id}
                         onClick={() => setSelectedConversation(conversation.id)}
-                        className={`${sidebarCollapsed ? 'p-2' : 'p-4'} border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                          selectedConversation === conversation.id ? 'bg-emerald-50 border-emerald-200' : ''
+                        className={`${sidebarCollapsed ? 'p-2' : 'p-4'} border-b border-border cursor-pointer hover:bg-accent transition-colors ${
+                          selectedConversation === conversation.id ? 'bg-primary/10 border-primary/20' : ''
                         } ${
-                          hasTypingUsers ? 'bg-blue-50' : ''
+                          hasTypingUsers ? 'bg-secondary/10' : ''
                         }`}
                         title={sidebarCollapsed ? `${conversation.otherUser?.display_name || 'Unknown User'}: ${conversation.lastMessage?.body || 'No messages yet'}` : ''}
                       >
                         <div className={`flex items-start ${sidebarCollapsed ? 'justify-center' : 'space-x-3'}`}>
                           <div className="flex-shrink-0 relative">
-                            <div className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-10 h-10'} bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center`}>
-                              <User className={`text-white ${sidebarCollapsed ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                            <div className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-10 h-10'} bg-primary rounded-full flex items-center justify-center`}>
+                              <User className={`text-primary-foreground ${sidebarCollapsed ? 'h-4 w-4' : 'h-5 w-5'}`} />
                             </div>
                             {conversation.unreadCount > 0 && (
-                              <span className={`absolute -top-1 -right-1 inline-flex items-center justify-center text-xs font-medium text-white bg-emerald-600 rounded-full ${
+                              <span className={`absolute -top-1 -right-1 inline-flex items-center justify-center text-xs font-medium text-primary-foreground bg-primary rounded-full ${
                                 sidebarCollapsed ? 'w-4 h-4 text-xs' : 'px-2 py-1'
                               }`}>
                                 {sidebarCollapsed ? conversation.unreadCount : conversation.unreadCount}
@@ -451,17 +451,17 @@ export default function MessagesPage() {
                           {!sidebarCollapsed && (
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-medium text-gray-900 truncate">
+                                <h3 className="text-sm font-medium text-foreground truncate">
                                   {conversation.otherUser?.display_name || 'Unknown User'}
                                 </h3>
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-muted-foreground">
                                   {conversation.lastMessageAt && formatDate(conversation.lastMessageAt)}
                                 </p>
                               </div>
-                              <p className="text-xs text-gray-500 mb-1">@{conversation.otherUser?.handle || 'unknown'}</p>
-                              <p className="text-sm text-gray-600 truncate">
+                              <p className="text-xs text-muted-foreground mb-1">@{conversation.otherUser?.handle || 'unknown'}</p>
+                              <p className="text-sm text-muted-foreground truncate">
                                 {hasTypingUsers ? (
-                                  <span className="italic text-blue-600">typing...</span>
+                                  <span className="italic text-primary">typing...</span>
                                 ) : (
                                   conversation.lastMessage?.body || 'No messages yet'
                                 )}
@@ -481,31 +481,31 @@ export default function MessagesPage() {
               {selectedConversation && conversationDetails ? (
                 <>
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200">
+                  <div className="p-4 border-b border-border">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         {/* Mobile sidebar toggle */}
                         <button
                           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                          className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
                           title={sidebarCollapsed ? 'Show conversations' : 'Hide conversations'}
                         >
-                          <Menu className="h-5 w-5 text-gray-600" />
+                          <Menu className="h-5 w-5 text-muted-foreground" />
                         </button>
-                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-white" />
+                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-primary-foreground" />
                         </div>
                         <div>
-                          <h2 className="text-lg font-medium text-gray-900">
+                          <h2 className="text-lg font-medium text-foreground">
                             {conversations.find(c => c.id === selectedConversation)?.otherUser?.display_name || 'Unknown User'}
                           </h2>
                           <div className="flex items-center space-x-2">
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                               @{conversations.find(c => c.id === selectedConversation)?.otherUser?.handle || 'unknown'}
                             </p>
                             {/* Typing Indicator */}
                             {Object.values(realtimeMessages.typingUsers).some(user => user.isTyping) && (
-                              <p className="text-xs text-emerald-600 italic">
+                              <p className="text-xs text-primary italic">
                                 typing...
                               </p>
                             )}
@@ -516,22 +516,22 @@ export default function MessagesPage() {
                       {/* Connection Status */}
                       <div className="flex items-center space-x-2">
                         {realtimeMessages.isConnecting ? (
-                          <div className="flex items-center space-x-1 text-xs text-gray-500">
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-400"></div>
+                          <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-muted-foreground"></div>
                             <span>Connecting...</span>
                           </div>
                         ) : realtimeMessages.isConnected ? (
-                          <div className="flex items-center space-x-1 text-xs text-emerald-600">
+                          <div className="flex items-center space-x-1 text-xs text-primary">
                             <Wifi className="h-3 w-3" />
                             <span>Connected</span>
                           </div>
                         ) : (
-                          <div className="flex items-center space-x-1 text-xs text-red-500">
+                          <div className="flex items-center space-x-1 text-xs text-destructive">
                             <WifiOff className="h-3 w-3" />
                             <span>Disconnected</span>
                             <button
                               onClick={realtimeMessages.reconnect}
-                              className="text-xs underline hover:text-red-700"
+                              className="text-xs underline hover:text-destructive"
                             >
                               Retry
                             </button>
@@ -544,7 +544,7 @@ export default function MessagesPage() {
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {conversationDetails.messages.length === 0 ? (
-                      <div className="text-center text-gray-500">
+                      <div className="text-center text-muted-foreground">
                         <p className="text-sm">No messages yet. Start the conversation!</p>
                       </div>
                     ) : (
@@ -556,13 +556,13 @@ export default function MessagesPage() {
                           <div
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                               message.fromUserId === user?.id
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-gray-200 text-gray-900'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-foreground'
                             }`}
                           >
                             <p className="text-sm">{message.body}</p>
                             <div className={`flex items-center justify-between mt-1 text-xs ${
-                              message.fromUserId === user?.id ? 'text-emerald-200' : 'text-gray-500'
+                              message.fromUserId === user?.id ? 'text-primary-200' : 'text-muted-foreground'
                             }`}>
                               <div className="flex items-center space-x-1">
                                 <Clock className="h-3 w-3" />
@@ -571,9 +571,9 @@ export default function MessagesPage() {
                               {message.fromUserId === user?.id && (
                                 <div className="flex items-center space-x-1">
                                   {message.readAt ? (
-                                    <span className="text-emerald-200" title="Read">✓✓</span>
+                                    <span className="text-primary-200" title="Read">✓✓</span>
                                   ) : (
-                                    <span className="text-emerald-300" title="Delivered">✓</span>
+                                    <span className="text-primary-300" title="Delivered">✓</span>
                                   )}
                                 </div>
                               )}
@@ -586,14 +586,14 @@ export default function MessagesPage() {
                     {/* Typing Indicators */}
                     {Object.values(realtimeMessages.typingUsers).filter(user => user.isTyping).map(user => (
                       <div key={user.userId} className="flex justify-start">
-                        <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-100">
+                        <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-accent">
                           <div className="flex items-center space-x-2">
                             <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                              <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                             </div>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-muted-foreground">
                               {user.userDisplayName || 'Someone'} is typing...
                             </span>
                           </div>
@@ -606,7 +606,7 @@ export default function MessagesPage() {
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-4 border-t border-gray-200">
+                  <div className="p-4 border-t border-border">
                     <div className="flex space-x-2">
                       <textarea
                         ref={inputRef}
@@ -614,14 +614,14 @@ export default function MessagesPage() {
                         onChange={handleInputChange}
                         onKeyPress={handleKeyPress}
                         placeholder="Type your message..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        className="flex-1 px-4 py-2 border border-border rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-primary"
                         rows={2}
                         disabled={!realtimeMessages.isConnected}
                       />
                       <button
                         onClick={sendMessage}
                         disabled={!newMessage.trim() || sending || !realtimeMessages.isConnected}
-                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         {sending ? (
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -633,13 +633,13 @@ export default function MessagesPage() {
                     
                     {/* Connection Error */}
                     {realtimeMessages.connectionError && (
-                      <div className="px-4 py-2 bg-red-50 border-t border-red-200 mt-2">
-                        <div className="flex items-center space-x-2 text-sm text-red-700">
+                      <div className="px-4 py-2 bg-destructive/10 border-t border-destructive/20 mt-2">
+                        <div className="flex items-center space-x-2 text-sm text-destructive">
                           <AlertCircle className="h-4 w-4" />
                           <span>Connection error: {realtimeMessages.connectionError}</span>
                           <button
                             onClick={realtimeMessages.reconnect}
-                            className="text-red-800 underline hover:text-red-900"
+                            className="text-destructive underline hover:text-destructive"
                           >
                             Retry
                           </button>
@@ -651,29 +651,29 @@ export default function MessagesPage() {
               ) : (
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
-                    <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Select a conversation</h3>
-                    <p className="text-gray-600">Choose a conversation from the sidebar to start messaging.</p>
+                    <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">Select a conversation</h3>
+                    <p className="text-muted-foreground">Choose a conversation from the sidebar to start messaging.</p>
                     
                     {/* Global connection status when no conversation selected */}
                     <div className="mt-4">
                       {realtimeMessages.isConnecting ? (
-                        <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                        <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-muted-foreground"></div>
                           <span>Connecting to real-time messaging...</span>
                         </div>
                       ) : realtimeMessages.isConnected ? (
-                        <div className="flex items-center justify-center space-x-2 text-sm text-emerald-600">
+                        <div className="flex items-center justify-center space-x-2 text-sm text-primary">
                           <Wifi className="h-4 w-4" />
                           <span>Connected to real-time messaging</span>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center space-x-2 text-sm text-red-500">
+                        <div className="flex items-center justify-center space-x-2 text-sm text-destructive">
                           <WifiOff className="h-4 w-4" />
                           <span>Real-time messaging disconnected</span>
                           <button
                             onClick={realtimeMessages.reconnect}
-                            className="underline hover:text-red-700"
+                            className="underline hover:text-destructive"
                           >
                             Retry
                           </button>

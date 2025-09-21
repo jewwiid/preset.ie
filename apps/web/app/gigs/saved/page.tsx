@@ -193,13 +193,13 @@ export default function SavedGigsPage() {
   const getCompTypeColor = (type: CompensationType) => {
     switch (type) {
       case 'PAID':
-        return 'bg-green-100 text-green-800';
+        return 'bg-primary-100 text-primary-800';
       case 'TFP':
         return 'bg-blue-100 text-blue-800';
       case 'EXPENSES':
         return 'bg-purple-100 text-purple-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -227,24 +227,24 @@ export default function SavedGigsPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-card border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-red-500 flex-shrink-0" />
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-3">
+                <Heart className="w-6 h-6 sm:w-7 sm:h-7 text-destructive flex-shrink-0" />
                 <span className="truncate">My Saved Gigs</span>
               </h1>
-              <p className="mt-1 text-sm text-gray-600">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Gigs you've saved for later • {savedGigs.length} saved
               </p>
             </div>
@@ -268,8 +268,8 @@ export default function SavedGigsPage() {
           /* Empty State */
           <div className="text-center py-16">
             <Heart className="w-20 h-20 text-gray-300 mx-auto mb-6" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No saved gigs yet</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            <h3 className="text-xl font-semibold text-foreground mb-2">No saved gigs yet</h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
               Start browsing gigs and click the heart icon on any gig you'd like to save for later.
             </p>
             <Link
@@ -284,9 +284,9 @@ export default function SavedGigsPage() {
           /* Saved Gigs Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {savedGigs.map((savedGig) => (
-              <div key={savedGig.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow relative">
+              <div key={savedGig.id} className="bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow relative">
                 {/* Gig Image/Moodboard Preview */}
-                <div className="relative h-48 bg-gray-200 rounded-t-lg overflow-hidden">
+                <div className="relative h-48 bg-muted rounded-t-lg overflow-hidden">
                   {savedGig.gig.moodboards && savedGig.gig.moodboards.length > 0 && savedGig.gig.moodboards[0].items && savedGig.gig.moodboards[0].items.length > 0 ? (
                     <img
                       src={savedGig.gig.moodboards[0].items[0].url || savedGig.gig.moodboards[0].items[0].thumbnail_url}
@@ -303,13 +303,13 @@ export default function SavedGigsPage() {
                   <button
                     onClick={() => removeSavedGig(savedGig.id, savedGig.gig.id)}
                     disabled={removingGigs.has(savedGig.gig.id)}
-                    className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all hover:bg-red-50 group disabled:opacity-50"
+                    className="absolute top-3 right-3 p-2 bg-card rounded-full shadow-md hover:shadow-lg transition-all hover:bg-red-50 group disabled:opacity-50"
                     title="Remove from saved"
                   >
                     {removingGigs.has(savedGig.gig.id) ? (
                       <div className="w-5 h-5 animate-spin border-2 border-red-500 border-t-transparent rounded-full" />
                     ) : (
-                      <Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
+                      <Trash2 className="w-5 h-5 text-muted-foreground group-hover:text-destructive transition-colors" />
                     )}
                   </button>
 
@@ -334,7 +334,7 @@ export default function SavedGigsPage() {
                     </h3>
                   </Link>
 
-                  <div className="flex items-center gap-3 mt-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 mt-3 p-3 bg-background rounded-lg">
                     <img
                       src={savedGig.gig.users_profile?.avatar_url || '/default-avatar.png'}
                       alt={savedGig.gig.users_profile?.display_name || 'User'}
@@ -342,7 +342,7 @@ export default function SavedGigsPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">
+                        <h4 className="text-sm font-medium text-foreground truncate">
                           {savedGig.gig.users_profile?.display_name || 'Anonymous'}
                         </h4>
                         {savedGig.gig.users_profile?.verified_id && (
@@ -355,18 +355,18 @@ export default function SavedGigsPage() {
                         )}
                       </div>
                       {savedGig.gig.users_profile?.handle && (
-                        <p className="text-xs text-gray-500">@{savedGig.gig.users_profile.handle}</p>
+                        <p className="text-xs text-muted-foreground">@{savedGig.gig.users_profile.handle}</p>
                       )}
                     </div>
                   </div>
 
                   {/* Location and Date */}
                   <div className="mt-3 space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="w-4 h-4" />
                       {savedGig.gig.location_text}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="w-4 h-4" />
                       {formatDate(savedGig.gig.start_time)}
                     </div>
@@ -383,7 +383,7 @@ export default function SavedGigsPage() {
 
                   {/* Footer Stats */}
                   <div className="mt-4 pt-3 border-t flex justify-between items-center">
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
                         {savedGig.gig.current_applicants || 0}/{savedGig.gig.max_applicants}

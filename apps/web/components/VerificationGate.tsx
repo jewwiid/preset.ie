@@ -78,7 +78,7 @@ export function VerificationGate({ feature, children, fallback }: VerificationGa
   if (canAccess === null) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     )
   }
@@ -195,7 +195,7 @@ export function VerificationGate({ feature, children, fallback }: VerificationGa
         {blockedInfo.action && (
           <button
             onClick={blockedInfo.action}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 transition"
           >
             Continue
           </button>

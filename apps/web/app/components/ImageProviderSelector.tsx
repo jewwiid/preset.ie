@@ -52,19 +52,19 @@ export function ImageProviderSelector({
 }: ImageProviderSelectorProps) {
   const getSpeedColor = (speed: string) => {
     switch (speed) {
-      case 'fast': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'slow': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'fast': return 'bg-primary/10 text-primary';
+      case 'medium': return 'bg-primary/10 text-primary';
+      case 'slow': return 'bg-destructive/10 text-destructive';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
   const getQualityColor = (quality: string) => {
     switch (quality) {
-      case 'high': return 'bg-blue-100 text-blue-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-primary/10 text-primary';
+      case 'medium': return 'bg-primary/10 text-primary';
+      case 'low': return 'bg-destructive/10 text-destructive';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -147,7 +147,7 @@ export function ImageProviderSelector({
                   </div>
 
                   {!canAfford && (
-                    <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                    <div className="text-xs text-destructive bg-destructive/5 p-2 rounded">
                       Insufficient credits. Need at least {provider.costPerCredit} credit{provider.costPerCredit !== 1 ? 's' : ''}.
                     </div>
                   )}

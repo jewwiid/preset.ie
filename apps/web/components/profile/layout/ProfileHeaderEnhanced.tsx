@@ -368,7 +368,7 @@ export function ProfileHeaderEnhanced() {
       name: 'Portfolio',
       handle: profile?.portfolio_url,
       icon: Briefcase,
-      color: 'from-green-500 to-green-600',
+      color: 'from-primary-primary to-primary-primary',
       url: profile?.portfolio_url || null
     }
   ].filter(link => link.handle && link.url)
@@ -415,7 +415,7 @@ export function ProfileHeaderEnhanced() {
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                className="px-3 py-2 bg-primary-600 hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -423,7 +423,7 @@ export function ProfileHeaderEnhanced() {
           ) : (
             <button 
               onClick={handleEditToggle}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+              className="px-4 py-2 bg-primary-600 hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
             >
               <Edit3 className="w-4 h-4" />
               Edit Profile
@@ -504,7 +504,7 @@ export function ProfileHeaderEnhanced() {
                     {profile?.display_name || 'Display Name'}
                   </h1>
                   {profile?.verification_status === 'fully_verified' && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-xs font-medium">
+                    <div className="flex items-center gap-1 px-2 py-1 bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 rounded-full text-xs font-medium">
                       <Award className="w-3 h-3" />
                       Verified
                     </div>

@@ -194,8 +194,8 @@ export function HeaderTypingIndicator({ conversationId, className = '' }: Header
       size="sm"
       showUserNames={false}
       className={className}
-      textClassName="text-emerald-600"
-      dotClassName="text-emerald-600"
+      textClassName="text-primary-600"
+      dotClassName="text-primary-600"
       anonymousText="typing..."
     />
   )

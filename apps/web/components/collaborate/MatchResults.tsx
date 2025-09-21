@@ -112,7 +112,7 @@ export default function MatchResults({
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-50';
+    if (score >= 80) return 'text-primary-600 bg-primary-50';
     if (score >= 60) return 'text-yellow-600 bg-yellow-50';
     return 'text-red-600 bg-red-50';
   };
@@ -220,7 +220,7 @@ export default function MatchResults({
             
             <div className="flex items-center space-x-4 mb-3 text-sm">
               {equipment.rent_day_cents && (
-                <span className="text-green-600 font-medium">
+                <span className="text-primary-600 font-medium">
                   {formatPrice(equipment.rent_day_cents)}/day
                 </span>
               )}

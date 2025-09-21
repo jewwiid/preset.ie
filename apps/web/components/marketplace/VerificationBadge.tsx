@@ -65,7 +65,7 @@ export default function VerificationBadge({
 
   const getBadgeClass = () => {
     if (verified) {
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-primary-100 text-primary-800 border-primary/20';
     }
     return 'bg-yellow-100 text-yellow-800 border-yellow-200';
   };

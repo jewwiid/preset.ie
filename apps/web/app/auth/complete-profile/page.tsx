@@ -552,7 +552,7 @@ export default function CompleteProfilePage() {
           <div key={step.key} className="flex items-center">
             <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
               index <= currentIndex 
-                ? 'bg-emerald-600 border-emerald-600 text-white' 
+                ? 'bg-primary-600 border-primary-600 text-white' 
                 : 'bg-white border-gray-300 text-gray-400'
             }`}>
               {index < currentIndex ? (
@@ -563,7 +563,7 @@ export default function CompleteProfilePage() {
             </div>
             {index < steps.length - 1 && (
               <div className={`w-16 h-0.5 mx-2 ${
-                index < currentIndex ? 'bg-emerald-600' : 'bg-gray-300'
+                index < currentIndex ? 'bg-primary-600' : 'bg-gray-300'
               }`} />
             )}
           </div>
@@ -575,13 +575,13 @@ export default function CompleteProfilePage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-primary/10 to-secondary-primary/10 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         {/* Logo/Header */}
         <div className="text-center mb-8">
@@ -621,10 +621,10 @@ export default function CompleteProfilePage() {
               <div className="grid gap-4">
                 <button
                   onClick={() => handleRoleSelection('CONTRIBUTOR')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left group"
+                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary/10 transition-all text-left group"
                 >
                   <div className="flex items-start">
-                    <Camera className="w-8 h-8 text-emerald-600 mr-4 flex-shrink-0" />
+                    <Camera className="w-8 h-8 text-primary-600 mr-4 flex-shrink-0" />
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         I'm a Contributor
@@ -633,16 +633,16 @@ export default function CompleteProfilePage() {
                         I'm a photographer, videographer, or cinematographer looking for talent for my shoots
                       </p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 ml-auto flex-shrink-0" />
+                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary ml-auto flex-shrink-0" />
                   </div>
                 </button>
 
                 <button
                   onClick={() => handleRoleSelection('TALENT')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left group"
+                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary/10 transition-all text-left group"
                 >
                   <div className="flex items-start">
-                    <Users className="w-8 h-8 text-emerald-600 mr-4 flex-shrink-0" />
+                    <Users className="w-8 h-8 text-primary-600 mr-4 flex-shrink-0" />
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         I'm Talent
@@ -651,16 +651,16 @@ export default function CompleteProfilePage() {
                         I'm a model, actor, or creative looking to collaborate on shoots
                       </p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 ml-auto flex-shrink-0" />
+                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary ml-auto flex-shrink-0" />
                   </div>
                 </button>
 
                 <button
                   onClick={() => handleRoleSelection('BOTH')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left group"
+                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary/10 transition-all text-left group"
                 >
                   <div className="flex items-start">
-                    <Sparkles className="w-8 h-8 text-emerald-600 mr-4 flex-shrink-0" />
+                    <Sparkles className="w-8 h-8 text-primary-600 mr-4 flex-shrink-0" />
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
                         I do both
@@ -669,7 +669,7 @@ export default function CompleteProfilePage() {
                         I'm both a creative professional and talent
                       </p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 ml-auto flex-shrink-0" />
+                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary ml-auto flex-shrink-0" />
                   </div>
                 </button>
               </div>
@@ -754,7 +754,7 @@ export default function CompleteProfilePage() {
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="John Doe"
                       required
                     />
@@ -764,7 +764,7 @@ export default function CompleteProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Handle * {handleAvailable && handle && (
-                      <span className="text-green-600 text-xs ml-2">
+                      <span className="text-primary-600 text-xs ml-2">
                         <Check className="inline w-3 h-3" /> Available
                       </span>
                     )}
@@ -775,7 +775,7 @@ export default function CompleteProfilePage() {
                       type="text"
                       value={handle}
                       onChange={(e) => setHandle(e.target.value.toLowerCase())}
-                      className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                      className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                         handleError ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="johndoe"
@@ -795,7 +795,7 @@ export default function CompleteProfilePage() {
                 <textarea
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                   rows={3}
                   placeholder="Tell us about yourself..."
                 />
@@ -812,7 +812,7 @@ export default function CompleteProfilePage() {
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Dublin"
                       required
                     />
@@ -828,7 +828,7 @@ export default function CompleteProfilePage() {
                     <select
                       value={country}
                       onChange={(e) => setCountry(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none"
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
                     >
                       {COUNTRIES.map(c => (
                         <option key={c} value={c}>{c}</option>
@@ -849,7 +849,7 @@ export default function CompleteProfilePage() {
                     type="date"
                     value={profileData.dateOfBirth || ''}
                     onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, dateOfBirth: e.target.value }))}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                     max={new Date().toISOString().split('T')[0]} // Can't be in the future
                   />
@@ -874,7 +874,7 @@ export default function CompleteProfilePage() {
                         type="text"
                         value={profileData.instagramHandle || ''}
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, instagramHandle: e.target.value }))}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="@username"
                       />
                     </div>
@@ -890,7 +890,7 @@ export default function CompleteProfilePage() {
                         type="text"
                         value={profileData.tiktokHandle || ''}
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, tiktokHandle: e.target.value }))}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="@username"
                       />
                     </div>
@@ -906,7 +906,7 @@ export default function CompleteProfilePage() {
                         type="url"
                         value={profileData.websiteUrl || ''}
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, websiteUrl: e.target.value }))}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="https://..."
                       />
                     </div>
@@ -922,7 +922,7 @@ export default function CompleteProfilePage() {
                         type="tel"
                         value={profileData.phoneNumber || ''}
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, phoneNumber: e.target.value }))}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="+353..."
                       />
                     </div>
@@ -940,7 +940,7 @@ export default function CompleteProfilePage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                  className="flex-1 py-2 px-4 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
                 >
                   Continue
                 </button>
@@ -970,7 +970,7 @@ export default function CompleteProfilePage() {
                     <select
                       value={profileData.genderIdentity || ''}
                       onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, genderIdentity: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       disabled={optionsLoading}
                     >
                       <option value="">Select...</option>
@@ -987,7 +987,7 @@ export default function CompleteProfilePage() {
                     <select
                       value={profileData.ethnicity || ''}
                       onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, ethnicity: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       disabled={optionsLoading}
                     >
                       <option value="">Select...</option>
@@ -1007,7 +1007,7 @@ export default function CompleteProfilePage() {
                       type="text"
                       value={profileData.nationality || ''}
                       onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, nationality: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       placeholder="Irish, American, etc."
                     />
                   </div>
@@ -1020,7 +1020,7 @@ export default function CompleteProfilePage() {
                       type="text"
                       value={profileData.stateProvince || ''}
                       onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, stateProvince: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       placeholder="Leinster, California, etc."
                     />
                   </div>
@@ -1033,7 +1033,7 @@ export default function CompleteProfilePage() {
                   <select
                     value={profileData.experienceLevel || ''}
                     onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, experienceLevel: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                     disabled={optionsLoading}
                   >
                     <option value="">Select...</option>
@@ -1059,7 +1059,7 @@ export default function CompleteProfilePage() {
                       onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, weightKg: parseInt(e.target.value) || null }))}
                       min="30"
                       max="200"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       placeholder="70"
                     />
                   </div>
@@ -1071,7 +1071,7 @@ export default function CompleteProfilePage() {
                     <select
                       value={profileData.bodyType || ''}
                       onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, bodyType: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       disabled={optionsLoading}
                     >
                       <option value="">Select...</option>
@@ -1088,7 +1088,7 @@ export default function CompleteProfilePage() {
                     <select
                       value={profileData.hairLength || ''}
                       onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, hairLength: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       disabled={optionsLoading}
                     >
                       <option value="">Select...</option>
@@ -1106,7 +1106,7 @@ export default function CompleteProfilePage() {
                   <select
                     value={profileData.skinTone || ''}
                     onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, skinTone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                     disabled={optionsLoading}
                   >
                     <option value="">Select...</option>
@@ -1128,7 +1128,7 @@ export default function CompleteProfilePage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep('details')}
-                  className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                  className="flex-1 py-2 px-4 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
                 >
                   Continue
                 </button>
@@ -1164,7 +1164,7 @@ export default function CompleteProfilePage() {
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, yearsExperience: parseInt(e.target.value) || 0 }))}
                         min="0"
                         max="50"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       />
                     </div>
                     
@@ -1189,7 +1189,7 @@ export default function CompleteProfilePage() {
                               }}
                               className={`px-3 py-2 text-sm rounded-lg transition ${
                                 (profileData.equipment || []).includes(item)
-                                  ? 'bg-emerald-600 text-white'
+                                  ? 'bg-primary-600 text-white'
                                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                               }`}
                             >
@@ -1218,7 +1218,7 @@ export default function CompleteProfilePage() {
                             }}
                             className={`px-3 py-2 text-sm rounded-lg transition ${
                               (profileData.editingSoftware || []).includes(item)
-                                ? 'bg-emerald-600 text-white'
+                                ? 'bg-primary-600 text-white'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                           >
@@ -1244,7 +1244,7 @@ export default function CompleteProfilePage() {
                           type="text"
                           value={profileData.studioName || ''}
                           onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, studioName: e.target.value }))}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                           placeholder="Studio name"
                         />
                       )}
@@ -1260,7 +1260,7 @@ export default function CompleteProfilePage() {
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, typicalTurnaroundDays: parseInt(e.target.value) || 7 }))}
                         min="1"
                         max="30"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       />
                     </div>
                   </div>
@@ -1291,7 +1291,7 @@ export default function CompleteProfilePage() {
                             }}
                             className={`px-3 py-2 text-sm rounded-lg transition ${
                               (profileData.talentCategories || []).includes(cat)
-                                ? 'bg-emerald-600 text-white'
+                                ? 'bg-primary-600 text-white'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                           >
@@ -1312,7 +1312,7 @@ export default function CompleteProfilePage() {
                           onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, heightCm: parseInt(e.target.value) || null }))}
                           min="100"
                           max="250"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                           placeholder="175"
                         />
                       </div>
@@ -1324,7 +1324,7 @@ export default function CompleteProfilePage() {
                         <select
                           value={profileData.eyeColor || ''}
                           onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, eyeColor: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                         >
                           <option value="">Select...</option>
                           {getOptionNames(predefinedOptions.eyeColors).map(color => (
@@ -1340,7 +1340,7 @@ export default function CompleteProfilePage() {
                         <select
                           value={profileData.hairColor || ''}
                           onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, hairColor: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                         >
                           <option value="">Select...</option>
                           {getOptionNames(predefinedOptions.hairColors).map(color => (
@@ -1386,7 +1386,7 @@ export default function CompleteProfilePage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep('preferences')}
-                  className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                  className="flex-1 py-2 px-4 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
                 >
                   Continue
                 </button>
@@ -1415,7 +1415,7 @@ export default function CompleteProfilePage() {
                   <select
                     value={profileData.availabilityStatus || ''}
                     onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, availabilityStatus: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                     disabled={optionsLoading}
                   >
                     <option value="">Select...</option>
@@ -1433,7 +1433,7 @@ export default function CompleteProfilePage() {
                     type="text"
                     value={profileData.preferredWorkingHours || ''}
                     onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, preferredWorkingHours: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                     placeholder="9 AM - 5 PM, Flexible, etc."
                   />
                 </div>
@@ -1578,7 +1578,7 @@ export default function CompleteProfilePage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep('privacy')}
-                  className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                  className="flex-1 py-2 px-4 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
                 >
                   Continue
                 </button>
@@ -1637,8 +1637,8 @@ export default function CompleteProfilePage() {
                 </div>
 
                 {/* Travel & Documentation */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-green-900 mb-3">Travel & Documentation</h3>
+                <div className="bg-primary-50 border border-primary/20 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-primary-900 mb-3">Travel & Documentation</h3>
                   
                   <label className="flex items-center cursor-pointer">
                     <input
@@ -1663,7 +1663,7 @@ export default function CompleteProfilePage() {
                 <button
                   type="button"
                   onClick={() => setCurrentStep('styles')}
-                  className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                  className="flex-1 py-2 px-4 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
                 >
                   Continue
                 </button>
@@ -1698,7 +1698,7 @@ export default function CompleteProfilePage() {
                         onClick={() => toggleStyle(style)}
                         className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                           selectedStyles.includes(style)
-                            ? 'bg-emerald-600 text-white'
+                            ? 'bg-primary-600 text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
@@ -1724,7 +1724,7 @@ export default function CompleteProfilePage() {
                         onClick={() => toggleVibe(vibe)}
                         className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                           selectedVibes.includes(vibe)
-                            ? 'bg-teal-600 text-white'
+                            ? 'bg-secondary-600 text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
@@ -1748,7 +1748,7 @@ export default function CompleteProfilePage() {
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={loading}
-                  className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                  className="flex-1 py-2 px-4 bg-primary-600 text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
                 >
                   {loading ? 'Saving profile...' : 'Complete setup'}
                 </button>

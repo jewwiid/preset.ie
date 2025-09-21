@@ -93,7 +93,7 @@ export function ReportsQueue() {
       case 'reviewing':
         return <AlertTriangle className="w-4 h-4 text-orange-500" />
       case 'resolved':
-        return <CheckCircle className="w-4 h-4 text-green-500" />
+        return <CheckCircle className="w-4 h-4 text-primary-500" />
       default:
         return <XCircle className="w-4 h-4 text-gray-500" />
     }
@@ -104,7 +104,7 @@ export function ReportsQueue() {
       case 'critical': return 'bg-red-100 text-red-800'
       case 'high': return 'bg-orange-100 text-orange-800'
       case 'medium': return 'bg-yellow-100 text-yellow-800'
-      case 'low': return 'bg-green-100 text-green-800'
+      case 'low': return 'bg-primary-100 text-primary-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -210,7 +210,7 @@ export function ReportsQueue() {
                       {report.status === 'reviewing' && (
                         <button
                           onClick={() => updateReportStatus(report.id, 'resolved', 'Action taken')}
-                          className="text-green-600 hover:text-green-900"
+                          className="text-primary-600 hover:text-primary-900"
                         >
                           Resolve
                         </button>
@@ -288,7 +288,7 @@ export function ReportsQueue() {
                         updateReportStatus(selectedReport.id, 'resolved', 'Action taken')
                         setSelectedReport(null)
                       }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
                     >
                       Take Action
                     </button>

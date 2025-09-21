@@ -52,31 +52,41 @@ export async function POST(request: NextRequest) {
         console.log('Task status updated successfully')
       }
       
-      // Also check if this is a playground generation task
-      const { data: playgroundTask, error: playgroundError } = await supabaseAdmin
-        .from('playground_generations')
+      // Check if this is a playground project task (find by taskId in metadata)
+      const { data: playgroundProjects, error: playgroundError } = await supabaseAdmin
+        .from('playground_projects')
         .select('*')
-        .eq('id', taskId)
-        .single()
+        .contains('metadata', { taskId })
       
-      if (playgroundTask && !playgroundError) {
-        // Update playground generation with the result
+      if (playgroundProjects && playgroundProjects.length > 0 && !playgroundError) {
+        const project = playgroundProjects[0]
+        console.log('🎯 Found playground project for taskId:', taskId)
+        
+        // Add the generated image to the project
+        const newImage = {
+          url: resultImageUrl,
+          width: 1024, // Default dimensions
+          height: 1024,
+          generated_at: new Date().toISOString(),
+          provider: 'nanobanana'
+        }
+        
+        const updatedImages = [...(project.generated_images || []), newImage]
+        
+        // Update playground project with the result
         const { error: updatePlaygroundError } = await supabaseAdmin
-          .from('playground_generations')
+          .from('playground_projects')
           .update({
-            generated_images: [{
-              url: resultImageUrl,
-              index: 1,
-              provider: 'nanobanana'
-            }],
-            status: 'completed'
+            generated_images: updatedImages,
+            status: 'generated', // Change from 'processing' to 'generated'
+            last_generated_at: new Date().toISOString()
           })
-          .eq('id', taskId)
+          .eq('id', project.id)
         
         if (updatePlaygroundError) {
-          console.error('Error updating playground generation:', updatePlaygroundError)
+          console.error('Error updating playground project:', updatePlaygroundError)
         } else {
-          console.log('Playground generation updated successfully')
+          console.log('✅ Playground project updated successfully with new image')
         }
       }
       
@@ -102,25 +112,33 @@ export async function POST(request: NextRequest) {
         console.error('Error updating failed task status:', updateError)
       }
       
-      // Also check if this is a playground generation task
-      const { data: playgroundTask, error: playgroundError } = await supabaseAdmin
-        .from('playground_generations')
+      // Check if this is a playground project task (find by taskId in metadata)
+      const { data: playgroundProjects, error: playgroundError } = await supabaseAdmin
+        .from('playground_projects')
         .select('*')
-        .eq('id', taskId)
-        .single()
+        .contains('metadata', { taskId })
       
-      if (playgroundTask && !playgroundError) {
-        // Update playground generation with error
+      if (playgroundProjects && playgroundProjects.length > 0 && !playgroundError) {
+        const project = playgroundProjects[0]
+        console.log('🎯 Found playground project for failed taskId:', taskId)
+        
+        // Update playground project with error
         const { error: updatePlaygroundError } = await supabaseAdmin
-          .from('playground_generations')
+          .from('playground_projects')
           .update({
-            status: 'failed',
-            error_message: msg || 'Unknown error'
+            status: 'draft', // Reset to draft on failure
+            metadata: {
+              ...project.metadata,
+              error_message: msg || 'Unknown error',
+              failed_at: new Date().toISOString()
+            }
           })
-          .eq('id', taskId)
+          .eq('id', project.id)
         
         if (updatePlaygroundError) {
-          console.error('Error updating failed playground generation:', updatePlaygroundError)
+          console.error('Error updating failed playground project:', updatePlaygroundError)
+        } else {
+          console.log('✅ Playground project updated with error status')
         }
       }
     }

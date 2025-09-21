@@ -1,6 +1,8 @@
 'use client'
 
 import { ChevronRight, FileText, Target, DollarSign } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CompType, PurposeType } from '../../../lib/gig-form-persistence'
 
 interface BasicDetailsStepProps {
@@ -40,15 +42,15 @@ export default function BasicDetailsStep({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-      <div className="p-6 border-b border-gray-100">
+    <div className="bg-card rounded-lg border border-border shadow-sm">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="bg-emerald-100 p-2 rounded-lg">
-            <FileText className="w-5 h-5 text-emerald-600" />
+          <div className="bg-primary/10 p-2 rounded-lg">
+            <FileText className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Basic Details</h2>
-            <p className="text-gray-600 text-sm">Let's start with the essential information about your gig</p>
+            <h2 className="text-xl font-semibold text-foreground">Basic Details</h2>
+            <p className="text-muted-foreground text-sm">Let's start with the essential information about your gig</p>
           </div>
         </div>
       </div>
@@ -56,8 +58,8 @@ export default function BasicDetailsStep({
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         {/* Title */}
         <div>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-            Gig Title <span className="text-red-500">*</span>
+          <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">
+            Gig Title <span className="text-destructive">*</span>
           </label>
           <input
             type="text"
@@ -65,18 +67,18 @@ export default function BasicDetailsStep({
             required
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+            className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
             placeholder="e.g., Fashion Editorial Shoot in Studio"
           />
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             Write a clear, descriptive title that will attract the right talent
           </p>
         </div>
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Description <span className="text-red-500">*</span>
+          <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
+            Description <span className="text-destructive">*</span>
           </label>
           <textarea
             id="description"
@@ -84,14 +86,14 @@ export default function BasicDetailsStep({
             rows={4}
             value={description}
             onChange={(e) => onDescriptionChange(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
+            className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
             placeholder="Describe your shoot concept, what you're looking for, and any specific requirements..."
           />
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             Provide details about the concept, style, and what talent should expect (minimum 50 characters)
           </p>
           {description.length > 0 && description.length < 50 && (
-            <p className="mt-1 text-xs text-red-500">
+            <p className="mt-1 text-xs text-destructive">
               {50 - description.length} more characters needed
             </p>
           )}
@@ -101,64 +103,63 @@ export default function BasicDetailsStep({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Purpose */}
           <div>
-            <label htmlFor="purpose" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="purpose" className="block text-sm font-medium text-foreground mb-2">
               <div className="flex items-center gap-2">
                 <Target className="w-4 h-4" />
-                Purpose of Shoot <span className="text-red-500">*</span>
+                Purpose of Shoot <span className="text-destructive">*</span>
               </div>
             </label>
-            <select
-              id="purpose"
-              required
-              value={purpose}
-              onChange={(e) => onPurposeChange(e.target.value as PurposeType)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-            >
-              <option value="PORTFOLIO">Portfolio Building</option>
-              <option value="COMMERCIAL">Commercial</option>
-              <option value="EDITORIAL">Editorial</option>
-              <option value="FASHION">Fashion</option>
-              <option value="BEAUTY">Beauty</option>
-              <option value="LIFESTYLE">Lifestyle</option>
-              <option value="WEDDING">Wedding</option>
-              <option value="EVENT">Event</option>
-              <option value="PRODUCT">Product</option>
-              <option value="ARCHITECTURE">Architecture</option>
-              <option value="STREET">Street</option>
-              <option value="CONCEPTUAL">Conceptual</option>
-              <option value="OTHER">Other</option>
-            </select>
+            <Select value={purpose} onValueChange={(value) => onPurposeChange(value as PurposeType)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select purpose" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PORTFOLIO">Portfolio Building</SelectItem>
+                <SelectItem value="COMMERCIAL">Commercial</SelectItem>
+                <SelectItem value="EDITORIAL">Editorial</SelectItem>
+                <SelectItem value="FASHION">Fashion</SelectItem>
+                <SelectItem value="BEAUTY">Beauty</SelectItem>
+                <SelectItem value="LIFESTYLE">Lifestyle</SelectItem>
+                <SelectItem value="WEDDING">Wedding</SelectItem>
+                <SelectItem value="EVENT">Event</SelectItem>
+                <SelectItem value="PRODUCT">Product</SelectItem>
+                <SelectItem value="ARCHITECTURE">Architecture</SelectItem>
+                <SelectItem value="STREET">Street</SelectItem>
+                <SelectItem value="CONCEPTUAL">Conceptual</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Compensation Type */}
           <div>
-            <label htmlFor="comp-type" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="comp-type" className="block text-sm font-medium text-foreground mb-2">
               <div className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Compensation Type <span className="text-red-500">*</span>
+                Compensation Type <span className="text-destructive">*</span>
               </div>
             </label>
-            <select
-              id="comp-type"
-              value={compType}
-              onChange={(e) => onCompTypeChange(e.target.value as CompType)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-            >
-              <option value="TFP">TFP (Time for Prints/Portfolio)</option>
-              <option value="PAID">Paid</option>
-              <option value="EXPENSES">Expenses Covered</option>
-              <option value="OTHER">Other</option>
-            </select>
+            <Select value={compType} onValueChange={(value) => onCompTypeChange(value as CompType)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select compensation type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TFP">TFP (Time for Prints/Portfolio)</SelectItem>
+                <SelectItem value="PAID">Paid</SelectItem>
+                <SelectItem value="EXPENSES">Expenses Covered</SelectItem>
+                <SelectItem value="OTHER">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         {/* Compensation Details - Conditional */}
-        {(compType === 'PAID' || compType === 'EXPENSES') && (
+        {(compType === 'PAID' || compType === 'EXPENSES' || compType === 'OTHER') && (
           <div>
-            <label htmlFor="comp-details" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="comp-details" className="block text-sm font-medium text-foreground mb-2">
               <div className="flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />
-                Compensation Details <span className="text-red-500">*</span>
+                Compensation Details <span className="text-destructive">*</span>
               </div>
             </label>
             <textarea
@@ -167,32 +168,37 @@ export default function BasicDetailsStep({
               rows={3}
               value={compDetails}
               onChange={(e) => onCompDetailsChange(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
+              className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
               placeholder={
                 compType === 'PAID' 
                   ? "e.g., €150 per hour, €500 flat rate, includes 10 edited images..."
-                  : "e.g., Travel expenses covered, lunch provided, parking reimbursed..."
+                  : compType === 'EXPENSES'
+                  ? "e.g., Travel expenses covered, lunch provided, parking reimbursed..."
+                  : "e.g., Equipment rental, mentorship, portfolio collaboration, skill exchange..."
               }
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               {compType === 'PAID' 
                 ? "Specify the payment amount, rate, and what's included"
-                : "Detail what expenses will be covered and any limits"
+                : compType === 'EXPENSES'
+                ? "Detail what expenses will be covered and any limits"
+                : "Describe the alternative compensation arrangement clearly"
               }
             </p>
           </div>
         )}
 
         {/* Navigation */}
-        <div className="flex justify-end pt-6 border-t border-gray-100">
-          <button
+        <div className="flex justify-end pt-6 border-t border-border">
+          <Button
             type="submit"
             disabled={!isValid}
-            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            size="lg"
+            className="flex items-center gap-2"
           >
             Continue to Schedule
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </form>
     </div>

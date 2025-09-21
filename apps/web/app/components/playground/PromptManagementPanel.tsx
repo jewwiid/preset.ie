@@ -510,7 +510,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                       ? 'bg-orange-50 border border-orange-200 text-orange-800' 
                       : duplicateCheck.isNameConflict
                       ? 'bg-red-50 border border-red-200 text-red-800'
-                      : 'bg-green-50 border border-green-200 text-green-800'
+                      : 'bg-primary-50 border border-primary/20 text-primary-800'
                   }`}>
                     <div className="flex items-center gap-2">
                       {duplicateCheck.isChecking ? (
@@ -809,7 +809,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                     ? 'bg-orange-50 border border-orange-200 text-orange-800' 
                     : duplicateCheck.isNameConflict
                     ? 'bg-red-50 border border-red-200 text-red-800'
-                    : 'bg-green-50 border border-green-200 text-green-800'
+                    : 'bg-primary-50 border border-primary/20 text-primary-800'
                 }`}>
                   <div className="flex items-center gap-2">
                     {duplicateCheck.isChecking ? (

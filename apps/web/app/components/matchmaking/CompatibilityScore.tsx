@@ -22,7 +22,7 @@ export default function CompatibilityScore({
   const [showTooltip, setShowTooltip] = useState(false)
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600'
+    if (score >= 80) return 'text-primary-600'
     if (score >= 60) return 'text-yellow-600'
     return 'text-red-600'
   }

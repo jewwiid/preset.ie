@@ -145,7 +145,7 @@ export default function ProjectDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'published': return 'bg-green-100 text-green-800';
+      case 'published': return 'bg-primary-100 text-primary-800';
       case 'in_progress': return 'bg-blue-100 text-blue-800';
       case 'completed': return 'bg-gray-100 text-gray-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
@@ -155,7 +155,7 @@ export default function ProjectDetailPage() {
 
   const getRoleStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-green-100 text-green-800';
+      case 'open': return 'bg-primary-100 text-primary-800';
       case 'filled': return 'bg-gray-100 text-gray-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-yellow-100 text-yellow-800';
@@ -357,7 +357,7 @@ export default function ProjectDetailPage() {
                         
                         <div className="flex items-center space-x-4">
                           {request.borrow_preferred && (
-                            <div className="flex items-center text-green-600">
+                            <div className="flex items-center text-primary-600">
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Borrowing preferred
                             </div>
@@ -418,7 +418,7 @@ export default function ProjectDetailPage() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <Badge className={participant.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                            <Badge className={participant.status === 'active' ? 'bg-primary-100 text-primary-800' : 'bg-gray-100 text-gray-800'}>
                               {participant.status}
                             </Badge>
                             <p className="text-xs text-gray-400 mt-1">

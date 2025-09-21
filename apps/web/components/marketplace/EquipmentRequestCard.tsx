@@ -75,7 +75,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
       'camera': 'bg-red-100 text-red-800',
       'lens': 'bg-blue-100 text-blue-800',
       'lighting': 'bg-yellow-100 text-yellow-800',
-      'audio': 'bg-green-100 text-green-800',
+      'audio': 'bg-primary-100 text-primary-800',
       'accessories': 'bg-purple-100 text-purple-800',
       'other': 'bg-gray-100 text-gray-800'
     };
@@ -182,7 +182,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
         {/* Price Range */}
         <div className="mb-3">
           <span className="text-sm font-medium text-gray-700">Budget: </span>
-          <span className="text-sm text-emerald-600 font-medium">{getPriceRange()}</span>
+          <span className="text-sm text-primary-600 font-medium">{getPriceRange()}</span>
         </div>
 
         {/* Rental Period */}

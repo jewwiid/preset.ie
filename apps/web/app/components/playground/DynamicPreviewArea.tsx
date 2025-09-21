@@ -42,7 +42,7 @@ export default function DynamicPreviewArea({
   onRemoveBaseImage
 }: DynamicPreviewAreaProps) {
   const { showSuccess, showError } = useToast()
-  const [showBaseImage, setShowBaseImage] = useState(true)
+  const [showBaseImage, setShowBaseImage] = useState(false) // Default to showing generated images
   
   // Use the aspect ratio from parent instead of local state
   const displayAspectRatio = aspectRatio || '1:1'
@@ -51,7 +51,19 @@ export default function DynamicPreviewArea({
   // Separate base images from generated images
   const baseImages = images.filter(img => img.type === 'base')
   const generatedImages = images.filter(img => img.type !== 'base')
-  const imagesToDisplay = showBaseImage ? baseImages : generatedImages
+  
+  // Show generated images by default when they exist, otherwise show base images
+  const imagesToDisplay = showBaseImage ? baseImages : generatedImages.length > 0 ? generatedImages : baseImages
+  
+  // Debug logging (only when needed)
+  // console.log('🔍 DynamicPreviewArea Debug:', {
+  //   totalImages: images.length,
+  //   baseImagesCount: baseImages.length,
+  //   generatedImagesCount: generatedImages.length,
+  //   showBaseImage,
+  //   imagesToDisplayCount: imagesToDisplay.length,
+  //   imagesToDisplay: imagesToDisplay.map(img => ({ url: img.url.substring(0, 50) + '...', type: img.type }))
+  // })
 
   const handleSaveToGallery = async (imageUrl: string) => {
     try {
@@ -185,7 +197,7 @@ export default function DynamicPreviewArea({
             {baseImages.length > 0 && generatedImages.length > 0 && (
               <div className="flex items-center justify-end gap-2">
                 <Label className="text-sm font-medium">View:</Label>
-                <div className="flex bg-gray-100 rounded-lg p-1">
+                <div className="flex bg-muted rounded-lg p-1">
                   <Button
                     size="sm"
                     variant={showBaseImage ? "default" : "ghost"}
@@ -232,7 +244,7 @@ export default function DynamicPreviewArea({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                      className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleSaveToGallery(imagesToDisplay[0].url)
@@ -249,7 +261,7 @@ export default function DynamicPreviewArea({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                      className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleDownloadImage(imagesToDisplay[0].url, `base-image.png`)
@@ -262,7 +274,7 @@ export default function DynamicPreviewArea({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 text-white shadow-md"
+                        className="h-8 w-8 p-0 bg-destructive/90 hover:bg-destructive text-destructive-foreground shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
                           onRemoveBaseImage()
@@ -277,7 +289,7 @@ export default function DynamicPreviewArea({
               ) : (
                 // Generated image or video - regular display
                 <div 
-                  className="relative w-full bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300"
+                  className="relative w-full bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden transition-all duration-300"
                   style={{ 
                     aspectRatio: previewAspectRatio,
                     minHeight: '300px',
@@ -316,7 +328,7 @@ export default function DynamicPreviewArea({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleSaveToGallery(imagesToDisplay[0].url)
@@ -333,7 +345,7 @@ export default function DynamicPreviewArea({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
                           if (imagesToDisplay[0].type === 'video') {
@@ -350,7 +362,7 @@ export default function DynamicPreviewArea({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 text-white shadow-md"
+                          className="h-8 w-8 p-0 bg-destructive/90 hover:bg-destructive text-destructive-foreground shadow-md"
                           onClick={(e) => {
                             e.stopPropagation()
                             onSelectImage(null)
@@ -365,7 +377,7 @@ export default function DynamicPreviewArea({
                     {/* Selection indicator */}
                     {selectedImage === imagesToDisplay[0].url && (
                       <div className="absolute top-2 left-2">
-                        <Badge variant="default" className="bg-green-500">Selected</Badge>
+                        <Badge variant="default" className="bg-primary">Selected</Badge>
                       </div>
                     )}
                   </div>
@@ -377,10 +389,10 @@ export default function DynamicPreviewArea({
                 {imagesToDisplay.map((image, index) => (
                   <div
                     key={index}
-                    className={`relative bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-200 cursor-pointer ${
+                    className={`relative bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden transition-all duration-200 cursor-pointer ${
                       selectedImage === image.url 
-                        ? 'ring-2 ring-purple-500 ring-offset-2' 
-                        : 'hover:ring-1 hover:ring-gray-400'
+                        ? 'ring-2 ring-primary ring-offset-2' 
+                        : 'hover:ring-1 hover:ring-border'
                     }`}
                     style={{ 
                       aspectRatio: previewAspectRatio,
@@ -408,7 +420,7 @@ export default function DynamicPreviewArea({
                     )}
                     
                     {/* Image number badge */}
-                    <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                    <div className="absolute top-2 left-2 bg-backdrop text-foreground text-xs px-2 py-1 rounded">
                       {index + 1}
                     </div>
                     
@@ -417,7 +429,7 @@ export default function DynamicPreviewArea({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleSaveToGallery(image.url)
@@ -434,7 +446,7 @@ export default function DynamicPreviewArea({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
                           if (image.type === 'video') {
@@ -451,7 +463,7 @@ export default function DynamicPreviewArea({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 text-white shadow-md"
+                          className="h-8 w-8 p-0 bg-destructive/90 hover:bg-destructive text-destructive-foreground shadow-md"
                           onClick={(e) => {
                             e.stopPropagation()
                             onRemoveBaseImage()
@@ -464,7 +476,7 @@ export default function DynamicPreviewArea({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 text-white shadow-md"
+                          className="h-8 w-8 p-0 bg-destructive/90 hover:bg-destructive text-destructive-foreground shadow-md"
                           onClick={(e) => {
                             e.stopPropagation()
                             onSelectImage(null)
@@ -479,14 +491,14 @@ export default function DynamicPreviewArea({
                     {/* Selection indicator */}
                     {selectedImage === image.url && (
                       <div className="absolute bottom-2 left-2">
-                        <Badge variant="default" className="bg-green-500">Selected</Badge>
+                        <Badge variant="default" className="bg-primary">Selected</Badge>
                       </div>
                     )}
                     
                     {/* Base image indicator */}
                     {image.type === 'base' && (
                       <div className="absolute bottom-2 left-2">
-                        <Badge variant="default" className="bg-blue-500">Base Image</Badge>
+                        <Badge variant="default" className="bg-primary">Base Image</Badge>
                       </div>
                     )}
                   </div>
@@ -496,13 +508,13 @@ export default function DynamicPreviewArea({
 
             {/* Bottom Controls and Info */}
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 <span>Dimensions: {dimensions.width} × {dimensions.height}</span>
-                <span className="mx-2 text-gray-400">|</span>
+                <span className="mx-2 text-muted-foreground">|</span>
                 <span>{imagesToDisplay.length} {showBaseImage ? 'base' : 'generated'} image{imagesToDisplay.length > 1 ? 's' : ''}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium text-gray-700">
+                <Label className="text-sm font-medium text-foreground">
                   <Settings className="h-4 w-4 inline mr-1" />
                   Aspect Ratio:
                 </Label>
@@ -514,7 +526,7 @@ export default function DynamicPreviewArea({
           </div>
         ) : (
           <div 
-            className="relative w-full bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center transition-all duration-300"
+            className="relative w-full bg-muted border-2 border-dashed border-border rounded-lg flex items-center justify-center transition-all duration-300"
             style={{ 
               aspectRatio: previewAspectRatio,
               minHeight: '300px',
@@ -522,24 +534,31 @@ export default function DynamicPreviewArea({
             }}
           >
             {loading ? (
-              <div className="text-center text-gray-500">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+              <div className="text-center text-muted-foreground">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="font-medium">Generating your image...</p>
                 <p className="text-sm">This usually takes 5-30 seconds</p>
-                <div className="mt-2 text-xs text-gray-400">
+                <div className="mt-2 text-xs text-muted-foreground">
                   Preview area: {aspectRatio} ({dimensions.width} × {dimensions.height})
+                </div>
+                <div className="mt-3">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center text-gray-500">
-                <Wand2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <div className="text-center text-muted-foreground">
+                <Wand2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="font-medium">
                   {showBaseImage ? 'No base image selected' : 'No images generated yet'}
                 </p>
                 <p className="text-sm">
                   {showBaseImage ? 'Select a base image to get started' : 'Create your first image!'}
                 </p>
-                <div className="mt-2 text-xs text-gray-400">
+                <div className="mt-2 text-xs text-muted-foreground">
                   Preview area: {aspectRatio} ({dimensions.width} × {dimensions.height})
                 </div>
               </div>

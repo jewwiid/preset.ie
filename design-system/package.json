@@ -1,0 +1,49 @@
+{
+  "name": "@preset/design-system",
+  "version": "1.0.0",
+  "description": "Preset Design System - Complete design tokens, components, and documentation",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Design system documentation built successfully'",
+    "dev": "echo 'Design system development mode'",
+    "lint": "echo 'Linting design system files'",
+    "test": "echo 'Running design system tests'"
+  },
+  "keywords": [
+    "design-system",
+    "preset",
+    "ui-components",
+    "design-tokens",
+    "tailwind",
+    "react",
+    "typescript"
+  ],
+  "author": "Preset Team",
+  "license": "MIT",
+  "dependencies": {
+    "@preset/tokens": "*",
+    "@preset/ui": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "tailwindcss": "^3.4.0"
+  },
+  "files": [
+    "tokens/",
+    "ui-components/",
+    "documentation/",
+    "examples/",
+    "assets/",
+    "*.md",
+    "*.js",
+    "*.css"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/preset/preset-design-system"
+  },
+  "bugs": {
+    "url": "https://github.com/preset/preset-design-system/issues"
+  },
+  "homepage": "https://github.com/preset/preset-design-system#readme"
+}

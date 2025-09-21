@@ -128,28 +128,28 @@ export default function VideoViewer({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-background rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-lg font-semibold text-foreground">{title}</h3>
           {description && (
-            <p className="text-sm text-gray-600 mt-1">{description}</p>
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
           )}
         </div>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-muted-foreground">
           {videos.length} video{videos.length !== 1 ? 's' : ''}
         </div>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-          <span className="ml-2 text-gray-600">Loading videos...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2 text-muted-foreground">Loading videos...</span>
         </div>
       ) : videos.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-            <Play className="h-8 w-8 text-gray-400" />
+        <div className="text-center py-12 text-muted-foreground">
+          <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+            <Play className="h-8 w-8 text-muted-foreground" />
           </div>
           <p className="text-lg font-medium mb-2">No Videos Yet</p>
           <p className="text-sm">{emptyStateMessage}</p>
@@ -186,8 +186,8 @@ export default function VideoViewer({
                 />
                 
                 {/* Custom Controls Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                  <div className="flex items-center justify-between text-white">
+                <div className="absolute bottom-0 left-0 right-0 bg-backdrop p-4">
+                  <div className="flex items-center justify-between text-foreground">
                     <div className="flex items-center space-x-3">
                       <Button
                         size="sm"
@@ -355,12 +355,12 @@ export default function VideoViewer({
                         muted
                         loop
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                        <p className="text-white text-xs font-medium truncate">
+                      <div className="absolute bottom-0 left-0 right-0 bg-backdrop p-2">
+                        <p className="text-foreground text-xs font-medium truncate">
                           {video.title || `Video ${index + 1}`}
                         </p>
                         {video.duration && (
-                          <p className="text-white text-xs opacity-75">
+                          <p className="text-foreground text-xs opacity-75">
                             {video.duration}s
                           </p>
                         )}

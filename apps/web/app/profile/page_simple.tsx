@@ -44,8 +44,8 @@ export default function ProfilePageSimple() {
             </div>
           </div>
           
-          <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <p className="text-green-800 dark:text-green-200 text-sm">
+          <div className="mt-6 p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary/20 dark:border-primary-800 rounded-lg">
+            <p className="text-primary-800 dark:text-primary-200 text-sm">
               ✅ <strong>Edit functionality preserved:</strong> All editing capabilities remain identical
             </p>
           </div>

@@ -1,21 +1,10 @@
 import { ShowcaseRepository } from '@preset/application';
 import { Showcase, EntityId } from '@preset/domain';
 import { SupabaseClient } from '../clients/supabase.client';
+import { Database } from '../types/database.types';
 
-interface ShowcaseRow {
-  id: string;
-  gig_id: string;
-  creator_user_id: string;
-  talent_user_id: string;
-  caption?: string;
-  tags: string[];
-  palette?: any; // JSONB
-  approved_by_creator_at?: string;
-  approved_by_talent_at?: string;
-  visibility: string;
-  created_at: string;
-  updated_at: string;
-}
+type ShowcaseRow = Database['public']['Tables']['showcases']['Row'];
+type ShowcaseInsert = Database['public']['Tables']['showcases']['Insert'];
 
 export class SupabaseShowcaseRepository implements ShowcaseRepository {
   constructor(private client: SupabaseClient) {}
@@ -121,20 +110,20 @@ export class SupabaseShowcaseRepository implements ShowcaseRepository {
     }
   }
 
-  private domainToRow(showcase: Showcase): Partial<ShowcaseRow> {
+  private domainToRow(showcase: Showcase): ShowcaseInsert {
     return {
-      id: showcase.id.toString(),
-      gig_id: showcase.gigId.toString(),
-      creator_user_id: showcase.creatorUserId.toString(),
-      talent_user_id: showcase.talentUserId.toString(),
-      caption: showcase.caption,
-      tags: showcase.tags,
-      palette: showcase.palette, // Assumes palette is already JSON-serializable
-      approved_by_creator_at: showcase.approvedByCreatorAt?.toISOString(),
-      approved_by_talent_at: showcase.approvedByTalentAt?.toISOString(),
-      visibility: showcase.visibility.toString(),
-      created_at: showcase.createdAt.toISOString(),
-      updated_at: showcase.updatedAt.toISOString(),
+      id: showcase.getId(),
+      gig_id: showcase.getGigId(),
+      creator_user_id: showcase.getCreatorId(),
+      talent_user_id: showcase.getTalentId(),
+      caption: showcase.getCaption(),
+      tags: showcase.getTags(),
+      palette: showcase.getPalette(), // Assumes palette is already JSON-serializable
+      approved_by_creator_at: showcase.getApprovals().find(a => a.getUserId() === showcase.getCreatorId())?.getApprovedAt().toISOString(),
+      approved_by_talent_at: showcase.getApprovals().find(a => a.getUserId() === showcase.getTalentId())?.getApprovedAt().toISOString(),
+      visibility: showcase.getVisibility().toString(),
+      created_at: showcase.getCreatedAt().toISOString(),
+      updated_at: new Date().toISOString(), // Use current time as updated_at
     };
   }
 

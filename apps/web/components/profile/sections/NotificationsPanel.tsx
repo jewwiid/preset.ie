@@ -142,7 +142,7 @@ export function NotificationsPanel() {
         return <Calendar className="w-4 h-4 text-blue-600" />
       case 'application_received':
       case 'application_viewed':
-        return <CheckCircle className="w-4 h-4 text-green-600" />
+        return <CheckCircle className="w-4 h-4 text-primary-600" />
       case 'booking_confirmed':
       case 'talent_booked':
         return <AlertCircle className="w-4 h-4 text-purple-600" />
@@ -219,7 +219,7 @@ export function NotificationsPanel() {
                 </p>
               </div>
               {notificationPrefs?.in_app_enabled ? (
-                <Bell className="w-8 h-8 text-green-600" />
+                <Bell className="w-8 h-8 text-primary-600" />
               ) : (
                 <BellOff className="w-8 h-8 text-red-600" />
               )}
@@ -287,7 +287,7 @@ export function NotificationsPanel() {
 
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
-                    <Smartphone className="w-5 h-5 text-green-600" />
+                    <Smartphone className="w-5 h-5 text-primary-600" />
                     <div>
                       <p className="font-medium">Push</p>
                       <p className="text-sm text-gray-500">Browser notifications</p>
@@ -297,7 +297,7 @@ export function NotificationsPanel() {
                     onClick={() => updatePreference('push_enabled', !notificationPrefs?.push_enabled)}
                     disabled={saving}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      notificationPrefs?.push_enabled ? 'bg-green-600' : 'bg-gray-200'
+                      notificationPrefs?.push_enabled ? 'bg-primary-600' : 'bg-gray-200'
                     }`}
                   >
                     <span
@@ -412,7 +412,7 @@ export function NotificationsPanel() {
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
                     {notificationPrefs?.sound_enabled ? (
-                      <Volume2 className="w-5 h-5 text-green-600" />
+                      <Volume2 className="w-5 h-5 text-primary-600" />
                     ) : (
                       <VolumeX className="w-5 h-5 text-gray-600" />
                     )}
@@ -425,7 +425,7 @@ export function NotificationsPanel() {
                     onClick={() => updatePreference('sound_enabled', !notificationPrefs?.sound_enabled)}
                     disabled={saving}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      notificationPrefs?.sound_enabled ? 'bg-green-600' : 'bg-gray-200'
+                      notificationPrefs?.sound_enabled ? 'bg-primary-600' : 'bg-gray-200'
                     }`}
                   >
                     <span
@@ -587,7 +587,7 @@ export function NotificationsPanel() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => window.open(notification.action_url, '_blank')}
-                                className="text-green-600 hover:text-green-700"
+                                className="text-primary-600 hover:text-primary-700"
                               >
                                 View
                               </Button>

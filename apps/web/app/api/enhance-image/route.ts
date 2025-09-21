@@ -142,24 +142,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if platform has enough credits with provider
-    const { data: platformCredits } = await supabaseAdmin
-      .rpc('check_platform_credits', { 
-        p_provider: PROVIDER,
-        p_user_credits: USER_CREDITS_PER_ENHANCEMENT 
-      });
+    // TODO: Implement proper platform credits check
+    // For now, we'll skip this check since the platform_credits table doesn't exist yet
+    // const { data: platformCredits } = await supabaseAdmin
+    //   .rpc('check_platform_credits', { 
+    //     p_provider: selectedProvider,
+    //     p_user_credits: USER_CREDITS_PER_ENHANCEMENT 
+    //   });
     
-    if (!platformCredits) {
-      console.error('Platform has insufficient NanoBanana credits');
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Enhancement service temporarily unavailable. Please try again later.',
-          code: 'PLATFORM_CREDITS_LOW'
-        },
-        { status: 503 }
-      );
-    }
+    // if (!platformCredits) {
+    //   console.error(`Platform has insufficient ${selectedProvider} credits`);
+    //   return NextResponse.json(
+    //     { 
+    //       success: false, 
+    //       error: 'Enhancement service temporarily unavailable. Please try again later.',
+    //       code: 'PLATFORM_CREDITS_LOW'
+    //     },
+    //     { status: 503 }
+    //   );
+    // }
 
     // Validate and optimize image URL
     let optimizedImageUrl = inputImageUrl;
@@ -382,6 +383,19 @@ export async function POST(request: NextRequest) {
             code: 'ENHANCEMENT_SERVICE_CREDITS'
           },
           { status: 402 }
+        );
+      }
+      
+      // Handle platform credits low error
+      if (responseData.code === 503 && responseData.error?.includes('PLATFORM_CREDITS_LOW')) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Enhancement service temporarily unavailable',
+            details: 'The enhancement service is currently experiencing high demand. Please try again later or use the Seedream provider.',
+            code: 'PLATFORM_CREDITS_LOW'
+          },
+          { status: 503 }
         );
       }
       

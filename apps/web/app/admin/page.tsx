@@ -485,7 +485,7 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">Current Balance</p>
-                      <p className="text-xl font-bold text-green-600">{credit.current_balance}</p>
+                      <p className="text-xl font-bold text-primary-600">{credit.current_balance}</p>
                       {credit.current_balance < credit.low_balance_threshold && (
                         <p className="text-xs text-red-600">⚠️ Low balance!</p>
                       )}
@@ -522,11 +522,11 @@ export default function AdminDashboard() {
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Credit Packages</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {creditPackages.map((pkg) => (
-                  <div key={pkg.id} className={`p-4 border rounded-lg ${pkg.is_active ? 'border-green-500' : 'border-gray-300 opacity-50'}`}>
+                  <div key={pkg.id} className={`p-4 border rounded-lg ${pkg.is_active ? 'border-primary-500' : 'border-gray-300 opacity-50'}`}>
                     <h3 className="font-semibold text-gray-900">{pkg.name}</h3>
                     <p className="text-sm text-gray-600 mb-2">{pkg.description}</p>
                     <p className="text-2xl font-bold text-gray-900">{pkg.user_credits} credits</p>
-                    <p className="text-lg text-green-600">${pkg.price_usd}</p>
+                    <p className="text-lg text-primary-600">${pkg.price_usd}</p>
                     <p className="text-xs text-gray-500">${(pkg.price_usd / pkg.user_credits).toFixed(2)} per credit</p>
                     {!pkg.is_active && (
                       <span className="inline-block mt-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">Inactive</span>
@@ -550,7 +550,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4">
                       <p className="text-sm text-gray-600">Credits Refunded</p>
-                      <p className="text-2xl font-bold text-green-600">{refundMetrics.totalCreditsRefunded}</p>
+                      <p className="text-2xl font-bold text-primary-600">{refundMetrics.totalCreditsRefunded}</p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4">
                       <p className="text-sm text-gray-600">Platform Loss</p>
@@ -582,7 +582,7 @@ export default function AdminDashboard() {
                               <td className="px-4 py-2 text-sm text-gray-900">
                                 {refund.task_id?.substring(0, 8)}...
                               </td>
-                              <td className="px-4 py-2 text-sm text-green-600">
+                              <td className="px-4 py-2 text-sm text-primary-600">
                                 {refund.credits_refunded}
                               </td>
                               <td className="px-4 py-2 text-sm text-gray-900">

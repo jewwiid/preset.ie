@@ -151,13 +151,13 @@ export function ModerationQueue() {
     if (score >= 80) return 'bg-red-100 text-red-800 border-red-200'
     if (score >= 60) return 'bg-orange-100 text-orange-800 border-orange-200'
     if (score >= 40) return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    return 'bg-green-100 text-green-800 border-green-200'
+    return 'bg-primary-100 text-primary-800 border-primary/20'
   }
 
   const getRiskColor = (score: number) => {
     if (score >= 70) return 'text-red-600'
     if (score >= 40) return 'text-orange-600'
-    return 'text-green-600'
+    return 'text-primary-600'
   }
 
   const formatRelativeTime = (dateString: string) => {
@@ -198,9 +198,9 @@ export function ModerationQueue() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Resolved Today</p>
-                <p className="text-2xl font-bold text-green-600">{stats.resolved_today}</p>
+                <p className="text-2xl font-bold text-primary-600">{stats.resolved_today}</p>
               </div>
-              <CheckCircle className="w-8 h-8 text-green-500" />
+              <CheckCircle className="w-8 h-8 text-primary-500" />
             </div>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
@@ -266,7 +266,7 @@ export function ModerationQueue() {
             <button
               onClick={() => handleBulkAction('approved')}
               disabled={processingAction === 'bulk'}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               {processingAction === 'bulk' ? 'Processing...' : `Approve Selected (${selectedItems.size})`}
             </button>
@@ -379,7 +379,7 @@ export function ModerationQueue() {
                       <button
                         onClick={() => handleAction(item.id, 'approved')}
                         disabled={processingAction === item.id}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 bg-green-100 hover:bg-green-200 rounded transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-700 bg-primary-100 hover:bg-primary-200 rounded transition-colors disabled:opacity-50"
                         title="Approve content"
                       >
                         <CheckCircle className="w-4 h-4" />

@@ -209,21 +209,21 @@ export default function AspectRatioSelector({
                   <Card 
                     key={option.id}
                     className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      isSelected ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:bg-gray-50'
+                      isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-accent'
                     }`}
                     onClick={() => handleAspectRatioChange(option.ratio)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <IconComponent className="h-4 w-4 text-gray-600" />
+                        <IconComponent className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">{option.name}</span>
                       </div>
-                      <div className="text-xs text-gray-600 mb-1">{option.description}</div>
+                      <div className="text-xs text-muted-foreground mb-1">{option.description}</div>
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-xs">
                           {option.ratio}
                         </Badge>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {dimensions.width}×{dimensions.height}
                         </span>
                       </div>
@@ -245,21 +245,21 @@ export default function AspectRatioSelector({
                   <Card 
                     key={option.id}
                     className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      isSelected ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:bg-gray-50'
+                      isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-accent'
                     }`}
                     onClick={() => handleAspectRatioChange(option.ratio)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <IconComponent className="h-4 w-4 text-gray-600" />
+                        <IconComponent className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">{option.name}</span>
                       </div>
-                      <div className="text-xs text-gray-600 mb-1">{option.description}</div>
+                      <div className="text-xs text-muted-foreground mb-1">{option.description}</div>
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-xs">
                           {option.ratio}
                         </Badge>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {dimensions.width}×{dimensions.height}
                         </span>
                       </div>
@@ -281,21 +281,21 @@ export default function AspectRatioSelector({
                   <Card 
                     key={option.id}
                     className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                      isSelected ? 'ring-2 ring-purple-500 bg-purple-50' : 'hover:bg-gray-50'
+                      isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-accent'
                     }`}
                     onClick={() => handleAspectRatioChange(option.ratio)}
                   >
                     <CardContent className="p-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <IconComponent className="h-4 w-4 text-gray-600" />
+                        <IconComponent className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">{option.name}</span>
                       </div>
-                      <div className="text-xs text-gray-600 mb-1">{option.description}</div>
+                      <div className="text-xs text-muted-foreground mb-1">{option.description}</div>
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-xs">
                           {option.ratio}
                         </Badge>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           {dimensions.width}×{dimensions.height}
                         </span>
                       </div>
@@ -343,7 +343,7 @@ export default function AspectRatioSelector({
                 Apply Custom Dimensions
               </Button>
               
-              <div className="text-xs text-gray-600 text-center">
+              <div className="text-xs text-muted-foreground text-center">
                 Custom: {customWidth}×{customHeight} pixels
               </div>
             </div>

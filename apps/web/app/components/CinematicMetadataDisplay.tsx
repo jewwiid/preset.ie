@@ -83,9 +83,9 @@ export default function CinematicMetadataDisplay({
         return 'bg-purple-100 text-purple-800 border-purple-200'
       case 'directorStyle':
       case 'eraEmulation':
-        return 'bg-green-100 text-green-800 border-green-200'
+        return 'bg-primary-100 text-primary-800 border-primary/20'
       case 'sceneMood':
-        return 'bg-pink-100 text-pink-800 border-pink-200'
+        return 'bg-primary-100 text-primary-800 border-primary/20'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }

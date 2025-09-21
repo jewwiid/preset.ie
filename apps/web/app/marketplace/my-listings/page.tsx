@@ -114,24 +114,24 @@ export default function MyListingsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-primary/10 text-primary';
       case 'inactive':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-muted text-muted-foreground';
       case 'archived':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   if (!user) {
     return (
       <MarketplaceLayout>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
-            <ShoppingBag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Sign in to view your listings</h2>
-            <p className="text-gray-600">You need to be signed in to access your marketplace listings.</p>
+            <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">Sign in to view your listings</h2>
+            <p className="text-muted-foreground">You need to be signed in to access your marketplace listings.</p>
           </div>
         </div>
       </MarketplaceLayout>
@@ -140,14 +140,14 @@ export default function MyListingsPage() {
 
   return (
     <MarketplaceLayout>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
-                <p className="text-gray-600 mt-2">Manage your marketplace listings</p>
+                <h1 className="text-3xl font-bold text-foreground">My Listings</h1>
+                <p className="text-muted-foreground mt-2">Manage your marketplace listings</p>
               </div>
               <Button asChild>
                 <Link href="/marketplace/create">
@@ -162,16 +162,16 @@ export default function MyListingsPage() {
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading your listings...</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-4 text-muted-foreground">Loading your listings...</p>
               </div>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">Error loading listings</h2>
-                <p className="text-gray-600 mb-4">{error}</p>
+                <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-foreground mb-2">Error loading listings</h2>
+                <p className="text-muted-foreground mb-4">{error}</p>
                 <Button onClick={fetchMyListings}>
                   Try Again
                 </Button>
@@ -180,9 +180,9 @@ export default function MyListingsPage() {
           ) : listings.length === 0 ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">No listings yet</h2>
-                <p className="text-gray-600 mb-4">Create your first marketplace listing to get started.</p>
+                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-foreground mb-2">No listings yet</h2>
+                <p className="text-muted-foreground mb-4">Create your first marketplace listing to get started.</p>
                 <Button asChild>
                   <Link href="/marketplace/create">
                     <Plus className="h-4 w-4 mr-2" />
@@ -196,7 +196,7 @@ export default function MyListingsPage() {
               {listings.map((listing) => (
                 <Card key={listing.id} className="overflow-hidden">
                   {/* Image */}
-                  <div className="aspect-w-16 aspect-h-9 bg-gray-200">
+                  <div className="aspect-w-16 aspect-h-9 bg-muted">
                     {listing.images && listing.images.length > 0 ? (
                       <img
                         src={listing.images[0].url}
@@ -204,8 +204,8 @@ export default function MyListingsPage() {
                         className="w-full h-48 object-cover"
                       />
                     ) : (
-                      <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                        <Package className="h-12 w-12 text-gray-400" />
+                      <div className="w-full h-48 bg-muted flex items-center justify-center">
+                        <Package className="h-12 w-12 text-muted-foreground" />
                       </div>
                     )}
                   </div>
@@ -213,7 +213,7 @@ export default function MyListingsPage() {
                   <CardContent className="p-4">
                     {/* Title and Status */}
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                      <h3 className="text-lg font-semibold text-foreground line-clamp-2">
                         {listing.title}
                       </h3>
                       <Badge className={`ml-2 ${getStatusColor(listing.status)}`}>
@@ -223,34 +223,34 @@ export default function MyListingsPage() {
 
                     {/* Description */}
                     {listing.description && (
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
                         {listing.description}
                       </p>
                     )}
 
                     {/* Details */}
                     <div className="space-y-2 mb-4">
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-muted-foreground">
                         <Euro className="h-4 w-4 mr-2" />
                         <span className="font-medium">{formatPrice(listing.price_cents)}</span>
-                        <span className="ml-1 text-gray-500">
+                        <span className="ml-1 text-muted-foreground/70">
                           {listing.mode === 'rent' ? '/day' : 'one-time'}
                         </span>
                       </div>
                       
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-muted-foreground">
                         <Package className="h-4 w-4 mr-2" />
                         <span className="capitalize">{listing.category}</span>
                       </div>
 
                       {listing.location && (
-                        <div className="flex items-center text-sm text-gray-600">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4 mr-2" />
                           <span>{listing.location}</span>
                         </div>
                       )}
 
-                      <div className="flex items-center text-sm text-gray-600">
+                      <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4 mr-2" />
                         <span>Created {formatDate(listing.created_at)}</span>
                       </div>
@@ -274,7 +274,7 @@ export default function MyListingsPage() {
                         variant="outline" 
                         size="sm" 
                         onClick={() => handleDeleteListing(listing.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

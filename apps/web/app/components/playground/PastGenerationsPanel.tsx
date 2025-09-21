@@ -10,7 +10,7 @@ import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import ProgressiveImage from '../ui/ProgressiveImage'
 import ProgressiveVideo from '../ui/ProgressiveVideo'
 import { usePagination } from '../../hooks/usePagination'
-import { useSmartPreloading } from '../../hooks/useSmartPreloading'
+import useSmartPreloading from '../../hooks/useSmartPreloading' // Fixed import
 
 interface PastGeneration {
   id: string
@@ -79,7 +79,14 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
 
   // Smart preloading for visible media
   const mediaUrls = paginatedGenerations
-    .flatMap(gen => gen.generated_images.map(img => img.url))
+    .flatMap(gen => gen.generated_images.map(img => {
+      // Handle both string URLs and object URLs
+      if (typeof img.url === 'string') return img.url
+      if (typeof img.url === 'object' && img.url !== null) {
+        return (img.url as any).url || (img.url as any).image_url || (img.url as any).enhancedUrl || null
+      }
+      return null
+    }))
     .filter(Boolean)
   
   const { preloadStatus } = useSmartPreloading(mediaUrls, {
@@ -364,7 +371,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="h-5 w-5 text-purple-600" />
+                <Clock className="h-5 w-5 text-primary" />
                 Past Generations
               </CardTitle>
               <CardDescription>
@@ -375,8 +382,8 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-            <span className="ml-2 text-gray-600">Loading past generations...</span>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-muted-foreground">Loading past generations...</span>
           </div>
         </CardContent>
       </Card>
@@ -390,7 +397,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="h-5 w-5 text-purple-600" />
+                <Clock className="h-5 w-5 text-primary" />
                 Past Generations
               </CardTitle>
               <CardDescription>
@@ -409,8 +416,8 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
         </CardHeader>
         <CardContent>
           {generations.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <ImageIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <div className="text-center py-8 text-muted-foreground">
+              <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
               <p className="font-medium">No recent generations found</p>
               <p className="text-sm">Generate some images or videos to see them here</p>
             </div>
@@ -429,7 +436,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                       <ChevronLeft className="h-4 w-4" />
                       Previous
                     </Button>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-muted-foreground">
                       Page {currentPage} of {totalPages}
                     </span>
                     <Button
@@ -442,10 +449,10 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-muted-foreground">
                     Showing {paginatedGenerations.length} of {generations.length} generations
                     {preloadStatus.loading > 0 && (
-                      <span className="ml-2 text-blue-500">
+                      <span className="ml-2 text-primary">
                         • Preloading {preloadStatus.loading}/{preloadStatus.total}
                       </span>
                     )}
@@ -467,7 +474,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                     <div
                       key={generation.id}
                       className={`group relative rounded-lg overflow-hidden border transition-all duration-200 cursor-pointer ${
-                        isUrgent && !generation.is_saved ? 'border-red-300 ring-2 ring-red-200' : 'border-gray-200 hover:border-purple-300'
+                        isUrgent && !generation.is_saved ? 'border-destructive ring-2 ring-destructive/20' : 'border-border hover:border-primary'
                       }`}
                       style={style}
                       onClick={() => onImportProject(generation)}
@@ -508,8 +515,8 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                             )}
                           </>
                         ) : (
-                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                            <ImageIcon className="h-8 w-8 text-gray-400" />
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
                           </div>
                         )}
                         
@@ -517,8 +524,8 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                         {generation.generated_images.length > 0 && 
                          generation.generated_images[0].type === 'video' && 
                          playingVideos.has(generation.id) && (
-                          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                          <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
+                            <div className="w-2 h-2 bg-destructive-foreground rounded-full animate-pulse"></div>
                             <span>Playing</span>
                           </div>
                         )}
@@ -526,21 +533,21 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                         {/* Status badges */}
                         <div className="absolute top-2 right-2 flex flex-col gap-1">
                           {generation.generated_images.length > 0 && (
-                            <div className="bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                            <div className="bg-backdrop text-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
                               <span>{getAspectRatioLabel(generation.generated_images[0].width, generation.generated_images[0].height)}</span>
                               {generation.is_video && (
-                                <span className="text-blue-300">🎬</span>
+                                <span className="text-primary">🎬</span>
                               )}
                             </div>
                           )}
                           {generation.is_saved && (
-                            <div className="bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                            <div className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
                               <CheckCircle className="h-3 w-3" />
                               <span>Saved</span>
                             </div>
                           )}
                           {isUrgent && !generation.is_saved && (
-                            <div className="bg-red-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                            <div className="bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
                               <AlertCircle className="h-3 w-3" />
                               <span>{daysRemaining === 0 ? 'Expires today' : '1 day left'}</span>
                             </div>
@@ -549,7 +556,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                         
                         {/* Multiple images indicator */}
                         {generation.generated_images.length > 1 && (
-                          <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                          <div className="absolute bottom-2 left-2 bg-backdrop text-foreground text-xs px-2 py-1 rounded">
                             +{generation.generated_images.length - 1} more
                           </div>
                         )}
@@ -563,7 +570,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                               <Button
                                 size="sm"
                                 variant="secondary"
-                                className="h-10 w-10 p-0 bg-white/90 hover:bg-white"
+                                className="h-10 w-10 p-0 bg-background/90 hover:bg-background"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   const video = e.currentTarget.closest('.group')?.querySelector('video') as HTMLVideoElement
@@ -659,14 +666,14 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-white text-sm font-medium truncate">{generation.title}</h4>
-                            <p className="text-white/80 text-xs truncate">{generation.prompt}</p>
+                            <h4 className="text-foreground text-sm font-medium truncate">{generation.title}</h4>
+                            <p className="text-muted-foreground text-xs truncate">{generation.prompt}</p>
                           </div>
                           <div className="flex items-center gap-1 ml-2">
-                            <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
+                            <Badge variant="secondary" className="text-xs bg-background/20 text-foreground border-border/30">
                               {generation.generated_images.length} {generation.is_video ? 'video(s)' : 'image(s)'}
                             </Badge>
-                            <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-200 border-purple-400/30">
+                            <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border-primary/30">
                               {generation.credits_used} credits
                             </Badge>
                           </div>
@@ -677,10 +684,10 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                 })}
               </div>
               
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-xs text-gray-500 text-center">
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-xs text-muted-foreground text-center">
                   Images auto-delete after 6 days unless saved to gallery. 
-                  <span className="text-green-600">●</span> Saved items are permanent.
+                  <span className="text-primary">●</span> Saved items are permanent.
                 </p>
               </div>
             </div>
@@ -798,7 +805,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                   <label className="text-sm font-medium text-gray-600">Status</label>
                   <div className="flex items-center gap-2 mt-1">
                     {selectedImageForInfo.is_saved && (
-                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                      <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Saved
                       </Badge>
@@ -949,7 +956,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                         <button
                           onClick={() => saveImageToGallery(image.url, viewingImages.title, viewingImages)}
                           disabled={savingImage === image.url}
-                          className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors disabled:opacity-50"
+                          className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50"
                         >
                           <Save className="h-3 w-3" />
                           <span>{savingImage === image.url ? 'Saving...' : 'Save'}</span>
@@ -985,7 +992,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                       })
                     }}
                     disabled={savingImage !== null}
-                    className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-green-600 bg-green-50 rounded-md hover:bg-green-100 transition-colors disabled:opacity-50"
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-md hover:bg-primary/20 transition-colors disabled:opacity-50"
                   >
                     <Save className="h-4 w-4" />
                     <span>{savingImage ? 'Saving...' : 'Save All'}</span>

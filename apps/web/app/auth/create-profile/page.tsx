@@ -201,7 +201,7 @@ export default function CreateProfilePage() {
                 />
                 <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                   formData.role === 'CONTRIBUTOR'
-                    ? 'border-emerald-500 bg-emerald-50'
+                    ? 'border-primary-500 bg-primary-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}>
                   <h4 className="font-semibold text-gray-900">Contributor</h4>
@@ -222,7 +222,7 @@ export default function CreateProfilePage() {
                 />
                 <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                   formData.role === 'TALENT'
-                    ? 'border-emerald-500 bg-emerald-50'
+                    ? 'border-primary-500 bg-primary-50'
                     : 'border-gray-300 hover:border-gray-400'
                 }`}>
                   <h4 className="font-semibold text-gray-900">Talent</h4>
@@ -271,7 +271,7 @@ export default function CreateProfilePage() {
                 <div className="flex items-center space-x-3">
                   <label
                     htmlFor="profilePicture"
-                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {uploadingPicture ? (
                       <>
@@ -330,7 +330,7 @@ export default function CreateProfilePage() {
                 required
                 value={formData.firstName}
                 onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 placeholder="Your first name"
               />
             </div>
@@ -345,7 +345,7 @@ export default function CreateProfilePage() {
                 required
                 value={formData.lastName}
                 onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 placeholder="Your last name"
               />
             </div>
@@ -362,7 +362,7 @@ export default function CreateProfilePage() {
                 required
                 value={formData.displayName}
                 onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 placeholder="Your full name"
               />
               <p className="text-xs text-gray-500 mt-1">Auto-generated from first and last name</p>
@@ -378,7 +378,7 @@ export default function CreateProfilePage() {
                 required
                 value={formData.handle}
                 onChange={(e) => setFormData(prev => ({ ...prev, handle: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
                 placeholder="username"
               />
               <p className="text-xs text-gray-500 mt-1">Letters, numbers, and underscores only</p>
@@ -417,7 +417,7 @@ export default function CreateProfilePage() {
               rows={3}
               value={formData.bio}
               onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
               placeholder="Tell others about your creative style and experience..."
             />
           </div>
@@ -435,7 +435,7 @@ export default function CreateProfilePage() {
                   disabled={!formData.styleTags.includes(tag) && formData.styleTags.length >= 8}
                   className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                     formData.styleTags.includes(tag)
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      ? 'bg-primary-100 text-primary-800 border border-primary/30'
                       : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed'
                   }`}
                 >
@@ -449,7 +449,7 @@ export default function CreateProfilePage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating Profile...' : 'Create Profile'}
             </button>

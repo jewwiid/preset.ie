@@ -36,9 +36,15 @@ import {
   Calendar,
   Palette,
   Users,
-  FileText
+  FileText,
+  Sparkles,
+  Camera,
+  Video,
+  Wand2
 } from 'lucide-react'
 import { NotificationBell } from './NotificationBell'
+import { ThemeToggle } from './ThemeToggle'
+import { DebugTheme } from './DebugTheme'
 
 export function NavBar() {
   const { user, userRole, loading, signOut } = useAuth()
@@ -48,6 +54,7 @@ export function NavBar() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const [profile, setProfile] = useState<any>(null)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [profileFetchFailed, setProfileFetchFailed] = useState(false)
 
 
   const getNavItemsForRole = () => {
@@ -59,9 +66,8 @@ export function NavBar() {
     // Base items for all authenticated users
     const baseItems = [
       { label: 'Messages', href: '/messages', icon: MessageSquare, requiresAuth: true },
-      { label: 'Presets', href: '/presets', icon: Palette, requiresAuth: true },
       { label: 'Collaborate', href: '/collaborate', icon: Users, requiresAuth: true },
-      { label: 'Treatments', href: '/treatments', icon: FileText, requiresAuth: true },
+      // Presets, Showcases, Treatments now accessible via Create menu
       // Marketplace is handled by dropdown, not as a base item
       // Matchmaking is accessible via dashboard, not as a main nav item
       // Applications moved to Dashboard dropdown
@@ -73,17 +79,13 @@ export function NavBar() {
     // Contributor-specific items
     if (profile?.role_flags?.includes('CONTRIBUTOR')) {
       roleSpecificItems.push(
-        { label: 'My Gigs', href: '/gigs/my-gigs', icon: Calendar, requiresAuth: true },
-        { label: 'Showcases', href: '/showcases', icon: Image, requiresAuth: true }
+        { label: 'My Gigs', href: '/gigs/my-gigs', icon: Calendar, requiresAuth: true }
+        // Showcases now accessible via Create menu
       )
     }
     
     // Talent-specific items (users who are not contributors)
-    if (!profile?.role_flags?.includes('CONTRIBUTOR')) {
-      roleSpecificItems.push(
-        { label: 'Showcases', href: '/showcases', icon: Image, requiresAuth: true }
-      )
-    }
+    // Showcases now accessible via Create menu for all users
 
     return [...baseItems, ...roleSpecificItems]
   }
@@ -107,41 +109,66 @@ export function NavBar() {
       setProfile(null)
       setIsAdmin(!!userRole?.isAdmin)
       setProfileLoading(false)
+      setProfileFetchFailed(false)
     }
   }, [user, loading, userRole])
 
-  const fetchProfileSimple = async () => {
+  const fetchProfileSimple = async (retryCount = 0) => {
     if (!user) return
     if (!supabase) {
       console.error('Supabase client not available')
       return
     }
     
-    console.log('🚀 NavBar: Simple profile fetch started')
+    console.log(`🚀 NavBar: Simple profile fetch started${retryCount > 0 ? ` (retry ${retryCount})` : ''}`)
     setProfileLoading(true)
+    if (retryCount === 0) {
+      setProfileFetchFailed(false)
+    }
     
     try {
-      // Use the exact same query as profile page, but without timeout
-      const { data, error } = await supabase!
+      // Reduced timeout to 5 seconds for faster failure detection
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+      )
+      
+      const fetchPromise = supabase!
         .from('users_profile')
-        .select('avatar_url, display_name, role_flags, handle')  // Include handle
+        .select('avatar_url, display_name, role_flags, handle')
         .eq('user_id', user.id)
-        .maybeSingle() // Use maybeSingle() instead of single() to handle no results gracefully
+        .maybeSingle()
+
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any
 
       if (error) {
         console.warn('❌ NavBar: Simple profile fetch failed:', error.message)
+        // Retry once if it's a network error and we haven't retried yet
+        if (retryCount === 0 && (error.message.includes('timeout') || error.message.includes('network'))) {
+          console.log('🔄 NavBar: Retrying profile fetch...')
+          setTimeout(() => fetchProfileSimple(1), 1000)
+          return
+        }
         setProfile(null)
+        setProfileFetchFailed(true)
       } else if (data) {
         console.log('✅ NavBar: Simple profile fetch success:', { hasAvatar: !!data.avatar_url })
         setProfile(data)
         setIsAdmin(data.role_flags?.includes('ADMIN'))
+        setProfileFetchFailed(false)
       } else {
         console.log('ℹ️ NavBar: No profile found for user, setting profile to null')
         setProfile(null)
       }
     } catch (error: any) {
       console.error('💥 NavBar: Simple profile fetch error:', error.message)
+      // Retry once for timeout errors
+      if (retryCount === 0 && error.message.includes('timeout')) {
+        console.log('🔄 NavBar: Retrying profile fetch after timeout...')
+        setTimeout(() => fetchProfileSimple(1), 2000)
+        return
+      }
       setProfile(null)
+      setProfileFetchFailed(true)
     } finally {
       setProfileLoading(false)
     }
@@ -189,7 +216,9 @@ export function NavBar() {
   const isContributor = profile?.role_flags?.includes('CONTRIBUTOR')
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <>
+      <DebugTheme />
+      <nav className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
@@ -202,7 +231,7 @@ export function NavBar() {
                   className="w-10 h-10"
                 />
               </div>
-              <span className="text-xl font-bold text-gray-900">Preset</span>
+              <span className="text-xl font-bold text-foreground">Preset</span>
             </Link>
           </div>
 
@@ -216,8 +245,8 @@ export function NavBar() {
                       className={`
                         inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                         ${(isActive('/dashboard') || isActive('/profile') || isActive('/matchmaking'))
-                          ? 'text-emerald-600 bg-emerald-50'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? 'text-primary bg-primary/10'
+                          : 'nav-item'
                         }
                       `}
                     >
@@ -263,8 +292,8 @@ export function NavBar() {
                       className={`
                         inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                         ${(isActive('/gigs'))
-                          ? 'text-emerald-600 bg-emerald-50'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? 'text-primary bg-primary/10'
+                          : 'nav-item'
                         }
                       `}
                     >
@@ -306,8 +335,8 @@ export function NavBar() {
                       className={`
                         inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                         ${(isActive('/marketplace'))
-                          ? 'text-emerald-600 bg-emerald-50'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? 'text-primary bg-primary/10'
+                          : 'nav-item'
                         }
                       `}
                     >
@@ -345,6 +374,56 @@ export function NavBar() {
                 </DropdownMenu>
               )}
 
+              {/* Create Menu */}
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={`
+                        inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                        ${(isActive('/presets') || isActive('/presets/create') || isActive('/showcases') || isActive('/showcases/create') || isActive('/treatments') || isActive('/treatments/create') || isActive('/playground'))
+                          ? 'text-primary bg-primary/10'
+                          : 'nav-item'
+                        }
+                      `}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create
+                      <ChevronDown className="w-4 h-4 ml-1" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="start">
+                    <DropdownMenuItem asChild>
+                      <Link href="/playground" className="flex items-center">
+                        <Camera className="mr-2 h-4 w-4" />
+                        Media (Playground)
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/presets" className="flex items-center">
+                        <Palette className="mr-2 h-4 w-4" />
+                        Presets
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/showcases" className="flex items-center">
+                        <Image className="mr-2 h-4 w-4" />
+                        Showcases
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/treatments" className="flex items-center">
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Treatments
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
               {/* Regular Nav Items */}
               {visibleNavItems.map((item) => {
                 const Icon = item.icon
@@ -355,8 +434,8 @@ export function NavBar() {
                     className={`
                       inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
                       ${isActive(item.href)
-                        ? 'text-emerald-600 bg-emerald-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'text-primary bg-primary/10'
+                        : 'nav-item'
                       }
                     `}
                   >
@@ -388,6 +467,9 @@ export function NavBar() {
                   </Button>
                 )}
 
+                {/* Theme Toggle */}
+                <ThemeToggle />
+
                 {/* Notifications - Only show if user exists */}
                 {user && <NotificationBell />}
 
@@ -399,23 +481,37 @@ export function NavBar() {
                         {(() => {
                           if (profileLoading) {
                             return (
-                              <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                               </div>
                             )
                           } else if (profile?.avatar_url) {
                             return (
-                              <img
-                                src={profile.avatar_url}
-                                alt={profile.display_name || 'User'}
-                                className="w-8 h-8 rounded-full object-cover"
-                                onLoad={() => console.log('✅ NavBar: Avatar image loaded successfully')}
-                                onError={(e) => console.error('❌ NavBar: Avatar image failed to load:', e, 'URL:', profile.avatar_url)}
-                              />
+                              <div className="relative w-8 h-8">
+                                <img
+                                  src={profile.avatar_url}
+                                  alt={profile.display_name || 'User'}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                  onLoad={() => console.log('✅ NavBar: Avatar image loaded successfully')}
+                                  onError={(e) => {
+                                    console.error('❌ NavBar: Avatar image failed to load:', profile.avatar_url)
+                                    // Fallback to default avatar on error
+                                    const target = e.target as HTMLImageElement
+                                    target.style.display = 'none'
+                                    const fallback = target.parentElement?.querySelector('.fallback-avatar')
+                                    if (fallback) {
+                                      (fallback as HTMLElement).style.display = 'flex'
+                                    }
+                                  }}
+                                />
+                                <div className="fallback-avatar absolute inset-0 w-8 h-8 bg-primary rounded-full items-center justify-center hidden">
+                                  <User className="w-4 h-4 text-white" />
+                                </div>
+                              </div>
                             )
                           } else {
                             return (
-                              <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
+                              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                                 <User className="w-4 h-4 text-white" />
                               </div>
                             )
@@ -428,7 +524,7 @@ export function NavBar() {
                       <div className="flex flex-col space-y-1">
                         {profileLoading ? (
                           <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-500 mr-2"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
                             <span className="text-sm text-gray-500">Loading...</span>
                           </div>
                         ) : profile ? (
@@ -519,7 +615,7 @@ export function NavBar() {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className="md:hidden p-2 rounded-md nav-item"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -540,8 +636,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/dashboard')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -554,8 +650,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/profile')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -568,8 +664,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/matchmaking')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -582,8 +678,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/applications')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -605,8 +701,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/gigs')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -619,8 +715,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/gigs/saved')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -634,8 +730,8 @@ export function NavBar() {
                     className={`
                       block px-3 py-2 text-base font-medium rounded-md
                       ${isActive('/gigs/my-gigs')
-                        ? 'text-emerald-600 bg-emerald-50'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'text-primary bg-primary/10'
+                        : 'nav-item'
                       }
                     `}
                     onClick={() => setMobileMenuOpen(false)}
@@ -658,8 +754,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/marketplace')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -672,8 +768,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/marketplace/create')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -686,8 +782,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/marketplace/my-listings')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -700,14 +796,79 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive('/marketplace/orders')
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Briefcase className="w-5 h-5 inline mr-3" />
                   My Orders
+                </Link>
+              </>
+            )}
+
+            {/* Create & Browse Section */}
+            {user && (
+              <>
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Create
+                </div>
+                <Link
+                  href="/playground"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/playground')
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Camera className="w-5 h-5 inline mr-3" />
+                  Media (Playground)
+                </Link>
+                <Link
+                  href="/presets"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/presets')
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Palette className="w-5 h-5 inline mr-3" />
+                  Presets
+                </Link>
+                <Link
+                  href="/showcases"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/showcases')
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Image className="w-5 h-5 inline mr-3" />
+                  Showcases
+                </Link>
+                <Link
+                  href="/treatments"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/treatments')
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Wand2 className="w-5 h-5 inline mr-3" />
+                  Treatments
                 </Link>
               </>
             )}
@@ -722,8 +883,8 @@ export function NavBar() {
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
                     ${isActive(item.href)
-                      ? 'text-emerald-600 bg-emerald-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
                     }
                   `}
                   onClick={() => setMobileMenuOpen(false)}
@@ -738,7 +899,7 @@ export function NavBar() {
             {!loading && user && profile?.role_flags?.includes('CONTRIBUTOR') && (
               <Link
                 href="/gigs/create"
-                className="block px-3 py-2 text-base font-medium text-emerald-600 hover:bg-emerald-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium nav-item"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Plus className="w-5 h-5 inline mr-3" />
@@ -751,7 +912,7 @@ export function NavBar() {
                 {isAdmin && (
                   <Link
                     href="/admin"
-                    className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900"
+                    className="block px-3 py-2 text-base font-medium nav-item"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Shield className="w-5 h-5 inline mr-3" />
@@ -784,6 +945,14 @@ export function NavBar() {
               </div>
             )}
 
+            {/* Theme Toggle for Mobile */}
+            <div className="mt-3 border-t border-gray-200 pt-3">
+              <div className="flex items-center justify-between px-3 py-2">
+                <span className="text-sm font-medium text-gray-600">Theme</span>
+                <ThemeToggle />
+              </div>
+            </div>
+
             {!loading && !user && (
               <div className="mt-3 border-t border-gray-200 pt-3">
                 <Link
@@ -795,7 +964,7 @@ export function NavBar() {
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="block px-3 py-2 text-base font-medium text-emerald-600 hover:bg-emerald-50 rounded-md"
+                  className="block px-3 py-2 text-base font-medium nav-item"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign Up
@@ -807,5 +976,6 @@ export function NavBar() {
       </div>
 
     </nav>
+    </>
   )
 }

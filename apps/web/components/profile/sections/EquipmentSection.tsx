@@ -770,7 +770,7 @@ export function EquipmentSection() {
               <button
                 onClick={toggleCustomMode}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  allowCustomModel ? 'bg-green-600' : 'bg-gray-200 dark:bg-gray-600'
+                  allowCustomModel ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'
                 }`}
               >
                 <span

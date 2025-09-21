@@ -118,7 +118,7 @@ export function UserManagement() {
       const colors = {
         ADMIN: 'bg-purple-100 text-purple-800',
         CONTRIBUTOR: 'bg-blue-100 text-blue-800',
-        TALENT: 'bg-green-100 text-green-800',
+        TALENT: 'bg-primary-100 text-primary-800',
         BANNED: 'bg-red-100 text-red-800',
         VERIFIED_ID: 'bg-yellow-100 text-yellow-800'
       }
@@ -287,7 +287,7 @@ export function UserManagement() {
                           ) : (
                             <button
                               onClick={() => updateUserRole(user.user_id, 'unban')}
-                              className="block w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50"
+                              className="block w-full text-left px-4 py-2 text-sm text-primary-600 hover:bg-primary/10"
                             >
                               Unban User
                             </button>

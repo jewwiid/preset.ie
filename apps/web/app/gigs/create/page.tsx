@@ -9,8 +9,11 @@ import StepIndicator, { GigEditStep } from '../../components/gig-edit-steps/Step
 import BasicDetailsStep from '../../components/gig-edit-steps/BasicDetailsStep'
 import LocationScheduleStep from '../../components/gig-edit-steps/LocationScheduleStep'
 import RequirementsStep from '../../components/gig-edit-steps/RequirementsStep'
+import ApplicantPreferencesStep from '../../components/gig-edit-steps/ApplicantPreferencesStep'
 import MoodboardStep from '../../components/gig-edit-steps/MoodboardStep'
 import ReviewPublishStep from '../../components/gig-edit-steps/ReviewPublishStep'
+import { Users } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function CreateGigPage() {
   const router = useRouter()
@@ -167,6 +170,42 @@ export default function CreateGigPage() {
     return true
   }
   
+  const getScheduleValidationErrors = () => {
+    const errors: string[] = []
+    
+    if (!formData.location.trim()) {
+      errors.push('Location is required')
+    }
+    
+    if (!formData.startDate) {
+      errors.push('Start date and time is required')
+    }
+    
+    if (!formData.endDate) {
+      errors.push('End date and time is required')
+    }
+    
+    if (formData.startDate && formData.endDate) {
+      const startTime = new Date(formData.startDate)
+      const endTime = new Date(formData.endDate)
+      
+      if (endTime <= startTime) {
+        errors.push('End time must be after start time')
+      }
+    }
+    
+    if (formData.applicationDeadline && formData.startDate) {
+      const deadline = new Date(formData.applicationDeadline)
+      const startTime = new Date(formData.startDate)
+      
+      if (deadline >= startTime) {
+        errors.push('Application deadline must be before the shoot starts')
+      }
+    }
+    
+    return errors
+  }
+  
   const validateRequirements = () => {
     return formData.usageRights.trim() !== '' && formData.maxApplicants > 0
   }
@@ -175,47 +214,10 @@ export default function CreateGigPage() {
   const createTempGig = async () => {
     if (tempGigId) return tempGigId
     
-    if (!user) throw new Error('User not authenticated')
-    
-    if (!supabase) {
-      throw new Error('Database connection not available')
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('users_profile')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-    
-    if (profileError || !profile) {
-      throw new Error('Profile not found')
-    }
-    
-    const gigData = {
-      owner_user_id: profile.id,
-      title: formData.title || 'Temporary Gig',
-      description: formData.description || 'Temporary gig for moodboard creation',
-      purpose: formData.purpose,
-      comp_type: formData.compType,
-      usage_rights: formData.usageRights || 'Portfolio use only',
-      start_time: formData.startDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      end_time: formData.endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 3600000).toISOString(),
-      status: 'DRAFT',
-      location_text: formData.location || 'Location TBD',
-      application_deadline: formData.applicationDeadline || new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-      max_applicants: formData.maxApplicants
-    }
-    
-    const { data, error } = await supabase
-      .from('gigs')
-      .insert(gigData)
-      .select()
-      .single()
-    
-    if (error) throw error
-    
-    setTempGigId(data.id)
-    return data.id
+    // Generate a temporary UUID for the moodboard without creating a database record
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    setTempGigId(tempId)
+    return tempId
   }
   
   // Final save function
@@ -244,56 +246,53 @@ export default function CreateGigPage() {
         throw new Error('Profile not found. Please complete your profile first.')
       }
       
-      // Use temp gig ID if we have one, otherwise create new gig
-      let gigId = tempGigId
+      // Always create new gig since temp gigs are not stored in database
+      let gigId = null
       
-      if (!gigId) {
-        // Create new gig
-        const gigData = {
-          owner_user_id: profile.id,
-          title: formData.title,
-          description: formData.description,
-          purpose: formData.purpose,
-          comp_type: formData.compType,
-          comp_details: formData.compDetails,
-          usage_rights: formData.usageRights,
-          start_time: formData.startDate,
-          end_time: formData.endDate,
-          status: formData.status,
-          location_text: formData.location,
-          application_deadline: formData.applicationDeadline,
-          max_applicants: formData.maxApplicants,
-          safety_notes: formData.safetyNotes
+      // Create new gig
+      const gigData = {
+        owner_user_id: profile.id,
+        title: formData.title,
+        description: formData.description,
+        purpose: formData.purpose,
+        comp_type: formData.compType,
+        comp_details: formData.compDetails,
+        usage_rights: formData.usageRights,
+        start_time: formData.startDate,
+        end_time: formData.endDate,
+        status: formData.status,
+        location_text: formData.location,
+        application_deadline: formData.applicationDeadline,
+        max_applicants: formData.maxApplicants,
+        safety_notes: formData.safetyNotes,
+        applicant_preferences: formData.applicantPreferences || {}
+      }
+      
+      const { data, error: insertError } = await supabase
+        .from('gigs')
+        .insert(gigData)
+        .select()
+        .single()
+      
+      if (insertError) throw insertError
+      gigId = data.id
+      
+      // Update moodboard to link to the real gig ID if one exists
+      if (formData.moodboardId) {
+        try {
+          const { error: moodboardError } = await supabase
+            .from('moodboards')
+            .update({ gig_id: gigId })
+            .eq('id', formData.moodboardId)
+          
+          if (moodboardError) {
+            console.warn('Failed to link moodboard to gig:', moodboardError)
+          } else {
+            console.log('✅ Moodboard linked to gig successfully')
+          }
+        } catch (error) {
+          console.warn('Error linking moodboard to gig:', error)
         }
-        
-        const { data, error: insertError } = await supabase
-          .from('gigs')
-          .insert(gigData)
-          .select()
-          .single()
-        
-        if (insertError) throw insertError
-        gigId = data.id
-      } else {
-        // Update existing temp gig
-        const { error: updateError } = await supabase
-          .from('gigs')
-          .update({
-            title: formData.title,
-            description: formData.description,
-            purpose: formData.purpose,
-            comp_type: formData.compType,
-            usage_rights: formData.usageRights,
-            start_time: formData.startDate,
-            end_time: formData.endDate,
-            status: formData.status,
-            location_text: formData.location,
-            application_deadline: formData.applicationDeadline,
-            max_applicants: formData.maxApplicants
-          })
-          .eq('id', gigId)
-        
-        if (updateError) throw updateError
       }
       
       // Clear saved data
@@ -376,7 +375,7 @@ export default function CreateGigPage() {
             onNext={goToNextStep}
             onBack={goToPreviousStep}
             isValid={validateSchedule()}
-            validationErrors={[]}
+            validationErrors={getScheduleValidationErrors()}
           />
         )
       
@@ -396,10 +395,49 @@ export default function CreateGigPage() {
           />
         )
       
+      case 'preferences':
+        return (
+          <ApplicantPreferencesStep
+            preferences={formData.applicantPreferences || {
+              physical: {
+                height_range: { min: null, max: null },
+                measurements: { required: false, specific: null },
+                eye_color: { required: false, preferred: [] },
+                hair_color: { required: false, preferred: [] },
+                tattoos: { allowed: true, required: false },
+                piercings: { allowed: true, required: false },
+                clothing_sizes: { required: false, preferred: [] }
+              },
+              professional: {
+                experience_years: { min: null, max: null },
+                specializations: { required: [], preferred: [] },
+                equipment: { required: [], preferred: [] },
+                software: { required: [], preferred: [] },
+                talent_categories: { required: [], preferred: [] },
+                portfolio_required: false
+              },
+              availability: {
+                travel_required: false,
+                travel_radius_km: null,
+                hourly_rate_range: { min: null, max: null }
+              },
+              other: {
+                age_range: { min: 18, max: null },
+                languages: { required: [], preferred: [] },
+                additional_requirements: ''
+              }
+            }}
+            onPreferencesChange={(preferences) => saveFormData({ applicantPreferences: preferences })}
+            onNext={goToNextStep}
+            onBack={goToPreviousStep}
+            loading={loading}
+          />
+        )
+      
       case 'moodboard':
         return (
           <MoodboardStep
-            gigId={tempGigId || 'temp'}
+            gigId={tempGigId || 'temp-' + Date.now()}
             moodboardId={formData.moodboardId}
             onMoodboardSave={(id) => {
               saveFormData({ moodboardId: id })
@@ -427,6 +465,7 @@ export default function CreateGigPage() {
             safetyNotes={formData.safetyNotes}
             status={formData.status}
             moodboardId={formData.moodboardId}
+            applicantPreferences={formData.applicantPreferences}
             onStatusChange={(value) => saveFormData({ status: value })}
             onBack={goToPreviousStep}
             onSave={handleSaveGig}
@@ -442,38 +481,51 @@ export default function CreateGigPage() {
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create a New Gig</h1>
-          <p className="text-gray-600">Follow the steps below to create your gig and attract the right talent</p>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="mb-8 rounded-2xl p-8 border border-border">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-primary mr-3" />
+              <div>
+                <h1 className="text-5xl font-bold text-primary mb-2">Create a New Gig</h1>
+                <p className="text-xl text-muted-foreground">Follow the steps below to create your gig and attract the right talent</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" onClick={() => router.back()}>
+                Cancel
+              </Button>
+            </div>
+          </div>
         </div>
+
         
         {/* Restore Prompt */}
         {showRestorePrompt && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
-                <svg className="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 text-primary mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-blue-800">Unsaved Changes Detected</h3>
-                <p className="text-sm text-blue-700 mt-1">
+                <h3 className="text-sm font-medium text-primary">Unsaved Changes Detected</h3>
+                <p className="text-sm text-primary/80 mt-1">
                   We found unsaved changes from a previous session. Would you like to restore them?
                 </p>
                 <div className="mt-3 flex gap-2">
                   <button
                     onClick={restoreUnsavedData}
-                    className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    className="text-sm bg-primary text-primary-foreground px-3 py-1 rounded hover:bg-primary/90"
                   >
                     Restore Changes
                   </button>
                   <button
                     onClick={clearUnsavedData}
-                    className="text-sm text-blue-600 hover:text-blue-800"
+                    className="text-sm text-primary hover:text-primary/80"
                   >
                     Start Fresh
                   </button>
@@ -485,14 +537,14 @@ export default function CreateGigPage() {
         
         {/* Error Display */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="mb-6 bg-destructive/10 border border-destructive/20 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
               <div>
-                <h3 className="text-sm font-medium text-red-800">Error</h3>
-                <p className="text-sm text-red-700 mt-1">{error}</p>
+                <h3 className="text-sm font-medium text-destructive">Error</h3>
+                <p className="text-sm text-destructive/80 mt-1">{error}</p>
               </div>
             </div>
           </div>
@@ -500,14 +552,14 @@ export default function CreateGigPage() {
         
         {/* Success Display */}
         {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <div>
-                <h3 className="text-sm font-medium text-green-800">Success</h3>
-                <p className="text-sm text-green-700 mt-1">{success}</p>
+                <h3 className="text-sm font-medium text-primary">Success</h3>
+                <p className="text-sm text-primary/80 mt-1">{success}</p>
               </div>
             </div>
           </div>

@@ -99,14 +99,14 @@ const CreditManagementDashboard = () => {
 
       {/* Alerts */}
       {alerts.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
-            <h3 className="font-semibold text-red-900">Active Alerts</h3>
+            <AlertTriangle className="w-5 h-5 text-destructive" />
+            <h3 className="font-semibold text-destructive">Active Alerts</h3>
           </div>
           <div className="space-y-2">
             {alerts.map((alert, index) => (
-              <div key={index} className="text-sm text-red-800">
+              <div key={index} className="text-sm text-destructive/80">
                 <span className="font-medium">{alert.type}:</span> {alert.message}
               </div>
             ))}
@@ -118,7 +118,7 @@ const CreditManagementDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
+            <DollarSign className="w-5 h-5 text-primary-600" />
             <h3 className="font-semibold text-gray-900">Platform Credits</h3>
           </div>
           <p className="text-3xl font-bold text-gray-900">{creditStats.platformCreditsRemaining}</p>
@@ -160,7 +160,7 @@ const CreditManagementDashboard = () => {
           {creditStats.providers?.map((provider) => (
             <div key={provider.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${provider.isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
+                <div className={`w-3 h-3 rounded-full ${provider.isHealthy ? 'bg-primary-500' : 'bg-red-500'}`} />
                 <div>
                   <p className="font-medium text-gray-900">{provider.name}</p>
                   <p className="text-sm text-gray-600">
@@ -211,7 +211,7 @@ const CreditManagementDashboard = () => {
           <button
             onClick={() => handleManualRefill(refillProvider, refillAmount)}
             disabled={!refillProvider || isRefilling}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90 disabled:opacity-50"
           >
             {isRefilling ? 'Refilling...' : 'Refill Credits'}
           </button>

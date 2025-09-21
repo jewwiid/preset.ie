@@ -407,7 +407,7 @@ export default function CatchAllPage() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-xl font-semibold text-green-600">
+                        <p className="text-xl font-semibold text-primary">
                           {formatRate(profile!.hourly_rate_min, profile!.hourly_rate_max)}
                         </p>
                       </CardContent>
@@ -488,7 +488,7 @@ export default function CatchAllPage() {
                       href={`https://instagram.com/${profile!.instagram_handle}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-pink-600 hover:text-pink-800"
+                      className="flex items-center text-primary-600 hover:text-primary-800"
                     >
                       <Instagram className="h-4 w-4 mr-2" />
                       @{profile!.instagram_handle}

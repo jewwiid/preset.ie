@@ -66,7 +66,7 @@ export default function EnhancedProfileForm({
                   onClick={() => setCurrentSection(index)}
                   className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     currentSection === index
-                      ? 'bg-emerald-100 text-emerald-700'
+                      ? 'bg-primary-100 text-primary-700'
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -111,7 +111,7 @@ export default function EnhancedProfileForm({
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
-                    className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                    className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                   />
                 </div>
               </div>
@@ -132,7 +132,7 @@ export default function EnhancedProfileForm({
                       />
                       <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                         formData.role === role
-                          ? 'border-emerald-500 bg-emerald-50'
+                          ? 'border-primary-500 bg-primary-50'
                           : 'border-gray-300 hover:border-gray-400'
                       }`}>
                         <h4 className="font-semibold text-gray-900">{role === 'BOTH' ? 'Both' : role.charAt(0) + role.slice(1).toLowerCase()}</h4>
@@ -157,7 +157,7 @@ export default function EnhancedProfileForm({
                     type="text"
                     value={formData.displayName}
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, displayName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   />
                 </div>
@@ -170,7 +170,7 @@ export default function EnhancedProfileForm({
                     type="text"
                     value={formData.handle}
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, handle: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="@username"
                     required
                   />
@@ -184,7 +184,7 @@ export default function EnhancedProfileForm({
                     type="text"
                     value={formData.city}
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, city: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   />
                 </div>
@@ -197,7 +197,7 @@ export default function EnhancedProfileForm({
                     type="text"
                     value={formData.country}
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, country: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   />
                 </div>
@@ -211,7 +211,7 @@ export default function EnhancedProfileForm({
                   value={formData.bio}
                   onChange={(e) => setFormData((prev: any) => ({ ...prev, bio: e.target.value }))}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Tell us about yourself..."
                 />
               </div>
@@ -247,7 +247,7 @@ export default function EnhancedProfileForm({
                       onClick={() => handleStyleTagToggle(tag)}
                       className={`px-3 py-1 rounded-full text-sm transition-colors ${
                         formData.styleTags.includes(tag)
-                          ? 'bg-emerald-600 text-white'
+                          ? 'bg-primary-600 text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
@@ -270,7 +270,7 @@ export default function EnhancedProfileForm({
                       onClick={() => handleVibeTagToggle(vibe)}
                       className={`px-3 py-1 rounded-full text-sm transition-colors ${
                         formData.vibeTags.includes(vibe)
-                          ? 'bg-emerald-600 text-white'
+                          ? 'bg-primary-600 text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
@@ -293,7 +293,7 @@ export default function EnhancedProfileForm({
                         type="number"
                         value={formData.heightCm || ''}
                         onChange={(e) => setFormData((prev: any) => ({ ...prev, heightCm: parseInt(e.target.value) || null }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
 
@@ -304,7 +304,7 @@ export default function EnhancedProfileForm({
                       <select
                         value={formData.eyeColor}
                         onChange={(e) => setFormData((prev: any) => ({ ...prev, eyeColor: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       >
                         <option value="">Select...</option>
                         <option value="Brown">Brown</option>
@@ -323,7 +323,7 @@ export default function EnhancedProfileForm({
                       <select
                         value={formData.hairColor}
                         onChange={(e) => setFormData((prev: any) => ({ ...prev, hairColor: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       >
                         <option value="">Select...</option>
                         <option value="Black">Black</option>
@@ -343,7 +343,7 @@ export default function EnhancedProfileForm({
                         type="text"
                         value={formData.shoeSize}
                         onChange={(e) => setFormData((prev: any) => ({ ...prev, shoeSize: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="e.g., 42, 9.5, etc."
                       />
                     </div>
@@ -357,7 +357,7 @@ export default function EnhancedProfileForm({
                       type="text"
                       value={formData.measurements}
                       onChange={(e) => setFormData((prev: any) => ({ ...prev, measurements: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="e.g., 34-28-36, S/M/L, etc."
                     />
                   </div>
@@ -407,7 +407,7 @@ export default function EnhancedProfileForm({
                         type="number"
                         value={formData.yearsExperience || ''}
                         onChange={(e) => setFormData((prev: any) => ({ ...prev, yearsExperience: parseInt(e.target.value) || 0 }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         min="0"
                       />
                     </div>
@@ -420,7 +420,7 @@ export default function EnhancedProfileForm({
                         type="number"
                         value={formData.typicalTurnaroundDays || ''}
                         onChange={(e) => setFormData((prev: any) => ({ ...prev, typicalTurnaroundDays: parseInt(e.target.value) || null }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         min="1"
                       />
                     </div>
@@ -448,7 +448,7 @@ export default function EnhancedProfileForm({
                           type="text"
                           value={formData.studioName}
                           onChange={(e) => setFormData((prev: any) => ({ ...prev, studioName: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
                       <div>
@@ -459,7 +459,7 @@ export default function EnhancedProfileForm({
                           type="text"
                           value={formData.studioAddress}
                           onChange={(e) => setFormData((prev: any) => ({ ...prev, studioAddress: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
                     </div>
@@ -484,7 +484,7 @@ export default function EnhancedProfileForm({
                     type="text"
                     value={formData.instagramHandle}
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, instagramHandle: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="@username"
                   />
                 </div>
@@ -497,7 +497,7 @@ export default function EnhancedProfileForm({
                     type="text"
                     value={formData.tiktokHandle}
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, tiktokHandle: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="@username"
                   />
                 </div>
@@ -510,7 +510,7 @@ export default function EnhancedProfileForm({
                     type="url"
                     value={formData.websiteUrl}
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, websiteUrl: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="https://your-website.com"
                   />
                 </div>
@@ -523,7 +523,7 @@ export default function EnhancedProfileForm({
                     type="url"
                     value={formData.portfolioUrl}
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, portfolioUrl: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="https://your-portfolio.com"
                   />
                 </div>
@@ -536,7 +536,7 @@ export default function EnhancedProfileForm({
                     type="tel"
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData((prev: any) => ({ ...prev, phoneNumber: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -562,7 +562,7 @@ export default function EnhancedProfileForm({
                         type="number"
                         value={formData.hourlyRateMin || ''}
                         onChange={(e) => setFormData((prev: any) => ({ ...prev, hourlyRateMin: parseFloat(e.target.value) || null }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         min="0"
                         step="0.01"
                       />
@@ -576,7 +576,7 @@ export default function EnhancedProfileForm({
                         type="number"
                         value={formData.hourlyRateMax || ''}
                         onChange={(e) => setFormData((prev: any) => ({ ...prev, hourlyRateMax: parseFloat(e.target.value) || null }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         min="0"
                         step="0.01"
                       />
@@ -591,7 +591,7 @@ export default function EnhancedProfileForm({
                       type="text"
                       value={formData.specializations.join(', ')}
                       onChange={(e) => setFormData((prev: any) => ({ ...prev, specializations: e.target.value.split(',').map(s => s.trim()) }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Fashion, Portrait, Commercial"
                     />
                   </div>
@@ -604,7 +604,7 @@ export default function EnhancedProfileForm({
                       type="text"
                       value={formData.equipment.join(', ')}
                       onChange={(e) => setFormData((prev: any) => ({ ...prev, equipment: e.target.value.split(',').map(s => s.trim()) }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Canon R5, Sony A7R4, Profoto B1"
                     />
                   </div>
@@ -617,7 +617,7 @@ export default function EnhancedProfileForm({
                       type="text"
                       value={formData.editingSoftware.join(', ')}
                       onChange={(e) => setFormData((prev: any) => ({ ...prev, editingSoftware: e.target.value.split(',').map(s => s.trim()) }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Photoshop, Lightroom, Capture One"
                     />
                   </div>
@@ -636,7 +636,7 @@ export default function EnhancedProfileForm({
                       type="text"
                       value={formData.talentCategories.join(', ')}
                       onChange={(e) => setFormData((prev: any) => ({ ...prev, talentCategories: e.target.value.split(',').map(s => s.trim()) }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Model, Actor, Dancer, Musician"
                     />
                   </div>
@@ -661,7 +661,7 @@ export default function EnhancedProfileForm({
                 <div
                   key={index}
                   className={`w-2 h-2 rounded-full ${
-                    index === currentSection ? 'bg-emerald-600' : 'bg-gray-300'
+                    index === currentSection ? 'bg-primary-600' : 'bg-gray-300'
                   }`}
                 />
               ))}
@@ -671,7 +671,7 @@ export default function EnhancedProfileForm({
               <button
                 type="button"
                 onClick={() => setCurrentSection(currentSection + 1)}
-                className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+                className="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90"
               >
                 Next
               </button>
@@ -679,7 +679,7 @@ export default function EnhancedProfileForm({
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 flex items-center"
+                className="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90 disabled:opacity-50 flex items-center"
               >
                 {loading ? (
                   <>

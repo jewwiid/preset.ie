@@ -65,7 +65,7 @@ export default function EnhancedListingCard({
   const getBoostIndicator = () => {
     if (listing.boost_level > 0) {
       return (
-        <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+        <div className="flex items-center space-x-1 text-primary-600 bg-primary-50 px-2 py-1 rounded-full">
           <Star className="w-4 h-4 fill-current" />
           <span className="text-sm font-medium">Boosted</span>
         </div>
@@ -166,7 +166,7 @@ export default function EnhancedListingCard({
           
           {/* Price and User Badges */}
           <div className="flex items-center justify-between">
-            <div className="text-lg font-bold text-emerald-600">
+            <div className="text-lg font-bold text-primary-600">
               €{(listing.price_cents / 100).toFixed(2)}/day
             </div>
             

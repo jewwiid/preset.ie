@@ -130,7 +130,7 @@ export default function CollaborationNotifications({
   };
 
   const getNotificationColor = (type: string) => {
-    if (type.includes('accepted') || type.includes('completed')) return 'text-green-600 bg-green-50';
+    if (type.includes('accepted') || type.includes('completed')) return 'text-primary-600 bg-primary-50';
     if (type.includes('rejected') || type.includes('cancelled')) return 'text-red-600 bg-red-50';
     if (type.includes('received') || type.includes('published')) return 'text-blue-600 bg-blue-50';
     return 'text-gray-600 bg-gray-50';

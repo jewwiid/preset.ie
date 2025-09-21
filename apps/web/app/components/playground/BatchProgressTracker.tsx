@@ -110,7 +110,7 @@ const BatchProgressTracker: React.FC<BatchProgressTrackerProps> = ({
   const getStatusIcon = () => {
     switch (batchJob.status) {
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
+        return <CheckCircle className="h-5 w-5 text-primary-500" />
       case 'failed':
         return <AlertCircle className="h-5 w-5 text-red-500" />
       case 'processing':

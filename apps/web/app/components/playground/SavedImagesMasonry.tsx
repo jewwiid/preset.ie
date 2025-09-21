@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Download, Trash2, Info, ChevronDown, ChevronUp, Play, Pause, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Download, Trash2, Info, ChevronDown, ChevronUp, Play, Pause, Maximize2, ChevronLeft, ChevronRight, Share, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import ProgressiveImage from '../ui/ProgressiveImage'
 import ProgressiveVideo from '../ui/ProgressiveVideo'
 import { usePagination } from '../../hooks/usePagination'
+import { useAuth } from '../../../lib/auth-context'
 
 interface SavedMedia {
   id: string
@@ -63,6 +64,7 @@ interface SavedMediaMasonryProps {
   selectedImageUrl?: string | null
   onExpandMedia?: (media: SavedMedia) => void
   currentTab?: string
+  onRefresh?: () => void
 }
 
 export default function SavedMediaMasonry({
@@ -76,14 +78,21 @@ export default function SavedMediaMasonry({
   deletingImage,
   selectedImageUrl,
   onExpandMedia,
-  currentTab = 'generate'
+  currentTab = 'generate',
+  onRefresh
 }: SavedMediaMasonryProps) {
+  const { session } = useAuth()
   const containerRef = useRef<HTMLDivElement>(null)
   const [imagesLoaded, setImagesLoaded] = useState<Map<string, boolean>>(new Map())
   const [selectedImageForInfo, setSelectedImageForInfo] = useState<SavedMedia | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [imagesPerRow, setImagesPerRow] = useState(4)
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set())
+  
+  // AI analysis state
+  const [analyzingDescription, setAnalyzingDescription] = useState(false)
+  const [editableDescription, setEditableDescription] = useState('')
+  const [savingDescription, setSavingDescription] = useState(false)
   
   // Pagination for performance optimization
   const {
@@ -161,6 +170,11 @@ export default function SavedMediaMasonry({
 
   // Convert aspect ratio to readable format
   const getAspectRatioLabel = (width: number, height: number): string => {
+    // Handle invalid or missing dimensions
+    if (!width || !height || width <= 0 || height <= 0) {
+      return '1:1'
+    }
+    
     const aspectRatio = width / height
     
     // Common aspect ratios with more generous tolerance
@@ -189,6 +203,203 @@ export default function SavedMediaMasonry({
     return `${w}:${h}`
   }
 
+  // Initialize editable description when modal opens
+  useEffect(() => {
+    if (selectedImageForInfo) {
+      setEditableDescription(selectedImageForInfo.description || '')
+      
+      // Debug: Check what dimensions are actually stored (only log once per modal open)
+      console.log('📊 Image metadata debug:', {
+        storedDimensions: { width: selectedImageForInfo.width, height: selectedImageForInfo.height },
+        hasGenerationMetadata: !!selectedImageForInfo.generation_metadata,
+        generationResolution: selectedImageForInfo.generation_metadata?.resolution,
+        generationAspectRatio: selectedImageForInfo.generation_metadata?.aspect_ratio,
+        actualDimensions: {
+          actual_width: (selectedImageForInfo.generation_metadata as any)?.actual_width,
+          actual_height: (selectedImageForInfo.generation_metadata as any)?.actual_height
+        }
+      })
+    }
+  }, [selectedImageForInfo])
+
+  // Generate contextual description from metadata
+  const generateContextualDescription = (metadata: any) => {
+    if (!metadata) {
+      return 'A beautiful AI-generated image with artistic composition and natural lighting.'
+    }
+
+    const context = []
+    
+    if (metadata.generation_mode === 'image-to-image') {
+      context.push('An AI-edited image with enhanced visual elements')
+    } else {
+      context.push('An AI-generated image created from text')
+    }
+    
+    if (metadata.style) {
+      context.push(`featuring ${metadata.style} styling`)
+    }
+    
+    if (metadata.cinematic_parameters) {
+      const params = metadata.cinematic_parameters
+      const cinematicDetails = []
+      if (params.lensType) cinematicDetails.push(`${params.lensType} lens`)
+      if (params.shotSize) cinematicDetails.push(`${params.shotSize} shot`)
+      if (params.timeSetting) cinematicDetails.push(`${params.timeSetting} lighting`)
+      if (params.locationType) cinematicDetails.push(`${params.locationType} setting`)
+      if (params.directorStyle) cinematicDetails.push(`in the style of ${params.directorStyle}`)
+      
+      if (cinematicDetails.length > 0) {
+        context.push(`with ${cinematicDetails.join(', ')}`)
+      }
+    }
+    
+    if (context.length > 0) {
+      return context.join(' ') + '. Professional quality with attention to composition, lighting, and artistic detail.'
+    }
+    
+    return 'A beautiful AI-generated image with artistic composition and natural lighting.'
+  }
+
+  // AI analyze image description
+  const analyzeImageDescription = async (imageUrl: string) => {
+    console.log('🔍 AI Analyze button clicked!', { 
+      imageUrl, 
+      hasSession: !!session,
+      hasAccessToken: !!session?.access_token,
+      selectedImageId: selectedImageForInfo?.id 
+    })
+    
+    setAnalyzingDescription(true)
+    
+    // First, try to generate a smart contextual description
+    const contextualDescription = generateContextualDescription(selectedImageForInfo?.generation_metadata)
+    
+    try {
+      console.log('🚀 Making API call to /api/ai-image-analysis...')
+      console.log('📤 Request payload:', {
+        imageUrl,
+        generationMetadata: selectedImageForInfo?.generation_metadata
+      })
+      
+      // Try OpenAI API for enhanced analysis, but don't fail if it doesn't work
+      const response = await fetch('/api/ai-image-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          imageUrl,
+          generationMetadata: selectedImageForInfo?.generation_metadata
+        })
+      })
+      
+      console.log('📥 API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📊 API Response Data:', data)
+        
+        if (data.success && data.description && !data.fallback) {
+          // Use OpenAI description if available and not a fallback
+          console.log('✅ AI analysis completed successfully')
+          setEditableDescription(data.description)
+          setAnalyzingDescription(false) // ✅ Ensure we stop the loading state
+          return
+        } else {
+          console.log('⚠️ API returned fallback or failed:', {
+            success: data.success,
+            hasDescription: !!data.description,
+            isFallback: data.fallback,
+            error: data.error
+          })
+        }
+      } else {
+        console.error('❌ API call failed:', {
+          status: response.status,
+          statusText: response.statusText
+        })
+      }
+    } catch (error) {
+      console.log('🔄 OpenAI API unavailable, using contextual description')
+      console.error('❌ Full error details:', error)
+    }
+    
+    // Always use the contextual description as it's more reliable
+    console.log('📝 Setting description to:', contextualDescription)
+    setEditableDescription(contextualDescription)
+    console.log('🏁 AI analysis finished, setting analyzingDescription to false')
+    setAnalyzingDescription(false)
+  }
+
+  // Save updated description
+  const saveUpdatedDescription = async () => {
+    if (!selectedImageForInfo || !editableDescription.trim()) {
+      console.log('❌ Cannot save: missing image info or description')
+      return
+    }
+
+    console.log('💾 Starting save process...', {
+      itemId: selectedImageForInfo.id,
+      descriptionLength: editableDescription.trim().length,
+      hasSession: !!session?.access_token
+    })
+
+    setSavingDescription(true)
+    try {
+      const response = await fetch('/api/playground/update-gallery-item', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          itemId: selectedImageForInfo.id,
+          description: editableDescription.trim()
+        })
+      })
+
+      console.log('💾 Save API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      })
+
+      if (response.ok) {
+        const responseData = await response.json()
+        console.log('✅ Save successful:', responseData)
+        
+        // Update the local state
+        setSelectedImageForInfo(prev => prev ? {
+          ...prev,
+          description: editableDescription.trim()
+        } : null)
+        
+        // Refresh the saved media list to show updated description
+        if (onRefresh) {
+          console.log('🔄 Refreshing media list...')
+          onRefresh()
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('❌ Failed to update description:', {
+          status: response.status,
+          error: errorData
+        })
+      }
+    } catch (error) {
+      console.error('❌ Error saving description:', error)
+    } finally {
+      console.log('🏁 Save process finished')
+      setSavingDescription(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Pagination Controls */}
@@ -204,7 +415,7 @@ export default function SavedMediaMasonry({
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground">
               Page {currentPage} of {totalPages}
             </span>
             <Button
@@ -217,7 +428,7 @@ export default function SavedMediaMasonry({
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-foreground">
             Showing {paginatedImages.length} of {images.length} items
           </div>
         </div>
@@ -270,29 +481,29 @@ export default function SavedMediaMasonry({
               
               {/* Playing indicator */}
               {image.media_type === 'video' && playingVideos.has(image.id) && (
-                <div className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
+                  <div className="w-2 h-2 bg-foreground rounded-full animate-pulse"></div>
                   <span>Playing</span>
                 </div>
               )}
               
               {/* Aspect ratio badge */}
-              <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+              <div className="absolute top-2 right-2 bg-backdrop text-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
                 <span>{getAspectRatioLabel(image.width, image.height)}</span>
                 {image.media_type === 'video' && (
-                  <span className="text-blue-300">🎬</span>
+                  <span className="text-primary">🎬</span>
                 )}
               </div>
               
               {/* Overlay with actions */}
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex items-center justify-center">
+              <div className="absolute inset-0 bg-backdrop bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                   {/* Play button for videos */}
                   {image.media_type === 'video' && (
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-10 w-10 p-0 bg-white/90 hover:bg-white"
+                      className="h-10 w-10 p-0 bg-background/90 hover:bg-background"
                       onClick={(e) => {
                         e.stopPropagation()
                         // Play video in place
@@ -397,18 +608,18 @@ export default function SavedMediaMasonry({
             </div>
             
             {/* Media info overlay */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute bottom-0 left-0 right-0 bg-backdrop p-3 opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <h4 className="text-white text-sm font-medium truncate">{image.title}</h4>
                   <p className="text-white/80 text-xs truncate">{image.description}</p>
                 </div>
                 <div className="flex items-center gap-1 ml-2">
-                  <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
+                  <Badge variant="secondary" className="text-xs bg-background/20 text-foreground border-border/30">
                     {getAspectRatioLabel(image.width, image.height)}
                   </Badge>
                   {image.media_type === 'video' && (
-                    <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-200 border-blue-400/30">
+                    <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border-primary/30">
                       Video
                     </Badge>
                   )}
@@ -423,8 +634,8 @@ export default function SavedMediaMasonry({
       
       {/* Metadata Popup Modal */}
       {selectedImageForInfo && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 modal-backdrop">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden popover-fixed">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Image Metadata</CardTitle>
@@ -438,117 +649,188 @@ export default function SavedMediaMasonry({
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Image Preview */}
-              <div className="aspect-square rounded-lg overflow-hidden border">
-                {selectedImageForInfo.media_type === 'video' ? (
-                  <video
-                    src={selectedImageForInfo.video_url}
-                    poster={selectedImageForInfo.thumbnail_url}
-                    className="w-full h-full object-cover"
-                    controls
-                    preload="metadata"
-                    loop
-                  />
-                ) : (
-                  <img
-                    src={selectedImageForInfo.image_url}
-                    alt={selectedImageForInfo.title}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </div>
-              
-              {/* Metadata */}
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Title</label>
-                  <p className="text-sm">{selectedImageForInfo.title}</p>
-                </div>
-                
-                {selectedImageForInfo.description && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Description</label>
-                    <p className="text-sm">{selectedImageForInfo.description}</p>
+            <CardContent className="p-0">
+              {/* 2-Column Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                {/* Left Column - Image */}
+                <div className="space-y-4">
+                  <div className="aspect-square rounded-lg overflow-hidden border">
+                    {selectedImageForInfo.media_type === 'video' ? (
+                      <video
+                        src={selectedImageForInfo.video_url}
+                        poster={selectedImageForInfo.thumbnail_url}
+                        className="w-full h-full object-cover"
+                        controls
+                        preload="metadata"
+                        loop
+                      />
+                    ) : (
+                      <img
+                        src={selectedImageForInfo.image_url}
+                        alt={selectedImageForInfo.title}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
                   </div>
-                )}
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Dimensions</label>
-                  <p className="text-sm">{selectedImageForInfo.width} × {selectedImageForInfo.height}</p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Aspect Ratio</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="secondary" className="text-sm">
-                      {getAspectRatioLabel(selectedImageForInfo.width, selectedImageForInfo.height)}
-                    </Badge>
-                    <span className="text-sm text-gray-500">
-                      ({selectedImageForInfo.media_type === 'video' ? 'Video' : 'Image'})
-                    </span>
+                  
+                  {/* Quick Actions */}
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <Share className="h-4 w-4 mr-2" />
+                      Share
+                    </Button>
                   </div>
                 </div>
                 
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Created</label>
-                  <p className="text-sm">{new Date(selectedImageForInfo.created_at).toLocaleString()}</p>
-                </div>
-                
-                {selectedImageForInfo.tags && selectedImageForInfo.tags.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Tags</label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedImageForInfo.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
+                {/* Right Column - Metadata */}
+                <div className="space-y-4 overflow-y-auto max-h-[60vh]">
+                  {/* Basic Info */}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Title</label>
+                      <p className="text-sm font-medium">{selectedImageForInfo.title}</p>
                     </div>
-                  </div>
-                )}
-
-                {/* Generation Metadata */}
-                {selectedImageForInfo.generation_metadata && (
-                  <div className="border-t pt-3">
-                    <label className="text-sm font-medium text-gray-600 mb-2 block">Generation Settings</label>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="font-medium">Prompt:</span>
-                        <p className="text-gray-700 mt-1">{(selectedImageForInfo.generation_metadata as any).prompt || 'Not available'}</p>
+                    
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-medium text-muted-foreground">Description</label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => analyzeImageDescription(selectedImageForInfo.image_url || '')}
+                          disabled={analyzingDescription}
+                          className="h-6 px-2 text-xs"
+                        >
+                          {analyzingDescription ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1"></div>
+                              Analyzing...
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              AI Analyze
+                            </>
+                          )}
+                        </Button>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <span className="font-medium">Style:</span>
-                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).style || 'Not available'}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium">Resolution:</span>
-                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).resolution || 'Not available'}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium">Aspect Ratio:</span>
-                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).aspect_ratio || 'Not available'}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium">Consistency:</span>
-                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).consistency_level || 'Not available'}</p>
-                        </div>
-                      </div>
-                      {(selectedImageForInfo.generation_metadata as any).custom_style_preset && (
-                        <div>
-                          <span className="font-medium">Style Preset:</span>
-                          <p className="text-gray-700">{(selectedImageForInfo.generation_metadata as any).custom_style_preset.name}</p>
+                      <textarea
+                        value={editableDescription}
+                        onChange={(e) => setEditableDescription(e.target.value)}
+                        placeholder="Click 'AI Analyze' to generate a description, or write your own..."
+                        className="w-full text-sm p-2 border rounded-md resize-none"
+                        rows={3}
+                      />
+                      {editableDescription !== selectedImageForInfo.description && (
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => saveUpdatedDescription()}
+                            disabled={savingDescription}
+                            className="text-xs"
+                          >
+                            {savingDescription ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditableDescription(selectedImageForInfo.description || '')}
+                            className="text-xs"
+                          >
+                            Cancel
+                          </Button>
                         </div>
                       )}
-                      {(selectedImageForInfo.generation_metadata as any).generation_mode && (
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Dimensions</label>
+                        <p className="text-sm">{selectedImageForInfo.width} × {selectedImageForInfo.height}</p>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Aspect Ratio</label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className="text-sm">
+                            {getAspectRatioLabel(selectedImageForInfo.width, selectedImageForInfo.height)}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            ({selectedImageForInfo.media_type === 'video' ? 'Video' : 'Image'})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Created</label>
+                      <p className="text-sm">{new Date(selectedImageForInfo.created_at).toLocaleString()}</p>
+                    </div>
+                
+                    {/* Tags */}
+                    {selectedImageForInfo.tags && selectedImageForInfo.tags.length > 0 && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Tags</label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {selectedImageForInfo.tags.map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Generation Metadata */}
+                  {selectedImageForInfo.generation_metadata && (
+                    <div className="border-t pt-4">
+                      <h3 className="text-sm font-medium text-foreground mb-3">Generation Settings</h3>
+                      <div className="space-y-3 text-sm">
                         <div>
-                          <span className="font-medium">Generation Mode:</span>
-                          <p className="text-gray-700">
-                            {(selectedImageForInfo.generation_metadata as any).generation_mode === 'image-to-image' ? '🖼️ Image-to-Image' : '📝 Text-to-Image'}
+                          <label className="text-sm font-medium text-muted-foreground">Prompt</label>
+                          <p className="text-sm mt-1 bg-muted p-2 rounded border">
+                            {(selectedImageForInfo.generation_metadata as any).prompt || 'Not available'}
                           </p>
                         </div>
-                      )}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Style</label>
+                            <p className="text-sm">{(selectedImageForInfo.generation_metadata as any).style || 'Not available'}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Resolution</label>
+                            <p className="text-sm">{(selectedImageForInfo.generation_metadata as any).resolution || 'Not available'}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Aspect Ratio</label>
+                            <p className="text-sm">{(selectedImageForInfo.generation_metadata as any).aspect_ratio || 'Not available'}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Consistency</label>
+                            <p className="text-sm">{(selectedImageForInfo.generation_metadata as any).consistency_level || 'Not available'}</p>
+                          </div>
+                        </div>
+                        {(selectedImageForInfo.generation_metadata as any).custom_style_preset && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Style Preset</label>
+                            <p className="text-sm">{(selectedImageForInfo.generation_metadata as any).custom_style_preset.name}</p>
+                          </div>
+                        )}
+                        
+                        {(selectedImageForInfo.generation_metadata as any).generation_mode && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Generation Mode</label>
+                            <p className="text-sm">
+                              {(selectedImageForInfo.generation_metadata as any).generation_mode === 'image-to-image' ? '🖼️ Image-to-Image' : '📝 Text-to-Image'}
+                            </p>
+                          </div>
+                        )}
                       {(selectedImageForInfo.generation_metadata as any).base_image && (
                         <div>
                           <span className="font-medium">Base Image:</span>
@@ -568,8 +850,8 @@ export default function SavedMediaMasonry({
                             {Object.entries((selectedImageForInfo.generation_metadata as any).cinematic_parameters).map(([key, value]) => (
                               value ? (
                                 <div key={key} className="flex justify-between text-xs">
-                                  <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                                  <span className="text-gray-800 font-medium">{String(value).replace(/-/g, ' ')}</span>
+                                  <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                                  <span className="text-foreground font-medium">{String(value).replace(/-/g, ' ')}</span>
                                 </div>
                               ) : null
                             ))}
@@ -579,28 +861,29 @@ export default function SavedMediaMasonry({
                       {(selectedImageForInfo.generation_metadata as any).include_technical_details !== undefined && (
                         <div>
                           <span className="font-medium">Technical Details:</span>
-                          <span className="text-gray-700 ml-2">{(selectedImageForInfo.generation_metadata as any).include_technical_details ? 'Enabled' : 'Disabled'}</span>
+                          <span className="text-foreground ml-2">{(selectedImageForInfo.generation_metadata as any).include_technical_details ? 'Enabled' : 'Disabled'}</span>
                         </div>
                       )}
                       {(selectedImageForInfo.generation_metadata as any).include_style_references !== undefined && (
                         <div>
                           <span className="font-medium">Style References:</span>
-                          <span className="text-gray-700 ml-2">{(selectedImageForInfo.generation_metadata as any).include_style_references ? 'Enabled' : 'Disabled'}</span>
+                          <span className="text-foreground ml-2">{(selectedImageForInfo.generation_metadata as any).include_style_references ? 'Enabled' : 'Disabled'}</span>
                         </div>
                       )}
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         Generated: {(selectedImageForInfo.generation_metadata as any).generated_at 
                           ? new Date((selectedImageForInfo.generation_metadata as any).generated_at).toLocaleString()
                           : 'Unknown'
                         }
                       </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
               
               {/* Actions */}
-              <div className="flex gap-2 pt-4 border-t">
+              <div className="flex gap-2 pt-4 border-t px-6 pb-6">
                 {onReusePrompt && (
                   <Button
                     onClick={() => {

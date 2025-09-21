@@ -9,7 +9,12 @@
     "check-types": "turbo run check-types",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
-    "context:generate": "node scripts/generate-context.js"
+    "context:generate": "node scripts/generate-context.js",
+    "theme:audit": "node scripts/theme-audit.js --report-only",
+    "theme:audit:verbose": "node scripts/theme-audit.js --report-only --verbose",
+    "theme:fix-colors": "node scripts/fix-hardcoded-colors.js",
+    "theme:fix-all": "node scripts/theme-audit.js --fix-colors --fix-spacing --fix-shadows",
+    "theme:scan": "node scripts/fix-hardcoded-colors.js --scan-only"
   },
   "devDependencies": {
     "dotenv": "^16.6.1",

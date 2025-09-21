@@ -52,33 +52,32 @@ export default function MarketplaceLayout({ children }: MarketplaceLayoutProps) 
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Link href="/marketplace" className="text-2xl font-bold text-gray-900">
+              <Link href="/marketplace" className="text-2xl font-bold text-foreground">
                 Preset Marketplace
               </Link>
-              <span className="ml-3 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+              <span className="ml-3 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
                 Beta
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link
-                href="/marketplace/create"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Create Listing
-              </Link>
+              <Button asChild>
+                <Link href="/marketplace/create">
+                  Create Listing
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8" aria-label="Marketplace navigation">
             {marketplaceNavItems.map((item) => {
@@ -92,8 +91,8 @@ export default function MarketplaceLayout({ children }: MarketplaceLayoutProps) 
                   className={cn(
                     'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
                     isActive
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                   )}
                 >
                   {item.name}
@@ -110,9 +109,9 @@ export default function MarketplaceLayout({ children }: MarketplaceLayoutProps) 
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-16">
+      <footer className="bg-background border-t border-border mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-sm text-gray-500">
+          <div className="text-center text-sm text-muted-foreground">
             <p className="mb-2">
               Preset Marketplace - Peer-to-peer equipment rental and sales
             </p>

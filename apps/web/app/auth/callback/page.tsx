@@ -71,7 +71,7 @@ export default function AuthCallbackPage() {
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
         {status === 'loading' && (
           <>
-            <Loader2 className="w-16 h-16 text-emerald-600 mx-auto mb-4 animate-spin" />
+            <Loader2 className="w-16 h-16 text-primary-600 mx-auto mb-4 animate-spin" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Confirming your email...
             </h1>
@@ -83,7 +83,7 @@ export default function AuthCallbackPage() {
 
         {status === 'success' && (
           <>
-            <CheckCircle2 className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
+            <CheckCircle2 className="w-16 h-16 text-primary-600 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Email Confirmed!
             </h1>
@@ -107,7 +107,7 @@ export default function AuthCallbackPage() {
             </p>
             <button
               onClick={() => router.push('/auth/signup')}
-              className="w-full bg-emerald-600 text-white py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors"
+              className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
             >
               Try Again
             </button>

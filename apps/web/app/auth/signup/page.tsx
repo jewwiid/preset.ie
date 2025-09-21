@@ -5,13 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '../../../lib/auth-context'
 import { 
-  Camera, 
-  Users, 
   Check, 
   ChevronRight, 
   Mail, 
   Lock, 
-  Sparkles,
   AlertCircle,
   X,
   CheckCircle2,
@@ -19,6 +16,12 @@ import {
   EyeOff
 } from 'lucide-react'
 import { DatePicker } from '../../../components/ui/date-picker'
+import { Button } from '../../../components/ui/button'
+import { Input } from '../../../components/ui/input'
+import { Label } from '../../../components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card'
+import { Alert, AlertDescription } from '../../../components/ui/alert'
+import { Checkbox } from '../../../components/ui/checkbox'
 
 type SignupStep = 'role' | 'credentials'
 type UserRole = 'CONTRIBUTOR' | 'TALENT' | 'BOTH'
@@ -182,8 +185,8 @@ export default function SignUpPage() {
           <div key={step.key} className="flex items-center">
             <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
               index <= currentIndex 
-                ? 'bg-emerald-600 border-emerald-600 text-white' 
-                : 'bg-white border-gray-300 text-gray-400'
+                ? 'bg-primary border-primary text-primary-foreground' 
+                : 'bg-background border-border text-muted-foreground'
             }`}>
               {index < currentIndex ? (
                 <Check className="w-5 h-5" />
@@ -193,7 +196,7 @@ export default function SignUpPage() {
             </div>
             {index < steps.length - 1 && (
               <div className={`w-16 h-0.5 mx-2 ${
-                index < currentIndex ? 'bg-emerald-600' : 'bg-gray-300'
+                index < currentIndex ? 'bg-primary' : 'bg-border'
               }`} />
             )}
           </div>
@@ -203,14 +206,14 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        {/* Logo/Header */}
+        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-foreground mb-2">
             Join Preset
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Connect with creative professionals for amazing shoots
           </p>
         </div>
@@ -220,80 +223,81 @@ export default function SignUpPage() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
-            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         {/* Step Content */}
-        <div className="bg-white shadow-xl rounded-lg p-8">
+        <Card className="shadow-xl">
+          <CardContent className="p-8">
           {/* Role Selection Step */}
           {currentStep === 'role' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                <h2 className="text-2xl font-semibold text-foreground mb-2">
                   How will you use Preset?
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Choose your primary role (you can change this later)
                 </p>
               </div>
 
               <div className="grid gap-4">
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => handleRoleSelection('CONTRIBUTOR')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left group"
+                  className="p-6 h-auto border-2 hover:border-primary hover:bg-primary/10 transition-all text-left group w-full justify-start"
                 >
-                  <div className="flex items-start">
-                    <Camera className="w-8 h-8 text-emerald-600 mr-4 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <div className="flex items-start w-full">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
                         I'm a Contributor
                       </h3>
-                      <p className="text-gray-600">
+                      <p className="text-muted-foreground">
                         I'm a photographer, videographer, or cinematographer looking for talent for my shoots
                       </p>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 ml-auto flex-shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary ml-auto flex-shrink-0" />
                   </div>
-                </button>
+                </Button>
 
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => handleRoleSelection('TALENT')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left group"
+                  className="p-6 h-auto border-2 hover:border-primary hover:bg-primary/10 transition-all text-left group w-full justify-start"
                 >
-                  <div className="flex items-start">
-                    <Users className="w-8 h-8 text-emerald-600 mr-4 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <div className="flex items-start w-full">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
                         I'm Talent
                       </h3>
-                      <p className="text-gray-600">
+                      <p className="text-muted-foreground">
                         I'm a model, actor, or creative looking to collaborate on shoots
                       </p>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 ml-auto flex-shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary ml-auto flex-shrink-0" />
                   </div>
-                </button>
+                </Button>
 
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => handleRoleSelection('BOTH')}
-                  className="p-6 border-2 border-gray-200 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all text-left group"
+                  className="p-6 h-auto border-2 hover:border-primary hover:bg-primary/10 transition-all text-left group w-full justify-start"
                 >
-                  <div className="flex items-start">
-                    <Sparkles className="w-8 h-8 text-emerald-600 mr-4 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  <div className="flex items-start w-full">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
                         I do both
                       </h3>
-                      <p className="text-gray-600">
+                      <p className="text-muted-foreground">
                         I'm both a creative professional and talent
                       </p>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-600 ml-auto flex-shrink-0" />
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary ml-auto flex-shrink-0" />
                   </div>
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -302,28 +306,26 @@ export default function SignUpPage() {
           {currentStep === 'credentials' && (
             <form onSubmit={handleCredentialsSubmit} className="space-y-6">
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                <h2 className="text-2xl font-semibold text-foreground mb-2">
                   Create your account
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   Enter your email and choose a secure password
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email address
-                  </label>
+                  <Label htmlFor="email">Email address</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
                       id="email"
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="pl-10"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -343,7 +345,7 @@ export default function SignUpPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setPasswordFocused(true)}
                       onBlur={() => setPasswordFocused(false)}
-                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-gray-900 ${
+                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-white text-gray-900 ${
                         password && !isPasswordValid ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Create a strong password"
@@ -363,7 +365,7 @@ export default function SignUpPage() {
                     {password && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                         {isPasswordValid ? (
-                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
                         ) : (
                           <X className="w-5 h-5 text-red-500" />
                         )}
@@ -380,7 +382,7 @@ export default function SignUpPage() {
                           passwordStrength.color === 'red' ? 'text-red-600' :
                           passwordStrength.color === 'yellow' ? 'text-yellow-600' :
                           passwordStrength.color === 'blue' ? 'text-blue-600' :
-                          'text-green-600'
+                          'text-primary'
                         }`}>
                           {passwordStrength.level}
                         </span>
@@ -391,7 +393,7 @@ export default function SignUpPage() {
                             passwordStrength.color === 'red' ? 'bg-red-500' :
                             passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
                             passwordStrength.color === 'blue' ? 'bg-blue-500' :
-                            'bg-green-500'
+                            'bg-primary'
                           }`}
                           style={{ width: passwordStrength.width }}
                         />
@@ -402,7 +404,7 @@ export default function SignUpPage() {
                   {/* Password requirements checklist */}
                   {(passwordFocused || password) && (
                     <div className="mt-2 space-y-1 text-xs">
-                      <div className={`flex items-center ${passwordValidations.minLength ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.minLength ? 'text-primary' : 'text-gray-400'}`}>
                         {passwordValidations.minLength ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
@@ -410,7 +412,7 @@ export default function SignUpPage() {
                         )}
                         At least 8 characters
                       </div>
-                      <div className={`flex items-center ${passwordValidations.hasUpperCase ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.hasUpperCase ? 'text-primary' : 'text-gray-400'}`}>
                         {passwordValidations.hasUpperCase ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
@@ -418,7 +420,7 @@ export default function SignUpPage() {
                         )}
                         One uppercase letter
                       </div>
-                      <div className={`flex items-center ${passwordValidations.hasLowerCase ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.hasLowerCase ? 'text-primary' : 'text-gray-400'}`}>
                         {passwordValidations.hasLowerCase ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
@@ -426,7 +428,7 @@ export default function SignUpPage() {
                         )}
                         One lowercase letter
                       </div>
-                      <div className={`flex items-center ${passwordValidations.hasNumber ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.hasNumber ? 'text-primary' : 'text-gray-400'}`}>
                         {passwordValidations.hasNumber ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
@@ -434,7 +436,7 @@ export default function SignUpPage() {
                         )}
                         One number
                       </div>
-                      <div className={`flex items-center ${passwordValidations.hasSpecialChar ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.hasSpecialChar ? 'text-primary' : 'text-gray-400'}`}>
                         {passwordValidations.hasSpecialChar ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
@@ -460,7 +462,7 @@ export default function SignUpPage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       onFocus={() => setConfirmPasswordFocused(true)}
                       onBlur={() => setConfirmPasswordFocused(false)}
-                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white text-gray-900 ${
+                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-white text-gray-900 ${
                         confirmPassword && !passwordsMatch ? 'border-red-300' : 'border-gray-300'
                       }`}
                       placeholder="Re-enter your password"
@@ -480,7 +482,7 @@ export default function SignUpPage() {
                     {confirmPassword && (
                       <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                         {passwordsMatch ? (
-                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
                         ) : (
                           <X className="w-5 h-5 text-red-500" />
                         )}
@@ -491,7 +493,7 @@ export default function SignUpPage() {
                     <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
                   )}
                   {confirmPassword && passwordsMatch && (
-                    <p className="mt-1 text-xs text-green-600">Passwords match</p>
+                    <p className="mt-1 text-xs text-primary">Passwords match</p>
                   )}
                 </div>
               </div>
@@ -509,7 +511,7 @@ export default function SignUpPage() {
                   className="w-full"
                 />
                 {dateOfBirth && (
-                  <div className={`mt-2 text-sm ${isOver18 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className={`mt-2 text-sm ${isOver18 ? 'text-primary' : 'text-red-600'}`}>
                     {isOver18 ? (
                       <span className="flex items-center">
                         <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -532,15 +534,15 @@ export default function SignUpPage() {
                     type="checkbox"
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-1 h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                    className="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                   />
                   <span className="ml-2 text-sm text-gray-700">
                     I agree to the{' '}
-                    <Link href="/terms" className="text-emerald-600 hover:text-emerald-700">
+                    <Link href="/terms" className="text-primary hover:text-primary/80">
                       Terms of Service
                     </Link>{' '}
                     and{' '}
-                    <Link href="/privacy" className="text-emerald-600 hover:text-emerald-700">
+                    <Link href="/privacy" className="text-primary hover:text-primary/80">
                       Privacy Policy
                     </Link>
                   </span>
@@ -559,7 +561,7 @@ export default function SignUpPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 py-2 px-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+                  className="flex-1 py-2 px-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
                 >
                   {loading ? 'Creating account...' : 'Create account'}
                 </button>
@@ -567,13 +569,14 @@ export default function SignUpPage() {
             </form>
           )}
 
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Sign In Link */}
         <div className="text-center mt-6">
-          <span className="text-gray-600">
+          <span className="text-muted-foreground">
             Already have an account?{' '}
-            <Link href="/auth/signin" className="font-medium text-emerald-600 hover:text-emerald-700">
+            <Link href="/auth/signin" className="font-medium text-primary hover:text-primary/80">
               Sign in
             </Link>
           </span>

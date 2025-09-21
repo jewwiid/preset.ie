@@ -227,7 +227,7 @@ export default function LinkGearRequestModal({
                         selectedListing?.id === listing.id
                           ? 'border-blue-500 bg-blue-50'
                           : compatible
-                          ? 'border-green-200 bg-green-50 hover:bg-green-100'
+                          ? 'border-primary/20 bg-primary-50 hover:bg-primary/20'
                           : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
                       }`}
                       onClick={() => setSelectedListing(listing)}
@@ -240,7 +240,7 @@ export default function LinkGearRequestModal({
                               {listing.condition}
                             </Badge>
                             {compatible && (
-                              <Badge className="text-xs bg-green-100 text-green-800">
+                              <Badge className="text-xs bg-primary-100 text-primary-800">
                                 <CheckCircle className="h-3 w-3 mr-1" />
                                 Compatible
                               </Badge>
@@ -252,7 +252,7 @@ export default function LinkGearRequestModal({
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <span className="font-medium">{listing.category}</span>
                             {listing.rent_day_cents && (
-                              <span className="text-green-600 font-medium">
+                              <span className="text-primary-600 font-medium">
                                 {formatPrice(listing.rent_day_cents)}/day
                               </span>
                             )}

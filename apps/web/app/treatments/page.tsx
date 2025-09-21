@@ -61,9 +61,9 @@ const TREATMENT_FORMATS = {
 };
 
 const TREATMENT_STATUSES = {
-  draft: { label: 'Draft', color: 'bg-yellow-100 text-yellow-800' },
-  published: { label: 'Published', color: 'bg-green-100 text-green-800' },
-  archived: { label: 'Archived', color: 'bg-gray-100 text-gray-800' }
+  draft: { label: 'Draft', color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' },
+  published: { label: 'Published', color: 'bg-primary/10 text-primary' },
+  archived: { label: 'Archived', color: 'bg-muted text-muted-foreground' }
 };
 
 export default function TreatmentsPage() {
@@ -165,11 +165,11 @@ export default function TreatmentsPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-4">Sign In Required</h2>
-            <p className="text-gray-600 mb-4">Please sign in to view your treatments.</p>
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Sign In Required</h2>
+            <p className="text-muted-foreground mb-4">Please sign in to view your treatments.</p>
             <Link href="/auth/signin">
               <Button>Sign In</Button>
             </Link>
@@ -180,59 +180,49 @@ export default function TreatmentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="mb-8 rounded-2xl p-8 border border-border">
+          <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <FileText className="h-8 w-8 text-blue-600 mr-3" />
+              <FileText className="h-8 w-8 text-primary mr-3" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Treatments</h1>
-                <p className="text-gray-600">Create and manage professional treatments</p>
+                <h1 className="text-5xl font-bold text-primary mb-2">Treatments</h1>
+                <p className="text-xl text-muted-foreground">Create and manage professional treatments</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/treatments/create">
-                <Button className="inline-flex items-center">
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button size="lg" className="px-8 py-3 text-lg font-semibold">
+                  <Plus className="h-5 w-5 mr-2" />
                   Create Treatment
                 </Button>
               </Link>
             </div>
           </div>
         </div>
-      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main>
         <div className="space-y-6">
-          {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Filter className="h-5 w-5 mr-2" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Search
-                  </label>
-                  <Input
-                    placeholder="Search treatments..."
-                    value={filters.search}
-                    onChange={(e) => handleFiltersChange({ ...filters, search: e.target.value })}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Format
-                  </label>
+          {/* Smart Filters Bar */}
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                {/* Search and Controls */}
+                <div className="flex gap-3 items-center w-full lg:w-auto">
+                  <div className="relative flex-1 lg:flex-none">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search treatments..."
+                      value={filters.search}
+                      onChange={(e) => handleFiltersChange({ ...filters, search: e.target.value })}
+                      className="pl-10 w-full lg:w-64"
+                    />
+                  </div>
+                  
                   <Select value={filters.format} onValueChange={(value) => handleFiltersChange({ ...filters, format: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-40">
                       <SelectValue placeholder="All formats" />
                     </SelectTrigger>
                     <SelectContent>
@@ -245,14 +235,9 @@ export default function TreatmentsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
                   <Select value={filters.status} onValueChange={(value) => handleFiltersChange({ ...filters, status: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-40">
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
@@ -264,10 +249,8 @@ export default function TreatmentsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
 
-                <div className="flex items-end">
-                  <Button variant="outline" onClick={handleClearFilters} className="w-full">
+                  <Button variant="outline" onClick={handleClearFilters}>
                     Clear Filters
                   </Button>
                 </div>
@@ -277,11 +260,11 @@ export default function TreatmentsPage() {
 
           {/* Results Header */}
           <div className="flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900">
+            <h2 className="text-lg font-medium text-foreground">
               {loading ? 'Loading...' : `${pagination.total} treatments found`}
             </h2>
             {!loading && pagination.total > 0 && (
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 Page {pagination.page} of {pagination.pages}
               </span>
             )}
@@ -293,13 +276,13 @@ export default function TreatmentsPage() {
               {[...Array(6)].map((_, i) => (
                 <Card key={i} className="animate-pulse">
                   <CardHeader>
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      <div className="h-3 bg-gray-200 rounded"></div>
-                      <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                      <div className="h-3 bg-muted rounded"></div>
+                      <div className="h-3 bg-muted rounded w-5/6"></div>
                     </div>
                   </CardContent>
                 </Card>
@@ -307,16 +290,16 @@ export default function TreatmentsPage() {
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <p className="text-red-600">{error}</p>
+              <p className="text-destructive">{error}</p>
               <Button onClick={() => fetchTreatments()} className="mt-4">
                 Try Again
               </Button>
             </div>
           ) : treatments.length === 0 ? (
             <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No treatments found</h3>
-              <p className="text-gray-500 mb-4">
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No treatments found</h3>
+              <p className="text-muted-foreground mb-4">
                 Create your first treatment to get started with professional project presentations.
               </p>
               <Link href="/treatments/create">
@@ -333,7 +316,7 @@ export default function TreatmentsPage() {
                         <CardTitle className="text-lg mb-2">
                           <Link 
                             href={`/treatments/${treatment.id}/edit`}
-                            className="hover:text-blue-600 transition-colors"
+                            className="hover:text-primary transition-colors"
                           >
                             {treatment.title}
                           </Link>
@@ -357,7 +340,7 @@ export default function TreatmentsPage() {
                     <div className="space-y-3">
                       {/* Related Project */}
                       {treatment.gigs && (
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <Users className="h-4 w-4 mr-2" />
                           <span>From gig: {treatment.gigs.title}</span>
                         </div>
@@ -365,20 +348,20 @@ export default function TreatmentsPage() {
                       
                       {/* Moodboard */}
                       {treatment.moodboards && (
-                        <div className="flex items-center text-sm text-gray-500">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <Wand2 className="h-4 w-4 mr-2" />
                           <span>From moodboard: {treatment.moodboards.title}</span>
                         </div>
                       )}
                       
                       {/* Dates */}
-                      <div className="flex items-center text-sm text-gray-500">
+                      <div className="flex items-center text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4 mr-2" />
                         <span>Updated {formatDate(treatment.updated_at)}</span>
                       </div>
                     </div>
                     
-                    <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="mt-4 pt-4 border-t border-border">
                       <div className="flex items-center justify-between">
                         <div className="flex space-x-2">
                           <Button size="sm" variant="outline">
@@ -441,7 +424,8 @@ export default function TreatmentsPage() {
             </div>
           )}
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

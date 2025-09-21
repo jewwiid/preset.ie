@@ -178,7 +178,7 @@ export default function RoleApplicationModal({
                 {role.is_paid && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">Compensation:</span>
-                    <span className="text-green-600 font-medium">Paid</span>
+                    <span className="text-primary-600 font-medium">Paid</span>
                   </div>
                 )}
                 

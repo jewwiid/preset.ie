@@ -280,7 +280,7 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
               <div>
                 <Label htmlFor="rent_day_cents">Daily Rent Price (€) *</Label>
                 <div className="relative">
-                  <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="rent_day_cents"
                     type="number"
@@ -296,7 +296,7 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
               <div>
                 <Label htmlFor="rent_week_cents">Weekly Rent Price (€)</Label>
                 <div className="relative">
-                  <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="rent_week_cents"
                     type="number"
@@ -480,7 +480,7 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <X className="h-3 w-3" />
                   </button>

@@ -10,11 +10,11 @@ interface FeedbackProps extends FeedbackMessage {
 
 const feedbackStyles = {
   success: {
-    container: 'bg-white/95 backdrop-blur-md border-green-200/50 shadow-lg shadow-green-100/50',
-    accent: 'border-l-4 border-l-green-500',
+    container: 'bg-white/95 backdrop-blur-md border-primary/20/50 shadow-lg shadow-primary-primary/10/50',
+    accent: 'border-l-4 border-l-primary-primary',
     icon: CheckCircle,
-    iconColor: 'text-green-500',
-    iconBg: 'bg-green-50'
+    iconColor: 'text-primary-500',
+    iconBg: 'bg-primary-50'
   },
   error: {
     container: 'bg-white/95 backdrop-blur-md border-red-200/50 shadow-lg shadow-red-100/50',
@@ -131,7 +131,7 @@ export function Feedback({ type, title, message, actions, avatar, dismissible = 
                     className={`
                       px-3 py-1.5 text-xs font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2
                       ${action.style === 'primary' 
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500'
+                        ? 'bg-primary-600 text-white hover:bg-primary/90 focus:ring-primary'
                         : action.style === 'destructive'
                         ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-300'

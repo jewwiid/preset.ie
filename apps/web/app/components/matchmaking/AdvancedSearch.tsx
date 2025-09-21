@@ -355,7 +355,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Search className="w-5 h-5 text-emerald-600" />
+              <Search className="w-5 h-5 text-primary-600" />
               Advanced Search
             </CardTitle>
             <div className="flex items-center gap-2">
@@ -471,7 +471,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
               {/* Compensation Types */}
               <div className="space-y-3">
                 <h4 className="font-medium flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <DollarSign className="w-4 h-4 text-primary-600" />
                   Compensation
                 </h4>
                 <div className="space-y-2">

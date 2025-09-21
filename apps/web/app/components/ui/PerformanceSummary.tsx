@@ -100,7 +100,7 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
   }
 
   const score = getPerformanceScore()
-  const scoreColor = score >= 80 ? 'text-green-500' : score >= 60 ? 'text-yellow-500' : 'text-red-500'
+  const scoreColor = score >= 80 ? 'text-primary-500' : score >= 60 ? 'text-yellow-500' : 'text-red-500'
 
   return (
     <div className="bg-white border rounded-lg p-4 space-y-4">
@@ -130,7 +130,7 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Image className="h-4 w-4 text-green-500" />
+            <Image className="h-4 w-4 text-primary-500" />
             <span className="text-sm font-medium">Images</span>
           </div>
           <div className="text-lg font-mono">{metrics.imageCount}</div>
@@ -163,14 +163,14 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
 
       {improvements.length > 0 && (
         <div className="space-y-2">
-          <h4 className="font-medium text-green-700 flex items-center gap-2">
+          <h4 className="font-medium text-primary-700 flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
             Improvements
           </h4>
           <ul className="space-y-1">
             {improvements.map((improvement, index) => (
-              <li key={index} className="text-sm text-green-600 flex items-start gap-2">
-                <span className="text-green-500 mt-1">✓</span>
+              <li key={index} className="text-sm text-primary-600 flex items-start gap-2">
+                <span className="text-primary-500 mt-1">✓</span>
                 {improvement}
               </li>
             ))}

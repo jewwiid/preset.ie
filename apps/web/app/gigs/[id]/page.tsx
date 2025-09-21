@@ -4,11 +4,18 @@ import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
-import MoodboardViewer from '../../components/MoodboardViewer'
 import CompatibilityScore from '../../components/matchmaking/CompatibilityScore'
 import MatchmakingCard from '../../components/matchmaking/MatchmakingCard'
 import CompatibilityBreakdownModal from '../../components/matchmaking/CompatibilityBreakdownModal'
+import SimilarTalentSlim from '../../components/SimilarTalentSlim'
 import { CompatibilityData, Recommendation } from '../../../lib/types/matchmaking'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { MapPin, Calendar, Clock, Users, Eye, Edit, ArrowLeft, Palette, Camera, Star } from 'lucide-react'
+import LocationMap from '../../../components/LocationMap'
 
 interface GigDetails {
   id: string
@@ -18,6 +25,10 @@ interface GigDetails {
   comp_type: string
   usage_rights: string
   location_text: string
+  location?: {
+    lat: number
+    lng: number
+  }
   start_time: string
   end_time: string
   application_deadline: string
@@ -30,6 +41,7 @@ interface GigDetails {
     handle: string
     city?: string
     style_tags: string[]
+    avatar_url?: string
   }
 }
 
@@ -40,6 +52,9 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
+  const [moodboardData, setMoodboardData] = useState<any>(null)
+  const [applications, setApplications] = useState<any[]>([])
+  const [applicationCount, setApplicationCount] = useState(0)
   
   // Matchmaking state
   const [compatibilityData, setCompatibilityData] = useState<CompatibilityData | null>(null)
@@ -54,6 +69,8 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
 
   useEffect(() => {
     fetchGigDetails()
+    fetchMoodboardData()
+    fetchApplications()
     if (user) {
       fetchUserProfile()
     }
@@ -84,6 +101,53 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
     }
   }
 
+  const fetchMoodboardData = async () => {
+    if (!supabase) return
+
+    try {
+      const { data } = await supabase
+        .from('moodboards')
+        .select('*')
+        .eq('gig_id', gigId)
+        .single()
+      
+      if (data) {
+        setMoodboardData(data)
+      }
+    } catch (error) {
+      console.log('No moodboard found for this gig')
+    }
+  }
+
+  const fetchApplications = async () => {
+    if (!supabase) return
+
+    try {
+      const { data, error, count } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          users_profile (
+            display_name,
+            handle,
+            avatar_url
+          )
+        `, { count: 'exact' })
+        .eq('gig_id', gigId)
+        .order('applied_at', { ascending: false })
+        .limit(10)
+      
+      if (error) throw error
+      
+      if (data) {
+        setApplications(data)
+        setApplicationCount(count || 0)
+      }
+    } catch (error) {
+      console.log('Error fetching applications:', error)
+    }
+  }
+
   const fetchMatchmakingData = async () => {
     if (!gig || !userProfile || !supabase) return
 
@@ -91,113 +155,54 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
       setMatchmakingLoading(true)
 
       // Fetch compatibility score for current user
-      const { data: compatibilityResult, error: compatibilityError } = await supabase
-        .rpc('calculate_gig_compatibility', {
-          p_profile_id: userProfile.id,
-          p_gig_id: gig.id
-        })
+      try {
+        const { data: compatibilityResult, error: compatibilityError } = await supabase
+          .rpc('calculate_gig_compatibility', {
+            p_profile_id: userProfile.id,
+            p_gig_id: gig.id
+          })
 
-      if (compatibilityError) {
-        console.error('Error fetching compatibility:', compatibilityError)
-      } else if (compatibilityResult && compatibilityResult.length > 0) {
-        const result = compatibilityResult[0]
-        setCompatibilityData({
-          score: result.compatibility_score,
-          breakdown: {
-            gender: result.match_factors.gender_match ? 20 : 0,
-            age: result.match_factors.age_match ? 20 : 0,
-            height: result.match_factors.height_match ? 15 : 0,
-            experience: result.match_factors.experience_match ? 25 : 0,
-            specialization: typeof result.match_factors.specialization_match === 'number' ? 
-              (result.match_factors.specialization_match / result.match_factors.total_required) * 20 : 
-              result.match_factors.specialization_match ? 20 : 0,
-            total: result.compatibility_score
-          },
-          factors: result.match_factors
-        })
+        if (compatibilityError) {
+          console.warn('Compatibility function not available:', compatibilityError)
+        } else if (compatibilityResult && compatibilityResult.length > 0) {
+          setCompatibilityData(compatibilityResult[0])
+        }
+      } catch (error) {
+        console.warn('Compatibility calculation not available:', error)
       }
 
-      // Fetch similar users (compatible talent for this gig)
-      const { data: usersResult, error: usersError } = await supabase
-        .rpc('find_compatible_users_for_gig', {
-          p_gig_id: gig.id,
-          p_limit: 6
-        })
+      // Fetch similar users (talent recommendations)
+      try {
+        const { data: similarUsersData, error: similarUsersError } = await supabase
+          .rpc('get_gig_talent_recommendations', {
+            p_gig_id: gig.id,
+            p_limit: 6
+          })
 
-      if (usersError) {
-        console.error('Error fetching similar users:', usersError)
-      } else if (usersResult) {
-        setSimilarUsers(usersResult.map((user: any) => ({
-          id: user.profile_id,
-          type: 'user' as const,
-          data: {
-            id: user.profile_id,
-            user_id: user.profile_id,
-            display_name: user.display_name,
-            handle: user.display_name.toLowerCase().replace(/\s+/g, ''),
-            city: user.city,
-            country: 'Unknown',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          compatibility_score: user.compatibility_score,
-          compatibility_breakdown: {
-            gender: user.match_factors.gender_match ? 20 : 0,
-            age: user.match_factors.age_match ? 20 : 0,
-            height: user.match_factors.height_match ? 15 : 0,
-            experience: user.match_factors.experience_match ? 25 : 0,
-            specialization: typeof user.match_factors.specialization_match === 'number' ? 
-              (user.match_factors.specialization_match / user.match_factors.total_required) * 20 : 
-              user.match_factors.specialization_match ? 20 : 0,
-            total: user.compatibility_score
-          },
-          reason: 'Matches gig requirements',
-          priority: user.compatibility_score >= 80 ? 'high' as const : 
-                   user.compatibility_score >= 60 ? 'medium' as const : 'low' as const
-        })))
+        if (similarUsersError) {
+          console.warn('Similar users function not available:', similarUsersError)
+        } else if (similarUsersData) {
+          setSimilarUsers(similarUsersData)
+        }
+      } catch (error) {
+        console.warn('Similar users calculation not available:', error)
       }
 
-      // Fetch similar gigs (compatible gigs for current user)
-      const { data: gigsResult, error: gigsError } = await supabase
-        .rpc('find_compatible_gigs_for_user', {
-          p_profile_id: userProfile.id,
-          p_limit: 6
-        })
+      // Fetch similar gigs
+      try {
+        const { data: similarGigsData, error: similarGigsError } = await supabase
+          .rpc('get_user_gig_recommendations', {
+            p_profile_id: userProfile.id,
+            p_limit: 6
+          })
 
-      if (gigsError) {
-        console.error('Error fetching similar gigs:', gigsError)
-      } else if (gigsResult) {
-        setSimilarGigs(gigsResult.map((gig: any) => ({
-          id: gig.gig_id,
-          type: 'gig' as const,
-          data: {
-            id: gig.gig_id,
-            title: gig.title,
-            description: 'Similar gig based on your profile',
-            location_text: gig.location_text,
-            start_time: gig.start_time,
-            end_time: gig.start_time, // We don't have end_time from the function
-            comp_type: 'TFP', // Default value
-            owner_user_id: 'unknown',
-            status: 'PUBLISHED',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          compatibility_score: gig.compatibility_score,
-          compatibility_breakdown: {
-            gender: gig.match_factors.gender_match ? 20 : 0,
-            age: gig.match_factors.age_match ? 20 : 0,
-            height: gig.match_factors.height_match ? 15 : 0,
-            experience: gig.match_factors.experience_match ? 25 : 0,
-            specialization: typeof gig.match_factors.specialization_match === 'number' ? 
-              (gig.match_factors.specialization_match / gig.match_factors.total_required) * 20 : 
-              gig.match_factors.specialization_match ? 20 : 0,
-            total: gig.compatibility_score
-          },
-          reason: 'Matches your profile',
-          priority: gig.compatibility_score >= 80 ? 'high' as const : 
-                   gig.compatibility_score >= 60 ? 'medium' as const : 'low' as const
-        })))
+        if (similarGigsError) {
+          console.warn('Similar gigs function not available:', similarGigsError)
+        } else if (similarGigsData) {
+          setSimilarGigs(similarGigsData)
+        }
+      } catch (error) {
+        console.warn('Similar gigs calculation not available:', error)
       }
 
     } catch (error) {
@@ -209,68 +214,62 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
 
   const fetchGigDetails = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      
-      // Validate gigId
-      if (!gigId) {
-        throw new Error('No gig ID provided')
-      }
-      
-      console.log('Fetching gig with ID:', gigId)
-      
       if (!supabase) {
         console.error('Supabase client not available')
-        throw new Error('Database connection not available')
+        return
       }
 
-      // First fetch the gig details
-      const { data: gigData, error: gigError } = await supabase
+      // First get the basic gig data
+      const { data, error } = await supabase
         .from('gigs')
-        .select('*')
+        .select(`
+          *,
+          users_profile (
+            display_name,
+            handle,
+            city,
+            style_tags,
+            avatar_url
+          )
+        `)
         .eq('id', gigId)
         .single()
-
-      if (gigError) {
-        console.error('Supabase error fetching gig:', gigError)
-        throw new Error(gigError.message || 'Failed to fetch gig')
-      }
-
-      if (!gigData) {
-        throw new Error('Gig not found')
-      }
-
-      console.log('Gig data fetched:', gigData.title)
-
-      // Then fetch the owner's profile separately
-      if (gigData.owner_user_id) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('users_profile')
-          .select('display_name, handle, city, style_tags')
-          .eq('id', gigData.owner_user_id)
-          .single()
-
-        if (profileError) {
-          console.warn('Could not fetch owner profile:', profileError.message)
-        } else if (profileData) {
-          // Combine the data
-          gigData.users_profile = profileData
+      
+      // Extract coordinates from location field if available
+      let processedData = data
+      if (data && data.location) {
+        try {
+          // Try to extract coordinates using PostGIS functions
+          const { data: coordsData, error: coordsError } = await supabase
+            .rpc('get_location_coordinates', { gig_id: gigId })
+          
+          if (!coordsError && coordsData && coordsData.length > 0) {
+            processedData = {
+              ...data,
+              location: {
+                lat: coordsData[0].latitude,
+                lng: coordsData[0].longitude
+              }
+            }
+          }
+        } catch (coordsError) {
+          console.warn('Could not extract coordinates:', coordsError)
+          // Continue without coordinates
         }
       }
-
-      setGig(gigData)
+      
+      if (error) throw error
+      
+      setGig(processedData)
     } catch (err: any) {
-      console.error('Error in fetchGigDetails:', {
-        error: err,
-        message: err?.message,
-        gigId: gigId
-      })
-      setError(err?.message || 'Failed to load gig')
+      console.error('Error fetching gig:', err)
+      setError(err.message || 'Failed to load gig')
     } finally {
       setLoading(false)
     }
   }
 
+  // Helper functions
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'long',
@@ -283,55 +282,36 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
   }
 
   const getCompensationType = (type: string) => {
-    const types: Record<string, string> = {
-      'TFP': 'Time for Prints/Portfolio',
-      'PAID': 'Paid',
-      'EXPENSES': 'Expenses Covered',
-      'OTHER': 'Other (see description)'
+    switch (type) {
+      case 'PAID': return 'Paid'
+      case 'TFP': return 'TFP (Trade for Photos)'
+      case 'EXPENSES': return 'Expenses Covered'
+      default: return type
     }
-    return types[type] || type
   }
 
   const getPurposeLabel = (purpose?: string) => {
     if (!purpose) return 'Not specified'
-    const purposes: Record<string, string> = {
-      'PORTFOLIO': 'Portfolio Building',
-      'COMMERCIAL': 'Commercial',
-      'EDITORIAL': 'Editorial',
-      'FASHION': 'Fashion',
-      'BEAUTY': 'Beauty',
-      'LIFESTYLE': 'Lifestyle',
-      'WEDDING': 'Wedding',
-      'EVENT': 'Event',
-      'PRODUCT': 'Product',
-      'ARCHITECTURE': 'Architecture',
-      'STREET': 'Street',
-      'CONCEPTUAL': 'Conceptual',
-      'OTHER': 'Other'
-    }
-    return purposes[purpose] || purpose
+    return purpose.charAt(0).toUpperCase() + purpose.slice(1).toLowerCase()
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     )
   }
 
   if (error || !gig) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Gig not found</h2>
-          <p className="text-gray-600 mb-4">{error || 'This gig may have been removed or does not exist.'}</p>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
-          >
-            Back to Dashboard
-          </button>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Gig not found</h2>
+          <p className="text-muted-foreground mb-4">{error || 'This gig may have been removed or does not exist.'}</p>
+          <Button onClick={() => router.push('/gigs')}>
+            Back to Gigs
+          </Button>
         </div>
       </div>
     )
@@ -342,228 +322,433 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
   const applicationDeadlinePassed = new Date(gig.application_deadline) < new Date()
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{gig.title}</h1>
-              <div className="flex items-center text-sm text-gray-600 space-x-4">
-                <span>Posted by {gig.users_profile?.display_name || 'Unknown'}</span>
-                {gig.users_profile?.handle && (
-                  <span>@{gig.users_profile.handle}</span>
-                )}
-                {gig.users_profile?.city && (
-                  <span className="text-gray-500">Based in: {gig.users_profile.city}</span>
-                )}
-              </div>
-            </div>
-            <div className="text-right">
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                gig.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
-                gig.status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
-                'bg-yellow-100 text-yellow-800'
-              }`}>
-                {gig.status}
-              </span>
-            </div>
-          </div>
-
-          {/* Quick Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Compensation</h3>
-              <p className="mt-1 text-lg font-medium text-gray-900">{getCompensationType(gig.comp_type)}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Purpose</h3>
-              <p className="mt-1 text-lg font-medium text-gray-900">{getPurposeLabel(gig.purpose)}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Usage Rights</h3>
-              <p className="mt-1 text-lg font-medium text-gray-900">{gig.usage_rights}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Shoot Location</h3>
-              <p className="mt-1 text-lg font-medium text-gray-900">📍 {gig.location_text}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Compatibility Score Section */}
-        {user && userProfile && compatibilityData && (
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Your Compatibility</h2>
-              <button
-                onClick={() => setShowCompatibilityModal(true)}
-                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-              >
-                View Details
-              </button>
-            </div>
-            <div className="flex items-center space-x-4">
-              <CompatibilityScore 
-                score={compatibilityData.score}
-                breakdown={compatibilityData.breakdown}
-                size="lg"
-                showBreakdown={true}
+    <div className="min-h-screen bg-background">
+      {/* Hero Section with Moodboard Background */}
+      {moodboardData && moodboardData.items && moodboardData.items.length > 0 && (
+        <div className="relative h-96 overflow-hidden">
+          {/* Background Image Grid */}
+          <div className="absolute inset-0 grid grid-cols-3 gap-1 opacity-20">
+            {moodboardData.items.slice(0, 6).map((item: any, index: number) => (
+              <div
+                key={index}
+                className="bg-cover bg-center"
+                style={{ backgroundImage: `url(${item.url})` }}
               />
-              <div className="text-sm text-gray-600">
-                <p>Based on your profile and this gig's requirements</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {compatibilityData.score >= 80 ? 'Excellent match!' :
-                   compatibilityData.score >= 60 ? 'Good match' :
-                   compatibilityData.score >= 40 ? 'Fair match' : 'Consider improving your profile'}
-                </p>
+            ))}
+          </div>
+          
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
+          
+          {/* Content */}
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-end pb-12">
+            <div className="w-full">
+              <div className="flex items-center gap-3 mb-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push('/gigs')}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Gigs
+                </Button>
+                <Badge variant={gig.status === 'PUBLISHED' ? 'default' : 'secondary'}>
+                  {gig.status}
+                </Badge>
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+                {gig.title}
+              </h1>
+              
+              <div className="flex items-center gap-6 text-muted-foreground">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-12 h-12 border-2 border-primary-foreground/20 shadow-lg">
+                    <AvatarImage 
+                      src={gig.users_profile?.avatar_url || undefined}
+                      alt={`${gig.users_profile?.display_name || 'User'} avatar`}
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                      {gig.users_profile?.display_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm text-muted-foreground/80">Posted by</p>
+                    <p className="font-semibold text-foreground">{gig.users_profile?.display_name || 'Unknown'}</p>
+                  </div>
+                </div>
+                {gig.users_profile?.city && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    <span>{gig.users_profile.city}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Moodboard */}
-        <MoodboardViewer gigId={gigId} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Moodboard Section - Masonry Layout */}
+            {moodboardData && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Palette className="w-5 h-5 text-primary" />
+                      <CardTitle>{moodboardData.title || 'Visual Inspiration'}</CardTitle>
+                    </div>
+                    {moodboardData.palette && moodboardData.palette.length > 0 && (
+                      <div className="flex gap-1">
+                        {moodboardData.palette.slice(0, 5).map((color: string, index: number) => (
+                          <div
+                            key={index}
+                            className="w-6 h-6 rounded-full border-2 border-background shadow-sm"
+                            style={{ backgroundColor: color }}
+                            title={color}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {moodboardData.summary && (
+                    <CardDescription>{moodboardData.summary}</CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {/* Masonry Grid for Images */}
+                  <div className="columns-2 md:columns-3 gap-4 space-y-4">
+                    {moodboardData.items.map((item: any, index: number) => (
+                      <div
+                        key={index}
+                        className="break-inside-avoid mb-4 group cursor-pointer"
+                        onClick={() => window.open(item.url, '_blank')}
+                      >
+                        <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02]">
+                          <img
+                            src={item.thumbnail_url || item.url}
+                            alt={item.caption || `Moodboard image ${index + 1}`}
+                            className="w-full h-auto object-cover"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="absolute bottom-0 left-0 right-0 p-3 text-foreground bg-background/90 backdrop-blur-sm transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                            <p className="text-xs font-medium line-clamp-2">{item.caption}</p>
+                            {item.photographer && (
+                              <p className="text-xs opacity-80 mt-1">📷 {item.photographer}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Description */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">About this Gig</h2>
-          <div className="prose max-w-none text-gray-700">
-            <p className="whitespace-pre-wrap">{gig.description}</p>
+            {/* About Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>About this Gig</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="prose prose-sm max-w-none text-foreground">
+                  <p className="whitespace-pre-wrap leading-relaxed">{gig.description}</p>
+                </div>
+                
+                <Separator />
+                
+                {/* Location Section */}
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Shoot Location</h3>
+                  <LocationMap 
+                    location={gig.location_text}
+                    latitude={gig.location?.lat}
+                    longitude={gig.location?.lng}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contributor Styles */}
+            {gig.users_profile?.style_tags && gig.users_profile.style_tags.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contributor's Style</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {gig.users_profile.style_tags.map((tag) => (
+                      <Badge key={tag} variant="outline">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Gig Details Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-primary" />
+                  Gig Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Compensation</p>
+                    <Badge variant="outline" className="mt-1">
+                      {getCompensationType(gig.comp_type)}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Purpose</p>
+                    <Badge variant="outline" className="mt-1">
+                      {getPurposeLabel(gig.purpose)}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Usage Rights</p>
+                  <p className="text-sm text-foreground">{gig.usage_rights}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Applications Bar */}
+            {applicationCount > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-primary" />
+                      Applications ({applicationCount})
+                    </CardTitle>
+                    {isOwner && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push(`/gigs/${gigId}/applications`)}
+                      >
+                        View All
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-3">
+                    <div className="flex -space-x-2">
+                      {applications.slice(0, 6).map((application, index) => (
+                        <Avatar key={application.id} className="w-8 h-8 border-2 border-background">
+                          <AvatarImage 
+                            src={application.users_profile?.avatar_url || undefined}
+                          />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                            {application.users_profile?.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
+                      {applicationCount > 6 && (
+                        <div className="w-8 h-8 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                          <span className="text-xs font-medium text-muted-foreground">+{applicationCount - 6}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {applicationCount === 1 ? '1 person applied' : `${applicationCount} people applied`}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Schedule Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  Schedule
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Shoot Dates</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <span className="font-medium">Starts:</span>
+                      <span>{formatDate(gig.start_time)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <span className="font-medium">Ends:</span>
+                      <span>{formatDate(gig.end_time)}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Application Deadline</p>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <span className="text-sm">{formatDate(gig.application_deadline)}</span>
+                    {applicationDeadlinePassed && (
+                      <Badge variant="destructive" className="text-xs">Closed</Badge>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Availability</p>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" />
+                    <span className="text-sm">{gig.max_applicants} spots available</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Compatibility Score */}
+            {user && userProfile && compatibilityData && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Star className="w-5 h-5 text-primary" />
+                      Your Match
+                    </CardTitle>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowCompatibilityModal(true)}
+                    >
+                      Details
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <CompatibilityScore 
+                    score={compatibilityData.score}
+                    breakdown={compatibilityData.breakdown}
+                    size="lg"
+                    showBreakdown={true}
+                  />
+                  <p className="text-xs text-muted-foreground mt-3">
+                    {compatibilityData.score >= 80 ? '🎯 Excellent match!' :
+                     compatibilityData.score >= 60 ? '✨ Good match' :
+                     compatibilityData.score >= 40 ? '👍 Fair match' :
+                     '💡 Consider improving your profile'}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
           </div>
         </div>
 
-        {/* Schedule */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Schedule</h2>
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Shoot Date & Time</h3>
-              <p className="mt-1 text-gray-900">
-                <span className="font-medium">Starts:</span> {formatDate(gig.start_time)}
-              </p>
-              <p className="mt-1 text-gray-900">
-                <span className="font-medium">Ends:</span> {formatDate(gig.end_time)}
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Application Deadline</h3>
-              <p className="mt-1 text-gray-900">
-                {formatDate(gig.application_deadline)}
-                {applicationDeadlinePassed && (
-                  <span className="ml-2 text-red-600 text-sm">(Applications closed)</span>
-                )}
-              </p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Max Applicants</h3>
-              <p className="mt-1 text-gray-900">{gig.max_applicants} spots available</p>
-            </div>
-          </div>
+        {/* Similar Talent Section - Slim Design */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+          <SimilarTalentSlim gigId={gigId} />
         </div>
-
-        {/* Contributor Styles */}
-        {gig.users_profile?.style_tags && gig.users_profile.style_tags.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Contributor's Style</h2>
-            <div className="flex flex-wrap gap-2">
-              {gig.users_profile.style_tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 bg-emerald-100 text-emerald-800 text-sm rounded-full"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Similar Users Section */}
-        {similarUsers.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Similar Talent</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Other users who match this gig's requirements
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {similarUsers.map((user) => (
-                <MatchmakingCard
-                  key={user.id}
-                  type={user.type}
-                  data={user.data}
-                  compatibilityScore={user.compatibility_score}
-                  compatibilityBreakdown={user.compatibility_breakdown}
-                  onViewDetails={() => router.push(`/profile/${user.id}`)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Similar Gigs Section */}
         {similarGigs.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Similar Gigs</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Other gigs that match your profile
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {similarGigs.map((gig) => (
-                <MatchmakingCard
-                  key={gig.id}
-                  type={gig.type}
-                  data={gig.data}
-                  compatibilityScore={gig.compatibility_score}
-                  compatibilityBreakdown={gig.compatibility_breakdown}
-                  onViewDetails={() => router.push(`/gigs/${gig.id}`)}
-                />
-              ))}
-            </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-12">
+            <Card>
+              <CardHeader>
+                <CardTitle>Similar Gigs</CardTitle>
+                <CardDescription>Other gigs that match your profile</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {similarGigs.map((gig) => (
+                    <MatchmakingCard
+                      key={gig.id}
+                      type={gig.type}
+                      data={gig.data}
+                      onViewDetails={() => router.push(`/gigs/${gig.id}`)}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
-        {/* Actions */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-center">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              Back to Dashboard
-            </button>
-            
-            <div className="space-x-3">
-              {isOwner && (
+        {/* Bottom Action Buttons */}
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border mt-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+              {isOwner ? (
                 <>
-                  <button 
+                  <Button
                     onClick={() => router.push(`/gigs/${gigId}/edit`)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                    className="flex-1"
+                    size="lg"
                   >
+                    <Edit className="w-4 h-4 mr-2" />
                     Edit Gig
-                  </button>
-                  <button 
+                  </Button>
+                  <Button
                     onClick={() => router.push(`/gigs/${gigId}/applications`)}
-                    className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+                    variant="outline"
+                    className="flex-1"
+                    size="lg"
                   >
+                    <Eye className="w-4 h-4 mr-2" />
                     View Applications
-                  </button>
+                  </Button>
                 </>
-              )}
-              
-              {!isOwner && isTalent && !applicationDeadlinePassed && (
-                <button className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700">
-                  Apply to this Gig
-                </button>
-              )}
-              
-              {!user && (
-                <button
-                  onClick={() => router.push('/auth/signin')}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
-                >
-                  Sign in to Apply
-                </button>
+              ) : (
+                <>
+                  {isTalent && !applicationDeadlinePassed ? (
+                    <Button className="flex-1" size="lg">
+                      <Users className="w-4 h-4 mr-2" />
+                      Apply to this Gig
+                    </Button>
+                  ) : !user ? (
+                    <Button
+                      onClick={() => router.push('/auth/signin')}
+                      className="flex-1"
+                      size="lg"
+                    >
+                      Sign in to Apply
+                    </Button>
+                  ) : applicationDeadlinePassed ? (
+                    <Button disabled className="flex-1" size="lg">
+                      Applications Closed
+                    </Button>
+                  ) : (
+                    <Button disabled className="flex-1" size="lg">
+                      Talent Role Required
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => router.push('/gigs')}
+                    variant="outline"
+                    className="flex-1"
+                    size="lg"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Gigs
+                  </Button>
+                </>
               )}
             </div>
           </div>

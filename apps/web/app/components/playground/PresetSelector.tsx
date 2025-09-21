@@ -197,12 +197,12 @@ export default function PresetSelector({
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      photography: 'bg-blue-100 text-blue-800',
-      cinematic: 'bg-purple-100 text-purple-800',
-      artistic: 'bg-pink-100 text-pink-800',
-      custom: 'bg-green-100 text-green-800'
+      photography: 'bg-primary/10 text-primary',
+      cinematic: 'bg-primary/10 text-primary',
+      artistic: 'bg-primary/10 text-primary',
+      custom: 'bg-primary/10 text-primary'
     }
-    return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+    return colors[category as keyof typeof colors] || 'bg-muted text-muted-foreground'
   }
 
   return (
@@ -267,8 +267,8 @@ export default function PresetSelector({
                     </div>
                   ) : presets.length === 0 ? (
                     <div className="text-center py-8">
-                      <Palette className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">No presets found</p>
+                      <Palette className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-muted-foreground">No presets found</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -283,10 +283,10 @@ export default function PresetSelector({
                               <CardTitle className="text-sm">{preset.name}</CardTitle>
                               <div className="flex items-center space-x-1">
                                 {preset.is_featured && (
-                                  <Star className="h-3 w-3 text-yellow-500" />
+                                  <Star className="h-3 w-3 text-primary" />
                                 )}
                                 {preset.is_public && (
-                                  <Users className="h-3 w-3 text-blue-500" />
+                                  <Users className="h-3 w-3 text-primary" />
                                 )}
                               </div>
                             </div>
@@ -294,7 +294,7 @@ export default function PresetSelector({
                               <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
                                 {preset.category}
                               </Badge>
-                              <div className="flex items-center space-x-1 text-xs text-gray-500">
+                              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                 <Eye className="h-3 w-3" />
                                 <span>{preset.usage_count}</span>
                               </div>
@@ -302,11 +302,11 @@ export default function PresetSelector({
                           </CardHeader>
                           <CardContent className="pt-0">
                             {preset.description && (
-                              <p className="text-xs text-gray-600 line-clamp-2 mb-2">
+                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                                 {preset.description}
                               </p>
                             )}
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               by @{preset.creator.handle}
                             </p>
                           </CardContent>
@@ -401,7 +401,7 @@ export default function PresetSelector({
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-sm">{selectedPreset.name}</p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-muted-foreground">
                   {selectedPreset.description || 'No description'}
                 </p>
               </div>

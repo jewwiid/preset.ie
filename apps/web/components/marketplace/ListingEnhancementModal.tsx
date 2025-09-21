@@ -160,7 +160,7 @@ export default function ListingEnhancementModal({
                 key={option.type}
                 className={`cursor-pointer transition-all border-2 ${
                   selectedOption === option.type 
-                    ? 'border-emerald-500 shadow-lg' 
+                    ? 'border-primary-500 shadow-lg' 
                     : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                 }`}
                 onClick={() => setSelectedOption(option.type)}
@@ -187,7 +187,7 @@ export default function ListingEnhancementModal({
                   <div className="p-4 space-y-2">
                     {option.benefits.map((benefit, index) => (
                       <div key={index} className="flex items-center space-x-2">
-                        <Star className="w-4 h-4 text-emerald-500 fill-current" />
+                        <Star className="w-4 h-4 text-primary-500 fill-current" />
                         <span className="text-gray-700 text-sm">{benefit}</span>
                       </div>
                     ))}
@@ -197,7 +197,7 @@ export default function ListingEnhancementModal({
                   <div className="px-4 pb-4">
                     {benefit.included ? (
                       <div className="space-y-2">
-                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                        <Badge className="bg-primary-100 text-primary-800 border-primary/20">
                           Included in {userSubscriptionTier} subscription
                         </Badge>
                         <Button
@@ -206,7 +206,7 @@ export default function ListingEnhancementModal({
                             handleEnhancement(option);
                           }}
                           disabled={loading || benefit.remaining === 0}
-                          className="w-full bg-emerald-600 hover:bg-emerald-700"
+                          className="w-full bg-primary-600 hover:bg-primary/90"
                         >
                           {benefit.remaining === 0 
                             ? 'Monthly limit reached' 

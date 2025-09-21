@@ -352,7 +352,17 @@ export class Profile extends BaseAggregateRoot {
   }
 
   // Additional getter methods needed by application layer
+  getId(): string { return this.props.id; }
+  getUserId(): string { return this.props.userId; }
   getDisplayName(): string { return this.props.displayName; }
   getHandle(): Handle { return this.props.handle; }
   getAvatarUrl(): string | undefined { return this.props.avatarUrl; }
+  getBio(): string | undefined { return this.props.bio; }
+  getCity(): string | undefined { return this.props.city; }
+  getStyleTags(): string[] { return [...this.props.styleTags]; }
+  getShowcaseIds(): string[] { return [...this.props.showcaseIds]; }
+  getWebsiteUrl(): string | undefined { return this.props.website; }
+  getInstagramHandle(): string | undefined { return this.props.instagram; }
+  getCreatedAt(): Date { return new Date(this.props.createdAt); }
+  getUpdatedAt(): Date { return new Date(this.props.updatedAt); }
 }

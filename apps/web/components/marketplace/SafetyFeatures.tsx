@@ -91,7 +91,7 @@ export default function SafetyFeatures({
   const getTrustColor = () => {
     switch (trustLevel) {
       case 'high':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-primary-100 text-primary-800 border-primary/20';
       case 'medium':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       default:
@@ -105,7 +105,7 @@ export default function SafetyFeatures({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center space-x-2">
-            <Shield className="h-5 w-5 text-emerald-600" />
+            <Shield className="h-5 w-5 text-primary-600" />
             <span>Trust & Safety</span>
           </CardTitle>
         </CardHeader>

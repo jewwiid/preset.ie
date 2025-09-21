@@ -121,35 +121,35 @@ export default function PresetsPage() {
     const colors = {
       photography: 'bg-blue-100 text-blue-800',
       cinematic: 'bg-purple-100 text-purple-800',
-      artistic: 'bg-pink-100 text-pink-800',
-      custom: 'bg-green-100 text-green-800'
+      artistic: 'bg-primary-100 text-primary-800',
+      custom: 'bg-primary/10 text-primary'
     }
-    return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800'
+    return colors[category as keyof typeof colors] || 'bg-muted text-muted-foreground'
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-preset-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading presets...</p>
+          <p className="text-muted-foreground">Loading presets...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+              <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center">
                 <Palette className="h-8 w-8 mr-3 text-preset-500" />
                 Presets
               </h1>
-              <p className="text-gray-600">Discover and create AI generation presets</p>
+              <p className="text-muted-foreground">Discover and create AI generation presets</p>
             </div>
             
             <Button asChild>
@@ -171,12 +171,12 @@ export default function PresetsPage() {
 
           <TabsContent value="browse" className="mt-6">
             {/* Filters and Search */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="bg-card rounded-lg shadow-sm p-6 mb-6">
               <div className="flex flex-col md:flex-row gap-4">
                 {/* Search */}
                 <form onSubmit={handleSearch} className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search presets..."
                       value={searchQuery}
@@ -215,11 +215,11 @@ export default function PresetsPage() {
                 </Select>
 
                 {/* View Mode */}
-                <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <div className="flex items-center bg-muted rounded-lg p-1">
                   <button
                     onClick={() => setViewMode('grid')}
                     className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
+                      viewMode === 'grid' ? 'bg-background shadow-sm' : 'hover:bg-accent'
                     }`}
                   >
                     <Grid className="h-4 w-4" />
@@ -227,7 +227,7 @@ export default function PresetsPage() {
                   <button
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'
+                      viewMode === 'list' ? 'bg-background shadow-sm' : 'hover:bg-accent'
                     }`}
                   >
                     <List className="h-4 w-4" />
@@ -244,9 +244,9 @@ export default function PresetsPage() {
               </div>
             ) : presets.length === 0 ? (
               <div className="text-center py-12">
-                <Palette className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No presets found</h3>
-                <p className="text-gray-500 mb-4">Try adjusting your search or create a new preset</p>
+                <Palette className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No presets found</h3>
+                <p className="text-muted-foreground mb-4">Try adjusting your search or create a new preset</p>
                 <Button asChild>
                   <a href="/presets/create">Create Your First Preset</a>
                 </Button>
@@ -280,7 +280,7 @@ export default function PresetsPage() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 text-sm text-gray-500">
+                        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                           <Eye className="h-4 w-4" />
                           <span>{preset.usage_count}</span>
                         </div>
@@ -288,12 +288,12 @@ export default function PresetsPage() {
                     </CardHeader>
                     <CardContent className="pt-0">
                       {preset.description && (
-                        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
                           {preset.description}
                         </p>
                       )}
                       
-                      <div className="flex items-center justify-between text-sm text-gray-500">
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
                         <div className="flex items-center space-x-2">
                           {preset.creator.avatar_url ? (
                             <img
@@ -302,7 +302,7 @@ export default function PresetsPage() {
                               className="w-6 h-6 rounded-full"
                             />
                           ) : (
-                            <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
+                            <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
                               <span className="text-xs font-medium">
                                 {preset.creator.display_name.charAt(0)}
                               </span>
@@ -330,9 +330,9 @@ export default function PresetsPage() {
 
           <TabsContent value="my-presets" className="mt-6">
             <div className="text-center py-12">
-              <Palette className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">My Presets</h3>
-              <p className="text-gray-500 mb-4">Manage your created presets</p>
+              <Palette className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">My Presets</h3>
+              <p className="text-muted-foreground mb-4">Manage your created presets</p>
               <Button asChild>
                 <a href="/presets/create">Create New Preset</a>
               </Button>
@@ -341,9 +341,9 @@ export default function PresetsPage() {
 
           <TabsContent value="marketplace" className="mt-6">
             <div className="text-center py-12">
-              <Palette className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Preset Marketplace</h3>
-              <p className="text-gray-500 mb-4">Discover featured presets from the community</p>
+              <Palette className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Preset Marketplace</h3>
+              <p className="text-muted-foreground mb-4">Discover featured presets from the community</p>
               <Button asChild>
                 <a href="/presets/marketplace">Browse Marketplace</a>
               </Button>

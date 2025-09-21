@@ -18,6 +18,7 @@ node_modules
 # Scripts with potential secrets
 *deploy*.js
 *execute*.sql
+*key-backup*.txt
 *migration*.js
 deploy-*.js
 execute_*.sql

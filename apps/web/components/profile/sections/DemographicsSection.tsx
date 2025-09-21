@@ -78,7 +78,7 @@ export function DemographicsSection() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <User className="h-5 w-5 text-emerald-600" />
+        <User className="h-5 w-5 text-primary-600" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Demographics</h2>
       </div>
 
@@ -201,7 +201,7 @@ export function DemographicsSection() {
       {/* Location Information */}
       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <MapPin className="h-4 w-4 text-emerald-600" />
+          <MapPin className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Location</h3>
         </div>
         

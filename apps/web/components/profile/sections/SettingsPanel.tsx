@@ -271,15 +271,15 @@ export function SettingsPanel() {
             <h4 className="font-medium text-gray-700 dark:text-gray-300">Notifications</h4>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.email_notifications ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${formSettings.email_notifications ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
                 <span className="text-gray-600 dark:text-gray-400">Email Notifications</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.push_notifications ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${formSettings.push_notifications ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
                 <span className="text-gray-600 dark:text-gray-400">Push Notifications</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.marketing_emails ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${formSettings.marketing_emails ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
                 <span className="text-gray-600 dark:text-gray-400">Marketing Emails</span>
               </div>
             </div>
@@ -289,11 +289,11 @@ export function SettingsPanel() {
             <h4 className="font-medium text-gray-700 dark:text-gray-300">Privacy</h4>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.location_visibility ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${formSettings.location_visibility ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
                 <span className="text-gray-600 dark:text-gray-400">Location Visible</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.profile_visibility ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${formSettings.profile_visibility ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
                 <span className="text-gray-600 dark:text-gray-400">Profile Visible</span>
               </div>
             </div>

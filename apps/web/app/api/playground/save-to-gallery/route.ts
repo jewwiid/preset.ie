@@ -1,32 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '../../../../lib/supabase'
-import { getUserFromRequest } from '../../../../lib/auth-utils'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function POST(request: NextRequest) {
   console.log('Save-to-gallery API called')
   
-  const { user, error: authError } = await getUserFromRequest(request)
-  console.log('Auth result:', { user: user?.id, authError })
-  
-  const { imageUrl, title, description, tags, projectId, editId, overrideExisting, generationMetadata } = await request.json()
-  console.log('Request data:', { imageUrl, title, description, tags, projectId, editId, overrideExisting, generationMetadata })
-  
-  if (!user) {
-    console.log('No user found, returning 401')
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
-
-  if (!supabaseAdmin) {
-    return NextResponse.json(
-      { error: 'Database connection failed' },
-      { status: 500 }
-    )
-  }
-  
   try {
+    // Get auth token from header
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader) {
+      console.log('No authorization header provided')
+      return NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      )
+    }
+    
+    const token = authHeader.replace('Bearer ', '')
+    
+    // Create two clients: one for user auth, one for admin operations
+    const supabaseAnon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+    
+    // Set the user's session to verify the token
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token)
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError)
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      )
+    }
+
+    const { imageUrl, title, description, tags, projectId, editId, overrideExisting, generationMetadata } = await request.json()
+    console.log('Request data:', { imageUrl, title, description, tags, projectId, editId, overrideExisting, generationMetadata })
     let finalImageUrl = imageUrl
     
     // Handle data URLs and external URLs by uploading to Supabase Storage
@@ -178,41 +188,61 @@ export async function POST(request: NextRequest) {
     let imageHeight = 1024 // Default fallback
     
     try {
-      // Try to extract dimensions from generation metadata first
-      if (generationMetadata?.resolution) {
-        const resolutionMatch = generationMetadata.resolution.match(/(\d+)x(\d+)/)
+      // Priority 1: Use actual dimensions from metadata if available
+      if (generationMetadata?.actual_width && generationMetadata?.actual_height) {
+        imageWidth = generationMetadata.actual_width
+        imageHeight = generationMetadata.actual_height
+        console.log('Using actual dimensions from metadata:', { imageWidth, imageHeight })
+      }
+      // Priority 2: Extract from resolution string
+      else if (generationMetadata?.resolution) {
+        const resolutionMatch = generationMetadata.resolution.match(/(\d+)[\*x](\d+)/)
         if (resolutionMatch) {
           imageWidth = parseInt(resolutionMatch[1])
           imageHeight = parseInt(resolutionMatch[2])
-          console.log('Extracted dimensions from metadata:', { imageWidth, imageHeight })
+          console.log('Extracted dimensions from resolution string:', { imageWidth, imageHeight, resolution: generationMetadata.resolution })
         }
       }
-      
-      // If metadata doesn't have resolution, try to get it from the image URL
-      if (imageWidth === 1024 && imageHeight === 1024) {
-        // For Seedream URLs, we can sometimes extract dimensions from the URL
-        // or we could make a HEAD request to get image dimensions
-        // For now, we'll use the metadata if available
-        if (generationMetadata?.aspect_ratio) {
-          const aspectRatio = generationMetadata.aspect_ratio
-          if (aspectRatio === '16:9') {
-            imageWidth = 1920
-            imageHeight = 1080
-          } else if (aspectRatio === '9:16') {
-            imageWidth = 1080
-            imageHeight = 1920
-          } else if (aspectRatio === '21:9') {
-            imageWidth = 2560
-            imageHeight = 1080
-          } else if (aspectRatio === '4:3') {
-            imageWidth = 1024
-            imageHeight = 768
-          } else if (aspectRatio === '3:4') {
-            imageWidth = 768
-            imageHeight = 1024
+      // Priority 3: Calculate from aspect ratio and base resolution
+      else if (generationMetadata?.aspect_ratio) {
+        const aspectRatio = generationMetadata.aspect_ratio
+        
+        // Handle custom aspect ratios like "1024:576"
+        const aspectMatch = aspectRatio.match(/(\d+):(\d+)/)
+        if (aspectMatch) {
+          const widthRatio = parseInt(aspectMatch[1])
+          const heightRatio = parseInt(aspectMatch[2])
+          const ratio = widthRatio / heightRatio
+          
+          // Use the base resolution to calculate actual dimensions
+          const baseResolution = parseInt(generationMetadata.resolution?.split(/[\*x]/)[0] || '1024')
+          
+          if (ratio >= 1) {
+            imageWidth = baseResolution
+            imageHeight = Math.round(baseResolution / ratio)
+          } else {
+            imageHeight = baseResolution
+            imageWidth = Math.round(baseResolution * ratio)
           }
-          console.log('Extracted dimensions from aspect ratio:', { imageWidth, imageHeight, aspectRatio })
+          
+          console.log('Calculated dimensions from custom aspect ratio:', { 
+            imageWidth, imageHeight, aspectRatio, ratio, baseResolution 
+          })
         }
+        // Handle standard aspect ratios
+        else if (aspectRatio === '16:9') {
+          imageWidth = 1920; imageHeight = 1080
+        } else if (aspectRatio === '9:16') {
+          imageWidth = 1080; imageHeight = 1920
+        } else if (aspectRatio === '21:9') {
+          imageWidth = 2560; imageHeight = 1080
+        } else if (aspectRatio === '4:3') {
+          imageWidth = 1024; imageHeight = 768
+        } else if (aspectRatio === '3:4') {
+          imageWidth = 768; imageHeight = 1024
+        }
+        
+        console.log('Extracted dimensions from aspect ratio:', { imageWidth, imageHeight, aspectRatio })
       }
     } catch (error) {
       console.error('Error extracting image dimensions:', error)
@@ -242,7 +272,12 @@ export async function POST(request: NextRequest) {
           original_url: imageUrl, // Store original URL for reference
           permanently_stored: finalImageUrl !== imageUrl, // Track if image was downloaded and stored
           storage_method: imageUrl.startsWith('data:') ? 'base64' : 
-                        imageUrl.startsWith('http') ? 'downloaded' : 'external_reference'
+                        imageUrl.startsWith('http') ? 'downloaded' : 'external_reference',
+          // Ensure custom dimensions are preserved
+          saved_width: imageWidth,
+          saved_height: imageHeight,
+          saved_aspect_ratio: generationMetadata?.aspect_ratio || `${imageWidth}:${imageHeight}`,
+          saved_at: new Date().toISOString()
         }
       })
       .select()
@@ -268,6 +303,19 @@ export async function POST(request: NextRequest) {
               enhanced_prompt: generationMetadata?.enhanced_prompt,
               include_technical_details: generationMetadata?.include_technical_details,
               include_style_references: generationMetadata?.include_style_references,
+              // Preserve all generation settings for reuse
+              original_prompt: generationMetadata?.prompt,
+              style: generationMetadata?.style,
+              aspect_ratio: generationMetadata?.aspect_ratio,
+              resolution: generationMetadata?.resolution,
+              consistency_level: generationMetadata?.consistency_level,
+              generation_mode: generationMetadata?.generation_mode,
+              base_image: generationMetadata?.base_image,
+              provider: generationMetadata?.provider,
+              intensity: generationMetadata?.intensity,
+              // Preserve actual dimensions
+              actual_width: imageWidth,
+              actual_height: imageHeight,
               saved_at: new Date().toISOString()
             }
           })

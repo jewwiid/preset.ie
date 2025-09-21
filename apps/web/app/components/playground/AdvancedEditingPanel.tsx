@@ -317,15 +317,15 @@ export default function AdvancedEditingPanel({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-background rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 flex items-center">
-        <Wand2 className="h-5 w-5 mr-2 text-purple-500" />
+        <Wand2 className="h-5 w-5 mr-2 text-primary" />
         Advanced Editing
       </h2>
       
       {/* Image Source Selection */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           Image Source
         </label>
         <div className="grid grid-cols-3 gap-2 mb-3">
@@ -354,21 +354,21 @@ export default function AdvancedEditingPanel({
 
         {/* Image Status */}
         {imageSource === 'saved' && selectedImage && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-            <div className="flex items-center text-sm text-green-800">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+          <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+            <div className="flex items-center text-sm text-primary">
+              <div className="w-2 h-2 bg-primary rounded-full mr-2"></div>
               Image selected from gallery
             </div>
-            <div className="mt-1 text-xs text-green-700">
+            <div className="mt-1 text-xs text-primary">
               {savedImages.find(img => img.image_url === selectedImage)?.title || 'Selected image'}
             </div>
           </div>
         )}
         
         {imageSource === 'saved' && !selectedImage && (
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-            <div className="flex items-center text-sm text-yellow-800">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+          <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+            <div className="flex items-center text-sm text-primary">
+              <div className="w-2 h-2 bg-primary rounded-full mr-2"></div>
               Select an image from the gallery to edit
             </div>
           </div>
@@ -377,14 +377,14 @@ export default function AdvancedEditingPanel({
         {/* Saved Images Selection */}
         {imageSource === 'saved' && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Select from Saved Images
             </label>
             {savedImages.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-lg">
-                <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <div className="text-center py-8 text-muted-foreground border border-border rounded-lg">
+                <ImageIcon className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                 <p className="text-sm font-medium">No saved images available</p>
-                <p className="text-xs text-gray-400 mt-1">Save images from your generations to see them here</p>
+                <p className="text-xs text-muted-foreground mt-1">Save images from your generations to see them here</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
@@ -424,9 +424,9 @@ export default function AdvancedEditingPanel({
         )}
 
         {imageSource === 'upload' && uploadedImage && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-            <div className="flex items-center text-sm text-green-800">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+          <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+            <div className="flex items-center text-sm text-primary">
+              <div className="w-2 h-2 bg-primary rounded-full mr-2"></div>
               Image uploaded successfully
             </div>
           </div>
@@ -442,12 +442,12 @@ export default function AdvancedEditingPanel({
         )}
 
         {imageSource === 'pexels' && selectedImage && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-            <div className="flex items-center text-sm text-green-800">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+          <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+            <div className="flex items-center text-sm text-primary">
+              <div className="w-2 h-2 bg-primary rounded-full mr-2"></div>
               Image selected from Pexels
             </div>
-            <div className="mt-1 text-xs text-green-700">
+            <div className="mt-1 text-xs text-primary">
               Selected image
             </div>
           </div>
@@ -466,7 +466,7 @@ export default function AdvancedEditingPanel({
       {/* Image Upload Section */}
       {imageSource === 'upload' && (
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Upload Image to Edit
           </label>
           
@@ -520,7 +520,7 @@ export default function AdvancedEditingPanel({
                 <X className="h-4 w-4" />
               </Button>
               <div className="absolute top-2 left-2">
-                <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
+                <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
                   Uploaded Image
                 </span>
               </div>
@@ -535,7 +535,7 @@ export default function AdvancedEditingPanel({
       {/* Pexels Section */}
       {imageSource === 'pexels' && (
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Search Pexels Images
           </label>
           
@@ -791,7 +791,7 @@ export default function AdvancedEditingPanel({
                   {/* Saved Images Section */}
                   {referenceImageSource === 'saved' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Select from Saved Images
                       </label>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -841,7 +841,7 @@ export default function AdvancedEditingPanel({
                     <X className="h-4 w-4" />
                   </Button>
                   <div className="absolute top-2 left-2">
-                    <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
+                    <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
                       {referenceImageSource === 'upload' && 'Uploaded Image'}
                       {referenceImageSource === 'saved' && 'Saved Image'}
                     </span>

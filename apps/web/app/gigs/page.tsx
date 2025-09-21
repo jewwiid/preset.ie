@@ -6,6 +6,10 @@ import { supabase } from '../../lib/supabase';
 import { MapPin, Calendar, Users, Search, Filter, Heart, Clock, DollarSign, Camera, Video, Sparkles, ChevronLeft, ChevronRight, X, Tag, Eye, Shield, TrendingUp, Radius, Building } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 
 type CompensationType = 'TFP' | 'PAID' | 'EXPENSES' | 'OTHER';
 type PurposeType = 'PORTFOLIO' | 'COMMERCIAL' | 'EDITORIAL' | 'FASHION' | 'BEAUTY' | 'LIFESTYLE' | 'WEDDING' | 'EVENT' | 'PRODUCT' | 'ARCHITECTURE' | 'STREET' | 'CONCEPTUAL' | 'OTHER';
@@ -648,13 +652,13 @@ export default function GigDiscoveryPage() {
   const getCompTypeColor = (type: CompensationType) => {
     switch (type) {
       case 'PAID':
-        return 'bg-green-100 text-green-800';
+        return 'bg-primary/10 text-primary';
       case 'TFP':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-secondary/20 text-secondary-foreground';
       case 'EXPENSES':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-muted/50 text-muted-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -679,105 +683,134 @@ export default function GigDiscoveryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header with Search and Filters */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search Bar */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search gigs, styles, or keywords..."
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+    <>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="mb-8 rounded-2xl p-8 border border-border">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <Camera className="h-8 w-8 text-primary mr-3" />
+              <div>
+                <h1 className="text-5xl font-bold text-primary mb-2">Gigs</h1>
+                <p className="text-xl text-muted-foreground">Discover creative opportunities and collaborate with talented professionals</p>
+              </div>
             </div>
+            <div className="flex items-center space-x-4">
+              <Link href="/gigs/create">
+                <Button size="lg" className="px-8 py-3 text-lg font-semibold flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Create Gig
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Search and Filters */}
+        <Card className="sticky top-4 z-10 mb-6">
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Search Bar */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="Search gigs, styles, or keywords..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
 
             {/* Filter Buttons - Mobile Responsive */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-2">
               {/* First row on mobile: Type selector and Location */}
               <div className="flex gap-2 flex-1">
-                <select
-                  className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base flex-shrink-0"
-                  value={selectedCompType}
-                  onChange={(e) => setSelectedCompType(e.target.value as CompensationType | 'ALL')}
-                >
-                  <option value="ALL">All Types</option>
-                  <option value="TFP">TFP</option>
-                  <option value="PAID">Paid</option>
-                  <option value="EXPENSES">Expenses</option>
-                  <option value="OTHER">Other</option>
-                </select>
+                <Select value={selectedCompType} onValueChange={(value) => setSelectedCompType(value as CompensationType | 'ALL')}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">All Types</SelectItem>
+                    <SelectItem value="TFP">TFP</SelectItem>
+                    <SelectItem value="PAID">Paid</SelectItem>
+                    <SelectItem value="EXPENSES">Expenses</SelectItem>
+                    <SelectItem value="OTHER">Other</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <input
+                <Input
                   type="text"
                   placeholder="Location..."
-                  className="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base flex-1 min-w-0"
+                  className="flex-1 min-w-0"
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
                 />
               </div>
 
               {/* Filter button - always visible */}
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setShowFilters(!showFilters)}
-                className="px-3 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm sm:text-base flex-shrink-0 whitespace-nowrap"
+                className="flex items-center gap-2 flex-shrink-0 whitespace-nowrap"
               >
                 <Filter className="w-4 h-4" />
                 <span className="hidden sm:inline">Filters</span>
                 <span className="sm:hidden">Filt</span>
-              </button>
+              </Button>
             </div>
           </div>
+          </CardContent>
+        </Card>
 
-          {/* Advanced Filters */}
-          {showFilters && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+        {/* Advanced Filters */}
+        {showFilters && (
+          <Card className="mb-6">
+            <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Purpose Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Purpose
                   </label>
-                  <select
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={selectedPurpose}
-                    onChange={(e) => setSelectedPurpose(e.target.value as PurposeType | 'ALL')}
-                  >
-                    <option value="ALL">All Purposes</option>
-                    <option value="PORTFOLIO">Portfolio</option>
-                    <option value="COMMERCIAL">Commercial</option>
-                    <option value="EDITORIAL">Editorial</option>
-                    <option value="FASHION">Fashion</option>
-                    <option value="BEAUTY">Beauty</option>
-                    <option value="LIFESTYLE">Lifestyle</option>
-                    <option value="WEDDING">Wedding</option>
-                    <option value="EVENT">Event</option>
-                    <option value="PRODUCT">Product</option>
-                    <option value="ARCHITECTURE">Architecture</option>
-                    <option value="STREET">Street</option>
-                    <option value="CONCEPTUAL">Conceptual</option>
-                    <option value="OTHER">Other</option>
-                  </select>
+                  <Select value={selectedPurpose} onValueChange={(value) => setSelectedPurpose(value as PurposeType | 'ALL')}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="All Purposes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All Purposes</SelectItem>
+                      <SelectItem value="PORTFOLIO">Portfolio</SelectItem>
+                      <SelectItem value="COMMERCIAL">Commercial</SelectItem>
+                      <SelectItem value="EDITORIAL">Editorial</SelectItem>
+                      <SelectItem value="FASHION">Fashion</SelectItem>
+                      <SelectItem value="BEAUTY">Beauty</SelectItem>
+                      <SelectItem value="LIFESTYLE">Lifestyle</SelectItem>
+                      <SelectItem value="WEDDING">Wedding</SelectItem>
+                      <SelectItem value="EVENT">Event</SelectItem>
+                      <SelectItem value="PRODUCT">Product</SelectItem>
+                      <SelectItem value="ARCHITECTURE">Architecture</SelectItem>
+                      <SelectItem value="STREET">Street</SelectItem>
+                      <SelectItem value="CONCEPTUAL">Conceptual</SelectItem>
+                      <SelectItem value="OTHER">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Usage Rights Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Usage Rights
                   </label>
                   <select
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     value={selectedUsageRights}
                     onChange={(e) => setSelectedUsageRights(e.target.value)}
                   >
@@ -793,12 +826,12 @@ export default function GigDiscoveryPage() {
 
                 {/* Start Date Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Start Date From
                   </label>
                   <input
                     type="date"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     value={startDateFilter}
                     onChange={(e) => setStartDateFilter(e.target.value)}
                   />
@@ -806,12 +839,12 @@ export default function GigDiscoveryPage() {
 
                 {/* End Date Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     End Date Until
                   </label>
                   <input
                     type="date"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     value={endDateFilter}
                     onChange={(e) => setEndDateFilter(e.target.value)}
                   />
@@ -819,7 +852,7 @@ export default function GigDiscoveryPage() {
 
                 {/* Max Applicants Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Max Applicants
                   </label>
                   <input
@@ -827,7 +860,7 @@ export default function GigDiscoveryPage() {
                     min="1"
                     max="100"
                     placeholder="e.g. 10"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     value={maxApplicantsFilter || ''}
                     onChange={(e) => setMaxApplicantsFilter(e.target.value ? parseInt(e.target.value) : null)}
                   />
@@ -838,7 +871,7 @@ export default function GigDiscoveryPage() {
               {/* Style Tags Filter */}
               {availableStyleTags.length > 0 && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Style Tags
                   </label>
                   <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
@@ -854,8 +887,8 @@ export default function GigDiscoveryPage() {
                         }}
                         className={`px-3 py-1 rounded-full text-sm transition-all hover:scale-105 ${
                           selectedStyleTags.includes(tag)
-                            ? 'bg-indigo-100 text-indigo-800 border-2 border-indigo-500'
-                            : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:border-gray-400'
+                            ? 'bg-primary/20 text-primary border-2 border-primary'
+                            : 'bg-muted text-foreground border-2 border-border hover:border-primary/50'
                         }`}
                       >
                         <Tag className="w-3 h-3 inline mr-1" />
@@ -868,13 +901,13 @@ export default function GigDiscoveryPage() {
                       {selectedStyleTags.map((tag, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 text-primary text-xs rounded-full"
                         >
                           <Tag className="w-3 h-3" />
                           {tag}
                           <button
                             onClick={() => setSelectedStyleTags(prev => prev.filter(t => t !== tag))}
-                            className="hover:text-indigo-900"
+                            className="hover:text-primary/80"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -888,7 +921,7 @@ export default function GigDiscoveryPage() {
               {/* Vibe Tags Filter */}
               {availableVibeTags.length > 0 && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Vibe Tags
                   </label>
                   <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
@@ -904,8 +937,8 @@ export default function GigDiscoveryPage() {
                         }}
                         className={`px-3 py-1 rounded-full text-sm transition-all hover:scale-105 ${
                           selectedVibeTags.includes(tag)
-                            ? 'bg-purple-100 text-purple-800 border-2 border-purple-500'
-                            : 'bg-gray-100 text-gray-700 border-2 border-gray-300 hover:border-gray-400'
+                            ? 'bg-secondary/20 text-secondary-foreground border-2 border-secondary'
+                            : 'bg-muted text-foreground border-2 border-border hover:border-primary/50'
                         }`}
                       >
                         <Sparkles className="w-3 h-3 inline mr-1" />
@@ -918,13 +951,13 @@ export default function GigDiscoveryPage() {
                       {selectedVibeTags.map((tag, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-secondary/20 text-secondary-foreground text-xs rounded-full"
                         >
                           <Sparkles className="w-3 h-3" />
                           {tag}
                           <button
                             onClick={() => setSelectedVibeTags(prev => prev.filter(t => t !== tag))}
-                            className="hover:text-purple-900"
+                            className="hover:text-secondary-foreground/80"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -938,7 +971,7 @@ export default function GigDiscoveryPage() {
               {/* Color Palette Filter */}
               {availablePalettes.length > 0 && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Color Palette
                   </label>
                   <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
@@ -954,8 +987,8 @@ export default function GigDiscoveryPage() {
                         }}
                         className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
                           selectedPalette.includes(color)
-                            ? 'border-indigo-500 ring-2 ring-indigo-200'
-                            : 'border-gray-300 hover:border-gray-400'
+                            ? 'border-primary ring-2 ring-primary/20'
+                            : 'border-border hover:border-primary/50'
                         }`}
                         style={{ backgroundColor: color }}
                         title={color}
@@ -967,7 +1000,7 @@ export default function GigDiscoveryPage() {
                       {selectedPalette.map((color, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-muted text-foreground text-xs rounded-full"
                         >
                           <div 
                             className="w-3 h-3 rounded-full border" 
@@ -976,7 +1009,7 @@ export default function GigDiscoveryPage() {
                           {color}
                           <button
                             onClick={() => setSelectedPalette(prev => prev.filter(c => c !== color))}
-                            className="hover:text-gray-900"
+                            className="hover:text-foreground"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -988,15 +1021,15 @@ export default function GigDiscoveryPage() {
               )}
 
               {/* Creator Profile Filters */}
-              <div className="mt-6 border-t border-gray-100 dark:border-gray-700 pt-4">
-                <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+              <div className="mt-6 border-t border-border pt-4">
+                <div className="bg-card backdrop-blur-sm rounded-2xl p-6 border border-border shadow-xl">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
-                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Creator Profile Filters</h3>
+                    <h3 className="text-lg font-bold text-foreground">Creator Profile Filters</h3>
                   </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   
@@ -1011,7 +1044,7 @@ export default function GigDiscoveryPage() {
                         min="0"
                         max="50"
                         placeholder="Min"
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                         value={minExperienceFilter || ''}
                         onChange={(e) => setMinExperienceFilter(e.target.value ? parseInt(e.target.value) : null)}
                       />
@@ -1020,7 +1053,7 @@ export default function GigDiscoveryPage() {
                         min="0"
                         max="50"
                         placeholder="Max"
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                         value={maxExperienceFilter || ''}
                         onChange={(e) => setMaxExperienceFilter(e.target.value ? parseInt(e.target.value) : null)}
                       />
@@ -1037,7 +1070,7 @@ export default function GigDiscoveryPage() {
                         type="number"
                         min="0"
                         placeholder="Min"
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-yellow-200 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 bg-card dark:bg-gray-700 border border-yellow-200 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-foreground"
                         value={minRateFilter || ''}
                         onChange={(e) => setMinRateFilter(e.target.value ? parseInt(e.target.value) : null)}
                       />
@@ -1045,7 +1078,7 @@ export default function GigDiscoveryPage() {
                         type="number"
                         min="0"
                         placeholder="Max"
-                        className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-yellow-200 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 bg-card dark:bg-gray-700 border border-yellow-200 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-foreground"
                         value={maxRateFilter || ''}
                         onChange={(e) => setMaxRateFilter(e.target.value ? parseInt(e.target.value) : null)}
                       />
@@ -1053,8 +1086,8 @@ export default function GigDiscoveryPage() {
                   </div>
 
                   {/* Availability Filters */}
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-4 border border-green-100 dark:border-green-800/50">
-                    <label className="block text-sm font-medium text-green-800 dark:text-green-200 mb-3">
+                  <div className="bg-gradient-to-r from-primary-primary/10 to-primary-primary/10 dark:from-primary-primary/20 dark:to-primary-primary/20 rounded-xl p-4 border border-primary-100 dark:border-primary-800/50">
+                    <label className="block text-sm font-medium text-primary-800 dark:text-primary-200 mb-3">
                       Availability
                     </label>
                     <div className="space-y-3">
@@ -1063,18 +1096,18 @@ export default function GigDiscoveryPage() {
                           type="checkbox"
                           checked={travelOnlyFilter}
                           onChange={(e) => setTravelOnlyFilter(e.target.checked)}
-                          className="mr-3 w-4 h-4 text-green-600 bg-white dark:bg-gray-700 border-green-300 dark:border-green-600 rounded focus:ring-green-500"
+                          className="mr-3 w-4 h-4 text-primary-600 bg-card dark:bg-gray-700 border-primary/30 dark:border-primary-600 rounded focus:ring-primary"
                         />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Available for Travel</span>
+                        <span className="text-sm text-foreground dark:text-gray-300">Available for Travel</span>
                       </label>
                       <label className="flex items-center">
                         <input
                           type="checkbox"
                           checked={studioOnlyFilter}
                           onChange={(e) => setStudioOnlyFilter(e.target.checked)}
-                          className="mr-3 w-4 h-4 text-green-600 bg-white dark:bg-gray-700 border-green-300 dark:border-green-600 rounded focus:ring-green-500"
+                          className="mr-3 w-4 h-4 text-primary-600 bg-card dark:bg-gray-700 border-primary/30 dark:border-primary-600 rounded focus:ring-primary"
                         />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Has Studio</span>
+                        <span className="text-sm text-foreground dark:text-gray-300">Has Studio</span>
                       </label>
                     </div>
                   </div>
@@ -1100,7 +1133,7 @@ export default function GigDiscoveryPage() {
                           className={`px-3 py-1 rounded-full text-sm transition-all hover:scale-105 ${
                             selectedSpecializations.includes(spec)
                               ? 'bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 border-2 border-purple-500'
-                              : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-purple-200 dark:border-purple-600 hover:border-purple-400'
+                              : 'bg-card dark:bg-gray-700 text-foreground dark:text-gray-300 border-2 border-purple-200 dark:border-purple-600 hover:border-purple-400'
                           }`}
                         >
                           <Tag className="w-3 h-3 inline mr-1" />
@@ -1119,7 +1152,7 @@ export default function GigDiscoveryPage() {
                             {spec}
                             <button
                               onClick={() => setSelectedSpecializations(prev => prev.filter(s => s !== spec))}
-                              className="hover:text-purple-900 dark:hover:text-purple-100"
+                              className="hover:text-secondary-foreground/80 dark:hover:text-purple-100"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -1133,7 +1166,9 @@ export default function GigDiscoveryPage() {
 
               {/* Clear Filters */}
               <div className="mt-4 flex justify-between items-center">
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setSelectedPurpose('ALL');
                     setSelectedUsageRights('ALL');
@@ -1154,39 +1189,57 @@ export default function GigDiscoveryPage() {
                     setTravelOnlyFilter(false);
                     setStudioOnlyFilter(false);
                   }}
-                  className="text-sm text-gray-600 hover:text-gray-800 underline"
+                  className="text-sm underline"
                 >
                   Clear all filters
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowFilters(false)}
-                  className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                  className="text-sm font-medium"
                 >
                   Hide filters
-                </button>
+                </Button>
               </div>
-                </div>
               </div>
-          )}
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Results Count */}
-          <div className="mt-4 text-sm text-gray-600">
-            Found {filteredGigs.length} gigs
-            {(selectedPalette.length > 0 || selectedStyleTags.length > 0 || selectedVibeTags.length > 0 || selectedPurpose !== 'ALL' || selectedUsageRights !== 'ALL' || startDateFilter || endDateFilter || maxApplicantsFilter || minExperienceFilter !== null || maxExperienceFilter !== null || selectedSpecializations.length > 0 || minRateFilter !== null || maxRateFilter !== null || travelOnlyFilter || studioOnlyFilter) && (
-              <span className="ml-2 text-indigo-600">
+        {/* Results Count */}
+        <div className="mb-4 text-sm text-muted-foreground">
+          Found {filteredGigs.length} gigs
+          {(() => {
+            const hasFilters = selectedPalette.length > 0 || 
+                              selectedStyleTags.length > 0 || 
+                              selectedVibeTags.length > 0 || 
+                              selectedPurpose !== 'ALL' || 
+                              selectedUsageRights !== 'ALL' || 
+                              startDateFilter || 
+                              endDateFilter || 
+                              maxApplicantsFilter || 
+                              minExperienceFilter !== null || 
+                              maxExperienceFilter !== null || 
+                              selectedSpecializations.length > 0 || 
+                              minRateFilter !== null || 
+                              maxRateFilter !== null || 
+                              travelOnlyFilter || 
+                              studioOnlyFilter;
+            
+            return hasFilters ? (
+              <span className="ml-2 text-primary">
                 (filtered)
               </span>
-            )}
-          </div>
+            ) : null;
+          })()}
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Main Content */}
         {/* Gig Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentGigs.map((gig) => (
-            <div key={gig.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div key={gig.id} className="bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
               {/* Gig Image/Moodboard Preview */}
               <div className="relative h-48 bg-gray-200 rounded-t-lg overflow-hidden">
                 {gig.moodboard_urls && gig.moodboard_urls.length > 0 ? (
@@ -1204,10 +1257,10 @@ export default function GigDiscoveryPage() {
                 {/* Save Button */}
                 <button
                   onClick={() => toggleSaveGig(gig.id)}
-                  className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-shadow"
+                  className="absolute top-3 right-3 p-2 bg-card rounded-full shadow-md hover:shadow-lg transition-shadow"
                 >
                   <Heart
-                    className={`w-5 h-5 ${savedGigs.has(gig.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+                    className={`w-5 h-5 ${savedGigs.has(gig.id) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
                   />
                 </button>
 
@@ -1222,12 +1275,12 @@ export default function GigDiscoveryPage() {
               <div className="p-4">
                 {/* Title and Owner */}
                 <Link href={`/gigs/${gig.id}`}>
-                  <h3 className="font-semibold text-lg hover:text-indigo-600 transition-colors">
+                  <h3 className="font-semibold text-lg hover:text-primary transition-colors">
                     {gig.title}
                   </h3>
                 </Link>
 
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <div className="mt-3 p-3 bg-muted rounded-lg">
                   <div className="flex items-center gap-3 mb-2">
                     <img
                       src={gig.users_profile?.avatar_url || '/default-avatar.png'}
@@ -1252,7 +1305,7 @@ export default function GigDiscoveryPage() {
                   </div>
                   
                   {/* Enhanced Creator Profile Information */}
-                  <div className="space-y-1 text-xs text-gray-600">
+                  <div className="space-y-1 text-xs text-muted-foreground">
                     {gig.users_profile?.years_experience && (
                       <div className="flex items-center gap-1">
                         <TrendingUp className="w-3 h-3" />
@@ -1294,17 +1347,17 @@ export default function GigDiscoveryPage() {
                     )}
                   </div>
                   {gig.users_profile?.handle && (
-                    <p className="text-xs text-gray-500 mt-0.5">@{gig.users_profile.handle}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">@{gig.users_profile.handle}</p>
                   )}
                 </div>
 
                 {/* Location and Date */}
                 <div className="mt-3 space-y-1">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <MapPin className="w-4 h-4" />
                     {gig.location_text}
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4" />
                     {formatDate(gig.start_time)}
                   </div>
@@ -1313,7 +1366,7 @@ export default function GigDiscoveryPage() {
                 {/* Purpose Tag */}
                 {gig.purpose && (
                   <div className="mt-3">
-                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
+                    <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
                       {gig.purpose.replace('_', ' ')}
                     </span>
                   </div>
@@ -1333,7 +1386,7 @@ export default function GigDiscoveryPage() {
                         </span>
                       ))}
                       {gig.style_tags.length > 3 && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           +{gig.style_tags.length - 3} more
                         </span>
                       )}
@@ -1348,14 +1401,14 @@ export default function GigDiscoveryPage() {
                       {gig.vibe_tags.slice(0, 2).map((tag, index) => (
                         <span
                           key={index}
-                          className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full flex items-center gap-1"
+                          className="text-xs bg-secondary/20 text-secondary-foreground px-2 py-1 rounded-full flex items-center gap-1"
                         >
                           <Sparkles className="w-2 h-2" />
                           {tag}
                         </span>
                       ))}
                       {gig.vibe_tags.length > 2 && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           +{gig.vibe_tags.length - 2} more
                         </span>
                       )}
@@ -1378,7 +1431,7 @@ export default function GigDiscoveryPage() {
                         ))}
                       </div>
                       {gig.palette_colors.length > 4 && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground">
                           +{gig.palette_colors.length - 4}
                         </span>
                       )}
@@ -1388,7 +1441,7 @@ export default function GigDiscoveryPage() {
 
                 {/* Footer Stats */}
                 <div className="mt-4 pt-3 border-t flex justify-between items-center">
-                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
                       {gig.current_applicants}/{gig.max_applicants}
@@ -1400,7 +1453,7 @@ export default function GigDiscoveryPage() {
                   </div>
                   <Link
                     href={`/gigs/${gig.id}`}
-                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                    className="text-sm text-primary hover:text-indigo-700 font-medium"
                   >
                     View Details →
                   </Link>
@@ -1413,47 +1466,47 @@ export default function GigDiscoveryPage() {
         {/* Empty State */}
         {filteredGigs.length === 0 && (
           <div className="text-center py-12">
-            <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No gigs found</h3>
-            <p className="text-gray-600">Try adjusting your filters or search terms</p>
+            <p className="text-muted-foreground">Try adjusting your filters or search terms</p>
           </div>
         )}
 
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
 
             {[...Array(totalPages)].map((_, index) => (
-              <button
+              <Button
                 key={index + 1}
+                variant={currentPage === index + 1 ? "default" : "outline"}
+                size="sm"
                 onClick={() => setCurrentPage(index + 1)}
-                className={`px-4 py-2 rounded-lg ${
-                  currentPage === index + 1
-                    ? 'bg-indigo-600 text-white'
-                    : 'border hover:bg-gray-50'
-                }`}
               >
                 {index + 1}
-              </button>
+              </Button>
             ))}
 
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

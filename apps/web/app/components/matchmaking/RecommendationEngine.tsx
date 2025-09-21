@@ -109,8 +109,8 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
                   variant="ghost"
                   className={`h-6 w-6 p-0 ${
                     feedback.get(recommendation.id) === 'like' 
-                      ? 'text-green-600 bg-green-50' 
-                      : 'text-gray-400 hover:text-green-600'
+                      ? 'text-primary-600 bg-primary-50' 
+                      : 'text-gray-400 hover:text-primary-600'
                   }`}
                   onClick={() => handleFeedback(recommendation.id, 'like')}
                 >
@@ -207,8 +207,8 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <Star className="w-5 h-5 text-green-600" />
+                <div className="p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
+                  <Star className="w-5 h-5 text-primary-600" />
                 </div>
                 <div>
                   <p className="text-xl font-bold text-gray-900 dark:text-white">
@@ -295,8 +295,8 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
           <RecommendationSection
             title="Perfect Matches"
             recommendations={highPriorityRecommendations}
-            icon={<Star className="w-5 h-5 text-green-500" />}
-            badgeColor="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"
+            icon={<Star className="w-5 h-5 text-primary-500" />}
+            badgeColor="bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-300"
             description="High compatibility matches (90%+ score)"
           />
         </TabsContent>
@@ -316,7 +316,7 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
       {loading && (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-emerald-500" />
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-primary-500" />
             <p className="text-gray-600 dark:text-gray-400">Finding your perfect matches...</p>
           </div>
         </div>

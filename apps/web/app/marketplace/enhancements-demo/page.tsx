@@ -109,14 +109,14 @@ export default function EnhancementsDemoPage() {
   const stats = getEnhancementStats();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Marketplace Enhancement System Demo
           </h1>
-          <p className="text-xl text-gray-600 mb-6">
+          <p className="text-xl text-muted-foreground mb-6">
             See how listing enhancements work with subscription benefits
           </p>
           
@@ -147,32 +147,32 @@ export default function EnhancementsDemoPage() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-              <div className="text-sm text-gray-600">Total Listings</div>
+              <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+              <div className="text-sm text-muted-foreground">Total Listings</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-emerald-600">{stats.enhanced}</div>
-              <div className="text-sm text-gray-600">Enhanced</div>
+              <div className="text-2xl font-bold text-primary-600">{stats.enhanced}</div>
+              <div className="text-sm text-muted-foreground">Enhanced</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-pink-600">{stats.premium}</div>
-              <div className="text-sm text-gray-600">Premium</div>
+              <div className="text-2xl font-bold text-primary-600">{stats.premium}</div>
+              <div className="text-sm text-muted-foreground">Premium</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-purple-600">{stats.priority}</div>
-              <div className="text-sm text-gray-600">Priority</div>
+              <div className="text-2xl font-bold text-primary">{stats.priority}</div>
+              <div className="text-sm text-muted-foreground">Priority</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-gray-600">{stats.basic}</div>
-              <div className="text-sm text-gray-600">Basic</div>
+              <div className="text-2xl font-bold text-muted-foreground">{stats.basic}</div>
+              <div className="text-sm text-muted-foreground">Basic</div>
             </CardContent>
           </Card>
         </div>
@@ -181,7 +181,7 @@ export default function EnhancementsDemoPage() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Star className="w-5 h-5 mr-2 text-emerald-600" />
+              <Star className="w-5 h-5 mr-2 text-primary-600" />
               Enhancement Options
             </CardTitle>
           </CardHeader>
@@ -192,18 +192,18 @@ export default function EnhancementsDemoPage() {
                   <TrendingUp className="w-8 h-8 mx-auto" />
                 </div>
                 <h3 className="font-semibold">Basic Bump</h3>
-                <p className="text-sm text-gray-600 mb-2">€1 for 1 day</p>
-                <p className="text-xs text-gray-500">Bumps to top of basic ads</p>
+                <p className="text-sm text-muted-foreground mb-2">€1 for 1 day</p>
+                <p className="text-xs text-muted-foreground">Bumps to top of basic ads</p>
               </div>
               <div className="text-center p-4 border rounded-lg">
                 <div className="bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-lg p-3 mb-3">
                   <Zap className="w-8 h-8 mx-auto" />
                 </div>
                 <h3 className="font-semibold">Priority Bump</h3>
-                <p className="text-sm text-gray-600 mb-2">€5 for 3 days</p>
-                <p className="text-xs text-gray-500">Above basic listings</p>
+                <p className="text-sm text-muted-foreground mb-2">€5 for 3 days</p>
+                <p className="text-xs text-muted-foreground">Above basic listings</p>
                 {userSubscriptionTier === 'PLUS' && (
-                  <Badge className="bg-emerald-100 text-emerald-800 mt-2">Included in Plus</Badge>
+                  <Badge className="bg-primary-100 text-primary-800 mt-2">Included in Plus</Badge>
                 )}
               </div>
               <div className="text-center p-4 border rounded-lg">
@@ -211,10 +211,10 @@ export default function EnhancementsDemoPage() {
                   <Crown className="w-8 h-8 mx-auto" />
                 </div>
                 <h3 className="font-semibold">Premium Bump</h3>
-                <p className="text-sm text-gray-600 mb-2">€7 for 7 days</p>
-                <p className="text-xs text-gray-500">Top placement with badge</p>
+                <p className="text-sm text-muted-foreground mb-2">€7 for 7 days</p>
+                <p className="text-xs text-muted-foreground">Top placement with badge</p>
                 {userSubscriptionTier === 'PRO' && (
-                  <Badge className="bg-emerald-100 text-emerald-800 mt-2">Included in Pro</Badge>
+                  <Badge className="bg-primary-100 text-primary-800 mt-2">Included in Pro</Badge>
                 )}
               </div>
             </div>

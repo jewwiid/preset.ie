@@ -140,7 +140,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
   }
 
   const getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return 'text-green-600'
+    if (rating >= 4.5) return 'text-primary-600'
     if (rating >= 4.0) return 'text-blue-600'
     if (rating >= 3.0) return 'text-yellow-600'
     if (rating >= 2.0) return 'text-orange-600'

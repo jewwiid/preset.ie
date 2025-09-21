@@ -257,7 +257,7 @@ export default function MosaicGrid({
                     if (task?.status === 'completed') {
                       return (
                         <>
-                          <CheckCircle className="w-8 h-8 text-green-400 mb-2" />
+                          <CheckCircle className="w-8 h-8 text-primary-400 mb-2" />
                           <span className="text-sm text-white font-medium">Enhanced!</span>
                         </>
                       )

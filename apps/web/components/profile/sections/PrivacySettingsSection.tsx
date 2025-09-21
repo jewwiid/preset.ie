@@ -17,7 +17,7 @@ export function PrivacySettingsSection() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <Shield className="h-5 w-5 text-emerald-600" />
+        <Shield className="h-5 w-5 text-primary-600" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Privacy Settings</h2>
       </div>
 
@@ -43,7 +43,7 @@ export function PrivacySettingsSection() {
       {/* Profile Visibility */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
-          <Eye className="h-4 w-4 text-emerald-600" />
+          <Eye className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Profile Visibility</h3>
         </div>
         
@@ -74,7 +74,7 @@ export function PrivacySettingsSection() {
       {/* Contact Information */}
       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <User className="h-4 w-4 text-emerald-600" />
+          <User className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Contact Information</h3>
         </div>
         
@@ -105,7 +105,7 @@ export function PrivacySettingsSection() {
       {/* Professional Information */}
       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <Globe className="h-4 w-4 text-emerald-600" />
+          <Globe className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Professional Information</h3>
         </div>
         
@@ -143,7 +143,7 @@ export function PrivacySettingsSection() {
       {/* Search & Discovery */}
       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <MapPin className="h-4 w-4 text-emerald-600" />
+          <MapPin className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Search & Discovery</h3>
         </div>
         
@@ -174,7 +174,7 @@ export function PrivacySettingsSection() {
       {/* Data & Analytics */}
       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <Shield className="h-4 w-4 text-emerald-600" />
+          <Shield className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Data & Analytics</h3>
         </div>
         

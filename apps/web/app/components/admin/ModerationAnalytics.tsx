@@ -59,7 +59,7 @@ export function ModerationAnalytics() {
 
   const getEfficiencyColor = (resolvedToday: number, pending: number) => {
     const ratio = pending > 0 ? resolvedToday / pending : 1
-    if (ratio >= 0.8) return 'text-green-600'
+    if (ratio >= 0.8) return 'text-primary-600'
     if (ratio >= 0.5) return 'text-yellow-600'
     return 'text-red-600'
   }
@@ -68,7 +68,7 @@ export function ModerationAnalytics() {
     if (severity >= 70) return 'text-red-600'
     if (severity >= 50) return 'text-orange-600'
     if (severity >= 30) return 'text-yellow-600'
-    return 'text-green-600'
+    return 'text-primary-600'
   }
 
   if (loading) {
@@ -137,7 +137,7 @@ export function ModerationAnalytics() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Resolved Today</p>
-              <p className="text-3xl font-bold text-green-600">{stats.resolved_today}</p>
+              <p className="text-3xl font-bold text-primary-600">{stats.resolved_today}</p>
               <p className={`text-xs mt-1 ${getEfficiencyColor(stats.resolved_today, stats.pending_items)}`}>
                 {stats.pending_items > 0 
                   ? `${Math.round((stats.resolved_today / stats.pending_items) * 100)}% efficiency`
@@ -145,7 +145,7 @@ export function ModerationAnalytics() {
                 }
               </p>
             </div>
-            <TrendingUp className="w-8 h-8 text-green-500" />
+            <TrendingUp className="w-8 h-8 text-primary-500" />
           </div>
         </div>
 
@@ -230,11 +230,11 @@ export function ModerationAnalytics() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
+                <div className="w-4 h-4 bg-primary-500 rounded"></div>
                 <span className="text-sm text-gray-700">Low Risk (0-30)</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-green-600">
+                <span className="text-lg font-bold text-primary-600">
                   {stats.risk_distribution.low}
                 </span>
                 <span className="text-sm text-gray-500">users</span>
@@ -284,7 +284,7 @@ export function ModerationAnalytics() {
       {/* Recent Activity Chart */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-green-500" />
+          <TrendingUp className="w-5 h-5 text-primary-500" />
           Recent Activity (Last 7 Days)
         </h3>
         <div className="space-y-2">
@@ -319,7 +319,7 @@ export function ModerationAnalytics() {
                   <div className="text-xs text-gray-500 w-14">Resolved:</div>
                   <div className="flex-1 bg-gray-200 rounded h-2">
                     <div
-                      className="bg-green-400 h-2 rounded"
+                      className="bg-primary-400 h-2 rounded"
                       style={{ 
                         width: `${Math.min(100, (activity.resolved / Math.max(activity.flagged, activity.resolved, 1)) * 100)}%` 
                       }}

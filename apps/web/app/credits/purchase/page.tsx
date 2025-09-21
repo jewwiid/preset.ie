@@ -17,7 +17,7 @@ export default function CreditPurchasePage() {
           <p className="text-gray-600 mb-4">Please sign in to purchase credits</p>
           <button
             onClick={() => router.push('/auth/signin')}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90"
           >
             Sign In
           </button>

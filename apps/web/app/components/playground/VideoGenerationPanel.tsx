@@ -205,9 +205,9 @@ export default function VideoGenerationPanel({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-background rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 flex items-center">
-        <Wand2 className="h-5 w-5 mr-2 text-purple-500" />
+        <Wand2 className="h-5 w-5 mr-2 text-primary" />
         Video Generation
       </h2>
       
@@ -215,7 +215,7 @@ export default function VideoGenerationPanel({
         {/* Current Image Preview */}
         {getCurrentImage() && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Current Image
             </label>
             <DraggableImagePreview
@@ -226,9 +226,9 @@ export default function VideoGenerationPanel({
               onSaveFraming={handleSaveFraming}
               className="mb-2"
             />
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-muted-foreground">
               <div>Target: {calculateDimensions(selectedAspectRatio, videoResolution).width} × {calculateDimensions(selectedAspectRatio, videoResolution).height}</div>
-              <div className="text-green-600">
+              <div className="text-primary">
                 {activeImageSource === 'selected' && 'Selected Image'}
                 {activeImageSource === 'uploaded' && 'Uploaded Image'}
                 {activeImageSource === 'saved' && 'Saved Image'}
@@ -284,7 +284,7 @@ export default function VideoGenerationPanel({
         {/* Image Upload Section */}
         {activeImageSource === 'uploaded' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Upload Image
             </label>
             <input
@@ -359,7 +359,7 @@ export default function VideoGenerationPanel({
         {/* Saved Images Selection */}
         {activeImageSource === 'saved' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Select from Saved Images
             </label>
             <p className="text-xs text-gray-500 mb-3">

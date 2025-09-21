@@ -1,0 +1,391 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand Colors - Preset Green */
+  --preset-50: #f0fdf9;
+  --preset-100: #ccfbef;
+  --preset-200: #99f6e0;
+  --preset-300: #5eead4;
+  --preset-400: #2dd4bf;
+  --preset-500: #00876f;
+  --preset-600: #0d7d72;
+  --preset-700: #15706b;
+  --preset-800: #155e56;
+  --preset-900: #134e48;
+
+  /* Backgrounds */
+  --background-secondary: #f8fafc;
+  --background-tertiary: #f1f5f9;
+
+  /* Foreground/Text */
+  --foreground-secondary: #475569;
+  --foreground-tertiary: #64748b;
+  --foreground-muted: #94a3b8;
+
+  /* Borders */
+  --border: #e2e8f0;
+  --border-secondary: #cbd5e1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Backgrounds */
+    --background-secondary: #1e293b;
+    --background-tertiary: #334155;
+
+    /* Foreground/Text */
+    --foreground-secondary: #cbd5e1;
+    --foreground-tertiary: #94a3b8;
+    --foreground-muted: #64748b;
+
+    /* Borders */
+    --border: #475569;
+    --border-secondary: #64748b;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+}
+
+/* Custom gradient utilities */
+.gradient-preset {
+  background: linear-gradient(135deg, #00876f 0%, #2dd4bf 100%);
+}
+
+.gradient-preset-radial {
+  background: radial-gradient(circle at top left, #5eead4, #00876f);
+}
+
+.gradient-hero {
+  background: linear-gradient(to bottom right, #f0fdf9, #ccfbef, #ffffff);
+}
+
+/* Glass morphism effects */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, #00876f 0%, #2dd4bf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Base styles */
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--preset-500);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--preset-600);
+}
+
+.imgDark {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .imgLight {
+    display: none;
+  }
+  .imgDark {
+    display: unset;
+  }
+}
+
+/* Force light theme for form inputs to prevent dark backgrounds */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+  background-color: white !important;
+  color: #0f172a !important;
+  color-scheme: light !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  color-scheme: light !important;
+  accent-color: #10b981 !important;
+}
+
+/* Ensure placeholders are visible */
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 1s ease-in-out;
+}
+
+@layer base {
+  :root {
+    --background: oklch(1.0000 0 0);
+    --foreground: oklch(0.1408 0.0044 285.8229);
+    --card: oklch(0.9842 0.0034 247.8575);
+    --card-foreground: oklch(0.1408 0.0044 285.8229);
+    --popover: oklch(1.0000 0 0);
+    --popover-foreground: oklch(0.1408 0.0044 285.8229);
+    /* Using Preset brand color as primary */
+    --primary: oklch(0.5563 0.1055 174.3329);  /* #00876f */
+    --primary-foreground: oklch(0.9851 0 0);
+    --secondary: oklch(0.9683 0.0069 247.8956);  /* Very light preset tint */
+    --secondary-foreground: oklch(0.1408 0.0044 285.8229);  /* Darker preset */
+    --muted: oklch(0.9683 0.0069 247.8956);
+    --muted-foreground: oklch(0.5544 0.0407 257.4166);
+    --accent: oklch(0.9288 0.0126 255.5078);  /* Lighter preset accent */
+    --accent-foreground: oklch(0.1408 0.0044 285.8229);
+    --destructive: oklch(0.6368 0.2078 25.3313);
+    --destructive-foreground: oklch(0.9851 0 0);
+    --border: oklch(0.9288 0.0126 255.5078);
+    --input: oklch(0.9288 0.0126 255.5078);
+    --ring: oklch(0.5563 0.1055 174.3329);  /* Preset brand color for focus rings */
+    /* Chart colors using preset palette */
+    --chart-1: oklch(0.5563 0.1055 174.3329);  /* preset-500 */
+    --chart-2: oklch(0.6889 0.0727 172.2422);   /* preset-300 */
+    --chart-3: oklch(0.8178 0.0437 168.0623);   /* preset-600 */
+    --chart-4: oklch(0.4175 0.0786 175.1422);   /* preset-400 */
+    --chart-5: oklch(0.3181 0.0596 175.7326);   /* preset-700 */
+    --radius: 0.5rem;  /* Slightly more rounded for modern feel */  --sidebar: oklch(0.9842 0.0034 247.8575);  --sidebar-foreground: oklch(0.1408 0.0044 285.8229);  --sidebar-primary: oklch(0.5563 0.1055 174.3329);  --sidebar-primary-foreground: oklch(0.9851 0 0);  --sidebar-accent: oklch(0.9288 0.0126 255.5078);  --sidebar-accent-foreground: oklch(0.1408 0.0044 285.8229);  --sidebar-border: oklch(0.9288 0.0126 255.5078);  --sidebar-ring: oklch(0.5563 0.1055 174.3329);  --font-sans: Inter;  --font-serif: serif;  --font-mono: monospace;  --shadow-color: #000000;  --shadow-opacity: 0.1;  --shadow-blur: 8px;  --shadow-spread: -2px;  --shadow-offset-x: 0px;  --shadow-offset-y: 2px;  --letter-spacing: 0px;  --spacing: 0.25rem;  --shadow-2xs: 0px 2px 8px -2px hsl(0 0% 0% / 0.05);  --shadow-xs: 0px 2px 8px -2px hsl(0 0% 0% / 0.05);  --shadow-sm: 0px 2px 8px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);  --shadow: 0px 2px 8px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);  --shadow-md: 0px 2px 8px -2px hsl(0 0% 0% / 0.10), 0px 2px 4px -3px hsl(0 0% 0% / 0.10);  --shadow-lg: 0px 2px 8px -2px hsl(0 0% 0% / 0.10), 0px 4px 6px -3px hsl(0 0% 0% / 0.10);  --shadow-xl: 0px 2px 8px -2px hsl(0 0% 0% / 0.10), 0px 8px 10px -3px hsl(0 0% 0% / 0.10);  --shadow-2xl: 0px 2px 8px -2px hsl(0 0% 0% / 0.25);  --tracking-normal: 0px;
+  }
+  .dark {
+    --background: oklch(0.1408 0.0044 285.8229);
+    --foreground: oklch(0.9851 0 0);
+    --card: oklch(0.2103 0.0059 285.8852);
+    --card-foreground: oklch(0.9851 0 0);
+    --popover: oklch(0.1408 0.0044 285.8229);
+    --popover-foreground: oklch(0.9851 0 0);
+    /* Brighter preset color for dark mode primary */
+    --primary: oklch(0.5563 0.1055 174.3329);  /* Lighter preset for better contrast */
+    --primary-foreground: oklch(0.9851 0 0);  /* Very dark preset */
+    --secondary: oklch(0.2739 0.0055 286.0326);  /* Dark with preset tint */
+    --secondary-foreground: oklch(0.9851 0 0);
+    --muted: oklch(0.2739 0.0055 286.0326);
+    --muted-foreground: oklch(0.7118 0.0129 286.0665);
+    --accent: oklch(0.2739 0.0055 286.0326);  /* Medium preset tone */
+    --accent-foreground: oklch(0.9851 0 0);
+    --destructive: oklch(0.3958 0.1331 25.7230);
+    --destructive-foreground: oklch(0.9851 0 0);
+    --border: oklch(0.2739 0.0055 286.0326);  /* Subtle preset tint */
+    --input: oklch(0.2739 0.0055 286.0326);
+    --ring: oklch(0.5563 0.1055 174.3329);  /* Bright preset for focus */
+    /* Dark mode chart colors */
+    --chart-1: oklch(0.5563 0.1055 174.3329);   /* Light preset */
+    --chart-2: oklch(0.4683 0.0879 175.5767);   /* Medium preset */
+    --chart-3: oklch(0.3789 0.0705 176.5745);   /* Bright preset */
+    --chart-4: oklch(0.6889 0.0727 172.2422);  /* Original brand */
+    --chart-5: oklch(0.8178 0.0437 168.0623);   /* Dark preset */   --radius: 0.5rem;   --sidebar: oklch(0.1408 0.0044 285.8229);   --sidebar-foreground: oklch(0.9851 0 0);   --sidebar-primary: oklch(0.5563 0.1055 174.3329);   --sidebar-primary-foreground: oklch(0.9851 0 0);   --sidebar-accent: oklch(0.2739 0.0055 286.0326);   --sidebar-accent-foreground: oklch(0.9851 0 0);   --sidebar-border: oklch(0.2739 0.0055 286.0326);   --sidebar-ring: oklch(0.5563 0.1055 174.3329);   --font-sans: Inter;   --font-serif: serif;   --font-mono: monospace;   --shadow-color: #000000;   --shadow-opacity: 0.2;   --shadow-blur: 8px;   --shadow-spread: -2px;   --shadow-offset-x: 0px;   --shadow-offset-y: 2px;   --letter-spacing: 0px;   --spacing: 0.25rem;   --shadow-2xs: 0px 2px 8px -2px hsl(0 0% 0% / 0.10);   --shadow-xs: 0px 2px 8px -2px hsl(0 0% 0% / 0.10);   --shadow-sm: 0px 2px 8px -2px hsl(0 0% 0% / 0.20), 0px 1px 2px -3px hsl(0 0% 0% / 0.20);   --shadow: 0px 2px 8px -2px hsl(0 0% 0% / 0.20), 0px 1px 2px -3px hsl(0 0% 0% / 0.20);   --shadow-md: 0px 2px 8px -2px hsl(0 0% 0% / 0.20), 0px 2px 4px -3px hsl(0 0% 0% / 0.20);   --shadow-lg: 0px 2px 8px -2px hsl(0 0% 0% / 0.20), 0px 4px 6px -3px hsl(0 0% 0% / 0.20);   --shadow-xl: 0px 2px 8px -2px hsl(0 0% 0% / 0.20), 0px 8px 10px -3px hsl(0 0% 0% / 0.20);   --shadow-2xl: 0px 2px 8px -2px hsl(0 0% 0% / 0.50);
+  }
+  .theme {
+    --font-sans: Inter;
+    --font-mono: monospace;
+    --font-serif: serif;
+    --radius: 0.5rem;
+    --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+    --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+    --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+    --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+    --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+  }
+  body {
+    letter-spacing: var(--tracking-normal);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Showcase-specific styles */
+.showcase-hero {
+  background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.showcase-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+.showcase-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  border-color: hsl(var(--primary));
+}
+
+.showcase-masonry {
+  column-count: 4;
+  column-gap: 1.5rem;
+}
+
+.showcase-masonry > * {
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .showcase-masonry {
+    column-count: 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .showcase-masonry {
+    column-count: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .showcase-masonry {
+    column-count: 1;
+  }
+}
+
+.filter-badge {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.5rem 1rem;
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
+}
+
+.filter-badge:hover {
+  background: hsl(var(--accent));
+  transform: translateY(-1px);
+}
+
+.filter-badge.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+}
+
+.hero-button {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--chart-2)) 100%);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  color: hsl(var(--primary-foreground));
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.hero-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.create-button {
+  background: linear-gradient(135deg, hsl(var(--chart-2)) 0%, hsl(var(--chart-3)) 100%);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  color: white;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.create-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.like-button {
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: hsl(var(--muted-foreground));
+}
+
+.like-button:hover {
+  background: hsl(var(--accent) / 0.1);
+  color: hsl(var(--destructive));
+}
+
+.like-button.liked {
+  color: hsl(var(--destructive));
+  background: hsl(var(--destructive) / 0.1);
+}

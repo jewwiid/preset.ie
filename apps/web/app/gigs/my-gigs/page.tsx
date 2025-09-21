@@ -118,15 +118,15 @@ export default function MyGigsPage() {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'published':
-        return 'bg-green-100 text-green-800'
+        return 'bg-primary-100 text-primary-800'
       case 'draft':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-muted text-muted-foreground'
       case 'closed':
         return 'bg-red-100 text-red-800'
       case 'completed':
         return 'bg-blue-100 text-blue-800'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-muted text-muted-foreground'
     }
   }
 
@@ -142,25 +142,25 @@ export default function MyGigsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-card shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6 flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Gigs</h1>
-              <p className="mt-1 text-sm text-gray-600">Manage your created gigs</p>
+              <h1 className="text-3xl font-bold text-foreground">My Gigs</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Manage your created gigs</p>
             </div>
             <button
               onClick={() => router.push('/gigs/create')}
-              className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create New Gig
@@ -178,8 +178,8 @@ export default function MyGigsPage() {
               onClick={() => setFilter(filterOption as any)}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                 filter === filterOption
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-card text-foreground hover:bg-muted'
               }`}
             >
               {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
@@ -191,16 +191,16 @@ export default function MyGigsPage() {
       {/* Gigs List */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {gigs.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No gigs found</h3>
-            <p className="text-gray-600 mb-4">
+          <div className="bg-card rounded-lg shadow p-12 text-center">
+            <h3 className="text-lg font-medium text-foreground mb-2">No gigs found</h3>
+            <p className="text-muted-foreground mb-4">
               {filter === 'all' 
                 ? "You haven't created any gigs yet." 
                 : `You don't have any ${filter} gigs.`}
             </p>
             <button
               onClick={() => router.push('/gigs/create')}
-              className="inline-flex items-center px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Gig
@@ -212,20 +212,20 @@ export default function MyGigsPage() {
               const isPastDeadline = new Date(gig.application_deadline) < new Date()
               
               return (
-                <div key={gig.id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+                <div key={gig.id} className="bg-card rounded-lg shadow hover:shadow-md transition-shadow">
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-semibold text-gray-900">{gig.title}</h3>
+                          <h3 className="text-xl font-semibold text-foreground">{gig.title}</h3>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(gig.status)}`}>
                             {gig.status}
                           </span>
                         </div>
                         
-                        <p className="text-gray-600 mb-3 line-clamp-2">{gig.description}</p>
+                        <p className="text-muted-foreground mb-3 line-clamp-2">{gig.description}</p>
                         
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                        <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center">
                             <MapPin className="w-4 h-4 mr-1" />
                             {gig.location_text}
@@ -251,14 +251,14 @@ export default function MyGigsPage() {
                       <div className="flex gap-2 ml-4">
                         <button
                           onClick={() => router.push(`/gigs/${gig.id}`)}
-                          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                           title="View"
                         >
                           <Eye className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => router.push(`/gigs/${gig.id}/edit`)}
-                          className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded"
+                          className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded"
                           title="Edit"
                         >
                           <Edit className="w-5 h-5" />
@@ -270,7 +270,7 @@ export default function MyGigsPage() {
                       <div className="mt-4 pt-4 border-t">
                         <button
                           onClick={() => router.push(`/gigs/${gig.id}/applications`)}
-                          className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                          className="text-sm text-primary-600 hover:text-primary/80 font-medium"
                         >
                           View {gig.application_count} application{gig.application_count !== 1 ? 's' : ''} →
                         </button>

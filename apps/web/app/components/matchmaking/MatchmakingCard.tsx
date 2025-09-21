@@ -42,10 +42,10 @@ export default function MatchmakingCard({
           <div className="flex flex-col space-y-4">
             {/* Gig Title */}
             <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900">{data.title}</h3>
-              <p className="text-sm text-gray-600">{data.location_text}</p>
+              <h3 className="text-lg font-semibold text-foreground">{data.title}</h3>
+              <p className="text-sm text-muted-foreground">{data.location_text}</p>
               {data.description && (
-                <p className="text-sm text-gray-500 mt-2 line-clamp-2">{data.description}</p>
+                <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{data.description}</p>
               )}
             </div>
 
@@ -63,7 +63,7 @@ export default function MatchmakingCard({
               {onViewDetails && (
                 <button
                   onClick={onViewDetails}
-                  className="w-full bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
+                  className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 transition-colors"
                 >
                   View Details
                 </button>
@@ -94,17 +94,17 @@ export default function MatchmakingCard({
               alt={cardData?.name || 'User'}
               className="w-20 h-20 rounded-full object-cover"
             />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary-500 rounded-full border-2 border-white"></div>
           </div>
 
           {/* User Info */}
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900">{cardData?.name || 'Unknown User'}</h3>
+            <h3 className="text-lg font-semibold text-foreground">{cardData?.name || 'Unknown User'}</h3>
             {cardData?.location && (
-              <p className="text-sm text-gray-600">{cardData.location}</p>
+              <p className="text-sm text-muted-foreground">{cardData.location}</p>
             )}
             {cardData?.bio && (
-              <p className="text-sm text-gray-500 mt-2 line-clamp-2">{cardData.bio}</p>
+              <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{cardData.bio}</p>
             )}
           </div>
 
@@ -121,13 +121,13 @@ export default function MatchmakingCard({
               {cardData.skills.slice(0, 3).map((skill: string, index: number) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                  className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full"
                 >
                   {skill}
                 </span>
               ))}
               {cardData.skills.length > 3 && (
-                <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full">
                   +{cardData.skills.length - 3}
                 </span>
               )}

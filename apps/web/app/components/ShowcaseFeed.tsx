@@ -354,7 +354,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
                   <span>0</span>
                 </button>
 
-                <button className="flex items-center space-x-2 text-gray-500 hover:text-green-500 transition-colors">
+                <button className="flex items-center space-x-2 text-gray-500 hover:text-primary transition-colors">
                   <Share2 className="h-5 w-5" />
                   <span>Share</span>
                 </button>

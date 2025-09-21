@@ -80,11 +80,11 @@ export default function MarketplaceFilters({
   };
 
   return (
-    <div className={cn("bg-white rounded-lg border border-gray-200 p-4", className)}>
+    <div className={cn("bg-card rounded-lg border border-border p-4", className)}>
       {/* Search Bar */}
       <div className="mb-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search listings..."
             value={localFilters.search || ''}
@@ -116,7 +116,7 @@ export default function MarketplaceFilters({
             variant="ghost"
             size="sm"
             onClick={handleClearFilters}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4 mr-1" />
             Clear
@@ -126,10 +126,10 @@ export default function MarketplaceFilters({
 
       {/* Expanded Filters */}
       {isExpanded && (
-        <div className="space-y-4 border-t border-gray-200 pt-4">
+        <div className="space-y-4 border-t border-border pt-4">
           {/* Category */}
           <div>
-            <Label htmlFor="category" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="category" className="text-sm font-medium text-foreground">
               Category
             </Label>
             <Select
@@ -152,7 +152,7 @@ export default function MarketplaceFilters({
 
           {/* Mode */}
           <div>
-            <Label htmlFor="mode" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="mode" className="text-sm font-medium text-foreground">
               Type
             </Label>
             <Select
@@ -175,7 +175,7 @@ export default function MarketplaceFilters({
 
           {/* Condition */}
           <div>
-            <Label htmlFor="condition" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="condition" className="text-sm font-medium text-foreground">
               Condition
             </Label>
             <Select
@@ -199,7 +199,7 @@ export default function MarketplaceFilters({
           {/* Location */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="city" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="city" className="text-sm font-medium text-foreground">
                 City
               </Label>
               <Input
@@ -210,7 +210,7 @@ export default function MarketplaceFilters({
               />
             </div>
             <div>
-              <Label htmlFor="country" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="country" className="text-sm font-medium text-foreground">
                 Country
               </Label>
               <Input
@@ -224,7 +224,7 @@ export default function MarketplaceFilters({
 
           {/* Price Range */}
           <div>
-            <Label className="text-sm font-medium text-gray-700">
+            <Label className="text-sm font-medium text-foreground">
               Price Range
             </Label>
             <div className="mt-2 space-y-2">
@@ -252,9 +252,9 @@ export default function MarketplaceFilters({
               id="verified_only"
               checked={localFilters.verified_only || false}
               onChange={(e) => handleFilterChange('verified_only', e.target.checked || undefined)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
             />
-            <Label htmlFor="verified_only" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="verified_only" className="text-sm font-medium text-foreground">
               Verified users only
             </Label>
           </div>
@@ -263,14 +263,14 @@ export default function MarketplaceFilters({
 
       {/* Active Filters Display */}
       {hasActiveFilters && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-border">
           <div className="flex flex-wrap gap-2">
             {filters.search && (
               <Badge variant="secondary" className="flex items-center space-x-1">
                 <span>Search: {filters.search}</span>
                 <button
                   onClick={() => handleFilterChange('search', undefined)}
-                  className="ml-1 hover:text-gray-600"
+                  className="ml-1 hover:text-muted-foreground"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -281,7 +281,7 @@ export default function MarketplaceFilters({
                 <span>Category: {filters.category}</span>
                 <button
                   onClick={() => handleFilterChange('category', undefined)}
-                  className="ml-1 hover:text-gray-600"
+                  className="ml-1 hover:text-muted-foreground"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -292,7 +292,7 @@ export default function MarketplaceFilters({
                 <span>Type: {modes.find(m => m.value === filters.mode)?.label}</span>
                 <button
                   onClick={() => handleFilterChange('mode', undefined)}
-                  className="ml-1 hover:text-gray-600"
+                  className="ml-1 hover:text-muted-foreground"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -303,7 +303,7 @@ export default function MarketplaceFilters({
                 <span>Condition: {filters.condition}</span>
                 <button
                   onClick={() => handleFilterChange('condition', undefined)}
-                  className="ml-1 hover:text-gray-600"
+                  className="ml-1 hover:text-muted-foreground"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -314,7 +314,7 @@ export default function MarketplaceFilters({
                 <span>Verified Only</span>
                 <button
                   onClick={() => handleFilterChange('verified_only', undefined)}
-                  className="ml-1 hover:text-gray-600"
+                  className="ml-1 hover:text-muted-foreground"
                 >
                   <X className="h-3 w-3" />
                 </button>

@@ -287,7 +287,7 @@ export function ToggleSwitch({
         className={`
           relative inline-flex h-6 w-11 items-center rounded-full transition-colors
           ${checked 
-            ? 'bg-emerald-600 dark:bg-emerald-500' 
+            ? 'bg-primary-600 dark:bg-primary-500' 
             : 'bg-gray-200 dark:bg-gray-700'
           }
           ${disabled 

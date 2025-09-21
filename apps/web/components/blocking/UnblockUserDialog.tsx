@@ -61,7 +61,7 @@ export function UnblockUserDialog({ isOpen, onClose, blockedUser, onUnblockSucce
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShieldOff className="h-5 w-5 text-green-600" />
+            <ShieldOff className="h-5 w-5 text-primary-600" />
             Unblock User
           </DialogTitle>
           <DialogDescription>
@@ -119,7 +119,7 @@ export function UnblockUserDialog({ isOpen, onClose, blockedUser, onUnblockSucce
             variant="default" 
             onClick={handleUnblock} 
             disabled={isLoading}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-primary-600 hover:bg-primary/90"
           >
             {isLoading ? 'Unblocking...' : 'Unblock User'}
           </Button>

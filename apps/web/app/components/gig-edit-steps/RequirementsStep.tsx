@@ -1,6 +1,11 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, FileText, Users, AlertCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, FileText, Users, AlertCircle, X, Minus, Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { useState } from 'react'
 
 interface RequirementsStepProps {
   usageRights: string
@@ -27,10 +32,42 @@ export default function RequirementsStep({
   isValid,
   applicationCount = 0
 }: RequirementsStepProps) {
+  // Parse existing usage rights into array (split by comma or semicolon)
+  const [selectedRights, setSelectedRights] = useState<string[]>(
+    usageRights ? usageRights.split(/[,;]/).map(right => right.trim()).filter(Boolean) : []
+  )
+  const [customRight, setCustomRight] = useState('')
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (isValid) {
       onNext()
+    }
+  }
+
+  // Update parent component when selected rights change
+  const updateUsageRights = (rights: string[]) => {
+    setSelectedRights(rights)
+    onUsageRightsChange(rights.join(', '))
+  }
+
+  // Add a usage right
+  const addUsageRight = (right: string) => {
+    if (right && !selectedRights.includes(right)) {
+      updateUsageRights([...selectedRights, right])
+    }
+  }
+
+  // Remove a usage right
+  const removeUsageRight = (rightToRemove: string) => {
+    updateUsageRights(selectedRights.filter(right => right !== rightToRemove))
+  }
+
+  // Add custom usage right
+  const addCustomRight = () => {
+    if (customRight.trim() && !selectedRights.includes(customRight.trim())) {
+      updateUsageRights([...selectedRights, customRight.trim()])
+      setCustomRight('')
     }
   }
 
@@ -44,15 +81,15 @@ export default function RequirementsStep({
   ]
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-      <div className="p-6 border-b border-gray-100">
+    <div className="bg-card rounded-lg border border-border shadow-sm">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="bg-emerald-100 p-2 rounded-lg">
-            <FileText className="w-5 h-5 text-emerald-600" />
+          <div className="bg-primary/10 p-2 rounded-lg">
+            <FileText className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Requirements & Rights</h2>
-            <p className="text-gray-600 text-sm">Set usage rights and application limits</p>
+            <h2 className="text-xl font-semibold text-foreground">Requirements & Rights</h2>
+            <p className="text-muted-foreground text-sm">Set usage rights and application limits</p>
           </div>
         </div>
       </div>
@@ -60,68 +97,146 @@ export default function RequirementsStep({
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         {/* Usage Rights */}
         <div>
-          <label htmlFor="usage-rights" className="block text-sm font-medium text-gray-700 mb-2">
-            Usage Rights <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            id="usage-rights"
-            required
-            value={usageRights}
-            onChange={(e) => onUsageRightsChange(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-            placeholder="e.g., Portfolio use only, Social media allowed"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Clearly specify how the images can be used by talent
-          </p>
+          <Label className="text-sm font-medium text-foreground mb-2">
+            Usage Rights <span className="text-destructive">*</span>
+          </Label>
+          
+          {/* Selected Usage Rights */}
+          {selectedRights.length > 0 && (
+            <div className="mb-3">
+              <div className="flex flex-wrap gap-2">
+                {selectedRights.map((right) => (
+                  <Badge
+                    key={right}
+                    variant="secondary"
+                    className="flex items-center gap-1 px-3 py-1"
+                  >
+                    {right}
+                    <button
+                      type="button"
+                      onClick={() => removeUsageRight(right)}
+                      className="ml-1 hover:bg-destructive/20 rounded-full p-0.5 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add Custom Usage Right */}
+          <div className="flex gap-2 mb-3">
+            <Input
+              type="text"
+              value={customRight}
+              onChange={(e) => setCustomRight(e.target.value)}
+              placeholder="Add custom usage right..."
+              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addCustomRight()
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addCustomRight}
+              disabled={!customRight.trim() || selectedRights.includes(customRight.trim())}
+            >
+              Add
+            </Button>
+          </div>
 
           {/* Common Usage Options */}
-          <div className="mt-3">
-            <p className="text-xs text-gray-600 mb-2">Common options (click to use):</p>
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Common options (click to add):</p>
             <div className="flex flex-wrap gap-2">
               {commonUsageOptions.map((option) => (
-                <button
+                <Button
                   key={option}
                   type="button"
-                  onClick={() => onUsageRightsChange(option)}
-                  className="text-xs px-3 py-1 bg-gray-100 text-gray-700 rounded-full hover:bg-emerald-100 hover:text-emerald-700 transition-colors"
+                  variant={selectedRights.includes(option) ? "default" : "secondary"}
+                  size="sm"
+                  onClick={() => {
+                    if (selectedRights.includes(option)) {
+                      removeUsageRight(option)
+                    } else {
+                      addUsageRight(option)
+                    }
+                  }}
+                  className="text-xs h-8 px-3"
                 >
-                  {option}
-                </button>
+                  {selectedRights.includes(option) ? '✓ ' : ''}{option}
+                </Button>
               ))}
             </div>
           </div>
+
+          <p className="mt-2 text-xs text-muted-foreground">
+            Select multiple usage rights that apply to your shoot. Be specific to help talent understand their permissions.
+          </p>
         </div>
 
         {/* Max Applicants */}
         <div>
-          <label htmlFor="max-applicants" className="block text-sm font-medium text-gray-700 mb-2">
+          <Label className="text-sm font-medium text-foreground mb-3">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Maximum Applicants
             </div>
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              id="max-applicants"
-              min="1"
-              max="100"
-              value={maxApplicants}
-              onChange={(e) => onMaxApplicantsChange(parseInt(e.target.value) || 1)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-            />
+          </Label>
+          
+          <div className="flex items-center gap-3">
+            {/* Decrement Button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => onMaxApplicantsChange(Math.max(1, maxApplicants - 1))}
+              disabled={maxApplicants <= 1}
+              className="h-10 w-10 shrink-0"
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            
+            {/* Value Display */}
+            <div className="flex-1 text-center">
+              <div className="text-2xl font-bold text-foreground">{maxApplicants}</div>
+              <div className="text-sm text-muted-foreground">
+                {maxApplicants === 1 ? 'applicant' : 'applicants'}
+              </div>
+            </div>
+            
+            {/* Increment Button */}
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => onMaxApplicantsChange(Math.min(100, maxApplicants + 1))}
+              disabled={maxApplicants >= 100}
+              className="h-10 w-10 shrink-0"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* Range Display */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+            <span>Min: 1</span>
+            <span>Max: 100</span>
           </div>
           
           {/* Application Count Warning */}
           {applicationCount > 0 && (
-            <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="mt-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
               <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
-                  <p className="text-amber-800 font-medium">Current applications: {applicationCount}</p>
-                  <p className="text-amber-700">
+                  <p className="text-yellow-600 dark:text-yellow-400 font-medium">Current applications: {applicationCount}</p>
+                  <p className="text-yellow-600/80 dark:text-yellow-400/80">
                     {maxApplicants < applicationCount 
                       ? `Warning: You have more applications (${applicationCount}) than your new limit (${maxApplicants}). Existing applications won't be removed.`
                       : `You can accept ${maxApplicants - applicationCount} more applications.`
@@ -132,60 +247,63 @@ export default function RequirementsStep({
             </div>
           )}
           
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             Limit the number of applications to make selection easier
           </p>
         </div>
 
         {/* Safety Notes */}
         <div>
-          <label htmlFor="safety-notes" className="block text-sm font-medium text-gray-700 mb-2">
+          <Label htmlFor="safety-notes" className="text-sm font-medium text-foreground mb-2">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
               Safety Notes (Optional)
             </div>
-          </label>
+          </Label>
           <textarea
             id="safety-notes"
             rows={3}
             value={safetyNotes}
             onChange={(e) => onSafetyNotesChange(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
             placeholder="e.g., Location has stairs, bring comfortable shoes, weather-dependent shoot..."
           />
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             Important safety information, accessibility notes, or special requirements for talent
           </p>
         </div>
 
         {/* Additional Requirements (Optional) */}
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Pro Tip</h3>
-          <p className="text-sm text-gray-600">
+        <div className="bg-muted rounded-lg p-4">
+          <h3 className="text-sm font-medium text-foreground mb-2">Pro Tip</h3>
+          <p className="text-sm text-muted-foreground">
             Clear usage rights help talent understand what they're agreeing to. 
             Be specific about social media, commercial use, and portfolio rights.
           </p>
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between pt-6 border-t border-gray-100">
-          <button
+        <div className="flex justify-between pt-6 border-t border-border">
+          <Button
             type="button"
+            variant="outline"
             onClick={onBack}
-            className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+            size="lg"
+            className="flex items-center gap-2"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to Schedule
-          </button>
+          </Button>
           
-          <button
+          <Button
             type="submit"
             disabled={!isValid}
-            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            size="lg"
+            className="flex items-center gap-2"
           >
             Continue to Moodboard
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       </form>
     </div>

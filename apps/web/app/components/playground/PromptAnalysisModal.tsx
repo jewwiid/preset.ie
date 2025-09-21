@@ -282,7 +282,7 @@ export default function PromptAnalysisModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose()
@@ -290,21 +290,21 @@ export default function PromptAnalysisModal({
       }}
     >
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-gray-200"
+        className="bg-popover rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-border popover-fixed"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-indigo-50 flex items-center justify-between">
+        <div className="px-6 py-5 border-b border-border bg-primary/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Sparkles className="w-5 h-5 text-purple-600" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Sparkles className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">AI Prompt Optimizer</h2>
-              <p className="text-sm text-gray-600">Professional prompt analysis and optimization</p>
+              <h2 className="text-xl font-bold text-foreground">AI Prompt Optimizer</h2>
+              <p className="text-sm text-muted-foreground">Professional prompt analysis and optimization</p>
             </div>
             {subscriptionTier !== 'free' && (
-              <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-green-200">
+              <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
                 {subscriptionTier === 'plus' ? 'Plus' : 'Pro'} Feature
               </Badge>
             )}
@@ -312,7 +312,7 @@ export default function PromptAnalysisModal({
           <button
             onClick={onClose}
             disabled={isAnalyzing}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 transition-colors"
+            className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg disabled:opacity-50 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -323,23 +323,23 @@ export default function PromptAnalysisModal({
           {/* Top Row - Only show when no base image */}
           {!imageUrl && (
             <div className="w-full">
-              <p className="text-sm font-medium text-gray-700 mb-2">Current Prompt</p>
-              <div className="relative w-full bg-gray-50 rounded-lg border border-gray-200 p-4" style={{ minHeight: '120px' }}>
+              <p className="text-sm font-medium text-foreground mb-2">Current Prompt</p>
+              <div className="relative w-full bg-muted rounded-lg border border-border p-4" style={{ minHeight: '120px' }}>
                 {!analysis && !isAnalyzing && !error && (
                   <div className="h-full flex flex-col">
                     <div className="flex-1">
                       <div className="mb-3">
                         <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="w-4 h-4 text-purple-600" />
-                          <span className="text-sm font-medium text-gray-700">Prompt to Analyze</span>
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-medium text-foreground">Prompt to Analyze</span>
                         </div>
-                        <div className="bg-white rounded-lg border border-gray-200 p-3">
-                          <p className="text-sm text-gray-800 leading-relaxed">
+                        <div className="bg-card rounded-lg border border-border p-3">
+                          <p className="text-sm text-foreground leading-relaxed">
                             {originalPrompt || 'No prompt provided'}
                           </p>
                         </div>
                       </div>
-                      <div className="text-center text-gray-500">
+                      <div className="text-center text-muted-foreground">
                         <p className="text-xs">Ready for AI analysis</p>
                       </div>
                     </div>
@@ -349,9 +349,9 @@ export default function PromptAnalysisModal({
                 {isAnalyzing && (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-center">
-                      <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">Analyzing prompt...</p>
-                      <p className="text-xs text-gray-500 mt-1">This may take a few moments</p>
+                      <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-2" />
+                      <p className="text-sm text-foreground">Analyzing prompt...</p>
+                      <p className="text-xs text-muted-foreground mt-1">This may take a few moments</p>
                     </div>
                   </div>
                 )}
@@ -359,14 +359,14 @@ export default function PromptAnalysisModal({
                 {analysis && (
                   <div className="h-full flex flex-col">
                     <div className="flex items-center gap-2 mb-3">
-                      <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium text-green-600">Analysis Complete!</span>
+                      <Check className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">Analysis Complete!</span>
                       <Badge variant="outline" className="text-xs">
                         {Math.round(analysis.confidence * 100)}% Confidence
                       </Badge>
                     </div>
-                    <div className="bg-white rounded-lg border border-gray-200 p-3 flex-1">
-                      <p className="text-sm text-gray-800 leading-relaxed">
+                    <div className="bg-card rounded-lg border border-border p-3 flex-1">
+                      <p className="text-sm text-foreground leading-relaxed">
                         {originalPrompt}
                       </p>
                     </div>
@@ -376,11 +376,11 @@ export default function PromptAnalysisModal({
                 {error && (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-center p-4">
-                      <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />
-                      <p className="text-sm text-red-600 font-medium mb-2">Analysis Failed</p>
-                      <p className="text-xs text-red-500">{error}</p>
+                      <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-2" />
+                      <p className="text-sm text-destructive font-medium mb-2">Analysis Failed</p>
+                      <p className="text-xs text-destructive">{error}</p>
                       {error.includes('required') && (
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-muted-foreground mt-2">
                           Please fill in all required fields before analyzing.
                         </p>
                       )}
@@ -396,8 +396,8 @@ export default function PromptAnalysisModal({
             {/* Base Image */}
             {imageUrl && (
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700 mb-2">Base Image</p>
-                <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden" style={{ aspectRatio: aspectRatio ? aspectRatio.replace(':', '/') : '1/1' }}>
+                <p className="text-sm font-medium text-foreground mb-2">Base Image</p>
+                <div className="relative w-full bg-muted rounded-lg overflow-hidden" style={{ aspectRatio: aspectRatio ? aspectRatio.replace(':', '/') : '1/1' }}>
                   <img
                     src={imageUrl}
                     alt="Base image"
@@ -409,10 +409,10 @@ export default function PromptAnalysisModal({
 
             {/* Generation Context */}
             <div className={imageUrl ? "flex-1" : "w-full"}>
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 h-full">
+              <Card className="border-border bg-primary/5 h-full">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-blue-600" />
+                    <Camera className="w-4 h-4 text-primary" />
                     Generation Context
                   </CardTitle>
                   <CardDescription className="text-sm">
@@ -423,14 +423,14 @@ export default function PromptAnalysisModal({
                   {/* Prompt Section */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-3 h-3 text-blue-600" />
-                      <span className="text-sm font-medium text-gray-700">Original Prompt</span>
+                      <Sparkles className="w-3 h-3 text-primary" />
+                      <span className="text-sm font-medium text-foreground">Original Prompt</span>
                       {originalPrompt && originalPrompt.trim().length < 10 && (
                         <Badge variant="destructive" className="text-xs">Too Short</Badge>
                       )}
                     </div>
-                    <div className="bg-white rounded-lg border border-blue-200 p-3">
-                      <p className={`text-sm leading-relaxed ${!originalPrompt || originalPrompt.trim().length < 10 ? 'text-red-500' : 'text-gray-800'}`}>
+                    <div className="bg-card rounded-lg border border-border p-3">
+                      <p className={`text-sm leading-relaxed ${!originalPrompt || originalPrompt.trim().length < 10 ? 'text-destructive' : 'text-foreground'}`}>
                         {originalPrompt || 'No prompt provided'}
                       </p>
                     </div>
@@ -440,40 +440,40 @@ export default function PromptAnalysisModal({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-600">Style</span>
+                        <span className="text-xs font-medium text-muted-foreground">Style</span>
                         {!style && <Badge variant="destructive" className="text-xs">Required</Badge>}
                       </div>
-                      <div className={`text-sm font-medium ${!style ? 'text-red-500' : 'text-gray-800'}`}>
+                        <div className={`text-sm font-medium ${!style ? 'text-destructive' : 'text-foreground'}`}>
                         {style || 'Not selected'}
                       </div>
                     </div>
 
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-600">Resolution</span>
+                        <span className="text-xs font-medium text-muted-foreground">Resolution</span>
                         {!resolution && <Badge variant="destructive" className="text-xs">Required</Badge>}
                       </div>
-                      <div className={`text-sm font-medium ${!resolution ? 'text-red-500' : 'text-gray-800'}`}>
+                        <div className={`text-sm font-medium ${!resolution ? 'text-destructive' : 'text-foreground'}`}>
                         {resolution || 'Not selected'}
                       </div>
                     </div>
 
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-600">Aspect Ratio</span>
+                        <span className="text-xs font-medium text-muted-foreground">Aspect Ratio</span>
                         {!aspectRatio && <Badge variant="destructive" className="text-xs">Required</Badge>}
                       </div>
-                      <div className={`text-sm font-medium ${!aspectRatio ? 'text-red-500' : 'text-gray-800'}`}>
+                        <div className={`text-sm font-medium ${!aspectRatio ? 'text-destructive' : 'text-foreground'}`}>
                         {aspectRatio || 'Not selected'}
                       </div>
                     </div>
 
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-600">Mode</span>
+                        <span className="text-xs font-medium text-muted-foreground">Mode</span>
                         {!generationMode && <Badge variant="destructive" className="text-xs">Required</Badge>}
                       </div>
-                      <div className={`text-sm font-medium ${!generationMode ? 'text-red-500' : 'text-gray-800'}`}>
+                        <div className={`text-sm font-medium ${!generationMode ? 'text-destructive' : 'text-foreground'}`}>
                         {generationMode || 'Not selected'}
                       </div>
                     </div>
@@ -482,9 +482,9 @@ export default function PromptAnalysisModal({
                   {/* Custom Preset */}
                   {customStylePreset && (
                     <div className="space-y-1">
-                      <span className="text-xs font-medium text-gray-600">Custom Preset</span>
-                      <div className="bg-white rounded-lg border border-blue-200 p-2">
-                        <div className="text-sm font-medium text-gray-800">{customStylePreset.name}</div>
+                      <span className="text-xs font-medium text-muted-foreground">Custom Preset</span>
+                      <div className="bg-card rounded-lg border border-border p-2">
+                        <div className="text-sm font-medium text-foreground">{customStylePreset.name}</div>
                       </div>
                     </div>
                   )}
@@ -492,17 +492,17 @@ export default function PromptAnalysisModal({
                   {/* Cinematic Parameters */}
                   {cinematicParameters && Object.keys(cinematicParameters).length > 0 && (
                     <div className="space-y-1">
-                      <span className="text-xs font-medium text-gray-600">Cinematic Parameters</span>
-                      <div className="bg-white rounded-lg border border-blue-200 p-2">
+                      <span className="text-xs font-medium text-muted-foreground">Cinematic Parameters</span>
+                      <div className="bg-card rounded-lg border border-border p-2">
                         <div className="space-y-1">
                           {Object.entries(cinematicParameters).map(([key, value]) => {
                             if (value && typeof value === 'string') {
                               return (
                                 <div key={key} className="flex items-center justify-between text-xs">
-                                  <span className="text-gray-600 capitalize">
+                                  <span className="text-muted-foreground capitalize">
                                     {key.replace(/([A-Z])/g, ' $1').trim()}:
                                   </span>
-                                  <span className="font-medium text-gray-800">
+                                  <span className="font-medium text-foreground">
                                     {value.split('-').map(word => 
                                       word.charAt(0).toUpperCase() + word.slice(1)
                                     ).join(' ')}
@@ -522,10 +522,10 @@ export default function PromptAnalysisModal({
           </div>
 
           {/* Analysis Expert */}
-          <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-indigo-50">
+          <Card className="border-border bg-primary/5">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
-                <Users className="w-4 h-4 text-purple-600" />
+                <Users className="w-4 h-4 text-primary" />
                 Analysis Expert
               </CardTitle>
               <CardDescription className="text-sm">
@@ -537,7 +537,7 @@ export default function PromptAnalysisModal({
                 const persona = ANALYSIS_PERSONAS.find(p => p.id === value)
                 if (persona) setSelectedPersona(persona)
               }}>
-                <SelectTrigger className="bg-white border-purple-200 focus:border-purple-400">
+                <SelectTrigger className="bg-background border-border focus:border-ring">
                   <SelectValue>
                     <div className="flex items-center gap-2">
                       <span className="text-lg">{selectedPersona.icon}</span>
@@ -552,7 +552,7 @@ export default function PromptAnalysisModal({
                         <span className="text-lg">{persona.icon}</span>
                         <div>
                           <div className="font-medium">{persona.name}</div>
-                          <div className="text-xs text-gray-500">{persona.description}</div>
+                          <div className="text-xs text-muted-foreground">{persona.description}</div>
                         </div>
                       </div>
                     </SelectItem>
@@ -563,12 +563,12 @@ export default function PromptAnalysisModal({
               <div className="space-y-3">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Target className="w-3 h-3 text-purple-600" />
-                    <span className="text-sm font-medium text-gray-700">Specialization</span>
+                    <Target className="w-3 h-3 text-primary" />
+                    <span className="text-sm font-medium text-foreground">Specialization</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedPersona.specialization.map((spec, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs bg-purple-100 text-purple-700 border-purple-200">
+                      <Badge key={index} variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
                         {spec}
                       </Badge>
                     ))}
@@ -577,10 +577,10 @@ export default function PromptAnalysisModal({
                 
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Palette className="w-3 h-3 text-purple-600" />
-                    <span className="text-sm font-medium text-gray-700">Analysis Focus</span>
+                    <Palette className="w-3 h-3 text-primary" />
+                    <span className="text-sm font-medium text-foreground">Analysis Focus</span>
                   </div>
-                  <div className="text-sm text-gray-600 leading-relaxed">
+                  <div className="text-sm text-muted-foreground leading-relaxed">
                     {selectedPersona.analysisFocus.join(' • ')}
                   </div>
                 </div>
@@ -597,7 +597,7 @@ export default function PromptAnalysisModal({
                   <CardTitle className="text-sm">Prompt Analysis</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-700">{analysis.promptAnalysis}</p>
+                  <p className="text-sm text-foreground">{analysis.promptAnalysis}</p>
                 </CardContent>
               </Card>
 
@@ -607,7 +607,7 @@ export default function PromptAnalysisModal({
                   <CardTitle className="text-sm">Style Alignment</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-700">{analysis.styleAlignment}</p>
+                  <p className="text-sm text-foreground">{analysis.styleAlignment}</p>
                 </CardContent>
               </Card>
 
@@ -617,21 +617,21 @@ export default function PromptAnalysisModal({
                   <CardTitle className="text-sm">Aspect Ratio Considerations</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-700">{analysis.aspectRatioConsiderations}</p>
+                  <p className="text-sm text-foreground">{analysis.aspectRatioConsiderations}</p>
                 </CardContent>
               </Card>
 
               {/* Cinematic Analysis */}
               {analysis.cinematicAnalysis && analysis.cinematicAnalysis !== 'N/A - no cinematic parameters provided' && (
-                <Card className="border-purple-200 bg-purple-50">
+                <Card className="border-primary/20 bg-primary/5">
                   <CardHeader>
-                    <CardTitle className="text-sm text-purple-800">Cinematic Analysis</CardTitle>
-                    <CardDescription className="text-purple-600">
+                    <CardTitle className="text-sm text-primary">Cinematic Analysis</CardTitle>
+                    <CardDescription className="text-primary">
                       Analysis of cinematic parameters and their impact on the visual narrative
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-gray-700">{analysis.cinematicAnalysis}</p>
+                    <p className="text-sm text-foreground">{analysis.cinematicAnalysis}</p>
                   </CardContent>
                 </Card>
               )}
@@ -643,7 +643,7 @@ export default function PromptAnalysisModal({
                     <CardTitle className="text-sm">Base Image Insights</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-gray-700">{analysis.baseImageInsights}</p>
+                    <p className="text-sm text-foreground">{analysis.baseImageInsights}</p>
                   </CardContent>
                 </Card>
               )}
@@ -652,13 +652,13 @@ export default function PromptAnalysisModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm text-green-700">Strengths</CardTitle>
+                    <CardTitle className="text-sm text-primary">Strengths</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-1">
                       {analysis.strengths.map((strength, index) => (
-                        <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                          <span className="text-green-500 mt-1">✓</span>
+                        <li key={index} className="text-sm text-foreground flex items-start gap-2">
+                          <span className="text-primary mt-1">✓</span>
                           {strength}
                         </li>
                       ))}
@@ -668,12 +668,12 @@ export default function PromptAnalysisModal({
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm text-red-700">Areas for Improvement</CardTitle>
+                    <CardTitle className="text-sm text-destructive">Areas for Improvement</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-1">
                       {analysis.weaknesses.map((weakness, index) => (
-                        <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                        <li key={index} className="text-sm text-foreground flex items-start gap-2">
                           <span className="text-red-500 mt-1">⚠</span>
                           {weakness}
                         </li>
@@ -731,7 +731,7 @@ export default function PromptAnalysisModal({
                   <CardContent>
                     <ul className="space-y-2">
                       {analysis.professionalInsights.map((insight, index) => (
-                        <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                        <li key={index} className="text-sm text-foreground flex items-start gap-2">
                           <span className="text-blue-500 mt-1">💡</span>
                           {insight}
                         </li>
@@ -807,7 +807,7 @@ export default function PromptAnalysisModal({
 
           {/* Validation Notice */}
           {subscriptionTier !== 'free' && !isInputValid() && (
-            <Card className="border-red-200 bg-gradient-to-r from-red-50 to-orange-50">
+            <Card className="border-destructive/20 bg-destructive/5">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 text-red-800">
                   <div className="p-2 bg-red-100 rounded-lg">
@@ -857,7 +857,7 @@ export default function PromptAnalysisModal({
                 variant="outline"
                 size="sm"
                 onClick={handleSaveAsPreset}
-                className="border-green-200 text-green-700 hover:bg-green-50"
+                className="border-primary/20 text-primary hover:bg-primary/10"
               >
                 <Save className="w-4 h-4 mr-2" />
                 Save as Preset
@@ -877,7 +877,7 @@ export default function PromptAnalysisModal({
               <Button
                 onClick={handleAnalyze}
                 disabled={isAnalyzing || !isInputValid()}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 text-white shadow-lg"
+                className="bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground shadow-lg"
               >
                 {isAnalyzing ? (
                   <>

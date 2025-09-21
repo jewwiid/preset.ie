@@ -23,9 +23,9 @@ const badgeConfig = {
   verified_age: {
     icon: CheckCircle,
     label: 'Age Verified',
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
-    borderColor: 'border-green-200',
+    color: 'text-primary-600',
+    bgColor: 'bg-primary-100',
+    borderColor: 'border-primary/20',
     tooltip: 'This user has verified they are 18 or older'
   },
   verified_email: {
@@ -55,9 +55,9 @@ const badgeConfig = {
   verified_business: {
     icon: Building,
     label: 'Business Verified',
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-100',
-    borderColor: 'border-teal-200',
+    color: 'text-secondary-600',
+    bgColor: 'bg-secondary-100',
+    borderColor: 'border-secondary-200',
     tooltip: 'Business registration verified'
   },
   pending_verification: {

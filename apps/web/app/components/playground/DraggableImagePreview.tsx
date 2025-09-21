@@ -164,7 +164,7 @@ export default function DraggableImagePreview({
       {/* Container with fixed aspect ratio */}
       <div 
         ref={containerRef}
-        className={`w-full bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300 relative group ${
+        className={`w-full bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden transition-all duration-300 relative group ${
           isFramingSaved ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
         }`}
         style={{ 
@@ -200,13 +200,13 @@ export default function DraggableImagePreview({
         {/* Simple overlay */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Center line indicator */}
-          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500 opacity-50 transform -translate-y-1/2" />
+          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-primary opacity-50 transform -translate-y-1/2" />
           
           {/* State-based UI */}
           {isFramingSaved ? (
             <>
               {/* Saved state - show confirmation and options */}
-              <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+              <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
                 ✓ Framing saved
               </div>
               <div className="absolute bottom-2 right-2 flex gap-2 pointer-events-auto">
@@ -216,7 +216,7 @@ export default function DraggableImagePreview({
                     e.preventDefault()
                     resetPosition()
                   }}
-                  className="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-2 rounded transition-colors shadow-lg"
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs px-3 py-2 rounded transition-colors shadow-lg"
                 >
                   Reset
                 </button>
@@ -226,7 +226,7 @@ export default function DraggableImagePreview({
                     e.preventDefault()
                     resetFraming()
                   }}
-                  className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-2 rounded transition-colors shadow-lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 py-2 rounded transition-colors shadow-lg"
                 >
                   Adjust More
                 </button>
@@ -235,7 +235,7 @@ export default function DraggableImagePreview({
           ) : (
             <>
               {/* Default state - show drag instruction */}
-              <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+              <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
                 <Move className="h-3 w-3" />
                 Click & drag to adjust
               </div>
@@ -249,7 +249,7 @@ export default function DraggableImagePreview({
                       e.preventDefault()
                       saveFraming()
                     }}
-                    className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-2 rounded transition-colors shadow-lg"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 py-2 rounded transition-colors shadow-lg"
                   >
                     Save Framing
                   </button>

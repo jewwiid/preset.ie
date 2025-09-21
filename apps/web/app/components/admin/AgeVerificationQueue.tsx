@@ -160,7 +160,7 @@ export function AgeVerificationQueue() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending_verification': return 'text-yellow-600 bg-yellow-100'
-      case 'age_verified': return 'text-green-600 bg-green-100'
+      case 'age_verified': return 'text-primary-600 bg-primary-100'
       case 'fully_verified': return 'text-blue-600 bg-blue-100'
       case 'suspended': return 'text-red-600 bg-red-100'
       case 'banned': return 'text-gray-600 bg-gray-100'
@@ -192,7 +192,7 @@ export function AgeVerificationQueue() {
             onClick={() => setFilter(filterOption)}
             className={`px-4 py-2 rounded-lg font-medium transition ${
               filter === filterOption
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-primary-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -246,7 +246,7 @@ export function AgeVerificationQueue() {
                         </span>
                       </div>
                       <div className={`text-sm font-medium ${
-                        user.calculated_age >= 18 ? 'text-green-600' : 'text-red-600'
+                        user.calculated_age >= 18 ? 'text-primary-600' : 'text-red-600'
                       }`}>
                         Age: {user.calculated_age} years
                       </div>
@@ -265,7 +265,7 @@ export function AgeVerificationQueue() {
                     </span>
                     {user.age_verified && (
                       <div className="mt-1">
-                        <CheckCircle className="w-4 h-4 text-green-600 inline mr-1" />
+                        <CheckCircle className="w-4 h-4 text-primary-600 inline mr-1" />
                         <span className="text-xs text-gray-500">
                           Verified {user.age_verified_at ? new Date(user.age_verified_at).toLocaleDateString() : ''}
                         </span>
@@ -298,7 +298,7 @@ export function AgeVerificationQueue() {
                         <button
                           onClick={() => verifyUser(user.user_id, user.date_of_birth)}
                           disabled={processing}
-                          className="text-green-600 hover:text-green-700 font-medium text-sm disabled:opacity-50"
+                          className="text-primary-600 hover:text-primary-700 font-medium text-sm disabled:opacity-50"
                         >
                           Verify
                         </button>
@@ -364,7 +364,7 @@ export function AgeVerificationQueue() {
                 <div>
                   <label className="text-sm font-medium text-gray-500">Calculated Age</label>
                   <p className={`font-bold ${
-                    selectedUser.calculated_age >= 18 ? 'text-green-600' : 'text-red-600'
+                    selectedUser.calculated_age >= 18 ? 'text-primary-600' : 'text-red-600'
                   }`}>
                     {selectedUser.calculated_age} years old
                   </p>
@@ -382,7 +382,7 @@ export function AgeVerificationQueue() {
                       verifyUser(selectedUser.user_id, selectedUser.date_of_birth)
                     }}
                     disabled={processing}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
                   >
                     Approve Age Verification
                   </button>

@@ -204,7 +204,7 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
               {/* Compatibility Score Range */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Target className="w-4 h-4 text-emerald-600" />
+                  <Target className="w-4 h-4 text-primary-600" />
                   <h4 className="font-medium">Compatibility Score</h4>
                 </div>
                 <div className="px-3">
@@ -290,7 +290,7 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
               {/* Compensation Types */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <DollarSign className="w-4 h-4 text-primary-600" />
                   <h4 className="font-medium">Compensation</h4>
                 </div>
                 <div className="space-y-2">

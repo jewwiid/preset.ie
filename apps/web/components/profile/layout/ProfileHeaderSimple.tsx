@@ -233,7 +233,7 @@ export function ProfileHeaderSimple() {
                 {!isEditing ? (
                   <button 
                     onClick={handleEditToggle}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                    className="bg-primary-600 hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                   >
                     <Edit3 className="w-4 h-4" />
                     Edit Profile
@@ -249,7 +249,7 @@ export function ProfileHeaderSimple() {
                     <button 
                       onClick={handleSave}
                       disabled={saving}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                      className="bg-primary-600 hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
                     >
                       {saving ? 'Saving...' : 'Save Changes'}
                     </button>

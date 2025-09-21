@@ -295,7 +295,7 @@ export default function ImageManipulator({
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div className="flex items-center gap-4">
             <CardTitle className="text-lg font-semibold">Adjust Image</CardTitle>
-            <div className="text-sm text-gray-600 bg-blue-50 px-3 py-2 rounded-lg">
+            <div className="text-sm text-muted-foreground bg-primary/5 px-3 py-2 rounded-lg">
               <span className="font-medium">Image Manipulation Mode:</span> Your image is {originalAspectRatio} but the preview is {currentAspectRatio}. You can zoom, move, and rotate the image to get the perfect crop.
             </div>
           </div>
@@ -396,7 +396,7 @@ export default function ImageManipulator({
                   <Button
                     onClick={handleSave}
                     disabled={isProcessing}
-                    className="flex-1 bg-purple-600 hover:bg-purple-700"
+                    className="flex-1 bg-primary hover:bg-primary/90"
                   >
                     {isProcessing ? (
                       <>
@@ -414,8 +414,8 @@ export default function ImageManipulator({
               </div>
 
               {/* Right Column - Image Preview */}
-              <div className="p-6 flex items-center justify-center bg-gray-50">
-                <div className="relative bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
+              <div className="p-6 flex items-center justify-center bg-muted">
+                <div className="relative bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden">
                   <div
                     className={`relative ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} select-none`}
                     style={{
@@ -430,7 +430,7 @@ export default function ImageManipulator({
                     onWheel={handleWheel}
                   >
                     {/* Target aspect ratio frame */}
-                    <div className="absolute inset-0 border-2 border-purple-500 bg-purple-100/20 pointer-events-none" />
+                    <div className="absolute inset-0 border-2 border-primary bg-primary/20 pointer-events-none" />
                     
                     {/* Image */}
                     <img
@@ -449,7 +449,7 @@ export default function ImageManipulator({
                     />
                     
                     {/* Overlay instructions */}
-                    <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded pointer-events-none">
+                    <div className="absolute top-2 left-2 bg-backdrop text-foreground text-xs px-2 py-1 rounded pointer-events-none">
                       {isDragging ? 'Dragging...' : 'Drag to move • Scroll to zoom • Touch to drag on mobile'}
                     </div>
                   </div>
@@ -458,7 +458,7 @@ export default function ImageManipulator({
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">
+              <p className="text-muted-foreground mb-4">
                 No manipulation needed - the image already matches the {targetAspectRatio} aspect ratio.
               </p>
               <Button onClick={onCancel}>

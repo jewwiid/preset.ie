@@ -163,7 +163,7 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
   return (
     <div className="flex items-center space-x-4">
       <div className="relative">
-        <div className={`${sizeClasses[size]} rounded-full bg-emerald-500 flex items-center justify-center overflow-hidden relative`}>
+        <div className={`${sizeClasses[size]} rounded-full bg-primary-500 flex items-center justify-center overflow-hidden relative`}>
           {isUploading && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
               <Loader2 className={`${iconSizes[size]} text-white animate-spin`} />
@@ -197,7 +197,7 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading || !user}
-          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-3 py-1.5 bg-primary-600 hover:bg-primary/90 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
           title={!user ? 'Please sign in to upload avatar' : ''}
         >
           {isUploading ? 'Uploading...' : !user ? 'Sign in to Upload' : 'Upload Photo'}

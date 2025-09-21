@@ -91,11 +91,11 @@ function SignupSuccessContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-primary/10 via-white to-secondary-primary/10 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         {/* Logo Section */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-primary to-secondary-primary rounded-full mb-4">
             <Camera className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">
@@ -128,8 +128,8 @@ function SignupSuccessContent() {
         <div className="bg-white shadow-xl rounded-2xl p-8">
           <div className="text-center space-y-6">
             <div className="flex justify-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-primary-600" />
               </div>
             </div>
             
@@ -146,7 +146,7 @@ function SignupSuccessContent() {
               <button
                 onClick={handleCheckEmail}
                 disabled={loading}
-                className="w-full flex items-center justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                className="w-full flex items-center justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primary-primary to-secondary-primary hover:from-primary-primary/90 hover:to-secondary-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
               >
                 {loading ? (
                   <div className="flex items-center">
@@ -164,7 +164,7 @@ function SignupSuccessContent() {
               <button
                 onClick={handleResendEmail}
                 disabled={resending || !email}
-                className="w-full flex items-center justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full flex items-center justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {resending ? (
                   <div className="flex items-center">
@@ -189,7 +189,7 @@ function SignupSuccessContent() {
             <button
               onClick={handleResendEmail}
               disabled={resending || !email}
-              className="font-medium text-emerald-600 hover:text-emerald-500 transition-colors disabled:opacity-50"
+              className="font-medium text-primary-600 hover:text-primary transition-colors disabled:opacity-50"
             >
               resend it
             </button>
@@ -200,7 +200,7 @@ function SignupSuccessContent() {
         <div className="text-center mt-6">
           <button
             onClick={() => router.push('/auth/signin')}
-            className="text-sm text-gray-600 hover:text-emerald-600 transition-colors"
+            className="text-sm text-gray-600 hover:text-primary transition-colors"
           >
             Back to sign in
           </button>

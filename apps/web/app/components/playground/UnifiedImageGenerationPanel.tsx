@@ -570,7 +570,7 @@ export default function UnifiedImageGenerationPanel({
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wand2 className="h-5 w-5 text-purple-500" />
+          <Wand2 className="h-5 w-5 text-primary" />
           Generate Images
         </CardTitle>
         <CardDescription>
@@ -633,7 +633,7 @@ export default function UnifiedImageGenerationPanel({
               variant="outline"
               size="sm"
               onClick={() => setShowProviderSelector(!showProviderSelector)}
-              className="text-purple-600 border-purple-200 hover:bg-purple-50"
+              className="text-primary border-primary/20 hover:bg-primary/5"
             >
               <Settings className="h-4 w-4 mr-2" />
               {showProviderSelector ? 'Hide' : 'Change'} Provider
@@ -641,21 +641,21 @@ export default function UnifiedImageGenerationPanel({
           </div>
           
           {/* Current Provider Display */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+          <div className="flex items-center justify-between p-3 bg-muted rounded-lg border">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
               <span className="text-sm font-medium">
                 Using: {selectedProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌟 Seedream V4'}
               </span>
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-muted-foreground">
               {creditsPerImage} credit{creditsPerImage !== 1 ? 's' : ''} per image
             </div>
           </div>
 
           {/* Provider Selection Modal */}
           {showProviderSelector && (
-            <div className="p-4 border rounded-lg bg-white">
+            <div className="p-4 border rounded-lg bg-background">
               <ImageProviderSelector
                 selectedProvider={selectedProvider}
                 onProviderChange={(provider) => {
@@ -692,10 +692,10 @@ export default function UnifiedImageGenerationPanel({
         </div>
 
         {/* Cinematic Mode Toggle */}
-        <div className="flex items-center justify-between p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-blue-50">
+        <div className="flex items-center justify-between p-4 border rounded-lg bg-primary/5">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Film className="h-4 w-4 text-purple-600" />
+              <Film className="h-4 w-4 text-primary" />
               <Label className="text-base font-medium">Cinematic Mode</Label>
               {enableCinematicMode && (
                 <Badge variant="secondary" className="text-xs">
@@ -749,7 +749,7 @@ export default function UnifiedImageGenerationPanel({
               <>
                 {/* Upload Section */}
                 {baseImageSource === 'upload' && (
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -757,15 +757,15 @@ export default function UnifiedImageGenerationPanel({
                       onChange={handleFileUpload}
                       className="hidden"
                     />
-                    <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">
+                    <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground mb-2">
                       Upload a base image to modify
                     </p>
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
-                      className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                      className="text-primary border-primary/20 hover:bg-primary/5"
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Choose Base Image
@@ -779,7 +779,7 @@ export default function UnifiedImageGenerationPanel({
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-40 overflow-y-auto">
                       {savedImages.length === 0 ? (
                         <div className="col-span-full">
-                          <p className="text-sm text-gray-500 text-center py-4">
+                          <p className="text-sm text-muted-foreground text-center py-4">
                             No saved images available
                           </p>
                         </div>
@@ -787,10 +787,10 @@ export default function UnifiedImageGenerationPanel({
                         savedImages.map((image) => (
                           <div
                             key={image.id}
-                            className="relative group cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-gray-300 transition-all"
+                            className="relative group cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-border transition-all"
                             onClick={() => selectSavedBaseImage(image.image_url)}
                           >
-                            <div className="aspect-square bg-gray-100">
+                            <div className="aspect-square bg-muted">
                               <img
                                 src={image.image_url}
                                 alt={image.title}
@@ -800,15 +800,15 @@ export default function UnifiedImageGenerationPanel({
                             </div>
                             
                             {/* Image title overlay */}
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                              <p className="text-xs text-white font-medium truncate w-full">
+                            <div className="absolute inset-0 bg-backdrop opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                              <p className="text-xs text-foreground font-medium truncate w-full">
                                 {image.title}
                               </p>
                             </div>
                             
                             {/* Select indicator */}
                             <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white/80 border border-gray-300 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <svg className="w-3 h-3 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="w-3 h-3 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
                             </div>
@@ -828,11 +828,11 @@ export default function UnifiedImageGenerationPanel({
                         type="text"
                         value={pexelsQuery}
                         onChange={(e) => setPexelsQuery(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 text-sm"
+                        className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-ring focus:border-ring text-sm"
                         placeholder="Search for stock photos... (searches as you type)"
                       />
                       {pexelsLoading && (
-                        <div className="flex items-center px-3 py-2 text-sm text-purple-600">
+                        <div className="flex items-center px-3 py-2 text-sm text-primary">
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
                           Searching...
                         </div>
@@ -846,7 +846,7 @@ export default function UnifiedImageGenerationPanel({
                         onChange={(e) => {
                           setPexelsFilters(prev => ({ ...prev, orientation: e.target.value }))
                         }}
-                        className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                        className="px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-ring focus:border-ring"
                       >
                         <option value="">All orientations</option>
                         <option value="landscape">Landscape</option>
@@ -859,7 +859,7 @@ export default function UnifiedImageGenerationPanel({
                         onChange={(e) => {
                           setPexelsFilters(prev => ({ ...prev, size: e.target.value }))
                         }}
-                        className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                        className="px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-ring focus:border-ring"
                       >
                         <option value="">All sizes</option>
                         <option value="small">Small</option>
@@ -872,7 +872,7 @@ export default function UnifiedImageGenerationPanel({
                         onChange={(e) => {
                           setPexelsFilters(prev => ({ ...prev, color: e.target.value }))
                         }}
-                        className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                        className="px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-ring focus:border-ring"
                       >
                         <option value="">All colors</option>
                         <option value="red">Red</option>
@@ -894,7 +894,7 @@ export default function UnifiedImageGenerationPanel({
                     {pexelsResults.length > 0 && (
                       <div>
                         {/* Results count */}
-                        <div className="mb-3 text-sm text-gray-600">
+                        <div className="mb-3 text-sm text-muted-foreground">
                           Showing {pexelsResults.length} of {pexelsTotalResults.toLocaleString()} results for "{pexelsQuery}"
                         </div>
                         
@@ -925,7 +925,7 @@ export default function UnifiedImageGenerationPanel({
                               disabled={pexelsLoading}
                               variant="outline"
                               size="sm"
-                              className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                              className="text-primary border-primary/20 hover:bg-primary/5"
                             >
                               {pexelsLoading ? (
                                 <>
@@ -944,18 +944,18 @@ export default function UnifiedImageGenerationPanel({
                     {/* No results message */}
                     {pexelsQuery && pexelsResults.length === 0 && !pexelsLoading && (
                       <div className="text-center py-4">
-                        <p className="text-sm text-gray-500">No images found for "{pexelsQuery}"</p>
-                        <p className="text-xs text-gray-400 mt-1">Try different search terms or filters</p>
+                        <p className="text-sm text-muted-foreground">No images found for "{pexelsQuery}"</p>
+                        <p className="text-xs text-muted-foreground mt-1">Try different search terms or filters</p>
                       </div>
                     )}
                   </div>
                 )}
               </>
             ) : (
-              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-primary/5 border border-primary/20 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm font-medium text-green-800">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span className="text-sm font-medium text-primary">
                     Base image {baseImageSource === 'upload' ? 'uploaded' : baseImageSource === 'pexels' ? 'selected from Pexels' : 'selected'}
                   </span>
                 </div>
@@ -964,7 +964,7 @@ export default function UnifiedImageGenerationPanel({
                   variant="outline"
                   size="sm"
                   onClick={removeBaseImage}
-                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  className="text-destructive border-destructive/20 hover:bg-destructive/5"
                 >
                   <X className="h-4 w-4 mr-1" />
                   Remove
@@ -979,7 +979,7 @@ export default function UnifiedImageGenerationPanel({
           <div className="flex items-center justify-between">
             <Label htmlFor="prompt">
               Prompt {enableCinematicMode && (
-                <span className="text-xs text-purple-600 ml-2">
+                <span className="text-xs text-primary ml-2">
                   (Enhanced with Cinematic Parameters)
                 </span>
               )}
@@ -1003,7 +1003,7 @@ export default function UnifiedImageGenerationPanel({
             rows={3}
           />
           {isPromptModified && (
-            <p className="text-xs text-blue-600">
+            <p className="text-xs text-primary">
               💡 You've modified the prompt. Click "Save" in the Presets section above to create a comprehensive preset.
             </p>
           )}
@@ -1138,8 +1138,8 @@ export default function UnifiedImageGenerationPanel({
             </Select>
             
             {/* Display context-aware prompt for regular styles */}
-            <div className="p-2 bg-gray-50 border border-gray-200 rounded-md">
-              <p className="text-xs text-gray-600">{getStylePrompt(style, generationMode)}</p>
+            <div className="p-2 bg-muted border border-border rounded-md">
+              <p className="text-xs text-muted-foreground">{getStylePrompt(style, generationMode)}</p>
             </div>
           </div>
 
@@ -1154,12 +1154,12 @@ export default function UnifiedImageGenerationPanel({
               step={0.1}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>Subtle (0.1)</span>
               <span>Default (1.0)</span>
               <span>Strong (2.0)</span>
             </div>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-muted-foreground">
               Controls how strongly the selected style is applied to your image
             </p>
           </div>
@@ -1192,7 +1192,7 @@ export default function UnifiedImageGenerationPanel({
               step={1}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>Single</span>
               <span>Multiple</span>
             </div>
@@ -1222,8 +1222,8 @@ export default function UnifiedImageGenerationPanel({
               </Select>
             ) : (
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md border">
-                  <span className="text-sm text-gray-600">1024px (Standard)</span>
+                <div className="flex items-center justify-between p-3 bg-muted rounded-md border">
+                  <span className="text-sm text-muted-foreground">1024px (Standard)</span>
                   <Badge variant="secondary" className="text-xs">
                     Free Tier
                   </Badge>
@@ -1258,7 +1258,7 @@ export default function UnifiedImageGenerationPanel({
                 <SelectItem value="high">🎯 High (Less Variation)</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-muted-foreground">
               {consistencyLevel === 'low' && 'More creative variation, less predictable results'}
               {consistencyLevel === 'medium' && 'Balanced creativity and consistency'}
               {consistencyLevel === 'high' && 'More consistent results, less variation'}

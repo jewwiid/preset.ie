@@ -5,6 +5,36 @@ export type CompType = 'TFP' | 'PAID' | 'EXPENSES' | 'OTHER'
 export type PurposeType = 'PORTFOLIO' | 'COMMERCIAL' | 'EDITORIAL' | 'FASHION' | 'BEAUTY' | 'LIFESTYLE' | 'WEDDING' | 'EVENT' | 'PRODUCT' | 'ARCHITECTURE' | 'STREET' | 'CONCEPTUAL' | 'OTHER'
 export type StatusType = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'COMPLETED'
 
+export interface ApplicantPreferences {
+  physical: {
+    height_range: { min: number | null; max: number | null }
+    measurements: { required: boolean; specific: string | null }
+    eye_color: { required: boolean; preferred: string[] }
+    hair_color: { required: boolean; preferred: string[] }
+    tattoos: { allowed: boolean; required: boolean }
+    piercings: { allowed: boolean; required: boolean }
+    clothing_sizes: { required: boolean; preferred: string[] }
+  }
+  professional: {
+    experience_years: { min: number | null; max: number | null }
+    specializations: { required: string[]; preferred: string[] }
+    equipment: { required: string[]; preferred: string[] }
+    software: { required: string[]; preferred: string[] }
+    talent_categories: { required: string[]; preferred: string[] }
+    portfolio_required: boolean
+  }
+  availability: {
+    travel_required: boolean
+    travel_radius_km: number | null
+    hourly_rate_range: { min: number | null; max: number | null }
+  }
+  other: {
+    age_range: { min: number | null; max: number | null }
+    languages: { required: string[]; preferred: string[] }
+    additional_requirements: string
+  }
+}
+
 export interface GigFormData {
   title: string
   description: string
@@ -20,6 +50,7 @@ export interface GigFormData {
   safetyNotes?: string
   status: StatusType
   moodboardId?: string
+  applicantPreferences?: ApplicantPreferences
   lastSaved?: string
 }
 

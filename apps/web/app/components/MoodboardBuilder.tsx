@@ -3,7 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../lib/auth-context'
-import { Upload, Search, Sparkles, Save, Loader2, X, Palette, Clock, CheckCircle } from 'lucide-react'
+import { Upload, Search, Sparkles, Save, Loader2, X, Palette, Clock, CheckCircle, ImageIcon, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { extractPaletteFromImages } from '../../lib/color-extractor'
 import { extractAIPaletteFromImages } from '../../lib/ai-color-extractor'
 import EnhancedEnhancementModal from './EnhancedEnhancementModal'
@@ -49,7 +50,7 @@ interface MoodboardBuilderProps {
 }
 
 export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel, compactMode = false }: MoodboardBuilderProps) {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   
   // Gig data for comprehensive AI analysis
   const [gigData, setGigData] = useState<any>(null)
@@ -60,12 +61,15 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'upload' | 'pexels' | 'url' | 'enhance'>('upload')
+  const [success, setSuccess] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'upload' | 'pexels' | 'saved' | 'url' | 'enhance'>('upload')
   const [pexelsQuery, setPexelsQuery] = useState('')
   const [pexelsResults, setPexelsResults] = useState<any[]>([])
   const [pexelsPage, setPexelsPage] = useState(1)
   const [pexelsLoading, setPexelsLoading] = useState(false)
   const [pexelsTotalResults, setPexelsTotalResults] = useState(0)
+  const [pexelsCurrentPage, setPexelsCurrentPage] = useState(1)
+  const [pexelsTotalPages, setPexelsTotalPages] = useState(0)
   const [pexelsFilters, setPexelsFilters] = useState({
     orientation: '',
     size: '',
@@ -89,8 +93,26 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
   const [activeEnhancement, setActiveEnhancement] = useState<{ itemId: string, taskId: string, url: string, type: string, prompt: string } | null>(null)
   
   // Provider selection state for enhancements
-  const [selectedEnhancementProvider, setSelectedEnhancementProvider] = useState<'nanobanana' | 'seedream'>('nanobanana')
+  const [selectedEnhancementProvider, setSelectedEnhancementProvider] = useState<'nanobanana' | 'seedream'>('seedream')
   const [showEnhancementProviderSelector, setShowEnhancementProviderSelector] = useState(false)
+  
+  // Vibe & Style Tags state
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [customTag, setCustomTag] = useState('')
+  const [showTagInput, setShowTagInput] = useState(false)
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false)
+  const [templateName, setTemplateName] = useState('')
+  const [existingTemplate, setExistingTemplate] = useState<any>(null)
+  const [showTemplateConflict, setShowTemplateConflict] = useState(false)
+  
+  // Enhanced image upload state
+  const [savedImages, setSavedImages] = useState<Array<{
+    id: string
+    image_url: string
+    title: string
+    created_at: string
+  }>>([])
+  const [savedImagesLoading, setSavedImagesLoading] = useState(false)
 
   // Debug modal state
   useEffect(() => {
@@ -138,6 +160,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
           setTitle(data.title || '')
           setDescription(data.summary || '')
           setPalette(data.palette || [])
+          setSelectedTags(data.tags || [])
           
           // Load items with enhanced URLs preserved
           if (data.items && Array.isArray(data.items)) {
@@ -173,6 +196,27 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
 
   const limits = getSubscriptionLimits()
   
+  // Predefined vibe options
+  const vibeOptions = [
+    'Minimalist', 'Vintage', 'Modern', 'Boho', 'Industrial', 'Ethereal',
+    'Bold', 'Soft', 'Dark', 'Bright', 'Moody', 'Clean', 'Rustic', 'Elegant',
+    'Edgy', 'Romantic', 'Urban', 'Natural', 'Luxurious', 'Playful'
+  ]
+
+  // Helper function to get image dimensions
+  const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight })
+      }
+      img.onerror = () => {
+        reject(new Error('Failed to load image'))
+      }
+      img.src = url
+    })
+  }
+  
   // Fetch user's subscription tier and credits on mount
   useEffect(() => {
     fetchSubscriptionTier()
@@ -181,10 +225,23 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     }
   }, [user])
 
+  // Fetch saved images when saved tab is active
+  useEffect(() => {
+    if (activeTab === 'saved' && user && session?.access_token && savedImages.length === 0) {
+      fetchSavedImages()
+    }
+  }, [activeTab, user, session?.access_token])
+
   // Fetch gig data for comprehensive AI analysis
   useEffect(() => {
     const fetchGigData = async () => {
       if (!gigId || !user) return
+
+      // Skip fetching if gigId is temporary or not a valid UUID
+      if (gigId.startsWith('temp-') || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gigId)) {
+        console.log('Skipping gig data fetch for temporary or invalid gigId:', gigId)
+        return
+      }
 
       try {
         if (!supabase) {
@@ -230,6 +287,205 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     }
   }, [items, useAIPalette])
   
+  // Fetch saved images
+  const fetchSavedImages = async () => {
+    if (!user || !session?.access_token) return
+    
+    setSavedImagesLoading(true)
+    try {
+      const response = await fetch('/api/playground/saved-images', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.images) {
+          setSavedImages(data.images)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching saved images:', error)
+    } finally {
+      setSavedImagesLoading(false)
+    }
+  }
+
+  // Tag management functions
+  const addTag = (tag: string) => {
+    if (tag && !selectedTags.includes(tag) && selectedTags.length < 3) {
+      setSelectedTags(prev => [...prev, tag])
+      setHasUnsavedChanges(true)
+    }
+  }
+
+  const removeTag = (tagToRemove: string) => {
+    setSelectedTags(prev => prev.filter(tag => tag !== tagToRemove))
+    setHasUnsavedChanges(true)
+  }
+
+  const addCustomTag = () => {
+    if (customTag.trim() && !selectedTags.includes(customTag.trim()) && selectedTags.length < 3) {
+      setSelectedTags(prev => [...prev, customTag.trim()])
+      setCustomTag('')
+      setShowTagInput(false)
+      setHasUnsavedChanges(true)
+    }
+  }
+
+  // Check for similar existing templates
+  const checkForSimilarTemplates = async (name: string) => {
+    if (!supabase || !user || !name.trim()) return null
+
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('users_profile')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (profileError || !profile) return null
+
+      // Check for templates with similar names or content
+      const { data: templates, error } = await supabase
+        .from('moodboards')
+        .select('*')
+        .eq('owner_user_id', profile.id)
+        .eq('is_template', true)
+        .or(`template_name.ilike.%${name}%,template_description.ilike.%${description}%`)
+        .limit(5)
+
+      if (error) {
+        console.error('Error checking templates:', error)
+        return null
+      }
+
+      return templates || []
+    } catch (error) {
+      console.error('Error in checkForSimilarTemplates:', error)
+      return null
+    }
+  }
+
+  // Calculate moodboard similarity score
+  const calculateSimilarity = (template: any) => {
+    let score = 0
+    let factors = []
+
+    // Name similarity
+    if (template.template_name && templateName) {
+      const nameSimilarity = template.template_name.toLowerCase().includes(templateName.toLowerCase()) ||
+                           templateName.toLowerCase().includes(template.template_name.toLowerCase())
+      if (nameSimilarity) {
+        score += 30
+        factors.push('Similar name')
+      }
+    }
+
+    // Description similarity
+    if (template.template_description && description) {
+      const descSimilarity = template.template_description.toLowerCase().includes(description.toLowerCase()) ||
+                            description.toLowerCase().includes(template.template_description.toLowerCase())
+      if (descSimilarity) {
+        score += 20
+        factors.push('Similar description')
+      }
+    }
+
+    // Image count similarity
+    const templateImageCount = template.items?.length || 0
+    const currentImageCount = items.length
+    if (Math.abs(templateImageCount - currentImageCount) <= 2) {
+      score += 15
+      factors.push('Similar image count')
+    }
+
+    // Tag similarity
+    if (template.tags && selectedTags.length > 0) {
+      const commonTags = template.tags.filter((tag: string) => selectedTags.includes(tag))
+      if (commonTags.length > 0) {
+        score += (commonTags.length / Math.max(template.tags.length, selectedTags.length)) * 25
+        factors.push(`${commonTags.length} common tags`)
+      }
+    }
+
+    // Palette similarity (basic check)
+    if (template.palette && palette.length > 0) {
+      const commonColors = template.palette.filter((color: string) => palette.includes(color))
+      if (commonColors.length > 0) {
+        score += (commonColors.length / Math.max(template.palette.length, palette.length)) * 10
+        factors.push(`${commonColors.length} common colors`)
+      }
+    }
+
+    return { score: Math.round(score), factors }
+  }
+
+  // Handle template name change with similarity check
+  const handleTemplateNameChange = async (name: string) => {
+    setTemplateName(name)
+    
+    if (name.trim().length >= 3) {
+      const similarTemplates = await checkForSimilarTemplates(name)
+      
+      if (similarTemplates && similarTemplates.length > 0) {
+        // Find the most similar template
+        const templatesWithScores = similarTemplates.map(template => ({
+          ...template,
+          similarity: calculateSimilarity(template)
+        }))
+        
+        const mostSimilar = templatesWithScores.reduce((prev, current) => 
+          current.similarity.score > prev.similarity.score ? current : prev
+        )
+        
+        // If similarity is high (>70%), show conflict warning
+        if (mostSimilar.similarity.score > 70) {
+          setExistingTemplate(mostSimilar)
+          setShowTemplateConflict(true)
+        } else {
+          setExistingTemplate(null)
+          setShowTemplateConflict(false)
+        }
+      } else {
+        setExistingTemplate(null)
+        setShowTemplateConflict(false)
+      }
+    } else {
+      setExistingTemplate(null)
+      setShowTemplateConflict(false)
+    }
+  }
+
+  // Select saved image for moodboard
+  const selectSavedImage = async (image: { id: string; image_url: string; title: string }) => {
+    try {
+      // Get image dimensions
+      const dimensions = await getImageDimensions(image.image_url)
+      
+      const newItem: MoodboardItem = {
+        id: Date.now().toString(),
+        type: 'image',
+        source: 'upload',
+        url: image.image_url,
+        thumbnail_url: image.image_url,
+        caption: image.title || 'Saved Image',
+        width: dimensions.width,
+        height: dimensions.height,
+        position: items.length
+      }
+      
+      setItems(prev => [...prev, newItem])
+      setHasUnsavedChanges(true)
+      
+      // Close the tab after selection
+      setActiveTab('upload')
+    } catch (error) {
+      console.error('Error adding saved image:', error)
+    }
+  }
+
   const extractColors = async () => {
     const imageUrls = items
       .filter(item => item.type === 'image')
@@ -496,7 +752,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
         body: JSON.stringify({ 
           query: pexelsQuery,
           page,
-          per_page: 12,
+          per_page: 18, // 3 rows of 6 images
           ...(pexelsFilters.orientation && { orientation: pexelsFilters.orientation }),
           ...(pexelsFilters.size && { size: pexelsFilters.size }),
           ...(pexelsFilters.color && { color: pexelsFilters.color })
@@ -507,14 +763,15 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
       
       const data = await response.json()
       
-      if (page === 1) {
-        setPexelsResults(data.photos || [])
-      } else {
-        setPexelsResults(prev => [...prev, ...(data.photos || [])])
-      }
-      
-      setPexelsPage(data.page || page)
+      // Always replace results for pagination (no appending)
+      setPexelsResults(data.photos || [])
+      setPexelsCurrentPage(data.page || page)
       setPexelsTotalResults(data.total_results || 0)
+      
+      // Calculate total pages (18 images per page)
+      const totalPages = Math.ceil((data.total_results || 0) / 18)
+      setPexelsTotalPages(totalPages)
+      
     } catch (err: any) {
       console.error('Pexels search error:', err)
       setError('Failed to search images')
@@ -523,12 +780,35 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
     }
   }
   
-  // Load more Pexels results
-  const loadMorePexels = () => {
-    if (!pexelsLoading && pexelsResults.length < pexelsTotalResults) {
-      searchPexels(pexelsPage + 1)
+  // Pagination functions
+  const goToPreviousPage = () => {
+    if (pexelsCurrentPage > 1 && !pexelsLoading) {
+      searchPexels(pexelsCurrentPage - 1)
     }
   }
+
+  const goToNextPage = () => {
+    if (pexelsCurrentPage < pexelsTotalPages && !pexelsLoading) {
+      searchPexels(pexelsCurrentPage + 1)
+    }
+  }
+
+  // Debounced search effect for Pexels
+  useEffect(() => {
+    if (!pexelsQuery.trim()) {
+      setPexelsResults([])
+      setPexelsTotalResults(0)
+      setPexelsCurrentPage(1)
+      setPexelsTotalPages(0)
+      return
+    }
+
+    const timeoutId = setTimeout(() => {
+      searchPexels(1)
+    }, 500) // 500ms delay
+
+    return () => clearTimeout(timeoutId)
+  }, [pexelsQuery, pexelsFilters])
   
   // Add Pexels image
   const addPexelsImage = (photo: any) => {
@@ -572,6 +852,40 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
       .filter(item => item.id !== itemId)
       .map((item, index) => ({ ...item, position: index }))
     )
+  }
+
+  // Handle saving enhanced image to gallery
+  const handleSaveToGallery = async (imageUrl: string, caption?: string) => {
+    if (!supabase || !user) {
+      throw new Error('Authentication required')
+    }
+
+    try {
+      // Save to playground gallery
+      const { data, error } = await supabase
+        .from('playground_gallery')
+        .insert({
+          user_id: user.id,
+          image_url: imageUrl,
+          thumbnail_url: imageUrl, // Use same URL for thumbnail
+          title: caption || 'Enhanced Image',
+          media_type: 'image',
+          source: 'enhancement'
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error saving to gallery:', error)
+        throw error
+      }
+
+      console.log('Image saved to gallery:', data)
+      // You could show a success toast here
+    } catch (error) {
+      console.error('Failed to save to gallery:', error)
+      throw error
+    }
   }
   
   // Drag and drop handlers
@@ -901,6 +1215,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
         const errorData = JSON.parse(error.message.split(': ')[1] || '{}')
         if (errorData.code === 'ENHANCEMENT_SERVICE_CREDITS') {
           errorMessage = 'Enhancement service has insufficient credits. Please contact support to add credits to your enhancement service account.'
+        } else if (errorData.code === 'PLATFORM_CREDITS_LOW') {
+          errorMessage = 'Enhancement service is temporarily unavailable due to low platform credits. Please try again later or contact support.'
         } else if (errorData.details) {
           errorMessage = errorData.details
         }
@@ -1079,6 +1395,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
             summary: description,
             items,
             palette,
+            tags: selectedTags,
             updated_at: new Date().toISOString()
           })
           .eq('id', moodboardId)
@@ -1088,27 +1405,66 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
         setHasUnsavedChanges(false)
         onSave?.(moodboardId)
       } else {
-        // Create new moodboard
-        const { data: newMoodboard, error: createError } = await supabase
-          .from('moodboards')
-          .insert({
+        // Handle template saving with deduplication
+        if (saveAsTemplate && existingTemplate?.shouldUpdate) {
+          // Update existing similar template
+          const { error: updateError } = await supabase
+            .from('moodboards')
+            .update({
+              title: title || 'Untitled Moodboard',
+              summary: description,
+              items,
+              palette,
+              tags: selectedTags,
+              template_name: templateName || title || 'Untitled Template',
+              template_description: description,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingTemplate.id)
+          
+          if (updateError) throw updateError
+          console.log('Existing template updated successfully')
+          setSuccess('Template updated successfully!')
+          onSave?.(existingTemplate.id)
+        } else {
+          // Create new moodboard/template
+          const moodboardData: any = {
             owner_user_id: profile.id,
-            gig_id: gigId,
             title: title || 'Untitled Moodboard',
             summary: description,
             items,
             palette,
-            is_public: false
-          })
-          .select()
-          .single()
-        
-        if (createError) throw createError
-        console.log('New moodboard created successfully with enhanced items')
-        onSave?.(newMoodboard.id)
+            tags: selectedTags,
+            is_template: saveAsTemplate,
+            template_name: saveAsTemplate ? (templateName || title || 'Untitled Template') : null,
+            template_description: saveAsTemplate ? description : null
+          }
+          
+          // Only include gig_id if it's a valid UUID (not a temporary ID) and not saving as template
+          if (!saveAsTemplate && gigId && !gigId.startsWith('temp-') && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gigId)) {
+            moodboardData.gig_id = gigId
+          }
+          
+          const { data: newMoodboard, error: createError } = await supabase
+            .from('moodboards')
+            .insert(moodboardData)
+            .select()
+            .single()
+          
+          if (createError) throw createError
+          console.log(saveAsTemplate ? 'New template created successfully' : 'New moodboard created successfully')
+          setSuccess(saveAsTemplate ? 'Template saved successfully!' : 'Moodboard saved successfully!')
+          onSave?.(newMoodboard.id)
+        }
       }
     } catch (err: any) {
       console.error('Save error:', err)
+      console.error('Error details:', {
+        message: err.message,
+        code: err.code,
+        details: err.details,
+        hint: err.hint
+      })
       setError(err.message || 'Failed to save moodboard')
     } finally {
       setLoading(false)
@@ -1116,73 +1472,154 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
   }
   
   return (
-    <div className={compactMode ? "space-y-4" : "bg-white rounded-lg shadow-lg p-6"}>
+    <div className={compactMode ? "space-y-4" : "bg-card rounded-lg shadow-lg p-6"}>
       {!compactMode && (
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-foreground mb-4">
             {moodboardId ? 'Edit Moodboard' : 'Create Moodboard'}
           </h2>
         </div>
       )}
       
       {error && (
-        <div className={`p-3 bg-red-100 border border-red-400 text-red-700 rounded ${compactMode ? 'mb-4' : 'mb-4'}`}>
+        <div className={`p-3 bg-destructive/10 border border-destructive/20 text-destructive rounded ${compactMode ? 'mb-4' : 'mb-4'}`}>
           {error}
         </div>
       )}
       
       {compactMode ? (
         // Compact mode: Combined sections
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-card rounded-lg border border-border shadow-sm">
           <div className="p-5">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Moodboard Details</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Moodboard Details</h3>
             
             {/* Basic Information */}
             <div className="grid gap-4 md:grid-cols-2 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Moodboard Title
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors"
                   placeholder="Enter a title for your moodboard"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Description (optional)
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors resize-none"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors resize-none"
                   placeholder="Describe the vibe or concept..."
                 />
               </div>
             </div>
             
-            {/* Vibe & Style Tags Placeholder - for future implementation */}
-            <div className="border-t border-gray-200 pt-4">
+            {/* Vibe & Style Tags */}
+            <div className="border-t border-border pt-4">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h4 className="text-base font-medium text-gray-900">Vibe & Style Tags</h4>
-                  <p className="text-sm text-gray-500">Choose up to 3 vibes to define your aesthetic</p>
+                  <h4 className="text-base font-medium text-foreground">Vibe & Style Tags</h4>
+                  <p className="text-sm text-muted-foreground">Choose up to 3 vibes to define your aesthetic</p>
                 </div>
                 <button
                   type="button"
-                  className="text-emerald-600 hover:text-emerald-700 text-sm font-medium"
+                  onClick={() => setShowTagInput(!showTagInput)}
+                  className="text-primary hover:text-primary/80 text-sm font-medium"
                 >
-                  Add Tags
+                  {showTagInput ? 'Cancel' : 'Add Tags'}
                 </button>
               </div>
-              <div className="text-xs text-gray-400">
-                No tags selected yet
-              </div>
+              
+              {/* Selected Tags */}
+              {selectedTags.length > 0 ? (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {selectedTags.map((tag) => (
+                    <div
+                      key={tag}
+                      className="flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="ml-1 hover:bg-destructive/20 rounded-full p-0.5 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground mb-3">
+                  No tags selected yet
+                </div>
+              )}
+
+              {/* Tag Input/Selection */}
+              {showTagInput && (
+                <div className="space-y-3">
+                  {/* Custom Tag Input */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customTag}
+                      onChange={(e) => setCustomTag(e.target.value)}
+                      placeholder="Add custom tag..."
+                      className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          addCustomTag()
+                        }
+                      }}
+                      maxLength={20}
+                    />
+                    <button
+                      type="button"
+                      onClick={addCustomTag}
+                      disabled={!customTag.trim() || selectedTags.includes(customTag.trim()) || selectedTags.length >= 3}
+                      className="px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 text-sm"
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  {/* Predefined Options */}
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Popular vibes (click to add):</p>
+                    <div className="flex flex-wrap gap-2">
+                      {vibeOptions
+                        .filter(vibe => !selectedTags.includes(vibe))
+                        .slice(0, 12) // Show first 12 options
+                        .map((vibe) => (
+                        <button
+                          key={vibe}
+                          type="button"
+                          onClick={() => addTag(vibe)}
+                          disabled={selectedTags.length >= 3}
+                          className="px-3 py-1 text-xs bg-muted text-muted-foreground rounded-full hover:bg-primary/10 hover:text-primary transition-colors disabled:opacity-50"
+                        >
+                          {vibe}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {selectedTags.length >= 3 && (
+                    <p className="text-xs text-muted-foreground">
+                      Maximum of 3 tags reached. Remove a tag to add more.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1191,27 +1628,27 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
         <div className="mb-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Moodboard Title
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-ring focus:border-ring"
                 placeholder="Enter a title for your moodboard"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Description (optional)
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-ring focus:border-ring resize-none"
                 placeholder="Describe the vibe or concept..."
               />
             </div>
@@ -1221,17 +1658,17 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
       
       {!compactMode && (
         // Subscription Tier Info (only show in non-compact mode)
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-blue-900">
+            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
               {subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1).toLowerCase()} Plan
             </span>
-            <span className="text-xs text-blue-600">
+            <span className="text-xs text-blue-600/80 dark:text-blue-400/80">
               {limits?.userUploads || 0} uploads • {limits?.aiEnhancements || 0} AI enhancements
             </span>
           </div>
-          <div className="text-xs text-blue-600">
+          <div className="text-xs text-blue-600/80 dark:text-blue-400/80">
             {userCredits ? (
               <>
                 <span>Credits: {userCredits.current}/{userCredits.monthly}</span>
@@ -1239,7 +1676,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                   <button
                     type="button"
                     onClick={() => window.open('/credits/purchase', '_blank')}
-                    className="ml-2 text-xs text-purple-600 hover:text-purple-700 underline"
+                    className="ml-2 text-xs text-primary hover:text-primary/80 underline"
                   >
                     Buy more
                   </button>
@@ -1254,18 +1691,18 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
       )}
 
       {/* Add Media Tabs */}
-      <div className={compactMode ? "bg-white rounded-lg border border-gray-200 shadow-sm mb-4" : "mb-6"}>
+      <div className={compactMode ? "bg-card rounded-lg border border-border shadow-sm mb-4" : "mb-6"}>
         <div className={compactMode ? "p-5 pb-0" : ""}>
-          {compactMode && <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Images</h3>}
-        <div className="border-b border-gray-200">
+          {compactMode && <h3 className="text-lg font-semibold text-foreground mb-4">Add Images</h3>}
+        <div className="border-b border-border">
           <nav className="-mb-px flex space-x-8">
             <button
               type="button"
               onClick={() => setActiveTab('upload')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'upload'
-                  ? 'border-emerald-500 text-emerald-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover-text hover-border'
               }`}
             >
               <Upload className="w-4 h-4 inline mr-1" />
@@ -1276,8 +1713,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
               onClick={() => setActiveTab('pexels')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'pexels'
-                  ? 'border-emerald-500 text-emerald-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover-text hover-border'
               }`}
             >
               <Search className="w-4 h-4 inline mr-1" />
@@ -1285,11 +1722,23 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
             </button>
             <button
               type="button"
+              onClick={() => setActiveTab('saved')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'saved'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover-text hover-border'
+              }`}
+            >
+              <ImageIcon className="w-4 h-4 inline mr-1" />
+              Saved Images
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('url')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'url'
-                  ? 'border-emerald-500 text-emerald-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover-text hover-border'
               }`}
             >
               Add from URL
@@ -1300,8 +1749,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                 onClick={() => setActiveTab('enhance')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'enhance'
-                    ? 'border-emerald-500 text-emerald-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover-text hover-border'
                 }`}
               >
                 <Sparkles className="w-4 h-4 inline mr-1" />
@@ -1326,11 +1775,11 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={loading}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
               >
                 Choose Files
               </button>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-muted-foreground">
                 Upload images or videos (max 10MB each)
               </p>
             </div>
@@ -1343,26 +1792,15 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                   type="text"
                   value={pexelsQuery}
                   onChange={(e) => setPexelsQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setPexelsPage(1)
-                      searchPexels(1)
-                    }
-                  }}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="Search for stock photos..."
+                  className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-ring focus:border-ring"
+                  placeholder="Search for stock photos... (searches as you type)"
                 />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPexelsPage(1)
-                    searchPexels(1)
-                  }}
-                  disabled={pexelsLoading}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {pexelsLoading ? 'Searching...' : 'Search'}
-                </button>
+                {pexelsLoading && (
+                  <div className="flex items-center px-3 py-2 text-sm text-primary">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Searching...
+                  </div>
+                )}
               </div>
               
               {/* Filter Controls */}
@@ -1371,12 +1809,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                   value={pexelsFilters.orientation}
                   onChange={(e) => {
                     setPexelsFilters(prev => ({ ...prev, orientation: e.target.value }))
-                    if (pexelsQuery.trim()) {
-                      setPexelsPage(1)
-                      searchPexels(1)
-                    }
                   }}
-                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                  className="px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-ring focus:border-ring"
                 >
                   <option value="">All orientations</option>
                   <option value="landscape">Landscape</option>
@@ -1388,12 +1822,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                   value={pexelsFilters.size}
                   onChange={(e) => {
                     setPexelsFilters(prev => ({ ...prev, size: e.target.value }))
-                    if (pexelsQuery.trim()) {
-                      setPexelsPage(1)
-                      searchPexels(1)
-                    }
                   }}
-                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                  className="px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-ring focus:border-ring"
                 >
                   <option value="">All sizes</option>
                   <option value="small">Small</option>
@@ -1405,12 +1835,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                   value={pexelsFilters.color}
                   onChange={(e) => {
                     setPexelsFilters(prev => ({ ...prev, color: e.target.value }))
-                    if (pexelsQuery.trim()) {
-                      setPexelsPage(1)
-                      searchPexels(1)
-                    }
                   }}
-                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 text-sm focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                  className="px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-ring focus:border-ring"
                 >
                   <option value="">All colors</option>
                   <option value="red">Red</option>
@@ -1430,13 +1856,44 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
               
               {pexelsResults.length > 0 && (
                 <div className="mt-4">
-                  {/* Results count */}
-                  <div className="mb-4 text-sm text-gray-600">
-                    Showing {pexelsResults.length} of {pexelsTotalResults.toLocaleString()} results for "{pexelsQuery}"
+                  {/* Results count and pagination */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {pexelsResults.length} of {pexelsTotalResults.toLocaleString()} results for "{pexelsQuery}"
+                    </div>
+                    
+                    {/* Pagination controls */}
+                    {pexelsTotalPages > 1 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={goToPreviousPage}
+                          disabled={pexelsCurrentPage === 1 || pexelsLoading}
+                          className="p-2 rounded-md border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="Previous page"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        
+                        <span className="text-sm text-muted-foreground min-w-[80px] text-center">
+                          {pexelsCurrentPage} of {pexelsTotalPages}
+                        </span>
+                        
+                        <button
+                          type="button"
+                          onClick={goToNextPage}
+                          disabled={pexelsCurrentPage === pexelsTotalPages || pexelsLoading}
+                          className="p-2 rounded-md border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="Next page"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Photo grid */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {/* Photo grid - expandable to show more rows */}
+                  <div className="grid grid-cols-6 gap-3">
                     {pexelsResults.map((photo) => (
                       <div key={photo.id} className="relative group cursor-pointer" onClick={() => addPexelsImage(photo)}>
                         <div className="aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
@@ -1450,7 +1907,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                           </div>
                         </div>
                         {/* Photographer attribution */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 rounded-b-lg">
+                        <div className="absolute bottom-0 left-0 right-0 bg-backdrop p-2 rounded-b-lg">
                           <div className="text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
                             Photo by {photo.photographer}
                           </div>
@@ -1459,26 +1916,68 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                     ))}
                   </div>
                   
-                  {/* Load more button */}
-                  {pexelsResults.length < pexelsTotalResults && (
-                    <div className="mt-6 text-center">
-                      <button
-                        type="button"
-                        onClick={loadMorePexels}
-                        disabled={pexelsLoading}
-                        className="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 mx-auto"
-                      >
-                        {pexelsLoading ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Loading more...
-                          </>
-                        ) : (
-                          `Load more (${(pexelsTotalResults - pexelsResults.length).toLocaleString()} remaining)`
-                        )}
-                      </button>
+                  {/* Loading indicator */}
+                  {pexelsLoading && (
+                    <div className="mt-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading images...
+                      </div>
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {activeTab === 'saved' && (
+            <div>
+              {savedImagesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
+                  <span className="text-muted-foreground">Loading saved images...</span>
+                </div>
+              ) : savedImages.length === 0 ? (
+                <div className="text-center py-8">
+                  <ImageIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">No saved images available</p>
+                  <p className="text-sm text-muted-foreground">
+                    Generate some images in the playground to see them here
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <div className="mb-4 text-sm text-muted-foreground">
+                    Select from your saved images
+                  </div>
+                  
+                  {/* Saved images grid */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto">
+                    {savedImages.map((image) => (
+                      <div 
+                        key={image.id} 
+                        className="relative group cursor-pointer" 
+                        onClick={() => selectSavedImage(image)}
+                      >
+                        <div className="aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                          <img
+                            src={image.image_url}
+                            alt={image.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-backdrop opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                            <span className="text-foreground opacity-0 group-hover:opacity-100 font-medium">+ Add</span>
+                          </div>
+                        </div>
+                        {/* Image title */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-backdrop p-2 rounded-b-lg">
+                          <div className="text-xs text-foreground opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                            {image.title}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -1491,13 +1990,13 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && addUrlImage()}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
+                className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-ring focus:border-ring"
                 placeholder="Enter image URL..."
               />
               <button
                 onClick={addUrlImage}
                 disabled={!urlInput.trim()}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
               >
                 Add
               </button>
@@ -1528,7 +2027,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                 {/* Current Provider Display */}
                 <div className="flex items-center justify-between p-2 bg-white rounded border">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-primary rounded-full"></div>
                     <span className="text-sm font-medium">
                       Using: {selectedEnhancementProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌟 Seedream V4'}
                     </span>
@@ -1613,38 +2112,36 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
       
       {/* Moodboard Grid */}
       {items.length > 0 && (
-        <div className={compactMode ? "bg-white rounded-lg border border-gray-200 shadow-sm mb-4" : "mb-6"}>
-          {compactMode && <div className="p-5 pb-2"><h3 className="text-lg font-semibold text-gray-900 mb-4">Your Moodboard</h3></div>}
-          {!compactMode && <h3 className="text-lg font-medium text-gray-900 mb-3">Your Moodboard</h3>}
+        <div className={compactMode ? "bg-card rounded-lg border border-border shadow-sm mb-4" : "mb-6"}>
+          {compactMode && <div className="p-5 pb-2"><h3 className="text-lg font-semibold text-foreground mb-4">Your Moodboard</h3></div>}
+          {!compactMode && <h3 className="text-lg font-medium text-foreground mb-3">Your Moodboard</h3>}
           
           {/* Color Palette */}
           {palette.length > 0 && (
             <div className={compactMode ? "px-5 pb-2" : "mb-4"}>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h4 className={compactMode ? "text-base font-medium text-gray-900" : "text-sm text-gray-600"}>Color Palette</h4>
-                  {compactMode && <p className="text-sm text-gray-500">Colors extracted from your images</p>}
+                  <h4 className={compactMode ? "text-base font-medium text-foreground" : "text-sm text-muted-foreground"}>Color Palette</h4>
+                  {compactMode && <p className="text-sm text-muted-foreground">Colors extracted from your images</p>}
                 </div>
                 {subscriptionTier !== 'free' && (
-                  <button
+                  <Button
+                    variant={useAIPalette ? "default" : "outline"}
+                    size="sm"
                     onClick={() => setUseAIPalette(!useAIPalette)}
-                    className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 transition-colors ${
-                      useAIPalette 
-                        ? 'bg-purple-100 text-purple-700 border border-purple-300' 
-                        : 'bg-gray-100 text-gray-600 border border-gray-300'
-                    }`}
+                    className="text-xs px-2 py-1 h-auto rounded-full"
                   >
                     <Palette className="w-3 h-3" />
                     {useAIPalette ? 'AI Analysis' : 'Basic'}
                     {paletteLoading && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
-                  </button>
+                  </Button>
                 )}
               </div>
               
               {aiAnalysis && (
-                <div className="mb-2 p-2 bg-purple-50 rounded text-xs text-purple-700">
+                <div className="mb-2 p-2 bg-primary/10 rounded text-xs text-primary border border-primary/20">
                   <p className="font-medium">Mood: {aiAnalysis.mood}</p>
-                  <p className="text-purple-600">{aiAnalysis.description}</p>
+                  <p className="text-primary/80">{aiAnalysis.description}</p>
                 </div>
               )}
               
@@ -1652,11 +2149,11 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                 {palette.map((color, index) => (
                   <div key={index} className="group relative">
                     <div
-                      className={`rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:scale-105 transition-transform ${compactMode ? 'w-10 h-10' : 'w-12 h-12'}`}
+                      className={`rounded-lg shadow-sm border border-border cursor-pointer hover:scale-105 transition-transform ${compactMode ? 'w-10 h-10' : 'w-12 h-12'}`}
                       style={{ backgroundColor: color }}
                       title={color}
                     />
-                    <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                       {color}
                     </span>
                   </div>
@@ -1665,7 +2162,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
             </div>
           )}
           
-          <div className={compactMode ? "px-5 pb-4" : ""}>
+          <div className={compactMode ? "px-5 pb-4 mt-8" : "mt-8"}>
             <DraggableMasonryGrid
             items={items}
             onRemove={removeItem}
@@ -1723,42 +2220,137 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
         <div className="flex gap-2 items-center">
           {/* Auto-save indicator */}
           {(hasUnsavedChanges || isSavingPositions) && moodboardId && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {isSavingPositions ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                   <span>Saving arrangement...</span>
                 </>
               ) : hasUnsavedChanges ? (
                 <>
-                  <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
+                  <div className="h-2 w-2 bg-yellow-500 dark:bg-yellow-400 rounded-full"></div>
                   <span>Unsaved changes</span>
                 </>
               ) : null}
             </div>
           )}
           
-          <div className="relative group">
-            <button
-              onClick={saveMoodboard}
-              disabled={loading || items.length === 0}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : 'Save Moodboard'}
-            </button>
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-              Save images and layout only
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                <div className="border-4 border-transparent border-t-gray-900"></div>
+          <div className="flex items-center gap-2">
+            <div className="relative group">
+              <Button
+                variant="outline"
+                onClick={saveMoodboard}
+                disabled={loading || items.length === 0}
+                className="px-4 py-2"
+              >
+                {loading ? 'Saving...' : 'Save Moodboard'}
+              </Button>
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground border border-border text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-md">
+                Save images and layout only
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                  <div className="border-4 border-transparent border-t-popover"></div>
+                </div>
               </div>
             </div>
+            
+            <Button
+              variant="ghost"
+              onClick={() => setSaveAsTemplate(!saveAsTemplate)}
+              disabled={loading || items.length === 0}
+              className={`px-3 py-2 ${saveAsTemplate ? 'bg-primary text-primary-foreground' : ''}`}
+            >
+              <Palette className="w-4 h-4 mr-2" />
+              {saveAsTemplate ? 'Template' : 'Save as Template'}
+            </Button>
           </div>
           
+          {saveAsTemplate && (
+            <div className="mt-3 p-3 bg-muted rounded-lg">
+              <label className="block text-sm font-medium mb-2">Template Name</label>
+              <input
+                type="text"
+                value={templateName}
+                onChange={(e) => handleTemplateNameChange(e.target.value)}
+                placeholder="Enter template name..."
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <p className="text-xs text-muted-foreground mt-1 mb-3">
+                Save this moodboard as a reusable template for future gigs
+              </p>
+              
+              {/* Template Conflict Warning */}
+              {showTemplateConflict && existingTemplate && (
+                <div className="mb-3 p-3 bg-warning/10 border border-warning/20 rounded-md">
+                  <div className="flex items-start gap-2">
+                    <div className="w-5 h-5 bg-warning rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-warning-foreground text-xs font-bold">!</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-warning-foreground mb-1">
+                        Similar Template Found
+                      </p>
+                      <p className="text-xs text-warning-foreground/80 mb-2">
+                        You have an existing template "{existingTemplate.template_name}" that's {existingTemplate.similarity.score}% similar.
+                      </p>
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {existingTemplate.similarity.factors.map((factor: string, index: number) => (
+                          <span key={index} className="text-xs bg-warning/20 text-warning-foreground px-2 py-1 rounded">
+                            {factor}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setTemplateName(existingTemplate.template_name + ' (Copy)')
+                            setShowTemplateConflict(false)
+                          }}
+                          className="text-xs h-7"
+                        >
+                          Rename Current
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // Update existing template instead
+                            setExistingTemplate((prev: any) => ({ ...prev, shouldUpdate: true }))
+                            setShowTemplateConflict(false)
+                          }}
+                          className="text-xs h-7"
+                        >
+                          Update Existing
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowTemplateConflict(false)}
+                          className="text-xs h-7"
+                        >
+                          Continue Anyway
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <Button
+                onClick={saveMoodboard}
+                disabled={loading || items.length === 0 || !templateName.trim()}
+                className="w-full"
+              >
+                {loading ? 'Saving Template...' : 'Save Template'}
+              </Button>
+            </div>
+          )}
+          
           <div className="relative group">
-            <button
+            <Button
               onClick={generateMoodboard}
               disabled={isGenerating || items.length === 0}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2"
+              className="px-4 py-2 flex items-center gap-2"
             >
               {isGenerating ? (
                 <>
@@ -1771,8 +2363,8 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                   Add AI Analysis
                 </>
               )}
-            </button>
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal z-50 w-64">
+            </Button>
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground border border-border text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-normal z-50 w-64 shadow-md">
               <div className="font-semibold mb-1">AI analyzes your moodboard to add:</div>
               <ul className="text-xs space-y-0.5">
                 <li>• Vibe summary & aesthetic description</li>
@@ -1780,11 +2372,11 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                 <li>• Searchable style tags</li>
                 <li>• Color palette extraction</li>
               </ul>
-              <div className="mt-2 pt-2 border-t border-gray-700 text-xs italic">
+              <div className="mt-2 pt-2 border-t border-border text-xs italic">
                 No credits used - doesn't modify images
               </div>
               <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                <div className="border-4 border-transparent border-t-gray-900"></div>
+                <div className="border-4 border-transparent border-t-popover"></div>
               </div>
             </div>
           </div>
@@ -1807,6 +2399,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
               await enhanceImage(itemId, type, prompt, provider)
             }
           }}
+          onSaveToGallery={handleSaveToGallery}
           itemUrl={items.find(i => i.id === enhancementModal.itemId)?.original_url || items.find(i => i.id === enhancementModal.itemId)?.url || ''}
           itemCaption={items.find(i => i.id === enhancementModal.itemId)?.caption}
           credits={userCredits?.current || 0}

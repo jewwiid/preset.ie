@@ -89,7 +89,7 @@ export default function ProjectMarketplaceIntegration({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'fulfilled':
-        return 'text-green-600 bg-green-50';
+        return 'text-primary-600 bg-primary-50';
       case 'open':
         return 'text-blue-600 bg-blue-50';
       default:
@@ -121,7 +121,7 @@ export default function ProjectMarketplaceIntegration({
                 {gearRequest.retainer_acceptable && ' (Retainer OK)'}
               </span>
               {gearRequest.max_daily_rate_cents && (
-                <span className="text-green-600 font-medium">
+                <span className="text-primary-600 font-medium">
                   Max: {formatPrice(gearRequest.max_daily_rate_cents)}/day
                 </span>
               )}
@@ -158,12 +158,12 @@ export default function ProjectMarketplaceIntegration({
         {/* Matching Listings */}
         {gearRequest.matching_listings.length > 0 && (
           <div className="mt-3">
-            <h4 className="text-sm font-medium text-green-600 mb-2">
+            <h4 className="text-sm font-medium text-primary-600 mb-2">
               Exact Matches ({gearRequest.matching_listings.length})
             </h4>
             <div className="space-y-2">
               {gearRequest.matching_listings.slice(0, 3).map((listing) => (
-                <div key={listing.id} className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
+                <div key={listing.id} className="flex items-center justify-between p-2 bg-primary-50 rounded border border-primary/20">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-sm">{listing.title}</span>
@@ -172,7 +172,7 @@ export default function ProjectMarketplaceIntegration({
                     <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
                       <span>{listing.owner.display_name}</span>
                       {listing.rent_day_cents && (
-                        <span className="text-green-600 font-medium">
+                        <span className="text-primary-600 font-medium">
                           {formatPrice(listing.rent_day_cents)}/day
                         </span>
                       )}
@@ -288,7 +288,7 @@ export default function ProjectMarketplaceIntegration({
           <Card>
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center mb-2">
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle className="h-8 w-8 text-primary-500" />
               </div>
               <div className="text-2xl font-bold">{stats.fulfilledRequests}</div>
               <div className="text-sm text-gray-500">Fulfilled</div>
@@ -342,7 +342,7 @@ export default function ProjectMarketplaceIntegration({
         <TabsContent value="open" className="mt-4">
           {gearRequests.filter(r => r.status === 'open').length === 0 ? (
             <div className="text-center py-8">
-              <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
+              <CheckCircle className="h-12 w-12 text-primary-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">All Requests Fulfilled</h3>
               <p className="text-gray-500">All gear requests for this project have been fulfilled.</p>
             </div>

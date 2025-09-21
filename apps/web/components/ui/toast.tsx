@@ -42,7 +42,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-green-500" />
+        return <CheckCircle className="h-5 w-5 text-primary-500" />
       case 'error':
         return <AlertCircle className="h-5 w-5 text-red-500" />
       case 'warning':
@@ -57,7 +57,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   const getBackgroundColor = () => {
     switch (toast.type) {
       case 'success':
-        return 'bg-green-50 border-green-200'
+        return 'bg-primary-50 border-primary/20'
       case 'error':
         return 'bg-red-50 border-red-200'
       case 'warning':

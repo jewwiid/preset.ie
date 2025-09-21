@@ -145,7 +145,7 @@ export function BlockUserButton({
             size={size === 'md' ? 'default' : size}
             onClick={handleUnblock}
             disabled={isUnblocking}
-            className="text-green-600 hover:text-green-700 border-green-200"
+            className="text-primary-600 hover:text-primary-700 border-primary/20"
           >
             <ShieldOff className="h-3 w-3 mr-1" />
             {isUnblocking ? 'Unblocking...' : 'Unblock User'}
@@ -187,7 +187,7 @@ export function BlockUserButton({
             size="sm"
             onClick={handleUnblock}
             disabled={isUnblocking}
-            className="text-green-600 hover:text-green-700 p-0 h-auto"
+            className="text-primary-600 hover:text-primary-700 p-0 h-auto"
           >
             {isUnblocking ? 'Unblocking...' : 'Unblock'}
           </Button>
@@ -211,7 +211,7 @@ export function BlockUserButton({
             <DropdownMenuItem 
               onClick={handleUnblock} 
               disabled={isUnblocking}
-              className="text-green-600 focus:text-green-700"
+              className="text-primary-600 focus:text-primary-700"
             >
               <ShieldOff className="h-4 w-4 mr-2" />
               {isUnblocking ? 'Unblocking...' : 'Unblock User'}

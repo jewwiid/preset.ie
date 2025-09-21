@@ -343,7 +343,7 @@ export default function ImagePreviewArea({
           <div className="space-y-4">
             {/* Selected Image - Large Display (TOP) */}
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">
+              <h4 className="text-sm font-medium text-foreground">
                 {videoGenerationStatus === 'generating' ? 'Video Generation Started!' : 
                  videoGenerationStatus === 'completed' ? 'Generated Video' : 'Selected Image'}
               </h4>
@@ -351,7 +351,7 @@ export default function ImagePreviewArea({
               {/* Video Generation Status Display */}
               {videoGenerationStatus === 'generating' ? (
                 <div 
-                  className="relative w-full bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-dashed border-purple-300 rounded-lg overflow-hidden transition-all duration-300 flex items-center justify-center"
+                  className="relative w-full bg-primary/5 border-2 border-dashed border-primary/30 rounded-lg overflow-hidden transition-all duration-300 flex items-center justify-center"
                   style={{ 
                     aspectRatio: previewAspectRatio,
                     maxWidth: '100%',
@@ -361,15 +361,15 @@ export default function ImagePreviewArea({
                   <div className="text-center space-y-4">
                     <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto"></div>
                     <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-purple-700">Video Generation Started!</h3>
-                      <p className="text-sm text-purple-600">Creating your video from the selected image...</p>
-                      <p className="text-xs text-gray-500">This may take a few minutes</p>
+                      <h3 className="text-lg font-semibold text-primary">Video Generation Started!</h3>
+                      <p className="text-sm text-primary">Creating your video from the selected image...</p>
+                      <p className="text-xs text-muted-foreground">This may take a few minutes</p>
                     </div>
                   </div>
                 </div>
               ) : videoGenerationStatus === 'completed' && generatedVideoUrl ? (
                 <div 
-                  className="relative w-full bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300"
+                  className="relative w-full bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden transition-all duration-300"
                   style={{ 
                     aspectRatio: previewAspectRatio,
                     maxWidth: '100%'
@@ -377,10 +377,10 @@ export default function ImagePreviewArea({
                 >
                   <div className="absolute inset-0">
                     {generatedVideoUrl === 'pending' || !generatedVideoUrl.startsWith('http') ? (
-                      <div className="flex items-center justify-center h-full bg-gray-100">
+                      <div className="flex items-center justify-center h-full bg-muted">
                         <div className="text-center space-y-2">
-                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-blue-600 mx-auto"></div>
-                          <p className="text-sm text-gray-600">Video processing...</p>
+                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary mx-auto"></div>
+                          <p className="text-sm text-muted-foreground">Video processing...</p>
                         </div>
                       </div>
                     ) : (
@@ -418,7 +418,7 @@ export default function ImagePreviewArea({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                         onClick={() => {
                           setFullScreenImage({
                             url: generatedVideoUrl,
@@ -434,7 +434,7 @@ export default function ImagePreviewArea({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                          className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                           onClick={() => {
                             console.log('🎯 Save button clicked for generated video:', generatedVideoUrl)
                             handleSaveToGallery(generatedVideoUrl)
@@ -453,7 +453,7 @@ export default function ImagePreviewArea({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                          className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                           onClick={() => handleDownloadVideo(generatedVideoUrl, 'generated-video.mp4')}
                           title="Download Video"
                         >
@@ -511,7 +511,7 @@ export default function ImagePreviewArea({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                         onClick={() => {
                           const imageIndex = images.findIndex(img => getImageUrl(img.url) === getImageUrl(selectedImage))
                           setFullScreenImage({
@@ -538,7 +538,7 @@ export default function ImagePreviewArea({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                          className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                           onClick={() => {
                             console.log('Crop button clicked')
                             openImageManipulator(selectedImage)
@@ -552,7 +552,7 @@ export default function ImagePreviewArea({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                          className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                           onClick={() => {
                             console.log('🎯 Save button clicked for selected image:', selectedImage)
                             handleSaveToGallery(selectedImage)
@@ -571,7 +571,7 @@ export default function ImagePreviewArea({
                         <Button
                           size="sm"
                           variant="secondary"
-                          className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                          className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                           onClick={() => {
                             const selectedImageData = images.find(img => getImageUrl(img.url) === getImageUrl(selectedImage))
                             if (selectedImageData?.type === 'video') {
@@ -601,7 +601,7 @@ export default function ImagePreviewArea({
 
                     {/* Selection indicator */}
                     <div className="absolute top-2 left-2">
-                      <Badge variant="default" className="bg-green-500">Selected</Badge>
+                      <Badge variant="default" className="bg-primary">Selected</Badge>
                     </div>
                   </div>
                 </div>
@@ -625,7 +625,7 @@ export default function ImagePreviewArea({
 
             {/* Thumbnail Row - All Images (BOTTOM) */}
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">All Images</h4>
+              <h4 className="text-sm font-medium text-foreground">All Images</h4>
               <div className="flex gap-2 overflow-x-auto pb-2">
                 {images.map((image, index) => (
                   <div
@@ -679,7 +679,7 @@ export default function ImagePreviewArea({
                     {/* Selection indicator */}
                     {selectedImage === getImageUrl(image.url) && (
                       <div className="absolute bottom-1 left-1">
-                        <Badge variant="default" className="bg-green-500 text-[10px] px-1 py-0.5">✓</Badge>
+                        <Badge variant="default" className="bg-primary text-[10px] px-1 py-0.5">✓</Badge>
                       </div>
                     )}
                     

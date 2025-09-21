@@ -153,7 +153,7 @@ export default function OptimizedMasonryGrid({
                 <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center z-10">
                   {task?.status === 'completed' ? (
                     <>
-                      <CheckCircle className="w-8 h-8 text-green-400 mb-2" />
+                      <CheckCircle className="w-8 h-8 text-primary-400 mb-2" />
                       <span className="text-sm text-white font-medium">Enhanced!</span>
                     </>
                   ) : task?.status === 'failed' ? (

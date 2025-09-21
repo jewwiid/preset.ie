@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     if (!supabase) {
       console.error('Supabase client not available for auth state change listener')
-      return
+      return () => {} // Return empty cleanup function
     }
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -113,7 +113,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     )
 
-    return () => subscription.unsubscribe()
+    // Listen for storage events to sync auth state across tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sb-preset-auth-token' && e.newValue !== e.oldValue) {
+        console.log('Auth token changed in another tab, refreshing session...')
+        // Refresh the session when storage changes
+        supabase?.auth.getSession().then(({ data: { session } }) => {
+          setSession(session)
+          setUser(session?.user ?? null)
+          if (session?.user) {
+            getUserRole(session.user.id).then(setUserRole).catch(() => setUserRole(null))
+          } else {
+            setUserRole(null)
+          }
+        })
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange)
+    }
+
+    return () => {
+      subscription.unsubscribe()
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorageChange)
+      }
+    }
   }, [])
 
   const signUp = async (email: string, password: string) => {

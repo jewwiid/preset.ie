@@ -332,7 +332,7 @@ export default function ProfilePage() {
                 {/* Additional Info */}
                 <div className="space-y-2">
                   {profile.available_for_travel && (
-                    <div className="flex items-center text-green-600">
+                    <div className="flex items-center text-primary-600">
                       <Globe className="h-4 w-4 mr-2" />
                       <span className="text-sm">Available for travel</span>
                     </div>
@@ -427,7 +427,7 @@ export default function ProfilePage() {
                       href={`https://instagram.com/${profile.instagram_handle}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-pink-600 hover:text-pink-800 text-sm"
+                      className="flex items-center text-primary-600 hover:text-primary-800 text-sm"
                     >
                       <Instagram className="h-4 w-4 mr-2" />
                       @{profile.instagram_handle}

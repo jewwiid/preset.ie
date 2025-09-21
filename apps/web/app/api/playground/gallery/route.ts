@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '../../../../lib/supabase'
-import { getUserFromRequest } from '../../../../lib/auth-utils'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function GET(request: NextRequest) {
   try {
-    const { user } = await getUserFromRequest(request)
-    
-    if (!user) {
+    // Get auth token from header
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader) {
+      console.log('No authorization header provided')
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { error: 'Unauthorized - No token provided' },
         { status: 401 }
       )
     }
-
-    if (!supabaseAdmin) {
+    
+    const token = authHeader.replace('Bearer ', '')
+    
+    // Create two clients: one for user auth, one for admin operations
+    const supabaseAnon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+    
+    // Set the user's session to verify the token
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token)
+    
+    if (authError || !user) {
+      console.error('Auth error:', authError)
       return NextResponse.json(
-        { success: false, error: 'Database connection failed' },
-        { status: 500 }
+        { error: 'Invalid token' },
+        { status: 401 }
       )
     }
 

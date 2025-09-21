@@ -122,10 +122,10 @@ export function DashboardAuthGuard({ children }: { children: React.ReactNode }) 
     <AuthGuard 
       requireAuth={true}
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-100">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-primary/10 to-blue-100">
           <div className="text-center max-w-md mx-auto p-8 bg-white rounded-2xl shadow-xl">
             <div className="mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-primary-primary to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <User className="h-8 w-8 text-white" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard Access</h1>
@@ -136,7 +136,7 @@ export function DashboardAuthGuard({ children }: { children: React.ReactNode }) 
             <div className="space-y-3">
               <Button 
                 onClick={() => window.location.href = '/auth/signin'} 
-                className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
+                className="w-full bg-gradient-to-r from-primary-primary to-blue-600 hover:from-primary-primary hover:to-blue-700"
               >
                 <User className="h-4 w-4 mr-2" />
                 Sign In to Dashboard

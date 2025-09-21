@@ -140,7 +140,7 @@ export default function EnhancementModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 modal-backdrop"
       onClick={(e) => {
         // Only close if clicking the backdrop, not the modal content
         if (e.target === e.currentTarget) {
@@ -149,7 +149,7 @@ export default function EnhancementModal({
       }}
     >
       <div 
-        className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden popover-fixed"
         onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -160,7 +160,7 @@ export default function EnhancementModal({
           <button
             onClick={onClose}
             disabled={isProcessing}
-            className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            className="text-muted-foreground hover-text disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
@@ -226,8 +226,8 @@ export default function EnhancementModal({
 
                 {status === 'completed' && (
                   <div className="text-center">
-                    <Check className="w-12 h-12 text-green-500 mx-auto mb-2" />
-                    <p className="text-sm text-green-600">Enhancement completed!</p>
+                    <Check className="w-12 h-12 text-primary mx-auto mb-2" />
+                    <p className="text-sm text-primary">Enhancement completed!</p>
                   </div>
                 )}
 
@@ -260,7 +260,7 @@ export default function EnhancementModal({
                     className={`p-3 rounded-lg border-2 transition-all ${
                       selectedType === type.id
                         ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-border hover-border'
                     } disabled:opacity-50`}
                   >
                     <TypeIcon className={`w-5 h-5 mb-1 ${
@@ -301,7 +301,7 @@ export default function EnhancementModal({
                     setPrompt(quickPrompt)
                   }}
                   disabled={isProcessing}
-                  className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 hover:text-gray-900 rounded-md transition-colors disabled:opacity-50"
+                  className="px-3 py-1.5 text-xs font-medium btn-secondary rounded-md disabled:opacity-50"
                 >
                   {quickPrompt}
                 </button>
@@ -341,7 +341,7 @@ export default function EnhancementModal({
                 onClose()
               }}
               disabled={isProcessing}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium btn-secondary rounded-lg disabled:opacity-50"
             >
               Cancel
             </button>

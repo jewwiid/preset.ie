@@ -112,10 +112,10 @@ export default function EditImageSelector({
               {currentProjectImages.map((image, index) => (
                 <div
                   key={index}
-                  className={`relative bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-200 cursor-pointer ${
+                  className={`relative bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden transition-all duration-200 cursor-pointer ${
                     selectedImage === image.url 
-                      ? 'ring-2 ring-purple-500 ring-offset-2' 
-                      : 'hover:ring-1 hover:ring-gray-400'
+                      ? 'ring-2 ring-primary ring-offset-2' 
+                      : 'hover:ring-1 hover:ring-border'
                   }`}
                   style={{ 
                     aspectRatio: '1/1',
@@ -130,7 +130,7 @@ export default function EditImageSelector({
                   />
                   
                   {/* Image number badge */}
-                  <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  <div className="absolute top-2 left-2 bg-backdrop text-foreground text-xs px-2 py-1 rounded">
                     {index + 1}
                   </div>
                   
@@ -140,7 +140,7 @@ export default function EditImageSelector({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                        className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleSaveToGallery(image.url)
@@ -149,7 +149,7 @@ export default function EditImageSelector({
                         title="Save to Gallery"
                       >
                         {savingImage === image.url ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                         ) : (
                           <Heart className="h-4 w-4" />
                         )}
@@ -158,7 +158,7 @@ export default function EditImageSelector({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                      className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleDownloadImage(image.url, `generated-image-${index + 1}.png`)
@@ -171,7 +171,7 @@ export default function EditImageSelector({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 text-white shadow-md"
+                        className="h-8 w-8 p-0 bg-destructive/90 hover:bg-destructive text-destructive-foreground shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
                           onSelectImage(null)
@@ -186,7 +186,7 @@ export default function EditImageSelector({
                   {/* Selection indicator */}
                   {selectedImage === image.url && (
                     <div className="absolute bottom-2 left-2">
-                      <Badge variant="default" className="bg-green-500">Selected</Badge>
+                      <Badge variant="default" className="bg-primary">Selected</Badge>
                     </div>
                   )}
                 </div>
@@ -195,16 +195,16 @@ export default function EditImageSelector({
 
             {/* Bottom Info */}
             <div className="flex items-center justify-between pt-4 border-t">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 <span>Dimensions: {currentProjectImages.find(img => img.url === selectedImage)?.width || 1024} × {currentProjectImages.find(img => img.url === selectedImage)?.height || 1024}</span>
-                <span className="mx-2 text-gray-400">|</span>
+                <span className="mx-2 text-muted-foreground">|</span>
                 <span>{currentProjectImages.length} image{currentProjectImages.length > 1 ? 's' : ''}</span>
               </div>
             </div>
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            <Edit3 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <div className="text-center py-8 text-muted-foreground">
+            <Edit3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p>No images available for editing</p>
             <p className="text-sm">Generate some images first!</p>
           </div>

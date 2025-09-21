@@ -253,7 +253,7 @@ export default function GearOfferModal({
                 {gearRequest.max_daily_rate_cents && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500">Max daily rate:</span>
-                    <span className="text-green-600 font-medium">
+                    <span className="text-primary-600 font-medium">
                       {formatPrice(gearRequest.max_daily_rate_cents)}
                     </span>
                   </div>

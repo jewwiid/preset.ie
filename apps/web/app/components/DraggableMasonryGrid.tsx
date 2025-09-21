@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Sparkles, X, CheckCircle, Loader2, Move, Maximize2 } from 'lucide-react'
+import { Sparkles, X, CheckCircle, Loader2, Move, Maximize2, Camera } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface MasonryItem {
   id: string
@@ -264,10 +265,10 @@ export default function DraggableMasonryGrid({
               key={item.id}
               data-item-id={item.id}
               className={`
-                relative group rounded-lg overflow-hidden bg-gray-50 
+                relative group rounded-lg overflow-hidden bg-muted/20 
                 ${editable ? 'cursor-move' : 'cursor-pointer'}
                 ${isDragging ? 'opacity-50 scale-95' : 'opacity-100'}
-                ${isDraggedOver ? 'ring-4 ring-purple-400 ring-offset-2' : ''}
+                ${isDraggedOver ? 'ring-4 ring-primary ring-offset-2' : ''}
                 hover:shadow-xl transition-all duration-300 
                 ${itemSpan}
               `}
@@ -283,8 +284,8 @@ export default function DraggableMasonryGrid({
             >
               {/* Drag handle indicator */}
               {editable && !isEnhancing && (
-                <div className="absolute top-2 left-2 z-20 bg-white/90 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Move className="w-4 h-4 text-gray-600" />
+                <div className="absolute top-2 left-2 z-20 bg-background/90 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Move className="w-4 h-4 text-muted-foreground" />
                 </div>
               )}
 
@@ -315,16 +316,16 @@ export default function DraggableMasonryGrid({
 
                 {/* Loading placeholder */}
                 {!imagesLoaded.get(item.id) && (
-                  <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+                  <div className="absolute inset-0 bg-muted animate-pulse" />
                 )}
               </div>
 
               {/* Enhancement status overlay */}
               {isEnhancing && (
-                <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center z-10">
+                <div className="absolute inset-0 bg-background/60 flex flex-col items-center justify-center z-10">
                   {task?.status === 'completed' ? (
                     <>
-                      <CheckCircle className="w-8 h-8 text-green-400 mb-2" />
+                      <CheckCircle className="w-8 h-8 text-primary mb-2" />
                       <span className="text-sm text-white font-medium">Enhanced!</span>
                     </>
                   ) : task?.status === 'failed' ? (
@@ -334,14 +335,14 @@ export default function DraggableMasonryGrid({
                     </>
                   ) : (
                     <>
-                      <Loader2 className="w-10 h-10 text-purple-400 animate-spin mb-2" />
-                      <div className="w-24 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                      <Loader2 className="w-10 h-10 text-primary animate-spin mb-2" />
+                      <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-500"
+                          className="h-full bg-primary transition-all duration-500"
                           style={{ width: `${task?.progress || 0}%` }}
                         />
                       </div>
-                      <span className="text-xs text-gray-300 mt-2">Enhancing...</span>
+                      <span className="text-xs text-muted-foreground mt-2">Enhancing...</span>
                     </>
                   )}
                 </div>
@@ -349,29 +350,31 @@ export default function DraggableMasonryGrid({
 
               {/* Enhancement badge */}
               {item.enhancement_status === 'completed' && !isEnhancing && (
-                <div className="absolute top-2 right-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
+                <div className="absolute top-2 right-12 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
                   <Sparkles className="w-3 h-3" />
                   {item.showing_original ? 'Original' : 'Enhanced'}
                 </div>
               )}
 
               {/* Hover overlay with actions */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                 {/* Action buttons need pointer events */}
                 <div className="pointer-events-auto">
                   {/* Top actions */}
                   <div className="absolute top-2 right-2 flex gap-2">
                     {/* Remove button */}
                     {editable && onRemove && (
-                      <button
+                      <Button
                         onClick={(e) => {
                           e.stopPropagation()
                           onRemove(item.id)
                         }}
-                        className="bg-red-500 text-white rounded-full w-8 h-8 hover:bg-red-600 flex items-center justify-center transition-colors"
+                        variant="destructive"
+                        size="icon"
+                        className="w-8 h-8 rounded-full"
                       >
                         <X className="w-4 h-4" />
-                      </button>
+                      </Button>
                     )}
                   </div>
 
@@ -380,34 +383,38 @@ export default function DraggableMasonryGrid({
                     <div className="flex gap-2">
                       {/* Toggle original/enhanced */}
                       {item.original_url && item.enhancement_status === 'completed' && onToggleOriginal && (
-                        <button
+                        <Button
                           onClick={(e) => {
                             e.stopPropagation()
                             onToggleOriginal(item.id)
                           }}
-                          className="bg-white/90 text-gray-700 rounded px-2 py-1 text-xs hover:bg-white transition-colors"
+                          variant="outline"
+                          size="sm"
+                          className="bg-background/90 text-xs"
                         >
                           {item.showing_original ? "Enhanced" : "Original"}
-                        </button>
+                        </Button>
                       )}
 
                       {/* Enhance button */}
                       {editable && subscriptionTier !== 'free' && item.type === 'image' && !item.enhanced_url && !isEnhancing && onEnhance && (
                         <div className="relative group/enhance">
-                          <button
+                          <Button
                             onClick={(e) => {
                               e.stopPropagation()
                               onEnhance(item.id)
                             }}
-                            className="bg-purple-500 text-white rounded px-3 py-1 text-xs hover:bg-purple-600 flex items-center gap-1 transition-colors"
+                            variant="default"
+                            size="sm"
+                            className="text-xs"
                           >
-                            <Sparkles className="w-3 h-3" />
+                            <Sparkles className="w-3 h-3 mr-1" />
                             Enhance
-                          </button>
-                          <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20">
+                          </Button>
+                          <div className="absolute bottom-full left-0 mb-1 px-2 py-1 bg-popover text-popover-foreground text-xs rounded opacity-0 group-hover/enhance:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20">
                             AI enhance this image (1 credit)
                             <div className="absolute top-full left-4 -mt-1">
-                              <div className="border-4 border-transparent border-t-gray-900"></div>
+                              <div className="border-4 border-transparent border-t-popover"></div>
                             </div>
                           </div>
                         </div>
@@ -415,22 +422,25 @@ export default function DraggableMasonryGrid({
 
                       {/* Redo enhancement */}
                       {editable && item.enhancement_status === 'completed' && onRedoEnhancement && (
-                        <button
+                        <Button
                           onClick={(e) => {
                             e.stopPropagation()
                             onRedoEnhancement(item.id)
                           }}
-                          className="bg-orange-500 text-white rounded px-3 py-1 text-xs hover:bg-orange-600 transition-colors"
+                          variant="secondary"
+                          size="sm"
+                          className="text-xs"
                         >
                           Redo
-                        </button>
+                        </Button>
                       )}
                     </div>
 
                     {/* Attribution */}
                     {item.photographer && (
-                      <div className="text-xs text-white bg-black/50 px-2 py-1 rounded">
-                        📷 {item.photographer}
+                      <div className="text-xs text-primary-foreground bg-background/50 px-2 py-1 rounded flex items-center gap-1">
+                        <Camera className="w-3 h-3" />
+                        {item.photographer}
                       </div>
                     )}
                   </div>
@@ -439,22 +449,25 @@ export default function DraggableMasonryGrid({
 
               {/* View mode attribution */}
               {!editable && item.photographer && (
-                <div className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded z-10">
-                  📷 {item.photographer}
+                <div className="absolute bottom-2 left-2 text-xs text-primary-foreground bg-background/50 px-2 py-1 rounded z-10 flex items-center gap-1">
+                  <Camera className="w-3 h-3" />
+                  {item.photographer}
                 </div>
               )}
 
               {/* Full screen button for view mode */}
               {!editable && onItemClick && (
-                <button
+                <Button
                   onClick={(e) => {
                     e.stopPropagation()
                     onItemClick(item)
                   }}
-                  className="absolute top-2 right-2 bg-white/90 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                  variant="outline"
+                  size="icon"
+                  className="absolute top-2 right-2 bg-background/90 opacity-0 group-hover:opacity-100 transition-opacity z-10 w-8 h-8"
                 >
-                  <Maximize2 className="w-4 h-4 text-gray-600" />
-                </button>
+                  <Maximize2 className="w-4 h-4" />
+                </Button>
               )}
             </div>
           )
@@ -463,19 +476,13 @@ export default function DraggableMasonryGrid({
 
       {/* Empty state */}
       {orderedItems.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          <div className="text-6xl mb-4">📸</div>
+        <div className="text-center py-12 text-muted-foreground">
+          <Camera className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
           <p>No images added yet</p>
           <p className="text-sm">Upload some images to create your moodboard</p>
         </div>
       )}
 
-      {/* Instructions for edit mode */}
-      {editable && orderedItems.length > 0 && (
-        <div className="mt-4 text-center text-sm text-gray-500">
-          <p>🖱️ Drag and drop images to rearrange • 📱 Touch and hold on mobile</p>
-        </div>
-      )}
     </div>
   )
 }

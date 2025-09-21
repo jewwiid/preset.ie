@@ -143,7 +143,7 @@ export function ProfileCompletionCard() {
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'basic': return 'from-blue-500 to-blue-600'
-      case 'professional': return 'from-green-500 to-green-600'
+      case 'professional': return 'from-primary-primary to-primary-primary'
       case 'contact': return 'from-purple-500 to-purple-600'
       case 'social': return 'from-pink-500 to-pink-600'
       case 'equipment': return 'from-orange-500 to-orange-600'
@@ -186,7 +186,7 @@ export function ProfileCompletionCard() {
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
               isComplete 
-                ? 'bg-gradient-to-br from-green-500 to-green-600' 
+                ? 'bg-gradient-to-br from-primary-primary to-primary-primary' 
                 : 'bg-gradient-to-br from-blue-500 to-blue-600'
             }`}>
               {isComplete ? (
@@ -210,7 +210,7 @@ export function ProfileCompletionCard() {
           
           <div className="flex items-center gap-3">
             {isComplete && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm font-medium">
+              <div className="flex items-center gap-2 px-3 py-1 bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 rounded-full text-sm font-medium">
                 <CheckCircle className="w-4 h-4" />
                 Complete
               </div>
@@ -243,7 +243,7 @@ export function ProfileCompletionCard() {
             <div 
               className={`h-3 rounded-full transition-all duration-500 ${
                 isComplete 
-                  ? 'bg-gradient-to-r from-green-500 to-green-600' 
+                  ? 'bg-gradient-to-r from-primary-primary to-primary-primary' 
                   : 'bg-gradient-to-r from-blue-500 to-blue-600'
               }`}
               style={{ width: `${completion.percentage}%` }}

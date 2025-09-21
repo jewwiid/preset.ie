@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Moodboard, MoodboardItem, SourceBreakdown, EnhancementLogEntry } from '../../domain/moodboards/entities/Moodboard';
+import { Moodboard, MoodboardItem, SourceBreakdown, EnhancementLogEntry } from '@preset/domain';
 import { PexelsService } from '../external/PexelsService';
 import { NanoBananaService } from '../external/NanoBananaService';
 

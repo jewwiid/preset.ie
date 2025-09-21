@@ -331,7 +331,7 @@ export function ProfileContentEnhanced() {
             defaultValue={item.value}
             className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
-          <button className="p-1 text-green-600 hover:text-green-700">
+          <button className="p-1 text-primary-600 hover:text-primary-700">
             <Save className="w-4 h-4" />
           </button>
           <button className="p-1 text-red-600 hover:text-red-700">
@@ -392,7 +392,7 @@ export function ProfileContentEnhanced() {
         {/* Contact Information */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-primary to-primary-primary rounded-lg flex items-center justify-center">
               <Mail className="w-5 h-5 text-white" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Contact Information</h2>
@@ -486,7 +486,7 @@ export function ProfileContentEnhanced() {
       {profile?.talent_categories && profile.talent_categories.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-primary to-primary-primary rounded-lg flex items-center justify-center">
               <Target className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
@@ -498,8 +498,8 @@ export function ProfileContentEnhanced() {
             <div className="flex items-center gap-2">
               {compatibleGigs.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm text-emerald-600 font-medium">
+                  <TrendingUp className="w-4 h-4 text-primary-600" />
+                  <span className="text-sm text-primary-600 font-medium">
                     {compatibleGigs.length} matches found
                   </span>
                 </div>
@@ -509,7 +509,7 @@ export function ProfileContentEnhanced() {
 
           {matchmakingLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
               <span className="ml-3 text-gray-600 dark:text-gray-400">Finding compatible gigs...</span>
             </div>
           ) : compatibleGigs.length > 0 ? (
@@ -537,7 +537,7 @@ export function ProfileContentEnhanced() {
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={() => window.location.href = '/profile?edit=true'}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   Complete Profile
                 </button>

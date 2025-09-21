@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { CalendarIcon, ArrowLeft, ArrowRight, Check, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -657,25 +657,28 @@ export default function CreateProjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-6">
-            <Button
-              variant="ghost"
-              onClick={() => router.push('/collaborate')}
-              className="mr-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <h1 className="text-2xl font-bold text-gray-900">Create Project</h1>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="mb-8 rounded-2xl p-8 border border-border">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-primary mr-3" />
+              <div>
+                <h1 className="text-5xl font-bold text-primary mb-2">Create Project</h1>
+                <p className="text-xl text-muted-foreground">Build your creative team and collaborate on amazing projects</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" onClick={() => router.push('/collaborate')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-4xl mx-auto">
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -688,7 +691,7 @@ export default function CreateProjectPage() {
                   <div className={cn(
                     "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium",
                     isActive ? "bg-blue-600 text-white" : 
-                    isCompleted ? "bg-green-600 text-white" : 
+                    isCompleted ? "bg-primary-600 text-white" : 
                     "bg-gray-200 text-gray-600"
                   )}>
                     {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
@@ -745,7 +748,8 @@ export default function CreateProjectPage() {
             {currentStep !== 'review' && <ArrowRight className="h-4 w-4 ml-2" />}
           </Button>
         </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

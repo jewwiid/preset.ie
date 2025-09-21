@@ -250,12 +250,12 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
 
   return (
     <>
-    <Card className={`border-t-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 ${className}`} data-saved-gallery>
+    <Card className={`border-t-2 border-primary/20 bg-primary/5 ${className}`} data-saved-gallery>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-purple-600" />
+              <ImageIcon className="h-5 w-5 text-primary" />
               Saved Images
             </CardTitle>
             <CardDescription>
@@ -275,12 +275,12 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
-            <span className="ml-2 text-gray-600">Loading saved images...</span>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2 text-muted-foreground">Loading saved images...</span>
           </div>
         ) : savedMedia.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <ImageIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <div className="text-center py-8 text-muted-foreground">
+            <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p className="font-medium">No saved images yet</p>
             <p className="text-sm">Save images from your generations to see them here</p>
           </div>
@@ -305,9 +305,9 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
     {/* Delete Confirmation Dialog */}
     {showDeleteConfirm && (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Delete Media</h3>
+            <h3 className="text-lg font-semibold text-foreground">Delete Media</h3>
             <Button
               size="sm"
               variant="ghost"
@@ -318,7 +318,7 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
             </Button>
           </div>
           
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             Are you sure you want to delete this media? This action cannot be undone.
           </p>
           

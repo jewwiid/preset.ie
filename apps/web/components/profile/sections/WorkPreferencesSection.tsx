@@ -17,14 +17,14 @@ export function WorkPreferencesSection() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <Briefcase className="h-5 w-5 text-emerald-600" />
+        <Briefcase className="h-5 w-5 text-primary-600" />
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Work Preferences</h2>
       </div>
 
       {/* Compensation Preferences */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
-          <DollarSign className="h-4 w-4 text-emerald-600" />
+          <DollarSign className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Compensation</h3>
         </div>
         
@@ -48,7 +48,7 @@ export function WorkPreferencesSection() {
       {/* Location Preferences */}
       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <MapPin className="h-4 w-4 text-emerald-600" />
+          <MapPin className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Location Preferences</h3>
         </div>
         
@@ -72,7 +72,7 @@ export function WorkPreferencesSection() {
       {/* Schedule Preferences */}
       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-4 w-4 text-emerald-600" />
+          <Clock className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Schedule Preferences</h3>
         </div>
         
@@ -110,7 +110,7 @@ export function WorkPreferencesSection() {
       {/* Collaboration Preferences */}
       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <Users className="h-4 w-4 text-emerald-600" />
+          <Users className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Collaboration Style</h3>
         </div>
         
@@ -134,7 +134,7 @@ export function WorkPreferencesSection() {
       {/* Content Preferences */}
       <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <Shield className="h-4 w-4 text-emerald-600" />
+          <Shield className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">Content Comfort</h3>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">

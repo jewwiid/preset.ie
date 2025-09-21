@@ -229,7 +229,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     )
   }
@@ -241,8 +241,8 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Platform Settings</h1>
-        <p className="text-gray-600 mt-2">Manage your account preferences, notifications, and security settings.</p>
+        <h1 className="text-3xl font-bold text-foreground">Platform Settings</h1>
+        <p className="text-muted-foreground mt-2">Manage your account preferences, notifications, and security settings.</p>
       </div>
 
       <Tabs defaultValue="notifications" className="w-full">
@@ -265,42 +265,42 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="email-notifications" className="text-base">Email notifications</Label>
-                  <p className="text-sm text-gray-500">Receive emails about gig applications, bookings, and messages.</p>
+                  <p className="text-sm text-muted-foreground">Receive emails about gig applications, bookings, and messages.</p>
                 </div>
                 <input
                   id="email-notifications"
                   type="checkbox"
                   checked={settings.email_notifications}
                   onChange={(e) => setSettings(prev => ({ ...prev, email_notifications: e.target.checked }))}
-                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="push-notifications" className="text-base">Push notifications</Label>
-                  <p className="text-sm text-gray-500">Get notified on your device about important activity.</p>
+                  <p className="text-sm text-muted-foreground">Get notified on your device about important activity.</p>
                 </div>
                 <input
                   id="push-notifications"
                   type="checkbox"
                   checked={settings.push_notifications}
                   onChange={(e) => setSettings(prev => ({ ...prev, push_notifications: e.target.checked }))}
-                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="marketing-emails" className="text-base">Marketing emails</Label>
-                  <p className="text-sm text-gray-500">Receive updates about new features and tips.</p>
+                  <p className="text-sm text-muted-foreground">Receive updates about new features and tips.</p>
                 </div>
                 <input
                   id="marketing-emails"
                   type="checkbox"
                   checked={settings.marketing_emails}
                   onChange={(e) => setSettings(prev => ({ ...prev, marketing_emails: e.target.checked }))}
-                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                 />
               </div>
 
@@ -326,7 +326,7 @@ export default function SettingsPage() {
                   id="profile-visibility"
                   value={settings.profile_visibility}
                   onChange={(e) => setSettings(prev => ({ ...prev, profile_visibility: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full p-2 border border-border rounded-md focus:ring-primary focus:border-primary bg-background text-foreground"
                 >
                   <option value="public">Public - Anyone can see your profile</option>
                   <option value="private">Private - Only you can see your profile</option>
@@ -337,14 +337,14 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="show-contact" className="text-base">Show contact information</Label>
-                  <p className="text-sm text-gray-500">Allow others to see your contact details in your profile.</p>
+                  <p className="text-sm text-muted-foreground">Allow others to see your contact details in your profile.</p>
                 </div>
                 <input
                   id="show-contact"
                   type="checkbox"
                   checked={settings.show_contact_info}
                   onChange={(e) => setSettings(prev => ({ ...prev, show_contact_info: e.target.checked }))}
-                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
                 />
               </div>
 
@@ -408,8 +408,8 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between opacity-50">
                   <div className="space-y-0.5">
-                    <Label className="text-base text-gray-400">Two-factor authentication</Label>
-                    <p className="text-sm text-gray-400">Add an extra layer of security to your account.</p>
+                    <Label className="text-base text-muted-foreground">Two-factor authentication</Label>
+                    <p className="text-sm text-muted-foreground">Add an extra layer of security to your account.</p>
                   </div>
                   <Button variant="outline" size="sm" disabled className="cursor-not-allowed">
                     Coming Soon
@@ -431,16 +431,16 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Account Information</h3>
-                  <p className="text-sm text-gray-600 mb-4">Your account email: {user.email}</p>
-                  <p className="text-sm text-gray-600">Account created: {new Date(user.created_at).toLocaleDateString()}</p>
+                  <h3 className="text-lg font-medium text-foreground mb-2">Account Information</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Your account email: {user.email}</p>
+                  <p className="text-sm text-muted-foreground">Account created: {new Date(user.created_at).toLocaleDateString()}</p>
                 </div>
 
                 <hr className="my-6" />
 
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Data Export</h3>
-                  <p className="text-sm text-gray-600 mb-4">Download a copy of all your data from Preset.</p>
+                  <h3 className="text-lg font-medium text-foreground mb-2">Data Export</h3>
+                  <p className="text-sm text-muted-foreground mb-4">Download a copy of all your data from Preset.</p>
                   <Button variant="outline">
                     Request Data Export
                   </Button>
@@ -449,8 +449,8 @@ export default function SettingsPage() {
                 <hr className="my-6" />
 
                 <div>
-                  <h3 className="text-lg font-medium text-red-600 mb-2">Danger Zone</h3>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <h3 className="text-lg font-medium text-destructive mb-2">Danger Zone</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
                     Permanently delete your account and all associated data. This action cannot be undone.
                   </p>
                   <Button variant="destructive" onClick={deleteAccount}>

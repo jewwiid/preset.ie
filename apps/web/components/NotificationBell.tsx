@@ -100,7 +100,7 @@ export function NotificationBell() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`relative p-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 rounded-md transition-colors ${
+        className={`relative p-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary rounded-md transition-colors ${
           isMuted 
             ? 'text-gray-400 hover:text-gray-500' 
             : 'text-gray-600 hover:text-gray-900'
@@ -138,7 +138,7 @@ export function NotificationBell() {
                 className={`flex items-center gap-1 text-sm font-medium transition-colors p-1.5 rounded-md ${
                   isMuted
                     ? 'text-gray-500 hover:text-gray-600 bg-gray-100'
-                    : 'text-emerald-600 hover:text-emerald-700'
+                    : 'text-primary-600 hover:text-primary/80'
                 }`}
                 title={isMuted ? 'Unmute notifications' : 'Mute notifications'}
               >
@@ -153,7 +153,7 @@ export function NotificationBell() {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                  className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary/80 font-medium transition-colors"
                 >
                   <CheckCheck className="w-4 h-4" />
                   Mark all read
@@ -166,7 +166,7 @@ export function NotificationBell() {
           <div className="max-h-80 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
               </div>
             ) : notifications.length === 0 ? (
               <div className="text-center p-8">
@@ -236,7 +236,7 @@ export function NotificationBell() {
                                   e.stopPropagation()
                                   markAsRead(notification.id)
                                 }}
-                                className="p-1 text-gray-400 hover:text-emerald-600 transition-colors"
+                                className="p-1 text-gray-400 hover:text-primary transition-colors"
                                 title="Mark as read"
                               >
                                 <Check className="w-4 h-4" />
@@ -275,7 +275,7 @@ export function NotificationBell() {
                   setIsOpen(false)
                   window.location.href = '/notifications'
                 }}
-                className="w-full text-center text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                className="w-full text-center text-sm text-primary-600 hover:text-primary/80 font-medium transition-colors"
               >
                 View all notifications
               </button>

@@ -77,11 +77,11 @@ interface OffersResponse {
 }
 
 const OFFER_STATUSES = {
-  open: { label: 'Open', color: 'bg-blue-100 text-blue-800', icon: Clock },
-  accepted: { label: 'Accepted', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-  declined: { label: 'Declined', color: 'bg-red-100 text-red-800', icon: XCircle },
-  expired: { label: 'Expired', color: 'bg-gray-100 text-gray-800', icon: AlertCircle },
-  cancelled: { label: 'Cancelled', color: 'bg-orange-100 text-orange-800', icon: XCircle }
+  open: { label: 'Open', color: 'bg-primary/10 text-primary', icon: Clock },
+  accepted: { label: 'Accepted', color: 'bg-primary/10 text-primary', icon: CheckCircle },
+  declined: { label: 'Declined', color: 'bg-destructive/10 text-destructive', icon: XCircle },
+  expired: { label: 'Expired', color: 'bg-muted text-muted-foreground', icon: AlertCircle },
+  cancelled: { label: 'Cancelled', color: 'bg-destructive/10 text-destructive', icon: XCircle }
 };
 
 export default function OffersPage() {
@@ -187,11 +187,11 @@ export default function OffersPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md bg-card border-border">
           <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-4">Sign In Required</h2>
-            <p className="text-gray-600 mb-4">Please sign in to view your offers.</p>
+            <h2 className="text-xl font-semibold mb-4 text-foreground">Sign In Required</h2>
+            <p className="text-muted-foreground mb-4">Please sign in to view your offers.</p>
           </CardContent>
         </Card>
       </div>
@@ -199,16 +199,16 @@ export default function OffersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Handshake className="h-8 w-8 text-blue-600 mr-3" />
+              <Handshake className="h-8 w-8 text-primary mr-3" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Offers</h1>
-                <p className="text-gray-600">Manage your marketplace offers</p>
+                <h1 className="text-3xl font-bold text-foreground">Offers</h1>
+                <p className="text-muted-foreground">Manage your marketplace offers</p>
               </div>
             </div>
           </div>
@@ -228,7 +228,7 @@ export default function OffersPage() {
             <CardContent>
               <div className="flex items-center space-x-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Status
                   </label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -260,11 +260,11 @@ export default function OffersPage() {
             <TabsContent value={activeTab} className="space-y-4">
               {/* Results Header */}
               <div className="flex justify-between items-center">
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 className="text-lg font-medium text-foreground">
                   {loading ? 'Loading...' : `${pagination.total} offers found`}
                 </h2>
                 {!loading && pagination.total > 0 && (
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-muted-foreground">
                     Page {pagination.page} of {pagination.pages}
                   </span>
                 )}
@@ -274,15 +274,15 @@ export default function OffersPage() {
               {loading ? (
                 <div className="space-y-4">
                   {[...Array(3)].map((_, i) => (
-                    <Card key={i} className="animate-pulse">
+                    <Card key={i} className="animate-pulse bg-card border-border">
                       <CardHeader>
-                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        <div className="h-4 bg-muted rounded w-3/4"></div>
+                        <div className="h-3 bg-muted rounded w-1/2"></div>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2">
-                          <div className="h-3 bg-gray-200 rounded"></div>
-                          <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                          <div className="h-3 bg-muted rounded"></div>
+                          <div className="h-3 bg-muted rounded w-5/6"></div>
                         </div>
                       </CardContent>
                     </Card>
@@ -290,16 +290,16 @@ export default function OffersPage() {
                 </div>
               ) : error ? (
                 <div className="text-center py-12">
-                  <p className="text-red-600">{error}</p>
+                  <p className="text-destructive">{error}</p>
                   <Button onClick={() => fetchOffers()} className="mt-4">
                     Try Again
                   </Button>
                 </div>
               ) : offers.length === 0 ? (
                 <div className="text-center py-12">
-                  <Handshake className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No offers found</h3>
-                  <p className="text-gray-500">
+                  <Handshake className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No offers found</h3>
+                  <p className="text-muted-foreground">
                     {activeTab === 'sent' && "You haven't sent any offers yet."}
                     {activeTab === 'received' && "You haven't received any offers yet."}
                     {activeTab === 'all' && "You don't have any offers yet."}
@@ -308,7 +308,7 @@ export default function OffersPage() {
               ) : (
                 <div className="space-y-4">
                   {offers.map((offer) => (
-                    <Card key={offer.id} className="hover:shadow-lg transition-shadow">
+                    <Card key={offer.id} className="hover:shadow-lg transition-shadow bg-card border-border">
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -326,10 +326,10 @@ export default function OffersPage() {
                             </CardTitle>
                           </div>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-green-600">
+                            <div className="text-2xl font-bold text-primary">
                               {formatPrice(offer.payload.price_cents)}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-muted-foreground">
                               {offer.context === 'rent' ? 'per day' : 'total'}
                             </div>
                           </div>
@@ -339,13 +339,13 @@ export default function OffersPage() {
                       <CardContent>
                         <div className="space-y-3">
                           {/* Listing Details */}
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-muted-foreground">
                             <Package className="h-4 w-4 mr-2" />
                             <span>{offer.listings?.category} • {offer.listings?.condition}</span>
                           </div>
                           
                           {/* User Details */}
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-muted-foreground">
                             <User className="h-4 w-4 mr-2" />
                             <span>
                               {activeTab === 'sent' ? 'To' : 'From'}: {offer.users_profile?.display_name || 'Unknown User'}
@@ -353,14 +353,14 @@ export default function OffersPage() {
                           </div>
                           
                           {/* Dates */}
-                          <div className="flex items-center text-sm text-gray-500">
+                          <div className="flex items-center text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4 mr-2" />
                             <span>Created {formatDateTime(offer.created_at)}</span>
                           </div>
                           
                           {/* Expiration */}
                           {offer.status === 'open' && (
-                            <div className="flex items-center text-sm text-orange-600">
+                            <div className="flex items-center text-sm text-destructive">
                               <Clock className="h-4 w-4 mr-2" />
                               <span>Expires {formatDateTime(offer.expires_at)}</span>
                             </div>
@@ -368,8 +368,8 @@ export default function OffersPage() {
                           
                           {/* Message */}
                           {offer.payload.message && (
-                            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                              <p className="text-sm text-gray-700">{offer.payload.message}</p>
+                            <div className="mt-3 p-3 bg-muted rounded-lg">
+                              <p className="text-sm text-foreground">{offer.payload.message}</p>
                             </div>
                           )}
                         </div>

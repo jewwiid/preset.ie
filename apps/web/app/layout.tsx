@@ -26,11 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground`}>
         <FeedbackProvider>
           <AuthProvider>
             <NavBar />
-            <main className="min-h-screen">
+            <main className="min-h-screen bg-background">
               {children}
             </main>
           </AuthProvider>

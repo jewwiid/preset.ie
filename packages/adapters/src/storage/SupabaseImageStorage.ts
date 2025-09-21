@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { ImageStorageService } from '@preset/domain/moodboards/ports/ImageStorageService';
+import { ImageStorageService } from '@preset/domain';
 
 export class SupabaseImageStorage implements ImageStorageService {
   private bucketName = 'moodboard-images';

@@ -303,7 +303,7 @@ export default function ProfileSetupForm({
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="John Doe"
                   required
                 />
@@ -313,7 +313,7 @@ export default function ProfileSetupForm({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Handle * {handleAvailable && handle && (
-                  <span className="text-green-600 text-xs ml-2">
+                  <span className="text-primary-600 text-xs ml-2">
                     <Check className="inline w-3 h-3" /> Available
                   </span>
                 )}
@@ -324,7 +324,7 @@ export default function ProfileSetupForm({
                   type="text"
                   value={handle}
                   onChange={(e) => setHandle(e.target.value.toLowerCase())}
-                  className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+                  className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
                     handleError ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="johndoe"
@@ -344,7 +344,7 @@ export default function ProfileSetupForm({
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
               rows={3}
               placeholder="Tell us about yourself..."
             />
@@ -361,7 +361,7 @@ export default function ProfileSetupForm({
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Dublin"
                   required
                 />
@@ -377,7 +377,7 @@ export default function ProfileSetupForm({
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none"
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
                 >
                   {COUNTRIES.map(c => (
                     <option key={c} value={c}>{c}</option>
@@ -402,7 +402,7 @@ export default function ProfileSetupForm({
                     type="text"
                     value={instagramHandle}
                     onChange={(e) => setInstagramHandle(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="@username"
                   />
                 </div>
@@ -418,7 +418,7 @@ export default function ProfileSetupForm({
                     type="text"
                     value={tiktokHandle}
                     onChange={(e) => setTiktokHandle(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="@username"
                   />
                 </div>
@@ -434,7 +434,7 @@ export default function ProfileSetupForm({
                     type="url"
                     value={websiteUrl}
                     onChange={(e) => setWebsiteUrl(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="https://..."
                   />
                 </div>
@@ -450,7 +450,7 @@ export default function ProfileSetupForm({
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="+353..."
                   />
                 </div>
@@ -474,7 +474,7 @@ export default function ProfileSetupForm({
                     onChange={(e) => setYearsExperience(parseInt(e.target.value) || 0)}
                     min="0"
                     max="50"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                   />
                 </div>
                 
@@ -490,7 +490,7 @@ export default function ProfileSetupForm({
                         onClick={() => toggleArrayItem(equipment, setEquipment, item)}
                         className={`px-3 py-2 text-sm rounded-lg transition ${
                           equipment.includes(item)
-                            ? 'bg-emerald-600 text-white'
+                            ? 'bg-primary-600 text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
@@ -512,7 +512,7 @@ export default function ProfileSetupForm({
                         onClick={() => toggleArrayItem(software, setSoftware, item)}
                         className={`px-3 py-2 text-sm rounded-lg transition ${
                           software.includes(item)
-                            ? 'bg-emerald-600 text-white'
+                            ? 'bg-primary-600 text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
@@ -538,7 +538,7 @@ export default function ProfileSetupForm({
                       type="text"
                       value={studioName}
                       onChange={(e) => setStudioName(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Studio name"
                     />
                   )}
@@ -554,7 +554,7 @@ export default function ProfileSetupForm({
                     onChange={(e) => setTurnaroundDays(parseInt(e.target.value) || 7)}
                     min="1"
                     max="30"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                   />
                 </div>
               </div>
@@ -579,7 +579,7 @@ export default function ProfileSetupForm({
                         onClick={() => toggleArrayItem(talentCategories, setTalentCategories, cat)}
                         className={`px-3 py-2 text-sm rounded-lg transition ${
                           talentCategories.includes(cat)
-                            ? 'bg-emerald-600 text-white'
+                            ? 'bg-primary-600 text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
@@ -600,7 +600,7 @@ export default function ProfileSetupForm({
                       onChange={(e) => setHeightCm(e.target.value)}
                       min="100"
                       max="250"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                       placeholder="175"
                     />
                   </div>
@@ -612,7 +612,7 @@ export default function ProfileSetupForm({
                     <select
                       value={eyeColor}
                       onChange={(e) => setEyeColor(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                     >
                       <option value="">Select...</option>
                       {EYE_COLORS.map(color => (
@@ -628,7 +628,7 @@ export default function ProfileSetupForm({
                     <select
                       value={hairColor}
                       onChange={(e) => setHairColor(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
                     >
                       <option value="">Select...</option>
                       {HAIR_COLORS.map(color => (
@@ -685,7 +685,7 @@ export default function ProfileSetupForm({
                     onChange={(e) => setTravelRadiusKm(parseInt(e.target.value) || 50)}
                     min="10"
                     max="500"
-                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <span className="text-sm text-gray-600">km</span>
                 </div>
@@ -706,7 +706,7 @@ export default function ProfileSetupForm({
           <button
             onClick={handleSave}
             disabled={!displayName || !handle || !handleAvailable || !city}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Continue
           </button>

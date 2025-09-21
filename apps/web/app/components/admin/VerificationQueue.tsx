@@ -123,7 +123,7 @@ export function VerificationQueue() {
       case 'pending':
         return <Clock className="w-4 h-4 text-yellow-500" />
       case 'approved':
-        return <CheckCircle className="w-4 h-4 text-green-500" />
+        return <CheckCircle className="w-4 h-4 text-primary-500" />
       case 'rejected':
         return <XCircle className="w-4 h-4 text-red-500" />
       default:
@@ -135,7 +135,7 @@ export function VerificationQueue() {
     const colors = {
       'government_id': 'bg-blue-100 text-blue-800',
       'student_id': 'bg-purple-100 text-purple-800',
-      'professional_cert': 'bg-green-100 text-green-800'
+      'professional_cert': 'bg-primary-100 text-primary-800'
     }
     return (
       <span className={`px-2 py-1 text-xs rounded-full ${colors[type as keyof typeof colors] || 'bg-gray-100 text-gray-800'}`}>
@@ -237,7 +237,7 @@ export function VerificationQueue() {
                         <>
                           <button
                             onClick={() => updateVerificationStatus(verification.id, 'approved')}
-                            className="text-green-600 hover:text-green-900"
+                            className="text-primary-600 hover:text-primary-900"
                             title="Approve"
                           >
                             <CheckCircle className="w-4 h-4" />
@@ -333,7 +333,7 @@ export function VerificationQueue() {
                       onClick={() => {
                         updateVerificationStatus(selectedVerification.id, 'approved')
                       }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
                     >
                       Approve
                     </button>

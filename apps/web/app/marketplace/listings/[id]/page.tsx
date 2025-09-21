@@ -118,12 +118,12 @@ export default function ListingDetailPage() {
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
-      case 'new': return 'bg-green-100 text-green-800';
-      case 'like_new': return 'bg-blue-100 text-blue-800';
-      case 'good': return 'bg-yellow-100 text-yellow-800';
-      case 'fair': return 'bg-orange-100 text-orange-800';
-      case 'poor': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'new': return 'bg-primary/10 text-primary';
+      case 'like_new': return 'bg-primary/10 text-primary';
+      case 'good': return 'bg-primary/10 text-primary';
+      case 'fair': return 'bg-destructive/10 text-destructive';
+      case 'poor': return 'bg-destructive/10 text-destructive';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -161,13 +161,13 @@ export default function ListingDetailPage() {
       return (
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <Euro className="h-5 w-5 text-gray-500" />
+            <Euro className="h-5 w-5 text-muted-foreground" />
             <span className="text-2xl font-bold">
               {listing.rent_day_cents ? formatPrice(listing.rent_day_cents) : 'N/A'}/day
             </span>
           </div>
           {listing.rent_week_cents && (
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               Weekly rate: {formatPrice(listing.rent_week_cents)}
             </div>
           )}
@@ -176,7 +176,7 @@ export default function ListingDetailPage() {
     } else if (listing.mode === 'sale') {
       return (
         <div className="flex items-center space-x-2">
-          <Euro className="h-5 w-5 text-gray-500" />
+          <Euro className="h-5 w-5 text-muted-foreground" />
           <span className="text-2xl font-bold">
             {listing.sale_price_cents ? formatPrice(listing.sale_price_cents) : 'N/A'}
           </span>
@@ -191,14 +191,14 @@ export default function ListingDetailPage() {
 
     if (listing.retainer_mode === 'none' && listing.borrow_ok) {
       return (
-        <div className="flex items-center space-x-2 text-green-600">
+        <div className="flex items-center space-x-2 text-primary">
           <Shield className="h-4 w-4" />
           <span>Free to borrow</span>
         </div>
       );
     } else if (listing.retainer_mode !== 'none') {
       return (
-        <div className="flex items-center space-x-2 text-blue-600">
+        <div className="flex items-center space-x-2 text-primary">
           <Shield className="h-4 w-4" />
           <span>€{formatPrice(listing.retainer_cents)} retainer</span>
         </div>
@@ -213,14 +213,14 @@ export default function ListingDetailPage() {
         <div className="animate-pulse">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
-              <div className="h-8 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-64 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-full"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              <div className="h-8 bg-muted rounded w-3/4"></div>
+              <div className="h-64 bg-muted rounded"></div>
+              <div className="h-4 bg-muted rounded w-full"></div>
+              <div className="h-4 bg-muted rounded w-2/3"></div>
             </div>
             <div className="space-y-4">
-              <div className="h-32 bg-gray-200 rounded"></div>
-              <div className="h-20 bg-gray-200 rounded"></div>
+              <div className="h-32 bg-muted rounded"></div>
+              <div className="h-20 bg-muted rounded"></div>
             </div>
           </div>
         </div>
@@ -232,13 +232,13 @@ export default function ListingDetailPage() {
     return (
       <MarketplaceLayout>
         <div className="text-center py-12">
-          <div className="text-red-600 mb-4">
+          <div className="text-destructive mb-4">
             <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Listing not found</h3>
-          <p className="text-gray-500 mb-4">{error || 'The listing you are looking for does not exist.'}</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">Listing not found</h3>
+          <p className="text-muted-foreground mb-4">{error || 'The listing you are looking for does not exist.'}</p>
           <Button onClick={() => router.push('/marketplace')}>
             Back to Marketplace
           </Button>
@@ -251,12 +251,12 @@ export default function ListingDetailPage() {
     <MarketplaceLayout>
       <div className="space-y-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-500">
-          <Link href="/marketplace" className="hover:text-gray-700">
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
+          <Link href="/marketplace" className="hover:text-foreground">
             Marketplace
           </Link>
           <span>/</span>
-          <span className="text-gray-900">{listing.title}</span>
+          <span className="text-foreground">{listing.title}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -264,7 +264,7 @@ export default function ListingDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Title and Badges */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">{listing.title}</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-4">{listing.title}</h1>
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <Badge className={getConditionColor(listing.condition)}>
                   {listing.condition.replace('_', ' ')}
@@ -272,7 +272,7 @@ export default function ListingDetailPage() {
                 <Badge variant="outline">{listing.category}</Badge>
                 {getModeBadges()}
                 {listing.verified_only && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
+                  <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     <Shield className="h-3 w-3 mr-1" />
                     Verified Only
                   </Badge>
@@ -283,7 +283,7 @@ export default function ListingDetailPage() {
             {/* Images */}
             {listing.images && listing.images.length > 0 && (
               <div className="space-y-4">
-                <div className="aspect-w-16 aspect-h-9 bg-gray-200 rounded-lg overflow-hidden">
+                <div className="aspect-w-16 aspect-h-9 bg-muted rounded-lg overflow-hidden">
                   <Image
                     src={getPrimaryImage()!.path}
                     alt={getPrimaryImage()!.alt_text || listing.title}
@@ -299,8 +299,8 @@ export default function ListingDetailPage() {
                       <button
                         key={image.id}
                         onClick={() => setSelectedImageIndex(index)}
-                        className={`aspect-w-16 aspect-h-9 bg-gray-200 rounded-lg overflow-hidden ${
-                          selectedImageIndex === index ? 'ring-2 ring-blue-500' : ''
+                        className={`aspect-w-16 aspect-h-9 bg-muted rounded-lg overflow-hidden ${
+                          selectedImageIndex === index ? 'ring-2 ring-primary' : ''
                         }`}
                       >
                         <Image
@@ -320,8 +320,8 @@ export default function ListingDetailPage() {
             {/* Description */}
             {listing.description && (
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">Description</h2>
-                <p className="text-gray-700 whitespace-pre-wrap">{listing.description}</p>
+                <h2 className="text-xl font-semibold text-foreground mb-3">Description</h2>
+                <p className="text-foreground whitespace-pre-wrap">{listing.description}</p>
               </div>
             )}
 
@@ -341,20 +341,20 @@ export default function ListingDetailPage() {
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Category</span>
-                        <p className="text-gray-900">{listing.category}</p>
+                        <span className="text-sm font-medium text-muted-foreground">Category</span>
+                        <p className="text-foreground">{listing.category}</p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Condition</span>
-                        <p className="text-gray-900">{listing.condition.replace('_', ' ')}</p>
+                        <span className="text-sm font-medium text-muted-foreground">Condition</span>
+                        <p className="text-foreground">{listing.condition.replace('_', ' ')}</p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Quantity</span>
-                        <p className="text-gray-900">{listing.quantity}</p>
+                        <span className="text-sm font-medium text-muted-foreground">Quantity</span>
+                        <p className="text-foreground">{listing.quantity}</p>
                       </div>
                       <div>
-                        <span className="text-sm font-medium text-gray-500">Location</span>
-                        <p className="text-gray-900">
+                        <span className="text-sm font-medium text-muted-foreground">Location</span>
+                        <p className="text-foreground">
                           {listing.location_city}
                           {listing.location_country && `, ${listing.location_country}`}
                         </p>
@@ -373,9 +373,9 @@ export default function ListingDetailPage() {
                     {listing.availability && listing.availability.length > 0 ? (
                       <div className="space-y-2">
                         {listing.availability.map((block) => (
-                          <div key={block.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div key={block.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                             <div className="flex items-center space-x-2">
-                              <Calendar className="h-4 w-4 text-gray-500" />
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
                               <span className="text-sm">
                                 {new Date(block.start_date).toLocaleDateString()} - {new Date(block.end_date).toLocaleDateString()}
                               </span>
@@ -387,7 +387,7 @@ export default function ListingDetailPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-500">No availability blocks set</p>
+                      <p className="text-muted-foreground">No availability blocks set</p>
                     )}
                   </CardContent>
                 </Card>
@@ -411,43 +411,43 @@ export default function ListingDetailPage() {
                               className="rounded-full"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                              <span className="text-lg font-medium text-gray-600">
+                            <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                              <span className="text-lg font-medium text-muted-foreground">
                                 {listing.users_profile.display_name.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           )}
                           <div>
-                            <h3 className="font-semibold text-gray-900">
+                            <h3 className="font-semibold text-foreground">
                               {listing.users_profile.display_name}
                             </h3>
                             <div className="flex items-center space-x-2">
-                              <span className="text-sm text-gray-500">@{listing.users_profile.handle}</span>
+                              <span className="text-sm text-muted-foreground">@{listing.users_profile.handle}</span>
                               {listing.users_profile.verified_id && (
-                                <Shield className="h-4 w-4 text-blue-500" />
+                                <Shield className="h-4 w-4 text-primary" />
                               )}
                             </div>
                           </div>
                         </div>
                         
                         {listing.users_profile.bio && (
-                          <p className="text-gray-700">{listing.users_profile.bio}</p>
+                          <p className="text-foreground">{listing.users_profile.bio}</p>
                         )}
                         
                         {listing.users_profile.city && (
-                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                             <MapPin className="h-4 w-4" />
                             <span>{listing.users_profile.city}</span>
                           </div>
                         )}
                         
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                           <User className="h-4 w-4" />
                           <span>Member since {new Date(listing.users_profile.created_at).toLocaleDateString()}</span>
                         </div>
 
                         {/* Safety Features */}
-                        <div className="pt-4 border-t border-gray-200">
+                        <div className="pt-4 border-t border-border">
                           <SafetyFeatures 
                             user={{
                               id: listing.users_profile.id,
@@ -472,7 +472,7 @@ export default function ListingDetailPage() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-gray-500">Owner information not available</p>
+                      <p className="text-muted-foreground">Owner information not available</p>
                     )}
                   </CardContent>
                 </Card>
@@ -491,7 +491,7 @@ export default function ListingDetailPage() {
                 {getPriceDisplay()}
                 {getRetainerInfo()}
                 {listing.deposit_cents > 0 && (
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-muted-foreground">
                     Deposit: {formatPrice(listing.deposit_cents)}
                   </div>
                 )}
@@ -552,15 +552,15 @@ export default function ListingDetailPage() {
                     <Link
                       key={otherListing.id}
                       href={`/marketplace/listings/${otherListing.id}`}
-                      className="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      className="block p-3 border border-border rounded-lg hover:bg-muted transition-colors"
                     >
-                      <h4 className="font-medium text-gray-900 line-clamp-1">
+                      <h4 className="font-medium text-foreground line-clamp-1">
                         {otherListing.title}
                       </h4>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         {otherListing.category} • {otherListing.mode}
                       </p>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {otherListing.rent_day_cents && formatPrice(otherListing.rent_day_cents)}/day
                         {otherListing.sale_price_cents && ` • ${formatPrice(otherListing.sale_price_cents)}`}
                       </p>
@@ -575,9 +575,9 @@ export default function ListingDetailPage() {
 
       {/* Messaging Modal */}
       {showMessaging && listing.users_profile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Message Owner</h3>
                 <Button variant="ghost" size="sm" onClick={() => setShowMessaging(false)}>

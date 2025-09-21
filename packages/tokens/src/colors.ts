@@ -3,10 +3,24 @@
  * Based on brand identity with comprehensive dark/light mode support
  */
 
-// Brand Colors - Primary palette from your SVG assets
+// Brand Colors - OKLCH format for better consistency
 export const brandColors = {
-  // Primary brand green from your logo
+  // Primary brand green from your logo - OKLCH format
   preset: {
+    50: 'oklch(0.9842 0.0034 247.8575)',   // Lightest
+    100: 'oklch(0.9683 0.0069 247.8956)',  // Light
+    200: 'oklch(0.9288 0.0126 255.5078)',  // Medium-light
+    300: 'oklch(0.8178 0.0437 168.0623)',  // Medium
+    400: 'oklch(0.6889 0.0727 172.2422)',  // Secondary
+    500: 'oklch(0.5563 0.1055 174.3329)',  // Primary brand color
+    600: 'oklch(0.4683 0.0879 175.5767)',  // Dark
+    700: 'oklch(0.3789 0.0705 176.5745)',  // Darker
+    800: 'oklch(0.3181 0.0596 175.7326)',  // Dark
+    900: 'oklch(0.2103 0.0059 285.8852)',  // Darkest
+  },
+  
+  // Legacy hex colors for backward compatibility
+  presetHex: {
     50: '#f0fdf9',
     100: '#ccfbef', 
     200: '#99f6e0',

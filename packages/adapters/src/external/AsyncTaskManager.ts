@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { NanoBananaService, NanoBananaTask } from './NanoBananaService';
+import { NanoBananaService } from './NanoBananaService';
 import { CreditManager } from '../../application/credits/CreditManager';
 
 export interface EnhancementTask {
@@ -26,9 +26,10 @@ export class AsyncTaskManager {
 
   constructor(
     private supabase: SupabaseClient,
-    apiKey: string
+    apiKey: string,
+    callbackUrl: string = ''
   ) {
-    this.nanoBananaService = new NanoBananaService(apiKey);
+    this.nanoBananaService = new NanoBananaService(apiKey, callbackUrl);
     this.creditManager = new CreditManager(supabase);
   }
 
@@ -107,35 +108,61 @@ export class AsyncTaskManager {
         throw new Error('Task not found');
       }
 
-      // Call NanoBanana API
-      const result = await this.nanoBananaService.enhanceImage({
-        inputImageUrl: task.input_image_url,
-        enhancementType: task.enhancement_type,
-        prompt: task.prompt,
-        strength: task.strength
+      // Call WaveSpeed API (via NanoBananaService)
+      const initialResult = await this.nanoBananaService.enhanceImage({
+        imageUrl: task.input_image_url,
+        enhancementType: task.enhancement_type as 'upscale' | 'style-transfer' | 'background-removal',
+        style: task.prompt
       });
 
-      // Update task with result
+      // Update task with API task ID and set to processing
       await this.supabase
         .from('enhancement_tasks')
         .update({
-          status: 'completed',
-          result_url: result.enhancedUrl,
-          cost_usd: result.cost,
+          status: 'processing',
+          api_task_id: initialResult.taskId,
           updated_at: new Date().toISOString()
         })
         .eq('id', taskId);
 
-      // Log successful transaction
-      await this.creditManager.logCreditTransaction({
-        userId: task.user_id,
-        moodboardId: task.moodboard_id,
-        transactionType: 'deduction',
-        creditsUsed: 1,
-        costUsd: result.cost,
-        provider: 'nanobanan',
-        enhancementType: task.enhancement_type
-      });
+      // Wait for completion using the polling method
+      try {
+        const completedResult = await this.nanoBananaService.waitForTaskCompletion(initialResult.taskId);
+        
+        // Update task with final result
+        await this.supabase
+          .from('enhancement_tasks')
+          .update({
+            status: 'completed',
+            result_url: completedResult.enhancedUrl,
+            cost_usd: completedResult.cost,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', taskId);
+
+        // Log successful transaction
+        await this.creditManager.logCreditTransaction({
+          userId: task.user_id,
+          moodboardId: task.moodboard_id,
+          transactionType: 'deduction',
+          creditsUsed: 1,
+          costUsd: completedResult.cost,
+          provider: 'wavespeed',
+          enhancementType: task.enhancement_type
+        });
+      } catch (pollingError) {
+        // If polling fails, mark task as failed
+        await this.supabase
+          .from('enhancement_tasks')
+          .update({
+            status: 'failed',
+            error_message: pollingError.message,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', taskId);
+        
+        throw pollingError;
+      }
 
     } catch (error) {
       console.error(`Task ${taskId} processing error:`, error);

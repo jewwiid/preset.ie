@@ -1,7 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { UserBlock } from '@preset/domain/collaboration/entities/UserBlock';
-import { UserBlockRepository } from '@preset/domain/collaboration/ports/UserBlockRepository';
-import { BlockReason, BlockReasonDetails } from '@preset/domain/collaboration/value-objects/BlockReason';
+import { UserBlock, UserBlockRepository, BlockReason, BlockReasonDetails } from '@preset/domain';
 
 export class SupabaseUserBlockRepository implements UserBlockRepository {
   constructor(private supabase: SupabaseClient) {}

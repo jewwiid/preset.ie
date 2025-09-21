@@ -597,32 +597,31 @@ function CreateTreatmentPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Hero Section */}
+        <div className="mb-8 rounded-2xl p-8 border border-border">
+          <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <FileText className="h-8 w-8 text-blue-600 mr-3" />
+              <FileText className="h-8 w-8 text-primary mr-3" />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Create Treatment</h1>
-                <p className="text-gray-600">Generate professional treatments from your gigs and moodboards</p>
+                <h1 className="text-5xl font-bold text-primary mb-2">Create Treatment</h1>
+                <p className="text-xl text-muted-foreground">Generate professional treatments from your gigs and moodboards</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="outline" onClick={() => router.back()}>
                 Cancel
               </Button>
-              <Button onClick={saveTreatment} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {saving ? 'Saving...' : 'Save Draft'}
+              <Button size="lg" className="px-8 py-3 text-lg font-semibold" onClick={saveTreatment} disabled={saving}>
+                <Save className="h-5 w-5 mr-2" />
+                {saving ? 'Saving...' : 'Save Treatment'}
               </Button>
             </div>
           </div>
         </div>
-      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="setup">Setup</TabsTrigger>
@@ -1037,7 +1036,8 @@ function CreateTreatmentPageContent() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

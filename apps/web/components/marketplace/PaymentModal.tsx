@@ -219,16 +219,16 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
                   </div>
                 ) : userCredits ? (
                   <div className={`p-3 rounded-lg ${
-                    canPayWithCredits() ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                    canPayWithCredits() ? 'bg-primary-50 border border-primary/20' : 'bg-red-50 border border-red-200'
                   }`}>
                     <div className="flex items-center space-x-2">
                       {canPayWithCredits() ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle className="h-4 w-4 text-primary-600" />
                       ) : (
                         <AlertCircle className="h-4 w-4 text-red-600" />
                       )}
                       <span className={`text-sm font-medium ${
-                        canPayWithCredits() ? 'text-green-800' : 'text-red-800'
+                        canPayWithCredits() ? 'text-primary-800' : 'text-red-800'
                       }`}>
                         {canPayWithCredits() 
                           ? `Sufficient credits available (${userCredits.current_balance} credits)`

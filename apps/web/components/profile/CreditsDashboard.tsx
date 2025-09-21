@@ -225,7 +225,7 @@ export default function CreditsDashboard() {
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case 'purchase': return <ShoppingCart className="w-4 h-4 text-green-600" />;
+      case 'purchase': return <ShoppingCart className="w-4 h-4 text-primary-600" />;
       case 'consume': return <TrendingUp className="w-4 h-4 text-blue-600" />;
       case 'refund': return <RefreshCw className="w-4 h-4 text-orange-600" />;
       case 'bonus': return <Coins className="w-4 h-4 text-purple-600" />;
@@ -236,7 +236,7 @@ export default function CreditsDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Completed</Badge>;
+        return <Badge variant="default" className="bg-primary-100 text-primary-800">Completed</Badge>;
       case 'pending':
         return <Badge variant="secondary">Pending</Badge>;
       case 'failed':
@@ -267,22 +267,22 @@ export default function CreditsDashboard() {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('purchase')}>
+        <Card className="bg-gradient-to-br from-primary-primary/10 to-primary-primary/10 border-primary/20 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('purchase')}>
           <CardContent className="p-6">
             <div className="space-y-4">
               <div className="flex items-center">
-                <Coins className="w-8 h-8 text-emerald-600" />
+                <Coins className="w-8 h-8 text-primary-600" />
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-600">Credit Balance</p>
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-emerald-700">{userCredits?.balance || 0}</p>
+                <p className="text-3xl font-bold text-primary-700">{userCredits?.balance || 0}</p>
                 <p className="text-sm text-gray-500 mt-1">Available credits</p>
               </div>
               <Button
                 size="sm"
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="w-full bg-primary-600 hover:bg-primary/90 text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveTab('purchase');
@@ -299,7 +299,7 @@ export default function CreditsDashboard() {
           <CardContent className="p-6">
             <div className="space-y-3">
               <div className="flex items-center">
-                <TrendingUp className="w-8 h-8 text-green-600" />
+                <TrendingUp className="w-8 h-8 text-primary-600" />
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-600">Total Earned</p>
                 </div>
@@ -394,7 +394,7 @@ export default function CreditsDashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <p className={`font-medium ${transaction.amount > 0 ? 'text-primary-600' : 'text-red-600'}`}>
                           {transaction.amount > 0 ? '+' : ''}{transaction.amount} credits
                         </p>
                         <p className="text-sm text-gray-500">
@@ -471,7 +471,7 @@ export default function CreditsDashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <p className={`font-medium ${transaction.amount > 0 ? 'text-primary-600' : 'text-red-600'}`}>
                           {transaction.amount > 0 ? '+' : ''}{transaction.amount} credits
                         </p>
                         <p className="text-sm text-gray-500">
@@ -573,7 +573,7 @@ export default function CreditsDashboard() {
                           className={`w-full h-11 font-semibold transition-all duration-200 shadow-md hover:shadow-lg ${
                             pkg.is_popular 
                               ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800' 
-                              : 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800'
+                              : 'bg-gradient-to-r from-primary-primary to-primary-primary/90 hover:from-primary-primary/90 hover:to-primary-primary'
                           }`}
                         >
                           {purchasing === pkg.id ? (

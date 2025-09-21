@@ -140,7 +140,7 @@ export default function OrderManagement({
       case 'in_progress':
         return 'text-purple-600 bg-purple-50';
       case 'completed':
-        return 'text-green-600 bg-green-50';
+        return 'text-primary-600 bg-primary-50';
       case 'cancelled':
         return 'text-red-600 bg-red-50';
       default:
@@ -231,7 +231,7 @@ export default function OrderManagement({
               </div>
               
               <div className="text-right">
-                <div className="text-lg font-bold text-green-600">
+                <div className="text-lg font-bold text-primary-600">
                   {formatPrice(order.total_amount_cents)}
                 </div>
                 {order.order_type === 'rental' && order.daily_rate_cents && (

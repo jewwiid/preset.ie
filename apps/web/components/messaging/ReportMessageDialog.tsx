@@ -162,7 +162,7 @@ export function ReportMessageDialog({
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-[425px]">
           <div className="flex flex-col items-center justify-center py-8">
-            <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+            <CheckCircle className="h-16 w-16 text-primary-500 mb-4" />
             <h3 className="text-lg font-semibold mb-2">Report Submitted</h3>
             <p className="text-sm text-muted-foreground text-center mb-4">
               Thank you for helping keep our community safe. We'll review your report and take appropriate action.

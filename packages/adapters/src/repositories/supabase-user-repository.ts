@@ -1,5 +1,5 @@
 import { UserRepository } from '@preset/application';
-import { UserProfile, EntityId } from '@preset/domain';
+import { Profile, EntityId } from '@preset/domain';
 import { SupabaseClient } from '../clients/supabase.client';
 import { UserMapper } from '../mappers/user-mapper';
 import type { Database } from '../types/database.types';
@@ -10,7 +10,7 @@ type UserProfileInsert = Database['public']['Tables']['users_profile']['Insert']
 export class SupabaseUserRepository implements UserRepository {
   constructor(private client: SupabaseClient) {}
 
-  async save(user: UserProfile): Promise<void> {
+  async save(user: Profile): Promise<void> {
     const row = UserMapper.toRow(user) as UserProfileInsert;
     
     const { error } = await this.client.getClient()
@@ -22,7 +22,7 @@ export class SupabaseUserRepository implements UserRepository {
     }
   }
 
-  async findById(id: EntityId): Promise<UserProfile | null> {
+  async findById(id: EntityId): Promise<Profile | null> {
     const { data, error } = await this.client.getClient()
       .from('users_profile')
       .select('*')
@@ -37,7 +37,7 @@ export class SupabaseUserRepository implements UserRepository {
     return data ? UserMapper.toDomain(data) : null;
   }
 
-  async findByUserId(userId: string): Promise<UserProfile | null> {
+  async findByUserId(userId: string): Promise<Profile | null> {
     const { data, error } = await this.client.getClient()
       .from('users_profile')
       .select('*')
@@ -52,7 +52,7 @@ export class SupabaseUserRepository implements UserRepository {
     return data ? UserMapper.toDomain(data) : null;
   }
 
-  async findByHandle(handle: string): Promise<UserProfile | null> {
+  async findByHandle(handle: string): Promise<Profile | null> {
     const { data, error } = await this.client.getClient()
       .from('users_profile')
       .select('*')

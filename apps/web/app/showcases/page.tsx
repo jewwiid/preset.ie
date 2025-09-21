@@ -39,45 +39,19 @@ export default function ShowcasesPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Hero Section */}
-        <div className="showcase-hero mb-12 rounded-2xl p-8 border border-slate-200">
-          <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+        <div className="showcase-hero mb-8 rounded-2xl p-8 border border-border">
+          <div className="text-center">
+            <h1 className="text-5xl font-bold text-primary mb-4">
               Showcases
             </h1>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
               Where creativity meets innovation. Discover amazing work from our creative community.
             </p>
-          </div>
 
-          {/* Trending Categories */}
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-white/50 backdrop-blur-sm">
-                <TabsTrigger value="trending" className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Trending
-                </TabsTrigger>
-                <TabsTrigger value="featured" className="flex items-center gap-2">
-                  <Star className="h-4 w-4" />
-                  Featured
-                </TabsTrigger>
-                <TabsTrigger value="latest" className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  Latest
-                </TabsTrigger>
-                <TabsTrigger value="community" className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Community
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-
-          {/* Create Button */}
-          <div className="flex justify-center">
+            {/* Create Button */}
             <Button
               onClick={() => setShowCreateModal(true)}
               size="lg"
@@ -89,84 +63,352 @@ export default function ShowcasesPage() {
           </div>
         </div>
 
-        {/* Smart Filters Bar */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              {/* Filter Badges */}
-              <div className="flex flex-wrap gap-2">
-                {filterOptions.map((option) => {
-                  const Icon = option.icon
-                  return (
-                    <Button
-                      key={option.value}
-                      variant={filterType === option.value ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilterType(option.value as any)}
-                      className="filter-badge"
-                    >
-                      <Icon className="h-4 w-4 mr-2" />
-                      {option.label}
-                    </Button>
-                  )
-                })}
-              </div>
+        {/* Main Tabs - Positioned like playground */}
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="trending" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Trending
+            </TabsTrigger>
+            <TabsTrigger value="featured" className="flex items-center gap-2">
+              <Star className="h-4 w-4" />
+              Featured
+            </TabsTrigger>
+            <TabsTrigger value="latest" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Latest
+            </TabsTrigger>
+            <TabsTrigger value="community" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Community
+            </TabsTrigger>
+          </TabsList>
 
-              {/* Search and Controls */}
-              <div className="flex gap-3 items-center">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder="Search showcases..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-64"
-                  />
+          {/* Tab Content */}
+          <TabsContent value="trending" className="mt-6">
+            {/* Smart Filters Bar */}
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                  {/* Filter Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    {filterOptions.map((option) => {
+                      const Icon = option.icon
+                      return (
+                        <Button
+                          key={option.value}
+                          variant={filterType === option.value ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setFilterType(option.value as any)}
+                          className="filter-badge"
+                        >
+                          <Icon className="h-4 w-4 mr-2" />
+                          {option.label}
+                        </Button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Search and Controls */}
+                  <div className="flex gap-3 items-center">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search showcases..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
+                    
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center bg-muted rounded-lg p-1">
+                      <Button
+                        variant={viewMode === 'grid' ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode('grid')}
+                        className="p-2"
+                      >
+                        <Grid className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === 'list' ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className="p-2"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sortOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              </CardContent>
+            </Card>
 
-                <div className="flex items-center bg-slate-100 rounded-lg p-1">
-                  <Button
-                    variant={viewMode === 'grid' ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className="p-2"
-                  >
-                    <Grid className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className="p-2"
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
+            {/* Showcase Feed */}
+            <ShowcaseFeed 
+              className={viewMode === 'grid' ? 'showcase-masonry' : 'space-y-6'} 
+              showcaseType={filterType}
+              showCinematicFilters={true}
+              tabFilter={activeTab}
+            />
+          </TabsContent>
+
+          <TabsContent value="featured" className="mt-6">
+            {/* Smart Filters Bar */}
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                  {/* Filter Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    {filterOptions.map((option) => {
+                      const Icon = option.icon
+                      return (
+                        <Button
+                          key={option.value}
+                          variant={filterType === option.value ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setFilterType(option.value as any)}
+                          className="filter-badge"
+                        >
+                          <Icon className="h-4 w-4 mr-2" />
+                          {option.label}
+                        </Button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Search and Controls */}
+                  <div className="flex gap-3 items-center">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search featured showcases..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
+                    
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center bg-muted rounded-lg p-1">
+                      <Button
+                        variant={viewMode === 'grid' ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode('grid')}
+                        className="p-2"
+                      >
+                        <Grid className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === 'list' ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className="p-2"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Showcase Feed */}
-        <ShowcaseFeed 
-          className={viewMode === 'grid' ? 'showcase-masonry' : 'space-y-6'} 
-          showcaseType={filterType}
-          showCinematicFilters={true}
-          tabFilter={activeTab}
-        />
+            {/* Showcase Feed */}
+            <ShowcaseFeed 
+              className={viewMode === 'grid' ? 'showcase-masonry' : 'space-y-6'} 
+              showcaseType={filterType}
+              showCinematicFilters={true}
+              tabFilter={activeTab}
+            />
+          </TabsContent>
+
+          <TabsContent value="latest" className="mt-6">
+            {/* Smart Filters Bar */}
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                  {/* Filter Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    {filterOptions.map((option) => {
+                      const Icon = option.icon
+                      return (
+                        <Button
+                          key={option.value}
+                          variant={filterType === option.value ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setFilterType(option.value as any)}
+                          className="filter-badge"
+                        >
+                          <Icon className="h-4 w-4 mr-2" />
+                          {option.label}
+                        </Button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Search and Controls */}
+                  <div className="flex gap-3 items-center">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search latest showcases..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
+                    
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center bg-muted rounded-lg p-1">
+                      <Button
+                        variant={viewMode === 'grid' ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode('grid')}
+                        className="p-2"
+                      >
+                        <Grid className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === 'list' ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className="p-2"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Showcase Feed */}
+            <ShowcaseFeed 
+              className={viewMode === 'grid' ? 'showcase-masonry' : 'space-y-6'} 
+              showcaseType={filterType}
+              showCinematicFilters={true}
+              tabFilter={activeTab}
+            />
+          </TabsContent>
+
+          <TabsContent value="community" className="mt-6">
+            {/* Smart Filters Bar */}
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                  {/* Filter Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    {filterOptions.map((option) => {
+                      const Icon = option.icon
+                      return (
+                        <Button
+                          key={option.value}
+                          variant={filterType === option.value ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setFilterType(option.value as any)}
+                          className="filter-badge"
+                        >
+                          <Icon className="h-4 w-4 mr-2" />
+                          {option.label}
+                        </Button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Search and Controls */}
+                  <div className="flex gap-3 items-center">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search community showcases..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
+                    
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center bg-muted rounded-lg p-1">
+                      <Button
+                        variant={viewMode === 'grid' ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode('grid')}
+                        className="p-2"
+                      >
+                        <Grid className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === 'list' ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className="p-2"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Showcase Feed */}
+            <ShowcaseFeed 
+              className={viewMode === 'grid' ? 'showcase-masonry' : 'space-y-6'} 
+              showcaseType={filterType}
+              showCinematicFilters={true}
+              tabFilter={activeTab}
+            />
+          </TabsContent>
+        </Tabs>
 
         {/* Create Showcase Modal */}
         {showCreateModal && (

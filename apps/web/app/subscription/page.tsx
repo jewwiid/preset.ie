@@ -258,7 +258,7 @@ export default function SubscriptionPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-500"></div>
       </div>
     )
   }
@@ -271,7 +271,7 @@ export default function SubscriptionPage() {
           <p className="text-gray-600 mb-4">Please sign in to view subscription plans</p>
           <button 
             onClick={() => window.location.href = '/auth/signin'}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90"
           >
             Sign In
           </button>
@@ -296,13 +296,13 @@ export default function SubscriptionPage() {
 
         {/* Current Plan Status */}
         {currentPlan !== 'FREE' && (
-          <div className="mb-8 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="mb-8 p-4 bg-primary-50 border border-primary/20 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-emerald-800">
+                <h3 className="text-lg font-semibold text-primary-800">
                   Current Plan: {currentPlan}
                 </h3>
-                <p className="text-emerald-600">
+                <p className="text-primary-600">
                   You're currently subscribed to the {currentPlan} plan
                 </p>
               </div>
@@ -326,9 +326,9 @@ export default function SubscriptionPage() {
         )}
         
         {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
-            <Check className="w-5 h-5 text-green-500" />
-            <p className="text-green-700">{success}</p>
+          <div className="mb-6 p-4 bg-primary-50 border border-primary/20 rounded-md flex items-center gap-2">
+            <Check className="w-5 h-5 text-primary-500" />
+            <p className="text-primary-700">{success}</p>
           </div>
         )}
 
@@ -339,13 +339,13 @@ export default function SubscriptionPage() {
               key={plan.id}
               className={`relative bg-white rounded-2xl shadow-lg border-2 p-8 flex flex-col ${
                 plan.popular 
-                  ? 'border-emerald-500 transform scale-105' 
+                  ? 'border-primary-500 transform scale-105' 
                   : 'border-gray-200'
-              } ${currentPlan === plan.tier ? 'ring-2 ring-emerald-500' : ''}`}
+              } ${currentPlan === plan.tier ? 'ring-2 ring-primary-primary' : ''}`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-emerald-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                  <span className="bg-primary-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
                     Most Popular
                   </span>
                 </div>
@@ -363,7 +363,7 @@ export default function SubscriptionPage() {
               <div className="text-center mb-8">
                 <div className="flex justify-center mb-4">
                   {plan.tier === 'FREE' && <Star className="w-8 h-8 text-gray-400" />}
-                  {plan.tier === 'PLUS' && <Zap className="w-8 h-8 text-emerald-500" />}
+                  {plan.tier === 'PLUS' && <Zap className="w-8 h-8 text-primary-500" />}
                   {plan.tier === 'PRO' && <Crown className="w-8 h-8 text-purple-500" />}
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
@@ -378,7 +378,7 @@ export default function SubscriptionPage() {
               <div className="space-y-4 mb-8 flex-grow">
                 {plan.features.map((feature, index) => (
                   <div key={index} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                    <Check className="w-5 h-5 text-primary-500 flex-shrink-0" />
                     <span className="text-gray-700">{feature}</span>
                   </div>
                 ))}
@@ -392,7 +392,7 @@ export default function SubscriptionPage() {
                   currentPlan === plan.tier
                     ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
                     : plan.popular
-                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg'
+                    ? 'bg-primary-600 text-white hover:bg-primary/90 hover:shadow-lg'
                     : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg'
                 }`}
               >

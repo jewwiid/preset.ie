@@ -81,7 +81,7 @@ export function DatePicker({
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal h-10 px-3 py-2",
-            "border-gray-300 hover:border-emerald-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-20",
+            "border-gray-300 hover:border-primary-500 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20",
             "transition-all duration-200",
             !date && "text-gray-500",
             error && "border-red-300 focus:border-red-500 focus:ring-red-500",
@@ -210,7 +210,7 @@ export function DatePicker({
               "inline-flex items-center justify-center rounded-md text-sm",
               "ring-offset-white transition-colors",
               "hover:bg-gray-100 hover:text-gray-900",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-primary focus-visible:ring-offset-2",
               "aria-selected:opacity-100",
               // Mobile touch optimization
               "active:scale-95 touch-manipulation",
@@ -218,11 +218,11 @@ export function DatePicker({
               "tap-highlight-transparent"
             ),
             day_selected: cn(
-              "bg-emerald-600 text-white hover:bg-emerald-600 hover:text-white",
-              "focus:bg-emerald-600 focus:text-white",
+              "bg-primary-600 text-white hover:bg-primary-600 hover:text-white",
+              "focus:bg-primary-600 focus:text-white",
               "font-semibold"
             ),
-            day_today: "bg-emerald-100 text-emerald-900 font-semibold border border-emerald-300",
+            day_today: "bg-primary-100 text-primary-900 font-semibold border border-primary/30",
             day_outside: "text-gray-400 opacity-50",
             day_disabled: "text-gray-400 opacity-50 cursor-not-allowed",
             day_range_middle: "aria-selected:bg-gray-100 aria-selected:text-gray-900",

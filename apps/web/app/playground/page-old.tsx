@@ -764,7 +764,7 @@ export default function PlaygroundPage() {
                     <button
                       onClick={generateSequentialEdits}
                       disabled={loading || !selectedImage}
-                      className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       {loading ? (
                         <>

@@ -1,15 +1,180 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '../../../../lib/supabase'
-import { getUserFromRequest } from '../../../../lib/auth-utils'
+import { createClient } from '@supabase/supabase-js'
 
-// Manually load environment variables
-import dotenv from 'dotenv'
-import path from 'path'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Load environment variables from .env.local (from project root)
-dotenv.config({ path: path.join(process.cwd(), '../../.env.local') })
+// Helper function to generate with WaveSpeed NanoBanana
+async function generateWithWaveSpeedNanoBanana({
+  prompt,
+  baseImage,
+  size,
+  enableBase64Output,
+  enableSyncMode,
+  consistencyLevel,
+  imageIndex,
+  totalImages,
+  generationMode
+}: {
+  prompt: string
+  baseImage?: string
+  size: string
+  enableBase64Output: boolean
+  enableSyncMode: boolean
+  consistencyLevel: string
+  imageIndex: number
+  totalImages: number
+  generationMode: 'text-to-image' | 'image-to-image'
+}) {
+  try {
+    const isImageToImage = generationMode === 'image-to-image' && baseImage
+    
+    // Choose the correct endpoint based on generation mode
+    const apiEndpoint = isImageToImage 
+      ? 'https://api.wavespeed.ai/api/v3/google/nano-banana/edit'
+      : 'https://api.wavespeed.ai/api/v3/google/nano-banana/text-to-image'
+    
+    console.log('🔗 WaveSpeed NanoBanana API request:', {
+      endpoint: apiEndpoint,
+      prompt: prompt.substring(0, 100) + '...',
+      hasBaseImage: !!baseImage,
+      enableSyncMode,
+      enableBase64Output
+    })
 
-// Helper function to generate with NanoBanana
+    // Build request body according to WaveSpeed API spec
+    const requestBody: any = {
+      prompt: prompt,
+      output_format: 'png',
+      enable_sync_mode: enableSyncMode,
+      enable_base64_output: enableBase64Output
+    }
+
+    // Add images array for image-to-image editing
+    if (isImageToImage && baseImage) {
+      requestBody.images = [baseImage]
+      console.log('🖼️ WaveSpeed NanoBanana image-to-image request:', {
+        endpoint: apiEndpoint,
+        prompt: prompt.substring(0, 50) + '...',
+        imagesCount: 1,
+        baseImageUrl: baseImage.substring(0, 50) + '...',
+        outputFormat: requestBody.output_format,
+        syncMode: enableSyncMode,
+        requestBodyKeys: Object.keys(requestBody),
+        fullRequestBody: JSON.stringify(requestBody, null, 2)
+      })
+      
+      // Validate against official schema
+      console.log('📋 Schema validation:', {
+        hasRequiredPrompt: !!requestBody.prompt,
+        hasRequiredImages: !!requestBody.images && Array.isArray(requestBody.images) && requestBody.images.length > 0,
+        imagesArrayLength: requestBody.images?.length || 0,
+        outputFormatValid: ['png', 'jpeg'].includes(requestBody.output_format),
+        syncModeType: typeof requestBody.enable_sync_mode,
+        base64OutputType: typeof requestBody.enable_base64_output
+      })
+    }
+
+    const response = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ WaveSpeed NanoBanana API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+        endpoint: apiEndpoint,
+        isImageToImage,
+        hasBaseImage: !!baseImage
+      })
+      throw new Error(`WaveSpeed API error: ${response.status} - ${errorText}`)
+    }
+    
+    const data = await response.json()
+    console.log('🎨 WaveSpeed NanoBanana API response:', {
+      code: data.code,
+      message: data.message,
+      hasData: !!data.data,
+      hasId: !!data.data?.id,
+      id: data.data?.id,
+      status: data.data?.status,
+      model: data.data?.model,
+      hasOutputs: !!data.data?.outputs?.length,
+      outputsCount: data.data?.outputs?.length || 0,
+      hasUrls: !!data.data?.urls,
+      createdAt: data.data?.created_at
+    })
+    
+    // Handle completed response - image is ready immediately
+    if (data.data?.status === 'completed' && data.data?.outputs?.length > 0) {
+      return {
+        success: true,
+        taskId: data.data.id,
+        imageUrl: data.data.outputs[0],
+        provider: 'wavespeed-nanobanan',
+        cost: 0.025,
+        message: `WaveSpeed NanoBanana ${isImageToImage ? 'image edit' : 'image generation'} completed successfully!`
+      }
+    }
+    
+    // Handle async mode - need to poll for results
+    if (data.data?.id) {
+      // Poll for results
+      const maxAttempts = 30 // 30 seconds max
+      let attempts = 0
+      
+      while (attempts < maxAttempts) {
+        attempts++
+        await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second
+        
+        const resultResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${data.data.id}/result`, {
+          headers: {
+            'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`
+          }
+        })
+        
+        if (resultResponse.ok) {
+          const resultData = await resultResponse.json()
+          console.log(`🔄 Polling attempt ${attempts}:`, resultData.status)
+          
+          if (resultData.status === 'completed' && resultData.outputs?.length > 0) {
+            return {
+              success: true,
+              taskId: data.data.id,
+              imageUrl: resultData.outputs[0],
+              provider: 'wavespeed-nanobanan',
+              cost: 0.025,
+              message: `WaveSpeed NanoBanana ${isImageToImage ? 'image edit' : 'image generation'} completed successfully (async mode)`
+            }
+          } else if (resultData.status === 'failed') {
+            throw new Error(`Task failed: ${resultData.error || 'Unknown error'}`)
+          }
+          // Continue polling if still processing
+        }
+      }
+      
+      throw new Error('Task timed out after 30 seconds')
+    }
+    
+    throw new Error(`No task ID returned from WaveSpeed API. Response: ${JSON.stringify(data)}`)
+  } catch (error) {
+    console.error('WaveSpeed NanoBanana generation error:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      provider: 'wavespeed-nanobanan'
+    }
+  }
+}
+
+// Helper function to generate with NanoBanana (Legacy - deprecated)
 async function generateWithNanoBanana({
   prompt,
   baseImage,
@@ -38,7 +203,11 @@ async function generateWithNanoBanana({
     const apiEndpoint = 'https://api.nanobananaapi.ai/api/v1/nanobanana/generate'
     
     // Create callback URL for this request
-    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://preset.ie'}/api/nanobanana/callback`
+    // Use Vercel deployment URL for callbacks
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://web-brown-three-40.vercel.app'
+    const callbackUrl = `${baseUrl}/api/nanobanana/callback`
+    
+    console.log('🔗 Callback URL:', callbackUrl)
     
     // Build request body according to official API spec
     const requestBody = {
@@ -302,12 +471,40 @@ export async function POST(request: NextRequest) {
   console.log('🚀 === PLAYGROUND GENERATION API STARTED ===')
   console.log('📅 Timestamp:', new Date().toISOString())
   
-  const { user } = await getUserFromRequest(request)
+  // Get auth token from header
+  const authHeader = request.headers.get('Authorization')
+  if (!authHeader) {
+    console.log('No authorization header provided')
+    return NextResponse.json(
+      { error: 'Unauthorized - No token provided' },
+      { status: 401 }
+    )
+  }
+  
+  const token = authHeader.replace('Bearer ', '')
+  
+  // Create two clients: one for user auth, one for admin operations
+  const supabaseAnon = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+  
+  // Set the user's session to verify the token
+  const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token)
+  
+  if (authError || !user) {
+    console.error('Auth error:', authError)
+    return NextResponse.json(
+      { error: 'Invalid token' },
+      { status: 401 }
+    )
+  }
+
   console.log('👤 User authenticated:', { 
     userId: user?.id, 
     hasUser: !!user,
     userEmail: user?.email 
   })
+
+  try {
   
   const requestBody = await request.json()
   const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences, selectedProvider } = requestBody
@@ -321,11 +518,24 @@ export async function POST(request: NextRequest) {
     maxImages,
     generationMode,
     hasBaseImage: !!baseImage,
+    baseImageUrl: baseImage ? baseImage.substring(0, 50) + '...' : 'none',
     hasCustomStylePreset: !!customStylePreset,
     intensity,
     selectedProvider: selectedProvider || 'seedream', // Default to seedream for backward compatibility
     requestBodyKeys: Object.keys(requestBody)
   })
+
+  // Debug provider selection specifically for image-to-image
+  if (generationMode === 'image-to-image' && baseImage) {
+    console.log('🖼️ Image-to-Image Request Debug:', {
+      generationMode,
+      hasBaseImage: !!baseImage,
+      baseImageUrl: baseImage.substring(0, 50) + '...',
+      selectedProvider: selectedProvider || 'seedream',
+      willUseNanoBanana: selectedProvider === 'nanobanana',
+      willUseSeedream: !selectedProvider || selectedProvider === 'seedream'
+    })
+  }
   
   // Parse resolution from frontend (format: "1024*576" or "1024")
   let finalResolution: string
@@ -580,8 +790,18 @@ export async function POST(request: NextRequest) {
           const provider = selectedProvider || 'seedream'
           
           if (provider === 'nanobanana') {
+            console.log('🔍 NanoBanana batch generation debug:', {
+              provider,
+              imageIndex: i + 1,
+              isImageToImage,
+              hasBaseImage: !!baseImage,
+              baseImageUrl: baseImage ? baseImage.substring(0, 50) + '...' : 'none',
+              generationMode: isImageToImage ? 'image-to-image' : 'text-to-image',
+              prompt: enhancedPrompt.substring(0, 50) + '...'
+            })
+            
             imagePromises.push(
-              generateWithNanoBanana({
+              generateWithWaveSpeedNanoBanana({
                 prompt: enhancedPrompt,
                 baseImage: baseImage,
                 size: resolutionForGeneration,
@@ -633,22 +853,20 @@ export async function POST(request: NextRequest) {
         
         imageResults.forEach((result, index) => {
           if (result.status === 'fulfilled' && result.value) {
-            // Check if it's a NanoBanana result with taskId (callback-based)
+            // Check if it's a WaveSpeed NanoBanana result with taskId and imageUrl
             if ('success' in result.value && result.value.success && 'taskId' in result.value) {
-              // NanoBanana callback-based result - store task info
-              console.log(`NanoBanana task ${index + 1} submitted:`, result.value.taskId)
-              // For now, we'll handle this differently - the image will come via callback
-              // We need to store the task info and wait for callback
+              // WaveSpeed NanoBanana result - may have immediate imageUrl or need polling
+              console.log(`WaveSpeed NanoBanana task ${index + 1}:`, result.value.taskId, result.value.imageUrl ? 'with image' : 'processing')
               successfulImages.push({
-                url: '', // Will be filled by callback
+                url: result.value.imageUrl as string || '', // May be immediate or empty for async
                 index: index + 1,
-                provider: 'nanobanana',
+                provider: 'wavespeed-nanobanan',
                 cost: result.value.cost || 0.025,
                 taskId: result.value.taskId as string,
-                isCallback: true
+                isCallback: !result.value.imageUrl // Only callback if no immediate URL
               })
             } else if ('success' in result.value && result.value.success && 'imageUrl' in result.value) {
-              // NanoBanana immediate result format (legacy)
+              // Legacy immediate result format
               successfulImages.push({
                 url: result.value.imageUrl as string,
                 index: index + 1,
@@ -684,23 +902,24 @@ export async function POST(request: NextRequest) {
         // For callback-based results, we need to handle them differently
         if (callbackResults.length > 0) {
           console.log('NanoBanana tasks submitted, images will come via callback')
-          // Store callback task info in database for later processing
+          // Store callback task info in database for later processing - use same table as Seedream
           for (const callbackResult of callbackResults) {
             if (callbackResult.taskId) {
-              // Store the task info - callback will update this later
+              // Store in playground_projects table just like Seedream does
               await supabaseAdmin
-                .from('playground_generations')
+                .from('playground_projects')
                 .insert({
                   user_id: user.id,
-                  project_id: projectId || null,
+                  title: enhancedPrompt.substring(0, 50),
                   prompt: enhancedPrompt,
                   style: style || 'photorealistic',
-                  resolution: resolutionForGeneration,
                   aspect_ratio: aspectRatio,
-                  consistency_level: consistencyLevel || 'high',
-                  num_images: 1,
+                  resolution: resolutionForGeneration,
                   generated_images: [], // Will be filled by callback
-                  generation_metadata: {
+                  credits_used: 1, // NanoBanana costs 1 credit
+                  status: 'processing',
+                  last_generated_at: new Date().toISOString(),
+                  metadata: {
                     provider: 'nanobanana',
                     taskId: callbackResult.taskId,
                     generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
@@ -709,9 +928,7 @@ export async function POST(request: NextRequest) {
                     include_technical_details: includeTechnicalDetails,
                     include_style_references: includeStyleReferences,
                     base_image: baseImage || null
-                  },
-                  credits_used: 1, // NanoBanana costs 1 credit
-                  status: 'processing'
+                  }
                 })
             }
           }
@@ -739,8 +956,17 @@ export async function POST(request: NextRequest) {
         console.log(`Using provider: ${provider} for single image generation`)
         
         if (provider === 'nanobanana') {
+          console.log('🔍 NanoBanana single generation debug:', {
+            provider,
+            isImageToImage,
+            hasBaseImage: !!baseImage,
+            baseImageUrl: baseImage ? baseImage.substring(0, 50) + '...' : 'none',
+            generationMode: isImageToImage ? 'image-to-image' : 'text-to-image',
+            prompt: enhancedPrompt.substring(0, 50) + '...'
+          })
+          
           // Use NanoBanana for single image generation
-          const result = await generateWithNanoBanana({
+          const result = await generateWithWaveSpeedNanoBanana({
             prompt: enhancedPrompt,
             baseImage: baseImage,
             size: finalResolution,
@@ -753,20 +979,27 @@ export async function POST(request: NextRequest) {
           })
           
           if (result.success) {
-            // Handle callback-based response
+            // Handle WaveSpeed response - image URL is available immediately
             if (result.taskId) {
-              // Store the generation in database with processing status
-              const insertData = {
+              // Store in playground_projects table with generated image
+              const projectData = {
                 user_id: user.id,
-                project_id: projectId || null,
+                title: enhancedPrompt.substring(0, 50),
                 prompt: enhancedPrompt,
                 style: style || 'photorealistic',
-                resolution: finalResolution,
                 aspect_ratio: aspectRatio,
-                consistency_level: consistencyLevel || 'high',
-                num_images: 1,
-                generated_images: [], // Will be filled by callback
-                generation_metadata: {
+                resolution: finalResolution,
+                generated_images: result.imageUrl ? [{
+                  url: result.imageUrl,
+                  width: 1024,
+                  height: 1024,
+                  generated_at: new Date().toISOString(),
+                  type: 'image'
+                }] : [],
+                credits_used: 1, // WaveSpeed NanoBanana costs 1 credit
+                status: result.imageUrl ? 'generated' : 'processing',
+                last_generated_at: new Date().toISOString(),
+                metadata: {
                   provider: result.provider,
                   taskId: result.taskId,
                   generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
@@ -775,49 +1008,66 @@ export async function POST(request: NextRequest) {
                   include_technical_details: includeTechnicalDetails,
                   include_style_references: includeStyleReferences,
                   base_image: baseImage || null
-                },
-                credits_used: 1, // NanoBanana costs 1 credit
-                status: 'processing'
+                }
               }
               
               const { data: generationData, error: insertError } = await supabaseAdmin
-                .from('playground_generations')
-                .insert(insertData)
+                .from('playground_projects')
+                .insert(projectData)
                 .select()
                 .single()
               
               if (insertError) {
-                console.error('Error storing generation:', insertError)
-                throw new Error('Failed to store generation task')
+                console.error('❌ Error storing generation task:', {
+                  error: insertError,
+                  message: insertError.message,
+                  details: insertError.details,
+                  hint: insertError.hint,
+                  code: insertError.code,
+                  projectData: JSON.stringify(projectData, null, 2),
+                  userId: user.id,
+                  userEmail: user.email
+                })
+                throw new Error(`Failed to store generation task: ${insertError.message}`)
               } else {
-                console.log('Generation task stored successfully:', generationData.id)
+                console.log('✅ Generation task stored successfully:', generationData.id)
               }
               
               return NextResponse.json({
                 success: true,
+                project: generationData, // Frontend expects project object
+                images: result.imageUrl ? [{
+                  url: result.imageUrl,
+                  width: 1024,
+                  height: 1024,
+                  generated_at: new Date().toISOString(),
+                  type: 'image'
+                }] : [],
+                creditsUsed: creditsNeeded,
                 taskId: result.taskId,
-                generationId: generationData.id,
                 provider: result.provider,
-                status: 'processing',
-                message: 'NanoBanana task submitted successfully. You will receive the result via callback within 30-60 seconds.'
+                status: result.imageUrl ? 'generated' : 'processing',
+                message: result.imageUrl ? `WaveSpeed NanoBanana ${isImageToImage ? 'image edit' : 'image generation'} completed successfully!` : `WaveSpeed NanoBanana ${isImageToImage ? 'image edit' : 'image generation'} task submitted successfully.`
               })
             } else if ('imageUrl' in result && result.imageUrl) {
-              // Legacy immediate response
-              const insertData = {
+              // Legacy immediate response - use same table as Seedream
+              const projectData = {
                 user_id: user.id,
-                project_id: projectId || null,
+                title: enhancedPrompt.substring(0, 50),
                 prompt: enhancedPrompt,
                 style: style || 'photorealistic',
-                resolution: finalResolution,
                 aspect_ratio: aspectRatio,
-                consistency_level: consistencyLevel || 'high',
-                num_images: 1,
+                resolution: finalResolution,
                 generated_images: [{
                   url: result.imageUrl,
-                  index: 1,
-                  provider: result.provider
+                  width: parseInt(finalResolution.split('*')[0] || '1024'),
+                  height: parseInt(finalResolution.split('*')[1] || '1024'),
+                  generated_at: new Date().toISOString()
                 }],
-                generation_metadata: {
+                credits_used: 1, // NanoBanana costs 1 credit
+                status: 'generated',
+                last_generated_at: new Date().toISOString(),
+                metadata: {
                   provider: result.provider,
                   cost: result.cost,
                   generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
@@ -826,14 +1076,12 @@ export async function POST(request: NextRequest) {
                   include_technical_details: includeTechnicalDetails,
                   include_style_references: includeStyleReferences,
                   base_image: baseImage || null
-                },
-                credits_used: 1, // NanoBanana costs 1 credit
-                status: 'completed'
+                }
               }
               
               const { data: generationData, error: insertError } = await supabaseAdmin
-                .from('playground_generations')
-                .insert(insertData)
+                .from('playground_projects')
+                .insert(projectData)
                 .select()
                 .single()
               
@@ -844,14 +1092,15 @@ export async function POST(request: NextRequest) {
                 console.log('Generation stored successfully:', generationData.id)
               }
               
-              return NextResponse.json({
-                success: true,
-                images: [result.imageUrl],
-                generationId: generationData?.id,
-                provider: result.provider,
-                cost: result.cost,
-                message: 'Image generated successfully with NanoBanana'
-              })
+                return NextResponse.json({
+                  success: true,
+                  project: generationData, // Frontend expects project object
+                  images: [{ url: result.imageUrl, width: 1024, height: 1024 }],
+                  creditsUsed: creditsNeeded,
+                  provider: result.provider,
+                  cost: result.cost,
+                  message: 'Image generated successfully with NanoBanana'
+                })
             }
           } else {
             throw new Error(result.error || 'NanoBanana generation failed')
@@ -1245,6 +1494,10 @@ export async function POST(request: NextRequest) {
     })
     
     return NextResponse.json(finalResponse)
+  } catch (innerError) {
+    console.error('Inner try block error:', innerError)
+    throw innerError // Re-throw to be caught by outer catch
+  }
   } catch (error) {
     console.error('💥 === GENERATION FAILED ===')
     console.error('❌ Error occurred:', error)

@@ -167,8 +167,8 @@ export default function EquipmentRequestsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Equipment Requests</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-foreground">Equipment Requests</h1>
+          <p className="text-muted-foreground mt-2">
             Find equipment you need or respond to requests from other users
           </p>
         </div>
@@ -183,9 +183,9 @@ export default function EquipmentRequestsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-orange-500" />
+              <AlertCircle className="w-5 h-5 text-destructive" />
               <div>
-                <p className="text-sm text-gray-600">Urgent Requests</p>
+                <p className="text-sm text-muted-foreground">Urgent Requests</p>
                 <p className="text-2xl font-bold">
                   {requests.filter(r => r.urgent).length}
                 </p>
@@ -197,9 +197,9 @@ export default function EquipmentRequestsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-blue-500 rounded-full"></div>
+              <div className="w-5 h-5 bg-primary rounded-full"></div>
               <div>
-                <p className="text-sm text-gray-600">Total Requests</p>
+                <p className="text-sm text-muted-foreground">Total Requests</p>
                 <p className="text-2xl font-bold">{requests.length}</p>
               </div>
             </div>
@@ -209,9 +209,9 @@ export default function EquipmentRequestsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-green-500 rounded-full"></div>
+              <div className="w-5 h-5 bg-primary rounded-full"></div>
               <div>
-                <p className="text-sm text-gray-600">Active Today</p>
+                <p className="text-sm text-muted-foreground">Active Today</p>
                 <p className="text-2xl font-bold">
                   {requests.filter(r => {
                     const today = new Date().toDateString();
@@ -226,9 +226,9 @@ export default function EquipmentRequestsPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 bg-purple-500 rounded-full"></div>
+              <div className="w-5 h-5 bg-primary rounded-full"></div>
               <div>
-                <p className="text-sm text-gray-600">Categories</p>
+                <p className="text-sm text-muted-foreground">Categories</p>
                 <p className="text-2xl font-bold">{CATEGORIES.length}</p>
               </div>
             </div>
@@ -247,11 +247,11 @@ export default function EquipmentRequestsPage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Search
               </label>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search requests..."
                   value={searchQuery}
@@ -262,7 +262,7 @@ export default function EquipmentRequestsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Category
               </label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -281,7 +281,7 @@ export default function EquipmentRequestsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 City
               </label>
               <Input
@@ -307,18 +307,18 @@ export default function EquipmentRequestsPage() {
 
       {/* Error State */}
       {error && (
-        <Card className="mb-8 border-red-200 bg-red-50">
+        <Card className="mb-8 border-destructive/20 bg-destructive/10">
           <CardContent className="p-4">
-            <p className="text-red-600">{error}</p>
+            <p className="text-destructive">{error}</p>
             {(error.includes('migration') || error.includes('not yet available')) ? (
               <div className="mt-3">
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   To enable the equipment requests feature, please apply the database migration:
                 </p>
-                <div className="bg-gray-100 p-3 rounded text-sm">
+                <div className="bg-muted p-3 rounded text-sm">
                   <p className="font-medium mb-1">Migration File:</p>
                   <code className="block">supabase/migrations/096_equipment_requests.sql</code>
-                  <p className="mt-2 text-xs text-gray-500">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     Copy the contents of this file and run it in your Supabase SQL Editor
                   </p>
                 </div>
@@ -339,13 +339,13 @@ export default function EquipmentRequestsPage() {
       {/* Requests Grid */}
       {loading && requests.length === 0 ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="text-gray-600 mt-4">Loading requests...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-4">Loading requests...</p>
         </div>
       ) : filteredRequests.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <p className="text-gray-600 mb-4">No equipment requests found</p>
+            <p className="text-muted-foreground mb-4">No equipment requests found</p>
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Post First Request

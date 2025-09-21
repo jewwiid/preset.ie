@@ -12,6 +12,7 @@ import StepIndicator, { GigEditStep } from '../../../components/gig-edit-steps/S
 import BasicDetailsStep from '../../../components/gig-edit-steps/BasicDetailsStep'
 import LocationScheduleStep from '../../../components/gig-edit-steps/LocationScheduleStep'
 import RequirementsStep from '../../../components/gig-edit-steps/RequirementsStep'
+import ApplicantPreferencesStep from '../../../components/gig-edit-steps/ApplicantPreferencesStep'
 import MoodboardStep from '../../../components/gig-edit-steps/MoodboardStep'
 import ReviewPublishStep from '../../../components/gig-edit-steps/ReviewPublishStep'
 
@@ -29,6 +30,7 @@ interface GigDetails {
   max_applicants: number
   status: StatusType
   owner_user_id: string
+  applicant_preferences?: any
 }
 
 export default function EditGigPage({ params }: { params: Promise<{ id: string }> }) {
@@ -78,6 +80,9 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   const [safetyNotes, setSafetyNotes] = useState('')
   const [status, setStatus] = useState<StatusType>('DRAFT')
   const [moodboardId, setMoodboardId] = useState<string | null>(null)
+  const [formData, setFormData] = useState<any>({
+    applicantPreferences: null
+  })
   
   // Warnings
   const [warnings, setWarnings] = useState<string[]>([])
@@ -151,19 +156,25 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   const detectCompletedSteps = useCallback((gig: any): GigEditStep[] => {
     const completed: GigEditStep[] = []
     
-    // Basic step: Check if title and description exist
-    if (gig?.title && gig?.description) {
+    // Basic step: Check if title, description, and purpose exist
+    if (gig?.title && gig?.description && gig?.purpose) {
       completed.push('basic')
     }
     
-    // Schedule step: Check if start_time and end_time exist
-    if (gig?.start_time && gig?.end_time && gig?.location_text) {
+    // Schedule step: Check if start_time, end_time, location, and application_deadline exist
+    if (gig?.start_time && gig?.end_time && gig?.location_text && gig?.application_deadline) {
       completed.push('schedule')
     }
     
-    // Requirements step: Check if comp_type and usage_rights exist
-    if (gig?.comp_type && gig?.usage_rights) {
+    // Requirements step: Check if comp_type, usage_rights, and max_applicants exist
+    if (gig?.comp_type && gig?.usage_rights && gig?.max_applicants) {
       completed.push('requirements')
+    }
+    
+    // Preferences step: Mark as completed if basic requirements are met
+    // This step is optional but should be accessible for editing
+    if (gig?.comp_type && gig?.usage_rights) {
+      completed.push('preferences')
     }
     
     // Moodboard step is always considered completed (it's optional)
@@ -230,10 +241,18 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
       setDescription(gig.description || '')
       setPurpose(gig.purpose || 'PORTFOLIO')
       setCompType(gig.comp_type)
+      setCompDetails(gig.comp_details || '')
       setUsageRights(gig.usage_rights || '')
       setLocation(gig.location_text || '')
       setStatus(gig.status)
       setMaxApplicants(gig.max_applicants || 10)
+      setSafetyNotes(gig.safety_notes || '')
+      
+      // Load applicant preferences
+      setFormData((prev: any) => ({
+        ...prev,
+        applicantPreferences: gig.applicant_preferences || null
+      }))
       
       // Format dates for input fields
       if (gig.start_time) {
@@ -335,6 +354,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
           application_deadline: deadlineDateTime.toISOString(),
           max_applicants: maxApplicants,
           status,
+          applicant_preferences: formData.applicantPreferences || {},
           updated_at: new Date().toISOString()
         })
         .eq('id', gigId)
@@ -460,7 +480,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   }
 
   // Step definitions
-  const steps: GigEditStep[] = ['basic', 'schedule', 'requirements', 'moodboard', 'review']
+  const steps: GigEditStep[] = ['basic', 'schedule', 'requirements', 'preferences', 'moodboard', 'review']
 
   // Validation functions
   const isBasicStepValid = (): boolean => {
@@ -500,21 +520,21 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-emerald-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     )
   }
   
   if (!isOwner) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Unauthorized</h2>
-          <p className="text-gray-600 mb-4">{error || 'You cannot edit this gig.'}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Unauthorized</h2>
+          <p className="text-muted-foreground mb-4">{error || 'You cannot edit this gig.'}</p>
           <button
             onClick={() => router.push('/dashboard')}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
           >
             Back to Dashboard
           </button>
@@ -524,32 +544,32 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   }
   
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Restore prompt */}
         {showRestorePrompt && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-muted/20 border border-border rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-blue-800 mb-2">
+                <h3 className="text-sm font-medium text-foreground mb-2">
                   Unsaved Changes Found
                 </h3>
-                <p className="text-sm text-blue-700 mb-3">
+                <p className="text-sm text-muted-foreground mb-3">
                   You have unsaved changes from a previous editing session. Would you like to restore them?
                 </p>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleRestoreSavedData}
-                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                    className="px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:bg-primary/90 transition-colors"
                   >
                     Restore Changes
                   </button>
                   <button
                     type="button"
                     onClick={handleDiscardSavedData}
-                    className="px-3 py-1 bg-white border border-blue-300 text-blue-700 text-xs rounded hover:bg-blue-50 transition-colors"
+                    className="px-3 py-1 bg-background border border-border text-foreground text-xs rounded hover:bg-muted transition-colors"
                   >
                     Discard & Start Fresh
                   </button>
@@ -558,7 +578,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
               <button
                 type="button"
                 onClick={() => setShowRestorePrompt(false)}
-                className="text-blue-400 hover:text-blue-600"
+                className="text-muted-foreground hover:text-foreground"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -567,23 +587,23 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
         )}
 
         {/* Header */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <div className="bg-card shadow rounded-lg p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Edit Gig</h1>
-              <p className="text-gray-600 text-sm mt-1">Update your gig details step by step</p>
+              <h1 className="text-2xl font-bold text-foreground">Edit Gig</h1>
+              <p className="text-muted-foreground text-sm mt-1">Update your gig details step by step</p>
             </div>
             <div className="flex gap-2">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                status === 'PUBLISHED' ? 'bg-green-100 text-green-800' :
-                status === 'DRAFT' ? 'bg-gray-100 text-gray-800' :
-                status === 'CLOSED' ? 'bg-red-100 text-red-800' :
-                'bg-yellow-100 text-yellow-800'
+                status === 'PUBLISHED' ? 'bg-primary/20 text-primary' :
+                status === 'DRAFT' ? 'bg-muted text-muted-foreground' :
+                status === 'CLOSED' ? 'bg-destructive/20 text-destructive' :
+                'bg-secondary text-secondary-foreground'
               }`}>
                 {status}
               </span>
               {applicationCount > 0 && (
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">
                   {applicationCount} applications
                 </span>
               )}
@@ -600,14 +620,14 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
 
         {/* Global Alerts */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="bg-destructive/20 border border-destructive/20 rounded-lg p-4 mb-6">
+            <p className="text-destructive text-sm">{error}</p>
           </div>
         )}
         
         {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <p className="text-green-700 text-sm">{success}</p>
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
+            <p className="text-primary text-sm">{success}</p>
           </div>
         )}
 
@@ -661,6 +681,47 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
           />
         )}
 
+        {currentStep === 'preferences' && (
+          <ApplicantPreferencesStep
+            preferences={formData.applicantPreferences || {
+              physical: {
+                height_range: { min: null, max: null },
+                measurements: { required: false, specific: null },
+                eye_color: { required: false, preferred: [] },
+                hair_color: { required: false, preferred: [] },
+                tattoos: { allowed: true, required: false },
+                piercings: { allowed: true, required: false },
+                clothing_sizes: { required: false, preferred: [] }
+              },
+              professional: {
+                experience_years: { min: null, max: null },
+                specializations: { required: [], preferred: [] },
+                equipment: { required: [], preferred: [] },
+                software: { required: [], preferred: [] },
+                talent_categories: { required: [], preferred: [] },
+                portfolio_required: false
+              },
+              availability: {
+                travel_required: false,
+                travel_radius_km: null,
+                hourly_rate_range: { min: null, max: null }
+              },
+              other: {
+                age_range: { min: 18, max: null },
+                languages: { required: [], preferred: [] },
+                additional_requirements: ''
+              }
+            }}
+            onPreferencesChange={(preferences) => {
+              setFormData((prev: any) => ({ ...prev, applicantPreferences: preferences }))
+              debouncedSaveGigData({ applicantPreferences: preferences })
+            }}
+            onNext={handleNextStep}
+            onBack={handleBackStep}
+            loading={saving}
+          />
+        )}
+
         {currentStep === 'moodboard' && (
           <MoodboardStep
             gigId={gigId}
@@ -687,6 +748,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
             safetyNotes={safetyNotes}
             status={status}
             moodboardId={moodboardId || undefined}
+            applicantPreferences={formData.applicantPreferences}
             onStatusChange={setStatus}
             onBack={handleBackStep}
             onSave={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent)}
@@ -697,28 +759,28 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
         )}
 
         {/* Quick Actions */}
-        <div className="bg-white shadow rounded-lg p-6 mt-6">
+        <div className="bg-card shadow rounded-lg p-6 mt-6">
           <div className="flex justify-between">
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => router.push(`/gigs/${gigId}`)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+                className="px-4 py-2 border border-border rounded-lg text-foreground hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
-                className="px-4 py-2 border border-red-300 rounded-lg text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                className="px-4 py-2 border border-destructive/20 rounded-lg text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-2 transition-colors"
               >
                 Delete Gig
               </button>
             </div>
             
             {hasUnsavedData() && (
-              <div className="text-sm text-gray-500 flex items-center gap-2">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
                 Auto-saving changes...
               </div>
             )}

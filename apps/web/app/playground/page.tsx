@@ -131,7 +131,12 @@ export default function PlaygroundPage() {
       
       setCurrentProject(prev => prev ? {
         ...prev,
-        generated_images: [...(prev.generated_images || []), ...newImages]
+        generated_images: [
+          // Keep base images
+          ...(prev.generated_images || []).filter(img => img.type === 'base'),
+          // Add new generated images (replacing any previous generated images)
+          ...newImages
+        ]
       } : null)
     }
   }
@@ -154,12 +159,39 @@ export default function PlaygroundPage() {
   }) => {
     setCurrentPrompt(params.prompt)
     setLoading(true)
+    
+    // Clear previous generated images when starting new generation
+    setCurrentProject(prev => prev ? {
+      ...prev,
+      generated_images: prev.generated_images.filter(img => img.type === 'base') // Keep base images, remove generated ones
+    } : null)
+    
+    // Clear selected image if it was a generated image (not base image)
+    if (selectedImage && currentProject?.generated_images.find(img => img.url === selectedImage && img.type !== 'base')) {
+      setSelectedImage(null)
+    }
+    
+    // Debug session and token
+    console.log('🔍 Session Debug:', {
+      hasSession: !!session,
+      hasAccessToken: !!session?.access_token,
+      tokenLength: session?.access_token?.length || 0,
+      user: user?.id,
+      userEmail: user?.email
+    })
+    
+    if (!session?.access_token) {
+      console.error('❌ No session or access token available')
+      setLoading(false)
+      throw new Error('Authentication required. Please sign in again.')
+    }
+    
     try {
       const response = await fetch('/api/playground/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           ...params,
@@ -828,7 +860,16 @@ export default function PlaygroundPage() {
           base_image: currentProject.metadata?.base_image || null,
           api_endpoint: currentProject.metadata?.api_endpoint || 'seedream-v4',
           credits_used: currentProject.credits_used || 0,
-          generated_at: currentProject.last_generated_at || new Date().toISOString()
+          generated_at: currentProject.last_generated_at || new Date().toISOString(),
+          // Add cinematic parameters and other missing metadata
+          cinematic_parameters: (currentProject.metadata as any)?.cinematic_parameters || null,
+          include_technical_details: (currentProject.metadata as any)?.include_technical_details || false,
+          include_style_references: (currentProject.metadata as any)?.include_style_references || false,
+          intensity: (currentProject.metadata as any)?.intensity || 1.0,
+          provider: (currentProject.metadata as any)?.provider || 'seedream',
+          // Preserve actual image dimensions
+          actual_width: currentProject.generated_images?.[0]?.width || 1024,
+          actual_height: currentProject.generated_images?.[0]?.height || 1024
         } : {}
 
         const response = await fetch('/api/playground/save-to-gallery', {
@@ -913,8 +954,23 @@ export default function PlaygroundPage() {
     }
   }
 
+  // Check authentication
+  if (!user || !session) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Authentication Required</h1>
+          <p className="text-muted-foreground mb-6">Please sign in to access the playground.</p>
+          <Button onClick={() => window.location.href = '/auth/signin'}>
+            Sign In
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Enhanced Header */}
         <EnhancedPlaygroundHeader
@@ -977,14 +1033,14 @@ export default function PlaygroundPage() {
 
       {/* Full Screen Media Modal */}
       {fullScreenImage && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
           <div className="relative max-w-7xl max-h-full w-full h-full flex items-center justify-center">
             {/* Close button */}
             <button
               onClick={() => setFullScreenImage(null)}
-              className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+              className="absolute top-4 right-4 z-10 p-2 bg-backdrop/50 hover:bg-backdrop/70 rounded-full transition-colors"
             >
-              <X className="h-6 w-6 text-white" />
+              <X className="h-6 w-6 text-foreground" />
             </button>
 
             {/* Media */}
@@ -1008,11 +1064,11 @@ export default function PlaygroundPage() {
             )}
 
             {/* Media info */}
-            <div className="absolute bottom-4 left-4 right-4 bg-black/50 text-white p-4 rounded-lg">
+            <div className="absolute bottom-4 left-4 right-4 bg-backdrop/50 text-foreground p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-medium">{fullScreenImage.title}</h3>
-                  <p className="text-sm text-gray-300">
+                  <p className="text-sm text-muted-foreground">
                     {fullScreenImage.type === 'video' ? 'Video' : 'Image'} from Saved Gallery
                   </p>
                 </div>
@@ -1039,7 +1095,7 @@ export default function PlaygroundPage() {
                         document.body.removeChild(a)
                       }
                     }}
-                    className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                    className="bg-background/20 hover:bg-background/30 text-foreground border-border/30"
                     title={fullScreenImage.type === 'video' ? "Download Video" : "Download Image"}
                   >
                     <Download className="h-4 w-4" />

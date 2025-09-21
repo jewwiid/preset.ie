@@ -2,13 +2,17 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import MarketplaceLayout from '@/components/marketplace/MarketplaceLayout';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
 import MarketplaceFilters from '@/components/marketplace/MarketplaceFilters';
 import ListingsGrid from '@/components/marketplace/ListingsGrid';
 import SafetyDisclaimer from '@/components/marketplace/SafetyDisclaimer';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Grid, List } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RefreshCw, Grid, List, Plus, Store, Package, Search } from 'lucide-react';
 
 interface Listing {
   id: string;
@@ -58,6 +62,7 @@ interface ListingsResponse {
 }
 
 function MarketplacePageContent() {
+  const { user } = useAuth();
   const searchParams = useSearchParams();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,137 +164,235 @@ function MarketplacePageContent() {
   ];
 
   return (
-    <MarketplaceLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Marketplace</h1>
-            <p className="mt-2 text-gray-600">
-              Discover and rent equipment from the Preset community
+    <div className="min-h-screen bg-background">
+      {/* Header with Navigation */}
+      <div className="bg-background border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Store className="h-8 w-8 text-primary" />
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">Preset Marketplace</h1>
+                  <Badge variant="secondary" className="text-xs">
+                    Beta
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button asChild>
+                <Link href="/marketplace/create">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Listing
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* Navigation Tabs */}
+          <Tabs defaultValue="browse" className="w-full">
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="browse" className="flex items-center space-x-2">
+                <Search className="w-4 h-4" />
+                <span>Browse</span>
+              </TabsTrigger>
+              <TabsTrigger value="my-listings" asChild>
+                <Link href="/marketplace/my-listings" className="flex items-center space-x-2">
+                  <Package className="w-4 h-4" />
+                  <span>My Listings</span>
+                </Link>
+              </TabsTrigger>
+              <TabsTrigger value="orders" asChild>
+                <Link href="/marketplace/orders" className="flex items-center space-x-2">
+                  <Package className="w-4 h-4" />
+                  <span>Orders</span>
+                </Link>
+              </TabsTrigger>
+              <TabsTrigger value="offers" asChild>
+                <Link href="/marketplace/offers" className="flex items-center space-x-2">
+                  <Package className="w-4 h-4" />
+                  <span>Offers</span>
+                </Link>
+              </TabsTrigger>
+              <TabsTrigger value="requests" asChild>
+                <Link href="/marketplace/requests" className="flex items-center space-x-2">
+                  <Package className="w-4 h-4" />
+                  <span>Requests</span>
+                </Link>
+              </TabsTrigger>
+              <TabsTrigger value="reviews" asChild>
+                <Link href="/marketplace/reviews" className="flex items-center space-x-2">
+                  <Package className="w-4 h-4" />
+                  <span>Reviews</span>
+                </Link>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="browse" className="mt-6">
+              <div className="space-y-6">
+                {/* Page Header */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Store className="h-5 w-5" />
+                      <span>Marketplace</span>
+                    </CardTitle>
+                    <p className="text-muted-foreground">
+                      Discover and rent equipment from the Preset community
+                    </p>
+                  </CardHeader>
+                </Card>
+
+                {/* Safety Notice */}
+                <SafetyDisclaimer type="listing" />
+
+                {/* Filters */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <MarketplaceFilters
+                      filters={filters}
+                      onFiltersChange={handleFiltersChange}
+                      onClearFilters={handleClearFilters}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Results Header */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center space-x-4">
+                        <h2 className="text-lg font-medium text-foreground">
+                          {loading ? 'Loading...' : `${pagination.total} listings found`}
+                        </h2>
+                        {!loading && pagination.total > 0 && (
+                          <Badge variant="outline">
+                            Page {pagination.page} of {pagination.pages}
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="mt-4 sm:mt-0 flex items-center space-x-4">
+                        {/* Refresh Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRefresh}
+                          disabled={loading}
+                        >
+                          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                          Refresh
+                        </Button>
+
+                        {/* Sort */}
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                          <SelectTrigger className="w-48">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sortOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        {/* View Mode */}
+                        <div className="flex items-center border border-border rounded-md">
+                          <Button
+                            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('grid')}
+                            className="rounded-r-none border-r-0"
+                          >
+                            <Grid className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant={viewMode === 'list' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setViewMode('list')}
+                            className="rounded-l-none"
+                          >
+                            <List className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Listings */}
+                <ListingsGrid
+                  listings={listings}
+                  loading={loading}
+                  error={error || undefined}
+                  emptyMessage="No listings match your criteria. Try adjusting your filters."
+                />
+
+                {/* Pagination */}
+                {!loading && pagination.pages > 1 && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex justify-center items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(pagination.page - 1)}
+                          disabled={pagination.page === 1}
+                        >
+                          Previous
+                        </Button>
+                        
+                        <div className="flex items-center space-x-1">
+                          {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                            const pageNum = i + 1;
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={pagination.page === pageNum ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() => handlePageChange(pageNum)}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          })}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(pagination.page + 1)}
+                          disabled={pagination.page === pagination.pages}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-background border-t border-border mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center text-sm text-muted-foreground">
+            <p className="mb-2">
+              Preset Marketplace - Peer-to-peer equipment rental and sales
+            </p>
+            <p className="text-xs">
+              Platform is not liable for transactions. Transact with verified users when possible.
             </p>
           </div>
-          <div className="mt-4 sm:mt-0 flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
         </div>
-
-        {/* Safety Notice */}
-        <SafetyDisclaimer type="listing" />
-
-        {/* Filters */}
-        <MarketplaceFilters
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
-        />
-
-        {/* Results Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-lg font-medium text-gray-900">
-              {loading ? 'Loading...' : `${pagination.total} listings found`}
-            </h2>
-            {!loading && pagination.total > 0 && (
-              <span className="text-sm text-gray-500">
-                Page {pagination.page} of {pagination.pages}
-              </span>
-            )}
-          </div>
-
-          <div className="mt-4 sm:mt-0 flex items-center space-x-4">
-            {/* Sort */}
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* View Mode */}
-            <div className="flex items-center border border-gray-300 rounded-md">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="rounded-r-none"
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-l-none"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Listings */}
-        <ListingsGrid
-          listings={listings}
-          loading={loading}
-          error={error || undefined}
-          emptyMessage="No listings match your criteria. Try adjusting your filters."
-        />
-
-        {/* Pagination */}
-        {!loading && pagination.pages > 1 && (
-          <div className="flex justify-center items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page - 1)}
-              disabled={pagination.page === 1}
-            >
-              Previous
-            </Button>
-            
-            <div className="flex items-center space-x-1">
-              {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={pagination.page === pageNum ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handlePageChange(pageNum)}
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handlePageChange(pagination.page + 1)}
-              disabled={pagination.page === pagination.pages}
-            >
-              Next
-            </Button>
-          </div>
-        )}
-      </div>
-    </MarketplaceLayout>
+      </footer>
+    </div>
   );
 }
 

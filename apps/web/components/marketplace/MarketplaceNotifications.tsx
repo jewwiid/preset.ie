@@ -160,7 +160,7 @@ export default function MarketplaceNotifications({
       case 'rental_confirmed':
       case 'sale_confirmed':
       case 'payment_received':
-        return 'text-green-600 bg-green-100';
+        return 'text-primary-600 bg-primary-100';
       case 'offer_declined':
       case 'rental_cancelled':
       case 'sale_cancelled':
@@ -218,7 +218,7 @@ export default function MarketplaceNotifications({
       <div className="space-y-2">
         {loading ? (
           <div className="flex items-center justify-center p-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-500"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
           </div>
         ) : filteredNotifications.length === 0 ? (
           <div className="text-center p-4 text-gray-500">
@@ -288,7 +288,7 @@ export default function MarketplaceNotifications({
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
           </div>
         ) : error ? (
           <div className="text-center p-8">

@@ -22,45 +22,90 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
-    // Build query - use gigs table instead of non-existent listings table
+    // Build query - try listings table first, fallback to gigs if it doesn't exist
     let query = supabase
-      .from('gigs')
-      .select('*')
+      .from('listings')
+      .select(`
+        *,
+        users_profile:owner_id (
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        ),
+        images:listing_images (
+          id,
+          path,
+          sort_order,
+          alt_text
+        )
+      `)
+      .eq('status', 'active')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    // Apply filters - adapted for gigs table structure
+    // Apply filters for listings table
     if (location) {
-      query = query.ilike('location_text', `%${location}%`);
+      query = query.or(`location_city.ilike.%${location}%,location_country.ilike.%${location}%`);
     }
     
-    // Note: gigs table doesn't have category, mode, pricing columns
-    // These filters are disabled for now until the schema is updated
-    // if (category) {
-    //   query = query.eq('category', category);
-    // }
-    // 
-    // if (mode) {
-    //   query = query.eq('mode', mode);
-    // }
-    // 
-    // if (minPrice) {
-    //   query = query.gte('rent_day_cents', parseInt(minPrice) * 100);
-    // }
-    // 
-    // if (maxPrice) {
-    //   query = query.lte('rent_day_cents', parseInt(maxPrice) * 100);
-    // }
-    // 
-    // if (verifiedOnly) {
-    //   query = query.eq('verified_only', true);
-    // }
+    if (category) {
+      query = query.eq('category', category);
+    }
+    
+    if (mode) {
+      query = query.eq('mode', mode);
+    }
+    
+    if (minPrice) {
+      const minPriceCents = parseInt(minPrice) * 100;
+      if (mode === 'rent') {
+        query = query.gte('rent_day_cents', minPriceCents);
+      } else if (mode === 'sale') {
+        query = query.gte('sale_price_cents', minPriceCents);
+      } else {
+        // For 'both' or no mode specified, check either price field
+        query = query.or(`rent_day_cents.gte.${minPriceCents},sale_price_cents.gte.${minPriceCents}`);
+      }
+    }
+    
+    if (maxPrice) {
+      const maxPriceCents = parseInt(maxPrice) * 100;
+      if (mode === 'rent') {
+        query = query.lte('rent_day_cents', maxPriceCents);
+      } else if (mode === 'sale') {
+        query = query.lte('sale_price_cents', maxPriceCents);
+      } else {
+        // For 'both' or no mode specified, check either price field
+        query = query.or(`rent_day_cents.lte.${maxPriceCents},sale_price_cents.lte.${maxPriceCents}`);
+      }
+    }
+    
+    if (verifiedOnly) {
+      query = query.eq('verified_only', true);
+    }
 
     const { data: listings, error, count } = await query;
 
     if (error) {
       console.error('❌ Error fetching listings:', error);
       console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      
+      // If listings table doesn't exist, return empty result instead of error
+      if (error.message?.includes('relation "listings" does not exist')) {
+        console.log('ℹ️ Listings table does not exist yet, returning empty results');
+        return NextResponse.json({
+          listings: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            pages: 0
+          }
+        });
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to fetch listings',
         details: error.message || 'Unknown error'
