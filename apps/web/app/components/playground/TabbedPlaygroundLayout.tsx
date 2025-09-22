@@ -146,7 +146,11 @@ export default function TabbedPlaygroundLayout({
     aspectRatio: '1:1',
     resolution: '1024',
     baseImageAspectRatio: undefined as string | undefined,
-    baseImageUrl: undefined as string | undefined
+    baseImageUrl: undefined as string | undefined,
+    style: 'photorealistic' as string,
+    generationMode: 'text-to-image' as 'text-to-image' | 'image-to-image',
+    selectedProvider: 'nanobanana' as string,
+    consistencyLevel: 'high' as string
   })
   const [savedImages, setSavedImages] = useState<Array<{
     id: string
@@ -203,6 +207,13 @@ export default function TabbedPlaygroundLayout({
     if (activeTab === 'video') {
       // In video tab: set as selected image for video generation
       onSelectImage(imageUrl)
+      // Scroll to preview area
+      setTimeout(() => {
+        const previewElement = document.querySelector('[data-preview-area]')
+        if (previewElement) {
+          previewElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
       return
     }
     
@@ -210,23 +221,45 @@ export default function TabbedPlaygroundLayout({
       // In generate tab: add to additional preview images
       // Check if image is already in additional preview images
       if (additionalPreviewImages.some(img => img.url === imageUrl)) {
+        // Still scroll to preview area even if already added
+        setTimeout(() => {
+          const previewElement = document.querySelector('[data-preview-area]')
+          if (previewElement) {
+            previewElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }
+        }, 100)
         return // Already added
       }
 
-      // Add the image to additional preview images
+      // Add the image to additional preview images as a base image
       const newImage = {
         url: imageUrl,
         width: 1024, // Default dimensions for saved images
         height: 1024,
         generated_at: new Date().toISOString(),
-        type: 'saved'
+        type: 'base'
       }
       setAdditionalPreviewImages(prev => [...prev, newImage])
+      
+      // Scroll to preview area after adding the image
+      setTimeout(() => {
+        const previewElement = document.querySelector('[data-preview-area]')
+        if (previewElement) {
+          previewElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
     }
     
     // For other tabs (edit, batch, history), just set as selected image
     if (activeTab === 'edit' || activeTab === 'batch' || activeTab === 'history') {
       onSelectImage(imageUrl)
+      // Scroll to preview area
+      setTimeout(() => {
+        const previewElement = document.querySelector('[data-preview-area]')
+        if (previewElement) {
+          previewElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
     }
   }, [activeTab, additionalPreviewImages, onSelectImage])
 
@@ -435,59 +468,136 @@ export default function TabbedPlaygroundLayout({
 
         {/* Generate Tab */}
         <TabsContent value="generate" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {/* Generation Controls */}
-            <UnifiedImageGenerationPanel
-              onGenerate={onGenerate}
-              onSettingsChange={handleSettingsChange}
-              loading={loading}
-              userCredits={userCredits}
-              userSubscriptionTier={userSubscriptionTier}
-              savedImages={savedImages}
-              onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
-              selectedPreset={selectedPreset}
-            />
+          <div className="space-y-6">
+            {/* Full Width Generated Content Preview */}
+            <div className="w-full" data-preview-area>
+              <DynamicPreviewArea
+                aspectRatio={currentSettings.aspectRatio || currentSettings.baseImageAspectRatio || '1:1'}
+                resolution={currentSettings.resolution}
+                images={(() => {
+                  const currentImages = currentProject?.generated_images || []
+                  const imagesToShow = [...currentImages, ...additionalPreviewImages]
+                  
+                  // Add base image if it exists and is not already in the images
+                  if (currentSettings.baseImageUrl && !imagesToShow.some(img => img.url === currentSettings.baseImageUrl)) {
+                    imagesToShow.unshift({
+                      url: currentSettings.baseImageUrl,
+                      width: 1024, // Default dimensions for base images
+                      height: 1024,
+                      generated_at: new Date().toISOString(),
+                      type: 'base'
+                    })
+                  }
+                  
+                  // If selectedImage is not in current images, add it as a single-item array
+                  if (selectedImage && !imagesToShow.some(img => img.url === selectedImage)) {
+                    imagesToShow.push({
+                      url: selectedImage,
+                      width: 1024, // Default dimensions for saved images
+                      height: 1024,
+                      generated_at: new Date().toISOString(),
+                      type: 'saved'
+                    })
+                  }
+                  
+                  return imagesToShow
+                })()}
+                selectedImage={selectedImage}
+                onSelectImage={onSelectImage}
+                onSaveToGallery={handleSaveToGallery}
+                savingImage={savingImage}
+                loading={loading}
+                subscriptionTier={userSubscriptionTier as 'free' | 'plus' | 'pro'}
+                onRemoveBaseImage={removeBaseImageCallback}
+                fullWidth={true}
+                currentStyle={currentSettings.style || 'photorealistic'}
+                onStyleChange={(style) => {
+                  // Update the style in the current settings
+                  setCurrentSettings(prev => ({
+                    ...prev,
+                    style: style
+                  }))
+                }}
+                generationMode={currentSettings.generationMode}
+                onGenerationModeChange={(mode) => {
+                  // Update the generation mode in the current settings
+                  setCurrentSettings(prev => ({
+                    ...prev,
+                    generationMode: mode
+                  }))
+                }}
+                userSubscriptionTier={userSubscriptionTier}
+                onResolutionChange={(resolution) => {
+                  // Update the resolution in the current settings
+                  setCurrentSettings(prev => ({
+                    ...prev,
+                    resolution: resolution
+                  }))
+                }}
+                selectedProvider={currentSettings.selectedProvider || 'nanobanana'}
+                onProviderChange={(provider) => {
+                  // Update the provider in the current settings
+                  setCurrentSettings(prev => ({
+                    ...prev,
+                    selectedProvider: provider
+                  }))
+                }}
+                consistencyLevel={currentSettings.consistencyLevel || 'high'}
+                onConsistencyChange={(consistency) => {
+                  // Update the consistency level in the current settings
+                  setCurrentSettings(prev => ({
+                    ...prev,
+                    consistencyLevel: consistency
+                  }))
+                }}
+              />
+            </div>
 
-            {/* Dynamic Generated Content Preview */}
-            <DynamicPreviewArea
-              aspectRatio={currentSettings.aspectRatio || currentSettings.baseImageAspectRatio || '1:1'}
-              resolution={currentSettings.resolution}
-              images={(() => {
-                const currentImages = currentProject?.generated_images || []
-                const imagesToShow = [...currentImages]
-                
-                // Add base image if it exists and is not already in the images
-                if (currentSettings.baseImageUrl && !imagesToShow.some(img => img.url === currentSettings.baseImageUrl)) {
-                  imagesToShow.unshift({
-                    url: currentSettings.baseImageUrl,
-                    width: 1024, // Default dimensions for base images
-                    height: 1024,
-                    generated_at: new Date().toISOString(),
-                    type: 'base'
-                  })
-                }
-                
-                // If selectedImage is not in current images, add it as a single-item array
-                if (selectedImage && !imagesToShow.some(img => img.url === selectedImage)) {
-                  imagesToShow.push({
-                    url: selectedImage,
-                    width: 1024, // Default dimensions for saved images
-                    height: 1024,
-                    generated_at: new Date().toISOString(),
-                    type: 'saved'
-                  })
-                }
-                
-                return imagesToShow
-              })()}
-              selectedImage={selectedImage}
-              onSelectImage={onSelectImage}
-              onSaveToGallery={handleSaveToGallery}
-              savingImage={savingImage}
-              loading={loading}
-              subscriptionTier={userSubscriptionTier as 'free' | 'plus' | 'pro'}
-              onRemoveBaseImage={removeBaseImageCallback}
-            />
+            {/* Generation Controls - Full Width Below Preview */}
+            <div className="w-full">
+              <UnifiedImageGenerationPanel
+                onGenerate={onGenerate}
+                onSettingsChange={handleSettingsChange}
+                loading={loading}
+                userCredits={userCredits}
+                userSubscriptionTier={userSubscriptionTier}
+                savedImages={savedImages}
+                onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
+                selectedPreset={selectedPreset}
+                currentStyle={currentSettings.style}
+                onStyleChange={(style) => {
+                  // Update the style in the current settings
+                  setCurrentSettings(prev => ({
+                    ...prev,
+                    style: style
+                  }))
+                }}
+                generationMode={currentSettings.generationMode}
+                onGenerationModeChange={(mode) => {
+                  // Update the generation mode in the current settings
+                  setCurrentSettings(prev => ({
+                    ...prev,
+                    generationMode: mode
+                  }))
+                }}
+                selectedProvider={currentSettings.selectedProvider}
+                onProviderChange={(provider) => {
+                  // Update the provider in the current settings
+                  setCurrentSettings(prev => ({
+                    ...prev,
+                    selectedProvider: provider
+                  }))
+                }}
+                consistencyLevel={currentSettings.consistencyLevel}
+                onConsistencyChange={(consistency) => {
+                  // Update the consistency level in the current settings
+                  setCurrentSettings(prev => ({
+                    ...prev,
+                    consistencyLevel: consistency
+                  }))
+                }}
+              />
+            </div>
           </div>
         </TabsContent>
 
@@ -771,6 +881,51 @@ export default function TabbedPlaygroundLayout({
               }
               // Switch to the generate tab
               setActiveTab('generate')
+            }}
+            onSaveAsPreset={(metadata, imageUrl) => {
+              if (metadata) {
+                // Create preset data from image metadata
+                const presetData = {
+                  name: `Preset from ${new Date().toLocaleDateString()}`,
+                  description: `Generated from image with prompt: ${metadata.prompt?.substring(0, 100)}...`,
+                  category: 'style', // Default category
+                  prompt_template: metadata.prompt,
+                  style_settings: {
+                    style: metadata.style || metadata.style_applied || 'photorealistic',
+                    intensity: (metadata as any).intensity || 1.0,
+                    consistency_level: metadata.consistency_level || 'high'
+                  },
+                  technical_settings: {
+                    aspect_ratio: metadata.aspect_ratio || '1:1',
+                    resolution: metadata.resolution || '1024',
+                    num_images: (metadata as any).num_images || 1
+                  },
+                  cinematic_settings: metadata.cinematic_parameters ? {
+                    enableCinematicMode: true,
+                    cinematicParameters: metadata.cinematic_parameters,
+                    enhancedPrompt: metadata.enhanced_prompt,
+                    includeTechnicalDetails: (metadata as any).technical_details || false,
+                    includeStyleReferences: (metadata as any).style_references || false,
+                    generationMode: (metadata as any).generation_mode || 'text-to-image',
+                    selectedProvider: (metadata as any).api_endpoint?.includes('nanobanana') ? 'nanobanana' : 'seedream'
+                  } : undefined,
+                  sample_images: {
+                    before_images: (metadata as any).base_image ? [(metadata as any).base_image] : [],
+                    after_images: [imageUrl],
+                    descriptions: [
+                      (metadata as any).base_image ? 'Original input image' : '',
+                      'Generated result'
+                    ].filter(Boolean)
+                  },
+                  is_public: false
+                }
+                
+                // TODO: Implement preset save functionality
+                // This would open the preset save dialog with the presetData pre-filled
+                console.log('Preset data ready for saving:', presetData)
+                
+                console.log('Saving preset from image metadata:', presetData)
+              }
             }}
             onMediaUpdated={(media) => {
               // Update saved media state for BatchProcessingPanel - filter out videos

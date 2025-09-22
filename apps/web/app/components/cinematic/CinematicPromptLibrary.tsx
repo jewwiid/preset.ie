@@ -46,30 +46,27 @@ interface CinematicPromptTemplate {
 }
 
 interface CustomDirector {
-  id: string;
-  name: string;
+  id: number;
+  value: string;
+  label: string;
   description?: string;
-  visual_style?: string;
-  signature_elements: string[];
-  example_prompts: string[];
+  is_active: boolean;
   usage_count: number;
-  is_public: boolean;
-  created_by?: string;
   created_at: string;
+  updated_at: string;
+  created_by?: string;
 }
 
 interface CustomSceneMood {
-  id: string;
-  name: string;
+  id: number;
+  value: string;
+  label: string;
   description?: string;
-  color_palette?: string;
-  lighting_style?: string;
-  atmosphere_description?: string;
-  example_prompts: string[];
+  is_active: boolean;
   usage_count: number;
-  is_public: boolean;
-  created_by?: string;
   created_at: string;
+  updated_at: string;
+  created_by?: string;
 }
 
 interface CinematicPromptLibraryProps {
@@ -151,10 +148,13 @@ export default function CinematicPromptLibrary({
       const data = await response.json();
       
       if (data.success) {
-        setTemplates(data.templates);
+        setTemplates(data.templates || []);
+      } else {
+        setTemplates([]);
       }
     } catch (error) {
       console.error('Error loading templates:', error);
+      setTemplates([]);
     } finally {
       setLoading(false);
     }
@@ -169,10 +169,13 @@ export default function CinematicPromptLibrary({
       const data = await response.json();
       
       if (data.success) {
-        setDirectors(data.directors);
+        setDirectors(data.directors || []);
+      } else {
+        setDirectors([]);
       }
     } catch (error) {
       console.error('Error loading directors:', error);
+      setDirectors([]);
     }
   };
 
@@ -185,10 +188,13 @@ export default function CinematicPromptLibrary({
       const data = await response.json();
       
       if (data.success) {
-        setMoods(data.moods);
+        setMoods(data.moods || []);
+      } else {
+        setMoods([]);
       }
     } catch (error) {
       console.error('Error loading moods:', error);
+      setMoods([]);
     }
   };
 
@@ -204,11 +210,21 @@ export default function CinematicPromptLibrary({
   };
 
   const handleDirectorSelect = (director: CustomDirector) => {
-    onDirectorSelect?.(director);
+    // Transform the director data to match expected format
+    const transformedDirector = {
+      ...director,
+      name: director.label
+    };
+    onDirectorSelect?.(transformedDirector);
   };
 
   const handleMoodSelect = (mood: CustomSceneMood) => {
-    onMoodSelect?.(mood);
+    // Transform the mood data to match expected format
+    const transformedMood = {
+      ...mood,
+      name: mood.label
+    };
+    onMoodSelect?.(transformedMood);
   };
 
   const createTemplate = async () => {
@@ -341,7 +357,20 @@ export default function CinematicPromptLibrary({
             
             <TabsContent value="templates" className="space-y-2">
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {templates.map((template) => (
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-muted-foreground">Loading templates...</div>
+                  </div>
+                ) : templates.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Film className="h-8 w-8 text-muted-foreground mb-2" />
+                    <div className="text-sm text-muted-foreground">No cinematic templates available</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Templates will appear here when they're added to the database
+                    </div>
+                  </div>
+                ) : (
+                  templates.map((template) => (
                   <div
                     key={template.id}
                     className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
@@ -362,13 +391,27 @@ export default function CinematicPromptLibrary({
                       </Badge>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </TabsContent>
             
             <TabsContent value="directors" className="space-y-2">
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {directors.map((director) => (
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-muted-foreground">Loading directors...</div>
+                  </div>
+                ) : directors.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Film className="h-8 w-8 text-muted-foreground mb-2" />
+                    <div className="text-sm text-muted-foreground">No custom directors available</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Directors will appear here when they're added to the database
+                    </div>
+                  </div>
+                ) : (
+                  directors.map((director) => (
                   <div
                     key={director.id}
                     className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
@@ -376,7 +419,7 @@ export default function CinematicPromptLibrary({
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <span className="font-medium text-sm leading-tight block truncate">{director.name}</span>
+                        <span className="font-medium text-sm leading-tight block truncate">{director.label}</span>
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {director.description}
                         </p>
@@ -387,13 +430,27 @@ export default function CinematicPromptLibrary({
                       </Badge>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </TabsContent>
             
             <TabsContent value="moods" className="space-y-2">
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {moods.map((mood) => (
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-muted-foreground">Loading moods...</div>
+                  </div>
+                ) : moods.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Palette className="h-8 w-8 text-muted-foreground mb-2" />
+                    <div className="text-sm text-muted-foreground">No custom moods available</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Moods will appear here when they're added to the database
+                    </div>
+                  </div>
+                ) : (
+                  moods.map((mood) => (
                   <div
                     key={mood.id}
                     className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
@@ -401,7 +458,7 @@ export default function CinematicPromptLibrary({
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <span className="font-medium text-sm leading-tight block truncate">{mood.name}</span>
+                        <span className="font-medium text-sm leading-tight block truncate">{mood.label}</span>
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                           {mood.description}
                         </p>
@@ -412,7 +469,8 @@ export default function CinematicPromptLibrary({
                       </Badge>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </TabsContent>
           </Tabs>
@@ -558,7 +616,7 @@ export default function CinematicPromptLibrary({
                 <Card key={director.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">{director.name}</CardTitle>
+                      <CardTitle className="text-base">{director.label}</CardTitle>
                       <Badge variant="outline">
                         <TrendingUp className="h-3 w-3 mr-1" />
                         {director.usage_count}
@@ -570,17 +628,13 @@ export default function CinematicPromptLibrary({
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-2">
-                      {director.visual_style && (
-                        <div className="text-sm">
-                          <strong>Style:</strong> {director.visual_style}
-                        </div>
-                      )}
+                      <div className="text-sm">
+                        <strong>Value:</strong> {director.value}
+                      </div>
                       <div className="flex flex-wrap gap-1">
-                        {director.signature_elements.slice(0, 3).map((element) => (
-                          <Badge key={element} variant="secondary" className="text-xs">
-                            {element}
-                          </Badge>
-                        ))}
+                        <Badge variant="secondary" className="text-xs">
+                          {director.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
                       </div>
                       <Button
                         variant="outline"
@@ -611,7 +665,7 @@ export default function CinematicPromptLibrary({
                 <Card key={mood.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">{mood.name}</CardTitle>
+                      <CardTitle className="text-base">{mood.label}</CardTitle>
                       <Badge variant="outline">
                         <TrendingUp className="h-3 w-3 mr-1" />
                         {mood.usage_count}
@@ -623,22 +677,13 @@ export default function CinematicPromptLibrary({
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-2">
-                      {mood.atmosphere_description && (
-                        <div className="text-sm">
-                          <strong>Atmosphere:</strong> {mood.atmosphere_description}
-                        </div>
-                      )}
+                      <div className="text-sm">
+                        <strong>Value:</strong> {mood.value}
+                      </div>
                       <div className="flex gap-2">
-                        {mood.color_palette && (
-                          <Badge variant="secondary" className="text-xs">
-                            {mood.color_palette}
-                          </Badge>
-                        )}
-                        {mood.lighting_style && (
-                          <Badge variant="secondary" className="text-xs">
-                            {mood.lighting_style}
-                          </Badge>
-                        )}
+                        <Badge variant="secondary" className="text-xs">
+                          {mood.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
                       </div>
                       <Button
                         variant="outline"

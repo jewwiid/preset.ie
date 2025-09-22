@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Wand2, Download, Heart, Settings, X, Sparkles } from 'lucide-react'
+import { Wand2, Download, Heart, Settings, X, Sparkles, Grid3X3, Minus } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/components/ui/toast'
 import { downloadImageWithWatermark } from '../../../lib/watermark-utils'
 import DraggableImagePreview from './DraggableImagePreview'
@@ -27,6 +29,22 @@ interface DynamicPreviewAreaProps {
   loading?: boolean
   subscriptionTier?: 'free' | 'plus' | 'pro'
   onRemoveBaseImage?: () => void
+  fullWidth?: boolean
+  // Style selector props
+  currentStyle?: string
+  onStyleChange?: (style: string) => void
+  // Generation mode props
+  generationMode?: 'text-to-image' | 'image-to-image'
+  onGenerationModeChange?: (mode: 'text-to-image' | 'image-to-image') => void
+  // Resolution props
+  userSubscriptionTier?: string
+  onResolutionChange?: (resolution: string) => void
+  // Provider props
+  selectedProvider?: string
+  onProviderChange?: (provider: string) => void
+  // Consistency props
+  consistencyLevel?: string
+  onConsistencyChange?: (consistency: string) => void
 }
 
 export default function DynamicPreviewArea({
@@ -39,10 +57,23 @@ export default function DynamicPreviewArea({
   savingImage,
   loading = false,
   subscriptionTier = 'free',
-  onRemoveBaseImage
+  onRemoveBaseImage,
+  fullWidth = false,
+  currentStyle,
+  onStyleChange,
+  generationMode,
+  onGenerationModeChange,
+  userSubscriptionTier,
+  onResolutionChange,
+  selectedProvider,
+  onProviderChange,
+  consistencyLevel,
+  onConsistencyChange
 }: DynamicPreviewAreaProps) {
   const { showSuccess, showError } = useToast()
   const [showBaseImage, setShowBaseImage] = useState(false) // Default to showing generated images
+  const [showGridOverlay, setShowGridOverlay] = useState(true)
+  const [gridType, setGridType] = useState<'horizontal' | 'rule-of-thirds'>('horizontal')
   
   // Use the aspect ratio from parent instead of local state
   const displayAspectRatio = aspectRatio || '1:1'
@@ -51,6 +82,21 @@ export default function DynamicPreviewArea({
   // Separate base images from generated images
   const baseImages = images.filter(img => img.type === 'base')
   const generatedImages = images.filter(img => img.type !== 'base')
+  
+  // Auto-show base image when it exists and no generated images are present
+  useEffect(() => {
+    const hasBaseImages = baseImages.length > 0
+    const hasGeneratedImages = generatedImages.length > 0
+    
+    // If there are base images but no generated images, show base images by default
+    if (hasBaseImages && !hasGeneratedImages) {
+      setShowBaseImage(true)
+    }
+    // If there are generated images, show them by default
+    else if (hasGeneratedImages) {
+      setShowBaseImage(false)
+    }
+  }, [baseImages.length, generatedImages.length])
   
   // Show generated images by default when they exist, otherwise show base images
   const imagesToDisplay = showBaseImage ? baseImages : generatedImages.length > 0 ? generatedImages : baseImages
@@ -176,6 +222,479 @@ export default function DynamicPreviewArea({
     }
   }
 
+  // Side-by-side layout for full width mode
+  if (fullWidth) {
+    return (
+      <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Generated Content</CardTitle>
+              <CardDescription>
+                Preview and generated images side-by-side
+              </CardDescription>
+            </div>
+            {/* Style and Provider Selectors */}
+            <div className="flex items-center gap-4">
+              {/* Style Selector */}
+              {onStyleChange && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="style-selector" className="text-sm font-medium">Style:</Label>
+                  <Select value={currentStyle || 'photorealistic'} onValueChange={onStyleChange}>
+                    <SelectTrigger className="w-[160px] h-8 text-sm">
+                      <SelectValue placeholder="Select style" />
+                    </SelectTrigger>
+                  <SelectContent>
+                    {/* Original Styles */}
+                    <SelectItem value="photorealistic">Photorealistic</SelectItem>
+                    <SelectItem value="artistic">Artistic</SelectItem>
+                    <SelectItem value="cartoon">Cartoon</SelectItem>
+                    <SelectItem value="vintage">Vintage</SelectItem>
+                    <SelectItem value="cyberpunk">Cyberpunk</SelectItem>
+                    <SelectItem value="watercolor">Watercolor</SelectItem>
+                    <SelectItem value="sketch">Sketch</SelectItem>
+                    <SelectItem value="oil_painting">Oil Painting</SelectItem>
+                    
+                    {/* Photography Styles */}
+                    <SelectItem value="portrait">Portrait</SelectItem>
+                    <SelectItem value="fashion">Fashion</SelectItem>
+                    <SelectItem value="editorial">Editorial</SelectItem>
+                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="lifestyle">Lifestyle</SelectItem>
+                    <SelectItem value="street">Street</SelectItem>
+                    <SelectItem value="architecture">Architecture</SelectItem>
+                    <SelectItem value="nature">Nature</SelectItem>
+                    
+                    {/* Artistic Styles */}
+                    <SelectItem value="abstract">Abstract</SelectItem>
+                    <SelectItem value="surreal">Surreal</SelectItem>
+                    <SelectItem value="minimalist">Minimalist</SelectItem>
+                    <SelectItem value="maximalist">Maximalist</SelectItem>
+                    <SelectItem value="impressionist">Impressionist</SelectItem>
+                    <SelectItem value="renaissance">Renaissance</SelectItem>
+                    <SelectItem value="baroque">Baroque</SelectItem>
+                    <SelectItem value="art_deco">Art Deco</SelectItem>
+                    
+                    {/* Creative Styles */}
+                    <SelectItem value="pop_art">Pop Art</SelectItem>
+                    <SelectItem value="graffiti">Graffiti</SelectItem>
+                    <SelectItem value="digital_art">Digital Art</SelectItem>
+                    <SelectItem value="concept_art">Concept Art</SelectItem>
+                    <SelectItem value="fantasy">Fantasy</SelectItem>
+                    <SelectItem value="sci_fi">Sci-Fi</SelectItem>
+                    <SelectItem value="steampunk">Steampunk</SelectItem>
+                    <SelectItem value="gothic">Gothic</SelectItem>
+                    
+                    {/* Cinematic Styles */}
+                    <SelectItem value="cinematic">Cinematic</SelectItem>
+                    <SelectItem value="film_noir">Film Noir</SelectItem>
+                    <SelectItem value="dramatic">Dramatic</SelectItem>
+                    <SelectItem value="moody">Moody</SelectItem>
+                    <SelectItem value="bright">Bright</SelectItem>
+                    <SelectItem value="monochrome">Monochrome</SelectItem>
+                    <SelectItem value="sepia">Sepia</SelectItem>
+                    <SelectItem value="hdr">HDR</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              )}
+              
+              {/* Provider Selector */}
+              {onProviderChange && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="provider-selector" className="text-sm font-medium">Provider:</Label>
+                  <Select value={selectedProvider || 'nanobanana'} onValueChange={onProviderChange}>
+                    <SelectTrigger className="w-[140px] h-8 text-sm">
+                      <SelectValue placeholder="Select provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nanobanana">🍌 NanoBanana</SelectItem>
+                      <SelectItem value="seedream">🌊 Seedream</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column - Base Image Preview */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Base Image Preview</Label>
+                {baseImages.length > 0 && generatedImages.length > 0 && (
+                  <div className="flex bg-muted rounded-lg p-1">
+                    <Button
+                      size="sm"
+                      variant={showBaseImage ? "default" : "ghost"}
+                      onClick={() => setShowBaseImage(true)}
+                      className="text-xs px-2 py-1"
+                    >
+                      Base
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={!showBaseImage ? "default" : "ghost"}
+                      onClick={() => setShowBaseImage(false)}
+                      className="text-xs px-2 py-1"
+                    >
+                      Generated
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Generation Mode Controls - Always Visible */}
+              {onGenerationModeChange && (
+                <div className="bg-muted/30 p-3 rounded-lg">
+                  <div className="flex items-center gap-4">
+                    <Label className="text-sm font-medium">Generation Mode:</Label>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant={generationMode === 'text-to-image' ? 'default' : 'outline'}
+                        onClick={() => {
+                          onGenerationModeChange('text-to-image')
+                          // Scroll to prompt field
+                          setTimeout(() => {
+                            const promptField = document.querySelector('[data-prompt-field]')
+                            if (promptField) {
+                              promptField.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                            }
+                          }, 100)
+                        }}
+                        className="h-8 px-3 text-xs"
+                      >
+                        Text to Image
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={generationMode === 'image-to-image' ? 'default' : 'outline'}
+                        onClick={() => {
+                          onGenerationModeChange('image-to-image')
+                          // Scroll to base image source selector
+                          setTimeout(() => {
+                            const baseImageSection = document.querySelector('[data-base-image-section]')
+                            if (baseImageSection) {
+                              baseImageSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                            }
+                          }, 100)
+                        }}
+                        className="h-8 px-3 text-xs"
+                      >
+                        Image to Image
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {baseImages.length > 0 && showBaseImage ? (
+                <div className="space-y-3">
+                  {/* Grid Overlay Controls */}
+                  <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="grid-overlay" className="text-sm font-medium">
+                          Grid Overlay
+                        </Label>
+                        <Switch
+                          id="grid-overlay"
+                          checked={showGridOverlay}
+                          onCheckedChange={setShowGridOverlay}
+                        />
+                      </div>
+                      
+                      {showGridOverlay && (
+                        <div className="flex items-center gap-2">
+                          <Label className="text-sm font-medium">Type:</Label>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant={gridType === 'horizontal' ? 'default' : 'outline'}
+                              onClick={() => setGridType('horizontal')}
+                              className="h-8 px-3 text-xs"
+                            >
+                              <Minus className="h-3 w-3 mr-1" />
+                              Horizontal
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={gridType === 'rule-of-thirds' ? 'default' : 'outline'}
+                              onClick={() => setGridType('rule-of-thirds')}
+                              className="h-8 px-3 text-xs"
+                            >
+                              <Grid3X3 className="h-3 w-3 mr-1" />
+                              Rule of Thirds
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Remove Base Image Button */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (onRemoveBaseImage) {
+                          onRemoveBaseImage()
+                        } else {
+                          // Fallback: clear the base image from the images array
+                          setShowBaseImage(false)
+                        }
+                      }}
+                      className="h-8 px-3 text-xs text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Remove
+                    </Button>
+                  </div>
+                  
+                  <div className="relative">
+                    <DraggableImagePreview
+                    imageUrl={baseImages[0].url}
+                    aspectRatio={aspectRatio}
+                    resolution={resolution}
+                    onPositionChange={(yPosition) => {
+                      console.log('Base image position changed:', yPosition)
+                    }}
+                    onSaveFraming={(framing) => {
+                      console.log('Base image framing saved:', framing)
+                    }}
+                    className="w-full"
+                    showGridOverlay={showGridOverlay}
+                    gridType={gridType}
+                  />
+                  
+                  {/* Action buttons for base image */}
+                  <div className="absolute top-2 right-2 flex gap-1 z-10">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 w-7 p-0 bg-background/90 hover:bg-background shadow-md"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSaveToGallery(baseImages[0].url)
+                      }}
+                      disabled={savingImage === baseImages[0].url}
+                      title="Save to Gallery"
+                    >
+                      {savingImage === baseImages[0].url ? (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
+                      ) : (
+                        <Heart className="h-3 w-3" />
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="h-7 w-7 p-0 bg-background/90 hover:bg-background shadow-md"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDownloadImage(baseImages[0].url, `base-image.png`)
+                      }}
+                      title="Download"
+                    >
+                      <Download className="h-3 w-3" />
+                    </Button>
+                    {onRemoveBaseImage && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-7 w-7 p-0 bg-destructive/90 hover:bg-destructive text-destructive-foreground shadow-md"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onRemoveBaseImage()
+                        }}
+                        title="Remove"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              ) : (
+                <div 
+                  className="w-full bg-muted border-2 border-dashed border-border rounded-lg flex items-center justify-center"
+                  style={{ 
+                    aspectRatio: previewAspectRatio,
+                    minHeight: '300px'
+                  }}
+                >
+                  <div className="text-center">
+                    <Wand2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">No base image</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload or select an image to use as base
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Resolution and Consistency - Side by Side */}
+              {(onResolutionChange || onConsistencyChange) && (
+                <div className="mt-3 grid grid-cols-2 gap-4">
+                  {/* Resolution Dropdown */}
+                  {onResolutionChange && (
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="resolution" className="text-sm font-medium">Resolution</Label>
+                        {userSubscriptionTier === 'FREE' && (
+                          <Badge variant="secondary" className="text-xs">Free tier</Badge>
+                        )}
+                      </div>
+                      {userSubscriptionTier !== 'FREE' ? (
+                        <Select value={resolution} onValueChange={onResolutionChange}>
+                          <SelectTrigger className="h-8 text-sm mt-1">
+                            <SelectValue placeholder="Select resolution" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1024">1024px</SelectItem>
+                            <SelectItem value="1536">1536px</SelectItem>
+                            <SelectItem value="2048">2048px</SelectItem>
+                            <SelectItem value="3072">3072px</SelectItem>
+                            <SelectItem value="4096">4096px</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="flex items-center justify-between p-2 bg-muted rounded-md border mt-1">
+                          <span className="text-sm text-muted-foreground">1024px</span>
+                          <Badge variant="secondary" className="text-xs">Free</Badge>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Consistency Level */}
+                  {onConsistencyChange && (
+                    <div>
+                      <Label htmlFor="consistency" className="text-sm font-medium">Consistency</Label>
+                      <Select value={consistencyLevel} onValueChange={onConsistencyChange}>
+                        <SelectTrigger className="h-8 text-sm mt-1">
+                          <SelectValue placeholder="Select consistency level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">🎲 Low Variation</SelectItem>
+                          <SelectItem value="medium">⚖️ Medium</SelectItem>
+                          <SelectItem value="high">🎯 High Consistency</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right Column - Generated Images */}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Generated Images</Label>
+              
+              {generatedImages.length > 0 ? (
+                <div className="space-y-3">
+                  {generatedImages.map((image, index) => (
+                    <div 
+                      key={index}
+                      className={`relative w-full bg-muted border-2 rounded-lg overflow-hidden transition-all duration-300 ${
+                        selectedImage === image.url 
+                          ? 'border-primary ring-2 ring-primary/20' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      style={{ 
+                        aspectRatio: previewAspectRatio,
+                        minHeight: '200px'
+                      }}
+                    >
+                      <div
+                        className="absolute inset-0 cursor-pointer"
+                        onClick={() => onSelectImage(image.url)}
+                      >
+                        {image.type === 'video' ? (
+                          <video
+                            src={image.url}
+                            className="w-full h-full object-cover"
+                            controls
+                            preload="metadata"
+                            loop
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        ) : (
+                          <img
+                            src={image.url}
+                            alt={`Generated image ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        
+                        {/* Action buttons */}
+                        <div className="absolute top-2 right-2 flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 w-7 p-0 bg-background/90 hover:bg-background shadow-md"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleSaveToGallery(image.url)
+                            }}
+                            disabled={savingImage === image.url}
+                            title="Save to Gallery"
+                          >
+                            {savingImage === image.url ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
+                            ) : (
+                              <Heart className="h-3 w-3" />
+                            )}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 w-7 p-0 bg-background/90 hover:bg-background shadow-md"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDownloadImage(image.url, `generated-image-${index + 1}.png`)
+                            }}
+                            title="Download"
+                          >
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div 
+                  className="w-full bg-muted border-2 border-dashed border-border rounded-lg flex items-center justify-center"
+                  style={{ 
+                    aspectRatio: previewAspectRatio,
+                    minHeight: '300px'
+                  }}
+                >
+                  <div className="text-center">
+                    <Wand2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">No images generated yet</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Create your first image!
+                    </p>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Preview area: {aspectRatio} ({calculateDimensions(aspectRatio, resolution).width}×{calculateDimensions(aspectRatio, resolution).height})
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      </>
+    )
+  }
+
+  // Original single-column layout for non-full-width mode
   return (
     <>
     <Card>
@@ -223,8 +742,69 @@ export default function DynamicPreviewArea({
               // Single image - full size
               imagesToDisplay[0].type === 'base' ? (
                 // Base image - use draggable preview
-                <div className="relative">
-                  <DraggableImagePreview
+                <div className="space-y-3">
+                  {/* Grid Overlay Controls */}
+                  <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="grid-overlay-2" className="text-sm font-medium">
+                          Grid Overlay
+                        </Label>
+                        <Switch
+                          id="grid-overlay-2"
+                          checked={showGridOverlay}
+                          onCheckedChange={setShowGridOverlay}
+                        />
+                      </div>
+                      
+                      {showGridOverlay && (
+                        <div className="flex items-center gap-2">
+                          <Label className="text-sm font-medium">Type:</Label>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant={gridType === 'horizontal' ? 'default' : 'outline'}
+                              onClick={() => setGridType('horizontal')}
+                              className="h-8 px-3 text-xs"
+                            >
+                              <Minus className="h-3 w-3 mr-1" />
+                              Horizontal
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={gridType === 'rule-of-thirds' ? 'default' : 'outline'}
+                              onClick={() => setGridType('rule-of-thirds')}
+                              className="h-8 px-3 text-xs"
+                            >
+                              <Grid3X3 className="h-3 w-3 mr-1" />
+                              Rule of Thirds
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Remove Base Image Button */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (onRemoveBaseImage) {
+                          onRemoveBaseImage()
+                        } else {
+                          // Fallback: clear the base image from the images array
+                          setShowBaseImage(false)
+                        }
+                      }}
+                      className="h-8 px-3 text-xs text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Remove
+                    </Button>
+                  </div>
+                  
+                  <div className="relative">
+                    <DraggableImagePreview
                     imageUrl={imagesToDisplay[0].url}
                     aspectRatio={aspectRatio}
                     resolution={resolution}
@@ -237,6 +817,8 @@ export default function DynamicPreviewArea({
                       console.log('Base image framing saved:', framing)
                     }}
                     className="w-full"
+                    showGridOverlay={showGridOverlay}
+                    gridType={gridType}
                   />
                   
                   {/* Action buttons overlay for base image */}
@@ -286,6 +868,7 @@ export default function DynamicPreviewArea({
                     )}
                   </div>
                 </div>
+              </div>
               ) : (
                 // Generated image or video - regular display
                 <div 

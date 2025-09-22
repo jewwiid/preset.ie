@@ -10,6 +10,8 @@ interface DraggableImagePreviewProps {
   onPositionChange?: (yPosition: number) => void
   onSaveFraming?: (framing: { yPosition: number; dimensions: { width: number; height: number } }) => void
   className?: string
+  showGridOverlay?: boolean
+  gridType?: 'horizontal' | 'rule-of-thirds'
 }
 
 export default function DraggableImagePreview({
@@ -18,7 +20,9 @@ export default function DraggableImagePreview({
   resolution,
   onPositionChange,
   onSaveFraming,
-  className = ''
+  className = '',
+  showGridOverlay = true,
+  gridType = 'horizontal'
 }: DraggableImagePreviewProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [yPosition, setYPosition] = useState(0)
@@ -197,12 +201,30 @@ export default function DraggableImagePreview({
           />
         </div>
 
-        {/* Simple overlay */}
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Center line indicator */}
-          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-primary opacity-50 transform -translate-y-1/2" />
+        {/* Grid overlay */}
+        {showGridOverlay && (
+          <div className="absolute inset-0 pointer-events-none z-20">
+            {gridType === 'horizontal' && (
+              /* Horizontal center line */
+              <div className="absolute top-1/2 left-0 right-0 h-2 bg-red-500/90 transform -translate-y-1/2 shadow-2xl border border-white/50" />
+            )}
+            
+            {gridType === 'rule-of-thirds' && (
+              <>
+                {/* Rule of thirds grid - horizontal lines */}
+                <div className="absolute top-1/3 left-0 right-0 h-2 bg-red-500/90 transform -translate-y-1/2 shadow-2xl border border-white/50" />
+                <div className="absolute top-2/3 left-0 right-0 h-2 bg-red-500/90 transform -translate-y-1/2 shadow-2xl border border-white/50" />
+                
+                {/* Rule of thirds grid - vertical lines */}
+                <div className="absolute left-1/3 top-0 bottom-0 w-2 bg-red-500/90 transform -translate-x-1/2 shadow-2xl border border-white/50" />
+                <div className="absolute left-2/3 top-0 bottom-0 w-2 bg-red-500/90 transform -translate-x-1/2 shadow-2xl border border-white/50" />
+              </>
+            )}
+          </div>
+        )}
           
-          {/* State-based UI */}
+        {/* State-based UI */}
+        <div className="absolute inset-0 pointer-events-none">
           {isFramingSaved ? (
             <>
               {/* Saved state - show confirmation and options */}

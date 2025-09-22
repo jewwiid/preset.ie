@@ -16,16 +16,16 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Build query
+    // Build query using the actual scene_moods table
     let query = supabaseAdmin
-      .from('custom_scene_moods')
+      .from('scene_moods')
       .select('*')
-      .or('is_public.eq.true')
+      .eq('is_active', true)
       .order('usage_count', { ascending: false });
 
     // Apply search filter
     if (search) {
-      query = query.ilike('name', `%${search}%`);
+      query = query.ilike('label', `%${search}%`);
     }
 
     // Apply pagination

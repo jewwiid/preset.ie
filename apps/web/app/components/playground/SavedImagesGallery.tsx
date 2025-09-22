@@ -52,6 +52,7 @@ interface SavedMediaGalleryProps {
   onMediaSelect?: (media: SavedMedia) => void
   onReusePrompt?: (prompt: string) => void
   onReuseGenerationSettings?: (metadata: SavedMedia['generation_metadata']) => void
+  onSaveAsPreset?: (metadata: SavedMedia['generation_metadata'], imageUrl: string) => void
   onMediaUpdated?: (media: SavedMedia[]) => void
   onAddMediaToPreview?: (mediaUrl: string) => void
   onExpandMedia?: (media: SavedMedia) => void
@@ -65,7 +66,7 @@ export interface SavedMediaGalleryRef {
 }
 
 const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProps>(
-  ({ onMediaSelect, onReusePrompt, onReuseGenerationSettings, onMediaUpdated, onAddMediaToPreview, onExpandMedia, selectedMediaUrl, currentTab = 'generate', className = '' }, ref) => {
+  ({ onMediaSelect, onReusePrompt, onReuseGenerationSettings, onSaveAsPreset, onMediaUpdated, onAddMediaToPreview, onExpandMedia, selectedMediaUrl, currentTab = 'generate', className = '' }, ref) => {
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
   const [savedMedia, setSavedMedia] = useState<SavedMedia[]>([])
@@ -292,6 +293,7 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
                 onDelete={handleDeleteClick}
                 onReusePrompt={onReusePrompt}
                 onReuseGenerationSettings={onReuseGenerationSettings}
+                onSaveAsPreset={onSaveAsPreset}
                 onAddImageToPreview={onAddMediaToPreview}
                 onExpandMedia={onExpandMedia}
                 deletingImage={deletingMedia}

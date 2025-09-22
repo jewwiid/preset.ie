@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Palette, Search, Star, Users, Eye, Plus, Loader2 } from 'lucide-react'
+import { Palette, Search, Star, Users, Eye, Plus, Loader2, Settings, Film, Camera, Lightbulb, Palette as PaletteIcon, Trash2, ImageIcon } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
@@ -20,6 +20,20 @@ interface Preset {
   negative_prompt?: string
   style_settings: any
   technical_settings: any
+  cinematic_settings?: {
+    enableCinematicMode?: boolean
+    cinematicParameters?: any
+    enhancedPrompt?: string
+    includeTechnicalDetails?: boolean
+    includeStyleReferences?: boolean
+    generationMode?: 'text-to-image' | 'image-to-image'
+    selectedProvider?: 'nanobanana' | 'seedream'
+  }
+  sample_images?: {
+    before_images: string[]
+    after_images: string[]
+    descriptions: string[]
+  }
   ai_metadata: any
   seedream_config: any
   usage_count: number
@@ -46,6 +60,14 @@ interface PresetSelectorProps {
     consistencyLevel: string
     intensity: number
     numImages: number
+    // Cinematic parameters
+    enableCinematicMode?: boolean
+    cinematicParameters?: any
+    enhancedPrompt?: string
+    includeTechnicalDetails?: boolean
+    includeStyleReferences?: boolean
+    generationMode?: 'text-to-image' | 'image-to-image'
+    selectedProvider?: 'nanobanana' | 'seedream'
   }
 }
 
@@ -64,19 +86,101 @@ export default function PresetSelector({
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [showPresetDialog, setShowPresetDialog] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [presetToDelete, setPresetToDelete] = useState<Preset | null>(null)
   const [saveFormData, setSaveFormData] = useState({
     name: '',
     description: '',
-    category: 'custom',
+    category: 'photography',
     is_public: false
   })
+  
+  // Sample images state
+  const [savedImages, setSavedImages] = useState<Array<{
+    id: string
+    image_url: string
+    title: string
+    generation_metadata: any
+    created_at: string
+  }>>([])
+  const [selectedSampleImages, setSelectedSampleImages] = useState<{
+    before_images: string[]
+    after_images: string[]
+    descriptions: string[]
+  }>({
+    before_images: [],
+    after_images: [],
+    descriptions: []
+  })
+  const [savedImagesLoading, setSavedImagesLoading] = useState(false)
 
   const categories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'photography', label: 'Photography' },
+    
+    // Original Categories
+    { value: 'style', label: 'Style' },
     { value: 'cinematic', label: 'Cinematic' },
+    { value: 'technical', label: 'Technical' },
+    { value: 'custom', label: 'Custom' },
+    
+    // Photography Categories
+    { value: 'photography', label: 'Photography' },
+    { value: 'portrait', label: 'Portrait' },
+    { value: 'fashion', label: 'Fashion' },
+    { value: 'editorial', label: 'Editorial' },
+    { value: 'commercial', label: 'Commercial' },
+    { value: 'lifestyle', label: 'Lifestyle' },
+    { value: 'street', label: 'Street' },
+    { value: 'architecture', label: 'Architecture' },
+    { value: 'nature', label: 'Nature' },
+    
+    // Artistic Categories
     { value: 'artistic', label: 'Artistic' },
-    { value: 'custom', label: 'Custom' }
+    { value: 'painting', label: 'Painting' },
+    { value: 'illustration', label: 'Illustration' },
+    { value: 'digital_art', label: 'Digital Art' },
+    { value: 'abstract', label: 'Abstract' },
+    { value: 'surreal', label: 'Surreal' },
+    { value: 'minimalist', label: 'Minimalist' },
+    { value: 'maximalist', label: 'Maximalist' },
+    
+    // Creative Categories
+    { value: 'creative', label: 'Creative' },
+    { value: 'experimental', label: 'Experimental' },
+    { value: 'conceptual', label: 'Conceptual' },
+    { value: 'fantasy', label: 'Fantasy' },
+    { value: 'sci_fi', label: 'Sci-Fi' },
+    { value: 'steampunk', label: 'Steampunk' },
+    { value: 'gothic', label: 'Gothic' },
+    { value: 'vintage', label: 'Vintage' },
+    { value: 'retro', label: 'Retro' },
+    { value: 'futuristic', label: 'Futuristic' },
+    
+    // Professional Categories
+    { value: 'professional', label: 'Professional' },
+    { value: 'corporate', label: 'Corporate' },
+    { value: 'branding', label: 'Branding' },
+    { value: 'marketing', label: 'Marketing' },
+    
+    // Specialized Categories
+    { value: 'film_look', label: 'Film Look' },
+    { value: 'dramatic', label: 'Dramatic' },
+    { value: 'moody', label: 'Moody' },
+    { value: 'bright', label: 'Bright' },
+    { value: 'monochrome', label: 'Monochrome' },
+    { value: 'colorful', label: 'Colorful' },
+    { value: 'neutral', label: 'Neutral' },
+    { value: 'warm', label: 'Warm' },
+    { value: 'cool', label: 'Cool' },
+    
+    // Technical Categories
+    { value: 'hdr', label: 'HDR' },
+    { value: 'macro', label: 'Macro' },
+    { value: 'panoramic', label: 'Panoramic' },
+    { value: 'composite', label: 'Composite' },
+    { value: 'retouching', label: 'Retouching' },
+    { value: 'color_grading', label: 'Color Grading' },
+    { value: 'post_processing', label: 'Post Processing' }
   ]
 
   useEffect(() => {
@@ -84,6 +188,40 @@ export default function PresetSelector({
       fetchPresets()
     }
   }, [user, session, selectedCategory])
+
+  const fetchSavedImages = async () => {
+    if (!user || !session?.access_token) return
+
+    setSavedImagesLoading(true)
+    try {
+      const response = await fetch('/api/playground/gallery', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) throw new Error('Failed to fetch saved images')
+      
+      const data = await response.json()
+      setSavedImages(data.images || [])
+    } catch (error) {
+      console.error('Error fetching saved images:', error)
+      showFeedback({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load saved images'
+      })
+    } finally {
+      setSavedImagesLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (showSaveDialog) {
+      fetchSavedImages()
+    }
+  }, [showSaveDialog, user, session])
 
   const fetchPresets = async () => {
     if (!session?.access_token) return
@@ -157,6 +295,16 @@ export default function PresetSelector({
           resolution: currentSettings.resolution,
           num_images: currentSettings.numImages
         },
+        cinematic_settings: {
+          enableCinematicMode: currentSettings.enableCinematicMode || false,
+          cinematicParameters: currentSettings.cinematicParameters || {},
+          enhancedPrompt: currentSettings.enhancedPrompt,
+          includeTechnicalDetails: currentSettings.includeTechnicalDetails,
+          includeStyleReferences: currentSettings.includeStyleReferences,
+          generationMode: currentSettings.generationMode,
+          selectedProvider: currentSettings.selectedProvider
+        },
+        sample_images: selectedSampleImages.before_images.length > 0 || selectedSampleImages.after_images.length > 0 ? selectedSampleImages : undefined,
         is_public: saveFormData.is_public
       }
 
@@ -193,6 +341,52 @@ export default function PresetSelector({
         message: error instanceof Error ? error.message : 'Failed to save preset'
       })
     }
+  }
+
+  const handleDeletePreset = async () => {
+    if (!presetToDelete || !session) return
+
+    try {
+      const response = await fetch(`/api/presets?id=${presetToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete preset')
+      }
+
+      // Remove from local state
+      setPresets(prev => prev.filter(p => p.id !== presetToDelete.id))
+      
+      // Clear selection if this was the selected preset
+      if (selectedPreset?.id === presetToDelete.id) {
+        onPresetSelect(null)
+      }
+
+      setShowDeleteDialog(false)
+      setPresetToDelete(null)
+
+      showFeedback({
+        type: 'success',
+        title: 'Success',
+        message: 'Preset deleted successfully'
+      })
+    } catch (error) {
+      console.error('Error deleting preset:', error)
+      showFeedback({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to delete preset. Please try again.'
+      })
+    }
+  }
+
+  const confirmDelete = (preset: Preset) => {
+    setPresetToDelete(preset)
+    setShowDeleteDialog(true)
   }
 
   const getCategoryColor = (category: string) => {
@@ -288,6 +482,17 @@ export default function PresetSelector({
                                 {preset.is_public && (
                                   <Users className="h-3 w-3 text-primary" />
                                 )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    confirmDelete(preset)
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -306,6 +511,37 @@ export default function PresetSelector({
                                 {preset.description}
                               </p>
                             )}
+                            
+                            {/* Sample Images Preview */}
+                            {preset.sample_images && (preset.sample_images.before_images?.length > 0 || preset.sample_images.after_images?.length > 0) && (
+                              <div className="mb-2">
+                                <div className="text-xs text-muted-foreground mb-1">Sample Images:</div>
+                                <div className="flex gap-1">
+                                  {preset.sample_images.before_images?.slice(0, 2).map((url, index) => (
+                                    <img
+                                      key={`before-${index}`}
+                                      src={url}
+                                      alt={`Before ${index + 1}`}
+                                      className="w-8 h-8 object-cover rounded border"
+                                    />
+                                  ))}
+                                  {preset.sample_images.after_images?.slice(0, 2).map((url, index) => (
+                                    <img
+                                      key={`after-${index}`}
+                                      src={url}
+                                      alt={`After ${index + 1}`}
+                                      className="w-8 h-8 object-cover rounded border"
+                                    />
+                                  ))}
+                                  {((preset.sample_images.before_images?.length || 0) + (preset.sample_images.after_images?.length || 0)) > 4 && (
+                                    <div className="w-8 h-8 bg-muted rounded border flex items-center justify-center text-xs text-muted-foreground">
+                                      +{((preset.sample_images.before_images?.length || 0) + (preset.sample_images.after_images?.length || 0)) - 4}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
                             <p className="text-xs text-muted-foreground">
                               by @{preset.creator.handle}
                             </p>
@@ -327,11 +563,13 @@ export default function PresetSelector({
                   Save
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Save as Preset</DialogTitle>
                 </DialogHeader>
                 
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Left Column - Form */}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Name *</label>
@@ -352,6 +590,13 @@ export default function PresetSelector({
                       rows={2}
                     />
                   </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Prompt</label>
+                      <div className="w-full p-2 border rounded-md text-sm bg-muted/50 text-muted-foreground">
+                        {currentSettings.prompt?.substring(0, 200)}{currentSettings.prompt?.length > 200 ? '...' : ''}
+                      </div>
+                    </div>
                   
                   <div>
                     <label className="block text-sm font-medium mb-1">Category</label>
@@ -379,12 +624,263 @@ export default function PresetSelector({
                     <label htmlFor="is_public" className="text-sm">Make public</label>
                   </div>
                   
-                  <div className="flex justify-end space-x-2">
+                    {/* Sample Images Section */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Sample Images (Optional)</label>
+                      <div className="space-y-3">
+                        {/* Before Images */}
+                        <div>
+                          <label className="block text-xs text-muted-foreground mb-1">Before Images (Input)</label>
+                          <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                            {savedImagesLoading ? (
+                              <div className="col-span-2 text-xs text-muted-foreground">Loading images...</div>
+                            ) : savedImages.length === 0 ? (
+                              <div className="col-span-2 text-xs text-muted-foreground">No saved images available</div>
+                            ) : (
+                              savedImages.map((image) => (
+                                <div key={image.id} className="relative">
+                                  <img
+                                    src={image.image_url}
+                                    alt={image.title}
+                                    className="w-full h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => {
+                                      const newBeforeImages = selectedSampleImages.before_images.includes(image.image_url)
+                                        ? selectedSampleImages.before_images.filter(url => url !== image.image_url)
+                                        : [...selectedSampleImages.before_images, image.image_url]
+                                      setSelectedSampleImages({
+                                        ...selectedSampleImages,
+                                        before_images: newBeforeImages
+                                      })
+                                    }}
+                                  />
+                                  {selectedSampleImages.before_images.includes(image.image_url) && (
+                                    <div className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                      <span className="text-white text-xs">✓</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                          {selectedSampleImages.before_images.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {selectedSampleImages.before_images.length} before image(s) selected
+                            </div>
+                          )}
+                        </div>
+
+                        {/* After Images */}
+                        <div>
+                          <label className="block text-xs text-muted-foreground mb-1">After Images (Generated)</label>
+                          <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                            {savedImagesLoading ? (
+                              <div className="col-span-2 text-xs text-muted-foreground">Loading images...</div>
+                            ) : savedImages.length === 0 ? (
+                              <div className="col-span-2 text-xs text-muted-foreground">No saved images available</div>
+                            ) : (
+                              savedImages.map((image) => (
+                                <div key={image.id} className="relative">
+                                  <img
+                                    src={image.image_url}
+                                    alt={image.title}
+                                    className="w-full h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => {
+                                      const newAfterImages = selectedSampleImages.after_images.includes(image.image_url)
+                                        ? selectedSampleImages.after_images.filter(url => url !== image.image_url)
+                                        : [...selectedSampleImages.after_images, image.image_url]
+                                      setSelectedSampleImages({
+                                        ...selectedSampleImages,
+                                        after_images: newAfterImages
+                                      })
+                                    }}
+                                  />
+                                  {selectedSampleImages.after_images.includes(image.image_url) && (
+                                    <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                      <span className="text-white text-xs">✓</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                          {selectedSampleImages.after_images.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {selectedSampleImages.after_images.length} after image(s) selected
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column - Preview */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground">Preview of Settings to Save</h3>
+                    
+                    <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
+                      {/* Basic Settings */}
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <Settings className="h-3 w-3" />
+                          Basic Settings
+                        </h4>
+                        <div className="space-y-1 text-xs">
+                          <div><strong>Style:</strong> {currentSettings.style}</div>
+                          <div><strong>Resolution:</strong> {currentSettings.resolution}px</div>
+                          <div><strong>Aspect Ratio:</strong> {currentSettings.aspectRatio}</div>
+                          <div><strong>Images:</strong> {currentSettings.numImages}</div>
+                          <div><strong>Intensity:</strong> {currentSettings.intensity}</div>
+                          <div><strong>Consistency:</strong> {currentSettings.consistencyLevel}</div>
+                        </div>
+                      </div>
+
+                      {/* Cinematic Settings */}
+                      {currentSettings.enableCinematicMode && currentSettings.cinematicParameters ? (
+                        <div>
+                          <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                            <Film className="h-3 w-3" />
+                            Cinematic Settings
+                          </h4>
+                          <div className="space-y-1 text-xs">
+                            {currentSettings.cinematicParameters.directorStyle && (
+                              <div><strong>Director:</strong> {currentSettings.cinematicParameters.directorStyle}</div>
+                            )}
+                            {currentSettings.cinematicParameters.cameraAngle && (
+                              <div><strong>Camera Angle:</strong> {currentSettings.cinematicParameters.cameraAngle}</div>
+                            )}
+                            {currentSettings.cinematicParameters.lensType && (
+                              <div><strong>Lens Type:</strong> {currentSettings.cinematicParameters.lensType}</div>
+                            )}
+                            {currentSettings.cinematicParameters.lightingStyle && (
+                              <div><strong>Lighting:</strong> {currentSettings.cinematicParameters.lightingStyle}</div>
+                            )}
+                            {currentSettings.cinematicParameters.sceneMood && (
+                              <div><strong>Mood:</strong> {currentSettings.cinematicParameters.sceneMood}</div>
+                            )}
+                            {currentSettings.cinematicParameters.shotSize && (
+                              <div><strong>Shot Size:</strong> {currentSettings.cinematicParameters.shotSize}</div>
+                            )}
+                            {currentSettings.cinematicParameters.depthOfField && (
+                              <div><strong>Depth of Field:</strong> {currentSettings.cinematicParameters.depthOfField}</div>
+                            )}
+                            <div className="text-muted-foreground">
+                              <strong>Parameters:</strong> {Object.values(currentSettings.cinematicParameters).filter(v => v !== undefined).length} active
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                            <Film className="h-3 w-3" />
+                            Cinematic Settings
+                          </h4>
+                          <div className="text-xs text-muted-foreground">
+                            Cinematic Mode is disabled
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Generation Settings */}
+                      <div>
+                        <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                          <Camera className="h-3 w-3" />
+                          Generation Settings
+                        </h4>
+                        <div className="space-y-1 text-xs">
+                          <div><strong>Mode:</strong> {currentSettings.generationMode || 'text-to-image'}</div>
+                          <div><strong>Provider:</strong> {currentSettings.selectedProvider || 'nanobanana'}</div>
+                          {currentSettings.enableCinematicMode && (
+                            <div><strong>Enhanced Prompt:</strong> {currentSettings.includeTechnicalDetails ? 'Yes' : 'No'}</div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Sample Images Preview */}
+                      {(selectedSampleImages.before_images.length > 0 || selectedSampleImages.after_images.length > 0) && (
+                        <div>
+                          <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                            <ImageIcon className="h-3 w-3" />
+                            Sample Images
+                          </h4>
+                          <div className="space-y-2 text-xs">
+                            {selectedSampleImages.before_images.length > 0 && (
+                              <div>
+                                <div className="text-muted-foreground mb-1">Before ({selectedSampleImages.before_images.length}):</div>
+                                <div className="grid grid-cols-2 gap-1">
+                                  {selectedSampleImages.before_images.slice(0, 4).map((url, index) => (
+                                    <img
+                                      key={index}
+                                      src={url}
+                                      alt={`Before ${index + 1}`}
+                                      className="w-full h-8 object-cover rounded border"
+                                    />
+                                  ))}
+                                  {selectedSampleImages.before_images.length > 4 && (
+                                    <div className="w-full h-8 bg-muted rounded border flex items-center justify-center text-muted-foreground">
+                                      +{selectedSampleImages.before_images.length - 4}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {selectedSampleImages.after_images.length > 0 && (
+                              <div>
+                                <div className="text-muted-foreground mb-1">After ({selectedSampleImages.after_images.length}):</div>
+                                <div className="grid grid-cols-2 gap-1">
+                                  {selectedSampleImages.after_images.slice(0, 4).map((url, index) => (
+                                    <img
+                                      key={index}
+                                      src={url}
+                                      alt={`After ${index + 1}`}
+                                      className="w-full h-8 object-cover rounded border"
+                                    />
+                                  ))}
+                                  {selectedSampleImages.after_images.length > 4 && (
+                                    <div className="w-full h-8 bg-muted rounded border flex items-center justify-center text-muted-foreground">
+                                      +{selectedSampleImages.after_images.length - 4}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
                     <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
                       Cancel
                     </Button>
                     <Button onClick={handleSaveAsPreset}>
                       Save Preset
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Delete Confirmation Dialog */}
+          {showDeleteDialog && presetToDelete && (
+            <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Delete Preset</DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Are you sure you want to delete "{presetToDelete.name}"? This action cannot be undone.
+                  </p>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={handleDeletePreset}>
+                      Delete Preset
                     </Button>
                   </div>
                 </div>

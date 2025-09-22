@@ -16,7 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import AspectRatioSelector from '../ui/AspectRatioSelector'
 import PromptAnalysisModal from './PromptAnalysisModal'
 import CinematicParameterSelector from '../cinematic/CinematicParameterSelector'
-import CinematicPromptLibrary from '../cinematic/CinematicPromptLibrary'
 import { CinematicParameters } from '../../../../../packages/types/src/cinematic-parameters'
 import CinematicPromptBuilder from '../../../../../packages/services/src/cinematic-prompt-builder'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
@@ -42,6 +41,15 @@ interface Preset {
     aspect_ratio: string
     num_images: number
     quality?: string
+  }
+  cinematic_settings?: {
+    enableCinematicMode?: boolean
+    cinematicParameters?: any
+    enhancedPrompt?: string
+    includeTechnicalDetails?: boolean
+    includeStyleReferences?: boolean
+    generationMode?: 'text-to-image' | 'image-to-image'
+    selectedProvider?: 'nanobanana' | 'seedream'
   }
   ai_metadata: {
     model_version?: string
@@ -101,6 +109,14 @@ interface UnifiedImageGenerationPanelProps {
   }>
   onSelectSavedImage?: (imageUrl: string) => void
   selectedPreset?: Preset | null
+  currentStyle?: string
+  onStyleChange?: (style: string) => void
+  generationMode?: 'text-to-image' | 'image-to-image'
+  onGenerationModeChange?: (mode: 'text-to-image' | 'image-to-image') => void
+  selectedProvider?: string
+  onProviderChange?: (provider: string) => void
+  consistencyLevel?: string
+  onConsistencyChange?: (consistency: string) => void
 }
 
 export default function UnifiedImageGenerationPanel({ 
@@ -111,7 +127,15 @@ export default function UnifiedImageGenerationPanel({
   userSubscriptionTier, 
   savedImages = [], 
   onSelectSavedImage,
-  selectedPreset
+  selectedPreset,
+  currentStyle,
+  onStyleChange,
+  generationMode,
+  onGenerationModeChange,
+  selectedProvider,
+  onProviderChange,
+  consistencyLevel,
+  onConsistencyChange
 }: UnifiedImageGenerationPanelProps) {
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
@@ -120,14 +144,14 @@ export default function UnifiedImageGenerationPanel({
   const [style, setStyle] = useState('photorealistic')
   const [resolution, setResolution] = useState('1024')
   const [aspectRatio, setAspectRatio] = useState('1:1')
-  const [consistencyLevel, setConsistencyLevel] = useState('high')
+  // Use consistency level from props with fallback
+  const currentConsistencyLevel = consistencyLevel || 'high'
   const [intensity, setIntensity] = useState(1.0)
   const [numImages, setNumImages] = useState(1)
   const [currentPreset, setCurrentPreset] = useState<Preset | null>(null)
   
-  // Provider selection state
-  const [selectedProvider, setSelectedProvider] = useState<'nanobanana' | 'seedream'>('nanobanana')
-  const [showProviderSelector, setShowProviderSelector] = useState(false)
+  // Use provider from props with fallback
+  const currentProvider = selectedProvider || 'nanobanana'
   
   // Analysis modal state
   const [showAnalysisModal, setShowAnalysisModal] = useState(false)
@@ -164,6 +188,22 @@ export default function UnifiedImageGenerationPanel({
   const handleToggleChange = (technicalDetails: boolean, styleReferences: boolean) => {
     setIncludeTechnicalDetails(technicalDetails)
     setIncludeStyleReferences(styleReferences)
+  }
+  
+  // Handle style changes
+  const handleStyleChange = (newStyle: string) => {
+    setStyle(newStyle)
+    setCurrentPreset(null)
+    // Prefill prompt with context-aware style prompt
+    const newPrompt = getStylePrompt(newStyle, currentGenerationMode)
+    setPrompt(newPrompt)
+    setOriginalPrompt(newPrompt)
+    setIsPromptModified(false)
+    
+    // Notify parent component
+    if (onStyleChange) {
+      onStyleChange(newStyle)
+    }
   }
   
   // Context-aware prompts that adapt based on generation mode
@@ -206,7 +246,10 @@ export default function UnifiedImageGenerationPanel({
     return prompts[styleType as keyof typeof prompts]?.[mode] || prompts.photorealistic[mode]
   }
   
-  const [generationMode, setGenerationMode] = useState<'text-to-image' | 'image-to-image'>('text-to-image')
+  const [localGenerationMode, setLocalGenerationMode] = useState<'text-to-image' | 'image-to-image'>('text-to-image')
+  
+  // Use prop value if provided, otherwise use local state
+  const currentGenerationMode = generationMode || localGenerationMode
   const [baseImage, setBaseImage] = useState<string | null>(null)
   const [isPromptModified, setIsPromptModified] = useState(false)
   const [originalPrompt, setOriginalPrompt] = useState('')
@@ -225,6 +268,8 @@ export default function UnifiedImageGenerationPanel({
     size: '',
     color: ''
   })
+  const [customHexColor, setCustomHexColor] = useState('')
+  const [showHexInput, setShowHexInput] = useState(false)
   
   // Use ref to avoid stale closures
   const onSettingsChangeRef = useRef(onSettingsChange)
@@ -299,14 +344,20 @@ export default function UnifiedImageGenerationPanel({
       setPrompt(selectedPreset.prompt_template)
       setOriginalPrompt(selectedPreset.prompt_template)
       setIntensity(selectedPreset.style_settings?.intensity || 1.0)
-      setConsistencyLevel(selectedPreset.style_settings?.consistency_level || 'high')
+      if (onConsistencyChange) {
+        onConsistencyChange(selectedPreset.style_settings?.consistency_level || 'high')
+      }
       setAspectRatio(selectedPreset.technical_settings?.aspect_ratio || '1:1')
       setResolution(selectedPreset.technical_settings?.resolution || '1024')
       setNumImages(selectedPreset.technical_settings?.num_images || 1)
       
       // Set generation mode if the preset specifies one
       if (selectedPreset.style_settings?.generation_mode) {
-        setGenerationMode(selectedPreset.style_settings.generation_mode)
+        if (onGenerationModeChange) {
+          onGenerationModeChange(selectedPreset.style_settings.generation_mode)
+        } else {
+          setLocalGenerationMode(selectedPreset.style_settings.generation_mode)
+        }
       }
       
       setIsPromptModified(false)
@@ -325,10 +376,26 @@ export default function UnifiedImageGenerationPanel({
       setPrompt(preset.prompt_template)
       setStyle(preset.style_settings?.style || 'realistic')
       setIntensity(preset.style_settings?.intensity || 1.0)
-      setConsistencyLevel(preset.style_settings?.consistency_level || 'high')
+      if (onConsistencyChange) {
+        onConsistencyChange(preset.style_settings?.consistency_level || 'high')
+      }
       setAspectRatio(preset.technical_settings?.aspect_ratio || '1:1')
       setResolution(preset.technical_settings?.resolution || '1024')
       setNumImages(preset.technical_settings?.num_images || 1)
+      
+      // Apply cinematic settings if they exist
+      if (preset.cinematic_settings) {
+        setEnableCinematicMode(preset.cinematic_settings.enableCinematicMode || false)
+        setCinematicParameters(preset.cinematic_settings.cinematicParameters || {})
+        setEnhancedPrompt(preset.cinematic_settings.enhancedPrompt || '')
+        setIncludeTechnicalDetails(preset.cinematic_settings.includeTechnicalDetails ?? true)
+        setIncludeStyleReferences(preset.cinematic_settings.includeStyleReferences ?? true)
+        if (onGenerationModeChange) {
+          onGenerationModeChange(preset.cinematic_settings.generationMode || 'text-to-image')
+        } else {
+          setLocalGenerationMode(preset.cinematic_settings.generationMode || 'text-to-image')
+        }
+      }
 
       // Update settings for parent component
       if (onSettingsChange) {
@@ -343,11 +410,11 @@ export default function UnifiedImageGenerationPanel({
   // Update prompt when generation mode changes (for regular styles)
   useEffect(() => {
     if (!currentPreset && !isPromptModified) {
-      const newPrompt = getStylePrompt(style, generationMode)
+      const newPrompt = getStylePrompt(style, currentGenerationMode)
       setPrompt(newPrompt)
       setOriginalPrompt(newPrompt)
     }
-  }, [generationMode, style, currentPreset, isPromptModified])
+  }, [currentGenerationMode, style, currentPreset, isPromptModified])
 
 
 
@@ -378,7 +445,7 @@ export default function UnifiedImageGenerationPanel({
       return
     }
 
-    if (generationMode === 'image-to-image' && !baseImage) {
+    if (currentGenerationMode === 'image-to-image' && !baseImage) {
       showFeedback({
         type: 'error',
         title: 'Missing Base Image',
@@ -394,17 +461,17 @@ export default function UnifiedImageGenerationPanel({
       prompt: enableCinematicMode ? enhancedPrompt : prompt,
       style: currentPreset ? currentPreset.style_settings?.style || style : style,
       resolution: calculatedResolution,
-      consistencyLevel,
+      consistencyLevel: currentConsistencyLevel,
       numImages,
       customPreset: currentPreset || undefined,
-      baseImage: generationMode === 'image-to-image' ? baseImage || undefined : undefined,
-      generationMode,
+      baseImage: currentGenerationMode === 'image-to-image' ? baseImage || undefined : undefined,
+      generationMode: currentGenerationMode,
       intensity: intensity,
       cinematicParameters: enableCinematicMode ? cinematicParameters : undefined,
       enhancedPrompt: enableCinematicMode ? enhancedPrompt : undefined,
       includeTechnicalDetails: enableCinematicMode ? includeTechnicalDetails : undefined,
       includeStyleReferences: enableCinematicMode ? includeStyleReferences : undefined,
-      selectedProvider: selectedProvider
+      selectedProvider: currentProvider as 'nanobanana' | 'seedream'
     })
   }
 
@@ -484,23 +551,33 @@ export default function UnifiedImageGenerationPanel({
     }
   }
 
+  // Hex color validation
+  const isValidHexColor = (hex: string) => {
+    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex)
+  }
+
   // Pexels search functions
-  const searchPexels = async (page = 1, append = false) => {
+  const searchPexels = async (page = 1) => {
     if (!pexelsQuery.trim()) return
     
     setPexelsLoading(true)
     
     try {
+      // Determine which color to use - custom hex or predefined color
+      const colorValue = showHexInput && customHexColor && isValidHexColor(customHexColor) 
+        ? customHexColor 
+        : pexelsFilters.color
+
       const response = await fetch('/api/moodboard/pexels/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           query: pexelsQuery,
           page,
-          per_page: 12,
+          per_page: 8, // Show exactly 8 images (2 rows of 4)
           ...(pexelsFilters.orientation && { orientation: pexelsFilters.orientation }),
           ...(pexelsFilters.size && { size: pexelsFilters.size }),
-          ...(pexelsFilters.color && { color: pexelsFilters.color })
+          ...(colorValue && { color: colorValue })
         })
       })
       
@@ -508,14 +585,8 @@ export default function UnifiedImageGenerationPanel({
       
       const data = await response.json()
       
-      if (page === 1 || !append) {
         setPexelsResults(data.photos)
-        setPexelsPage(1)
-      } else {
-        setPexelsResults(prev => [...prev, ...data.photos])
-        setPexelsPage(prev => prev + 1)
-      }
-      
+      setPexelsPage(page)
       setPexelsTotalResults(data.total_results)
     } catch (error) {
       console.error('Pexels search error:', error)
@@ -529,19 +600,34 @@ export default function UnifiedImageGenerationPanel({
     if (!pexelsQuery.trim()) {
       setPexelsResults([])
       setPexelsTotalResults(0)
+      setPexelsPage(1)
       return
     }
 
     const timeoutId = setTimeout(() => {
-      searchPexels(1, false)
+      searchPexels(1)
     }, 500) // 500ms delay
 
     return () => clearTimeout(timeoutId)
-  }, [pexelsQuery, pexelsFilters])
+  }, [pexelsQuery, pexelsFilters, customHexColor, showHexInput])
 
-  const loadMorePexels = () => {
-    if (!pexelsLoading && pexelsResults.length < pexelsTotalResults && pexelsQuery.trim()) {
-      searchPexels(pexelsPage + 1, true)
+  // Pagination functions
+  const goToPage = (page: number) => {
+    if (!pexelsLoading && pexelsQuery.trim()) {
+      searchPexels(page)
+    }
+  }
+
+  const nextPage = () => {
+    const totalPages = Math.ceil(pexelsTotalResults / 8)
+    if (pexelsPage < totalPages) {
+      goToPage(pexelsPage + 1)
+    }
+  }
+
+  const prevPage = () => {
+    if (pexelsPage > 1) {
+      goToPage(pexelsPage - 1)
     }
   }
 
@@ -568,7 +654,9 @@ export default function UnifiedImageGenerationPanel({
   return (
     <>
     <Card className="w-full">
-      <CardHeader>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
         <CardTitle className="flex items-center gap-2">
           <Wand2 className="h-5 w-5 text-primary" />
           Generate Images
@@ -576,28 +664,37 @@ export default function UnifiedImageGenerationPanel({
         <CardDescription>
           Create AI-generated images from text descriptions
         </CardDescription>
+          </div>
+          {/* Credits Info */}
+          <div className="flex flex-col items-end gap-1">
+            <Badge variant="secondary" className="text-xs">
+              {userCredits} credits
+            </Badge>
+          </div>
+        </div>
+        
         {style && (
           <div className="mt-2 flex gap-2 flex-wrap">
             <Badge variant="outline" className="text-xs">
               Style: {currentPreset ? 
                 `🎨 ${currentPreset.name}` :
-                style === 'photorealistic' ? '📸 Photorealistic' : 
-                style === 'artistic' ? '🎨 Artistic' :
-                style === 'cartoon' ? '🎭 Cartoon' :
-                style === 'vintage' ? '📻 Vintage' :
-                style === 'cyberpunk' ? '🤖 Cyberpunk' :
-                style === 'watercolor' ? '🎨 Watercolor' :
-                style === 'sketch' ? '✏️ Sketch' :
-                style === 'oil_painting' ? '🖼️ Oil Painting' : style}
+                (currentStyle || style) === 'photorealistic' ? '📸 Photorealistic' : 
+                (currentStyle || style) === 'artistic' ? '🎨 Artistic' :
+                (currentStyle || style) === 'cartoon' ? '🎭 Cartoon' :
+                (currentStyle || style) === 'vintage' ? '📻 Vintage' :
+                (currentStyle || style) === 'cyberpunk' ? '🤖 Cyberpunk' :
+                (currentStyle || style) === 'watercolor' ? '🎨 Watercolor' :
+                (currentStyle || style) === 'sketch' ? '✏️ Sketch' :
+                (currentStyle || style) === 'oil_painting' ? '🖼️ Oil Painting' : (currentStyle || style)}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              Provider: {currentProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌊 Seedream'}
             </Badge>
             {intensity !== 1.0 && (
               <Badge variant="secondary" className="text-xs">
                 Intensity: {intensity}
               </Badge>
             )}
-            <Badge variant="outline" className="text-xs">
-              Provider: {selectedProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌟 Seedream V4'}
-            </Badge>
           </div>
         )}
       </CardHeader>
@@ -612,111 +709,51 @@ export default function UnifiedImageGenerationPanel({
             style,
             resolution,
             aspectRatio,
-            consistencyLevel,
+            consistencyLevel: currentConsistencyLevel,
             intensity,
-            numImages
+            numImages,
+            // Cinematic parameters
+            enableCinematicMode,
+            cinematicParameters,
+            enhancedPrompt,
+            includeTechnicalDetails,
+            includeStyleReferences,
+            generationMode,
+            selectedProvider: currentProvider as 'nanobanana' | 'seedream'
           }}
         />
       </CardContent>
 
-      {/* Provider Selection */}
-      <CardContent className="pb-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-medium">AI Provider</h3>
-              <p className="text-xs text-muted-foreground">
-                Choose your preferred image generation provider
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowProviderSelector(!showProviderSelector)}
-              className="text-primary border-primary/20 hover:bg-primary/5"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              {showProviderSelector ? 'Hide' : 'Change'} Provider
-            </Button>
-          </div>
-          
-          {/* Current Provider Display */}
-          <div className="flex items-center justify-between p-3 bg-muted rounded-lg border">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <span className="text-sm font-medium">
-                Using: {selectedProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌟 Seedream V4'}
-              </span>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {creditsPerImage} credit{creditsPerImage !== 1 ? 's' : ''} per image
-            </div>
-          </div>
-
-          {/* Provider Selection Modal */}
-          {showProviderSelector && (
-            <div className="p-4 border rounded-lg bg-background">
-              <ImageProviderSelector
-                selectedProvider={selectedProvider}
-                onProviderChange={(provider) => {
-                  setSelectedProvider(provider)
-                  setShowProviderSelector(false)
-                }}
-                userCredits={userCredits}
-              />
-            </div>
-          )}
-        </div>
-      </CardContent>
       
       <CardContent className="space-y-4">
-        {/* Generation Mode Selection */}
+        {/* Top Row: Cinematic Mode + Provider Info */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Cinematic Mode */}
         <div className="space-y-2">
-          <Label>Generation Mode</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant={generationMode === 'text-to-image' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setGenerationMode('text-to-image')}
-            >
-              Text to Image
-            </Button>
-            <Button
-              variant={generationMode === 'image-to-image' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setGenerationMode('image-to-image')}
-            >
-              Image to Image
-            </Button>
-          </div>
-        </div>
-
-        {/* Cinematic Mode Toggle */}
-        <div className="flex items-center justify-between p-4 border rounded-lg bg-primary/5">
-          <div className="space-y-1">
+            <Label className="text-sm">Cinematic Mode</Label>
+            <div className="flex items-center justify-between p-2 border rounded-lg bg-primary/5">
             <div className="flex items-center gap-2">
               <Film className="h-4 w-4 text-primary" />
-              <Label className="text-base font-medium">Cinematic Mode</Label>
+                <span className="text-sm">Professional</span>
               {enableCinematicMode && (
                 <Badge variant="secondary" className="text-xs">
-                  <Camera className="h-3 w-3 mr-1" />
                   {Object.values(cinematicParameters).filter(v => v !== undefined).length} params
                 </Badge>
               )}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Enable professional cinematic parameters for enhanced image generation
-            </p>
           </div>
           <Switch
             checked={enableCinematicMode}
             onCheckedChange={setEnableCinematicMode}
+                className="scale-75"
           />
+            </div>
+          </div>
+
         </div>
 
         {/* Base Image Upload Section for Image-to-Image */}
-        {generationMode === 'image-to-image' && (
-          <div className="space-y-3">
+        {currentGenerationMode === 'image-to-image' && (
+          <div className="space-y-3" data-base-image-section>
             <Label>Base Image</Label>
             
             {/* Base Image Source Selection */}
@@ -776,15 +813,16 @@ export default function UnifiedImageGenerationPanel({
                 {/* Saved Images Section */}
                 {baseImageSource === 'saved' && (
                   <div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-40 overflow-y-auto">
+                    <div className="grid grid-cols-4 gap-3">
                       {savedImages.length === 0 ? (
-                        <div className="col-span-full">
-                          <p className="text-sm text-muted-foreground text-center py-4">
+                        <div className="col-span-4">
+                          <p className="text-sm text-muted-foreground text-center py-8">
                             No saved images available
                           </p>
                         </div>
                       ) : (
-                        savedImages.map((image) => (
+                        // Show first 8 images in 2 rows of 4
+                        savedImages.slice(0, 8).map((image) => (
                           <div
                             key={image.id}
                             className="relative group cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-border transition-all"
@@ -816,6 +854,11 @@ export default function UnifiedImageGenerationPanel({
                         ))
                       )}
                     </div>
+                    {savedImages.length > 8 && (
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        Showing 8 of {savedImages.length} saved images
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -867,12 +910,20 @@ export default function UnifiedImageGenerationPanel({
                         <option value="large">Large</option>
                       </select>
                       
+                      <div className="relative">
+                        {!showHexInput ? (
                       <select
                         value={pexelsFilters.color}
                         onChange={(e) => {
+                              if (e.target.value === 'custom') {
+                                setShowHexInput(true)
+                                setPexelsFilters(prev => ({ ...prev, color: '' }))
+                              } else {
                           setPexelsFilters(prev => ({ ...prev, color: e.target.value }))
+                                setCustomHexColor('')
+                              }
                         }}
-                        className="px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-ring focus:border-ring"
+                            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-ring focus:border-ring"
                       >
                         <option value="">All colors</option>
                         <option value="red">Red</option>
@@ -887,19 +938,129 @@ export default function UnifiedImageGenerationPanel({
                         <option value="black">Black</option>
                         <option value="gray">Gray</option>
                         <option value="white">White</option>
+                            <option value="custom">Custom Hex</option>
                       </select>
+                        ) : (
+                          <div className="flex gap-1">
+                            <input
+                              type="text"
+                              value={customHexColor}
+                              onChange={(e) => {
+                                let value = e.target.value
+                                // Auto-add # if not present
+                                if (value && !value.startsWith('#')) {
+                                  value = '#' + value
+                                }
+                                setCustomHexColor(value)
+                              }}
+                              placeholder="#FF0000"
+                              className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-ring focus:border-ring"
+                              maxLength={7}
+                            />
+                            <Button
+                              type="button"
+                              onClick={() => {
+                                setShowHexInput(false)
+                                setCustomHexColor('')
+                                setPexelsFilters(prev => ({ ...prev, color: '' }))
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="h-9 px-2"
+                            >
+                              ×
+                            </Button>
+                    </div>
+                        )}
+                        
+                        {/* Color preview for custom hex */}
+                        {showHexInput && customHexColor && isValidHexColor(customHexColor) && (
+                          <div 
+                            className="absolute right-10 top-1/2 transform -translate-y-1/2 w-6 h-6 rounded border border-border"
+                            style={{ backgroundColor: customHexColor }}
+                            title={customHexColor}
+                          />
+                        )}
+                      </div>
                     </div>
                     
-                    {/* Results */}
+                    {/* Results Container - Fixed Height */}
+                    <div className="min-h-[280px]">
+                      {/* Results Header with Pagination */}
+                      <div className="mb-3 flex items-center justify-between text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
                     {pexelsResults.length > 0 && (
-                      <div>
-                        {/* Results count */}
-                        <div className="mb-3 text-sm text-muted-foreground">
-                          Showing {pexelsResults.length} of {pexelsTotalResults.toLocaleString()} results for "{pexelsQuery}"
+                            <span>
+                              {pexelsTotalResults.toLocaleString()} results for "{pexelsQuery}"
+                            </span>
+                          )}
+                          {pexelsLoading && (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span>Loading...</span>
+                            </div>
+                          )}
                         </div>
                         
-                        {/* Photo grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
+                        {/* Pagination Controls - Top Right */}
+                        {pexelsResults.length > 0 && pexelsTotalResults > 8 && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              onClick={prevPage}
+                              disabled={pexelsLoading || pexelsPage <= 1}
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                            >
+                              ←
+                            </Button>
+                            
+                            {/* Page numbers */}
+                            <div className="flex items-center gap-1">
+                              {(() => {
+                                const totalPages = Math.ceil(pexelsTotalResults / 8)
+                                const maxVisiblePages = 5
+                                const startPage = Math.max(1, pexelsPage - Math.floor(maxVisiblePages / 2))
+                                const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+                                
+                                const pages = []
+                                for (let i = startPage; i <= endPage; i++) {
+                                  pages.push(
+                                    <Button
+                                      key={i}
+                                      type="button"
+                                      onClick={() => goToPage(i)}
+                                      disabled={pexelsLoading}
+                                      variant={i === pexelsPage ? "default" : "outline"}
+                                      size="sm"
+                                      className="h-7 w-7 p-0 text-xs"
+                                    >
+                                      {i}
+                                    </Button>
+                                  )
+                                }
+                                return pages
+                              })()}
+                            </div>
+                            
+                            <Button
+                              type="button"
+                              onClick={nextPage}
+                              disabled={pexelsLoading || pexelsPage >= Math.ceil(pexelsTotalResults / 8)}
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2 text-xs"
+                            >
+                              →
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Results Content */}
+                      {pexelsResults.length > 0 ? (
+                        <div className="grid grid-cols-4 gap-3">
                           {pexelsResults.map((photo) => (
                             <div key={photo.id} className="relative group cursor-pointer" onClick={() => selectPexelsImage(photo)}>
                               <div className="aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
@@ -915,39 +1076,15 @@ export default function UnifiedImageGenerationPanel({
                             </div>
                           ))}
                         </div>
-                        
-                        {/* Load more button */}
-                        {pexelsResults.length < pexelsTotalResults && (
-                          <div className="mt-3 text-center">
-                            <Button
-                              type="button"
-                              onClick={loadMorePexels}
-                              disabled={pexelsLoading}
-                              variant="outline"
-                              size="sm"
-                              className="text-primary border-primary/20 hover:bg-primary/5"
-                            >
-                              {pexelsLoading ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                                  Loading more...
-                                </>
-                              ) : (
-                                `Load more (${(pexelsTotalResults - pexelsResults.length).toLocaleString()} remaining)`
-                              )}
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* No results message */}
-                    {pexelsQuery && pexelsResults.length === 0 && !pexelsLoading && (
-                      <div className="text-center py-4">
+                      ) : (
+                        <div className="flex items-center justify-center h-48 text-center">
+                          <div>
                         <p className="text-sm text-muted-foreground">No images found for "{pexelsQuery}"</p>
                         <p className="text-xs text-muted-foreground mt-1">Try different search terms or filters</p>
+                          </div>
                       </div>
                     )}
+                    </div>
                   </div>
                 )}
               </>
@@ -974,19 +1111,18 @@ export default function UnifiedImageGenerationPanel({
           </div>
         )}
 
-        {/* Prompt Field */}
+        {/* Compact Prompt Field */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="prompt">
+          <Label htmlFor="prompt" className="text-sm">
               Prompt {enableCinematicMode && (
-                <span className="text-xs text-primary ml-2">
-                  (Enhanced with Cinematic Parameters)
+              <span className="text-xs text-primary ml-1">
+                (Enhanced)
                 </span>
               )}
             </Label>
-          </div>
           <Textarea
             id="prompt"
+            data-prompt-field
             value={enableCinematicMode ? enhancedPrompt : prompt}
             onChange={(e) => {
               if (enableCinematicMode) {
@@ -1000,11 +1136,12 @@ export default function UnifiedImageGenerationPanel({
               setIsPromptModified(e.target.value !== originalPrompt)
             }}
             placeholder={generationMode === 'text-to-image' ? "Describe the image you want to create..." : "Describe how you want to modify the base image..."}
-            rows={3}
+            rows={2}
+            className="text-sm"
           />
           {isPromptModified && (
             <p className="text-xs text-primary">
-              💡 You've modified the prompt. Click "Save" in the Presets section above to create a comprehensive preset.
+              💡 Modified prompt - save as preset above
             </p>
           )}
 
@@ -1047,7 +1184,9 @@ export default function UnifiedImageGenerationPanel({
                       size="sm"
                       onClick={() => {
                         setIsManuallyEditingEnhancedPrompt(false)
-                        // This will trigger the useEffect to regenerate the enhanced prompt
+                        // Clear the enhanced prompt to force regeneration
+                        setEnhancedPrompt('')
+                        // The useEffect will regenerate it on the next render
                       }}
                     >
                       Regenerate Enhanced Prompt
@@ -1082,70 +1221,13 @@ export default function UnifiedImageGenerationPanel({
             </div>
           )}
 
-          {/* Cinematic Prompt Library */}
-          {enableCinematicMode && (
-            <div className="space-y-4">
-              <CinematicPromptLibrary
-                onTemplateSelect={(template) => {
-                  setPrompt(template.base_prompt);
-                  setCinematicParameters(template.cinematic_parameters);
-                }}
-                onDirectorSelect={(director) => {
-                  setCinematicParameters(prev => ({
-                    ...prev,
-                    directorStyle: director.name.toLowerCase().replace(/\s+/g, '-') as any
-                  }));
-                }}
-                onMoodSelect={(mood) => {
-                  setCinematicParameters(prev => ({
-                    ...prev,
-                    sceneMood: mood.name.toLowerCase().replace(/\s+/g, '-') as any,
-                    colorPalette: mood.color_palette as any,
-                    lightingStyle: mood.lighting_style as any
-                  }));
-                }}
-                compact={true}
-              />
-            </div>
-          )}
         </div>
 
-        <div className="space-y-4">
+        {/* Second Row: Style Intensity + Number of Images */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Style Intensity */}
           <div className="space-y-2">
-            <Label htmlFor="style">Style</Label>
-            <Select value={style} onValueChange={(value) => {
-              setStyle(value)
-              setCurrentPreset(null)
-              // Prefill prompt with context-aware style prompt
-              const newPrompt = getStylePrompt(value, generationMode)
-              setPrompt(newPrompt)
-              setOriginalPrompt(newPrompt)
-              setIsPromptModified(false)
-            }}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select style" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="photorealistic">📸 Photorealistic</SelectItem>
-                <SelectItem value="artistic">🎨 Artistic</SelectItem>
-                <SelectItem value="cartoon">🎭 Cartoon</SelectItem>
-                <SelectItem value="vintage">📻 Vintage</SelectItem>
-                <SelectItem value="cyberpunk">🤖 Cyberpunk</SelectItem>
-                <SelectItem value="watercolor">🎨 Watercolor</SelectItem>
-                <SelectItem value="sketch">✏️ Sketch</SelectItem>
-                <SelectItem value="oil_painting">🖼️ Oil Painting</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            {/* Display context-aware prompt for regular styles */}
-            <div className="p-2 bg-muted border border-border rounded-md">
-              <p className="text-xs text-muted-foreground">{getStylePrompt(style, generationMode)}</p>
-            </div>
-          </div>
-
-          {/* Style Intensity Slider */}
-          <div className="space-y-2">
-            <Label htmlFor="intensity">Style Intensity: {intensity}</Label>
+            <Label htmlFor="intensity" className="text-sm">Intensity: {intensity}</Label>
             <Slider
               value={[intensity]}
               onValueChange={(value) => setIntensity(Array.isArray(value) ? value[0] : value)}
@@ -1155,16 +1237,33 @@ export default function UnifiedImageGenerationPanel({
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Subtle (0.1)</span>
-              <span>Default (1.0)</span>
-              <span>Strong (2.0)</span>
+              <span>0.1</span>
+              <span>1.0</span>
+              <span>2.0</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Controls how strongly the selected style is applied to your image
-            </p>
           </div>
 
-          {/* Aspect Ratio Selector */}
+          {/* Number of Images */}
+          <div className="space-y-2">
+            <Label className="text-sm">Images: {numImages}</Label>
+            <Slider
+              value={[numImages]}
+              onValueChange={(value) => setNumImages(Array.isArray(value) ? value[0] : value)}
+              min={1}
+              max={8}
+              step={1}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>1</span>
+              <span>8</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Third Row: Aspect Ratio */}
+        <div className="space-y-2">
+          <Label className="text-sm">Aspect Ratio</Label>
           <AspectRatioSelector
             value={aspectRatio}
             onChange={setAspectRatio}
@@ -1180,102 +1279,16 @@ export default function UnifiedImageGenerationPanel({
             }}
           />
         </div>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Number of Images: {numImages}</Label>
-            <Slider
-              value={[numImages]}
-              onValueChange={(value) => setNumImages(Array.isArray(value) ? value[0] : value)}
-              min={1}
-              max={8}
-              step={1}
-              className="w-full"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Single</span>
-              <span>Multiple</span>
-            </div>
-          </div>
-
-        </div>
       </CardContent>
 
-      {/* Resolution and Consistency Level - 2 Column Row */}
-      <div className="px-6 pb-4">
-        <div className="grid grid-cols-2 gap-4">
-          {/* Resolution */}
-          <div className="space-y-2">
-            <Label htmlFor="resolution">Resolution</Label>
-            {userSubscriptionTier !== 'FREE' ? (
-              <Select value={resolution} onValueChange={setResolution}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select resolution" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1024">1024px (Standard)</SelectItem>
-                  <SelectItem value="1536">1536px (High Quality)</SelectItem>
-                  <SelectItem value="2048">2048px (Ultra Quality)</SelectItem>
-                  <SelectItem value="3072">3072px (4K Quality)</SelectItem>
-                  <SelectItem value="4096">4096px (Maximum Quality)</SelectItem>
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-3 bg-muted rounded-md border">
-                  <span className="text-sm text-muted-foreground">1024px (Standard)</span>
-                  <Badge variant="secondary" className="text-xs">
-                    Free Tier
-                  </Badge>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-xs w-full"
-                  onClick={() => showFeedback({
-                    type: 'info',
-                    title: 'Premium Feature',
-                    message: 'Higher resolution options (1536px, 2048px, 3072px, 4096px) are available for Plus and Pro subscribers. Upgrade for better image quality!'
-                  })}
-                >
-                  Upgrade for Higher Resolutions
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Consistency Level */}
-          <div className="space-y-2">
-            <Label htmlFor="consistency">Consistency Level</Label>
-            <Select value={consistencyLevel} onValueChange={setConsistencyLevel}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select consistency level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">🎲 Low (More Variation)</SelectItem>
-                <SelectItem value="medium">⚖️ Medium</SelectItem>
-                <SelectItem value="high">🎯 High (Less Variation)</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              {consistencyLevel === 'low' && 'More creative variation, less predictable results'}
-              {consistencyLevel === 'medium' && 'Balanced creativity and consistency'}
-              {consistencyLevel === 'high' && 'More consistent results, less variation'}
-            </p>
-          </div>
+      <CardFooter className="flex flex-col gap-3 pt-3">
+        {/* Compact Cost Info */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Cost: {totalCredits} credits ({numImages} × {creditsPerImage})</span>
+          <span>Aspect: {aspectRatio}</span>
         </div>
-      </div>
-
-      <CardFooter className="flex flex-col gap-2">
-        <div className="flex items-center justify-between w-full">
-          <Badge variant="secondary" className="text-xs">
-            Credits: {userCredits}
-          </Badge>
-          <Badge variant="outline" className="text-xs">
-            Cost: {totalCredits} credits ({numImages} × {creditsPerImage})
-          </Badge>
-        </div>
+        
+        {/* Action Buttons */}
         <div className="flex gap-2">
           {/* Analysis Button */}
           {userSubscriptionTier !== 'FREE' && (
@@ -1283,11 +1296,11 @@ export default function UnifiedImageGenerationPanel({
               onClick={() => setShowAnalysisModal(true)}
               disabled={loading || !prompt.trim()}
               variant="outline"
-              size="lg"
-              className="flex-1"
+              size="sm"
+              className="flex-1 text-xs h-9"
             >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Optimize Prompt
+              <Sparkles className="h-3 w-3 mr-1" />
+              Optimize
             </Button>
           )}
           
@@ -1296,20 +1309,17 @@ export default function UnifiedImageGenerationPanel({
             onClick={handleGenerate}
             disabled={loading || !prompt.trim() || userCredits < totalCredits}
             className={userSubscriptionTier !== 'FREE' ? "flex-1" : "w-full"}
-            size="lg"
+            size="sm"
           >
             {loading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Generating... (5-30s)
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                Generating...
               </>
             ) : (
               <>
-                <Wand2 className="h-4 w-4 mr-2" />
-                Generate {numImages} Image{numImages > 1 ? 's' : ''} ({totalCredits} credits)
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {aspectRatio}
-                </Badge>
+                <Wand2 className="h-3 w-3 mr-2" />
+                Generate {numImages} Image{numImages > 1 ? 's' : ''}
               </>
             )}
           </Button>
@@ -1326,7 +1336,7 @@ export default function UnifiedImageGenerationPanel({
       style={currentPreset ? currentPreset.style_settings?.style || style : style}
       resolution={resolution}
       aspectRatio={aspectRatio}
-      generationMode={generationMode}
+      generationMode={currentGenerationMode}
       cinematicParameters={enableCinematicMode ? cinematicParameters : undefined}
       onApplyPrompt={(improvedPrompt) => {
         setPrompt(improvedPrompt)
@@ -1341,7 +1351,7 @@ export default function UnifiedImageGenerationPanel({
           style: currentPreset ? currentPreset.style_settings?.style || style : style,
           resolution: resolution,
           aspect_ratio: aspectRatio,
-          consistency_level: consistencyLevel,
+          consistency_level: currentConsistencyLevel,
           intensity: intensity.toString(),
           num_images: numImages.toString(),
           is_public: 'false'

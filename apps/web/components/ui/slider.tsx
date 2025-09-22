@@ -38,17 +38,17 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
           }}
           className={cn(
             "w-full h-2 rounded-lg appearance-none cursor-pointer",
-            "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+            "focus:outline-none",
             "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5",
-            "[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary",
-            "[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-background",
-            "[&::-webkit-slider-thumb]:shadow-md hover:[&::-webkit-slider-thumb]:bg-primary/90",
+            "[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[var(--primary)]",
+            "[&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-0",
+            "[&::-webkit-slider-thumb]:shadow-md hover:[&::-webkit-slider-thumb]:bg-[var(--primary)]/90",
             "[&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5",
-            "[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-0",
+            "[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[var(--primary)] [&::-moz-range-thumb]:border-0",
             "[&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:shadow-md"
           )}
           style={{
-            background: `linear-gradient(to right, hsl(var(--primary)) 0%, hsl(var(--primary)) ${percentage}%, hsl(var(--muted)) ${percentage}%, hsl(var(--muted)) 100%)`
+            background: `linear-gradient(to right, var(--primary) 0%, var(--primary) ${percentage}%, var(--muted) ${percentage}%, var(--muted) 100%)`
           }}
           {...props}
         />

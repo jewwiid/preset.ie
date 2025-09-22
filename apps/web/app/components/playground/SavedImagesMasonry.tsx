@@ -59,6 +59,7 @@ interface SavedMediaMasonryProps {
   onDelete?: (id: string) => void
   onReusePrompt?: (prompt: string) => void
   onReuseGenerationSettings?: (metadata: SavedMedia['generation_metadata']) => void
+  onSaveAsPreset?: (metadata: SavedMedia['generation_metadata'], imageUrl: string) => void
   onAddImageToPreview?: (mediaUrl: string) => void
   deletingImage?: string | null
   selectedImageUrl?: string | null
@@ -74,6 +75,7 @@ export default function SavedMediaMasonry({
   onDelete,
   onReusePrompt,
   onReuseGenerationSettings,
+  onSaveAsPreset,
   onAddImageToPreview,
   deletingImage,
   selectedImageUrl,
@@ -447,8 +449,8 @@ export default function SavedMediaMasonry({
             key={image.id}
             className={`group relative rounded-lg overflow-hidden border transition-all duration-200 cursor-pointer ${
               selectedImageUrl === (image.image_url || image.video_url)
-                ? 'border-blue-500 ring-2 ring-blue-200' 
-                : 'border-gray-200 hover:border-purple-300'
+                ? 'border-primary ring-2 ring-primary/20' 
+                : 'border-border hover:border-primary/50'
             }`}
             style={style}
             onClick={() => onImageSelect?.(image)}
@@ -533,7 +535,7 @@ export default function SavedMediaMasonry({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-accent/80 hover:shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
                         onExpandMedia(image)
@@ -548,7 +550,7 @@ export default function SavedMediaMasonry({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:shadow-md hover:text-primary"
                       onClick={(e) => {
                         e.stopPropagation()
                         onAddImageToPreview(image.image_url || image.video_url || '')
@@ -574,7 +576,7 @@ export default function SavedMediaMasonry({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-green-500/10 hover:shadow-md hover:text-green-600"
                       onClick={(e) => {
                         e.stopPropagation()
                         onDownload(image.image_url || image.video_url || '', image.title)
@@ -588,7 +590,7 @@ export default function SavedMediaMasonry({
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="h-8 w-8 p-0"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-destructive/80 hover:shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
                         onDelete(image.id)
@@ -905,6 +907,18 @@ export default function SavedMediaMasonry({
                     className="flex-1"
                   >
                     Reuse All Settings
+                  </Button>
+                )}
+                {onSaveAsPreset && selectedImageForInfo.generation_metadata && (
+                  <Button
+                    onClick={() => {
+                      onSaveAsPreset(selectedImageForInfo.generation_metadata, selectedImageForInfo.image_url || '')
+                      setSelectedImageForInfo(null)
+                    }}
+                    className="flex-1"
+                    variant="outline"
+                  >
+                    Save as Preset
                   </Button>
                 )}
                 {onImageSelect && (
