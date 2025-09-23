@@ -206,18 +206,18 @@ export default function DraggableImagePreview({
           <div className="absolute inset-0 pointer-events-none z-20">
             {gridType === 'horizontal' && (
               /* Horizontal center line */
-              <div className="absolute top-1/2 left-0 right-0 h-2 bg-red-500/90 transform -translate-y-1/2 shadow-2xl border border-white/50" />
+              <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/90 transform -translate-y-1/2 shadow-lg" />
             )}
             
             {gridType === 'rule-of-thirds' && (
               <>
                 {/* Rule of thirds grid - horizontal lines */}
-                <div className="absolute top-1/3 left-0 right-0 h-2 bg-red-500/90 transform -translate-y-1/2 shadow-2xl border border-white/50" />
-                <div className="absolute top-2/3 left-0 right-0 h-2 bg-red-500/90 transform -translate-y-1/2 shadow-2xl border border-white/50" />
+                <div className="absolute top-1/3 left-0 right-0 h-px bg-green-500/90 transform -translate-y-1/2 shadow-lg" />
+                <div className="absolute top-2/3 left-0 right-0 h-px bg-green-500/90 transform -translate-y-1/2 shadow-lg" />
                 
                 {/* Rule of thirds grid - vertical lines */}
-                <div className="absolute left-1/3 top-0 bottom-0 w-2 bg-red-500/90 transform -translate-x-1/2 shadow-2xl border border-white/50" />
-                <div className="absolute left-2/3 top-0 bottom-0 w-2 bg-red-500/90 transform -translate-x-1/2 shadow-2xl border border-white/50" />
+                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-green-500/90 transform -translate-x-1/2 shadow-lg" />
+                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-green-500/90 transform -translate-x-1/2 shadow-lg" />
               </>
             )}
           </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import { Wand2, Edit3, Layers, Video, History, Sparkles, BookOpen } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -142,6 +142,12 @@ export default function TabbedPlaygroundLayout({
 }: TabbedPlaygroundLayoutProps) {
   const [activeTab, setActiveTab] = useState('generate')
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
+  
+  // Debug: Log when selectedPreset changes
+  useEffect(() => {
+    console.log('🎯 Parent selectedPreset changed:', selectedPreset)
+  }, [selectedPreset])
+
   const [currentSettings, setCurrentSettings] = useState({
     aspectRatio: '1:1',
     resolution: '1024',
@@ -150,8 +156,91 @@ export default function TabbedPlaygroundLayout({
     style: 'photorealistic' as string,
     generationMode: 'text-to-image' as 'text-to-image' | 'image-to-image',
     selectedProvider: 'nanobanana' as string,
-    consistencyLevel: 'high' as string
+    consistencyLevel: 'high' as string,
+    prompt: '' as string,
+    enhancedPrompt: '' as string
   })
+
+  // Handle prompt updates from UnifiedImageGenerationPanel
+  const handleSetPrompt = useCallback((prompt: string) => {
+    // Update the parent's prompt
+    onSetPrompt(prompt)
+    // Also update currentSettings for DynamicPreviewArea
+    setCurrentSettings(prev => ({
+      ...prev,
+      prompt: prompt
+    }))
+  }, [onSetPrompt])
+
+  // Handle enhanced prompt updates from UnifiedImageGenerationPanel
+  const handleSetEnhancedPrompt = useCallback((enhancedPrompt: string) => {
+    setCurrentSettings(prev => ({
+      ...prev,
+      enhancedPrompt: enhancedPrompt
+    }))
+  }, [])
+
+  // Handle regenerate action
+  const handleRegenerate = useCallback(() => {
+    // Trigger the same generation as the main generate button
+    if (onGenerate && currentSettings.prompt) {
+      onGenerate({
+        prompt: currentSettings.prompt,
+        style: currentSettings.style || 'photorealistic',
+        resolution: currentSettings.resolution || '1024',
+        consistencyLevel: currentSettings.consistencyLevel || 'high',
+        numImages: 1
+      })
+    }
+  }, [onGenerate, currentSettings])
+
+  // Handle clear images action
+  const handleClearImages = useCallback(() => {
+    // Clear the selected image
+    onSelectImage(null)
+    // Clear additional preview images
+    setAdditionalPreviewImages([])
+  }, [onSelectImage])
+
+  // Style change callback
+  const handleStyleChange = useCallback((style: string) => {
+    setCurrentSettings(prev => ({
+      ...prev,
+      style: style
+    }))
+  }, [])
+
+  // Generation mode change callback
+  const handleGenerationModeChange = useCallback((mode: string) => {
+    setCurrentSettings(prev => ({
+      ...prev,
+      generationMode: mode as 'text-to-image' | 'image-to-image'
+    }))
+  }, [])
+
+  // Resolution change callback
+  const handleResolutionChange = useCallback((resolution: string) => {
+    setCurrentSettings(prev => ({
+      ...prev,
+      resolution: resolution
+    }))
+  }, [])
+
+  // Provider change callback
+  const handleProviderChange = useCallback((provider: string) => {
+    setCurrentSettings(prev => ({
+      ...prev,
+      selectedProvider: provider
+    }))
+  }, [])
+
+  // Consistency change callback
+  const handleConsistencyChange = useCallback((consistency: string) => {
+    setCurrentSettings(prev => ({
+      ...prev,
+      consistencyLevel: consistency
+    }))
+  }, [])
   const [savedImages, setSavedImages] = useState<Array<{
     id: string
     image_url: string
@@ -184,13 +273,18 @@ export default function TabbedPlaygroundLayout({
   const [removeBaseImageCallback, setRemoveBaseImageCallback] = useState<(() => void) | undefined>(undefined)
 
   const handleSettingsChange = useCallback((settings: { resolution: string; aspectRatio?: string; baseImageAspectRatio?: string; baseImageUrl?: string; onRemoveBaseImage?: () => void }) => {
-    setCurrentSettings(prev => ({
-      ...prev,
-      resolution: settings.resolution,
-      aspectRatio: settings.aspectRatio || prev.aspectRatio,
-      baseImageAspectRatio: settings.baseImageAspectRatio,
-      baseImageUrl: settings.baseImageUrl
-    }))
+    console.log('🎯 Parent received settings change:', settings)
+    setCurrentSettings(prev => {
+      const newSettings = {
+        ...prev,
+        resolution: settings.resolution,
+        aspectRatio: settings.aspectRatio || prev.aspectRatio,
+        baseImageAspectRatio: settings.baseImageAspectRatio,
+        baseImageUrl: settings.baseImageUrl
+      }
+      console.log('🎯 Parent updating settings to:', newSettings)
+      return newSettings
+    })
     setRemoveBaseImageCallback(() => settings.onRemoveBaseImage)
   }, [])
 
@@ -305,6 +399,31 @@ export default function TabbedPlaygroundLayout({
       }))
     }
   }, [activeTab])
+
+  // Auto-adjust aspect ratio when a preset is selected
+  useEffect(() => {
+    if (selectedPreset) {
+      let presetAspectRatio = null
+      
+      // Check if it's a cinematic preset (has cinematic_settings with parameters)
+      if (selectedPreset.cinematic_settings?.cinematicParameters?.aspectRatio) {
+        presetAspectRatio = selectedPreset.cinematic_settings.cinematicParameters.aspectRatio
+      }
+      // Check if it's a regular preset with technical_settings
+      else if (selectedPreset.technical_settings?.aspect_ratio) {
+        presetAspectRatio = selectedPreset.technical_settings.aspect_ratio
+      }
+      
+      // Update aspect ratio if found
+      if (presetAspectRatio) {
+        console.log('🎯 Auto-adjusting aspect ratio to:', presetAspectRatio, 'from preset:', selectedPreset.name)
+        setCurrentSettings(prev => ({
+          ...prev,
+          aspectRatio: presetAspectRatio
+        }))
+      }
+    }
+  }, [selectedPreset])
 
   // Refresh videos when video generation completes and auto-select the new video
   useEffect(() => {
@@ -474,7 +593,8 @@ export default function TabbedPlaygroundLayout({
               <DynamicPreviewArea
                 aspectRatio={currentSettings.aspectRatio || currentSettings.baseImageAspectRatio || '1:1'}
                 resolution={currentSettings.resolution}
-                images={(() => {
+                prompt={currentSettings.enhancedPrompt || currentSettings.prompt}
+                images={useMemo(() => {
                   const currentImages = currentProject?.generated_images || []
                   const imagesToShow = [...currentImages, ...additionalPreviewImages]
                   
@@ -501,7 +621,7 @@ export default function TabbedPlaygroundLayout({
                   }
                   
                   return imagesToShow
-                })()}
+                }, [currentProject?.generated_images, additionalPreviewImages, currentSettings.baseImageUrl, selectedImage])}
                 selectedImage={selectedImage}
                 onSelectImage={onSelectImage}
                 onSaveToGallery={handleSaveToGallery}
@@ -511,45 +631,17 @@ export default function TabbedPlaygroundLayout({
                 onRemoveBaseImage={removeBaseImageCallback}
                 fullWidth={true}
                 currentStyle={currentSettings.style || 'photorealistic'}
-                onStyleChange={(style) => {
-                  // Update the style in the current settings
-                  setCurrentSettings(prev => ({
-                    ...prev,
-                    style: style
-                  }))
-                }}
+                onStyleChange={handleStyleChange}
                 generationMode={currentSettings.generationMode}
-                onGenerationModeChange={(mode) => {
-                  // Update the generation mode in the current settings
-                  setCurrentSettings(prev => ({
-                    ...prev,
-                    generationMode: mode
-                  }))
-                }}
+                onGenerationModeChange={handleGenerationModeChange}
                 userSubscriptionTier={userSubscriptionTier}
-                onResolutionChange={(resolution) => {
-                  // Update the resolution in the current settings
-                  setCurrentSettings(prev => ({
-                    ...prev,
-                    resolution: resolution
-                  }))
-                }}
+                onResolutionChange={handleResolutionChange}
                 selectedProvider={currentSettings.selectedProvider || 'nanobanana'}
-                onProviderChange={(provider) => {
-                  // Update the provider in the current settings
-                  setCurrentSettings(prev => ({
-                    ...prev,
-                    selectedProvider: provider
-                  }))
-                }}
+                onProviderChange={handleProviderChange}
                 consistencyLevel={currentSettings.consistencyLevel || 'high'}
-                onConsistencyChange={(consistency) => {
-                  // Update the consistency level in the current settings
-                  setCurrentSettings(prev => ({
-                    ...prev,
-                    consistencyLevel: consistency
-                  }))
-                }}
+                onConsistencyChange={handleConsistencyChange}
+                onRegenerate={handleRegenerate}
+                onClearImages={handleClearImages}
               />
             </div>
 
@@ -564,38 +656,18 @@ export default function TabbedPlaygroundLayout({
                 savedImages={savedImages}
                 onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
                 selectedPreset={selectedPreset}
+                onPresetApplied={() => setSelectedPreset(null)}
                 currentStyle={currentSettings.style}
-                onStyleChange={(style) => {
-                  // Update the style in the current settings
-                  setCurrentSettings(prev => ({
-                    ...prev,
-                    style: style
-                  }))
-                }}
+                aspectRatio={currentSettings.aspectRatio}
+                onStyleChange={handleStyleChange}
                 generationMode={currentSettings.generationMode}
-                onGenerationModeChange={(mode) => {
-                  // Update the generation mode in the current settings
-                  setCurrentSettings(prev => ({
-                    ...prev,
-                    generationMode: mode
-                  }))
-                }}
+                onGenerationModeChange={handleGenerationModeChange}
                 selectedProvider={currentSettings.selectedProvider}
-                onProviderChange={(provider) => {
-                  // Update the provider in the current settings
-                  setCurrentSettings(prev => ({
-                    ...prev,
-                    selectedProvider: provider
-                  }))
-                }}
+                onProviderChange={handleProviderChange}
                 consistencyLevel={currentSettings.consistencyLevel}
-                onConsistencyChange={(consistency) => {
-                  // Update the consistency level in the current settings
-                  setCurrentSettings(prev => ({
-                    ...prev,
-                    consistencyLevel: consistency
-                  }))
-                }}
+                onConsistencyChange={handleConsistencyChange}
+                onPromptChange={handleSetPrompt}
+                onEnhancedPromptChange={handleSetEnhancedPrompt}
               />
             </div>
           </div>
@@ -775,11 +847,69 @@ export default function TabbedPlaygroundLayout({
         <TabsContent value="prompts" className="mt-6">
           <PromptManagementPanel
             onSelectPreset={(preset) => {
+              // Extract aspect ratio from prompt text
+              const extractAspectRatioFromPrompt = (prompt: string): string => {
+                const aspectRatioPatterns = [
+                  { pattern: /(\d+):(\d+)\s*(?:widescreen|aspect|ratio)/gi, name: 'explicit' },
+                  { pattern: /16:9|16\s*:\s*9/gi, name: '16:9' },
+                  { pattern: /9:16|9\s*:\s*16/gi, name: '9:16' },
+                  { pattern: /4:3|4\s*:\s*3/gi, name: '4:3' },
+                  { pattern: /3:4|3\s*:\s*4/gi, name: '3:4' },
+                  { pattern: /1:1|1\s*:\s*1|square/gi, name: '1:1' },
+                  { pattern: /21:9|21\s*:\s*9/gi, name: '21:9' },
+                  { pattern: /3:2|3\s*:\s*2/gi, name: '3:2' },
+                  { pattern: /2:3|2\s*:\s*3/gi, name: '2:3' }
+                ]
+                
+                for (const { pattern, name } of aspectRatioPatterns) {
+                  const match = prompt.match(pattern)
+                  if (match) {
+                    if (name === 'explicit') {
+                      const [, width, height] = match[0].match(/(\d+):(\d+)/) || []
+                      if (width && height) return `${width}:${height}`
+                    } else {
+                      return name
+                    }
+                  }
+                }
+                
+                return '1:1' // Default fallback
+              }
+              
+              const extractedAspectRatio = extractAspectRatioFromPrompt(preset.prompt_template)
+              
+              // Convert StylePreset to Preset format for UnifiedImageGenerationPanel
+              const convertedPreset = {
+                id: preset.id,
+                name: preset.name,
+                description: preset.description,
+                category: preset.category,
+                prompt_template: preset.prompt_template,
+                negative_prompt: '',
+                style_settings: {
+                  style: 'realistic', // Default style
+                  intensity: 1.0,
+                  consistency_level: 'high',
+                  generation_mode: preset.generation_mode || 'text-to-image'
+                },
+                technical_settings: {
+                  resolution: '1024',
+                  aspect_ratio: extractedAspectRatio,
+                  num_images: 1,
+                  quality: 'high'
+                },
+                cinematic_settings: undefined,
+                usage_count: preset.usage_count,
+                is_public: preset.is_public,
+                created_at: preset.created_at,
+                updated_at: preset.created_at
+              }
+              
+              console.log('🎯 Extracted aspect ratio from prompt:', extractedAspectRatio, 'for preset:', preset.name)
+              
               // When a preset is selected, switch to generate tab and pre-fill the form
-              setSelectedPreset(preset)
+              setSelectedPreset(convertedPreset)
               setActiveTab('generate')
-              // Clear the preset after a short delay to allow the useEffect to run
-              setTimeout(() => setSelectedPreset(null), 100)
             }}
           />
         </TabsContent>

@@ -139,8 +139,8 @@ export class SupabaseProfileRepository implements ProfileRepository {
       isPublic: true, // Default value
       profileViews: 0, // Default value
       lastActiveAt: new Date(),
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at)
+      createdAt: new Date(row.created_at || new Date().toISOString()),
+      updatedAt: new Date(row.updated_at || new Date().toISOString())
     });
   }
 

@@ -49,11 +49,11 @@ export const colors = {
     tertiary: '#7D5260',
   },
   
-  // Background colors
+  // Background colors - Light teal/green shades
   background: {
     primary: '#ffffff',
-    secondary: '#f9fafb',
-    tertiary: '#f3f4f6',
+    secondary: '#fafdfc',  // Very light teal tint
+    tertiary: '#f5fbf9',  // Slightly more teal tint
   },
   
   // Text colors

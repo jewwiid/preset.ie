@@ -6,7 +6,10 @@
 // Font families
 export const fontFamily = {
   // Primary brand font from your kit
-  primary: ['Bloc', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+  primary: ['Bloc W01 Regular', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+  
+  // Heading font - Bloc for titles and headings
+  heading: ['Bloc W01 Regular', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
   
   // Supporting fonts
   secondary: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],

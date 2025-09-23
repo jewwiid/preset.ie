@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Wand2, Download, Heart, Settings, X, Sparkles, Grid3X3, Minus } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -36,6 +36,8 @@ interface DynamicPreviewAreaProps {
   // Generation mode props
   generationMode?: 'text-to-image' | 'image-to-image'
   onGenerationModeChange?: (mode: 'text-to-image' | 'image-to-image') => void
+  // Prompt prop
+  prompt?: string
   // Resolution props
   userSubscriptionTier?: string
   onResolutionChange?: (resolution: string) => void
@@ -45,6 +47,9 @@ interface DynamicPreviewAreaProps {
   // Consistency props
   consistencyLevel?: string
   onConsistencyChange?: (consistency: string) => void
+  // Generation action props
+  onRegenerate?: () => void
+  onClearImages?: () => void
 }
 
 export default function DynamicPreviewArea({
@@ -63,12 +68,15 @@ export default function DynamicPreviewArea({
   onStyleChange,
   generationMode,
   onGenerationModeChange,
+  prompt,
   userSubscriptionTier,
   onResolutionChange,
   selectedProvider,
   onProviderChange,
   consistencyLevel,
-  onConsistencyChange
+  onConsistencyChange,
+  onRegenerate,
+  onClearImages
 }: DynamicPreviewAreaProps) {
   const { showSuccess, showError } = useToast()
   const [showBaseImage, setShowBaseImage] = useState(false) // Default to showing generated images
@@ -79,9 +87,9 @@ export default function DynamicPreviewArea({
   const displayAspectRatio = aspectRatio || '1:1'
   const previewAspectRatio = displayAspectRatio.replace(':', '/')
   
-  // Separate base images from generated images
-  const baseImages = images.filter(img => img.type === 'base')
-  const generatedImages = images.filter(img => img.type !== 'base')
+  // Separate base images from generated images - memoized to prevent infinite loops
+  const baseImages = useMemo(() => images.filter(img => img.type === 'base'), [images])
+  const generatedImages = useMemo(() => images.filter(img => img.type !== 'base'), [images])
   
   // Auto-show base image when it exists and no generated images are present
   useEffect(() => {
@@ -96,7 +104,7 @@ export default function DynamicPreviewArea({
     else if (hasGeneratedImages) {
       setShowBaseImage(false)
     }
-  }, [baseImages.length, generatedImages.length])
+  }, [baseImages, generatedImages])
   
   // Show generated images by default when they exist, otherwise show base images
   const imagesToDisplay = showBaseImage ? baseImages : generatedImages.length > 0 ? generatedImages : baseImages
@@ -324,33 +332,10 @@ export default function DynamicPreviewArea({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Base Image Preview</Label>
-                {baseImages.length > 0 && generatedImages.length > 0 && (
-                  <div className="flex bg-muted rounded-lg p-1">
-                    <Button
-                      size="sm"
-                      variant={showBaseImage ? "default" : "ghost"}
-                      onClick={() => setShowBaseImage(true)}
-                      className="text-xs px-2 py-1"
-                    >
-                      Base
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={!showBaseImage ? "default" : "ghost"}
-                      onClick={() => setShowBaseImage(false)}
-                      className="text-xs px-2 py-1"
-                    >
-                      Generated
-                    </Button>
-                  </div>
-                )}
-              </div>
-              
-              {/* Generation Mode Controls - Always Visible */}
-              {onGenerationModeChange && (
-                <div className="bg-muted/30 p-3 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <Label className="text-sm font-medium">Generation Mode:</Label>
+                {/* Generation Mode Controls - Inline with header for symmetry */}
+                {onGenerationModeChange && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">Mode:</Label>
                     <div className="flex gap-1">
                       <Button
                         size="sm"
@@ -365,7 +350,7 @@ export default function DynamicPreviewArea({
                             }
                           }, 100)
                         }}
-                        className="h-8 px-3 text-xs"
+                        className="h-7 px-3 text-xs"
                       >
                         Text to Image
                       </Button>
@@ -382,16 +367,16 @@ export default function DynamicPreviewArea({
                             }
                           }, 100)
                         }}
-                        className="h-8 px-3 text-xs"
+                        className="h-7 px-3 text-xs"
                       >
                         Image to Image
                       </Button>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
               
-              {baseImages.length > 0 && showBaseImage ? (
+              {baseImages.length > 0 ? (
                 <div className="space-y-3">
                   {/* Grid Overlay Controls */}
                   <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
@@ -525,12 +510,26 @@ export default function DynamicPreviewArea({
                     minHeight: '300px'
                   }}
                 >
-                  <div className="text-center">
-                    <Wand2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">No base image</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Upload or select an image to use as base
-                    </p>
+                  <div className="text-center p-6">
+                    {generationMode === 'text-to-image' ? (
+                      <>
+                        <Wand2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <p className="text-sm font-medium text-foreground mb-2">Current prompt for generation</p>
+                        <div className="bg-background/50 rounded-lg p-4 border border-border max-w-md mx-auto">
+                          <p className="text-sm text-foreground leading-relaxed italic">
+                            "{prompt || 'No prompt entered yet'}"
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">No base image</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Upload or select an image to use as base
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -591,7 +590,33 @@ export default function DynamicPreviewArea({
 
             {/* Right Column - Generated Images */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Generated Images</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Generated Images</Label>
+                {generatedImages.length > 0 && (
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={onRegenerate}
+                      disabled={loading}
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7 px-3"
+                    >
+                      <Wand2 className="h-3 w-3 mr-1" />
+                      Re-generate
+                    </Button>
+                    <Button
+                      onClick={onClearImages}
+                      disabled={loading}
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7 px-3 text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Clear
+                    </Button>
+                  </div>
+                )}
+              </div>
               
               {generatedImages.length > 0 ? (
                 <div className="space-y-3">
@@ -665,6 +690,30 @@ export default function DynamicPreviewArea({
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : loading ? (
+                <div 
+                  className="w-full bg-muted border-2 border-dashed border-border rounded-lg flex items-center justify-center"
+                  style={{ 
+                    aspectRatio: previewAspectRatio,
+                    minHeight: '300px'
+                  }}
+                >
+                  <div className="text-center text-muted-foreground">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="font-medium">Generating your image...</p>
+                    <p className="text-sm">This usually takes 5-30 seconds</p>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Preview area: {aspectRatio} ({calculateDimensions(aspectRatio, resolution).width}×{calculateDimensions(aspectRatio, resolution).height})
+                    </div>
+                    <div className="mt-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div 

@@ -13,15 +13,15 @@ interface UserProfileRow {
   user_id: string;
   display_name: string;
   handle: string;
-  avatar_url?: string;
-  bio?: string;
-  city?: string;
+  avatar_url: string | null;
+  bio: string | null;
+  city: string | null;
   role_flags: string[];
   style_tags: string[];
   subscription_tier: string;
   subscription_status: string;
   subscription_started_at: string;
-  subscription_expires_at?: string;
+  subscription_expires_at: string | null;
   verified_id: boolean;
   created_at: string;
   updated_at: string;
@@ -48,9 +48,9 @@ export class UserMapper {
       userId: row.user_id,
       displayName: row.display_name,
       handle: row.handle,
-      avatarUrl: row.avatar_url,
-      bio: row.bio,
-      city: row.city,
+      avatarUrl: row.avatar_url || undefined,
+      bio: row.bio || undefined,
+      city: row.city || undefined,
       roles,
       styleTags: row.style_tags,
       subscription,

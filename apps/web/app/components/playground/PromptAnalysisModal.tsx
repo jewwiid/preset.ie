@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/components/ui/toast'
 import { useAuth } from '../../../lib/auth-context'
 
@@ -41,6 +42,7 @@ interface PromptAnalysisModalProps {
   onClose: () => void
   imageUrl?: string // Optional - for base image analysis
   originalPrompt: string
+  enhancedPrompt?: string // Optional - for enhanced prompt analysis
   style: string
   resolution: string
   aspectRatio: string
@@ -106,6 +108,7 @@ export default function PromptAnalysisModal({
   onClose,
   imageUrl,
   originalPrompt,
+  enhancedPrompt,
   style,
   resolution,
   aspectRatio,
@@ -136,6 +139,7 @@ export default function PromptAnalysisModal({
   const [error, setError] = useState<string | null>(null)
   const [selectedPrompt, setSelectedPrompt] = useState<string>('')
   const [selectedPersona, setSelectedPersona] = useState<AnalysisPersona>(ANALYSIS_PERSONAS[0])
+  const [useEnhancedPrompt, setUseEnhancedPrompt] = useState(false)
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -145,6 +149,14 @@ export default function PromptAnalysisModal({
       setSelectedPrompt('')
     }
   }, [isOpen])
+
+  // Re-analyze when prompt toggle changes (if analysis already exists)
+  useEffect(() => {
+    if (analysis && enhancedPrompt) {
+      // Re-run analysis with the new prompt selection
+      handleAnalyze()
+    }
+  }, [useEnhancedPrompt])
 
   // Validation function to check if all required fields are present
   const validateInputs = () => {
@@ -225,7 +237,7 @@ export default function PromptAnalysisModal({
         },
         body: JSON.stringify({
           baseImageUrl: imageUrl, // Use baseImageUrl for pre-generation analysis
-          originalPrompt,
+          originalPrompt: useEnhancedPrompt && enhancedPrompt ? enhancedPrompt : originalPrompt,
           style,
           resolution,
           aspectRatio,
@@ -422,16 +434,33 @@ export default function PromptAnalysisModal({
                 <CardContent className="space-y-4">
                   {/* Prompt Section */}
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-3 h-3 text-primary" />
-                      <span className="text-sm font-medium text-foreground">Original Prompt</span>
-                      {originalPrompt && originalPrompt.trim().length < 10 && (
-                        <Badge variant="destructive" className="text-xs">Too Short</Badge>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-3 h-3 text-primary" />
+                        <span className="text-sm font-medium text-foreground">
+                          {useEnhancedPrompt ? 'Enhanced Prompt' : 'Original Prompt'}
+                        </span>
+                        {enhancedPrompt && (
+                          <Badge variant="secondary" className="text-xs">Enhanced Available</Badge>
+                        )}
+                        {originalPrompt && originalPrompt.trim().length < 10 && (
+                          <Badge variant="destructive" className="text-xs">Too Short</Badge>
+                        )}
+                      </div>
+                      {enhancedPrompt && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Use Enhanced</span>
+                          <Switch
+                            checked={useEnhancedPrompt}
+                            onCheckedChange={setUseEnhancedPrompt}
+                            className="scale-75"
+                          />
+                        </div>
                       )}
                     </div>
                     <div className="bg-card rounded-lg border border-border p-3">
                       <p className={`text-sm leading-relaxed ${!originalPrompt || originalPrompt.trim().length < 10 ? 'text-destructive' : 'text-foreground'}`}>
-                        {originalPrompt || 'No prompt provided'}
+                        {useEnhancedPrompt && enhancedPrompt ? enhancedPrompt : (originalPrompt || 'No prompt provided')}
                       </p>
                     </div>
                   </div>
@@ -590,65 +619,98 @@ export default function PromptAnalysisModal({
 
           {/* Analysis Results */}
           {analysis && (
-            <div className="space-y-4">
-              {/* Prompt Analysis */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Prompt Analysis</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground">{analysis.promptAnalysis}</p>
-                </CardContent>
-              </Card>
+            <div className="space-y-6">
+              {/* Main Analysis Section - 2 columns */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column - Core Analysis */}
+                <div className="space-y-4">
+                  {/* Prompt Analysis */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm">Prompt Analysis</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-foreground">{analysis.promptAnalysis}</p>
+                    </CardContent>
+                  </Card>
 
-              {/* Style Alignment */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Style Alignment</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground">{analysis.styleAlignment}</p>
-                </CardContent>
-              </Card>
+                  {/* Style Alignment */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm">Style Alignment</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-foreground">{analysis.styleAlignment}</p>
+                    </CardContent>
+                  </Card>
 
-              {/* Aspect Ratio Considerations */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Aspect Ratio Considerations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-foreground">{analysis.aspectRatioConsiderations}</p>
-                </CardContent>
-              </Card>
+                  {/* Aspect Ratio Considerations */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm">Aspect Ratio Considerations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-foreground">{analysis.aspectRatioConsiderations}</p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              {/* Cinematic Analysis */}
-              {analysis.cinematicAnalysis && analysis.cinematicAnalysis !== 'N/A - no cinematic parameters provided' && (
-                <Card className="border-primary/20 bg-primary/5">
-                  <CardHeader>
-                    <CardTitle className="text-sm text-primary">Cinematic Analysis</CardTitle>
-                    <CardDescription className="text-primary">
-                      Analysis of cinematic parameters and their impact on the visual narrative
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-foreground">{analysis.cinematicAnalysis}</p>
-                  </CardContent>
-                </Card>
-              )}
+                {/* Right Column - Technical Analysis */}
+                <div className="space-y-4">
+                  {/* Cinematic Analysis */}
+                  {analysis.cinematicAnalysis && analysis.cinematicAnalysis !== 'N/A - no cinematic parameters provided' && (
+                    <Card className="border-primary/20 bg-primary/5">
+                      <CardHeader>
+                        <CardTitle className="text-sm text-primary">Cinematic Analysis</CardTitle>
+                        <CardDescription className="text-primary/80">
+                          Analysis of cinematic parameters and their impact on the visual narrative
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-foreground">{analysis.cinematicAnalysis}</p>
+                      </CardContent>
+                    </Card>
+                  )}
 
-              {/* Base Image Insights */}
-              {analysis.baseImageInsights && analysis.baseImageInsights !== 'N/A - no base image provided' && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Base Image Insights</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-foreground">{analysis.baseImageInsights}</p>
-                  </CardContent>
-                </Card>
-              )}
+                  {/* Base Image Insights */}
+                  {analysis.baseImageInsights && analysis.baseImageInsights !== 'N/A - no base image provided' && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm">Base Image Insights</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-foreground">{analysis.baseImageInsights}</p>
+                      </CardContent>
+                    </Card>
+                  )}
 
-              {/* Strengths and Weaknesses */}
+                  {/* Professional Insights */}
+                  {analysis.professionalInsights && analysis.professionalInsights.length > 0 && (
+                    <Card className="border-primary/20 bg-primary/5">
+                      <CardHeader>
+                        <CardTitle className="text-sm text-primary">
+                          {selectedPersona.icon} Professional Insights
+                        </CardTitle>
+                        <CardDescription className="text-primary/80">
+                          Expert recommendations from {selectedPersona.name}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {analysis.professionalInsights.map((insight, index) => (
+                            <li key={index} className="text-sm text-foreground flex items-start gap-2">
+                              <span className="text-yellow-500 mt-1">💡</span>
+                              {insight}
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+
+              {/* Strengths and Weaknesses - Full width */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader>
@@ -674,7 +736,7 @@ export default function PromptAnalysisModal({
                     <ul className="space-y-1">
                       {analysis.weaknesses.map((weakness, index) => (
                         <li key={index} className="text-sm text-foreground flex items-start gap-2">
-                          <span className="text-red-500 mt-1">⚠</span>
+                          <span className="text-destructive mt-1">⚠</span>
                           {weakness}
                         </li>
                       ))}
@@ -683,65 +745,44 @@ export default function PromptAnalysisModal({
                 </Card>
               </div>
 
-              {/* Improvements */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Specific Improvements</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {analysis.improvements.map((improvement, index) => (
-                      <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                        <span className="text-blue-500 mt-1">💡</span>
-                        {improvement}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-
-              {/* Technical Suggestions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Technical Suggestions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2">
-                    {analysis.technicalSuggestions.map((suggestion, index) => (
-                      <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                        <span className="text-purple-500 mt-1">🔧</span>
-                        {suggestion}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-
-              {/* Professional Insights */}
-              {analysis.professionalInsights && analysis.professionalInsights.length > 0 && (
-                <Card className="border-blue-200 bg-blue-50">
+              {/* Improvements and Technical Suggestions - 2 columns */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Improvements */}
+                <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm text-blue-800">
-                      {selectedPersona.icon} Professional Insights
-                    </CardTitle>
-                    <CardDescription className="text-blue-600">
-                      Expert recommendations from {selectedPersona.name}
-                    </CardDescription>
+                    <CardTitle className="text-sm">Specific Improvements</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {analysis.professionalInsights.map((insight, index) => (
+                      {analysis.improvements.map((improvement, index) => (
                         <li key={index} className="text-sm text-foreground flex items-start gap-2">
-                          <span className="text-blue-500 mt-1">💡</span>
-                          {insight}
+                          <span className="text-yellow-500 mt-1">💡</span>
+                          {improvement}
                         </li>
                       ))}
                     </ul>
                   </CardContent>
                 </Card>
-              )}
 
-              {/* Alternative Prompts */}
+                {/* Technical Suggestions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm">Technical Suggestions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {analysis.technicalSuggestions.map((suggestion, index) => (
+                        <li key={index} className="text-sm text-foreground flex items-start gap-2">
+                          <span className="text-muted-foreground mt-1">🔧</span>
+                          {suggestion}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Alternative Prompts - Full width */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">Alternative Prompts</CardTitle>
@@ -750,7 +791,7 @@ export default function PromptAnalysisModal({
                   {analysis.alternativePrompts.map((prompt, index) => (
                     <div key={index} className="flex items-start gap-2">
                       <div className="flex-1">
-                        <p className="text-sm text-gray-700">{prompt}</p>
+                        <p className="text-sm text-foreground">{prompt}</p>
                       </div>
                       <Button
                         size="sm"
@@ -765,11 +806,11 @@ export default function PromptAnalysisModal({
                 </CardContent>
               </Card>
 
-              {/* Recommended Prompt */}
-              <Card className="border-purple-200 bg-purple-50">
+              {/* Recommended Prompt - Full width */}
+              <Card className="border-primary/20 bg-primary/5">
                 <CardHeader>
-                  <CardTitle className="text-sm text-purple-800">Recommended Improved Prompt</CardTitle>
-                  <CardDescription className="text-purple-600">
+                  <CardTitle className="text-sm text-primary">Recommended Improved Prompt</CardTitle>
+                  <CardDescription className="text-primary/80">
                     Estimated improvement: {analysis.estimatedImprovement}
                   </CardDescription>
                 </CardHeader>
@@ -778,7 +819,7 @@ export default function PromptAnalysisModal({
                     <textarea
                       value={selectedPrompt}
                       onChange={(e) => setSelectedPrompt(e.target.value)}
-                      className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                      className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-sm bg-background text-foreground"
                       rows={4}
                     />
                     <div className="flex gap-2">
@@ -793,7 +834,7 @@ export default function PromptAnalysisModal({
                       <Button
                         size="sm"
                         onClick={handleApplyPrompt}
-                        className="bg-purple-600 hover:bg-purple-700"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       >
                         <Sparkles className="w-3 h-3 mr-1" />
                         Apply & Regenerate
@@ -809,21 +850,21 @@ export default function PromptAnalysisModal({
           {subscriptionTier !== 'free' && !isInputValid() && (
             <Card className="border-destructive/20 bg-destructive/5">
               <CardContent className="pt-6">
-                <div className="flex items-center gap-3 text-red-800">
-                  <div className="p-2 bg-red-100 rounded-lg">
+                <div className="flex items-center gap-3 text-destructive">
+                  <div className="p-2 bg-destructive/10 rounded-lg">
                     <AlertCircle className="w-5 h-5" />
                   </div>
                   <div>
                     <span className="font-semibold text-lg">Missing Required Information</span>
-                    <p className="text-sm text-red-700 mt-1">
+                    <p className="text-sm text-destructive/80 mt-1">
                       Please fill in all required fields before analyzing your prompt
                     </p>
                   </div>
                 </div>
                 <div className="mt-4 space-y-2">
                   {validateInputs().map((error, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm text-red-600">
-                      <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                    <div key={index} className="flex items-center gap-2 text-sm text-destructive">
+                      <div className="w-1.5 h-1.5 bg-destructive rounded-full"></div>
                       {error}
                     </div>
                   ))}
@@ -834,13 +875,13 @@ export default function PromptAnalysisModal({
 
           {/* Subscription Notice */}
           {subscriptionTier === 'free' && (
-            <Card className="border-orange-200 bg-orange-50">
+            <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
               <CardContent className="pt-6">
-                <div className="flex items-center gap-2 text-orange-800">
+                <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
                   <Zap className="w-5 h-5" />
                   <span className="font-medium">Premium Feature</span>
                 </div>
-                <p className="text-sm text-orange-700 mt-2">
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-2">
                   Prompt analysis is only available for Plus and Pro subscribers. 
                   Upgrade to get AI-powered insights for better image generation.
                 </p>
@@ -850,7 +891,7 @@ export default function PromptAnalysisModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-5 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+        <div className="px-6 py-5 border-t border-border bg-muted/50 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {analysis && (
               <Button
@@ -869,7 +910,7 @@ export default function PromptAnalysisModal({
               variant="outline"
               onClick={onClose}
               disabled={isAnalyzing}
-              className="border-gray-300 hover:bg-gray-50"
+              className="border-border hover:bg-accent"
             >
               Close
             </Button>

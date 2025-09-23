@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Wand2, Star, Users, Plus, Upload, Image as ImageIcon, X, Sparkles, Loader2, Camera, Film, Settings } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import AspectRatioSelector from '../ui/AspectRatioSelector'
@@ -91,6 +91,7 @@ interface UnifiedImageGenerationPanelProps {
     includeTechnicalDetails?: boolean
     includeStyleReferences?: boolean
     selectedProvider?: 'nanobanana' | 'seedream'
+    replaceLatestImages?: boolean
   }) => Promise<void>
   onSettingsChange?: (settings: {
     resolution: string
@@ -109,6 +110,7 @@ interface UnifiedImageGenerationPanelProps {
   }>
   onSelectSavedImage?: (imageUrl: string) => void
   selectedPreset?: Preset | null
+  onPresetApplied?: () => void
   currentStyle?: string
   onStyleChange?: (style: string) => void
   generationMode?: 'text-to-image' | 'image-to-image'
@@ -117,6 +119,9 @@ interface UnifiedImageGenerationPanelProps {
   onProviderChange?: (provider: string) => void
   consistencyLevel?: string
   onConsistencyChange?: (consistency: string) => void
+  aspectRatio?: string
+  onPromptChange?: (prompt: string) => void
+  onEnhancedPromptChange?: (enhancedPrompt: string) => void
 }
 
 export default function UnifiedImageGenerationPanel({ 
@@ -128,6 +133,7 @@ export default function UnifiedImageGenerationPanel({
   savedImages = [], 
   onSelectSavedImage,
   selectedPreset,
+  onPresetApplied,
   currentStyle,
   onStyleChange,
   generationMode,
@@ -135,20 +141,56 @@ export default function UnifiedImageGenerationPanel({
   selectedProvider,
   onProviderChange,
   consistencyLevel,
-  onConsistencyChange
+  onConsistencyChange,
+  aspectRatio: propAspectRatio,
+  onPromptChange,
+  onEnhancedPromptChange
 }: UnifiedImageGenerationPanelProps) {
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
   
-  const [prompt, setPrompt] = useState('Create a photorealistic image with natural lighting and detailed textures')
+  const [prompt, setPromptState] = useState('')
   const [style, setStyle] = useState('photorealistic')
+  
+  // Wrapper function for setPrompt that also calls onPromptChange
+  const setPrompt = useCallback((newPrompt: string) => {
+    setPromptState(newPrompt)
+    if (onPromptChange) {
+      onPromptChange(newPrompt)
+    }
+  }, [onPromptChange])
+  
+  // Force prompt to be empty on mount to override any state persistence
+  useEffect(() => {
+    console.log('🎯 Forcing prompt to empty on mount, current prompt:', prompt)
+    // Only clear simple cinematic preset prompts, not enhanced ones
+    if (prompt.includes('Cinematic preset:') && !prompt.includes('enhance the image with')) {
+      console.log('🎯 Detected simple cinematic preset prompt, clearing it')
+      setPrompt('')
+    }
+  }, [])
+  
+  // Additional override to ensure prompt stays empty (but not enhanced prompts)
+  useEffect(() => {
+    // Only clear if it's a simple cinematic preset prompt, not an enhanced one
+    if (prompt.includes('Cinematic preset:') && !prompt.includes('enhance the image with')) {
+      console.log('🎯 Additional override: clearing simple cinematic preset prompt')
+      setPrompt('')
+    }
+  }, [prompt])
   const [resolution, setResolution] = useState('1024')
   const [aspectRatio, setAspectRatio] = useState('1:1')
+  
+  // Debug: Log when aspect ratio changes
+  useEffect(() => {
+    console.log('🎯 Aspect ratio state changed to:', aspectRatio)
+  }, [aspectRatio])
   // Use consistency level from props with fallback
   const currentConsistencyLevel = consistencyLevel || 'high'
   const [intensity, setIntensity] = useState(1.0)
   const [numImages, setNumImages] = useState(1)
   const [currentPreset, setCurrentPreset] = useState<Preset | null>(null)
+  const [replaceLatestImages, setReplaceLatestImages] = useState(true)
   
   // Use provider from props with fallback
   const currentProvider = selectedProvider || 'nanobanana'
@@ -159,30 +201,310 @@ export default function UnifiedImageGenerationPanel({
   // Cinematic mode state
   const [enableCinematicMode, setEnableCinematicMode] = useState(false)
   const [cinematicParameters, setCinematicParameters] = useState<Partial<CinematicParameters>>({})
+  
+  // Debug: Log when cinematic parameters change
+  useEffect(() => {
+    console.log('🎯 Cinematic parameters changed:', cinematicParameters)
+  }, [cinematicParameters])
+
+  // Use refs to prevent infinite loops
+  const isUpdatingFromCinematic = useRef(false)
+  const isUpdatingFromMain = useRef(false)
+
+  // Sync cinematic aspect ratio with main aspect ratio selector
+  useEffect(() => {
+    if (enableCinematicMode && cinematicParameters.aspectRatio && cinematicParameters.aspectRatio !== aspectRatio && !isUpdatingFromMain.current) {
+      console.log('🎯 Syncing main aspect ratio from cinematic parameters:', cinematicParameters.aspectRatio)
+      isUpdatingFromCinematic.current = true
+      setAspectRatio(cinematicParameters.aspectRatio)
+      // Reset flag after state update
+      setTimeout(() => {
+        isUpdatingFromCinematic.current = false
+      }, 0)
+    }
+  }, [cinematicParameters.aspectRatio, enableCinematicMode])
+
+  // Sync main aspect ratio with cinematic parameters when cinematic mode is enabled
+  useEffect(() => {
+    if (enableCinematicMode && aspectRatio && cinematicParameters.aspectRatio !== aspectRatio && !isUpdatingFromCinematic.current) {
+      console.log('🎯 Syncing cinematic aspect ratio from main selector:', aspectRatio)
+      isUpdatingFromMain.current = true
+      setCinematicParameters(prev => ({
+        ...prev,
+        aspectRatio: aspectRatio as any // Type assertion needed due to string vs AspectRatio type mismatch
+      }))
+      // Reset flag after state update
+      setTimeout(() => {
+        isUpdatingFromMain.current = false
+      }, 0)
+    }
+  }, [aspectRatio, enableCinematicMode])
+
+  // Wrapper function to handle aspect ratio changes from the main selector
+  const handleAspectRatioChange = (newAspectRatio: string) => {
+    console.log('🎯 Main aspect ratio selector changed to:', newAspectRatio)
+    setAspectRatio(newAspectRatio)
+    
+    // If cinematic mode is enabled, also update cinematic parameters
+    if (enableCinematicMode && !isUpdatingFromCinematic.current) {
+      console.log('🎯 Also updating cinematic parameters with new aspect ratio:', newAspectRatio)
+      isUpdatingFromMain.current = true
+      setCinematicParameters(prev => ({
+        ...prev,
+        aspectRatio: newAspectRatio as any
+      }))
+      setTimeout(() => {
+        isUpdatingFromMain.current = false
+      }, 0)
+    }
+  }
+
+  // Wrapper function to handle cinematic parameter changes
+  const handleCinematicParametersChange = (newParameters: Partial<CinematicParameters>) => {
+    console.log('🎯 Cinematic parameters changed:', newParameters)
+    setCinematicParameters(newParameters)
+    
+    // If aspect ratio changed in cinematic parameters, also update main aspect ratio
+    if (newParameters.aspectRatio && newParameters.aspectRatio !== aspectRatio && !isUpdatingFromMain.current) {
+      console.log('🎯 Also updating main aspect ratio from cinematic parameters:', newParameters.aspectRatio)
+      isUpdatingFromCinematic.current = true
+      setAspectRatio(newParameters.aspectRatio as string)
+      setTimeout(() => {
+        isUpdatingFromCinematic.current = false
+      }, 0)
+    }
+  }
   const [enhancedPrompt, setEnhancedPrompt] = useState('')
   const [showCinematicPreview, setShowCinematicPreview] = useState(false)
   const [includeTechnicalDetails, setIncludeTechnicalDetails] = useState(true)
   const [includeStyleReferences, setIncludeStyleReferences] = useState(true)
+  const [hasInitializedPrompt, setHasInitializedPrompt] = useState(false)
   const promptBuilder = useRef(new CinematicPromptBuilder())
+
+  // Sync aspect ratio from parent
+  useEffect(() => {
+    if (propAspectRatio && propAspectRatio !== aspectRatio) {
+      console.log('🎯 Syncing aspect ratio from parent:', propAspectRatio, 'current internal:', aspectRatio)
+      setAspectRatio(propAspectRatio)
+    }
+  }, [propAspectRatio]) // Removed aspectRatio from dependencies to prevent infinite loop
+
   
   // Track if enhanced prompt is being manually edited
   const [isManuallyEditingEnhancedPrompt, setIsManuallyEditingEnhancedPrompt] = useState(false)
+  const [isPromptUpdating, setIsPromptUpdating] = useState(false)
+  
+  // Subject detection and enhancement
+  const [detectedSubject, setDetectedSubject] = useState<string | null>(null)
+  const [subjectContext, setSubjectContext] = useState<string | null>(null)
+  const [userSubject, setUserSubject] = useState<string>('')
+  const [isSubjectUpdating, setIsSubjectUpdating] = useState(false)
+  const [isUserTypingSubject, setIsUserTypingSubject] = useState(false)
+  const subjectUpdateTimeoutRef = useRef<number | null>(null)
+  
+  // Detect subject and context from user input
+  const detectSubjectAndContext = (promptText: string) => {
+    const text = promptText.toLowerCase().trim()
+    
+    // Subject categories with their keywords and context
+    const subjectCategories = {
+      portrait: {
+        keywords: ['portrait', 'person', 'face', 'headshot', 'selfie', 'profile', 'close-up', 'head and shoulders'],
+        context: 'portrait photography with focus on facial features and expression'
+      },
+      landscape: {
+        keywords: ['landscape', 'nature', 'mountain', 'forest', 'beach', 'ocean', 'sky', 'sunset', 'sunrise', 'valley', 'hill', 'field'],
+        context: 'landscape photography with natural lighting and environmental details'
+      },
+      architecture: {
+        keywords: ['building', 'house', 'skyscraper', 'bridge', 'tower', 'church', 'temple', 'monument', 'facade', 'interior', 'room'],
+        context: 'architectural photography with clean lines and structural details'
+      },
+      product: {
+        keywords: ['product', 'object', 'item', 'gadget', 'tool', 'device', 'furniture', 'clothing', 'shoe', 'bag', 'watch', 'phone'],
+        context: 'product photography with clean background and professional lighting'
+      },
+      character: {
+        keywords: ['character', 'figure', 'person', 'warrior', 'knight', 'wizard', 'hero', 'villain', 'fantasy', 'sci-fi', 'robot'],
+        context: 'character design with detailed features and personality'
+      },
+      vehicle: {
+        keywords: ['car', 'truck', 'motorcycle', 'bike', 'plane', 'boat', 'ship', 'train', 'vehicle', 'automobile'],
+        context: 'vehicle photography with dynamic angles and clean presentation'
+      },
+      food: {
+        keywords: ['food', 'meal', 'dish', 'recipe', 'cooking', 'restaurant', 'chef', 'ingredient', 'plate', 'bowl'],
+        context: 'food photography with appetizing presentation and natural lighting'
+      },
+      animal: {
+        keywords: ['animal', 'pet', 'dog', 'cat', 'bird', 'wildlife', 'creature', 'beast', 'mammal', 'reptile'],
+        context: 'animal photography with natural behavior and environmental context'
+      },
+      abstract: {
+        keywords: ['abstract', 'pattern', 'texture', 'shape', 'form', 'color', 'design', 'art', 'concept'],
+        context: 'abstract art with bold compositions and visual interest'
+      },
+      scene: {
+        keywords: ['scene', 'setting', 'environment', 'place', 'location', 'street', 'city', 'town', 'village', 'market'],
+        context: 'environmental storytelling with atmospheric details'
+      }
+    }
+    
+    // Find the best matching subject category
+    let bestMatch = null
+    let maxMatches = 0
+    
+    for (const [category, data] of Object.entries(subjectCategories)) {
+      const matches = data.keywords.filter(keyword => text.includes(keyword)).length
+      if (matches > maxMatches) {
+        maxMatches = matches
+        bestMatch = { category, context: data.context }
+      }
+    }
+    
+    // If no specific subject detected, try to extract from the beginning of the prompt
+    if (!bestMatch && text.length > 0) {
+      const firstWords = text.split(' ').slice(0, 3).join(' ')
+      if (firstWords.length > 0) {
+        bestMatch = { 
+          category: 'custom', 
+          context: `custom subject: ${firstWords}` 
+        }
+      }
+    }
+    
+    console.log('🎯 Subject detection:', { 
+      promptText, 
+      detectedSubject: bestMatch?.category, 
+      context: bestMatch?.context,
+      matches: maxMatches
+    })
+    
+    return bestMatch
+  }
+  
+  // Generate simple prompt that combines style + user subject
+  const generateEnhancedPrompt = useCallback(async (style: string, userPrompt: string, generationMode: 'text-to-image' | 'image-to-image') => {
+    try {
+      console.log('🎯 Fetching style prompt for:', { style, generationMode })
+      
+      // Get base style prompt from database
+      const response = await fetch('/api/style-prompts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          styleName: style,
+          generationMode: generationMode
+        })
+      })
+
+      if (!response.ok) {
+        // Only log error if it's not a 404 (style not found), which is expected for some styles
+        if (response.status !== 404) {
+          console.warn('Failed to fetch style prompt from database:', {
+            status: response.status,
+            statusText: response.statusText,
+            style,
+            generationMode
+          })
+        }
+        // Fallback to basic prompt
+        return generationMode === 'text-to-image' 
+          ? `Create a ${style} image with natural lighting and detailed textures`
+          : `Apply ${style} rendering with natural lighting and detailed textures`
+      }
+
+      const data = await response.json()
+      const { prompt: baseStylePrompt } = data
+      
+      if (!baseStylePrompt) {
+        console.error('No prompt returned from API:', data)
+        // Fallback to basic prompt
+        return generationMode === 'text-to-image' 
+          ? `Create a ${style} image with natural lighting and detailed textures`
+          : `Apply ${style} rendering with natural lighting and detailed textures`
+      }
+      
+      // Handle subject integration based on generation mode
+      if (generationMode === 'image-to-image') {
+        // For image-to-image, use "this image" instead of user subject
+        const simplePrompt = `${baseStylePrompt} this image`
+        console.log('🎯 Image-to-image prompt generated:', {
+          baseStylePrompt,
+          simplePrompt
+        })
+        return simplePrompt
+      } else if (userSubject.trim()) {
+        // For text-to-image, always generate a new prompt with the subject
+        // Add subject to the base style prompt with proper grammar
+        const simplePrompt = `${baseStylePrompt} of ${userSubject.trim()}`
+        console.log('🎯 Simple prompt generated:', {
+          baseStylePrompt,
+          userSubject: userSubject.trim(),
+          simplePrompt
+        })
+        return simplePrompt
+      }
+      
+      // If no user subject, return base style prompt
+      return baseStylePrompt
+      
+    } catch (error) {
+      console.warn('Error generating enhanced prompt (using fallback):', error)
+      // Fallback to basic prompt
+      return generationMode === 'text-to-image' 
+        ? `Create a ${style} image with natural lighting and detailed textures`
+        : `Apply ${style} rendering with natural lighting and detailed textures`
+    }
+  }, [userSubject])
   
   // Update enhanced prompt when cinematic parameters change
   useEffect(() => {
-    if (enableCinematicMode && prompt.trim() && !isManuallyEditingEnhancedPrompt) {
+    console.log('🎯 Cinematic useEffect running:', {
+      enableCinematicMode,
+      prompt: prompt?.trim() || '',
+      isManuallyEditingEnhancedPrompt,
+      cinematicParameters
+    })
+    
+    if (enableCinematicMode && ((prompt?.trim() || '') || userSubject.trim()) && !isManuallyEditingEnhancedPrompt) {
+      console.log('🎯 Generating enhanced prompt with parameters:', {
+        cinematicParameters,
+        currentPrompt: prompt,
+        userSubject,
+        isManuallyEditingEnhancedPrompt
+      })
+      
+      // For cinematic generation, use the current prompt as base (it already includes the subject if applicable)
+      // Don't add subject again to avoid duplication
+      const basePrompt = prompt?.trim() || ''
+      console.log('🎯 Using base prompt for cinematic generation:', basePrompt)
+      
       const result = promptBuilder.current.constructPrompt({
-        basePrompt: prompt,
+        basePrompt: basePrompt,
         cinematicParameters,
         enhancementType: 'generate',
         includeTechnicalDetails,
         includeStyleReferences
       })
+      console.log('🎯 Generated enhanced prompt:', result.fullPrompt)
       setEnhancedPrompt(result.fullPrompt)
     } else if (!enableCinematicMode) {
+      console.log('🎯 Cinematic mode disabled, setting enhanced prompt to main prompt')
       setEnhancedPrompt(prompt)
+    } else {
+      console.log('🎯 Conditions not met for enhanced prompt generation')
     }
-  }, [prompt, cinematicParameters, enableCinematicMode, includeTechnicalDetails, includeStyleReferences, isManuallyEditingEnhancedPrompt])
+  }, [prompt, userSubject, cinematicParameters, enableCinematicMode, includeTechnicalDetails, includeStyleReferences, isManuallyEditingEnhancedPrompt])
+
+  // Call enhanced prompt callback when enhanced prompt changes
+  useEffect(() => {
+    if (onEnhancedPromptChange) {
+      onEnhancedPromptChange(enhancedPrompt)
+    }
+  }, [enhancedPrompt, onEnhancedPromptChange])
 
   // Handle toggle changes from CinematicParameterSelector
   const handleToggleChange = (technicalDetails: boolean, styleReferences: boolean) => {
@@ -190,72 +512,163 @@ export default function UnifiedImageGenerationPanel({
     setIncludeStyleReferences(styleReferences)
   }
   
+  const [localGenerationMode, setLocalGenerationMode] = useState<'text-to-image' | 'image-to-image'>('text-to-image')
+  
+  // Use prop value if provided, otherwise use local state
+  const currentGenerationMode = generationMode || localGenerationMode
+  
   // Handle style changes
-  const handleStyleChange = (newStyle: string) => {
+  const handleStyleChange = useCallback((newStyle: string) => {
+    console.log('🎯 handleStyleChange called with:', newStyle, 'current style:', style, 'current prompt:', prompt)
     setStyle(newStyle)
     setCurrentPreset(null)
-    // Prefill prompt with context-aware style prompt
-    const newPrompt = getStylePrompt(newStyle, currentGenerationMode)
-    setPrompt(newPrompt)
-    setOriginalPrompt(newPrompt)
-    setIsPromptModified(false)
+    
+    // Check if current prompt is a default style prompt
+    const isDefaultPrompt = (promptText: string) => {
+      // Check for common patterns in database prompts
+      const defaultPatterns = [
+        'Create a photorealistic image',
+        'Create an artistic painting',
+        'Create a cartoon-style illustration',
+        'Create a vintage aesthetic',
+        'Create a cyberpunk style',
+        'Create a watercolor painting',
+        'Create a pencil sketch',
+        'Create an oil painting',
+        'Create a professional portrait',
+        'Create a fashion photography',
+        'Create an editorial photography',
+        'Create a commercial photography',
+        'Create a lifestyle photography',
+        'Create a street photography',
+        'Create an architectural photography',
+        'Create a nature photography',
+        'Create an abstract artwork',
+        'Create a surreal artwork',
+        'Create a minimalist artwork',
+        'Create a maximalist artwork',
+        'Create an impressionist painting',
+        'Create a Renaissance-style artwork',
+        'Create a Baroque-style artwork',
+        'Create an Art Deco style',
+        'Create a Pop Art style',
+        'Create a graffiti art style',
+        'Create a digital art style',
+        'Create a concept art style',
+        'Create a fantasy art style',
+        'Create a sci-fi art style',
+        'Create a steampunk style',
+        'Create a gothic art style',
+        'Create a cinematic image',
+        'Create a film noir style',
+        'Create a dramatic image',
+        'Create a moody image',
+        'Create a bright, cheerful image',
+        'Create a monochrome image',
+        'Create a sepia-toned image',
+        'Create an HDR image'
+      ]
+      
+      const trimmedPrompt = promptText.trim()
+      const isDefault = defaultPatterns.some(pattern => trimmedPrompt.startsWith(pattern))
+      console.log('🎯 isDefaultPrompt check (style change):', { 
+        promptText: trimmedPrompt, 
+        isDefault, 
+        matchingPattern: defaultPatterns.find(pattern => trimmedPrompt.startsWith(pattern))
+      })
+      return isDefault
+    }
+    
+    // Update prompt if it's empty OR if it's a default prompt that should be updated
+    const shouldUpdatePrompt = !prompt?.trim() || isDefaultPrompt(prompt)
+    console.log('🎯 Prompt update check:', { 
+      newStyle, 
+      currentPrompt: prompt, 
+      isEmpty: !prompt?.trim(), 
+      isDefault: isDefaultPrompt(prompt), 
+      shouldUpdate: shouldUpdatePrompt 
+    })
+    
+    if (shouldUpdatePrompt) {
+      console.log('🎯 Updating prompt with new style:', newStyle, 'isDefaultPrompt:', isDefaultPrompt(prompt))
+      setIsPromptUpdating(true)
+      
+      // Use enhanced prompt generation that considers subject + style
+      generateEnhancedPrompt(newStyle, prompt, currentGenerationMode).then((newPrompt: string) => {
+        setPrompt(newPrompt)
+        setOriginalPrompt(newPrompt)
+        setIsPromptModified(false)
+        
+        // Don't focus the prompt field to avoid disrupting user experience
+        setTimeout(() => {
+          setIsPromptUpdating(false)
+        }, 100)
+      })
+    } else {
+      // Don't focus the prompt field to avoid disrupting user experience
+      console.log('🎯 Style change: no prompt update needed')
+    }
     
     // Notify parent component
     if (onStyleChange) {
       onStyleChange(newStyle)
     }
-  }
+  }, [style, prompt, currentGenerationMode, userSubject, onStyleChange, generateEnhancedPrompt])
   
-  // Context-aware prompts that adapt based on generation mode
-  const getStylePrompt = (styleType: string, mode: 'text-to-image' | 'image-to-image') => {
-    const prompts = {
-      photorealistic: {
-        'text-to-image': 'Create a photorealistic image with natural lighting and detailed textures',
-        'image-to-image': 'Apply photorealistic rendering with natural lighting and detailed textures'
-      },
-      artistic: {
-        'text-to-image': 'Create an artistic painting with creative brushstrokes and vibrant colors',
-        'image-to-image': 'Apply an artistic painting style with creative brushstrokes and vibrant colors'
-      },
-      cartoon: {
-        'text-to-image': 'Create a cartoon-style illustration with bold outlines and bright colors',
-        'image-to-image': 'Transform into a cartoon-style illustration with bold outlines and bright colors'
-      },
-      vintage: {
-        'text-to-image': 'Create a vintage aesthetic with retro colors and nostalgic atmosphere',
-        'image-to-image': 'Apply a vintage aesthetic with retro colors and nostalgic atmosphere'
-      },
-      cyberpunk: {
-        'text-to-image': 'Create a cyberpunk style with neon lights and futuristic elements',
-        'image-to-image': 'Apply cyberpunk style with neon lights and futuristic elements'
-      },
-      watercolor: {
-        'text-to-image': 'Create a watercolor painting with soft, flowing colors and translucent effects',
-        'image-to-image': 'Apply watercolor painting technique with soft, flowing colors and translucent effects'
-      },
-      sketch: {
-        'text-to-image': 'Create a pencil sketch with detailed line work and shading',
-        'image-to-image': 'Convert to a pencil sketch style with detailed line work and shading'
-      },
-      oil_painting: {
-        'text-to-image': 'Create an oil painting with rich textures and classical art style',
-        'image-to-image': 'Apply oil painting technique with rich textures and classical art style'
-      }
+  // Sync style from parent
+  useEffect(() => {
+    console.log('🎯 Style sync useEffect running:', { currentStyle, style, prompt })
+    if (currentStyle && currentStyle !== style) {
+      console.log('🎯 Syncing style from parent:', currentStyle, 'current internal:', style)
+      handleStyleChange(currentStyle)
+    } else {
+      console.log('🎯 No style sync needed:', { currentStyle, style, areEqual: currentStyle === style })
     }
-    
-    return prompts[styleType as keyof typeof prompts]?.[mode] || prompts.photorealistic[mode]
+  }, [currentStyle, handleStyleChange]) // Include handleStyleChange in dependencies
+  
+  // Fetch style prompt from database
+  const getStylePrompt = async (styleType: string, mode: 'text-to-image' | 'image-to-image') => {
+    try {
+      const response = await fetch('/api/style-prompts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          styleName: styleType,
+          generationMode: mode
+        })
+      })
+
+      if (!response.ok) {
+        console.error('Failed to fetch style prompt from database')
+        // Fallback to default photorealistic prompt
+        return mode === 'text-to-image' 
+          ? 'Create a photorealistic image with natural lighting and detailed textures'
+          : 'Apply photorealistic rendering with natural lighting and detailed textures'
+      }
+
+      const { prompt } = await response.json()
+      return prompt
+    } catch (error) {
+      console.error('Error fetching style prompt:', error)
+      // Fallback to default photorealistic prompt
+      return mode === 'text-to-image' 
+        ? 'Create a photorealistic image with natural lighting and detailed textures'
+        : 'Apply photorealistic rendering with natural lighting and detailed textures'
+    }
   }
   
-  const [localGenerationMode, setLocalGenerationMode] = useState<'text-to-image' | 'image-to-image'>('text-to-image')
   
-  // Use prop value if provided, otherwise use local state
-  const currentGenerationMode = generationMode || localGenerationMode
+  
   const [baseImage, setBaseImage] = useState<string | null>(null)
   const [isPromptModified, setIsPromptModified] = useState(false)
   const [originalPrompt, setOriginalPrompt] = useState('')
+  const [hasInitialized, setHasInitialized] = useState(false)
   const [baseImageSource, setBaseImageSource] = useState<'upload' | 'saved' | 'pexels'>('upload')
   const [baseImageDimensions, setBaseImageDimensions] = useState<{ width: number; height: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const promptTextareaRef = useRef<HTMLTextAreaElement>(null)
   
   // Pexels state
   const [pexelsQuery, setPexelsQuery] = useState('')
@@ -338,11 +751,34 @@ export default function UnifiedImageGenerationPanel({
 
   // Handle preset selection from parent component (comprehensive Preset)
   useEffect(() => {
+    console.log('🎯 selectedPreset useEffect running:', selectedPreset)
+    
     if (selectedPreset) {
+      console.log('🎯 Applying preset:', selectedPreset.name || selectedPreset.id, 'prompt:', selectedPreset.prompt_template)
       setCurrentPreset(selectedPreset)
       setStyle(selectedPreset.style_settings?.style || 'realistic')
-      setPrompt(selectedPreset.prompt_template)
-      setOriginalPrompt(selectedPreset.prompt_template)
+      
+      // Handle preset application based on generation mode
+      let finalPrompt = selectedPreset.prompt_template
+      if (currentGenerationMode === 'image-to-image') {
+        // For image-to-image, use "this image" instead of user subject
+        finalPrompt = `${selectedPreset.prompt_template} this image`
+      } else if (userSubject.trim()) {
+        // For text-to-image, check if subject is already in the preset template to avoid duplication (robust check)
+        const subjectWords = userSubject.toLowerCase().trim().split(' ')
+        const templateWords = selectedPreset.prompt_template.toLowerCase().split(' ')
+        
+        const subjectInTemplate = subjectWords.some(word => 
+          word.length > 2 && templateWords.includes(word)
+        )
+        
+        if (!subjectInTemplate) {
+          finalPrompt = `${selectedPreset.prompt_template} of ${userSubject.trim()}`
+        }
+      }
+      
+      setPrompt(finalPrompt)
+      setOriginalPrompt(finalPrompt)
       setIntensity(selectedPreset.style_settings?.intensity || 1.0)
       if (onConsistencyChange) {
         onConsistencyChange(selectedPreset.style_settings?.consistency_level || 'high')
@@ -363,17 +799,37 @@ export default function UnifiedImageGenerationPanel({
       setIsPromptModified(false)
       
       // Clear the selected preset after applying it to avoid re-applying
-      // This will be handled by the parent component
+      if (onPresetApplied) {
+        onPresetApplied()
+      }
     }
-  }, [selectedPreset])
+  }, [selectedPreset, onPresetApplied])
 
   // Handle preset selection from PresetSelector
   const handlePresetSelect = (preset: Preset | null) => {
     setCurrentPreset(preset)
     
     if (preset) {
-      // Apply preset settings
-      setPrompt(preset.prompt_template)
+      // Apply preset settings based on generation mode
+      let finalPrompt = preset.prompt_template
+      if (currentGenerationMode === 'image-to-image') {
+        // For image-to-image, use "this image" instead of user subject
+        finalPrompt = `${preset.prompt_template} this image`
+      } else if (userSubject.trim()) {
+        // For text-to-image, check if subject is already in the preset template to avoid duplication (robust check)
+        const subjectWords = userSubject.toLowerCase().trim().split(' ')
+        const templateWords = preset.prompt_template.toLowerCase().split(' ')
+        
+        const subjectInTemplate = subjectWords.some(word => 
+          word.length > 2 && templateWords.includes(word)
+        )
+        
+        if (!subjectInTemplate) {
+          finalPrompt = `${preset.prompt_template} of ${userSubject.trim()}`
+        }
+      }
+      
+      setPrompt(finalPrompt)
       setStyle(preset.style_settings?.style || 'realistic')
       setIntensity(preset.style_settings?.intensity || 1.0)
       if (onConsistencyChange) {
@@ -404,19 +860,210 @@ export default function UnifiedImageGenerationPanel({
           aspectRatio: preset.technical_settings?.aspect_ratio || '1:1'
         })
       }
+    } else {
+      // Clear preset - reset to defaults but preserve user subject
+      console.log('🎯 Clearing preset, resetting to defaults')
+      
+      // If user has a subject, keep it, otherwise clear prompt
+      if (userSubject.trim()) {
+        setPrompt(userSubject.trim())
+      } else {
+        setPrompt('')
+      }
+      
+      setStyle('photorealistic')
+      setIntensity(1.0)
+      if (onConsistencyChange) {
+        onConsistencyChange('high')
+      }
+      setAspectRatio('1:1')
+      setResolution('1024')
+      setNumImages(1)
+      setEnableCinematicMode(false)
+      setCinematicParameters({})
+      setEnhancedPrompt('')
+      setIncludeTechnicalDetails(true)
+      setIncludeStyleReferences(true)
+      setIsPromptModified(false)
+      
+      // Update settings for parent component
+      if (onSettingsChange) {
+        onSettingsChange({
+          resolution: '1024',
+          aspectRatio: '1:1'
+        })
+      }
     }
   }
 
   // Update prompt when generation mode changes (for regular styles)
   useEffect(() => {
-    if (!currentPreset && !isPromptModified) {
-      const newPrompt = getStylePrompt(style, currentGenerationMode)
-      setPrompt(newPrompt)
-      setOriginalPrompt(newPrompt)
+    console.log('🎯 useEffect running:', {
+      hasInitialized,
+      currentPreset,
+      isPromptModified,
+      prompt: prompt?.trim() || '',
+      style,
+      currentGenerationMode
+    })
+    
+    if (!hasInitialized) {
+      console.log('🎯 First run, setting initialized to true')
+      setHasInitialized(true)
+      return
     }
-  }, [currentGenerationMode, style, currentPreset, isPromptModified])
+    
+    // Check if current prompt is a default style prompt
+    const isDefaultPrompt = (promptText: string) => {
+      // Check for common patterns in database prompts
+      const defaultPatterns = [
+        'Create a photorealistic image',
+        'Create an artistic painting',
+        'Create a cartoon-style illustration',
+        'Create a vintage aesthetic',
+        'Create a cyberpunk style',
+        'Create a watercolor painting',
+        'Create a pencil sketch',
+        'Create an oil painting',
+        'Create a professional portrait',
+        'Create a fashion photography',
+        'Create an editorial photography',
+        'Create a commercial photography',
+        'Create a lifestyle photography',
+        'Create a street photography',
+        'Create an architectural photography',
+        'Create a nature photography',
+        'Create an abstract artwork',
+        'Create a surreal artwork',
+        'Create a minimalist artwork',
+        'Create a maximalist artwork',
+        'Create an impressionist painting',
+        'Create a Renaissance-style artwork',
+        'Create a Baroque-style artwork',
+        'Create an Art Deco style',
+        'Create a Pop Art style',
+        'Create a graffiti art style',
+        'Create a digital art style',
+        'Create a concept art style',
+        'Create a fantasy art style',
+        'Create a sci-fi art style',
+        'Create a steampunk style',
+        'Create a gothic art style',
+        'Create a cinematic image',
+        'Create a film noir style',
+        'Create a dramatic image',
+        'Create a moody image',
+        'Create a bright, cheerful image',
+        'Create a monochrome image',
+        'Create a sepia-toned image',
+        'Create an HDR image',
+        'Apply photorealistic rendering',
+        'Apply an artistic painting style',
+        'Transform into a cartoon-style illustration',
+        'Apply a vintage aesthetic',
+        'Apply cyberpunk style',
+        'Apply watercolor painting technique',
+        'Convert to a pencil sketch style',
+        'Apply oil painting technique',
+        'Transform into a professional portrait',
+        'Apply fashion photography style',
+        'Apply editorial photography style',
+        'Apply commercial photography style',
+        'Apply lifestyle photography style',
+        'Apply street photography style',
+        'Apply architectural photography style',
+        'Apply nature photography style',
+        'Transform into an abstract artwork',
+        'Transform into a surreal artwork',
+        'Apply minimalist style',
+        'Apply maximalist style',
+        'Apply impressionist painting technique',
+        'Apply Renaissance painting technique',
+        'Apply Baroque painting technique',
+        'Apply Art Deco style',
+        'Transform into Pop Art style',
+        'Apply graffiti art style',
+        'Apply digital art style',
+        'Apply concept art style',
+        'Transform into fantasy art style',
+        'Apply sci-fi art style',
+        'Apply steampunk style',
+        'Apply gothic art style',
+        'Apply cinematic style',
+        'Apply film noir style',
+        'Apply dramatic style',
+        'Apply moody style',
+        'Apply bright, cheerful style',
+        'Convert to monochrome style',
+        'Apply sepia tone',
+        'Apply HDR processing'
+      ]
+      
+      const trimmedPrompt = promptText.trim()
+      const isDefault = defaultPatterns.some(pattern => trimmedPrompt.startsWith(pattern))
+      console.log('🎯 isDefaultPrompt check (generation mode):', { 
+        promptText: trimmedPrompt, 
+        isDefault, 
+        matchingPattern: defaultPatterns.find(pattern => trimmedPrompt.startsWith(pattern))
+      })
+      return isDefault
+    }
+    
+    // Update prompt if:
+    // 1. No current preset is selected
+    // 2. Prompt hasn't been manually modified by user, OR it's a default prompt that should be updated
+    // 3. Prompt is empty OR it's a default prompt
+    if (!currentPreset && (!isPromptModified || isDefaultPrompt(prompt)) && (!prompt?.trim() || isDefaultPrompt(prompt))) {
+      console.log('🎯 Updating prompt with style:', style, 'isDefaultPrompt:', isDefaultPrompt(prompt), 'generationMode:', currentGenerationMode)
+      
+      // Use enhanced prompt generation that considers subject + style
+      generateEnhancedPrompt(style, prompt, currentGenerationMode).then((newPrompt: string) => {
+        setPrompt(newPrompt)
+        setOriginalPrompt(newPrompt)
+        setIsPromptModified(false) // Reset the modified flag since we're updating it
+        
+        // Don't focus the prompt field to avoid disrupting user experience
+        console.log('🎯 Prompt updated from style change')
+      })
+    }
+  }, [currentGenerationMode, style, currentPreset, isPromptModified, prompt, hasInitialized])
+
+  // Update prompt when subject changes (debounced updates) - only for text-to-image mode
+  useEffect(() => {
+    if (currentGenerationMode === 'text-to-image' && userSubject.trim() && !isPromptModified && !isSubjectUpdating && !isUserTypingSubject) {
+      console.log('🎯 Subject changed, updating prompt (user finished typing):', userSubject)
+      setIsSubjectUpdating(true)
+      
+      // Generate enhanced prompt with current style and subject
+      generateEnhancedPrompt(style, prompt, currentGenerationMode).then((newPrompt: string) => {
+        console.log('🎯 Generated new prompt from subject:', {
+          userSubject,
+          currentPrompt: prompt,
+          newPrompt,
+          isDifferent: newPrompt !== prompt
+        })
+        
+        // Always update the prompt when subject changes, regardless of whether it's different
+        setPrompt(newPrompt)
+        setOriginalPrompt(newPrompt)
+        setIsPromptModified(false)
+        setIsSubjectUpdating(false)
+      }).catch((error) => {
+        console.error('🎯 Error generating prompt from subject:', error)
+        setIsSubjectUpdating(false)
+      })
+    }
+  }, [userSubject, style, currentGenerationMode, isPromptModified, isUserTypingSubject, generateEnhancedPrompt])
 
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (subjectUpdateTimeoutRef.current) {
+        clearTimeout(subjectUpdateTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const calculateResolution = (aspectRatioValue: string, baseResolution: string) => {
     const [widthRatio, heightRatio] = aspectRatioValue.split(':').map(Number)
@@ -437,11 +1084,25 @@ export default function UnifiedImageGenerationPanel({
       width = Math.round(baseSize * aspectRatioNum)
     }
     
-    return `${width}*${height}`
+    const result = `${width}*${height}`
+    
+    // Debug logging for aspect ratio calculation
+    console.log('🎯 Aspect Ratio Calculation:', {
+      aspectRatio: aspectRatioValue,
+      baseResolution,
+      widthRatio,
+      heightRatio,
+      aspectRatioNum: aspectRatioNum.toFixed(3),
+      calculatedWidth: width,
+      calculatedHeight: height,
+      finalResolution: result
+    })
+    
+    return result
   }
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
+    if (!prompt?.trim()) {
       return
     }
 
@@ -455,7 +1116,26 @@ export default function UnifiedImageGenerationPanel({
     }
     
     const effectiveResolution = userSubscriptionTier === 'FREE' ? '1024' : resolution
-    const calculatedResolution = calculateResolution(aspectRatio, effectiveResolution)
+    
+    // Use cinematic aspect ratio if available, otherwise use UI aspect ratio
+    const effectiveAspectRatio = enableCinematicMode && cinematicParameters.aspectRatio 
+      ? cinematicParameters.aspectRatio 
+      : aspectRatio
+    
+    const calculatedResolution = calculateResolution(effectiveAspectRatio, effectiveResolution)
+    
+    console.log('🚀 Generation Request:', {
+      uiAspectRatio: aspectRatio,
+      cinematicAspectRatio: enableCinematicMode ? cinematicParameters.aspectRatio : 'disabled',
+      effectiveAspectRatio,
+      baseResolution: resolution,
+      effectiveResolution,
+      calculatedResolution,
+      userSubscriptionTier,
+      currentGenerationMode,
+      enableCinematicMode,
+      cinematicParameters: enableCinematicMode ? cinematicParameters : 'disabled'
+    })
     
     await onGenerate({
       prompt: enableCinematicMode ? enhancedPrompt : prompt,
@@ -471,7 +1151,8 @@ export default function UnifiedImageGenerationPanel({
       enhancedPrompt: enableCinematicMode ? enhancedPrompt : undefined,
       includeTechnicalDetails: enableCinematicMode ? includeTechnicalDetails : undefined,
       includeStyleReferences: enableCinematicMode ? includeStyleReferences : undefined,
-      selectedProvider: currentProvider as 'nanobanana' | 'seedream'
+      selectedProvider: currentProvider as 'nanobanana' | 'seedream',
+      replaceLatestImages: replaceLatestImages
     })
   }
 
@@ -1113,6 +1794,110 @@ export default function UnifiedImageGenerationPanel({
 
         {/* Compact Prompt Field */}
         <div className="space-y-2">
+          {/* Subject Input */}
+          {/* Subject Input Field - Only show for text-to-image mode */}
+          {currentGenerationMode === 'text-to-image' && (
+            <div className="space-y-2">
+              <Label htmlFor="subject" className="text-sm font-medium">
+                What are you creating?
+              </Label>
+              <Input
+                id="subject"
+                value={userSubject}
+                onChange={(e) => {
+                  const newValue = e.target.value
+                  console.log('🎯 Subject input changed:', {
+                    newValue,
+                    currentUserSubject: userSubject,
+                    isPromptModified,
+                    isSubjectUpdating,
+                    isUserTypingSubject
+                  })
+                  setUserSubject(newValue)
+                  setIsUserTypingSubject(true)
+                  
+                  // Clear existing timeout
+                  if (subjectUpdateTimeoutRef.current) {
+                    clearTimeout(subjectUpdateTimeoutRef.current)
+                  }
+                  
+                  // Debounce the prompt update - only update after user stops typing
+                  subjectUpdateTimeoutRef.current = setTimeout(() => {
+                    console.log('🎯 Subject debounce timeout completed, setting isUserTypingSubject to false')
+                    setIsUserTypingSubject(false)
+                  }, 1000) // Wait 1 second after user stops typing
+                }}
+                placeholder="e.g., portrait of a person, mountain landscape, product shot, character design..."
+                className="text-sm"
+              />
+              {isUserTypingSubject && (
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  Typing... (will update when you pause)
+                </div>
+              )}
+              {isSubjectUpdating && !isUserTypingSubject && (
+                <div className="text-xs text-primary flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                  Updating prompt...
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Text-to-image mode indicator */}
+          {currentGenerationMode === 'text-to-image' && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground">
+                Text-to-Image Mode
+              </Label>
+              <div className="space-y-2">
+                <div className="text-xs text-muted-foreground">
+                  Current prompt for generation
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  <p className="text-sm text-foreground leading-relaxed">
+                    {prompt || 'No prompt entered yet'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Image-to-image mode indicator */}
+          {currentGenerationMode === 'image-to-image' && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground">
+                Image-to-Image Mode
+              </Label>
+              {baseImage ? (
+                <div className="space-y-2">
+                  <div className="text-xs text-muted-foreground">
+                    Base image loaded - will be modified with the selected style
+                  </div>
+                  <div className="relative inline-block">
+                    <img
+                      src={baseImage}
+                      alt="Base image for modification"
+                      className="w-24 h-24 object-cover rounded-lg border border-border"
+                    />
+                    <button
+                      onClick={removeBaseImage}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center text-xs hover:bg-destructive/90 transition-colors"
+                      title="Remove base image"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">
+                  Upload a base image above to modify it with the selected style
+                </div>
+              )}
+            </div>
+          )}
+
           <Label htmlFor="prompt" className="text-sm">
               Prompt {enableCinematicMode && (
               <span className="text-xs text-primary ml-1">
@@ -1121,27 +1906,99 @@ export default function UnifiedImageGenerationPanel({
               )}
             </Label>
           <Textarea
+            ref={promptTextareaRef}
             id="prompt"
             data-prompt-field
             value={enableCinematicMode ? enhancedPrompt : prompt}
             onChange={(e) => {
+              const newPrompt = e.target.value
+              
+              // Mark that user is manually editing the prompt
+              setIsPromptModified(true)
+              
               if (enableCinematicMode) {
                 setIsManuallyEditingEnhancedPrompt(true)
-                setEnhancedPrompt(e.target.value)
-                setPrompt(e.target.value)
+                setEnhancedPrompt(newPrompt)
+                setPrompt(newPrompt)
               } else {
-                setPrompt(e.target.value)
+                setPrompt(newPrompt)
               }
+              
+              // Extract aspect ratio from prompt text
+              const extractAspectRatioFromPrompt = (prompt: string): string | null => {
+                const aspectRatioPatterns = [
+                  { pattern: /(\d+):(\d+)\s*(?:widescreen|aspect|ratio)/gi, name: 'explicit' },
+                  { pattern: /16:9|16\s*:\s*9/gi, name: '16:9' },
+                  { pattern: /9:16|9\s*:\s*16/gi, name: '9:16' },
+                  { pattern: /4:3|4\s*:\s*3/gi, name: '4:3' },
+                  { pattern: /3:4|3\s*:\s*4/gi, name: '3:4' },
+                  { pattern: /1:1|1\s*:\s*1|square/gi, name: '1:1' },
+                  { pattern: /21:9|21\s*:\s*9/gi, name: '21:9' },
+                  { pattern: /3:2|3\s*:\s*2/gi, name: '3:2' },
+                  { pattern: /2:3|2\s*:\s*3/gi, name: '2:3' }
+                ]
+                
+                for (const { pattern, name } of aspectRatioPatterns) {
+                  const match = prompt.match(pattern)
+                  if (match) {
+                    if (name === 'explicit') {
+                      const [, width, height] = match[0].match(/(\d+):(\d+)/) || []
+                      if (width && height) return `${width}:${height}`
+                    } else {
+                      return name
+                    }
+                  }
+                }
+                
+                return null
+              }
+              
+              // Auto-adjust aspect ratio if found in prompt
+              console.log('🎯 Analyzing main prompt text:', newPrompt)
+              const extractedAspectRatio = extractAspectRatioFromPrompt(newPrompt)
+              console.log('🎯 Extracted aspect ratio from main prompt:', extractedAspectRatio)
+              if (extractedAspectRatio && extractedAspectRatio !== aspectRatio) {
+                console.log('🎯 Auto-adjusting aspect ratio from prompt:', extractedAspectRatio, 'current:', aspectRatio)
+                setAspectRatio(extractedAspectRatio)
+                
+                // Notify parent component about aspect ratio change
+                if (onSettingsChange) {
+                  console.log('🎯 Notifying parent of aspect ratio change:', extractedAspectRatio)
+                  onSettingsChange({
+                    resolution: resolution,
+                    aspectRatio: extractedAspectRatio,
+                    baseImageAspectRatio: baseImageDimensions 
+                      ? calculateAspectRatio(baseImageDimensions.width, baseImageDimensions.height)
+                      : aspectRatio,
+                    baseImageUrl: baseImage || undefined,
+                    onRemoveBaseImage: baseImage ? removeBaseImage : undefined
+                  })
+                }
+              } else if (extractedAspectRatio) {
+                console.log('🎯 Aspect ratio already matches:', extractedAspectRatio)
+              }
+              
               // Track if prompt has been modified from original
-              setIsPromptModified(e.target.value !== originalPrompt)
+              setIsPromptModified(newPrompt !== originalPrompt)
             }}
             placeholder={generationMode === 'text-to-image' ? "Describe the image you want to create..." : "Describe how you want to modify the base image..."}
             rows={2}
-            className="text-sm"
+            className={`text-sm ${isPromptUpdating || isSubjectUpdating ? 'ring-2 ring-primary/50 bg-primary/5' : ''}`}
           />
-          {isPromptModified && (
+          {isPromptUpdating && (
+            <div className="text-xs text-primary flex items-center gap-1">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+              Updating prompt...
+            </div>
+          )}
+          {isPromptModified && !isPromptUpdating && (
             <p className="text-xs text-primary">
               💡 Modified prompt - save as preset above
+            </p>
+          )}
+          {isPromptModified && userSubject.trim() && (
+            <p className="text-xs text-muted-foreground">
+              ⚠️ Manual editing detected - subject field updates disabled
             </p>
           )}
 
@@ -1150,7 +2007,7 @@ export default function UnifiedImageGenerationPanel({
             <div className="space-y-4">
               <CinematicParameterSelector
                 parameters={cinematicParameters}
-                onParametersChange={setCinematicParameters}
+                onParametersChange={handleCinematicParametersChange}
                 onToggleChange={handleToggleChange}
                 compact={false}
                 showAdvanced={true}
@@ -1166,6 +2023,53 @@ export default function UnifiedImageGenerationPanel({
                       setIsManuallyEditingEnhancedPrompt(true)
                       setEnhancedPrompt(e.target.value)
                       setPrompt(e.target.value) // Update the main prompt field too
+                      
+                      // Extract aspect ratio from enhanced prompt text
+                      const extractAspectRatioFromPrompt = (prompt: string): string | null => {
+                        const aspectRatioPatterns = [
+                          { pattern: /(\d+):(\d+)\s*(?:widescreen|aspect|ratio)/gi, name: 'explicit' },
+                          { pattern: /16:9|16\s*:\s*9/gi, name: '16:9' },
+                          { pattern: /9:16|9\s*:\s*16/gi, name: '9:16' },
+                          { pattern: /4:3|4\s*:\s*3/gi, name: '4:3' },
+                          { pattern: /3:4|3\s*:\s*4/gi, name: '3:4' },
+                          { pattern: /1:1|1\s*:\s*1|square/gi, name: '1:1' },
+                          { pattern: /21:9|21\s*:\s*9/gi, name: '21:9' },
+                          { pattern: /3:2|3\s*:\s*2/gi, name: '3:2' },
+                          { pattern: /2:3|2\s*:\s*3/gi, name: '2:3' }
+                        ]
+                        for (const { pattern, name } of aspectRatioPatterns) {
+                          const match = prompt.match(pattern)
+                          if (match) {
+                            if (name === 'explicit') {
+                              const [, width, height] = match[0].match(/(\d+):(\d+)/) || []
+                              if (width && height) return `${width}:${height}`
+                            } else {
+                              return name
+                            }
+                          }
+                        }
+                        return null
+                      }
+
+                      // Auto-adjust aspect ratio if found in enhanced prompt
+                      console.log('🎯 Analyzing enhanced prompt text:', e.target.value)
+                      const extractedAspectRatio = extractAspectRatioFromPrompt(e.target.value)
+                      console.log('🎯 Extracted aspect ratio from enhanced prompt:', extractedAspectRatio)
+                      if (extractedAspectRatio && extractedAspectRatio !== aspectRatio) {
+                        console.log('🎯 Auto-adjusting aspect ratio from enhanced prompt:', extractedAspectRatio, 'current:', aspectRatio)
+                        setAspectRatio(extractedAspectRatio)
+                        if (onSettingsChange) {
+                          onSettingsChange({
+                            resolution: resolution,
+                            aspectRatio: extractedAspectRatio,
+                            baseImageAspectRatio: baseImageDimensions 
+                              ? calculateAspectRatio(baseImageDimensions.width, baseImageDimensions.height)
+                              : aspectRatio,
+                            baseImageUrl: baseImage || undefined,
+                            onRemoveBaseImage: baseImage ? removeBaseImage : undefined
+                          })
+                        }
+                      }
                     }}
                     placeholder="Enhanced prompt with cinematic parameters..."
                     rows={3}
@@ -1184,9 +2088,9 @@ export default function UnifiedImageGenerationPanel({
                       size="sm"
                       onClick={() => {
                         setIsManuallyEditingEnhancedPrompt(false)
-                        // Clear the enhanced prompt to force regeneration
-                        setEnhancedPrompt('')
+                        // Force regeneration by updating cinematic parameters
                         // The useEffect will regenerate it on the next render
+                        setCinematicParameters({...cinematicParameters})
                       }}
                     >
                       Regenerate Enhanced Prompt
@@ -1266,7 +2170,7 @@ export default function UnifiedImageGenerationPanel({
           <Label className="text-sm">Aspect Ratio</Label>
           <AspectRatioSelector
             value={aspectRatio}
-            onChange={setAspectRatio}
+            onChange={handleAspectRatioChange}
             resolution={userSubscriptionTier === 'FREE' ? '1024' : resolution}
             onCustomDimensionsChange={(width, height) => {
               // Update settings when custom dimensions are used
@@ -1285,7 +2189,27 @@ export default function UnifiedImageGenerationPanel({
         {/* Compact Cost Info */}
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>Cost: {totalCredits} credits ({numImages} × {creditsPerImage})</span>
-          <span>Aspect: {aspectRatio}</span>
+          <div className="flex items-center gap-2">
+            <span>Aspect: {aspectRatio}</span>
+            {enableCinematicMode && cinematicParameters.aspectRatio && cinematicParameters.aspectRatio !== aspectRatio && (
+              <span className="text-yellow-500" title="Aspect ratio mismatch between main selector and cinematic parameters">
+                ⚠️ Sync
+              </span>
+            )}
+          </div>
+        </div>
+        
+        {/* Image Replacement Toggle */}
+        <div className="flex items-center justify-between">
+          <Label htmlFor="replace-images" className="text-xs text-muted-foreground">
+            Replace latest images
+          </Label>
+          <Switch
+            id="replace-images"
+            checked={replaceLatestImages}
+            onCheckedChange={setReplaceLatestImages}
+            className="scale-75"
+          />
         </div>
         
         {/* Action Buttons */}
@@ -1294,7 +2218,7 @@ export default function UnifiedImageGenerationPanel({
           {userSubscriptionTier !== 'FREE' && (
             <Button
               onClick={() => setShowAnalysisModal(true)}
-              disabled={loading || !prompt.trim()}
+              disabled={loading || !prompt || !prompt.trim()}
               variant="outline"
               size="sm"
               className="flex-1 text-xs h-9"
@@ -1307,7 +2231,7 @@ export default function UnifiedImageGenerationPanel({
           {/* Generate Button */}
           <Button
             onClick={handleGenerate}
-            disabled={loading || !prompt.trim() || userCredits < totalCredits}
+            disabled={loading || !prompt?.trim() || userCredits < totalCredits}
             className={userSubscriptionTier !== 'FREE' ? "flex-1" : "w-full"}
             size="sm"
           >
@@ -1333,6 +2257,7 @@ export default function UnifiedImageGenerationPanel({
       onClose={() => setShowAnalysisModal(false)}
       imageUrl={baseImage || undefined}
       originalPrompt={prompt}
+      enhancedPrompt={enhancedPrompt}
       style={currentPreset ? currentPreset.style_settings?.style || style : style}
       resolution={resolution}
       aspectRatio={aspectRatio}

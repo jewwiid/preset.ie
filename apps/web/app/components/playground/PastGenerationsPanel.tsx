@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Clock, Download, Trash2, AlertCircle, Image as ImageIcon, CheckCircle, Edit3, Eye, X, Save, Video, Play, Pause, Maximize2, Info, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Clock, Download, Trash2, AlertCircle, Image as ImageIcon, CheckCircle, Edit3, Eye, X, Save, Video, Play, Pause, Maximize2, Info, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -51,6 +51,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [viewingImages, setViewingImages] = useState<PastGeneration | null>(null)
   const [savingImage, setSavingImage] = useState<string | null>(null)
+  const [promotingImage, setPromotingImage] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const [requiresPermanent, setRequiresPermanent] = useState(false)
@@ -364,9 +365,90 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
     }
   }
 
+  const promoteImageToMedia = async (imageUrl: string, projectTitle: string, generation: any) => {
+    setPromotingImage(imageUrl)
+    try {
+      // First save to gallery if not already saved
+      const saveResponse = await fetch('/api/playground/save-to-gallery', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          imageUrl,
+          title: projectTitle,
+          description: `Generated from: ${projectTitle}`,
+          tags: ['ai-generated'],
+          generationMetadata: generation.metadata || {}
+        })
+      })
+
+      if (!saveResponse.ok) {
+        const errorData = await saveResponse.json()
+        if (saveResponse.status !== 409 || errorData.error !== 'duplicate') {
+          throw new Error(errorData.error || 'Failed to save image to gallery')
+        }
+      }
+
+      // Get the gallery item ID from the save response or find existing one
+      let galleryItemId: string
+      if (saveResponse.ok) {
+        const saveData = await saveResponse.json()
+        galleryItemId = saveData.galleryItem.id
+      } else {
+        // If it's a duplicate, we need to find the existing gallery item
+        const galleryResponse = await fetch('/api/playground/gallery-with-status', {
+          headers: { 'Authorization': `Bearer ${session?.access_token}` }
+        })
+        if (galleryResponse.ok) {
+          const galleryData = await galleryResponse.json()
+          const existingItem = galleryData.gallery.find((item: any) => item.image_url === imageUrl)
+          if (existingItem) {
+            galleryItemId = existingItem.id
+          } else {
+            throw new Error('Could not find gallery item to promote')
+          }
+        } else {
+          throw new Error('Could not find gallery item to promote')
+        }
+      }
+
+      // Now promote to media
+      const promoteResponse = await fetch('/api/playground/promote-to-media', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ galleryItemId })
+      })
+
+      if (promoteResponse.ok) {
+        showFeedback({
+          type: 'success',
+          title: 'Promoted!',
+          message: 'Image promoted to media library. You can now use it in showcases!'
+        })
+      } else {
+        const errorData = await promoteResponse.json()
+        throw new Error(errorData.error || 'Failed to promote image')
+      }
+    } catch (error) {
+      console.error('Error promoting image:', error)
+      showFeedback({
+        type: 'error',
+        title: 'Promote Failed',
+        message: error instanceof Error ? error.message : 'Could not promote image to media'
+      })
+    } finally {
+      setPromotingImage(null)
+    }
+  }
+
   if (loading) {
     return (
-      <Card className="border-t-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+      <Card className="border-t-2 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
@@ -392,7 +474,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
 
   return (
     <>
-      <Card className="border-t-2 border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">
+      <Card className="border-t-2 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
@@ -698,7 +780,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
       {/* Metadata Popup Modal */}
       {selectedImageForInfo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md max-h-[80vh] overflow-y-auto">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Generation Metadata</CardTitle>
@@ -712,176 +794,185 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Image Preview */}
-              <div className="aspect-square rounded-lg overflow-hidden border">
-                {selectedImageForInfo.generated_images.length > 0 ? (
-                  <>
-                    {selectedImageForInfo.generated_images[0].type === 'video' ? (
-                      <video
-                        src={selectedImageForInfo.generated_images[0].url}
-                        poster={selectedImageForInfo.generated_images[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
-                        className="w-full h-full object-cover"
-                        controls
-                        preload="metadata"
-                        loop
-                      />
+            <CardContent className="p-0">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
+                {/* Image Preview - Left Column */}
+                <div className="space-y-4">
+                  <div className="rounded-lg overflow-hidden border">
+                    {selectedImageForInfo.generated_images.length > 0 ? (
+                      <>
+                        {selectedImageForInfo.generated_images[0].type === 'video' ? (
+                          <video
+                            src={selectedImageForInfo.generated_images[0].url}
+                            poster={selectedImageForInfo.generated_images[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
+                            className="w-full h-auto max-h-96 object-contain"
+                            controls
+                            preload="metadata"
+                            loop
+                          />
+                        ) : (
+                          <img
+                            src={selectedImageForInfo.generated_images[0].url}
+                            alt={selectedImageForInfo.title}
+                            className="w-full h-auto max-h-96 object-contain"
+                          />
+                        )}
+                      </>
                     ) : (
-                      <img
-                        src={selectedImageForInfo.generated_images[0].url}
-                        alt={selectedImageForInfo.title}
-                        className="w-full h-full object-cover"
-                      />
+                      <div className="w-full h-64 bg-muted flex items-center justify-center">
+                        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                      </div>
                     )}
-                  </>
-                ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <ImageIcon className="h-12 w-12 text-gray-400" />
                   </div>
-                )}
-              </div>
-              
-              {/* Metadata */}
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Title</label>
-                  <p className="text-sm">{selectedImageForInfo.title}</p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Prompt</label>
-                  <p className="text-sm">{selectedImageForInfo.prompt}</p>
-                </div>
-                
-                {selectedImageForInfo.generated_images.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Dimensions</label>
-                    <p className="text-sm">{selectedImageForInfo.generated_images[0].width} × {selectedImageForInfo.generated_images[0].height}</p>
-                  </div>
-                )}
-                
-                {selectedImageForInfo.generated_images.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Aspect Ratio</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-sm">
-                        {getAspectRatioLabel(selectedImageForInfo.generated_images[0].width, selectedImageForInfo.generated_images[0].height)}
-                      </Badge>
-                      <span className="text-sm text-gray-500">
-                        ({selectedImageForInfo.is_video ? 'Video' : 'Image'})
-                      </span>
+                  
+                  {/* Image Info */}
+                  {selectedImageForInfo.generated_images.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Dimensions:</span>
+                        <span className="font-medium">
+                          {selectedImageForInfo.generated_images[0].width} × {selectedImageForInfo.generated_images[0].height}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Aspect Ratio:</span>
+                        <Badge variant="secondary" className="text-sm">
+                          {getAspectRatioLabel(selectedImageForInfo.generated_images[0].width, selectedImageForInfo.generated_images[0].height)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Type:</span>
+                        <span className="text-sm text-muted-foreground">
+                          {selectedImageForInfo.is_video ? 'Video' : 'Image'}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Created</label>
-                  <p className="text-sm">{new Date(selectedImageForInfo.created_at).toLocaleString()}</p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Credits Used</label>
-                  <p className="text-sm">{selectedImageForInfo.credits_used}</p>
-                </div>
-                
-                {selectedImageForInfo.style && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Style</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-sm">
-                        {selectedImageForInfo.style === 'realistic' ? '📸' : 
-                         selectedImageForInfo.style === 'artistic' ? '🎨' :
-                         selectedImageForInfo.style === 'cartoon' ? '🎭' :
-                         selectedImageForInfo.style === 'anime' ? '🌸' :
-                         selectedImageForInfo.style === 'fantasy' ? '✨' : 
-                         selectedImageForInfo.is_edit ? '✏️' : ''} {selectedImageForInfo.style}
-                      </Badge>
-                    </div>
-                  </div>
-                )}
-
-                {/* Status indicators */}
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Status</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    {selectedImageForInfo.is_saved && (
-                      <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Saved
-                      </Badge>
-                    )}
-                    {selectedImageForInfo.is_edit && (
-                      <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                        <Edit3 className="h-3 w-3 mr-1" />
-                        Edit
-                      </Badge>
-                    )}
-                    {selectedImageForInfo.is_video && (
-                      <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
-                        <Video className="h-3 w-3 mr-1" />
-                        Video
-                      </Badge>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                {/* Generation Metadata */}
-                {selectedImageForInfo.metadata && (
-                  <div className="border-t pt-3">
-                    <label className="text-sm font-medium text-gray-600 mb-2 block">Additional Metadata</label>
-                    <div className="space-y-2 text-sm">
-                      {selectedImageForInfo.metadata.enhanced_prompt && (
-                        <div>
-                          <span className="font-medium">Enhanced Prompt:</span>
-                          <p className="text-gray-700 mt-1">{selectedImageForInfo.metadata.enhanced_prompt}</p>
-                        </div>
-                      )}
-                      {selectedImageForInfo.metadata.style_applied && (
-                        <div>
-                          <span className="font-medium">Style Applied:</span>
-                          <p className="text-gray-700">{selectedImageForInfo.metadata.style_applied}</p>
-                        </div>
-                      )}
-                      {selectedImageForInfo.metadata.style_prompt && (
-                        <div>
-                          <span className="font-medium">Style Prompt:</span>
-                          <p className="text-gray-700">{selectedImageForInfo.metadata.style_prompt}</p>
-                        </div>
-                      )}
-                      {(selectedImageForInfo.metadata as any).cinematic_parameters && (
-                        <div>
-                          <span className="font-medium">Cinematic Parameters:</span>
-                          <div className="mt-2 space-y-1">
-                            {Object.entries((selectedImageForInfo.metadata as any).cinematic_parameters).map(([key, value]) => (
-                              value ? (
-                                <div key={key} className="flex justify-between text-xs">
-                                  <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                                  <span className="text-gray-800 font-medium">{String(value).replace(/-/g, ' ')}</span>
-                                </div>
-                              ) : null
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      {(selectedImageForInfo.metadata as any).include_technical_details !== undefined && (
-                        <div>
-                          <span className="font-medium">Technical Details:</span>
-                          <span className="text-gray-700 ml-2">{(selectedImageForInfo.metadata as any).include_technical_details ? 'Enabled' : 'Disabled'}</span>
-                        </div>
-                      )}
-                      {(selectedImageForInfo.metadata as any).include_style_references !== undefined && (
-                        <div>
-                          <span className="font-medium">Style References:</span>
-                          <span className="text-gray-700 ml-2">{(selectedImageForInfo.metadata as any).include_style_references ? 'Enabled' : 'Disabled'}</span>
-                        </div>
-                      )}
+                {/* Metadata - Right Column */}
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Title</label>
+                      <p className="text-sm">{selectedImageForInfo.title}</p>
                     </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Prompt</label>
+                      <p className="text-sm">{selectedImageForInfo.prompt}</p>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Created</label>
+                      <p className="text-sm">{new Date(selectedImageForInfo.created_at).toLocaleString()}</p>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Credits Used</label>
+                      <p className="text-sm">{selectedImageForInfo.credits_used}</p>
+                    </div>
+                    
+                    {selectedImageForInfo.style && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Style</label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className="text-sm">
+                            {selectedImageForInfo.style === 'realistic' ? '📸' : 
+                             selectedImageForInfo.style === 'artistic' ? '🎨' :
+                             selectedImageForInfo.style === 'cartoon' ? '🎭' :
+                             selectedImageForInfo.style === 'anime' ? '🌸' :
+                             selectedImageForInfo.style === 'fantasy' ? '✨' : 
+                             selectedImageForInfo.is_edit ? '✏️' : ''} {selectedImageForInfo.style}
+                          </Badge>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Status indicators */}
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Status</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        {selectedImageForInfo.is_saved && (
+                          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Saved
+                          </Badge>
+                        )}
+                        {selectedImageForInfo.is_edit && (
+                          <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-500">
+                            <Edit3 className="h-3 w-3 mr-1" />
+                            Edit
+                          </Badge>
+                        )}
+                        {selectedImageForInfo.is_video && (
+                          <Badge variant="secondary" className="text-xs bg-purple-500/10 text-purple-500">
+                            <Video className="h-3 w-3 mr-1" />
+                            Video
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Generation Metadata */}
+                    {selectedImageForInfo.metadata && (
+                      <div className="border-t pt-3">
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">Additional Metadata</label>
+                        <div className="space-y-2 text-sm">
+                          {selectedImageForInfo.metadata.enhanced_prompt && (
+                            <div>
+                              <span className="font-medium">Enhanced Prompt:</span>
+                              <p className="text-foreground mt-1">{selectedImageForInfo.metadata.enhanced_prompt}</p>
+                            </div>
+                          )}
+                          {selectedImageForInfo.metadata.style_applied && (
+                            <div>
+                              <span className="font-medium">Style Applied:</span>
+                              <p className="text-foreground">{selectedImageForInfo.metadata.style_applied}</p>
+                            </div>
+                          )}
+                          {selectedImageForInfo.metadata.style_prompt && (
+                            <div>
+                              <span className="font-medium">Style Prompt:</span>
+                              <p className="text-foreground">{selectedImageForInfo.metadata.style_prompt}</p>
+                            </div>
+                          )}
+                          {(selectedImageForInfo.metadata as any).cinematic_parameters && (
+                            <div>
+                              <span className="font-medium">Cinematic Parameters:</span>
+                              <div className="mt-2 space-y-1">
+                                {Object.entries((selectedImageForInfo.metadata as any).cinematic_parameters).map(([key, value]) => (
+                                  value ? (
+                                    <div key={key} className="flex justify-between text-xs">
+                                      <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                                      <span className="text-foreground font-medium">{String(value).replace(/-/g, ' ')}</span>
+                                    </div>
+                                  ) : null
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {(selectedImageForInfo.metadata as any).include_technical_details !== undefined && (
+                            <div>
+                              <span className="font-medium">Technical Details:</span>
+                              <span className="text-foreground ml-2">{(selectedImageForInfo.metadata as any).include_technical_details ? 'Enabled' : 'Disabled'}</span>
+                            </div>
+                          )}
+                          {(selectedImageForInfo.metadata as any).include_style_references !== undefined && (
+                            <div>
+                              <span className="font-medium">Style References:</span>
+                              <span className="text-foreground ml-2">{(selectedImageForInfo.metadata as any).include_style_references ? 'Enabled' : 'Disabled'}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
               
               {/* Actions */}
-              <div className="flex gap-2 pt-4 border-t">
+              <div className="flex gap-2 pt-4 border-t px-6 pb-6">
                 <Button
                   onClick={() => {
                     onImportProject(selectedImageForInfo)
@@ -912,16 +1003,16 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
       {/* Image Viewing Modal */}
       {viewingImages && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-hidden">
+          <div className="bg-card rounded-lg max-w-4xl max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-foreground">
                 {viewingImages.title} - All Images ({viewingImages.generated_images.length})
               </h3>
               <button
                 onClick={() => setViewingImages(null)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 hover:bg-muted rounded-full transition-colors"
               >
-                <X className="h-5 w-5 text-gray-500" />
+                <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
             
@@ -932,7 +1023,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                     {image.type === 'video' ? (
                       <video
                         src={image.url}
-                        className="w-full h-64 object-cover rounded-lg border border-gray-200"
+                        className="w-full h-64 object-cover rounded-lg border border-border"
                         controls
                         preload="metadata"
                         loop
@@ -944,7 +1035,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                       <img
                         src={image.url}
                         alt={`${viewingImages.title} - Image ${index + 1}`}
-                        className="w-full h-64 object-cover rounded-lg border border-gray-200"
+                        className="w-full h-64 object-cover rounded-lg border border-border"
                         loading="lazy"
                       />
                     )}
@@ -953,14 +1044,24 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                         <span className="text-white text-sm font-medium bg-black bg-opacity-70 px-2 py-1 rounded">
                           {image.type === 'video' ? 'Video' : 'Image'} {index + 1}
                         </span>
-                        <button
-                          onClick={() => saveImageToGallery(image.url, viewingImages.title, viewingImages)}
-                          disabled={savingImage === image.url}
-                          className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50"
-                        >
-                          <Save className="h-3 w-3" />
-                          <span>{savingImage === image.url ? 'Saving...' : 'Save'}</span>
-                        </button>
+                        <div className="flex flex-col space-y-1">
+                          <button
+                            onClick={() => saveImageToGallery(image.url, viewingImages.title, viewingImages)}
+                            disabled={savingImage === image.url}
+                            className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50"
+                          >
+                            <Save className="h-3 w-3" />
+                            <span>{savingImage === image.url ? 'Saving...' : 'Save'}</span>
+                          </button>
+                          <button
+                            onClick={() => promoteImageToMedia(image.url, viewingImages.title, viewingImages)}
+                            disabled={promotingImage === image.url}
+                            className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50"
+                          >
+                            <ArrowUp className="h-3 w-3" />
+                            <span>{promotingImage === image.url ? 'Promoting...' : 'Promote'}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -968,13 +1069,13 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
               </div>
             </div>
             
-            <div className="p-4 border-t bg-gray-50">
-              <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="p-4 border-t bg-muted/50">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center space-x-4">
                   <span>{viewingImages.generated_images.length} {viewingImages.is_video ? 'video(s)' : 'image(s)'}</span>
                   <span>{viewingImages.credits_used} credits</span>
                   {viewingImages.style && (
-                    <span className="text-blue-600 font-medium">
+                    <span className="text-primary font-medium">
                       {viewingImages.style === 'realistic' ? '📸' : 
                        viewingImages.style === 'artistic' ? '🎨' :
                        viewingImages.style === 'cartoon' ? '🎭' :
@@ -998,8 +1099,20 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                     <span>{savingImage ? 'Saving...' : 'Save All'}</span>
                   </button>
                   <button
+                    onClick={() => {
+                      viewingImages.generated_images.forEach(image => {
+                        promoteImageToMedia(image.url, viewingImages.title, viewingImages)
+                      })
+                    }}
+                    disabled={promotingImage !== null}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                    <span>{promotingImage ? 'Promoting...' : 'Promote All'}</span>
+                  </button>
+                  <button
                     onClick={() => onImportProject(viewingImages)}
-                    className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors"
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-md hover:bg-primary/20 transition-colors"
                   >
                     <Download className="h-4 w-4" />
                     <span>{viewingImages?.is_video ? 'Import to Video' : 'Import to Edit'}</span>
@@ -1014,9 +1127,9 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-card rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-foreground">
                 {requiresPermanent ? 'Permanent Delete Required' : 'Delete Generation'}
               </h3>
               <Button
@@ -1029,11 +1142,11 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
               </Button>
             </div>
             
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               {requiresPermanent ? (
                 <>
                   This generation has been saved to your gallery and cannot be deleted normally. 
-                  <strong className="text-red-600"> Permanent deletion will remove it completely</strong> from both Past Generations and Saved Media. This action cannot be undone.
+                  <strong className="text-destructive"> Permanent deletion will remove it completely</strong> from both Past Generations and Saved Media. This action cannot be undone.
                 </>
               ) : (
                 <>
@@ -1074,7 +1187,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                   >
                     {deletingId === itemToDelete ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-muted-foreground mr-2"></div>
                         Deleting...
                       </>
                     ) : (

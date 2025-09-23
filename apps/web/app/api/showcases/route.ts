@@ -1,13 +1,34 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-export async function GET(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function GET(request: NextRequest) {
+  try {
+    // Get auth token from header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Verify the token and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
 
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
@@ -145,59 +166,123 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({ showcases: sortedShowcases });
+  
+  } catch (error) {
+    console.error('Error in showcases GET:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
-export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function POST(request: NextRequest) {
+  try {
+    // Get auth token from header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Verify the token and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
 
   const {
     title,
     description,
     type,
-    media_ids,
+    mediaIds,
     tags,
-    moodboard_summary,
-    moodboard_palette
+    moodboardId,
+    mediaMetadata
   } = await request.json();
 
-  // Check subscription tier
+  // Check subscription tier and monthly limits
   const { data: profile, error: profileError } = await supabase
     .from('users_profile')
     .select('subscription_tier')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single();
 
   if (profileError || !profile) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
   }
 
-  if (profile.subscription_tier === 'FREE') {
-    return NextResponse.json({ error: 'Free users cannot create showcases' }, { status: 403 });
+  const subscriptionTier = profile.subscription_tier || 'FREE'
+  
+  // Check monthly showcase limits based on subscription tier
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  const { data: existingShowcases } = await supabase
+    .from('showcases')
+    .select('id')
+    .eq('creator_user_id', user.id)
+    .gte('created_at', startOfMonth.toISOString())
+
+  const currentMonthCount = existingShowcases?.length || 0
+  
+  // Apply subscription tier limits
+  let maxShowcases = 0
+  switch (subscriptionTier) {
+    case 'FREE':
+      maxShowcases = 3
+      break
+    case 'PLUS':
+      maxShowcases = 10
+      break
+    case 'PRO':
+      maxShowcases = -1 // unlimited
+      break
+    default:
+      maxShowcases = 0
+  }
+
+  if (maxShowcases !== -1 && currentMonthCount >= maxShowcases) {
+    return NextResponse.json({ 
+      error: `Monthly showcase limit reached (${currentMonthCount}/${maxShowcases}). Upgrade to create more showcases.`,
+      code: 'SHOWCASE_LIMIT_REACHED',
+      currentCount: currentMonthCount,
+      maxAllowed: maxShowcases,
+      subscriptionTier
+    }, { status: 403 });
   }
 
   // Validate media count
-  if (!media_ids || media_ids.length === 0 || media_ids.length > 6) {
+  if (!mediaIds || mediaIds.length === 0 || mediaIds.length > 6) {
     return NextResponse.json({ error: 'Showcase must contain between 1 and 6 media items' }, { status: 400 });
   }
 
-  // Create showcase
+  // Create showcase with metadata
+  const showcaseData = {
+    title,
+    description,
+    type,
+    creator_user_id: user.id,
+    tags: tags || [],
+    moodboard_summary: null,
+    moodboard_palette: null,
+    visibility: 'PUBLIC',
+    metadata: {
+      media_count: mediaIds.length,
+      media_metadata: mediaMetadata || [],
+      created_via: 'web_app'
+    }
+  };
+
   const { data: showcase, error: showcaseError } = await supabase
     .from('showcases')
-    .insert({
-      title,
-      description,
-      type,
-      creator_user_id: user.id,
-      tags: tags || [],
-      moodboard_summary,
-      moodboard_palette,
-      visibility: 'PUBLIC'
-    })
+    .insert(showcaseData)
     .select()
     .single();
 
@@ -207,7 +292,7 @@ export async function POST(request: Request) {
   }
 
   // Add media to showcase
-  const mediaInserts = media_ids.map((mediaId: string, index: number) => ({
+  const mediaInserts = mediaIds.map((mediaId: string, index: number) => ({
     showcase_id: showcase.id,
     media_id: mediaId,
     sort_order: index
@@ -225,4 +310,9 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ showcase });
+  
+  } catch (error) {
+    console.error('Error in showcases POST:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

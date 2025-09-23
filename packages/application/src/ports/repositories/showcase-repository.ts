@@ -7,5 +7,6 @@ export interface ShowcaseRepository {
   findByCreator(creatorUserId: EntityId): Promise<Showcase[]>;
   findByTalent(talentUserId: EntityId): Promise<Showcase[]>;
   countByUser(userId: EntityId, visibility?: string): Promise<number>;
+  countByUserThisMonth(userId: EntityId, visibility?: string): Promise<number>;
   delete(id: EntityId): Promise<void>;
 }

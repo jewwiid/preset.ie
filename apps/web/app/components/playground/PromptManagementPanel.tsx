@@ -16,9 +16,10 @@ interface StylePreset {
   id: string
   name: string
   description?: string
-  style_type: string
+  category: string
   prompt_template: string
-  intensity: number
+  style_settings?: any
+  technical_settings?: any
   usage_count: number
   is_public: boolean
   user_id?: string
@@ -44,16 +45,15 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
   
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'photorealistic' | 'artistic' | 'cartoon' | 'vintage' | 'cyberpunk' | 'watercolor' | 'sketch' | 'oil_painting'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'style' | 'cinematic' | 'technical' | 'custom'>('all')
   const [sortBy, setSortBy] = useState<'name' | 'usage' | 'created'>('usage')
   
   // Form state
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    styleType: '',
+    category: 'style',
     promptTemplate: '',
-    intensity: 1.0,
     isPublic: false,
     generationMode: 'text-to-image' as 'text-to-image' | 'image-to-image'
   })
@@ -72,8 +72,8 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
   })
 
   // Check for duplicates
-  const checkForDuplicates = async (name: string, styleType: string, promptTemplate: string) => {
-    if (!user || !session?.access_token || !name || !styleType || !promptTemplate) {
+  const checkForDuplicates = async (name: string, category: string, promptTemplate: string) => {
+    if (!user || !session?.access_token || !name || !category || !promptTemplate) {
       setDuplicateCheck({
         isChecking: false,
         isDuplicate: false,
@@ -94,9 +94,8 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
         },
         body: JSON.stringify({
           name: name.trim(),
-          styleType,
+          category,
           promptTemplate: promptTemplate.trim(),
-          intensity: formData.intensity,
           isPublic: formData.isPublic,
           generationMode: formData.generationMode,
           checkOnly: true // Special flag to only check, not create
@@ -143,7 +142,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     
     setLoading(true)
     try {
-      const response = await fetch('/api/presets?category=style&sort=popular', {
+      const response = await fetch('/api/presets?sort=popular', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`
         }
@@ -172,8 +171,8 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
   // Debounced duplicate checking
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (formData.name && formData.styleType && formData.promptTemplate) {
-        checkForDuplicates(formData.name, formData.styleType, formData.promptTemplate)
+      if (formData.name && formData.category && formData.promptTemplate) {
+        checkForDuplicates(formData.name, formData.category, formData.promptTemplate)
       } else {
         setDuplicateCheck({
           isChecking: false,
@@ -185,13 +184,13 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     }, 1000) // 1 second delay
 
     return () => clearTimeout(timeoutId)
-  }, [formData.name, formData.styleType, formData.promptTemplate])
+  }, [formData.name, formData.category, formData.promptTemplate])
 
   // Create preset
   const handleCreatePreset = async () => {
     if (!user || !session?.access_token) return
     
-    if (!formData.name || !formData.styleType || !formData.promptTemplate) {
+    if (!formData.name || !formData.category || !formData.promptTemplate) {
       showFeedback({
         type: 'warning',
         title: 'Missing Fields',
@@ -359,9 +358,8 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     setFormData({
       name: '',
       description: '',
-      styleType: '',
+      category: 'style',
       promptTemplate: '',
-      intensity: 1.0,
       isPublic: false,
       generationMode: 'text-to-image'
     })
@@ -372,23 +370,18 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     setFormData({
       name: preset.name,
       description: preset.description || '',
-      styleType: preset.style_type,
+      category: preset.category,
       promptTemplate: preset.prompt_template,
-      intensity: preset.intensity,
       isPublic: preset.is_public,
       generationMode: preset.generation_mode || 'text-to-image'
     })
   }
 
-  const styleTypes = [
-    { value: 'photorealistic', label: '📸 Photorealistic' },
-    { value: 'artistic', label: '🎨 Artistic' },
-    { value: 'cartoon', label: '🎭 Cartoon' },
-    { value: 'vintage', label: '📻 Vintage' },
-    { value: 'cyberpunk', label: '🤖 Cyberpunk' },
-    { value: 'watercolor', label: '🎨 Watercolor' },
-    { value: 'sketch', label: '✏️ Sketch' },
-    { value: 'oil_painting', label: '🖼️ Oil Painting' }
+  const categories = [
+    { value: 'style', label: '🎨 Style' },
+    { value: 'cinematic', label: '🎬 Cinematic' },
+    { value: 'technical', label: '⚙️ Technical' },
+    { value: 'custom', label: '🔧 Custom' }
   ]
 
   // Filter and sort presets
@@ -399,7 +392,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
         preset.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         preset.prompt_template.toLowerCase().includes(searchQuery.toLowerCase())
       
-      const matchesFilter = filterType === 'all' || preset.style_type === filterType
+      const matchesFilter = filterType === 'all' || preset.category === filterType
       
       return matchesSearch && matchesFilter
     })
@@ -420,8 +413,8 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Sign In Required</h3>
-          <p className="text-gray-600">Please sign in to manage your style presets.</p>
+          <h3 className="text-lg font-medium text-foreground mb-2">Sign In Required</h3>
+          <p className="text-muted-foreground">Please sign in to manage your style presets.</p>
         </div>
       </div>
     )
@@ -432,8 +425,8 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Prompt Management</h2>
-          <p className="text-gray-600">Create, organize, and reuse your custom style prompts</p>
+          <h2 className="text-2xl font-bold text-foreground">Prompt Management</h2>
+          <p className="text-muted-foreground">Create, organize, and reuse your custom style prompts</p>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
@@ -465,15 +458,15 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Style Type *</label>
-                <Select value={formData.styleType} onValueChange={(value) => setFormData({ ...formData, styleType: value })}>
+                <label className="block text-sm font-medium mb-1">Category *</label>
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select style type" />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {styleTypes.map(type => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                    {categories.map(category => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -490,7 +483,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                     <SelectItem value="image-to-image">🖼️ Image-to-Image</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Choose the context this prompt was written for
                 </p>
               </div>
@@ -507,10 +500,10 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                 {duplicateCheck.message && (
                   <div className={`mt-2 p-2 rounded-md text-xs ${
                     duplicateCheck.isDuplicate 
-                      ? 'bg-orange-50 border border-orange-200 text-orange-800' 
+                      ? 'bg-orange-500/10 border border-orange-500/20 text-orange-600' 
                       : duplicateCheck.isNameConflict
-                      ? 'bg-red-50 border border-red-200 text-red-800'
-                      : 'bg-primary-50 border border-primary/20 text-primary-800'
+                      ? 'bg-destructive/10 border border-destructive/20 text-destructive'
+                      : 'bg-primary/10 border border-primary/20 text-primary'
                   }`}>
                     <div className="flex items-center gap-2">
                       {duplicateCheck.isChecking ? (
@@ -534,26 +527,15 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                   </div>
                 )}
                 
-                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-xs text-blue-800 font-medium mb-1">💡 Prompt Writing Tips:</p>
-                  <ul className="text-xs text-blue-700 space-y-1">
+                <div className="mt-2 p-2 bg-primary/5 border border-primary/20 rounded-md">
+                  <p className="text-xs text-primary font-medium mb-1">💡 Prompt Writing Tips:</p>
+                  <ul className="text-xs text-primary/80 space-y-1">
                     <li>• <strong>Text-to-Image:</strong> Use "Create a..." (no existing image)</li>
                     <li>• <strong>Image-to-Image:</strong> Use "Apply..." or "Transform..." (modifying existing image)</li>
                     <li>• Use <code>{'{style_type}'}</code> placeholder for dynamic style names</li>
                     <li>• Be specific about visual characteristics (colors, textures, mood)</li>
                   </ul>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Intensity</label>
-                <Input
-                  type="number"
-                  min="0.1"
-                  max="2.0"
-                  step="0.1"
-                  value={formData.intensity}
-                  onChange={(e) => setFormData({ ...formData, intensity: parseFloat(e.target.value) })}
-                />
               </div>
               <div className="flex items-center space-x-2">
                 <input
@@ -581,7 +563,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search presets..."
             value={searchQuery}
@@ -594,18 +576,14 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
         <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
           <SelectTrigger className="w-full sm:w-48">
             <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Filter by style" />
+            <SelectValue placeholder="Filter by category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Styles</SelectItem>
-            <SelectItem value="photorealistic">📸 Photorealistic</SelectItem>
-            <SelectItem value="artistic">🎨 Artistic</SelectItem>
-            <SelectItem value="cartoon">🎭 Cartoon</SelectItem>
-            <SelectItem value="vintage">📻 Vintage</SelectItem>
-            <SelectItem value="cyberpunk">🤖 Cyberpunk</SelectItem>
-            <SelectItem value="watercolor">🎨 Watercolor</SelectItem>
-            <SelectItem value="sketch">✏️ Sketch</SelectItem>
-            <SelectItem value="oil_painting">🖼️ Oil Painting</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="style">🎨 Style</SelectItem>
+            <SelectItem value="cinematic">🎬 Cinematic</SelectItem>
+            <SelectItem value="technical">⚙️ Technical</SelectItem>
+            <SelectItem value="custom">🔧 Custom</SelectItem>
           </SelectContent>
         </Select>
         
@@ -623,22 +601,22 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
       </div>
 
       {/* Results Count */}
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-muted-foreground">
         {filteredPresets.length} preset{filteredPresets.length !== 1 ? 's' : ''} found
       </div>
 
       {/* Presets Grid */}
       {loading ? (
         <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       ) : filteredPresets.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-gray-400 mb-4">
+          <div className="text-muted-foreground mb-4">
             <Plus className="h-12 w-12 mx-auto" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No presets found</h3>
-          <p className="text-gray-600 mb-4">
+          <h3 className="text-lg font-medium text-foreground mb-2">No presets found</h3>
+          <p className="text-muted-foreground mb-4">
             {searchQuery || filterType !== 'all' 
               ? 'Try adjusting your search or filter criteria.' 
               : 'Create your first style preset to get started.'}
@@ -656,7 +634,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
             <Card 
               key={preset.id} 
               className={`cursor-pointer transition-all hover:shadow-md ${
-                selectedPreset?.id === preset.id ? 'ring-2 ring-blue-500' : 'hover:ring-1 hover:ring-gray-300'
+                selectedPreset?.id === preset.id ? 'ring-2 ring-primary' : 'hover:ring-1 hover:ring-border'
               }`}
               onClick={() => onSelectPreset?.(preset)}
             >
@@ -664,9 +642,9 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm truncate">{preset.name}</CardTitle>
                   <div className="flex items-center space-x-1">
-                    {preset.is_public && <Users className="h-3 w-3 text-blue-500" />}
+                    {preset.is_public && <Users className="h-3 w-3 text-primary" />}
                     <Badge variant="outline" className="text-xs">
-                      {preset.style_type}
+                      {preset.category}
                     </Badge>
                     {preset.generation_mode && (
                       <Badge variant="secondary" className="text-xs">
@@ -677,17 +655,17 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+                <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
                   {preset.description || preset.prompt_template}
                 </p>
                 
                 {/* Prompt Preview */}
-                <div className="bg-gray-50 p-2 rounded text-xs text-gray-700 mb-3 line-clamp-3">
+                <div className="bg-muted p-2 rounded text-xs text-foreground mb-3 line-clamp-3">
                   {preset.prompt_template}
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1 text-xs text-gray-500">
+                  <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                     <Star className="h-3 w-3" />
                     <span>{preset.usage_count} uses</span>
                   </div>
@@ -764,15 +742,15 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Style Type *</label>
-              <Select value={formData.styleType} onValueChange={(value) => setFormData({ ...formData, styleType: value })}>
+              <label className="block text-sm font-medium mb-1">Category *</label>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select style type" />
+                  <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {styleTypes.map(type => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                  {categories.map(category => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -789,7 +767,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                   <SelectItem value="image-to-image">🖼️ Image-to-Image</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Choose the context this prompt was written for
               </p>
             </div>
@@ -806,10 +784,10 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
               {duplicateCheck.message && (
                 <div className={`mt-2 p-2 rounded-md text-xs ${
                   duplicateCheck.isDuplicate 
-                    ? 'bg-orange-50 border border-orange-200 text-orange-800' 
+                    ? 'bg-orange-500/10 border border-orange-500/20 text-orange-600' 
                     : duplicateCheck.isNameConflict
-                    ? 'bg-red-50 border border-red-200 text-red-800'
-                    : 'bg-primary-50 border border-primary/20 text-primary-800'
+                    ? 'bg-destructive/10 border border-destructive/20 text-destructive'
+                    : 'bg-primary/10 border border-primary/20 text-primary'
                 }`}>
                   <div className="flex items-center gap-2">
                     {duplicateCheck.isChecking ? (
@@ -833,26 +811,15 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                 </div>
               )}
               
-              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-xs text-blue-800 font-medium mb-1">💡 Prompt Writing Tips:</p>
-                <ul className="text-xs text-blue-700 space-y-1">
+              <div className="mt-2 p-2 bg-primary/5 border border-primary/20 rounded-md">
+                <p className="text-xs text-primary font-medium mb-1">💡 Prompt Writing Tips:</p>
+                <ul className="text-xs text-primary/80 space-y-1">
                   <li>• <strong>Text-to-Image:</strong> Use "Create a..." (no existing image)</li>
                   <li>• <strong>Image-to-Image:</strong> Use "Apply..." or "Transform..." (modifying existing image)</li>
                   <li>• Use <code>{'{style_type}'}</code> placeholder for dynamic style names</li>
                   <li>• Be specific about visual characteristics (colors, textures, mood)</li>
                 </ul>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Intensity</label>
-              <Input
-                type="number"
-                min="0.1"
-                max="2.0"
-                step="0.1"
-                value={formData.intensity}
-                onChange={(e) => setFormData({ ...formData, intensity: parseFloat(e.target.value) })}
-              />
             </div>
             <div className="flex items-center space-x-2">
               <input

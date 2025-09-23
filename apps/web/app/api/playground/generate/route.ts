@@ -38,6 +38,7 @@ async function generateWithWaveSpeedNanoBanana({
       endpoint: apiEndpoint,
       prompt: prompt.substring(0, 100) + '...',
       hasBaseImage: !!baseImage,
+      size: size,
       enableSyncMode,
       enableBase64Output
     })
@@ -45,6 +46,7 @@ async function generateWithWaveSpeedNanoBanana({
     // Build request body according to WaveSpeed API spec
     const requestBody: any = {
       prompt: prompt,
+      size: size, // Add the size parameter required by WaveSpeed API
       output_format: 'png',
       enable_sync_mode: enableSyncMode,
       enable_base64_output: enableBase64Output
@@ -69,6 +71,8 @@ async function generateWithWaveSpeedNanoBanana({
         hasRequiredPrompt: !!requestBody.prompt,
         hasRequiredImages: !!requestBody.images && Array.isArray(requestBody.images) && requestBody.images.length > 0,
         imagesArrayLength: requestBody.images?.length || 0,
+        hasSize: !!requestBody.size,
+        sizeValue: requestBody.size,
         outputFormatValid: ['png', 'jpeg'].includes(requestBody.output_format),
         syncModeType: typeof requestBody.enable_sync_mode,
         base64OutputType: typeof requestBody.enable_base64_output
@@ -507,7 +511,7 @@ export async function POST(request: NextRequest) {
   try {
   
   const requestBody = await request.json()
-  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences, selectedProvider } = requestBody
+  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences, selectedProvider, replaceLatestImages = false } = requestBody
   
   console.log('📝 Generation request:', {
     prompt: prompt?.substring(0, 100) + (prompt?.length > 100 ? '...' : ''),
@@ -1343,6 +1347,41 @@ export async function POST(request: NextRequest) {
     }
     console.log('✅ Credits deducted successfully')
     
+    // Prepare new images
+    const newImages = seedreamData.data.outputs.map((imgUrl: string, index: number) => ({
+      url: imgUrl,
+      width: parseInt(finalResolution.split('*')[0] || '1024'),
+      height: parseInt(finalResolution.split('*')[1] || '1024'),
+      generated_at: new Date().toISOString()
+    }))
+
+    // Handle image replacement logic
+    let finalGeneratedImages = newImages
+    
+    if (projectId && replaceLatestImages) {
+      // Get existing project to merge images
+      console.log('🔄 Replacing latest images for existing project:', projectId)
+      const { data: existingProject } = await supabaseAdmin
+        .from('playground_projects')
+        .select('generated_images')
+        .eq('id', projectId)
+        .eq('user_id', user.id)
+        .single()
+      
+      if (existingProject?.generated_images) {
+        const existingImages = existingProject.generated_images as any[]
+        // Keep all images except the last batch (assuming same number of images)
+        const imagesToKeep = existingImages.slice(0, Math.max(0, existingImages.length - newImages.length))
+        finalGeneratedImages = [...imagesToKeep, ...newImages]
+        console.log('📸 Image replacement:', {
+          existingCount: existingImages.length,
+          newCount: newImages.length,
+          keptCount: imagesToKeep.length,
+          finalCount: finalGeneratedImages.length
+        })
+      }
+    }
+
     // Save or update project
     const projectData = {
       user_id: user.id,
@@ -1351,12 +1390,7 @@ export async function POST(request: NextRequest) {
       style,
       aspect_ratio: aspectRatio,
       resolution,
-      generated_images: seedreamData.data.outputs.map((imgUrl: string, index: number) => ({
-        url: imgUrl,
-        width: parseInt(finalResolution.split('*')[0] || '1024'),
-        height: parseInt(finalResolution.split('*')[1] || '1024'),
-        generated_at: new Date().toISOString()
-      })),
+      generated_images: finalGeneratedImages,
       credits_used: creditsNeeded,
       status: 'generated',
       last_generated_at: new Date().toISOString(),

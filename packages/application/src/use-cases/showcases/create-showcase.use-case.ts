@@ -44,23 +44,23 @@ export class CreateShowcaseUseCase {
       throw new Error('Talent not found');
     }
 
-    // Check showcase limits
-    const creatorShowcaseCount = await this.showcaseRepository.countByUser(
+    // Check showcase limits (monthly)
+    const creatorShowcaseCount = await this.showcaseRepository.countByUserThisMonth(
       EntityId.from(creator.id.toString()),
       'PUBLIC'
     );
 
     if (!creator.canCreateShowcase(creatorShowcaseCount)) {
-      throw new Error('Showcase limit reached for creator\'s subscription tier');
+      throw new Error('Monthly showcase limit reached for creator\'s subscription tier');
     }
 
-    const talentShowcaseCount = await this.showcaseRepository.countByUser(
+    const talentShowcaseCount = await this.showcaseRepository.countByUserThisMonth(
       EntityId.from(talent.id.toString()),
       'PUBLIC'
     );
 
     if (!talent.canCreateShowcase(talentShowcaseCount)) {
-      throw new Error('Showcase limit reached for talent\'s subscription tier');
+      throw new Error('Monthly showcase limit reached for talent\'s subscription tier');
     }
 
     // Validate media count (3-6 items)

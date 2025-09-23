@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Create Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Build query
+    // Fetch regular presets
     let query = supabase
       .from('presets')
       .select(`
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         user_id
       `)
       .eq('is_public', true) // Only show public presets
-      .order(sort === 'popular' ? 'usage_count' : sort, { ascending: sort === 'created_at' ? false : true });
+      .order(sort === 'popular' ? 'usage_count' : sort, { ascending: sort === 'created_at' ? false : (sort === 'name' ? true : false) });
 
     // Apply filters
     if (category && category !== 'all') {
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%, description.ilike.%${search}%, ai_metadata->tags.cs.{${search}}`);
+      query = query.or(`name.ilike.%${search}%, description.ilike.%${search}%`);
     }
 
     // Apply pagination
@@ -56,6 +56,35 @@ export async function GET(request: NextRequest) {
 
     const { data: presets, error, count } = await query;
 
+    // Fetch cinematic presets
+    let cinematicQuery = supabase
+      .from('cinematic_presets')
+      .select(`
+        id,
+        name,
+        display_name,
+        description,
+        category,
+        parameters,
+        sort_order,
+        is_active,
+        created_at,
+        updated_at
+      `)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+
+    // Apply filters to cinematic presets
+    if (category && category !== 'all') {
+      cinematicQuery = cinematicQuery.eq('category', category);
+    }
+
+    if (search) {
+      cinematicQuery = cinematicQuery.or(`display_name.ilike.%${search}%, description.ilike.%${search}%`);
+    }
+
+    const { data: cinematicPresets, error: cinematicError } = await cinematicQuery;
+
     if (error) {
       console.error('Error fetching presets:', error);
       return NextResponse.json(
@@ -64,8 +93,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Format response
-    const formattedPresets = presets?.map(preset => ({
+    // Format regular presets
+    const formattedRegularPresets = presets?.map(preset => ({
       id: preset.id,
       name: preset.name,
       description: preset.description,
@@ -91,8 +120,82 @@ export async function GET(request: NextRequest) {
       }
     })) || [];
 
-    // Fetch sample images from the dedicated table for each preset
+    // Format cinematic presets to match the expected structure
+    const formattedCinematicPresets = cinematicPresets?.map(cinematicPreset => {
+      // Map generic categories to more specific ones
+      let specificCategory = cinematicPreset.category;
+      if (cinematicPreset.name === 'portrait') specificCategory = 'portrait';
+      else if (cinematicPreset.name === 'landscape') specificCategory = 'nature';
+      else if (cinematicPreset.name === 'fashion') specificCategory = 'fashion';
+      else if (cinematicPreset.name === 'street') specificCategory = 'street';
+      else if (cinematicPreset.name === 'nature') specificCategory = 'nature';
+      else if (cinematicPreset.name === 'cinematic') specificCategory = 'cinematic';
+      else if (cinematicPreset.name === 'urban') specificCategory = 'cinematic';
+      
+      return {
+        id: `cinematic_${cinematicPreset.id}`,
+        name: cinematicPreset.display_name,
+        description: cinematicPreset.description,
+        category: specificCategory,
+        prompt_template: `Create a ${cinematicPreset.display_name.toLowerCase()} image with cinematic quality and professional composition`,
+        negative_prompt: '',
+        style_settings: {},
+        technical_settings: {},
+        cinematic_settings: {
+          enableCinematicMode: true,
+          cinematicParameters: cinematicPreset.parameters,
+          enhancedPrompt: true,
+          includeTechnicalDetails: true,
+          includeStyleReferences: true,
+          generationMode: 'text-to-image',
+          selectedProvider: 'nanobanana'
+        },
+        sample_images: undefined,
+        ai_metadata: {
+          cinematic_settings: {
+            enableCinematicMode: true,
+            cinematicParameters: cinematicPreset.parameters,
+            enhancedPrompt: true,
+            includeTechnicalDetails: true,
+            includeStyleReferences: true,
+            generationMode: 'text-to-image',
+            selectedProvider: 'nanobanana'
+          }
+        },
+        seedream_config: {},
+        usage_count: 0,
+        is_public: true,
+        is_featured: false,
+        created_at: cinematicPreset.created_at,
+        updated_at: cinematicPreset.updated_at,
+        creator: {
+          id: 'preset',
+          display_name: 'Preset',
+          handle: 'preset',
+          avatar_url: null
+        }
+      };
+    }) || [];
+
+    // Combine both types of presets
+    let formattedPresets = [...formattedCinematicPresets, ...formattedRegularPresets];
+
+    // Apply client-side sorting for combined results
+    if (sort === 'popular' || sort === 'usage_count') {
+      formattedPresets.sort((a, b) => (b.usage_count || 0) - (a.usage_count || 0));
+    } else if (sort === 'name') {
+      formattedPresets.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sort === 'created_at') {
+      formattedPresets.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
+    // Fetch sample images from the dedicated table for each preset (only for regular presets)
     for (const preset of formattedPresets) {
+      // Skip cinematic presets as they don't have sample images
+      if (preset.id.startsWith('cinematic_')) {
+        continue;
+      }
+      
       try {
         const { data: sampleImages } = await supabase
           .from('preset_images')
@@ -120,14 +223,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const totalPages = Math.ceil((count || 0) / limit);
+    // Apply pagination to combined results
+    const totalPresets = formattedPresets.length;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedPresets = formattedPresets.slice(startIndex, endIndex);
+    
+    const totalPages = Math.ceil(totalPresets / limit);
 
     return NextResponse.json({
-      presets: formattedPresets,
+      presets: paginatedPresets,
       pagination: {
         page,
         limit,
-        total: count || 0,
+        total: totalPresets,
         pages: totalPages
       }
     });
@@ -312,6 +421,78 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating preset:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { presetId } = body;
+
+    if (!presetId) {
+      return NextResponse.json(
+        { error: 'Preset ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Create Supabase client with service role key
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Check if it's a cinematic preset
+    if (presetId.startsWith('cinematic_')) {
+      const actualId = presetId.replace('cinematic_', '');
+      
+      // For cinematic presets, we'll track usage in a separate table or add a usage_count field
+      // For now, we'll just return success as cinematic presets don't have usage tracking yet
+      return NextResponse.json({
+        message: 'Usage tracked for cinematic preset'
+      });
+    }
+
+    // Increment usage count for regular presets
+    // First get the current usage count
+    const { data: currentPreset, error: fetchError } = await supabase
+      .from('presets')
+      .select('usage_count')
+      .eq('id', presetId)
+      .single();
+
+    if (fetchError || !currentPreset) {
+      console.error('Error fetching preset for usage update:', fetchError);
+      return NextResponse.json(
+        { error: 'Failed to fetch preset for usage update' },
+        { status: 500 }
+      );
+    }
+
+    // Increment the usage count
+    const { error } = await supabase
+      .from('presets')
+      .update({ 
+        usage_count: (currentPreset.usage_count || 0) + 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', presetId);
+
+    if (error) {
+      console.error('Error updating preset usage:', error);
+      return NextResponse.json(
+        { error: 'Failed to update preset usage' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      message: 'Usage tracked successfully'
+    });
+
+  } catch (error) {
+    console.error('Error tracking preset usage:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

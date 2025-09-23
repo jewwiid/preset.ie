@@ -8,20 +8,27 @@ interface GigRow {
   title: string;
   description: string;
   comp_type: string;
-  comp_details?: string;
+  comp_details: string | null;
   location_text: string;
-  location?: any; // PostGIS geography
-  radius_meters?: number;
+  location: any | null; // PostGIS geography
+  radius_meters: number | null;
   start_time: string;
   end_time: string;
   application_deadline: string;
   max_applicants: number;
   usage_rights: string;
-  safety_notes?: string;
-  status: string;
-  boost_level: number;
-  created_at: string;
-  updated_at: string;
+  safety_notes: string | null;
+  status: string | null;
+  boost_level: number | null;
+  created_at: string | null;
+  updated_at: string | null;
+  // Additional fields from actual database schema
+  applicant_preferences: any | null;
+  city: string | null;
+  country: string | null;
+  purpose: string | null;
+  style_tags: string[] | null;
+  vibe_tags: string[] | null;
 }
 
 export class SupabaseGigRepository implements GigRepository {
@@ -32,7 +39,7 @@ export class SupabaseGigRepository implements GigRepository {
     
     const { error } = await this.client.getClient()
       .from('gigs')
-      .upsert(row);
+      .upsert(row as any);
 
     if (error) {
       throw new Error(`Failed to save gig: ${error.message}`);
@@ -91,7 +98,7 @@ export class SupabaseGigRepository implements GigRepository {
     }
 
     if (filters?.compensationType) {
-      query = query.eq('comp_type', filters.compensationType);
+      query = query.eq('comp_type', filters.compensationType as 'TFP' | 'PAID' | 'EXPENSES');
     }
 
     // Location filtering would require PostGIS functions - simplified for now
@@ -122,7 +129,7 @@ export class SupabaseGigRepository implements GigRepository {
       .eq('owner_user_id', ownerUserId.toString());
 
     if (status) {
-      query = query.eq('status', status);
+      query = query.eq('status', status as 'DRAFT' | 'PUBLISHED' | 'APPLICATIONS_CLOSED' | 'BOOKED' | 'COMPLETED' | 'CANCELLED');
     }
 
     const { count, error } = await query;
@@ -145,27 +152,35 @@ export class SupabaseGigRepository implements GigRepository {
     }
   }
 
-  private domainToRow(gig: Gig): Partial<GigRow> {
+  private domainToRow(gig: Gig): GigRow {
     return {
-      id: gig.id.toString(),
+      id: gig.getId().toString(),
       owner_user_id: gig.ownerUserId.toString(),
       title: gig.title,
       description: gig.description,
-      comp_type: gig.compensation.type.toString(),
-      comp_details: gig.compensation.details,
+      comp_type: gig.compensation.type.toString() as 'TFP' | 'PAID' | 'EXPENSES',
+      comp_details: gig.compensation.details || null,
       location_text: gig.location.text,
       // location: PostGIS point - would need proper conversion
-      radius_meters: gig.location.radiusMeters,
+      location: null,
+      radius_meters: gig.location.radiusMeters || null,
       start_time: gig.startTime.toISOString(),
       end_time: gig.endTime.toISOString(),
       application_deadline: gig.applicationDeadline.toISOString(),
       max_applicants: gig.maxApplicants,
       usage_rights: gig.usageRights,
-      safety_notes: gig.safetyNotes,
+      safety_notes: gig.safetyNotes || null,
       status: gig.status.toString(),
-      boost_level: gig.boostLevel,
+      boost_level: gig.boostLevel || null,
       created_at: gig.createdAt.toISOString(),
       updated_at: gig.updatedAt.toISOString(),
+      // Additional fields with default values
+      applicant_preferences: null,
+      city: null,
+      country: null,
+      purpose: null,
+      style_tags: null,
+      vibe_tags: null,
     };
   }
 

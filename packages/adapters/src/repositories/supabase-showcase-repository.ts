@@ -87,13 +87,36 @@ export class SupabaseShowcaseRepository implements ShowcaseRepository {
       .or(`creator_user_id.eq.${userId.toString()},talent_user_id.eq.${userId.toString()}`);
 
     if (visibility) {
-      query = query.eq('visibility', visibility);
+      query = query.eq('visibility', visibility as 'DRAFT' | 'PUBLIC' | 'PRIVATE');
     }
 
     const { count, error } = await query;
 
     if (error) {
       throw new Error(`Failed to count showcases by user: ${error.message}`);
+    }
+
+    return count || 0;
+  }
+
+  async countByUserThisMonth(userId: EntityId, visibility?: string): Promise<number> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    let query = this.client.getClient()
+      .from('showcases')
+      .select('*', { count: 'exact' })
+      .or(`creator_user_id.eq.${userId.toString()},talent_user_id.eq.${userId.toString()}`)
+      .gte('created_at', startOfMonth.toISOString());
+
+    if (visibility) {
+      query = query.eq('visibility', visibility as 'DRAFT' | 'PUBLIC' | 'PRIVATE');
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+      throw new Error(`Failed to count showcases by user this month: ${error.message}`);
     }
 
     return count || 0;
@@ -121,7 +144,7 @@ export class SupabaseShowcaseRepository implements ShowcaseRepository {
       palette: showcase.getPalette(), // Assumes palette is already JSON-serializable
       approved_by_creator_at: showcase.getApprovals().find(a => a.getUserId() === showcase.getCreatorId())?.getApprovedAt().toISOString(),
       approved_by_talent_at: showcase.getApprovals().find(a => a.getUserId() === showcase.getTalentId())?.getApprovedAt().toISOString(),
-      visibility: showcase.getVisibility().toString(),
+      visibility: showcase.getVisibility().toString() as 'DRAFT' | 'PUBLIC' | 'PRIVATE',
       created_at: showcase.getCreatedAt().toISOString(),
       updated_at: new Date().toISOString(), // Use current time as updated_at
     };

@@ -47,6 +47,7 @@ interface CinematicParameterSelectorProps {
   onParametersChange: (parameters: Partial<CinematicParameters>) => void;
   onGenerateTemplate?: (category: string, mood: SceneMood, style?: DirectorStyle) => void;
   onToggleChange?: (includeTechnicalDetails: boolean, includeStyleReferences: boolean) => void;
+  onClear?: () => void;
   showAdvanced?: boolean;
   compact?: boolean;
 }
@@ -56,6 +57,7 @@ export default function CinematicParameterSelector({
   onParametersChange,
   onGenerateTemplate,
   onToggleChange,
+  onClear,
   showAdvanced = false,
   compact = false
 }: CinematicParameterSelectorProps) {
@@ -122,6 +124,46 @@ export default function CinematicParameterSelector({
     }));
   };
 
+  // Track active preset
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [availablePresets, setAvailablePresets] = useState<any[]>([]);
+  const [presetsLoading, setPresetsLoading] = useState(false);
+
+  // Fetch presets from API
+  useEffect(() => {
+    const fetchPresets = async () => {
+      setPresetsLoading(true);
+      try {
+        const response = await fetch('/api/cinematic-presets');
+        const data = await response.json();
+        
+        if (data.success) {
+          setAvailablePresets(data.presets || []);
+        } else {
+          console.error('Failed to fetch presets:', data.error);
+        }
+      } catch (error) {
+        console.error('Error fetching presets:', error);
+      } finally {
+        setPresetsLoading(false);
+      }
+    };
+
+    fetchPresets();
+  }, []);
+
+  // Apply cinematic preset from database
+  const applyCinematicPreset = (presetName: string) => {
+    const preset = availablePresets.find(p => p.name === presetName);
+    if (preset && preset.parameters) {
+      setActivePreset(presetName);
+      onParametersChange({
+        ...parameters,
+        ...preset.parameters
+      });
+    }
+  };
+
   const generateTemplate = (category: 'portrait' | 'landscape' | 'street' | 'cinematic' | 'artistic' | 'commercial') => {
     if (onGenerateTemplate) {
       const mood = parameters.sceneMood || 'romantic';
@@ -130,11 +172,11 @@ export default function CinematicParameterSelector({
     }
   };
 
-  const ParameterSelect = ({ 
-    label, 
-    value, 
-    options, 
-    onValueChange, 
+  const ParameterSelect = ({
+    label,
+    value,
+    options,
+    onValueChange,
     icon: Icon,
     description 
   }: {
@@ -144,41 +186,47 @@ export default function CinematicParameterSelector({
     onValueChange: (value: string) => void;
     icon?: React.ComponentType<any>;
     description?: string;
-  }) => (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-        <Label className="text-sm font-medium">{label}</Label>
-        {value && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onValueChange('')}
-            className="h-6 w-6 p-0"
-          >
-            ×
-          </Button>
+  }) => {
+    // Find the currently selected option to get its description
+    const selectedOption = options.find(option => option.value === value);
+    
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+          <Label className="text-sm font-medium">{label}</Label>
+          {value && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onValueChange('')}
+              className="h-6 w-6 p-0"
+            >
+              ×
+            </Button>
+          )}
+        </div>
+        <Select value={value || ''} onValueChange={onValueChange}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                <span>{option.label}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {/* Show description outside the dropdown */}
+        {selectedOption?.description && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {selectedOption.description}
+          </p>
         )}
       </div>
-      <Select value={value || ''} onValueChange={onValueChange}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              <div className="flex flex-col">
-                <span>{option.label}</span>
-                {option.description && (
-                  <span className="text-xs text-muted-foreground">{option.description}</span>
-                )}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
+    );
+  };
 
   const cameraOptions = getParameterOptions('camera_angles');
 
@@ -197,8 +245,13 @@ export default function CinematicParameterSelector({
     return (
       <Card className="w-full">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Cinematic Parameters</CardTitle>
-          <CardDescription>Loading cinematic parameters...</CardDescription>
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <Wand2 className="h-4 w-4 text-primary" />
+            Cinematic Parameters
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Loading cinematic parameters...
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
@@ -213,8 +266,10 @@ export default function CinematicParameterSelector({
     return (
       <Card className="w-full">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Wand2 className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <div className="p-1.5 bg-primary/10 rounded-md">
+              <Wand2 className="h-4 w-4 text-primary" />
+            </div>
             Cinematic Parameters
           </CardTitle>
         </CardHeader>
@@ -280,19 +335,23 @@ export default function CinematicParameterSelector({
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wand2 className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Wand2 className="h-5 w-5 text-primary" />
+          </div>
           Cinematic Parameters
         </CardTitle>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="space-y-4">
+          {/* Toggle Switches */}
+          <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2">
               <Switch
                 id="technical-details"
                 checked={includeTechnicalDetails}
                 onCheckedChange={setIncludeTechnicalDetails}
+                className="data-[state=checked]:bg-primary"
               />
-              <Label htmlFor="technical-details" className="text-sm">
+              <Label htmlFor="technical-details" className="text-sm font-medium text-foreground">
                 Technical Details
               </Label>
             </div>
@@ -301,33 +360,110 @@ export default function CinematicParameterSelector({
                 id="style-references"
                 checked={includeStyleReferences}
                 onCheckedChange={setIncludeStyleReferences}
+                className="data-[state=checked]:bg-primary"
               />
-              <Label htmlFor="style-references" className="text-sm">
+              <Label htmlFor="style-references" className="text-sm font-medium text-foreground">
                 Style References
               </Label>
             </div>
           </div>
-          <div className="flex gap-2">
+          {/* Preset Buttons Grid */}
+          {presetsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <span className="ml-2 text-sm text-muted-foreground">Loading presets...</span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {availablePresets.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {availablePresets.slice(0, 5).map((preset) => (
+                      <Button
+                        key={preset.id}
+                        variant={activePreset === preset.name ? "default" : "secondary"}
+                        size="sm"
+                        onClick={() => applyCinematicPreset(preset.name)}
+                        className={`text-xs font-medium transition-all duration-200 ${
+                          activePreset === preset.name 
+                            ? 'bg-primary text-primary-foreground shadow-md' 
+                            : 'hover:bg-accent hover:text-accent-foreground'
+                        }`}
+                      >
+                        {preset.display_name}
+                      </Button>
+                    ))}
+                  </div>
+                  {availablePresets.length > 5 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                      {availablePresets.slice(5).map((preset) => (
+                        <Button
+                          key={preset.id}
+                          variant={activePreset === preset.name ? "default" : "secondary"}
+                          size="sm"
+                          onClick={() => applyCinematicPreset(preset.name)}
+                          className={`text-xs font-medium transition-all duration-200 ${
+                            activePreset === preset.name 
+                              ? 'bg-primary text-primary-foreground shadow-md' 
+                              : 'hover:bg-accent hover:text-accent-foreground'
+                          }`}
+                        >
+                          {preset.display_name}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  No presets available. Please try refreshing the page.
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Selected Preset Description */}
+          {activePreset && (() => {
+            const selectedPreset = availablePresets.find(p => p.name === activePreset);
+            return selectedPreset ? (
+              <div className="mt-4 p-4 bg-card border border-border rounded-lg shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <h4 className="text-sm font-semibold text-foreground">Selected Preset</h4>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Badge variant="default" className="text-xs px-2 py-1 font-medium">
+                    {selectedPreset.display_name}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground leading-relaxed">
+                    {selectedPreset.description}
+                  </span>
+                </div>
+                <div className="mt-2">
+                  <Badge variant="secondary" className="text-xs px-2 py-1">
+                    {selectedPreset.category}
+                  </Badge>
+                </div>
+              </div>
+            ) : null;
+          })()}
+          
+          {/* Clear All Button */}
+          <div className="mt-4 flex justify-center">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => generateTemplate('portrait')}
+              onClick={() => {
+                setActivePreset(null);
+                if (onClear) {
+                  onClear();
+                } else {
+                  onParametersChange({});
+                }
+              }}
+              className="text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-destructive/10 hover:border-destructive/20 transition-all duration-200"
             >
-              Portrait
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => generateTemplate('landscape')}
-            >
-              Landscape
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => generateTemplate('cinematic')}
-            >
-              Cinematic
+              Clear All Parameters
             </Button>
           </div>
         </div>
@@ -605,9 +741,37 @@ export default function CinematicParameterSelector({
           <div className="flex flex-wrap gap-2">
             {Object.entries(parameters).map(([key, value]) => {
               if (!value) return null;
+              
+              // Format parameter names for better display
+              const formatParameterName = (paramKey: string) => {
+                const nameMap: Record<string, string> = {
+                  cameraAngle: 'Camera Angle',
+                  lensType: 'Lens Type',
+                  shotSize: 'Shot Size',
+                  depthOfField: 'Depth of Field',
+                  lightingStyle: 'Lighting Style',
+                  colorPalette: 'Color Palette',
+                  directorStyle: 'Director Style',
+                  sceneMood: 'Scene Mood',
+                  timeSetting: 'Time Setting',
+                  aspectRatio: 'Aspect Ratio',
+                  eraEmulation: 'Era Emulation',
+                  compositionTechnique: 'Composition'
+                };
+                return nameMap[paramKey] || paramKey.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+              };
+
+              // Format parameter values for better display
+              const formatParameterValue = (paramValue: string) => {
+                return paramValue
+                  .split('-')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+              };
+              
               return (
                 <Badge key={key} variant="secondary" className="text-xs">
-                  {key}: {String(value)}
+                  {formatParameterName(key)}: {formatParameterValue(String(value))}
                   <Button
                     variant="ghost"
                     size="sm"

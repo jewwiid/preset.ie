@@ -137,6 +137,9 @@ export default function AspectRatioSelector({
   const [activeCategory, setActiveCategory] = useState<'common' | 'social' | 'video' | 'custom'>('common')
 
   const selectedOption = aspectRatioOptions.find(option => option.ratio === value)
+  
+  // Debug logging
+  console.log('🎯 AspectRatioSelector received value:', value, 'selectedOption:', selectedOption?.name, 'isSelected for 16:9:', value === '16:9')
   const baseResolution = parseInt(resolution)
 
   const calculateDimensions = (ratio: string, baseRes: number) => {

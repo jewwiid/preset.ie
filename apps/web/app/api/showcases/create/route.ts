@@ -90,24 +90,44 @@ export async function POST(request: NextRequest) {
 
     const subscriptionTier = userProfile?.subscription_tier || 'free'
     
-    // Free tier users can only create 3 showcases per month
-    if (subscriptionTier === 'free') {
-      const { data: existingShowcases } = await supabase
-        .from('showcases')
-        .select('id')
-        .eq('creator_user_id', user.id)
-        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString())
+    // Check monthly showcase limits based on subscription tier
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    const { data: existingShowcases } = await supabase
+      .from('showcases')
+      .select('id')
+      .eq('creator_user_id', user.id)
+      .gte('created_at', startOfMonth.toISOString())
 
-      if (existingShowcases && existingShowcases.length >= 3) {
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: 'Free tier limit reached. Upgrade to create more showcases.',
-            code: 'SHOWCASE_LIMIT_REACHED'
-          },
-          { status: 403 }
-        )
-      }
+    const currentMonthCount = existingShowcases?.length || 0
+    
+    // Apply subscription tier limits
+    let maxShowcases = 0
+    switch (subscriptionTier) {
+      case 'free':
+        maxShowcases = 3
+        break
+      case 'plus':
+        maxShowcases = 10
+        break
+      case 'pro':
+        maxShowcases = -1 // unlimited
+        break
+      default:
+        maxShowcases = 0
+    }
+
+    if (maxShowcases !== -1 && currentMonthCount >= maxShowcases) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Monthly showcase limit reached (${currentMonthCount}/${maxShowcases}). Upgrade to create more showcases.`,
+          code: 'SHOWCASE_LIMIT_REACHED',
+          currentCount: currentMonthCount,
+          maxAllowed: maxShowcases,
+          subscriptionTier
+        },
+        { status: 403 }
+      )
     }
 
     let moodboard = null

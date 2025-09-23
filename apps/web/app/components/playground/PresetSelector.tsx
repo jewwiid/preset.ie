@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Palette, Search, Star, Users, Eye, Plus, Loader2, Settings, Film, Camera, Lightbulb, Palette as PaletteIcon, Trash2, ImageIcon } from 'lucide-react'
+import { Palette, Search, Star, Users, Eye, Plus, Loader2, Settings, Film, Camera, Lightbulb, Palette as PaletteIcon, Trash2, ImageIcon, Grid3X3, List } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
@@ -84,6 +84,8 @@ export default function PresetSelector({
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [sortBy, setSortBy] = useState('popular')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showPresetDialog, setShowPresetDialog] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -183,11 +185,24 @@ export default function PresetSelector({
     { value: 'post_processing', label: 'Post Processing' }
   ]
 
+  // Main effect for category and sort changes
   useEffect(() => {
     if (user && session) {
+      setSearchQuery('') // Clear search when category changes
       fetchPresets()
     }
-  }, [user, session, selectedCategory])
+  }, [user, session, selectedCategory, sortBy])
+
+  // Debounced search effect
+  useEffect(() => {
+    if (user && session && searchQuery !== '') {
+      const timeoutId = setTimeout(() => {
+        fetchPresets()
+      }, 300)
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [searchQuery])
 
   const fetchSavedImages = async () => {
     if (!user || !session?.access_token) return
@@ -231,8 +246,9 @@ export default function PresetSelector({
       const params = new URLSearchParams()
       if (selectedCategory !== 'all') params.append('category', selectedCategory)
       if (searchQuery) params.append('search', searchQuery)
-      params.append('sort', 'popular')
+      params.append('sort', sortBy)
       params.append('limit', '20')
+
 
       const response = await fetch(`/api/presets?${params.toString()}`, {
         headers: {
@@ -256,9 +272,26 @@ export default function PresetSelector({
     }
   }
 
-  const handlePresetSelect = (preset: Preset) => {
+  const handlePresetSelect = async (preset: Preset) => {
     onPresetSelect(preset)
     setShowPresetDialog(false)
+    
+    // Track preset usage
+    try {
+      if (session?.access_token) {
+        await fetch('/api/presets', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ presetId: preset.id })
+        })
+      }
+    } catch (error) {
+      console.error('Failed to track preset usage:', error)
+      // Don't show error to user as this is not critical
+    }
     
     showFeedback({
       type: 'success',
@@ -404,7 +437,7 @@ export default function PresetSelector({
       {/* Preset Selector Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Palette className="h-5 w-5 text-preset-500" />
+          <Palette className="h-5 w-5 text-primary" />
           <span className="font-medium">Presets</span>
           {selectedPreset && (
             <Badge variant="secondary" className="text-xs">
@@ -434,9 +467,27 @@ export default function PresetSelector({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        fetchPresets()
+                      }
+                    }}
                   />
+                  {searchQuery && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSearchQuery('')
+                        fetchPresets()
+                      }}
+                      className="ml-2"
+                    >
+                      Clear
+                    </Button>
+                  )}
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-40">
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -447,9 +498,48 @@ export default function PresetSelector({
                       ))}
                     </SelectContent>
                   </Select>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Sort" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="popular">Popular</SelectItem>
+                      <SelectItem value="created_at">Newest</SelectItem>
+                      <SelectItem value="name">Name A-Z</SelectItem>
+                      <SelectItem value="usage_count">Most Used</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Button onClick={fetchPresets} size="sm">
                     <Search className="h-4 w-4" />
                   </Button>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">View:</span>
+                    <div className="flex border rounded-md">
+                      <Button
+                        variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('grid')}
+                        className="rounded-r-none border-r"
+                      >
+                        <Grid3X3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === 'list' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className="rounded-l-none"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {presets.length} preset{presets.length !== 1 ? 's' : ''}
+                  </div>
                 </div>
 
                 {/* Presets Grid */}
@@ -465,88 +555,136 @@ export default function PresetSelector({
                       <p className="text-muted-foreground">No presets found</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div key={`${selectedCategory}-${searchQuery}-${sortBy}`} className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-2'}>
                       {presets.map(preset => (
-                        <Card 
-                          key={preset.id} 
-                          className="cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => handlePresetSelect(preset)}
-                        >
-                          <CardHeader className="pb-2">
-                            <div className="flex items-start justify-between">
-                              <CardTitle className="text-sm">{preset.name}</CardTitle>
-                              <div className="flex items-center space-x-1">
-                                {preset.is_featured && (
-                                  <Star className="h-3 w-3 text-primary" />
-                                )}
-                                {preset.is_public && (
-                                  <Users className="h-3 w-3 text-primary" />
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    confirmDelete(preset)
-                                  }}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
-                                {preset.category}
-                              </Badge>
-                              <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                <Eye className="h-3 w-3" />
-                                <span>{preset.usage_count}</span>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            {preset.description && (
-                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                                {preset.description}
-                              </p>
-                            )}
-                            
-                            {/* Sample Images Preview */}
-                            {preset.sample_images && (preset.sample_images.before_images?.length > 0 || preset.sample_images.after_images?.length > 0) && (
-                              <div className="mb-2">
-                                <div className="text-xs text-muted-foreground mb-1">Sample Images:</div>
-                                <div className="flex gap-1">
-                                  {preset.sample_images.before_images?.slice(0, 2).map((url, index) => (
-                                    <img
-                                      key={`before-${index}`}
-                                      src={url}
-                                      alt={`Before ${index + 1}`}
-                                      className="w-8 h-8 object-cover rounded border"
-                                    />
-                                  ))}
-                                  {preset.sample_images.after_images?.slice(0, 2).map((url, index) => (
-                                    <img
-                                      key={`after-${index}`}
-                                      src={url}
-                                      alt={`After ${index + 1}`}
-                                      className="w-8 h-8 object-cover rounded border"
-                                    />
-                                  ))}
-                                  {((preset.sample_images.before_images?.length || 0) + (preset.sample_images.after_images?.length || 0)) > 4 && (
-                                    <div className="w-8 h-8 bg-muted rounded border flex items-center justify-center text-xs text-muted-foreground">
-                                      +{((preset.sample_images.before_images?.length || 0) + (preset.sample_images.after_images?.length || 0)) - 4}
-                                    </div>
+                        viewMode === 'grid' ? (
+                          <Card 
+                            key={preset.id} 
+                            className="cursor-pointer hover:shadow-md transition-shadow"
+                            onClick={() => handlePresetSelect(preset)}
+                          >
+                            <CardHeader className="pb-2">
+                              <div className="flex items-start justify-between">
+                                <CardTitle className="text-sm">{preset.name}</CardTitle>
+                                <div className="flex items-center space-x-1">
+                                  {preset.is_featured && (
+                                    <Star className="h-3 w-3 text-primary" />
                                   )}
+                                  {preset.is_public && (
+                                    <Users className="h-3 w-3 text-primary" />
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      confirmDelete(preset)
+                                    }}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
                                 </div>
                               </div>
-                            )}
-                            
-                            <p className="text-xs text-muted-foreground">
-                              by @{preset.creator.handle}
-                            </p>
-                          </CardContent>
-                        </Card>
+                              <div className="flex items-center gap-2">
+                                <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
+                                  {preset.category}
+                                </Badge>
+                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                  <Eye className="h-3 w-3" />
+                                  <span>{preset.usage_count}</span>
+                                </div>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                              {preset.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                  {preset.description}
+                                </p>
+                              )}
+                              
+                              {/* Sample Images Preview */}
+                              {preset.sample_images && (preset.sample_images.before_images?.length > 0 || preset.sample_images.after_images?.length > 0) && (
+                                <div className="mb-2">
+                                  <div className="text-xs text-muted-foreground mb-1">Sample Images:</div>
+                                  <div className="flex gap-1">
+                                    {preset.sample_images.before_images?.slice(0, 2).map((url, index) => (
+                                      <img
+                                        key={`before-${index}`}
+                                        src={url}
+                                        alt={`Before ${index + 1}`}
+                                        className="w-8 h-8 object-cover rounded border"
+                                      />
+                                    ))}
+                                    {preset.sample_images.after_images?.slice(0, 2).map((url, index) => (
+                                      <img
+                                        key={`after-${index}`}
+                                        src={url}
+                                        alt={`After ${index + 1}`}
+                                        className="w-8 h-8 object-cover rounded border"
+                                      />
+                                    ))}
+                                    {((preset.sample_images.before_images?.length || 0) + (preset.sample_images.after_images?.length || 0)) > 4 && (
+                                      <div className="w-8 h-8 bg-muted rounded border flex items-center justify-center text-xs text-muted-foreground">
+                                        +{((preset.sample_images.before_images?.length || 0) + (preset.sample_images.after_images?.length || 0)) - 4}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <p className="text-xs text-muted-foreground">
+                                by @{preset.creator.handle}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <div 
+                            key={preset.id} 
+                            className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handlePresetSelect(preset)}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-medium text-sm truncate">{preset.name}</h3>
+                                <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
+                                  {preset.category}
+                                </Badge>
+                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                  <Eye className="h-3 w-3" />
+                                  <span>{preset.usage_count}</span>
+                                </div>
+                              </div>
+                              {preset.description && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {preset.description}
+                                </p>
+                              )}
+                              <p className="text-xs text-muted-foreground">
+                                by @{preset.creator.handle}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-1 ml-4">
+                              {preset.is_featured && (
+                                <Star className="h-4 w-4 text-primary" />
+                              )}
+                              {preset.is_public && (
+                                <Users className="h-4 w-4 text-primary" />
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  confirmDelete(preset)
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )
                       ))}
                     </div>
                   )}
@@ -654,7 +792,7 @@ export default function PresetSelector({
                                     }}
                                   />
                                   {selectedSampleImages.before_images.includes(image.image_url) && (
-                                    <div className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                                       <span className="text-white text-xs">✓</span>
                                     </div>
                                   )}
@@ -892,11 +1030,11 @@ export default function PresetSelector({
 
       {/* Selected Preset Info */}
       {selectedPreset && (
-        <Card className="bg-preset-50 border-preset-200">
+        <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm">{selectedPreset.name}</p>
+                <p className="font-medium text-sm text-foreground">{selectedPreset.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {selectedPreset.description || 'No description'}
                 </p>

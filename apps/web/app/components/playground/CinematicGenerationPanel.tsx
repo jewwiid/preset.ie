@@ -99,7 +99,7 @@ export default function CinematicGenerationPanel({
 
   // Update enhanced prompt when cinematic parameters change
   useEffect(() => {
-    if (enableCinematicMode && prompt.trim()) {
+    if (enableCinematicMode && prompt.trim() && Object.keys(cinematicParameters).length > 0) {
       const result = promptBuilder.current.constructPrompt({
         basePrompt: prompt,
         cinematicParameters,
@@ -108,6 +108,8 @@ export default function CinematicGenerationPanel({
         includeStyleReferences
       })
       setEnhancedPrompt(result.fullPrompt)
+    } else if (!enableCinematicMode || Object.keys(cinematicParameters).length === 0) {
+      setEnhancedPrompt('')
     } else {
       setEnhancedPrompt(prompt)
     }
@@ -117,6 +119,13 @@ export default function CinematicGenerationPanel({
   const handleToggleChange = (technicalDetails: boolean, styleReferences: boolean) => {
     setIncludeTechnicalDetails(technicalDetails)
     setIncludeStyleReferences(styleReferences)
+  }
+
+  // Clear cinematic parameters and enhanced prompt
+  const clearCinematicSettings = () => {
+    setEnableCinematicMode(false)
+    setCinematicParameters({})
+    setEnhancedPrompt('')
   }
 
   const handleGenerate = async () => {
@@ -317,6 +326,7 @@ export default function CinematicGenerationPanel({
                   onParametersChange={setCinematicParameters}
                   onGenerateTemplate={handleCinematicTemplate}
                   onToggleChange={handleToggleChange}
+                  onClear={clearCinematicSettings}
                   compact={false}
                   showAdvanced={true}
                 />
@@ -324,7 +334,17 @@ export default function CinematicGenerationPanel({
                 {/* Enhanced Prompt Preview */}
                 {enhancedPrompt && enhancedPrompt !== prompt && (
                   <div className="space-y-2">
-                    <Label>Enhanced Prompt Preview</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Enhanced Prompt Preview</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearCinematicSettings}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Clear
+                      </Button>
+                    </div>
                     <div className="p-3 bg-muted rounded-lg">
                       <p className="text-sm">{enhancedPrompt}</p>
                     </div>

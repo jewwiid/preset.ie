@@ -156,6 +156,7 @@ export default function PlaygroundPage() {
     enhancedPrompt?: string
     includeTechnicalDetails?: boolean
     includeStyleReferences?: boolean
+    replaceLatestImages?: boolean
   }) => {
     setCurrentPrompt(params.prompt)
     setLoading(true)
@@ -204,7 +205,8 @@ export default function PlaygroundPage() {
           cinematicParameters: params.cinematicParameters,
           enhancedPrompt: params.enhancedPrompt,
           includeTechnicalDetails: params.includeTechnicalDetails,
-          includeStyleReferences: params.includeStyleReferences
+          includeStyleReferences: params.includeStyleReferences,
+          replaceLatestImages: params.replaceLatestImages ?? true // Auto-replace latest images by default
         })
       })
 

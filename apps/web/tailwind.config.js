@@ -73,7 +73,17 @@ export default {
   		fontFamily: {
   			bloc: [
   				'Bloc W01 Regular',
-  				'serif'
+  				'Inter',
+  				'system-ui',
+  				'-apple-system',
+  				'sans-serif'
+  			],
+  			heading: [
+  				'Bloc W01 Regular',
+  				'Inter',
+  				'system-ui',
+  				'-apple-system',
+  				'sans-serif'
   			],
   			sans: [
   				'var(--font-sans)',

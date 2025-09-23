@@ -3,7 +3,7 @@
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ImageIcon, X } from 'lucide-react'
+import { ImageIcon, X, ArrowUp } from 'lucide-react'
 import { useAuth } from '../../../lib/auth-context'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import { downloadImageWithWatermark } from '../../../lib/watermark-utils'
@@ -72,6 +72,7 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
   const [savedMedia, setSavedMedia] = useState<SavedMedia[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingMedia, setDeletingMedia] = useState<string | null>(null)
+  const [promotingMedia, setPromotingMedia] = useState<string | null>(null)
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'plus' | 'pro'>('free')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [mediaToDelete, setMediaToDelete] = useState<string | null>(null)
@@ -202,6 +203,42 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
     setMediaToDelete(null)
   }
 
+  const promoteToMedia = async (mediaId: string) => {
+    if (!session?.access_token) return
+
+    try {
+      setPromotingMedia(mediaId)
+      const response = await fetch('/api/playground/promote-to-media', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ galleryItemId: mediaId })
+      })
+
+      if (response.ok) {
+        showFeedback({
+          type: 'success',
+          title: 'Promoted!',
+          message: 'Image promoted to media library. You can now use it in showcases!'
+        })
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to promote image')
+      }
+    } catch (error) {
+      console.error('Error promoting image:', error)
+      showFeedback({
+        type: 'error',
+        title: 'Promote Failed',
+        message: error instanceof Error ? error.message : 'Could not promote image to media'
+      })
+    } finally {
+      setPromotingMedia(null)
+    }
+  }
+
   const downloadImage = async (imageUrl: string, title: string) => {
     try {
       // Load watermark SVG from brandkit
@@ -291,12 +328,14 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
                 onImageSelect={onMediaSelect}
                 onDownload={downloadImage}
                 onDelete={handleDeleteClick}
+                onPromote={promoteToMedia}
                 onReusePrompt={onReusePrompt}
                 onReuseGenerationSettings={onReuseGenerationSettings}
                 onSaveAsPreset={onSaveAsPreset}
                 onAddImageToPreview={onAddMediaToPreview}
                 onExpandMedia={onExpandMedia}
                 deletingImage={deletingMedia}
+                promotingImage={promotingMedia}
                 selectedImageUrl={selectedMediaUrl}
                 currentTab={currentTab}
               />

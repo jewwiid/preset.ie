@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Download, Trash2, Info, ChevronDown, ChevronUp, Play, Pause, Maximize2, ChevronLeft, ChevronRight, Share, Sparkles } from 'lucide-react'
+import { Plus, Download, Trash2, Info, ChevronDown, ChevronUp, Play, Pause, Maximize2, ChevronLeft, ChevronRight, Share, Sparkles, ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -57,11 +57,13 @@ interface SavedMediaMasonryProps {
   onImageSelect?: (media: SavedMedia) => void
   onDownload?: (url: string, title: string) => void
   onDelete?: (id: string) => void
+  onPromote?: (id: string) => void
   onReusePrompt?: (prompt: string) => void
   onReuseGenerationSettings?: (metadata: SavedMedia['generation_metadata']) => void
   onSaveAsPreset?: (metadata: SavedMedia['generation_metadata'], imageUrl: string) => void
   onAddImageToPreview?: (mediaUrl: string) => void
   deletingImage?: string | null
+  promotingImage?: string | null
   selectedImageUrl?: string | null
   onExpandMedia?: (media: SavedMedia) => void
   currentTab?: string
@@ -73,11 +75,13 @@ export default function SavedMediaMasonry({
   onImageSelect,
   onDownload,
   onDelete,
+  onPromote,
   onReusePrompt,
   onReuseGenerationSettings,
   onSaveAsPreset,
   onAddImageToPreview,
   deletingImage,
+  promotingImage,
   selectedImageUrl,
   onExpandMedia,
   currentTab = 'generate',
@@ -602,6 +606,25 @@ export default function SavedMediaMasonry({
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       ) : (
                         <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                  {onPromote && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-blue-600 hover:shadow-md bg-blue-500"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onPromote(image.id)
+                      }}
+                      disabled={promotingImage === image.id}
+                      title="Promote to Media"
+                    >
+                      {promotingImage === image.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      ) : (
+                        <ArrowUp className="h-4 w-4" />
                       )}
                     </Button>
                   )}

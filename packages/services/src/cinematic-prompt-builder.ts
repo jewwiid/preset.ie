@@ -798,7 +798,7 @@ export class CinematicPromptBuilder {
       'landscape': 'enhance landscape elements',
       'street': 'enhance street photography style'
     };
-    return contexts[enhancementType] || 'enhance the image with';
+    return contexts[enhancementType] || '';
   }
 
   /**

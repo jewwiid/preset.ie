@@ -41,7 +41,7 @@ export class Subscription {
     }
   }
 
-  maxShowcases(): number {
+  maxShowcasesPerMonth(): number {
     switch (this.tier) {
       case SubscriptionTier.FREE:
         return 3;
@@ -52,6 +52,12 @@ export class Subscription {
       default:
         return 0;
     }
+  }
+
+  // Keep the old method for backward compatibility, but mark as deprecated
+  /** @deprecated Use maxShowcasesPerMonth() instead */
+  maxShowcases(): number {
+    return this.maxShowcasesPerMonth();
   }
 }
 

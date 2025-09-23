@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Bloc W01 Regular Font Face Declaration */
+@font-face {
+  font-family: 'Bloc W01 Regular';
+  src: url('/fonts/Bloc W01 Regular.woff2') format('woff2'),
+       url('/fonts/Bloc W01 Regular.woff') format('woff'),
+       url('/fonts/Bloc W01 Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Debug: Theme update 2024-09-19 */
 
 /* Uniform Hover and Active States */
@@ -89,20 +100,20 @@
 }
 
 :root {
-  /* Enhanced OKLCH Theme - Modern Design System */
+  /* Enhanced OKLCH Theme - Modern Design System with Light Teal Tints */
   --background: oklch(1.0000 0 0);
   --foreground: oklch(0.1448 0 0);
-  --card: oklch(0.9900 0.0020 247.8575);
+  --card: oklch(0.9900 0.0030 174.3329);  /* Light teal tint */
   --card-foreground: oklch(0.1448 0 0);
-  --popover: oklch(0.9900 0.0020 247.8575);
+  --popover: oklch(0.9850 0.0040 174.3329);  /* Slightly more teal tint */
   --popover-foreground: oklch(0.1448 0 0);
   --primary: oklch(0.5563 0.1055 174.3329);  /* Green color for light mode */
   --primary-foreground: oklch(1.0000 0 0);
-  --secondary: oklch(0.9683 0.0069 247.8956);
+  --secondary: oklch(0.9750 0.0050 174.3329);  /* Light teal tint */
   --secondary-foreground: oklch(0.1448 0 0);
-  --muted: oklch(0.9842 0.0034 247.8575);
+  --muted: oklch(0.9800 0.0035 174.3329);  /* Very light teal tint */
   --muted-foreground: oklch(0.5544 0.0407 257.4166);
-  --accent: oklch(0.9683 0.0069 247.8956);
+  --accent: oklch(0.9750 0.0050 174.3329);  /* Light teal tint */
   --accent-foreground: oklch(0.1448 0 0);
   --destructive: oklch(0.6368 0.2078 25.3313);
   --destructive-foreground: oklch(1.0000 0 0);
@@ -658,4 +669,54 @@ textarea::placeholder {
 .like-button.liked {
   color: hsl(var(--destructive));
   background: hsl(var(--destructive) / 0.1);
+}
+
+
+/* Heading Styles with Bloc Font - High Specificity to Override Tailwind */
+h1, h2, h3, h4, h5, h6,
+h1.font-bold, h2.font-bold, h3.font-bold, h4.font-bold, h5.font-bold, h6.font-bold,
+h1[class*="font-"], h2[class*="font-"], h3[class*="font-"], h4[class*="font-"], h5[class*="font-"], h6[class*="font-"] {
+  font-family: 'Bloc W01 Regular', 'Inter', system-ui, -apple-system, sans-serif !important;
+  letter-spacing: -0.025em;
+}
+
+/* Specific heading sizes with Bloc font */
+.heading-hero {
+  font-family: 'Bloc W01 Regular', 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 3.5rem;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-weight: normal;
+}
+
+.heading-xl {
+  font-family: 'Bloc W01 Regular', 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 2.25rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  font-weight: normal;
+}
+
+.heading-lg {
+  font-family: 'Bloc W01 Regular', 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1.875rem;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  font-weight: normal;
+}
+
+.heading-md {
+  font-family: 'Bloc W01 Regular', 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1.5rem;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+  font-weight: normal;
+}
+
+.heading-sm {
+  font-family: 'Bloc W01 Regular', 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+  font-weight: normal;
 }

@@ -286,13 +286,25 @@ export async function POST(request: NextRequest) {
     // Also create a media entry with cinematic metadata
     if (galleryItem && !insertError) {
       try {
+        // Get user's profile ID
+        const { data: userProfile, error: profileError } = await supabaseAdmin
+          .from('users_profile')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileError || !userProfile) {
+          console.error('Error fetching user profile for media creation:', profileError);
+          throw new Error('User profile not found');
+        }
+
         const cinematicMetadata = generationMetadata?.cinematic_parameters || {}
         
         const { data: mediaItem, error: mediaError } = await supabaseAdmin
           .from('media')
           .insert({
-            owner_user_id: user.id,
-            type: 'image',
+            owner_user_id: userProfile.id,
+            type: 'IMAGE',
             bucket: 'playground-gallery',
             path: finalImageUrl,
             width: imageWidth,

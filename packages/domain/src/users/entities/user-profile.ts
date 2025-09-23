@@ -104,7 +104,7 @@ export class UserProfile extends BaseAggregateRoot {
   }
 
   canCreateShowcase(currentShowcaseCount: number): boolean {
-    const max = this.props.subscription.maxShowcases();
+    const max = this.props.subscription.maxShowcasesPerMonth();
     return max === -1 || currentShowcaseCount < max;
   }
 

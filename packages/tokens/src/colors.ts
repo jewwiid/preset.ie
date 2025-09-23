@@ -76,11 +76,11 @@ export const brandColors = {
 
 // Semantic color tokens for light mode
 export const lightColors = {
-  // Background colors
+  // Background colors - Light teal/green shades
   background: {
     primary: '#ffffff',
-    secondary: '#f8fafc',
-    tertiary: '#f1f5f9',
+    secondary: '#fafdfc',  // Very light teal tint
+    tertiary: '#f5fbf9',  // Slightly more teal tint
     inverse: '#0f172a',
   },
   

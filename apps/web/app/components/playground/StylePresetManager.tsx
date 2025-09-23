@@ -351,7 +351,7 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
           <Card 
             key={preset.id} 
             className={`cursor-pointer transition-colors ${
-              selectedPreset?.id === preset.id ? 'ring-2 ring-blue-500' : 'hover:bg-gray-50'
+              selectedPreset?.id === preset.id ? 'ring-2 ring-primary' : 'hover:bg-muted/50'
             }`}
             onClick={() => onSelectPreset?.(preset)}
           >
@@ -359,7 +359,7 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm">{preset.name}</CardTitle>
                 <div className="flex items-center space-x-1">
-                  {preset.is_public && <Users className="h-3 w-3 text-blue-500" />}
+                  {preset.is_public && <Users className="h-3 w-3 text-primary" />}
                   <Badge variant="outline" className="text-xs">
                     {preset.style_type}
                   </Badge>
@@ -367,11 +367,11 @@ const StylePresetManager: React.FC<StylePresetManagerProps> = ({
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+              <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
                 {preset.description || preset.prompt_template}
               </p>
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-1 text-xs text-gray-500">
+                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                   <Star className="h-3 w-3" />
                   <span>{preset.usage_count} uses</span>
                 </div>
