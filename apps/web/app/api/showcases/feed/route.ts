@@ -36,35 +36,34 @@ export async function GET(request: NextRequest) {
     // Create Supabase client
     const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-    // Build query for showcases - simplified without join
+    // Build query for showcases - include media_ids field
     let query = supabase
       .from('showcases')
       .select(`
         id,
-        title,
-        description,
+        gig_id,
         creator_user_id,
-        moodboard_id,
-        showcase_type,
+        talent_user_id,
+        media_ids,
+        caption,
+        tags,
+        palette,
+        visibility,
+        likes_count,
+        views_count,
+        created_at,
+        updated_at,
         individual_image_url,
         individual_image_title,
         individual_image_description,
-        visibility,
-        tags,
-        likes_count,
-        views_count,
-        media_count,
-        created_at,
-        updated_at
+        individual_image_width,
+        individual_image_height
       `)
       .eq('visibility', 'PUBLIC')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    // Add type filter if specified
-    if (showcaseType && ['moodboard', 'individual_image'].includes(showcaseType)) {
-      query = query.eq('showcase_type', showcaseType)
-    }
+    // Note: showcase_type filter removed as it doesn't exist in current schema
 
     // Execute query
     const { data: showcases, error: showcasesError } = await query
@@ -110,43 +109,94 @@ export async function GET(request: NextRequest) {
       const { data: profiles } = await supabase
         .from('users_profile')
         .select('id, user_id, display_name, handle, avatar_url')
-        .in('user_id', creatorIds)
+        .in('id', creatorIds)
       creatorProfiles = profiles || []
+    }
+
+    // Get media items for all showcases
+    let mediaItems: any[] = []
+    if (showcases.length > 0) {
+      // Collect all unique media IDs from all showcases
+      const allMediaIds = [...new Set(showcases.flatMap(s => s.media_ids || []))]
+      
+      if (allMediaIds.length > 0) {
+        const { data: media, error: mediaError } = await supabase
+          .from('media')
+          .select('id, owner_user_id, type, bucket, path, width, height, duration, palette, blurhash, exif_json, visibility, created_at')
+          .in('id', allMediaIds)
+        
+        mediaItems = media || []
+      }
     }
 
     // Simplified - no cinematic filtering for now
     let filteredShowcases = showcases
 
-    // Create a map for quick lookup
-    const creatorMap = new Map(creatorProfiles.map(p => [p.user_id, p]))
+    // Create maps for quick lookup
+    const creatorMap = new Map(creatorProfiles.map(p => [p.id, p]))
+    const mediaMap = new Map(mediaItems.map(m => [m.id, m]))
 
     // Format the response
     const formattedShowcases = filteredShowcases.map(showcase => {
       const creatorProfile = creatorMap.get(showcase.creator_user_id)
+      
+      // Get media items for this showcase (deduplicate first)
+      const uniqueMediaIds = [...new Set(showcase.media_ids || [])]
+      const showcaseMedia = uniqueMediaIds
+        .map(mediaId => mediaMap.get(mediaId))
+        .filter(Boolean) // Remove any undefined items
+        .map(media => {
+          // Handle external URLs vs Supabase storage URLs
+          let url: string
+          if (media.bucket === 'external' || media.exif_json?.external_url) {
+            // For external URLs, use the path directly
+            url = media.path
+          } else {
+            // For Supabase storage, construct the public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from(media.bucket)
+              .getPublicUrl(media.path)
+            url = publicUrl
+          }
+          
+          return {
+            id: media.id,
+            type: media.type.toLowerCase(),
+            url: url,
+            width: media.width,
+            height: media.height,
+            duration: media.duration,
+            palette: media.palette,
+            blurhash: media.blurhash,
+            metadata: media.exif_json,
+            created_at: media.created_at
+          }
+        })
+
       return {
         id: showcase.id,
-        title: showcase.title,
-        description: showcase.description,
+        caption: showcase.caption,
         creator: {
           id: showcase.creator_user_id,
           display_name: creatorProfile?.display_name,
           handle: creatorProfile?.handle,
           avatar_url: creatorProfile?.avatar_url
         },
-      showcase_type: showcase.showcase_type,
-      moodboard_id: showcase.moodboard_id,
-      individual_image_url: showcase.individual_image_url,
-      individual_image_title: showcase.individual_image_title,
-      individual_image_description: showcase.individual_image_description,
-      visibility: showcase.visibility,
-      tags: showcase.tags,
-      likes_count: showcase.likes_count,
-      views_count: showcase.views_count,
-      media_count: showcase.media_count,
-      created_at: showcase.created_at,
-      updated_at: showcase.updated_at,
-        media: [], // Simplified - no media for now
-        is_liked: likedShowcases.includes(showcase.id)
+        visibility: showcase.visibility,
+        tags: showcase.tags || [],
+        palette: showcase.palette,
+        likes_count: showcase.likes_count || 0,
+        views_count: showcase.views_count || 0,
+        created_at: showcase.created_at,
+        updated_at: showcase.updated_at,
+        media: showcaseMedia,
+        media_count: showcaseMedia.length,
+        is_liked: likedShowcases.includes(showcase.id),
+        individual_image_url: showcase.individual_image_url,
+        individual_image_title: showcase.individual_image_title,
+        individual_image_description: showcase.individual_image_description,
+        individual_image_width: showcase.individual_image_width,
+        individual_image_height: showcase.individual_image_height
       }
     })
 
@@ -155,10 +205,6 @@ export async function GET(request: NextRequest) {
       .from('showcases')
       .select('*', { count: 'exact', head: true })
       .eq('visibility', 'PUBLIC')
-
-    if (showcaseType && ['moodboard', 'individual_image'].includes(showcaseType)) {
-      countQuery = countQuery.eq('showcase_type', showcaseType)
-    }
 
     const { count } = await countQuery
 

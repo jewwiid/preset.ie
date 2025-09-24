@@ -25,6 +25,8 @@ interface MediaItem {
   metadata?: any;
   preset?: string;
   source?: string;
+  width?: number;
+  height?: number;
 }
 
 export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: CreateShowcaseModalProps) {
@@ -588,13 +590,54 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
     setLoading(true);
     setError(null);
 
+    try {
+      // Check if any selected media items are playground gallery items that need promotion
+      const playgroundItems = selectedMedia.filter(media => media.id.startsWith('playground-'));
+      const regularMediaItems = selectedMedia.filter(media => !media.id.startsWith('playground-'));
+      
+      console.log('Playground items found:', playgroundItems.length);
+      console.log('Regular media items found:', regularMediaItems.length);
+      console.log('All selected media:', selectedMedia);
+      
+      let finalMediaIds = [...regularMediaItems.map(media => media.id)];
+      
+      // Promote playground gallery items to media first
+      if (playgroundItems.length > 0) {
+        console.log('Promoting playground gallery items:', playgroundItems);
+        
+        for (const playgroundItem of playgroundItems) {
+          const galleryItemId = playgroundItem.id.replace('playground-', '');
+          console.log('Promoting gallery item:', galleryItemId);
+          
+          const response = await fetch('/api/playground/promote-to-media', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token}` 
+            },
+            body: JSON.stringify({ galleryItemId })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Promotion successful:', data);
+            // Use the new media ID
+            finalMediaIds.push(data.mediaId);
+          } else {
+            const errorData = await response.json();
+            console.error('Promotion failed:', errorData);
+            throw new Error(`Failed to promote gallery item: ${errorData.error || 'Unknown error'}`);
+          }
+        }
+      }
+
       const requestBody = {
         title,
         description,
         type,
         visibility,
         tags,
-        mediaIds: selectedMedia.map(media => media.id),
+        mediaIds: finalMediaIds,
         moodboardId: selectedMoodboard || null,
         mediaMetadata: selectedMedia.map(media => ({
           id: media.id,
@@ -604,10 +647,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
         }))
       };
 
-    console.log('Request body:', requestBody);
-    console.log('Media IDs being sent:', selectedMedia.map(media => media.id));
+      console.log('Request body:', requestBody);
+      console.log('Final media IDs being sent:', finalMediaIds);
 
-    try {
       const response = await fetch('/api/showcases', {
         method: 'POST',
         headers: {
@@ -633,7 +675,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
       }
     } catch (err) {
       console.error('Error creating showcase:', err);
-      setError('An unexpected error occurred. Please try again.');
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -641,11 +683,11 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="w-[95vw] max-w-[1400px] h-[95vh] max-h-[95vh] overflow-hidden flex flex-col p-4 sm:p-6">
         {/* Header */}
-        <DialogHeader className="flex-shrink-0 pb-4">
-          <DialogTitle>Create Showcase</DialogTitle>
-          <p className="text-sm text-muted-foreground">
+        <DialogHeader className="flex-shrink-0 pb-3 sm:pb-4">
+          <DialogTitle className="text-lg sm:text-xl">Create Showcase</DialogTitle>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Share your creative work with the community
           </p>
         </DialogHeader>
@@ -677,157 +719,168 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
 
         <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
           {/* Main Content Grid */}
-          <div className="grid grid-cols-5 gap-6 flex-1 min-h-0">
-            {/* Left Column - Media Selection */}
-            <div className="col-span-3 space-y-3 overflow-hidden flex flex-col">
-              <Label>Select Media (Max 6)</Label>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:gap-6 flex-1 min-h-0">
+            {/* Left Column - Media Selection & Preview */}
+            <div className="xl:col-span-2 space-y-3 xl:space-y-4 overflow-hidden flex flex-col">
+              {/* Media Selection Header */}
+              <div className="flex items-center justify-between">
+                <Label className="text-sm sm:text-base font-medium">Select Media (Max 6)</Label>
+                <Badge variant="secondary" className="text-xs">
+                  {selectedMedia.length}/6 selected
+                </Badge>
+              </div>
               
-              {/* Main Preview - Above the media grid */}
+              {/* Main Preview */}
               {selectedMedia.length > 0 && (
-                <div className="bg-muted/30 rounded-lg p-4 border">
-                  <div className="text-sm font-medium mb-3 text-muted-foreground">
-                    Preview
-                  </div>
-                  <div className="relative w-full h-64 rounded-lg overflow-hidden border border-border bg-background">
-                    {selectedMedia[previewIndex].type === 'video' ? (
-                      <video
-                        src={selectedMedia[previewIndex].url}
-                        className="w-full h-full object-cover"
-                        controls
-                        preload="metadata"
-                        poster={selectedMedia[previewIndex].thumbnail_url}
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                    ) : (
-                      <img
-                        src={selectedMedia[previewIndex].thumbnail_url || selectedMedia[previewIndex].url}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                    )}
+                <div className="bg-muted/30 rounded-lg p-3 sm:p-4 border">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium text-muted-foreground">Preview</Label>
                     {selectedMedia.length > 1 && (
-                      <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                        {previewIndex + 1} of {selectedMedia.length}
+                      <div className="flex gap-1">
+                        {selectedMedia.map((_, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => setPreviewIndex(index)}
+                            className={`w-2 h-2 rounded-full transition-colors ${
+                              previewIndex === index ? 'bg-primary' : 'bg-muted-foreground/30'
+                            }`}
+                          />
+                        ))}
                       </div>
                     )}
                   </div>
                   
-                  {/* Media Info */}
-                  <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      {/* Debug info */}
-                      <div className="text-xs text-muted-foreground mb-2">
-                        Debug: preset={selectedMedia[previewIndex].preset || 'none'}, 
-                        metadata={selectedMedia[previewIndex].metadata ? 'exists' : 'none'},
-                        source={selectedMedia[previewIndex].source || 'unknown'}
-                      </div>
-                      
-                      {selectedMedia[previewIndex].preset && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">Preset:</span>
-                          <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs">
-                            {selectedMedia[previewIndex].preset}
-                          </span>
-                        </div>
-                      )}
-                      {selectedMedia[previewIndex].metadata?.prompt && (
-                <div>
-                          <span className="font-medium">Prompt:</span>
-                          <p className="text-xs mt-1 max-h-32 overflow-y-auto bg-background/50 p-2 rounded border">
-                            {selectedMedia[previewIndex].metadata.prompt}
-                          </p>
-                        </div>
-                      )}
-                      {selectedMedia[previewIndex].metadata?.aspect_ratio && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">Aspect Ratio:</span>
-                          <span>{selectedMedia[previewIndex].metadata.aspect_ratio}</span>
-                        </div>
-                      )}
-                      {selectedMedia[previewIndex].metadata?.resolution && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">Resolution:</span>
-                          <span>{selectedMedia[previewIndex].metadata.resolution}</span>
-                        </div>
-                      )}
-                      
-                      {/* Show raw metadata for debugging */}
-                      {selectedMedia[previewIndex].metadata && (
-                        <div className="mt-2 p-2 bg-background/50 rounded text-xs">
-                          <span className="font-medium">Raw Metadata:</span>
-                          <pre className="text-xs mt-1 overflow-auto max-h-20">
-                            {JSON.stringify(selectedMedia[previewIndex].metadata, null, 2)}
-                          </pre>
-                        </div>
+                  <div className="relative">
+                    <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                      {selectedMedia[previewIndex].type === 'video' ? (
+                        <video
+                          src={selectedMedia[previewIndex].url}
+                          className="w-full h-full object-cover"
+                          controls
+                          preload="metadata"
+                          poster={selectedMedia[previewIndex].thumbnail_url}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      ) : (
+                        <img
+                          src={selectedMedia[previewIndex].thumbnail_url || selectedMedia[previewIndex].url}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
                       )}
                     </div>
                   </div>
+                  
+                  {/* Clean Media Info */}
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 xl:gap-4">
+                    {selectedMedia[previewIndex].preset && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Style</Label>
+                        <Badge variant="outline" className="text-xs">
+                          {selectedMedia[previewIndex].preset}
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    {selectedMedia[previewIndex].metadata?.generation_metadata?.aspect_ratio && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Aspect Ratio</Label>
+                        <div className="text-xs font-medium">
+                          {selectedMedia[previewIndex].metadata.generation_metadata.aspect_ratio}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedMedia[previewIndex].metadata?.generation_metadata?.resolution && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Resolution</Label>
+                        <div className="text-xs font-medium">
+                          {selectedMedia[previewIndex].metadata.generation_metadata.resolution}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedMedia[previewIndex].metadata?.generation_metadata?.provider && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Provider</Label>
+                        <div className="text-xs font-medium">
+                          {selectedMedia[previewIndex].metadata.generation_metadata.provider}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Prompt Preview */}
+                  {selectedMedia[previewIndex].metadata?.generation_metadata?.prompt && (
+                    <div className="mt-4 space-y-2">
+                      <Label className="text-xs text-muted-foreground">Prompt</Label>
+                      <div className="text-xs bg-background/50 p-3 rounded border max-h-20 overflow-y-auto">
+                        {selectedMedia[previewIndex].metadata.generation_metadata.prompt}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               
-              {/* Selected Media List - Below preview */}
-              {selectedMedia.length > 0 && (
-                <div className="bg-muted/30 rounded-lg p-4 border">
-                  <div className="text-sm font-medium mb-3 text-muted-foreground">
+              {/* Selected Media Thumbnails */}
+              {selectedMedia.length > 1 && (
+                <div className="bg-muted/30 rounded-lg p-3 sm:p-4 border">
+                  <Label className="text-sm font-medium text-muted-foreground mb-3 block">
                     Selected Media ({selectedMedia.length}/6)
-                  </div>
-                  <div className="space-y-3">
+                  </Label>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                     {selectedMedia.map((media, index) => (
-                      <div key={media.id} className="flex items-center space-x-3">
-                        <button
-                          type="button"
-                          onClick={() => setPreviewIndex(index)}
-                          className={`relative w-16 h-16 rounded-lg overflow-hidden border transition-all ${
-                            previewIndex === index ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-border'
-                          }`}
-                        >
-                          {media.type === 'video' ? (
-                            <video
-                              src={media.url}
-                              className="w-full h-full object-cover"
-                              muted
-                              preload="metadata"
-                              poster={media.thumbnail_url}
-                            />
-                          ) : (
-                            <img
-                              src={media.thumbnail_url || media.url}
-                              alt={`Selected ${media.type}`}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">
-                            {media.type === 'video' ? 'Video' : 'Image'} {index + 1}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {media.type === 'video' ? 'Video content' : 'Image content'}
-                          </div>
+                      <button
+                        key={media.id}
+                        type="button"
+                        onClick={() => setPreviewIndex(index)}
+                        className={`relative aspect-square rounded-lg overflow-hidden border transition-all ${
+                          previewIndex === index ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-border'
+                        }`}
+                      >
+                        {media.type === 'video' ? (
+                          <video
+                            src={media.url}
+                            className="w-full h-full object-cover"
+                            muted
+                            preload="metadata"
+                            poster={media.thumbnail_url}
+                          />
+                        ) : (
+                          <img
+                            src={media.thumbnail_url || media.url}
+                            alt="Media thumbnail"
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <div className="absolute top-1 right-1">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedMedia(prev => prev.filter(item => item.id !== media.id))
+                            }}
+                            className="h-5 w-5 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            console.log('Remove button clicked for media:', media.id);
-                            setSelectedMedia(prev => prev.filter(item => item.id !== media.id))
-                          }}
-                          className="flex-shrink-0 p-2 hover:bg-destructive/10 rounded-full transition-colors border border-destructive/20 hover:border-destructive/40 bg-destructive/5"
-                          disabled={loading || !canCreateShowcase()}
-                          title="Remove from selection"
-                        >
-                          <X className="h-4 w-4 text-destructive" />
-                        </button>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
               )}
               
+              {/* Available Media Grid */}
               <div className="flex-1 min-h-0">
-                <div className="grid grid-cols-4 gap-3 h-full overflow-y-auto border rounded-lg p-4">
+                <Label className="text-sm font-medium text-muted-foreground mb-3 block">
+                  Available Media
+                </Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 xl:gap-3 h-full overflow-y-auto border rounded-lg p-3 xl:p-4">
                   {renderFilteredMedia()}
                 </div>
               </div>
@@ -835,37 +888,39 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
 
 
             {/* Right Column - Form Fields */}
-            <div className="col-span-2 space-y-4 overflow-y-auto pr-2">
+            <div className="space-y-4 xl:space-y-6 overflow-y-auto">
               {/* Title and Description */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
+                  <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
                   <Input
                     id="title"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Enter a compelling title"
                     disabled={loading || !canCreateShowcase()}
+                    className="text-sm"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="text-sm font-medium">Description</Label>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Describe your showcase..."
-                    rows={2}
+                    rows={3}
                     disabled={loading || !canCreateShowcase()}
+                    className="text-sm resize-none"
                   />
                 </div>
               </div>
 
-              {/* Showcase Type - Horizontal */}
-              <div className="space-y-2">
-                <Label>Showcase Type</Label>
-                <div className="flex gap-2">
+              {/* Showcase Type */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Showcase Type</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
                     { value: 'individual_image', label: 'Image', icon: ImageIcon },
                     { value: 'moodboard', label: 'Moodboard', icon: Palette },
@@ -880,99 +935,98 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                         variant={type === option.value ? "default" : "outline"}
                         onClick={() => setType(option.value as any)}
                         disabled={loading || !canCreateShowcase()}
-                        className="flex items-center space-x-2"
+                        className="flex items-center justify-center space-x-2 h-10"
                         size="sm"
                       >
                         <Icon className="h-4 w-4" />
-                        <span>{option.label}</span>
+                        <span className="text-sm">{option.label}</span>
                       </Button>
                     )
                   })}
                 </div>
               </div>
 
-              {/* Visibility and Tags - Side by Side */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Visibility */}
-                <div className="space-y-2">
-                  <Label>Visibility</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={visibility === 'public' ? "default" : "outline"}
-                      onClick={() => setVisibility('public')}
-                      disabled={loading || !canCreateShowcase()}
-                      className="flex items-center space-x-2"
-                      size="sm"
-                    >
-                      <Globe className="h-4 w-4" />
-                      <span>Public</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={visibility === 'private' ? "default" : "outline"}
-                      onClick={() => setVisibility('private')}
-                      disabled={loading || !canCreateShowcase()}
-                      className="flex items-center space-x-2"
-                      size="sm"
-                    >
-                      <Lock className="h-4 w-4" />
-                      <span>Private</span>
-                    </Button>
-                  </div>
+              {/* Visibility */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Visibility</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={visibility === 'public' ? "default" : "outline"}
+                    onClick={() => setVisibility('public')}
+                    disabled={loading || !canCreateShowcase()}
+                    className="flex items-center space-x-2 flex-1"
+                    size="sm"
+                  >
+                    <Globe className="h-4 w-4" />
+                    <span className="text-sm">Public</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={visibility === 'private' ? "default" : "outline"}
+                    onClick={() => setVisibility('private')}
+                    disabled={loading || !canCreateShowcase()}
+                    className="flex items-center space-x-2 flex-1"
+                    size="sm"
+                  >
+                    <Lock className="h-4 w-4" />
+                    <span className="text-sm">Private</span>
+                  </Button>
                 </div>
+              </div>
 
-                {/* Tags */}
-                <div className="space-y-2">
-                  <Label>Tags (Optional)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      placeholder="Add tag"
-                      disabled={loading || !canCreateShowcase()}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          if (newTag.trim() && !tags.includes(newTag.trim())) {
-                            setTags([...tags, newTag.trim()])
-                            setNewTag('')
-                          }
-                        }
-                      }}
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={() => {
+              {/* Tags */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Tags (Optional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    placeholder="Add tag"
+                    disabled={loading || !canCreateShowcase()}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
                         if (newTag.trim() && !tags.includes(newTag.trim())) {
                           setTags([...tags, newTag.trim()])
                           setNewTag('')
                         }
-                      }}
-                      disabled={loading || !canCreateShowcase() || !newTag.trim()}
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {tags.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="flex items-center gap-1 text-xs">
-                      {tag}
-                      <button
-                        type="button"
-                            onClick={() => setTags(tags.filter((_, i) => i !== index))}
-                            className="ml-1 hover:text-destructive"
-                            disabled={loading || !canCreateShowcase()}
-                          >
-                            <X className="h-2 w-2" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
+                      }
+                    }}
+                    className="text-sm"
+                  />
+                  <Button 
+                    type="button" 
+                    onClick={() => {
+                      if (newTag.trim() && !tags.includes(newTag.trim())) {
+                        setTags([...tags, newTag.trim()])
+                        setNewTag('')
+                      }
+                    }}
+                    disabled={loading || !canCreateShowcase() || !newTag.trim()}
+                    size="sm"
+                    className="px-3"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1 text-xs">
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                          className="ml-1 hover:text-destructive"
+                          disabled={loading || !canCreateShowcase()}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

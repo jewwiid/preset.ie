@@ -511,7 +511,7 @@ export async function POST(request: NextRequest) {
   try {
   
   const requestBody = await request.json()
-  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences, selectedProvider, replaceLatestImages = false } = requestBody
+  const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences, selectedProvider, replaceLatestImages = false, userSubject } = requestBody
   
   console.log('📝 Generation request:', {
     prompt: prompt?.substring(0, 100) + (prompt?.length > 100 ? '...' : ''),
@@ -654,19 +654,36 @@ export async function POST(request: NextRequest) {
     
     if (customStylePreset) {
       // Use custom style preset
-      stylePrompt = customStylePreset.prompt_template.replace('{style_type}', customStylePreset.style_type)
+      const styleType = customStylePreset.style_settings?.style || customStylePreset.style_type || 'photorealistic'
+      stylePrompt = customStylePreset.prompt_template?.replace('{style_type}', styleType) || ''
       
       // Apply intensity to the style prompt
-      const intensityValue = intensity || customStylePreset.intensity || 1.0
+      const intensityValue = intensity || customStylePreset.style_settings?.intensity || customStylePreset.intensity || 1.0
       const intensityModifier = intensityValue !== 1.0 ? ` (intensity: ${intensityValue})` : ''
       
-      enhancedPrompt = `${prompt}, ${stylePrompt}${intensityModifier}`
+      // Check if the prompt already contains the full preset content (subject replaced)
+      // If it does, use it as-is. If not, it's just the template and we need to add style info.
+      const isFullPrompt = prompt.includes(styleType) && !prompt.includes('{subject}')
       
-      // Update usage count for the preset
-      await supabaseAdmin
-        .from('playground_style_presets')
-        .update({ usage_count: customStylePreset.usage_count + 1 })
-        .eq('id', customStylePreset.id)
+      if (isFullPrompt) {
+        // Prompt already contains the full content with subject replaced
+        enhancedPrompt = `${prompt}${intensityModifier}`
+      } else {
+        // Prompt is just the template, add style information
+        enhancedPrompt = `${prompt}, ${stylePrompt}${intensityModifier}`
+      }
+      
+      // Update usage count for the preset (only if it's a real preset, not a custom one)
+      if (customStylePreset.id && customStylePreset.id !== 'local-preset') {
+        try {
+          await supabaseAdmin
+            .from('presets')
+            .update({ usage_count: (customStylePreset.usage_count || 0) + 1 })
+            .eq('id', customStylePreset.id)
+        } catch (error) {
+          console.error('Error updating preset usage count:', error)
+        }
+      }
     } else {
       // Use context-aware style prompts based on generation mode
       const getContextAwareStylePrompt = (styleType: string, mode: 'text-to-image' | 'image-to-image') => {
@@ -988,6 +1005,7 @@ export async function POST(request: NextRequest) {
               // Store in playground_projects table with generated image
               const projectData = {
                 user_id: user.id,
+                preset_id: customStylePreset?.id && customStylePreset.id !== 'local-preset' ? customStylePreset.id : null,
                 title: enhancedPrompt.substring(0, 50),
                 prompt: enhancedPrompt,
                 style: style || 'photorealistic',
@@ -1057,6 +1075,7 @@ export async function POST(request: NextRequest) {
               // Legacy immediate response - use same table as Seedream
               const projectData = {
                 user_id: user.id,
+                preset_id: customStylePreset?.id && customStylePreset.id !== 'local-preset' ? customStylePreset.id : null,
                 title: enhancedPrompt.substring(0, 50),
                 prompt: enhancedPrompt,
                 style: style || 'photorealistic',
@@ -1403,15 +1422,18 @@ export async function POST(request: NextRequest) {
         custom_style_preset: customStylePreset ? {
           id: customStylePreset.id,
           name: customStylePreset.name,
-          style_type: customStylePreset.style_type,
-          intensity: customStylePreset.intensity
+          style_type: customStylePreset.style_settings?.style || customStylePreset.style_type,
+          intensity: customStylePreset.style_settings?.intensity || customStylePreset.intensity,
+          style_settings: customStylePreset.style_settings,
+          technical_settings: customStylePreset.technical_settings
         } : null,
         generation_mode: generationMode || 'text-to-image',
         base_image: baseImage || null,
         api_endpoint: isImageToImage ? 'seedream-v4/edit' : 'seedream-v4',
         cinematic_parameters: cinematicParameters || null,
         include_technical_details: includeTechnicalDetails ?? true,
-        include_style_references: includeStyleReferences ?? true
+        include_style_references: includeStyleReferences ?? true,
+        user_subject: userSubject || null
       }
     }
     
@@ -1477,6 +1499,38 @@ export async function POST(request: NextRequest) {
       }
       project = data
       console.log('✅ Project created successfully:', { projectId: project.id })
+    }
+
+    // Track preset usage if a preset was used
+    if (customStylePreset?.id && customStylePreset.id !== 'local-preset') {
+      try {
+        const usageResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/presets/${customStylePreset.id}/usage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            usageType: 'playground_generation',
+            usageData: {
+              projectId: project.id,
+              prompt: enhancedPrompt,
+              style: style,
+              aspectRatio: aspectRatio,
+              resolution: finalResolution
+            }
+          })
+        });
+
+        if (usageResponse.ok) {
+          console.log('✅ Preset usage tracked successfully');
+        } else {
+          console.warn('⚠️ Failed to track preset usage:', await usageResponse.text());
+        }
+      } catch (error) {
+        console.warn('⚠️ Error tracking preset usage:', error);
+        // Don't fail the generation if usage tracking fails
+      }
     }
     
     // Generate appropriate warnings based on limitations

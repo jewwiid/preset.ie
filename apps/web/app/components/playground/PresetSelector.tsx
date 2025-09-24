@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Palette, Search, Star, Users, Eye, Plus, Loader2, Settings, Film, Camera, Lightbulb, Palette as PaletteIcon, Trash2, ImageIcon, Grid3X3, List } from 'lucide-react'
+import { Palette, Search, Star, Users, PlayCircle, Plus, Loader2, Settings, Film, Camera, Lightbulb, Palette as PaletteIcon, Trash2, ImageIcon, Grid3X3, List, Heart, Wand2 } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
@@ -37,6 +37,7 @@ interface Preset {
   ai_metadata: any
   seedream_config: any
   usage_count: number
+  likes_count: number
   is_public: boolean
   is_featured: boolean
   created_at: string
@@ -81,11 +82,14 @@ export default function PresetSelector({
   const { showFeedback } = useFeedback()
   
   const [presets, setPresets] = useState<Preset[]>([])
+  const [trendingPresets, setTrendingPresets] = useState<Preset[]>([])
   const [loading, setLoading] = useState(false)
+  const [trendingLoading, setTrendingLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('popular')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [showTrending, setShowTrending] = useState(false)
   const [showPresetDialog, setShowPresetDialog] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -193,6 +197,13 @@ export default function PresetSelector({
     }
   }, [user, session, selectedCategory, sortBy])
 
+  // Fetch trending presets when dialog opens
+  useEffect(() => {
+    if (showPresetDialog && user && session && trendingPresets.length === 0) {
+      fetchTrendingPresets()
+    }
+  }, [showPresetDialog, user, session])
+
   // Debounced search effect
   useEffect(() => {
     if (user && session && searchQuery !== '') {
@@ -272,26 +283,36 @@ export default function PresetSelector({
     }
   }
 
+  const fetchTrendingPresets = async () => {
+    if (!session?.access_token) return
+
+    setTrendingLoading(true)
+    try {
+      const response = await fetch('/api/presets/trending?limit=6', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+
+      if (!response.ok) throw new Error('Failed to fetch trending presets')
+
+      const data = await response.json()
+      setTrendingPresets(data.presets || [])
+    } catch (error) {
+      console.error('Error fetching trending presets:', error)
+      showFeedback({
+        type: 'error',
+        title: 'Failed to Load Trending Presets',
+        message: 'Could not load trending presets. Please try again.'
+      })
+    } finally {
+      setTrendingLoading(false)
+    }
+  }
+
   const handlePresetSelect = async (preset: Preset) => {
     onPresetSelect(preset)
     setShowPresetDialog(false)
-    
-    // Track preset usage
-    try {
-      if (session?.access_token) {
-        await fetch('/api/presets', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({ presetId: preset.id })
-        })
-      }
-    } catch (error) {
-      console.error('Failed to track preset usage:', error)
-      // Don't show error to user as this is not critical
-    }
     
     showFeedback({
       type: 'success',
@@ -432,6 +453,28 @@ export default function PresetSelector({
     return colors[category as keyof typeof colors] || 'bg-muted text-muted-foreground'
   }
 
+  const getPresetType = (presetId: string) => {
+    return presetId.startsWith('cinematic_') ? 'cinematic' : 'regular'
+  }
+
+  const getPresetTypeBadge = (presetId: string) => {
+    const type = getPresetType(presetId)
+    if (type === 'cinematic') {
+      return (
+        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+          <Camera className="h-3 w-3 mr-1" />
+          Cinematic
+        </Badge>
+      )
+    }
+    return (
+      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+        <Wand2 className="h-3 w-3 mr-1" />
+        Style
+      </Badge>
+    )
+  }
+
   return (
     <div className="space-y-4">
       {/* Preset Selector Header */}
@@ -504,6 +547,7 @@ export default function PresetSelector({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="popular">Popular</SelectItem>
+                      <SelectItem value="likes">Most Liked</SelectItem>
                       <SelectItem value="created_at">Newest</SelectItem>
                       <SelectItem value="name">Name A-Z</SelectItem>
                       <SelectItem value="usage_count">Most Used</SelectItem>
@@ -514,8 +558,19 @@ export default function PresetSelector({
                   </Button>
                 </div>
 
-                {/* View Mode Toggle */}
+                {/* Trending Presets Toggle */}
                 <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant={showTrending ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowTrending(!showTrending)}
+                      className="flex items-center"
+                    >
+                      <Star className="h-4 w-4 mr-1" />
+                      Trending Presets
+                    </Button>
+                  </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-muted-foreground">View:</span>
                     <div className="flex border rounded-md">
@@ -538,23 +593,138 @@ export default function PresetSelector({
                     </div>
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {presets.length} preset{presets.length !== 1 ? 's' : ''}
+                    {showTrending ? trendingPresets.length : presets.length} preset{(showTrending ? trendingPresets.length : presets.length) !== 1 ? 's' : ''}
                   </div>
                 </div>
 
+                {/* Trending Presets Section */}
+                {showTrending && (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Star className="h-4 w-4 text-primary" />
+                      <h3 className="text-sm font-medium">Trending Presets (Last 7 Days)</h3>
+                    </div>
+                    {trendingLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="ml-2 text-sm text-muted-foreground">Loading trending presets...</span>
+                      </div>
+                    ) : trendingPresets.length === 0 ? (
+                      <div className="text-center py-4">
+                        <Star className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No trending presets yet</p>
+                        <p className="text-xs text-muted-foreground">Like some presets to see them here!</p>
+                      </div>
+                    ) : (
+                      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-2'}>
+                        {trendingPresets.map(preset => (
+                          viewMode === 'grid' ? (
+                            <Card 
+                              key={preset.id} 
+                              className="cursor-pointer hover:shadow-md transition-shadow border-primary/20"
+                              onClick={() => handlePresetSelect(preset)}
+                            >
+                              <CardHeader className="pb-2">
+                                <div className="flex items-start justify-between">
+                                  <CardTitle className="text-sm">{preset.name}</CardTitle>
+                                  <div className="flex items-center space-x-1">
+                                    <Star className="h-3 w-3 text-primary fill-current" />
+                                    {preset.is_featured && (
+                                      <Star className="h-3 w-3 text-primary" />
+                                    )}
+                                    {preset.is_public && (
+                                      <Users className="h-3 w-3 text-primary" />
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
+                                    {preset.category}
+                                  </Badge>
+                                  {getPresetTypeBadge(preset.id)}
+                                  <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                    <PlayCircle className="h-3 w-3" />
+                                    <span>{preset.usage_count}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1 text-xs text-primary">
+                                    <Heart className="h-3 w-3" />
+                                    <span>{preset.likes_count || 0}</span>
+                                  </div>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="pt-0">
+                                {preset.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                    {preset.description}
+                                  </p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  by @{preset.creator.handle}
+                                </p>
+                              </CardContent>
+                            </Card>
+                          ) : (
+                            <div 
+                              key={preset.id} 
+                              className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors border-primary/20"
+                              onClick={() => handlePresetSelect(preset)}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-medium text-sm truncate">{preset.name}</h3>
+                                  <Star className="h-3 w-3 text-primary fill-current" />
+                                  <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
+                                    {preset.category}
+                                  </Badge>
+                                  {getPresetTypeBadge(preset.id)}
+                                  <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                    <PlayCircle className="h-3 w-3" />
+                                    <span>{preset.usage_count}</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1 text-xs text-primary">
+                                    <Heart className="h-3 w-3" />
+                                    <span>{preset.likes_count || 0}</span>
+                                  </div>
+                                </div>
+                                {preset.description && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {preset.description}
+                                  </p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  by @{preset.creator.handle}
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-1 ml-4">
+                                {preset.is_featured && (
+                                  <Star className="h-4 w-4 text-primary" />
+                                )}
+                                {preset.is_public && (
+                                  <Users className="h-4 w-4 text-primary" />
+                                )}
+                              </div>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Presets Grid */}
-                <div className="max-h-96 overflow-y-auto">
-                  {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                      <span className="ml-2">Loading presets...</span>
-                    </div>
-                  ) : presets.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Palette className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-muted-foreground">No presets found</p>
-                    </div>
-                  ) : (
+                {!showTrending && (
+                  <div className="max-h-96 overflow-y-auto">
+                    {loading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <span className="ml-2">Loading presets...</span>
+                      </div>
+                    ) : presets.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Palette className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-muted-foreground">No presets found</p>
+                      </div>
+                    ) : (
                     <div key={`${selectedCategory}-${searchQuery}-${sortBy}`} className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-2'}>
                       {presets.map(preset => (
                         viewMode === 'grid' ? (
@@ -590,9 +760,14 @@ export default function PresetSelector({
                                 <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
                                   {preset.category}
                                 </Badge>
+                                {getPresetTypeBadge(preset.id)}
                                 <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                  <Eye className="h-3 w-3" />
+                                  <PlayCircle className="h-3 w-3" />
                                   <span>{preset.usage_count}</span>
+                                </div>
+                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                  <Heart className="h-3 w-3" />
+                                  <span>{preset.likes_count || 0}</span>
                                 </div>
                               </div>
                             </CardHeader>
@@ -650,9 +825,14 @@ export default function PresetSelector({
                                 <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
                                   {preset.category}
                                 </Badge>
+                                {getPresetTypeBadge(preset.id)}
                                 <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                  <Eye className="h-3 w-3" />
+                                  <PlayCircle className="h-3 w-3" />
                                   <span>{preset.usage_count}</span>
+                                </div>
+                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                                  <Heart className="h-3 w-3" />
+                                  <span>{preset.likes_count || 0}</span>
                                 </div>
                               </div>
                               {preset.description && (
@@ -688,7 +868,8 @@ export default function PresetSelector({
                       ))}
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
             </DialogContent>
           </Dialog>

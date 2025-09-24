@@ -133,20 +133,28 @@ export async function GET(request: NextRequest) {
         });
       } else {
         // Handle media table format
-        const { data: { publicUrl } } = supabase.storage
-          .from(m.bucket)
-          .getPublicUrl(m.path);
+        if (m.bucket === 'external' || m.exif_json?.external_url) {
+          // For external URLs, use the path directly
+          url = m.path;
+          thumbnail_url = m.path;
+        } else {
+          // For Supabase storage, construct the public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from(m.bucket)
+            .getPublicUrl(m.path);
+          
+          url = publicUrl;
+          thumbnail_url = publicUrl;
+        }
         
-        url = publicUrl;
-        thumbnail_url = publicUrl;
         type = m.type.toLowerCase(); // Convert 'IMAGE' to 'image', 'VIDEO' to 'video'
         width = m.width;
         height = m.height;
         duration = m.duration;
         palette = m.palette;
         blurhash = m.blurhash;
-        metadata = m.ai_metadata || {};
-        preset = m.ai_metadata?.style || m.ai_metadata?.preset || 'realistic';
+        metadata = m.exif_json || m.ai_metadata || {};
+        preset = m.exif_json?.generation_metadata?.style || m.ai_metadata?.style || m.ai_metadata?.preset || 'realistic';
       }
 
       return {

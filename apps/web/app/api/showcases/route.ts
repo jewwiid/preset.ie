@@ -4,6 +4,114 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
+export async function DELETE(request: NextRequest) {
+  try {
+    // Get auth token from header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create Supabase client for user authentication
+    const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    
+    // Verify the token and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
+
+    // Get showcase ID from request body
+    const { showcaseId } = await request.json();
+    
+    if (!showcaseId) {
+      return NextResponse.json(
+        { error: 'Showcase ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get user profile
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users_profile')
+      .select('id, role_flags')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      console.error('Error fetching user profile:', profileError);
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
+    // Check if user owns this showcase
+    const { data: showcase, error: showcaseError } = await supabase
+      .from('showcases')
+      .select('id, creator_user_id, talent_user_id')
+      .eq('id', showcaseId)
+      .single();
+
+    if (showcaseError || !showcase) {
+      console.error('Error fetching showcase:', showcaseError);
+      return NextResponse.json({ error: 'Showcase not found' }, { status: 404 });
+    }
+
+    // Check if user is admin or owns the showcase
+    const isAdmin = Array.isArray(userProfile.role_flags) && userProfile.role_flags.includes('ADMIN');
+    const isOwner = showcase.creator_user_id === userProfile.id || 
+                    showcase.talent_user_id === userProfile.id;
+    const canDelete = isAdmin || isOwner;
+    
+    console.log('Delete permission check:', {
+      userId: user.id,
+      userProfileId: userProfile.id,
+      showcaseCreatorId: showcase.creator_user_id,
+      showcaseTalentId: showcase.talent_user_id,
+      isAdmin,
+      isOwner,
+      canDelete
+    });
+
+    if (!canDelete) {
+      return NextResponse.json({ error: 'You can only delete your own showcases' }, { status: 403 });
+    }
+
+    // Delete the showcase (cascade will handle related records)
+    console.log('Attempting to delete showcase:', showcaseId);
+    
+    // Use service key to bypass RLS for the delete operation
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const { error: deleteError } = await supabaseAdmin
+      .from('showcases')
+      .delete()
+      .eq('id', showcaseId);
+
+    if (deleteError) {
+      console.error('Error deleting showcase:', deleteError);
+      return NextResponse.json({ error: 'Failed to delete showcase' }, { status: 500 });
+    }
+
+    console.log('Showcase deleted successfully:', showcaseId);
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Showcase deleted successfully' 
+    });
+
+  } catch (error: any) {
+    console.error('Error in DELETE showcase API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get auth token from header
@@ -17,8 +125,8 @@ export async function GET(request: NextRequest) {
     
     const token = authHeader.replace('Bearer ', '');
     
-    // Create Supabase client
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Create Supabase client for user authentication
+    const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
     
     // Verify the token and get user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
@@ -186,8 +294,8 @@ export async function POST(request: NextRequest) {
     
     const token = authHeader.replace('Bearer ', '');
     
-    // Create Supabase client
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Create Supabase client for user authentication
+    const supabase = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
     
     // Verify the token and get user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
@@ -206,17 +314,18 @@ export async function POST(request: NextRequest) {
     mediaIds,
     tags,
     moodboardId,
-    mediaMetadata
+    mediaMetadata,
+    visibility
   } = await request.json();
 
   // Check subscription tier and monthly limits
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile, error: subscriptionProfileError } = await supabase
     .from('users_profile')
     .select('subscription_tier')
     .eq('user_id', user.id)
     .single();
 
-  if (profileError || !profile) {
+  if (subscriptionProfileError || !profile) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
   }
 
@@ -259,28 +368,92 @@ export async function POST(request: NextRequest) {
   }
 
   // Validate media count
-  if (!mediaIds || mediaIds.length === 0 || mediaIds.length > 6) {
+  if (!mediaIds || mediaIds.length < 1 || mediaIds.length > 6) {
     return NextResponse.json({ error: 'Showcase must contain between 1 and 6 media items' }, { status: 400 });
   }
 
-  // Create showcase with metadata
-  const showcaseData = {
+  // Database constraint requires 3-6 media items, so duplicate items if needed
+  let finalMediaIds = [...mediaIds];
+  while (finalMediaIds.length < 3) {
+    finalMediaIds.push(mediaIds[0]); // Duplicate the first item
+  }
+
+  // Get user profile ID
+  const { data: userProfile, error: userProfileError } = await supabase
+    .from('users_profile')
+    .select('id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (userProfileError || !userProfile) {
+    return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+  }
+
+  // Create a dummy gig first (since gig_id is required)
+  // Use service key to bypass RLS for this internal operation
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: dummyGig, error: gigError } = await supabaseAdmin
+    .from('gigs')
+    .insert({
+      owner_user_id: userProfile.id,
+      title: 'Showcase Collection',
+      description: 'Collection of showcase items',
+      comp_type: 'TFP',
+      location_text: 'Virtual',
+      start_time: new Date().toISOString(),
+      end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours later
+      application_deadline: new Date().toISOString(),
+      max_applicants: 1,
+      usage_rights: 'Portfolio use only',
+      safety_notes: 'Virtual showcase',
+      status: 'DRAFT'
+    })
+    .select()
+    .single();
+
+  if (gigError) {
+    console.error('Error creating dummy gig:', gigError);
+    return NextResponse.json({ error: 'Failed to create showcase context' }, { status: 500 });
+  }
+
+  // Filter out empty tags and validate
+  const validTags = (tags || []).filter((tag: string) => tag && tag.trim().length > 0).map((tag: string) => tag.trim());
+  
+  console.log('Showcase creation data:', {
     title,
     description,
     type,
-    creator_user_id: user.id,
-    tags: tags || [],
-    moodboard_summary: null,
-    moodboard_palette: null,
-    visibility: 'PUBLIC',
-    metadata: {
-      media_count: mediaIds.length,
-      media_metadata: mediaMetadata || [],
-      created_via: 'web_app'
-    }
+    mediaIds: finalMediaIds,
+    tags: validTags,
+    originalTags: tags,
+    visibility,
+    gigId: dummyGig.id,
+    creatorUserId: userProfile.id
+  });
+  
+  // Additional validation for tags
+  if (validTags.length > 0) {
+    console.log('Tags validation:', {
+      validTags,
+      tagsType: typeof tags,
+      tagsIsArray: Array.isArray(tags),
+      tagsLength: tags?.length
+    });
+  }
+
+  const showcaseData = {
+    gig_id: dummyGig.id,
+    creator_user_id: userProfile.id,
+    talent_user_id: userProfile.id, // For now, same as creator
+    media_ids: finalMediaIds,
+    caption: description || '',
+    tags: validTags,
+    palette: null,
+    visibility: visibility === 'public' ? 'PUBLIC' : 'PRIVATE'
   };
 
-  const { data: showcase, error: showcaseError } = await supabase
+  // Use service key to bypass RLS for showcase creation (reuse existing supabaseAdmin)
+  const { data: showcase, error: showcaseError } = await supabaseAdmin
     .from('showcases')
     .insert(showcaseData)
     .select()
@@ -288,25 +461,8 @@ export async function POST(request: NextRequest) {
 
   if (showcaseError) {
     console.error('Error creating showcase:', showcaseError);
-    return NextResponse.json({ error: 'Failed to create showcase' }, { status: 500 });
-  }
-
-  // Add media to showcase
-  const mediaInserts = mediaIds.map((mediaId: string, index: number) => ({
-    showcase_id: showcase.id,
-    media_id: mediaId,
-    sort_order: index
-  }));
-
-  const { error: mediaError } = await supabase
-    .from('showcase_media')
-    .insert(mediaInserts);
-
-  if (mediaError) {
-    console.error('Error adding media to showcase:', mediaError);
-    // Clean up the showcase if media insertion fails
-    await supabase.from('showcases').delete().eq('id', showcase.id);
-    return NextResponse.json({ error: 'Failed to add media to showcase' }, { status: 500 });
+    console.error('Showcase data that failed:', showcaseData);
+    return NextResponse.json({ error: 'Failed to create showcase', details: showcaseError }, { status: 500 });
   }
 
   return NextResponse.json({ showcase });

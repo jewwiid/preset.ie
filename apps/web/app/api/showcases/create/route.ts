@@ -187,6 +187,25 @@ export async function POST(request: NextRequest) {
       showcaseData.individual_image_url = individualImageUrl
       showcaseData.individual_image_title = individualImageTitle
       showcaseData.individual_image_description = individualImageDescription
+      
+      // Fetch width/height from playground_gallery if available
+      if (individualImageUrl) {
+        try {
+          const { data: galleryItem } = await supabase
+            .from('playground_gallery')
+            .select('width, height')
+            .eq('image_url', individualImageUrl)
+            .single()
+          
+          if (galleryItem) {
+            showcaseData.individual_image_width = galleryItem.width
+            showcaseData.individual_image_height = galleryItem.height
+            console.log('📐 Found gallery dimensions:', { width: galleryItem.width, height: galleryItem.height })
+          }
+        } catch (error) {
+          console.log('⚠️ Could not fetch gallery dimensions:', error)
+        }
+      }
     }
 
     console.log('💾 Creating showcase with data:', showcaseData)

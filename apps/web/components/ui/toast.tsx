@@ -42,30 +42,30 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-primary-500" />
+        return <CheckCircle className="h-5 w-5 text-preset-500" />
       case 'error':
         return <AlertCircle className="h-5 w-5 text-red-500" />
       case 'warning':
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />
+        return <AlertCircle className="h-5 w-5 text-amber-500" />
       case 'info':
-        return <Info className="h-5 w-5 text-blue-500" />
+        return <Info className="h-5 w-5 text-preset-500" />
       default:
-        return <Info className="h-5 w-5 text-blue-500" />
+        return <Info className="h-5 w-5 text-preset-500" />
     }
   }
 
   const getBackgroundColor = () => {
     switch (toast.type) {
       case 'success':
-        return 'bg-primary-50 border-primary/20'
+        return 'bg-preset-50 border-preset-200'
       case 'error':
         return 'bg-red-50 border-red-200'
       case 'warning':
-        return 'bg-yellow-50 border-yellow-200'
+        return 'bg-amber-50 border-amber-200'
       case 'info':
-        return 'bg-blue-50 border-blue-200'
+        return 'bg-preset-50 border-preset-200'
       default:
-        return 'bg-blue-50 border-blue-200'
+        return 'bg-preset-50 border-preset-200'
     }
   }
 
@@ -73,7 +73,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
     <div
       className={`
         ${getBackgroundColor()}
-        border rounded-lg p-4 shadow-lg max-w-sm w-full
+        border rounded-xl p-4 shadow-xl max-w-sm w-full backdrop-blur-sm
         transform transition-all duration-300 ease-in-out
         ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
       `}
@@ -83,11 +83,11 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
           {getIcon()}
         </div>
         <div className="ml-3 flex-1">
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-sm font-semibold text-gray-900">
             {toast.title}
           </p>
           {toast.description && (
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-gray-700">
               {toast.description}
             </p>
           )}
@@ -95,7 +95,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
             <div className="mt-3">
               <button
                 onClick={toast.action.onClick}
-                className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                className="text-sm font-medium text-preset-600 hover:text-preset-700 transition-colors"
               >
                 {toast.action.label}
               </button>
@@ -108,7 +108,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
               setIsVisible(false)
               setTimeout(() => onRemove(toast.id), 300)
             }}
-            className="inline-flex text-gray-400 hover:text-gray-600"
+            className="inline-flex text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -125,7 +125,7 @@ interface ToastContainerProps {
 
 export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2">
+    <div className="fixed top-6 right-6 z-50 space-y-3">
       {toasts.map((toast) => (
         <ToastComponent
           key={toast.id}
@@ -152,19 +152,27 @@ export function useToast() {
   }
 
   const showSuccess = (title: string, description?: string, action?: Toast['action']) => {
-    addToast({ title, description, type: 'success', duration: 4000, action })
+    addToast({ title, description, type: 'success', duration: 5000, action })
   }
 
   const showError = (title: string, description?: string, action?: Toast['action']) => {
-    addToast({ title, description, type: 'error', duration: 6000, action })
+    addToast({ title, description, type: 'error', duration: 7000, action })
   }
 
   const showWarning = (title: string, description?: string, action?: Toast['action']) => {
-    addToast({ title, description, type: 'warning', duration: 5000, action })
+    addToast({ title, description, type: 'warning', duration: 6000, action })
   }
 
   const showInfo = (title: string, description?: string, action?: Toast['action']) => {
-    addToast({ title, description, type: 'info', duration: 4000, action })
+    addToast({ title, description, type: 'info', duration: 5000, action })
+  }
+
+  // Hardcoded toast examples for testing
+  const showTestToasts = () => {
+    showSuccess('Success!', 'This is a success message with your brand colors')
+    setTimeout(() => showInfo('Info', 'This is an info message'), 1000)
+    setTimeout(() => showWarning('Warning', 'This is a warning message'), 2000)
+    setTimeout(() => showError('Error', 'This is an error message'), 3000)
   }
 
   return {
@@ -174,6 +182,7 @@ export function useToast() {
     showSuccess,
     showError,
     showWarning,
-    showInfo
+    showInfo,
+    showTestToasts
   }
 }

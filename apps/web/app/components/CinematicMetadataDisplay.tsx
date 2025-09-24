@@ -26,6 +26,34 @@ interface CinematicMetadata {
     generationCost?: number
     generatedAt?: string
   }
+  generation_metadata?: {
+    cinematic_parameters?: {
+      cameraAngle?: string
+      lensType?: string
+      shotSize?: string
+      depthOfField?: string
+      compositionTechnique?: string
+      lightingStyle?: string
+      colorPalette?: string
+      directorStyle?: string
+      eraEmulation?: string
+      sceneMood?: string
+      cameraMovement?: string
+      aspectRatio?: string
+      timeSetting?: string
+      weatherCondition?: string
+      locationType?: string
+    }
+    prompt?: string
+    enhanced_prompt?: string
+    style_prompt?: string
+    provider?: string
+    credits_used?: number
+    generated_at?: string
+    base_image?: string
+    resolution?: string
+    aspect_ratio?: string
+  }
   cinematic_tags?: string[]
 }
 
@@ -40,11 +68,12 @@ export default function CinematicMetadataDisplay({
   compact = false, 
   showAll = false 
 }: CinematicMetadataDisplayProps) {
-  if (!metadata?.ai_metadata) {
+  // Check both possible data paths
+  const aiMetadata = metadata?.ai_metadata || metadata?.generation_metadata?.cinematic_parameters
+  
+  if (!aiMetadata) {
     return null
   }
-
-  const aiMetadata = metadata.ai_metadata
   const formatLabel = (value: string) => {
     return value.split('-').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
@@ -182,14 +211,14 @@ export default function CinematicMetadataDisplay({
           </div>
 
           {/* Technical Details */}
-          {(aiMetadata.aiProvider || aiMetadata.generationCost) && (
+          {(metadata.generation_metadata?.provider || metadata.generation_metadata?.credits_used || (aiMetadata as any).aiProvider || (aiMetadata as any).generationCost) && (
             <div className="pt-2 mt-2 border-t border-gray-200">
               <div className="flex items-center justify-between text-xs text-gray-500">
-                {aiMetadata.aiProvider && (
-                  <span>AI: {aiMetadata.aiProvider}</span>
+                {(metadata.generation_metadata?.provider || (aiMetadata as any).aiProvider) && (
+                  <span>AI: {metadata.generation_metadata?.provider || (aiMetadata as any).aiProvider}</span>
                 )}
-                {aiMetadata.generationCost && (
-                  <span>Cost: ${aiMetadata.generationCost.toFixed(3)}</span>
+                {(metadata.generation_metadata?.credits_used || (aiMetadata as any).generationCost) && (
+                  <span>Cost: {metadata.generation_metadata?.credits_used || (aiMetadata as any).generationCost} credits</span>
                 )}
               </div>
             </div>

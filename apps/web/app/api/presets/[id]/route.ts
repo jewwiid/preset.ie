@@ -9,47 +9,173 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
+    const { id: rawId } = await params;
+    
+    // Handle cinematic preset IDs with prefix
+    let id = rawId;
+    let isCinematicPreset = false;
+    
+    if (rawId.startsWith('cinematic_')) {
+      id = rawId.replace('cinematic_', '');
+      isCinematicPreset = true;
+    }
 
     // Create Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get preset by ID
-    const { data: preset, error } = await supabase
-      .from('presets')
-      .select(`
-        id,
-        name,
-        description,
-        category,
-        prompt_template,
-        negative_prompt,
-        style_settings,
-        technical_settings,
-        ai_metadata,
-        seedream_config,
-        usage_count,
-        is_public,
-        is_featured,
-        created_at,
-        updated_at,
-        creator_id,
-        users_profile!presets_creator_id_fkey (
-          id,
-          display_name,
-          handle,
-          avatar_url
-        )
-      `)
-      .eq('id', id)
-      .single();
+    let preset;
+    let error;
 
-    if (error || !preset) {
-      console.error('Error fetching preset:', error);
-      return NextResponse.json(
-        { error: 'Preset not found' },
-        { status: 404 }
-      );
+    if (isCinematicPreset) {
+      // Directly fetch from cinematic_presets table
+      console.log(`Fetching cinematic preset ${id}...`);
+      
+      const { data: cinematicPreset, error: cinematicError } = await supabase
+        .from('cinematic_presets')
+        .select(`
+          id,
+          name,
+          display_name,
+          description,
+          category,
+          parameters,
+          sort_order,
+          is_active,
+          created_at,
+          updated_at
+        `)
+        .eq('id', id)
+        .single();
+
+      if (cinematicError || !cinematicPreset) {
+        console.error('Error fetching cinematic preset:', cinematicError);
+        return NextResponse.json(
+          { error: 'Preset not found' },
+          { status: 404 }
+        );
+      }
+
+      // Convert cinematic preset to regular preset format
+      preset = {
+        id: cinematicPreset.id,
+        name: cinematicPreset.display_name || cinematicPreset.name,
+        description: cinematicPreset.description,
+        category: cinematicPreset.category,
+        prompt_template: '', // Cinematic presets don't have prompt templates
+        negative_prompt: '',
+        style_settings: null,
+        technical_settings: null,
+        ai_metadata: null,
+        seedream_config: null,
+        usage_count: 0, // Cinematic presets don't track usage yet
+        likes_count: 0,
+        is_public: true,
+        is_featured: false,
+        created_at: cinematicPreset.created_at,
+        updated_at: cinematicPreset.updated_at,
+        user_id: null, // Cinematic presets are system presets
+        cinematic_parameters: cinematicPreset.parameters // Add cinematic parameters
+      };
+    } else {
+      // Get preset by ID from regular presets table
+      const result = await supabase
+        .from('presets')
+        .select(`
+          id,
+          name,
+          description,
+          category,
+          prompt_template,
+          negative_prompt,
+          style_settings,
+          technical_settings,
+          ai_metadata,
+          seedream_config,
+          usage_count,
+          likes_count,
+          is_public,
+          is_featured,
+          created_at,
+          updated_at,
+          user_id
+        `)
+        .eq('id', id)
+        .single();
+
+      preset = result.data;
+      error = result.error;
+
+      // If not found in regular presets, check cinematic_presets table
+      if (error || !preset) {
+        console.log(`Preset ${id} not found in regular presets table, checking cinematic_presets...`);
+        
+        const { data: cinematicPreset, error: cinematicError } = await supabase
+          .from('cinematic_presets')
+          .select(`
+            id,
+            name,
+            display_name,
+            description,
+            category,
+            parameters,
+            sort_order,
+            is_active,
+            created_at,
+            updated_at
+          `)
+          .eq('id', id)
+          .single();
+
+        if (cinematicError || !cinematicPreset) {
+          console.error('Error fetching preset from both tables:', error, cinematicError);
+          return NextResponse.json(
+            { error: 'Preset not found' },
+            { status: 404 }
+          );
+        }
+
+        // Convert cinematic preset to regular preset format
+        preset = {
+          id: cinematicPreset.id,
+          name: cinematicPreset.display_name || cinematicPreset.name,
+          description: cinematicPreset.description,
+          category: cinematicPreset.category,
+          prompt_template: '', // Cinematic presets don't have prompt templates
+          negative_prompt: '',
+          style_settings: null,
+          technical_settings: null,
+          ai_metadata: null,
+          seedream_config: null,
+          usage_count: 0, // Cinematic presets don't track usage yet
+          likes_count: 0,
+          is_public: true,
+          is_featured: false,
+          created_at: cinematicPreset.created_at,
+          updated_at: cinematicPreset.updated_at,
+          user_id: null, // Cinematic presets are system presets
+          cinematic_parameters: cinematicPreset.parameters // Add cinematic parameters
+        };
+      }
+    }
+
+    // Get creator information if preset has a user_id
+    let creatorInfo = {
+      id: null,
+      display_name: 'System',
+      handle: 'preset',
+      avatar_url: null
+    };
+
+    if (preset.user_id) {
+      const { data: creator } = await supabase
+        .from('users_profile')
+        .select('id, display_name, handle, avatar_url')
+        .eq('id', preset.user_id)
+        .single();
+      
+      if (creator) {
+        creatorInfo = creator;
+      }
     }
 
     // Check if preset is public or if user is the creator
@@ -67,7 +193,7 @@ export async function GET(
           .eq('user_id', user.id)
           .single();
         
-        isCreator = profile?.id === preset.creator_id;
+        isCreator = profile?.id === preset.user_id;
       }
     }
 
@@ -93,13 +219,7 @@ export async function GET(
       const { data: { user } } = await supabase.auth.getUser(token);
       
       if (user) {
-        const { data: profile } = await supabase
-          .from('users_profile')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-        
-        isLiked = likes?.some(like => like.user_id === profile?.id) || false;
+        isLiked = likes?.some(like => like.user_id === user.id) || false;
       }
     }
 
@@ -122,12 +242,8 @@ export async function GET(
       updated_at: preset.updated_at,
       like_count: likeCount,
       is_liked: isLiked,
-      creator: {
-        id: preset.users_profile?.[0]?.id,
-        display_name: preset.users_profile?.[0]?.display_name || 'Unknown',
-        handle: preset.users_profile?.[0]?.handle || 'unknown',
-        avatar_url: preset.users_profile?.[0]?.avatar_url
-      }
+      creator: creatorInfo,
+      cinematic_parameters: (preset as any).cinematic_parameters || null
     };
 
     return NextResponse.json(response);
@@ -187,7 +303,7 @@ export async function PUT(
     // Check if user owns the preset
     const { data: existingPreset, error: fetchError } = await supabase
       .from('presets')
-      .select('creator_id')
+      .select('user_id')
       .eq('id', id)
       .single();
 
@@ -198,7 +314,7 @@ export async function PUT(
       );
     }
 
-    if (existingPreset.creator_id !== profile.id) {
+    if (existingPreset.user_id !== profile.id) {
       return NextResponse.json(
         { error: 'Not authorized to update this preset' },
         { status: 403 }
@@ -283,7 +399,7 @@ export async function DELETE(
     // Check if user owns the preset
     const { data: existingPreset, error: fetchError } = await supabase
       .from('presets')
-      .select('creator_id')
+      .select('user_id')
       .eq('id', id)
       .single();
 
@@ -294,7 +410,7 @@ export async function DELETE(
       );
     }
 
-    if (existingPreset.creator_id !== profile.id) {
+    if (existingPreset.user_id !== profile.id) {
       return NextResponse.json(
         { error: 'Not authorized to delete this preset' },
         { status: 403 }

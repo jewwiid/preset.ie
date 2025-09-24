@@ -45,22 +45,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    // Check if this image is already promoted to media table
-    const { data: existingMedia, error: checkError } = await supabase
-      .from('media')
-      .select('id')
-      .eq('owner_user_id', userProfile.id)
-      .eq('path', galleryItem.image_url) // Use image_url as path for playground images
-      .single();
-
-    if (existingMedia) {
-      return NextResponse.json({
-        success: true,
-        message: 'Image already promoted to media',
-        mediaId: existingMedia.id,
-        action: 'already_exists'
-      });
-    }
+    // Always create a new media record to ensure it has PUBLIC visibility
+    console.log('Creating new media record for gallery item:', galleryItem.id);
 
     // Extract image dimensions from generation metadata
     let width = 1024; // Default fallback
@@ -91,12 +77,12 @@ export async function POST(request: NextRequest) {
       .from('media')
       .insert({
         owner_user_id: userProfile.id,
-        type: 'IMAGE',
-        bucket: 'playground-gallery', // Use the same bucket
-        path: galleryItem.image_url, // Use image_url as path
+        type: galleryItem.media_type?.toUpperCase() || 'IMAGE', // Use actual media type from gallery item
+        bucket: 'external', // Use 'external' bucket for external URLs
+        path: galleryItem.image_url, // Store the full URL as path for external images
         width: width,
         height: height,
-        duration: 0, // Images don't have duration
+        duration: galleryItem.video_duration || 0, // Use actual duration for videos
         palette: galleryItem.generation_metadata?.palette || null,
         blurhash: null, // Not stored in playground_gallery
         exif_json: {
@@ -104,9 +90,10 @@ export async function POST(request: NextRequest) {
           generation_metadata: galleryItem.generation_metadata,
           promoted_from_playground: true,
           original_gallery_id: galleryItem.id,
-          promoted_at: new Date().toISOString()
+          promoted_at: new Date().toISOString(),
+          external_url: true // Flag to indicate this is an external URL
         },
-        visibility: 'PRIVATE' // Default to private, user can change later
+        visibility: 'PUBLIC' // Set to public so it can be viewed in showcases
       })
       .select()
       .single();

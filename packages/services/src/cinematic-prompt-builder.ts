@@ -34,6 +34,7 @@ export interface PromptConstructionOptions {
   includeTechnicalDetails?: boolean;
   includeStyleReferences?: boolean;
   maxLength?: number;
+  subject?: string; // The subject for cinematic adjustments
 }
 
 export interface ConstructedPrompt {
@@ -59,7 +60,8 @@ export class CinematicPromptBuilder {
       enhancementType,
       includeTechnicalDetails = true,
       includeStyleReferences = true,
-      maxLength = this.MAX_PROMPT_LENGTH
+      maxLength = this.MAX_PROMPT_LENGTH,
+      subject
     } = options;
 
     const technicalDetails: string[] = [];
@@ -82,6 +84,11 @@ export class CinematicPromptBuilder {
     // Add environmental and mood details
     this.addEnvironmentalDetails(cinematicParameters, technicalDetails, cinematicTags);
     this.addMoodDetails(cinematicParameters, technicalDetails, cinematicTags);
+
+    // Add subject-aware cinematic adjustments
+    if (subject) {
+      this.addSubjectAwareAdjustments(subject, cinematicParameters, technicalDetails, cinematicTags);
+    }
 
     // Construct the full prompt
     const fullPrompt = this.assemblePrompt(
@@ -888,6 +895,114 @@ export class CinematicPromptBuilder {
     }
 
     return result;
+  }
+
+  /**
+   * Add subject-aware cinematic adjustments based on the subject type
+   */
+  private addSubjectAwareAdjustments(
+    subject: string,
+    cinematicParameters: Partial<CinematicParameters>,
+    technicalDetails: string[],
+    cinematicTags: string[]
+  ): void {
+    const subjectLower = subject.toLowerCase();
+    
+    // Portrait/Person adjustments
+    if (this.isPersonSubject(subjectLower)) {
+      if (!cinematicParameters.cameraAngle) {
+        technicalDetails.push('portrait framing');
+        cinematicTags.push('subject-type:person');
+      }
+      if (!cinematicParameters.lightingStyle) {
+        technicalDetails.push('flattering portrait lighting');
+        cinematicTags.push('lighting:portrait');
+      }
+    }
+    
+    // Landscape/Nature adjustments
+    else if (this.isLandscapeSubject(subjectLower)) {
+      if (!cinematicParameters.cameraAngle) {
+        technicalDetails.push('wide landscape framing');
+        cinematicTags.push('subject-type:landscape');
+      }
+      if (!cinematicParameters.lightingStyle) {
+        technicalDetails.push('natural ambient lighting');
+        cinematicTags.push('lighting:natural');
+      }
+    }
+    
+    // Architecture/Building adjustments
+    else if (this.isArchitectureSubject(subjectLower)) {
+      if (!cinematicParameters.cameraAngle) {
+        technicalDetails.push('architectural framing');
+        cinematicTags.push('subject-type:architecture');
+      }
+      if (!cinematicParameters.lightingStyle) {
+        technicalDetails.push('dramatic architectural lighting');
+        cinematicTags.push('lighting:architectural');
+      }
+    }
+    
+    // Product/Object adjustments
+    else if (this.isProductSubject(subjectLower)) {
+      if (!cinematicParameters.cameraAngle) {
+        technicalDetails.push('product photography framing');
+        cinematicTags.push('subject-type:product');
+      }
+      if (!cinematicParameters.lightingStyle) {
+        technicalDetails.push('clean product lighting');
+        cinematicTags.push('lighting:product');
+      }
+    }
+    
+    // Abstract/Artistic adjustments
+    else if (this.isAbstractSubject(subjectLower)) {
+      if (!cinematicParameters.lightingStyle) {
+        technicalDetails.push('artistic lighting');
+        cinematicTags.push('lighting:artistic');
+      }
+    }
+  }
+
+  /**
+   * Check if subject is a person/portrait
+   */
+  private isPersonSubject(subject: string): boolean {
+    const personKeywords = ['person', 'man', 'woman', 'child', 'baby', 'portrait', 'face', 'head', 'character', 'people', 'human'];
+    return personKeywords.some(keyword => subject.includes(keyword));
+  }
+
+  /**
+   * Check if subject is a landscape/nature scene
+   */
+  private isLandscapeSubject(subject: string): boolean {
+    const landscapeKeywords = ['landscape', 'mountain', 'forest', 'ocean', 'sea', 'lake', 'river', 'valley', 'hill', 'field', 'meadow', 'desert', 'beach', 'sunset', 'sunrise', 'sky', 'cloud', 'nature'];
+    return landscapeKeywords.some(keyword => subject.includes(keyword));
+  }
+
+  /**
+   * Check if subject is architecture/buildings
+   */
+  private isArchitectureSubject(subject: string): boolean {
+    const architectureKeywords = ['building', 'house', 'castle', 'church', 'tower', 'bridge', 'monument', 'architecture', 'structure', 'facade', 'interior', 'room'];
+    return architectureKeywords.some(keyword => subject.includes(keyword));
+  }
+
+  /**
+   * Check if subject is a product/object
+   */
+  private isProductSubject(subject: string): boolean {
+    const productKeywords = ['product', 'object', 'item', 'thing', 'tool', 'device', 'car', 'vehicle', 'furniture', 'chair', 'table', 'book', 'phone', 'laptop'];
+    return productKeywords.some(keyword => subject.includes(keyword));
+  }
+
+  /**
+   * Check if subject is abstract/artistic
+   */
+  private isAbstractSubject(subject: string): boolean {
+    const abstractKeywords = ['abstract', 'art', 'painting', 'drawing', 'design', 'pattern', 'texture', 'color', 'shape', 'form', 'concept', 'idea'];
+    return abstractKeywords.some(keyword => subject.includes(keyword));
   }
 }
 

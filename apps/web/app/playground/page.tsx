@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { Sparkles, X, Download } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../../lib/auth-context'
 import { useFeedback } from '../../components/feedback/FeedbackContext'
 import { supabase } from '../../lib/supabase'
@@ -53,10 +54,11 @@ interface PlaygroundProject {
   last_generated_at: string
 }
 
-export default function PlaygroundPage() {
+function PlaygroundContent() {
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
   const { toasts, removeToast } = useToast()
+  const searchParams = useSearchParams()
   
   // Core state
   const [currentProject, setCurrentProject] = useState<PlaygroundProject | null>(null)
@@ -64,8 +66,25 @@ export default function PlaygroundPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [userCredits, setUserCredits] = useState(0)
   const [userSubscriptionTier, setUserSubscriptionTier] = useState<string>('FREE')
+  
+  // Preset state from URL parameters
+  const [activePreset, setActivePreset] = useState<{id: string, name: string} | null>(null)
   const [savingImage, setSavingImage] = useState<string | null>(null)
   const [currentPrompt, setCurrentPrompt] = useState('')
+  
+  // Read URL parameters for preset
+  useEffect(() => {
+    const presetId = searchParams.get('preset')
+    const presetName = searchParams.get('name')
+    
+    if (presetId && presetName) {
+      setActivePreset({
+        id: presetId,
+        name: decodeURIComponent(presetName)
+      })
+      console.log('🎯 Active preset from URL:', { id: presetId, name: presetName })
+    }
+  }, [searchParams])
   
   // Video generation states
   const [videoGenerationStatus, setVideoGenerationStatus] = useState<'idle' | 'generating' | 'completed'>('idle')
@@ -157,6 +176,7 @@ export default function PlaygroundPage() {
     includeTechnicalDetails?: boolean
     includeStyleReferences?: boolean
     replaceLatestImages?: boolean
+    userSubject?: string
   }) => {
     setCurrentPrompt(params.prompt)
     setLoading(true)
@@ -206,7 +226,8 @@ export default function PlaygroundPage() {
           enhancedPrompt: params.enhancedPrompt,
           includeTechnicalDetails: params.includeTechnicalDetails,
           includeStyleReferences: params.includeStyleReferences,
-          replaceLatestImages: params.replaceLatestImages ?? true // Auto-replace latest images by default
+          replaceLatestImages: params.replaceLatestImages ?? true, // Auto-replace latest images by default
+          userSubject: params.userSubject
         })
       })
 
@@ -225,6 +246,21 @@ export default function PlaygroundPage() {
       })
       setCurrentProject(project)
       setUserCredits(prev => prev - creditsUsed)
+      
+      // Track preset usage if a custom preset was used
+      if (params.customStylePreset?.id) {
+        try {
+          await fetch(`/api/presets/${params.customStylePreset.id}/usage`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          })
+        } catch (error) {
+          console.error('Failed to track preset usage:', error)
+          // Don't show error to user as this is not critical
+        }
+      }
       
       showFeedback({
         type: 'success',
@@ -674,6 +710,19 @@ export default function PlaygroundPage() {
         })
       }
       
+      // Track preset usage if cinematic parameters were used (indicating a preset)
+      if (params.cinematicParameters) {
+        try {
+          // For video generation, we need to check if there's a preset ID in the cinematic parameters
+          // This would need to be passed from the video generation panel
+          // For now, we'll skip preset tracking for video generation
+          // TODO: Add preset ID to video generation parameters
+        } catch (error) {
+          console.error('Failed to track preset usage for video:', error)
+          // Don't show error to user as this is not critical
+        }
+      }
+      
       showFeedback({
         type: 'success',
         title: 'Video Generated!',
@@ -982,6 +1031,35 @@ export default function PlaygroundPage() {
           loading={loading}
         />
 
+        {/* Active Preset Indicator */}
+        {activePreset && (
+          <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Using Preset</p>
+                  <p className="text-sm text-muted-foreground">{activePreset.name}</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setActivePreset(null)
+                  // Clear URL parameters
+                  window.history.replaceState({}, '', '/playground')
+                }}
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear Preset
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Batch Progress Tracker */}
         {activeBatchJobId && (
           <div className="mb-6">
@@ -1109,5 +1187,13 @@ export default function PlaygroundPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function PlaygroundPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PlaygroundContent />
+    </Suspense>
   )
 }

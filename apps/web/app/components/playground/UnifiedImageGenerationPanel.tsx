@@ -51,6 +51,7 @@ interface Preset {
     generationMode?: 'text-to-image' | 'image-to-image'
     selectedProvider?: 'nanobanana' | 'seedream'
   }
+  likes_count: number
   ai_metadata: {
     model_version?: string
     generation_mode?: string
@@ -82,7 +83,7 @@ interface UnifiedImageGenerationPanelProps {
     resolution: string
     consistencyLevel: string
     numImages: number
-    customPreset?: Preset
+    customStylePreset?: Preset
     baseImage?: string
     generationMode?: 'text-to-image' | 'image-to-image'
     intensity?: number
@@ -92,6 +93,7 @@ interface UnifiedImageGenerationPanelProps {
     includeStyleReferences?: boolean
     selectedProvider?: 'nanobanana' | 'seedream'
     replaceLatestImages?: boolean
+    userSubject?: string
   }) => Promise<void>
   onSettingsChange?: (settings: {
     resolution: string
@@ -151,6 +153,8 @@ export default function UnifiedImageGenerationPanel({
   
   const [prompt, setPromptState] = useState('')
   const [style, setStyle] = useState('photorealistic')
+  const [userSubject, setUserSubject] = useState<string>('')
+  const [currentPreset, setCurrentPreset] = useState<Preset | null>(null)
   
   // Wrapper function for setPrompt that also calls onPromptChange
   const setPrompt = useCallback((newPrompt: string) => {
@@ -178,6 +182,181 @@ export default function UnifiedImageGenerationPanel({
       setPrompt('')
     }
   }, [prompt])
+
+  // Check for preset from localStorage or URL parameters on mount
+  useEffect(() => {
+    const storedPreset = localStorage.getItem('selectedPreset')
+    const urlParams = new URLSearchParams(window.location.search)
+    const presetId = urlParams.get('preset')
+    const presetName = urlParams.get('name')
+    
+    if (storedPreset) {
+      try {
+        const presetData = JSON.parse(storedPreset)
+        console.log('🎯 Found stored preset:', presetData.name)
+        
+        // Create a Preset object from the stored data
+        const presetObject: Preset = {
+          id: presetData.id || 'local-preset',
+          name: presetData.name || 'Unknown Preset',
+          description: presetData.description || '',
+          category: presetData.category || 'style',
+          prompt_template: presetData.prompt_template || '',
+          negative_prompt: presetData.negative_prompt || '',
+          style_settings: presetData.style_settings || { style: 'photorealistic', intensity: 1.0, consistency_level: 'medium' },
+          technical_settings: presetData.technical_settings || { resolution: '1024x1024', aspect_ratio: '1:1', num_images: 1 },
+          ai_metadata: presetData.ai_metadata || {},
+          seedream_config: presetData.seedream_config || { model: 'sd3', steps: 25, guidance_scale: 7.5, scheduler: 'ddim' },
+          usage_count: presetData.usage_count || 0,
+          likes_count: presetData.likes_count || 0,
+          is_public: presetData.is_public || true,
+          is_featured: presetData.is_featured || false,
+          created_at: presetData.created_at || new Date().toISOString(),
+          creator: presetData.creator || { id: 'system', display_name: 'System', handle: 'system' }
+        }
+        
+        // Set the current preset
+        setCurrentPreset(presetObject)
+        
+        // Apply the preset with subject replacement
+        if (presetData.prompt_template) {
+          let finalPrompt = presetData.prompt_template
+          
+          // Replace {subject} placeholder with user's input if available
+          if (userSubject.trim()) {
+            finalPrompt = presetData.prompt_template.replace(/\{subject\}/g, userSubject.trim())
+          }
+          
+          setPrompt(finalPrompt)
+          setOriginalPrompt(finalPrompt)
+        }
+        
+            if (presetData.style_settings?.style) {
+              console.log('🎯 Setting style from preset:', presetData.style_settings.style)
+              setStyle(presetData.style_settings.style)
+              // Notify parent component
+              if (onStyleChange) {
+                onStyleChange(presetData.style_settings.style)
+              }
+            }
+        
+        if (presetData.technical_settings?.resolution) {
+          setResolution(presetData.technical_settings.resolution)
+        }
+        
+        if (presetData.technical_settings?.aspect_ratio) {
+          setAspectRatio(presetData.technical_settings.aspect_ratio)
+        }
+        
+        if (presetData.style_settings?.intensity) {
+          setIntensity(presetData.style_settings.intensity)
+        }
+        
+        if (presetData.style_settings?.consistency_level && onConsistencyChange) {
+          onConsistencyChange(presetData.style_settings.consistency_level)
+        }
+        
+        // Clear the stored preset so it doesn't apply again
+        localStorage.removeItem('selectedPreset')
+        
+        console.log('🎯 Applied preset from localStorage:', presetData.name)
+      } catch (error) {
+        console.error('Error parsing stored preset:', error)
+        localStorage.removeItem('selectedPreset')
+      }
+    } else if (presetId && presetName) {
+      // Fetch preset data from API when URL parameters are present
+      console.log('🎯 Found preset in URL, fetching from API:', { presetId, presetName })
+      
+      fetch('/api/presets')
+        .then(response => response.json())
+        .then(data => {
+          if (data.presets) {
+            const presetData = data.presets.find((p: any) => p.id === presetId)
+            if (presetData) {
+            console.log('🎯 Fetched preset from API:', presetData.name)
+            
+            // Create a Preset object from the API data
+            const presetObject: Preset = {
+              id: presetData.id,
+              name: presetData.name,
+              description: presetData.description || '',
+              category: presetData.category || 'style',
+              prompt_template: presetData.prompt_template || '',
+              negative_prompt: presetData.negative_prompt || '',
+              style_settings: presetData.style_settings || { style: 'photorealistic', intensity: 1.0, consistency_level: 'medium' },
+              technical_settings: presetData.technical_settings || { resolution: '1024x1024', aspect_ratio: '1:1', num_images: 1 },
+              ai_metadata: presetData.ai_metadata || {},
+              seedream_config: presetData.seedream_config || { model: 'sd3', steps: 25, guidance_scale: 7.5, scheduler: 'ddim' },
+              usage_count: presetData.usage_count || 0,
+              likes_count: presetData.likes_count || 0,
+              is_public: presetData.is_public || true,
+              is_featured: presetData.is_featured || false,
+              created_at: presetData.created_at || new Date().toISOString(),
+              creator: presetData.creator || { id: 'system', display_name: 'System', handle: 'system' }
+            }
+            
+            // Set the current preset
+            setCurrentPreset(presetObject)
+            
+            // Apply the preset with subject replacement
+            if (presetData.prompt_template) {
+              let finalPrompt = presetData.prompt_template
+              
+              // Replace {subject} placeholder with user's input if available
+              if (userSubject.trim()) {
+                finalPrompt = presetData.prompt_template.replace(/\{subject\}/g, userSubject.trim())
+              }
+              
+              setPrompt(finalPrompt)
+              setOriginalPrompt(finalPrompt)
+            }
+            
+            if (presetData.style_settings?.style) {
+              console.log('🎯 Setting style from API preset:', presetData.style_settings.style)
+              setStyle(presetData.style_settings.style)
+              // Notify parent component
+              if (onStyleChange) {
+                onStyleChange(presetData.style_settings.style)
+              }
+            }
+            
+            if (presetData.technical_settings?.resolution) {
+              setResolution(presetData.technical_settings.resolution)
+            }
+            
+            if (presetData.technical_settings?.aspect_ratio) {
+              setAspectRatio(presetData.technical_settings.aspect_ratio)
+            }
+            
+            if (presetData.style_settings?.intensity) {
+              setIntensity(presetData.style_settings.intensity)
+            }
+            
+            if (presetData.style_settings?.consistency_level && onConsistencyChange) {
+              onConsistencyChange(presetData.style_settings.consistency_level)
+            }
+            
+            console.log('🎯 Applied preset from API:', presetData.name)
+            } else {
+              console.error('Preset not found in API response:', presetId)
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching preset from API:', error)
+        })
+    }
+  }, [onConsistencyChange, userSubject])
+
+  // Update prompt when userSubject changes and a preset is applied
+  useEffect(() => {
+    if (currentPreset && userSubject.trim()) {
+      const finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
+      setPrompt(finalPrompt)
+      setOriginalPrompt(finalPrompt)
+    }
+  }, [userSubject, currentPreset])
   const [resolution, setResolution] = useState('1024')
   const [aspectRatio, setAspectRatio] = useState('1:1')
   
@@ -189,7 +368,6 @@ export default function UnifiedImageGenerationPanel({
   const currentConsistencyLevel = consistencyLevel || 'high'
   const [intensity, setIntensity] = useState(1.0)
   const [numImages, setNumImages] = useState(1)
-  const [currentPreset, setCurrentPreset] = useState<Preset | null>(null)
   const [replaceLatestImages, setReplaceLatestImages] = useState(true)
   
   // Use provider from props with fallback
@@ -297,7 +475,6 @@ export default function UnifiedImageGenerationPanel({
   // Subject detection and enhancement
   const [detectedSubject, setDetectedSubject] = useState<string | null>(null)
   const [subjectContext, setSubjectContext] = useState<string | null>(null)
-  const [userSubject, setUserSubject] = useState<string>('')
   const [isSubjectUpdating, setIsSubjectUpdating] = useState(false)
   const [isUserTypingSubject, setIsUserTypingSubject] = useState(false)
   const subjectUpdateTimeoutRef = useRef<number | null>(null)
@@ -477,17 +654,22 @@ export default function UnifiedImageGenerationPanel({
         isManuallyEditingEnhancedPrompt
       })
       
-      // For cinematic generation, use the current prompt as base (it already includes the subject if applicable)
-      // Don't add subject again to avoid duplication
+      // For cinematic generation, we need to pass both the base prompt and the subject
+      // The base prompt should be the template with {subject} placeholder
+      // The subject should be extracted from userSubject for cinematic adjustments
       const basePrompt = prompt?.trim() || ''
+      const subjectForCinematic = userSubject.trim() || ''
+      
       console.log('🎯 Using base prompt for cinematic generation:', basePrompt)
+      console.log('🎯 Subject for cinematic adjustments:', subjectForCinematic)
       
       const result = promptBuilder.current.constructPrompt({
         basePrompt: basePrompt,
         cinematicParameters,
         enhancementType: 'generate',
         includeTechnicalDetails,
-        includeStyleReferences
+        includeStyleReferences,
+        subject: subjectForCinematic // Pass the subject for cinematic adjustments
       })
       console.log('🎯 Generated enhanced prompt:', result.fullPrompt)
       setEnhancedPrompt(result.fullPrompt)
@@ -764,17 +946,8 @@ export default function UnifiedImageGenerationPanel({
         // For image-to-image, use "this image" instead of user subject
         finalPrompt = `${selectedPreset.prompt_template} this image`
       } else if (userSubject.trim()) {
-        // For text-to-image, check if subject is already in the preset template to avoid duplication (robust check)
-        const subjectWords = userSubject.toLowerCase().trim().split(' ')
-        const templateWords = selectedPreset.prompt_template.toLowerCase().split(' ')
-        
-        const subjectInTemplate = subjectWords.some(word => 
-          word.length > 2 && templateWords.includes(word)
-        )
-        
-        if (!subjectInTemplate) {
-          finalPrompt = `${selectedPreset.prompt_template} of ${userSubject.trim()}`
-        }
+        // For text-to-image, replace {subject} placeholder with user's input
+        finalPrompt = selectedPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
       }
       
       setPrompt(finalPrompt)
@@ -816,17 +989,8 @@ export default function UnifiedImageGenerationPanel({
         // For image-to-image, use "this image" instead of user subject
         finalPrompt = `${preset.prompt_template} this image`
       } else if (userSubject.trim()) {
-        // For text-to-image, check if subject is already in the preset template to avoid duplication (robust check)
-        const subjectWords = userSubject.toLowerCase().trim().split(' ')
-        const templateWords = preset.prompt_template.toLowerCase().split(' ')
-        
-        const subjectInTemplate = subjectWords.some(word => 
-          word.length > 2 && templateWords.includes(word)
-        )
-        
-        if (!subjectInTemplate) {
-          finalPrompt = `${preset.prompt_template} of ${userSubject.trim()}`
-        }
+        // For text-to-image, replace {subject} placeholder with user's input
+        finalPrompt = preset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
       }
       
       setPrompt(finalPrompt)
@@ -839,9 +1003,9 @@ export default function UnifiedImageGenerationPanel({
       setResolution(preset.technical_settings?.resolution || '1024')
       setNumImages(preset.technical_settings?.num_images || 1)
       
-      // Apply cinematic settings if they exist
-      if (preset.cinematic_settings) {
-        setEnableCinematicMode(preset.cinematic_settings.enableCinematicMode || false)
+      // Apply cinematic settings ONLY if they exist and are explicitly enabled
+      if (preset.cinematic_settings && preset.cinematic_settings.enableCinematicMode) {
+        setEnableCinematicMode(true)
         setCinematicParameters(preset.cinematic_settings.cinematicParameters || {})
         setEnhancedPrompt(preset.cinematic_settings.enhancedPrompt || '')
         setIncludeTechnicalDetails(preset.cinematic_settings.includeTechnicalDetails ?? true)
@@ -851,6 +1015,13 @@ export default function UnifiedImageGenerationPanel({
         } else {
           setLocalGenerationMode(preset.cinematic_settings.generationMode || 'text-to-image')
         }
+      } else {
+        // For regular presets, disable cinematic mode
+        setEnableCinematicMode(false)
+        setCinematicParameters({})
+        setEnhancedPrompt('')
+        setIncludeTechnicalDetails(false)
+        setIncludeStyleReferences(false)
       }
 
       // Update settings for parent component
@@ -1034,26 +1205,40 @@ export default function UnifiedImageGenerationPanel({
       console.log('🎯 Subject changed, updating prompt (user finished typing):', userSubject)
       setIsSubjectUpdating(true)
       
-      // Generate enhanced prompt with current style and subject
-      generateEnhancedPrompt(style, prompt, currentGenerationMode).then((newPrompt: string) => {
-        console.log('🎯 Generated new prompt from subject:', {
+      // If a preset is active, use the preset template with subject replacement
+      if (currentPreset) {
+        const finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
+        console.log('🎯 Using preset template with subject replacement:', {
           userSubject,
-          currentPrompt: prompt,
-          newPrompt,
-          isDifferent: newPrompt !== prompt
+          presetTemplate: currentPreset.prompt_template,
+          finalPrompt
         })
-        
-        // Always update the prompt when subject changes, regardless of whether it's different
-        setPrompt(newPrompt)
-        setOriginalPrompt(newPrompt)
+        setPrompt(finalPrompt)
+        setOriginalPrompt(finalPrompt)
         setIsPromptModified(false)
         setIsSubjectUpdating(false)
-      }).catch((error) => {
-        console.error('🎯 Error generating prompt from subject:', error)
-        setIsSubjectUpdating(false)
-      })
+      } else {
+        // Generate enhanced prompt with current style and subject (no preset active)
+        generateEnhancedPrompt(style, prompt, currentGenerationMode).then((newPrompt: string) => {
+          console.log('🎯 Generated new prompt from subject:', {
+            userSubject,
+            currentPrompt: prompt,
+            newPrompt,
+            isDifferent: newPrompt !== prompt
+          })
+          
+          // Always update the prompt when subject changes, regardless of whether it's different
+          setPrompt(newPrompt)
+          setOriginalPrompt(newPrompt)
+          setIsPromptModified(false)
+          setIsSubjectUpdating(false)
+        }).catch((error) => {
+          console.error('🎯 Error generating prompt from subject:', error)
+          setIsSubjectUpdating(false)
+        })
+      }
     }
-  }, [userSubject, style, currentGenerationMode, isPromptModified, isUserTypingSubject, generateEnhancedPrompt])
+  }, [userSubject, style, currentGenerationMode, isPromptModified, isUserTypingSubject, generateEnhancedPrompt, currentPreset])
 
 
   // Cleanup timeout on unmount
@@ -1143,7 +1328,7 @@ export default function UnifiedImageGenerationPanel({
       resolution: calculatedResolution,
       consistencyLevel: currentConsistencyLevel,
       numImages,
-      customPreset: currentPreset || undefined,
+      customStylePreset: currentPreset || undefined,
       baseImage: currentGenerationMode === 'image-to-image' ? baseImage || undefined : undefined,
       generationMode: currentGenerationMode,
       intensity: intensity,
@@ -1152,7 +1337,8 @@ export default function UnifiedImageGenerationPanel({
       includeTechnicalDetails: enableCinematicMode ? includeTechnicalDetails : undefined,
       includeStyleReferences: enableCinematicMode ? includeStyleReferences : undefined,
       selectedProvider: currentProvider as 'nanobanana' | 'seedream',
-      replaceLatestImages: replaceLatestImages
+      replaceLatestImages: replaceLatestImages,
+      userSubject: currentGenerationMode === 'image-to-image' ? 'image' : (userSubject.trim() || undefined)
     })
   }
 
@@ -1357,16 +1543,42 @@ export default function UnifiedImageGenerationPanel({
         {style && (
           <div className="mt-2 flex gap-2 flex-wrap">
             <Badge variant="outline" className="text-xs">
-              Style: {currentPreset ? 
-                `🎨 ${currentPreset.name}` :
-                (currentStyle || style) === 'photorealistic' ? '📸 Photorealistic' : 
-                (currentStyle || style) === 'artistic' ? '🎨 Artistic' :
-                (currentStyle || style) === 'cartoon' ? '🎭 Cartoon' :
-                (currentStyle || style) === 'vintage' ? '📻 Vintage' :
-                (currentStyle || style) === 'cyberpunk' ? '🤖 Cyberpunk' :
-                (currentStyle || style) === 'watercolor' ? '🎨 Watercolor' :
-                (currentStyle || style) === 'sketch' ? '✏️ Sketch' :
-                (currentStyle || style) === 'oil_painting' ? '🖼️ Oil Painting' : (currentStyle || style)}
+              Style: {(() => {
+                // Get the effective style - prioritize preset style over current style
+                const effectiveStyle = currentPreset?.style_settings?.style || currentStyle || style
+                console.log('🎯 Style badge debug:', { 
+                  presetStyle: currentPreset?.style_settings?.style, 
+                  currentStyle, 
+                  style, 
+                  effectiveStyle 
+                })
+                
+                if (effectiveStyle === 'photorealistic') return '📸 Photorealistic'
+                if (effectiveStyle === 'artistic') return '🎨 Artistic'
+                if (effectiveStyle === 'cartoon') return '🎭 Cartoon'
+                if (effectiveStyle === 'vintage') return '📻 Vintage'
+                if (effectiveStyle === 'cyberpunk') return '🤖 Cyberpunk'
+                if (effectiveStyle === 'watercolor') return '🎨 Watercolor'
+                if (effectiveStyle === 'graffiti') return '🎨 Graffiti'
+                if (effectiveStyle === 'cinematic') return '🎬 Cinematic'
+                if (effectiveStyle === 'technical') return '📊 Technical'
+                if (effectiveStyle === 'impressionist') return '🎨 Impressionist'
+                if (effectiveStyle === 'renaissance') return '🏛️ Renaissance'
+                if (effectiveStyle === 'baroque') return '🎭 Baroque'
+                if (effectiveStyle === 'art_deco') return '✨ Art Deco'
+                if (effectiveStyle === 'pop_art') return '🎪 Pop Art'
+                if (effectiveStyle === 'digital_art') return '💻 Digital Art'
+                if (effectiveStyle === 'concept_art') return '🎮 Concept Art'
+                if (effectiveStyle === 'fantasy') return '🧙 Fantasy'
+                if (effectiveStyle === 'sci_fi') return '🚀 Sci-Fi'
+                if (effectiveStyle === 'maximalist') return '🌈 Maximalist'
+                if (effectiveStyle === 'surreal') return '🌌 Surreal'
+                if (effectiveStyle === 'minimalist') return '⚪ Minimalist'
+                if (effectiveStyle === 'abstract') return '🎭 Abstract'
+                if (effectiveStyle === 'sketch') return '✏️ Sketch'
+                if (effectiveStyle === 'oil_painting') return '🖼️ Oil Painting'
+                return effectiveStyle
+              })()}
             </Badge>
             <Badge variant="outline" className="text-xs">
               Provider: {currentProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌊 Seedream'}

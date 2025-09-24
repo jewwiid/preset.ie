@@ -261,6 +261,19 @@ export default function DynamicPreviewArea({
                     <SelectItem value="vintage">Vintage</SelectItem>
                     <SelectItem value="cyberpunk">Cyberpunk</SelectItem>
                     <SelectItem value="watercolor">Watercolor</SelectItem>
+                    <SelectItem value="impressionist">Impressionist</SelectItem>
+                    <SelectItem value="renaissance">Renaissance</SelectItem>
+                    <SelectItem value="baroque">Baroque</SelectItem>
+                    <SelectItem value="art_deco">Art Deco</SelectItem>
+                    <SelectItem value="pop_art">Pop Art</SelectItem>
+                    <SelectItem value="digital_art">Digital Art</SelectItem>
+                    <SelectItem value="concept_art">Concept Art</SelectItem>
+                    <SelectItem value="fantasy">Fantasy</SelectItem>
+                    <SelectItem value="sci_fi">Sci-Fi</SelectItem>
+                    <SelectItem value="maximalist">Maximalist</SelectItem>
+                    <SelectItem value="surreal">Surreal</SelectItem>
+                    <SelectItem value="minimalist">Minimalist</SelectItem>
+                    <SelectItem value="abstract">Abstract</SelectItem>
                     <SelectItem value="sketch">Sketch</SelectItem>
                     <SelectItem value="oil_painting">Oil Painting</SelectItem>
                     
@@ -274,15 +287,9 @@ export default function DynamicPreviewArea({
                     <SelectItem value="architecture">Architecture</SelectItem>
                     <SelectItem value="nature">Nature</SelectItem>
                     
-                    {/* Artistic Styles */}
+                    {/* Additional Artistic Styles */}
                     <SelectItem value="abstract">Abstract</SelectItem>
-                    <SelectItem value="surreal">Surreal</SelectItem>
                     <SelectItem value="minimalist">Minimalist</SelectItem>
-                    <SelectItem value="maximalist">Maximalist</SelectItem>
-                    <SelectItem value="impressionist">Impressionist</SelectItem>
-                    <SelectItem value="renaissance">Renaissance</SelectItem>
-                    <SelectItem value="baroque">Baroque</SelectItem>
-                    <SelectItem value="art_deco">Art Deco</SelectItem>
                     
                     {/* Creative Styles */}
                     <SelectItem value="pop_art">Pop Art</SelectItem>
@@ -303,6 +310,9 @@ export default function DynamicPreviewArea({
                     <SelectItem value="monochrome">Monochrome</SelectItem>
                     <SelectItem value="sepia">Sepia</SelectItem>
                     <SelectItem value="hdr">HDR</SelectItem>
+                    
+                    {/* Technical Styles */}
+                    <SelectItem value="technical">Technical</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

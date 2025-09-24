@@ -33,27 +33,13 @@ export async function POST(
       );
     }
 
-    // Get user profile ID
-    const { data: profile, error: profileError } = await supabase
-      .from('users_profile')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      );
-    }
-
     if (liked) {
       // Add like
       const { error: insertError } = await supabase
         .from('preset_likes')
         .upsert({
           preset_id: id,
-          user_id: profile.id,
+          user_id: user.id,
           created_at: new Date().toISOString()
         }, {
           onConflict: 'preset_id,user_id'
@@ -72,7 +58,7 @@ export async function POST(
         .from('preset_likes')
         .delete()
         .eq('preset_id', id)
-        .eq('user_id', profile.id);
+        .eq('user_id', user.id);
 
       if (deleteError) {
         console.error('Error removing like:', deleteError);
@@ -91,6 +77,19 @@ export async function POST(
 
     if (countError) {
       console.error('Error getting like count:', countError);
+    }
+
+    // Update the likes_count in the presets table
+    const { error: updateError } = await supabase
+      .from('presets')
+      .update({ 
+        likes_count: likeCount || 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      console.error('Error updating preset likes count:', updateError);
     }
 
     return NextResponse.json({

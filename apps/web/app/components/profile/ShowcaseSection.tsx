@@ -105,11 +105,11 @@ function ShowcaseCard({ showcase }: { showcase: any }) {
       <div className="grid grid-cols-2 gap-1 p-2">
         {showcase.media?.slice(0, 4).map((media: any, index: number) => (
           <div 
-            key={media.id}
+            key={`${media.id}-${index}`}
             className={`relative ${index === 0 ? 'col-span-2 row-span-2' : ''}`}
           >
             <img
-              src={media.thumbnail_url || media.enhanced_url}
+              src={media.url}
               alt={media.caption || ''}
               className="w-full h-32 object-cover rounded"
             />
