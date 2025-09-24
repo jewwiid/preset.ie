@@ -21,36 +21,36 @@ interface EnhancementOption {
 const ENHANCEMENT_OPTIONS: EnhancementOption[] = [
   {
     type: 'premium_bump',
-    title: 'Premium Bump',
+    title: 'Premium Boost',
     subtitle: '7 days on top with Premium badge',
     price: 7,
     duration: '7 days',
     benefits: ['Top placement', 'Premium badge', 'Maximum visibility'],
     icon: <Crown className="w-6 h-6" />,
-    gradient: 'from-pink-500 to-red-600',
+    gradient: 'bg-secondary',
     sellMultiplier: 'Sell 3x faster'
   },
   {
     type: 'priority_bump',
-    title: 'Priority Bump',
+    title: 'Priority Boost',
     subtitle: '3 days above basic ads',
     price: 5,
     duration: '3 days',
     benefits: ['Above basic listings', 'Priority placement'],
     icon: <Zap className="w-6 h-6" />,
-    gradient: 'from-purple-500 to-purple-700',
+    gradient: 'bg-primary',
     sellMultiplier: 'Sell 2x faster'
   },
   {
     type: 'basic_bump',
-    title: 'Basic Bump',
-    subtitle: 'Bumps to the top of all basic ads',
+    title: 'Basic Boost',
+    subtitle: 'Moves to the top of all basic ads',
     price: 1,
     duration: '1 day',
     benefits: ['Top of basic listings', 'Increased visibility'],
     icon: <TrendingUp className="w-6 h-6" />,
-    gradient: 'from-gray-400 to-gray-600',
-    sellMultiplier: 'Basic Bump'
+    gradient: 'bg-muted',
+    sellMultiplier: 'Basic Boost'
   }
 ];
 
@@ -81,7 +81,7 @@ export default function ListingEnhancementModal({
           body: JSON.stringify({
             listingId,
             enhancementType: option.type,
-            userId: 'current-user-id' // This should come from auth context
+            userId: 'current-user-id' // TODO: Get from auth context
           })
         });
 
@@ -95,23 +95,22 @@ export default function ListingEnhancementModal({
         }
       }
 
-      // Create payment intent for paid enhancement
-      const response = await fetch('/api/marketplace/enhancements/create-payment-intent', {
+      // Create Stripe Checkout session for paid enhancement
+      const response = await fetch('/api/marketplace/enhancements/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           listingId,
           enhancementType: option.type,
-          userId: 'current-user-id' // This should come from auth context
+          userId: 'current-user-id' // TODO: Get from auth context
         })
       });
 
-      const { client_secret, amount, duration_days } = await response.json();
+      const { url, amount, duration_days } = await response.json();
       
-      if (client_secret) {
-        // TODO: Integrate with Stripe Checkout or Elements
-        console.log('Payment intent created:', { client_secret, amount, duration_days });
-        alert(`Payment required: €${option.price} for ${option.duration}`);
+      if (url) {
+        // Redirect to Stripe Checkout
+        window.location.href = url;
       }
       
     } catch (error) {
@@ -140,7 +139,7 @@ export default function ListingEnhancementModal({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Select Bump Type</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Select Boost Type</h2>
             <button 
               onClick={onClose} 
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -166,8 +165,8 @@ export default function ListingEnhancementModal({
                 onClick={() => setSelectedOption(option.type)}
               >
                 <CardContent className="p-0">
-                  {/* Gradient Header */}
-                  <div className={`bg-gradient-to-r ${option.gradient} text-white rounded-t-lg p-4`}>
+                  {/* Header */}
+                  <div className={`${option.gradient} text-primary-foreground rounded-t-lg p-4`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         {option.icon}
@@ -187,8 +186,8 @@ export default function ListingEnhancementModal({
                   <div className="p-4 space-y-2">
                     {option.benefits.map((benefit, index) => (
                       <div key={index} className="flex items-center space-x-2">
-                        <Star className="w-4 h-4 text-primary-500 fill-current" />
-                        <span className="text-gray-700 text-sm">{benefit}</span>
+                        <Star className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">{benefit}</span>
                       </div>
                     ))}
                   </div>
@@ -197,7 +196,7 @@ export default function ListingEnhancementModal({
                   <div className="px-4 pb-4">
                     {benefit.included ? (
                       <div className="space-y-2">
-                        <Badge className="bg-primary-100 text-primary-800 border-primary/20">
+                        <Badge variant="secondary">
                           Included in {userSubscriptionTier} subscription
                         </Badge>
                         <Button
@@ -206,7 +205,7 @@ export default function ListingEnhancementModal({
                             handleEnhancement(option);
                           }}
                           disabled={loading || benefit.remaining === 0}
-                          className="w-full bg-primary-600 hover:bg-primary/90"
+                          className="w-full"
                         >
                           {benefit.remaining === 0 
                             ? 'Monthly limit reached' 
@@ -221,7 +220,8 @@ export default function ListingEnhancementModal({
                           handleEnhancement(option);
                         }}
                         disabled={loading}
-                        className="w-full bg-white text-gray-900 border border-gray-300 hover:bg-gray-50"
+                        variant="outline"
+                        className="w-full"
                       >
                         {option.title} for €{option.price}
                       </Button>
@@ -245,7 +245,7 @@ export default function ListingEnhancementModal({
                 alert('Free bumps are available for new users in their first 30 days!');
               }}
             >
-              What happened to my free bump after 30 days?
+              What happened to my free boost after 30 days?
             </a>
           </div>
         </div>

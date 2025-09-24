@@ -249,7 +249,7 @@ export default function DynamicPreviewArea({
               {onStyleChange && (
                 <div className="flex items-center gap-2">
                   <Label htmlFor="style-selector" className="text-sm font-medium">Style:</Label>
-                  <Select value={currentStyle || 'photorealistic'} onValueChange={onStyleChange}>
+                  <Select value={currentStyle || ''} onValueChange={onStyleChange}>
                     <SelectTrigger className="w-[160px] h-8 text-sm">
                       <SelectValue placeholder="Select style" />
                     </SelectTrigger>

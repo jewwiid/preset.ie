@@ -25,7 +25,7 @@ export default function StyleVariationsPanel({
   selectedImage,
   sessionToken
 }: StyleVariationsPanelProps) {
-  const [selectedStyles, setSelectedStyles] = useState(['photorealistic', 'artistic'])
+  const [selectedStyles, setSelectedStyles] = useState(['artistic'])
   const [selectedStylePreset, setSelectedStylePreset] = useState<any>(null)
 
   const handleGenerateStyleVariations = async () => {

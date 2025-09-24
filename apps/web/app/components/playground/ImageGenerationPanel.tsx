@@ -44,7 +44,7 @@ export default function ImageGenerationPanel({
   const { showFeedback } = useFeedback()
   
   const [prompt, setPrompt] = useState('')
-  const [style, setStyle] = useState('realistic')
+  const [style, setStyle] = useState('')
   const [aspectRatio, setAspectRatio] = useState('1:1')
   const [resolution, setResolution] = useState('1024')
   const [consistencyLevel, setConsistencyLevel] = useState('high')

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Palette, Search, Star, Users, PlayCircle, Plus, Loader2, Settings, Film, Camera, Lightbulb, Palette as PaletteIcon, Trash2, ImageIcon, Grid3X3, List, Heart, Wand2 } from 'lucide-react'
+import { Palette, Search, Star, Users, PlayCircle, Plus, Loader2, Settings, Film, Camera, Lightbulb, Palette as PaletteIcon, Trash2, ImageIcon, Grid3X3, List, Heart, Wand2, Package } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
@@ -128,6 +128,13 @@ export default function PresetSelector({
     { value: 'cinematic', label: 'Cinematic' },
     { value: 'technical', label: 'Technical' },
     { value: 'custom', label: 'Custom' },
+    
+    // NEW: Specialized Photography Categories
+    { value: 'headshot', label: '📷 Headshot' },
+    { value: 'product_photography', label: '📦 Product Photography' },
+    { value: 'ecommerce', label: '🛒 E-commerce' },
+    { value: 'corporate_portrait', label: '👔 Corporate Portrait' },
+    { value: 'linkedin_photo', label: '💼 LinkedIn Photo' },
     
     // Photography Categories
     { value: 'photography', label: 'Photography' },
@@ -558,9 +565,27 @@ export default function PresetSelector({
                   </Button>
                 </div>
 
-                {/* Trending Presets Toggle */}
+                {/* Quick Access Buttons */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
+                    <Button
+                      variant={selectedCategory === 'headshot' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedCategory('headshot')}
+                      className="flex items-center"
+                    >
+                      <Camera className="h-4 w-4 mr-1" />
+                      Headshots
+                    </Button>
+                    <Button
+                      variant={selectedCategory === 'product_photography' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedCategory('product_photography')}
+                      className="flex items-center"
+                    >
+                      <Package className="h-4 w-4 mr-1" />
+                      Product Photos
+                    </Button>
                     <Button
                       variant={showTrending ? 'default' : 'outline'}
                       size="sm"
@@ -568,7 +593,7 @@ export default function PresetSelector({
                       className="flex items-center"
                     >
                       <Star className="h-4 w-4 mr-1" />
-                      Trending Presets
+                      Trending
                     </Button>
                   </div>
                   <div className="flex items-center space-x-2">

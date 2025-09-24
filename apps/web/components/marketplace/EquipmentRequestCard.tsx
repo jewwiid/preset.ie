@@ -241,12 +241,12 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
         {showActions && (
           <div className="flex space-x-2">
             <Button asChild className="flex-1">
-              <Link href={`/marketplace/requests/${request.id}`}>
+              <Link href={`/equipment/requests/${request.id}`}>
                 View Details
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href={`/marketplace/requests/${request.id}#respond`}>
+              <Link href={`/equipment/requests/${request.id}#respond`}>
                 Respond
               </Link>
             </Button>

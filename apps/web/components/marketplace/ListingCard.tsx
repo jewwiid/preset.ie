@@ -58,9 +58,9 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
     
     switch (condition) {
       case 'new': return 'bg-primary/10 text-primary';
-      case 'like_new': return 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
-      case 'good': return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400';
-      case 'fair': return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
+      case 'like_new': return 'bg-primary/10 text-primary';
+      case 'good': return 'bg-primary/10 text-primary';
+      case 'fair': return 'bg-primary/10 text-primary';
       case 'poor': return 'bg-destructive/10 text-destructive';
       default: return 'bg-muted text-muted-foreground';
     }
@@ -128,13 +128,13 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
   const getRetainerInfo = () => {
     if (listing.retainer_mode === 'none' && listing.borrow_ok) {
       return (
-        <div className="flex items-center space-x-1 text-sm text-primary">
+        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
           <span>Free to borrow</span>
         </div>
       );
     } else if (listing.retainer_mode && listing.retainer_mode !== 'none' && listing.retainer_cents) {
       return (
-        <div className="flex items-center space-x-1 text-sm text-blue-600 dark:text-blue-400">
+        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
           <Shield className="h-3 w-3" />
           <span>€{formatPrice(listing.retainer_cents)} retainer</span>
         </div>
@@ -178,7 +178,7 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
         {/* Verified Only Badge */}
         {listing.verified_only && (
           <div className="absolute top-2 right-2">
-            <Badge variant="outline" className="bg-background/90 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+            <Badge variant="outline" className="bg-background/90">
               <Shield className="h-3 w-3 mr-1" />
               Verified Only
             </Badge>
@@ -249,7 +249,7 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
                 {listing.users_profile.display_name}
               </span>
               {listing.users_profile.verified_id && (
-                <Shield className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                <Shield className="h-4 w-4 text-muted-foreground" />
               )}
             </div>
           </div>
@@ -257,7 +257,7 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <Link href={`/marketplace/listings/${listing.id}`} className="w-full">
+        <Link href={`/equipment/listings/${listing.id}`} className="w-full">
           <Button className="w-full" variant="outline">
             View Details
           </Button>

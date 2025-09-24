@@ -13,38 +13,38 @@ interface MarketplaceLayoutProps {
 const marketplaceNavItems = [
   {
     name: 'Browse',
-    href: '/marketplace',
+    href: '/gear',
     description: 'Discover equipment'
   },
   {
     name: 'My Listings',
-    href: '/marketplace/my-listings',
+    href: '/gear/my-listings',
     description: 'Manage your listings'
   },
   {
     name: 'Orders',
-    href: '/marketplace/orders',
+    href: '/gear/orders',
     description: 'Track your orders'
   },
   {
     name: 'Offers',
-    href: '/marketplace/offers',
+    href: '/gear/offers',
     description: 'Manage offers'
   },
   {
     name: 'Requests',
-    href: '/marketplace/requests',
+    href: '/gear/requests',
     description: 'Equipment requests'
   },
   {
     name: 'Reviews',
-    href: '/marketplace/reviews',
+    href: '/gear/reviews',
     description: 'View reviews'
   },
   {
-    name: 'Enhancements Demo',
-    href: '/marketplace/enhancements-demo',
-    description: 'See enhancement system'
+    name: 'Boost',
+    href: '/gear/boost',
+    description: 'Boost your listings'
   }
 ];
 
@@ -58,8 +58,8 @@ export default function MarketplaceLayout({ children }: MarketplaceLayoutProps) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <Link href="/marketplace" className="text-2xl font-bold text-foreground">
-                Preset Marketplace
+              <Link href="/gear" className="text-2xl font-bold text-foreground">
+                Marketplace
               </Link>
               <span className="ml-3 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
                 Beta
@@ -67,7 +67,7 @@ export default function MarketplaceLayout({ children }: MarketplaceLayoutProps) 
             </div>
             <div className="flex items-center space-x-4">
               <Button asChild>
-                <Link href="/marketplace/create">
+                <Link href="/gear/create">
                   Create Listing
                 </Link>
               </Button>
@@ -82,7 +82,7 @@ export default function MarketplaceLayout({ children }: MarketplaceLayoutProps) 
           <nav className="flex space-x-8" aria-label="Marketplace navigation">
             {marketplaceNavItems.map((item) => {
               const isActive = pathname === item.href || 
-                (item.href !== '/marketplace' && pathname.startsWith(item.href));
+                (item.href !== '/equipment' && pathname.startsWith(item.href));
               
               return (
                 <Link

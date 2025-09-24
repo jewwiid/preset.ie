@@ -24,6 +24,7 @@ import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs'
+import { ApprovalStatusBadge } from '../../components/presets/ApprovalStatusBadge'
 
 interface Preset {
   id: string
@@ -101,6 +102,16 @@ const CATEGORIES = {
   portrait: { label: 'Portrait', icon: '👤', color: 'bg-primary/10 text-primary' },
   landscape: { label: 'Landscape', icon: '🏞️', color: 'bg-primary/10 text-primary' },
   commercial: { label: 'Commercial', icon: '💼', color: 'bg-muted text-muted-foreground' },
+  headshot: { label: 'Headshot', icon: '📷', color: 'bg-blue-100 text-blue-800' },
+  product_photography: { label: 'Product Photography', icon: '📦', color: 'bg-green-100 text-green-800' },
+  ecommerce: { label: 'E-commerce', icon: '🛒', color: 'bg-purple-100 text-purple-800' },
+  corporate_portrait: { label: 'Corporate Portrait', icon: '👔', color: 'bg-gray-100 text-gray-800' },
+  linkedin_photo: { label: 'LinkedIn Photo', icon: '💼', color: 'bg-blue-100 text-blue-800' },
+  professional_portrait: { label: 'Professional Portrait', icon: '👤', color: 'bg-indigo-100 text-indigo-800' },
+  business_headshot: { label: 'Business Headshot', icon: '📸', color: 'bg-slate-100 text-slate-800' },
+  product_catalog: { label: 'Product Catalog', icon: '📋', color: 'bg-orange-100 text-orange-800' },
+  product_lifestyle: { label: 'Product Lifestyle', icon: '🏠', color: 'bg-teal-100 text-teal-800' },
+  product_studio: { label: 'Product Studio', icon: '🎬', color: 'bg-pink-100 text-pink-800' },
   abstract: { label: 'Abstract', icon: '🌀', color: 'bg-primary/10 text-primary' },
   custom: { label: 'Custom', icon: '⚙️', color: 'bg-muted text-muted-foreground' }
 }
@@ -364,6 +375,12 @@ export default function PresetDetailPage() {
                   )}
                 </div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">{preset.name}</h1>
+                {/* Show approval status for preset creators */}
+                {user && preset.creator.id === user.id && (
+                  <div className="mb-4">
+                    <ApprovalStatusBadge presetId={preset.id} isCreator={true} />
+                  </div>
+                )}
                 {preset.description && (
                   <p className="text-muted-foreground text-lg">{preset.description}</p>
                 )}

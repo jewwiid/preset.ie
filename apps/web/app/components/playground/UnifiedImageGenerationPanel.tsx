@@ -101,6 +101,13 @@ interface UnifiedImageGenerationPanelProps {
     baseImageAspectRatio?: string
     baseImageUrl?: string
     onRemoveBaseImage?: () => void
+    // Additional context for regeneration
+    generationMode?: 'text-to-image' | 'image-to-image'
+    style?: string
+    selectedProvider?: string
+    consistencyLevel?: string
+    prompt?: string
+    enhancedPrompt?: string
   }) => void
   loading: boolean
   userCredits: number
@@ -152,7 +159,7 @@ export default function UnifiedImageGenerationPanel({
   const { showFeedback } = useFeedback()
   
   const [prompt, setPromptState] = useState('')
-  const [style, setStyle] = useState('photorealistic')
+  const [style, setStyle] = useState('')
   const [userSubject, setUserSubject] = useState<string>('')
   const [currentPreset, setCurrentPreset] = useState<Preset | null>(null)
   
@@ -203,7 +210,7 @@ export default function UnifiedImageGenerationPanel({
           category: presetData.category || 'style',
           prompt_template: presetData.prompt_template || '',
           negative_prompt: presetData.negative_prompt || '',
-          style_settings: presetData.style_settings || { style: 'photorealistic', intensity: 1.0, consistency_level: 'medium' },
+          style_settings: presetData.style_settings || { style: '', intensity: 1.0, consistency_level: 'medium' },
           technical_settings: presetData.technical_settings || { resolution: '1024x1024', aspect_ratio: '1:1', num_images: 1 },
           ai_metadata: presetData.ai_metadata || {},
           seedream_config: presetData.seedream_config || { model: 'sd3', steps: 25, guidance_scale: 7.5, scheduler: 'ddim' },
@@ -222,8 +229,16 @@ export default function UnifiedImageGenerationPanel({
         if (presetData.prompt_template) {
           let finalPrompt = presetData.prompt_template
           
-          // Replace {subject} placeholder with user's input if available
-          if (userSubject.trim()) {
+          // Handle preset application based on generation mode
+          if (currentGenerationMode === 'image-to-image') {
+            // For image-to-image, replace {subject} with "this image" or remove it entirely
+            if (presetData.prompt_template.includes('{subject}')) {
+              finalPrompt = presetData.prompt_template.replace(/\{subject\}/g, 'this image')
+            } else {
+              finalPrompt = `${presetData.prompt_template} this image`
+            }
+          } else if (userSubject.trim() && presetData.prompt_template.includes('{subject}')) {
+            // For text-to-image, replace {subject} placeholder with user's input ONLY if preset supports it
             finalPrompt = presetData.prompt_template.replace(/\{subject\}/g, userSubject.trim())
           }
           
@@ -284,7 +299,7 @@ export default function UnifiedImageGenerationPanel({
               category: presetData.category || 'style',
               prompt_template: presetData.prompt_template || '',
               negative_prompt: presetData.negative_prompt || '',
-              style_settings: presetData.style_settings || { style: 'photorealistic', intensity: 1.0, consistency_level: 'medium' },
+              style_settings: presetData.style_settings || { style: '', intensity: 1.0, consistency_level: 'medium' },
               technical_settings: presetData.technical_settings || { resolution: '1024x1024', aspect_ratio: '1:1', num_images: 1 },
               ai_metadata: presetData.ai_metadata || {},
               seedream_config: presetData.seedream_config || { model: 'sd3', steps: 25, guidance_scale: 7.5, scheduler: 'ddim' },
@@ -303,8 +318,16 @@ export default function UnifiedImageGenerationPanel({
             if (presetData.prompt_template) {
               let finalPrompt = presetData.prompt_template
               
-              // Replace {subject} placeholder with user's input if available
-              if (userSubject.trim()) {
+              // Handle preset application based on generation mode
+              if (currentGenerationMode === 'image-to-image') {
+                // For image-to-image, replace {subject} with "this image" or remove it entirely
+                if (presetData.prompt_template.includes('{subject}')) {
+                  finalPrompt = presetData.prompt_template.replace(/\{subject\}/g, 'this image')
+                } else {
+                  finalPrompt = `${presetData.prompt_template} this image`
+                }
+              } else if (userSubject.trim() && presetData.prompt_template.includes('{subject}')) {
+                // For text-to-image, replace {subject} placeholder with user's input ONLY if preset supports it
                 finalPrompt = presetData.prompt_template.replace(/\{subject\}/g, userSubject.trim())
               }
               
@@ -349,14 +372,7 @@ export default function UnifiedImageGenerationPanel({
     }
   }, [onConsistencyChange, userSubject])
 
-  // Update prompt when userSubject changes and a preset is applied
-  useEffect(() => {
-    if (currentPreset && userSubject.trim()) {
-      const finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
-      setPrompt(finalPrompt)
-      setOriginalPrompt(finalPrompt)
-    }
-  }, [userSubject, currentPreset])
+  // This useEffect will be moved after isUserTypingSubject is declared
   const [resolution, setResolution] = useState('1024')
   const [aspectRatio, setAspectRatio] = useState('1:1')
   
@@ -478,6 +494,16 @@ export default function UnifiedImageGenerationPanel({
   const [isSubjectUpdating, setIsSubjectUpdating] = useState(false)
   const [isUserTypingSubject, setIsUserTypingSubject] = useState(false)
   const subjectUpdateTimeoutRef = useRef<number | null>(null)
+
+  // Update prompt when userSubject changes and a preset is applied
+  useEffect(() => {
+    if (currentPreset && userSubject.trim() && currentPreset.prompt_template.includes('{subject}') && !isUserTypingSubject) {
+      const finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
+      setPrompt(finalPrompt)
+      setOriginalPrompt(finalPrompt)
+    }
+  }, [userSubject, currentPreset, isUserTypingSubject])
+
   
   // Detect subject and context from user input
   const detectSubjectAndContext = (promptText: string) => {
@@ -699,11 +725,40 @@ export default function UnifiedImageGenerationPanel({
   // Use prop value if provided, otherwise use local state
   const currentGenerationMode = generationMode || localGenerationMode
   
+  // Update prompt when generation mode changes and a preset is applied
+  useEffect(() => {
+    if (currentPreset && currentPreset.prompt_template) {
+      let finalPrompt = currentPreset.prompt_template
+      
+      // Handle preset application based on generation mode
+      if (currentGenerationMode === 'image-to-image') {
+        // For image-to-image, replace {subject} with "this image" or remove it entirely
+        if (currentPreset.prompt_template.includes('{subject}')) {
+          finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, 'this image')
+        } else {
+          finalPrompt = `${currentPreset.prompt_template} this image`
+        }
+      } else if (userSubject.trim() && currentPreset.prompt_template.includes('{subject}')) {
+        // For text-to-image, replace {subject} placeholder with user's input ONLY if preset supports it
+        finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
+      }
+      
+      setPrompt(finalPrompt)
+      setOriginalPrompt(finalPrompt)
+    }
+  }, [currentGenerationMode, currentPreset, userSubject])
+  
   // Handle style changes
   const handleStyleChange = useCallback((newStyle: string) => {
-    console.log('🎯 handleStyleChange called with:', newStyle, 'current style:', style, 'current prompt:', prompt)
+    console.log('🎯 handleStyleChange called with:', newStyle, 'current style:', style, 'current prompt:', prompt, 'currentPreset:', currentPreset)
     setStyle(newStyle)
-    setCurrentPreset(null)
+    
+    // Only clear preset if we're not applying a preset (preset should override style changes)
+    if (!currentPreset) {
+      setCurrentPreset(null)
+    } else {
+      console.log('🎯 Preset is active, not clearing preset on style change:', currentPreset.name)
+    }
     
     // Check if current prompt is a default style prompt
     const isDefaultPrompt = (promptText: string) => {
@@ -762,12 +817,14 @@ export default function UnifiedImageGenerationPanel({
     }
     
     // Update prompt if it's empty OR if it's a default prompt that should be updated
-    const shouldUpdatePrompt = !prompt?.trim() || isDefaultPrompt(prompt)
+    // BUT NOT if a preset is active (preset should override style changes)
+    const shouldUpdatePrompt = !currentPreset && (!prompt?.trim() || isDefaultPrompt(prompt))
     console.log('🎯 Prompt update check:', { 
       newStyle, 
       currentPrompt: prompt, 
       isEmpty: !prompt?.trim(), 
       isDefault: isDefaultPrompt(prompt), 
+      hasPreset: !!currentPreset,
       shouldUpdate: shouldUpdatePrompt 
     })
     
@@ -776,16 +833,32 @@ export default function UnifiedImageGenerationPanel({
       setIsPromptUpdating(true)
       
       // Use enhanced prompt generation that considers subject + style
-      generateEnhancedPrompt(newStyle, prompt, currentGenerationMode).then((newPrompt: string) => {
-        setPrompt(newPrompt)
-        setOriginalPrompt(newPrompt)
+      // Only generate if there's a style selected
+      if (newStyle.trim()) {
+        generateEnhancedPrompt(newStyle, prompt, currentGenerationMode).then((newPrompt: string) => {
+          setPrompt(newPrompt)
+          setOriginalPrompt(newPrompt)
+          setIsPromptModified(false)
+          
+          // Don't focus the prompt field to avoid disrupting user experience
+          setTimeout(() => {
+            setIsPromptUpdating(false)
+          }, 100)
+        })
+      } else {
+        // No style selected, clear the prompt or use just the subject
+        if (userSubject.trim()) {
+          setPrompt(userSubject.trim())
+          setOriginalPrompt(userSubject.trim())
+        } else {
+          setPrompt('')
+          setOriginalPrompt('')
+        }
         setIsPromptModified(false)
-        
-        // Don't focus the prompt field to avoid disrupting user experience
         setTimeout(() => {
           setIsPromptUpdating(false)
         }, 100)
-      })
+      }
     } else {
       // Don't focus the prompt field to avoid disrupting user experience
       console.log('🎯 Style change: no prompt update needed')
@@ -795,7 +868,7 @@ export default function UnifiedImageGenerationPanel({
     if (onStyleChange) {
       onStyleChange(newStyle)
     }
-  }, [style, prompt, currentGenerationMode, userSubject, onStyleChange, generateEnhancedPrompt])
+  }, [style, prompt, currentGenerationMode, userSubject, onStyleChange, generateEnhancedPrompt, currentPreset])
   
   // Sync style from parent
   useEffect(() => {
@@ -926,10 +999,17 @@ export default function UnifiedImageGenerationPanel({
         aspectRatio,
         baseImageAspectRatio,
         baseImageUrl: baseImage || undefined,
-        onRemoveBaseImage: baseImage ? removeBaseImage : undefined
+        onRemoveBaseImage: baseImage ? removeBaseImage : undefined,
+        // Include additional context for regeneration
+        generationMode: currentGenerationMode,
+        style: style,
+        selectedProvider: currentProvider,
+        consistencyLevel: currentConsistencyLevel,
+        prompt: prompt,
+        enhancedPrompt: enableCinematicMode ? enhancedPrompt : undefined
       })
     }
-  }, [resolution, userSubscriptionTier, baseImageDimensions, aspectRatio, baseImage])
+  }, [resolution, userSubscriptionTier, baseImageDimensions, aspectRatio, baseImage, currentGenerationMode, style, currentProvider, currentConsistencyLevel, prompt, enhancedPrompt, enableCinematicMode])
 
   // Handle preset selection from parent component (comprehensive Preset)
   useEffect(() => {
@@ -943,10 +1023,14 @@ export default function UnifiedImageGenerationPanel({
       // Handle preset application based on generation mode
       let finalPrompt = selectedPreset.prompt_template
       if (currentGenerationMode === 'image-to-image') {
-        // For image-to-image, use "this image" instead of user subject
-        finalPrompt = `${selectedPreset.prompt_template} this image`
-      } else if (userSubject.trim()) {
-        // For text-to-image, replace {subject} placeholder with user's input
+        // For image-to-image, replace {subject} with "this image" or remove it entirely
+        if (selectedPreset.prompt_template.includes('{subject}')) {
+          finalPrompt = selectedPreset.prompt_template.replace(/\{subject\}/g, 'this image')
+        } else {
+          finalPrompt = `${selectedPreset.prompt_template} this image`
+        }
+      } else if (userSubject.trim() && selectedPreset.prompt_template.includes('{subject}')) {
+        // For text-to-image, replace {subject} placeholder with user's input ONLY if preset supports it
         finalPrompt = selectedPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
       }
       
@@ -986,10 +1070,14 @@ export default function UnifiedImageGenerationPanel({
       // Apply preset settings based on generation mode
       let finalPrompt = preset.prompt_template
       if (currentGenerationMode === 'image-to-image') {
-        // For image-to-image, use "this image" instead of user subject
-        finalPrompt = `${preset.prompt_template} this image`
-      } else if (userSubject.trim()) {
-        // For text-to-image, replace {subject} placeholder with user's input
+        // For image-to-image, replace {subject} with "this image" or remove it entirely
+        if (preset.prompt_template.includes('{subject}')) {
+          finalPrompt = preset.prompt_template.replace(/\{subject\}/g, 'this image')
+        } else {
+          finalPrompt = `${preset.prompt_template} this image`
+        }
+      } else if (userSubject.trim() && preset.prompt_template.includes('{subject}')) {
+        // For text-to-image, replace {subject} placeholder with user's input ONLY if preset supports it
         finalPrompt = preset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
       }
       
@@ -1042,7 +1130,7 @@ export default function UnifiedImageGenerationPanel({
         setPrompt('')
       }
       
-      setStyle('photorealistic')
+      setStyle('')
       setIntensity(1.0)
       if (onConsistencyChange) {
         onConsistencyChange('high')
@@ -1184,7 +1272,8 @@ export default function UnifiedImageGenerationPanel({
     // 1. No current preset is selected
     // 2. Prompt hasn't been manually modified by user, OR it's a default prompt that should be updated
     // 3. Prompt is empty OR it's a default prompt
-    if (!currentPreset && (!isPromptModified || isDefaultPrompt(prompt)) && (!prompt?.trim() || isDefaultPrompt(prompt))) {
+    // 4. Style is actually selected (not empty)
+    if (!currentPreset && (!isPromptModified || isDefaultPrompt(prompt)) && (!prompt?.trim() || isDefaultPrompt(prompt)) && style.trim()) {
       console.log('🎯 Updating prompt with style:', style, 'isDefaultPrompt:', isDefaultPrompt(prompt), 'generationMode:', currentGenerationMode)
       
       // Use enhanced prompt generation that considers subject + style
@@ -1207,35 +1296,51 @@ export default function UnifiedImageGenerationPanel({
       
       // If a preset is active, use the preset template with subject replacement
       if (currentPreset) {
-        const finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
-        console.log('🎯 Using preset template with subject replacement:', {
-          userSubject,
-          presetTemplate: currentPreset.prompt_template,
-          finalPrompt
-        })
-        setPrompt(finalPrompt)
-        setOriginalPrompt(finalPrompt)
-        setIsPromptModified(false)
+        // Only update if the preset template contains {subject} placeholder
+        if (currentPreset.prompt_template.includes('{subject}')) {
+          const finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
+          console.log('🎯 Using preset template with subject replacement:', {
+            userSubject,
+            presetTemplate: currentPreset.prompt_template,
+            finalPrompt
+          })
+          setPrompt(finalPrompt)
+          setOriginalPrompt(finalPrompt)
+          setIsPromptModified(false)
+        } else {
+          // Preset doesn't have {subject} placeholder, don't modify the preset's prompt
+          console.log('🎯 Preset does not contain {subject} placeholder, keeping original prompt:', currentPreset.prompt_template)
+        }
         setIsSubjectUpdating(false)
       } else {
         // Generate enhanced prompt with current style and subject (no preset active)
-        generateEnhancedPrompt(style, prompt, currentGenerationMode).then((newPrompt: string) => {
-          console.log('🎯 Generated new prompt from subject:', {
-            userSubject,
-            currentPrompt: prompt,
-            newPrompt,
-            isDifferent: newPrompt !== prompt
+        // Only generate if there's a style selected
+        if (style.trim()) {
+          generateEnhancedPrompt(style, prompt, currentGenerationMode).then((newPrompt: string) => {
+            console.log('🎯 Generated new prompt from subject:', {
+              userSubject,
+              currentPrompt: prompt,
+              newPrompt,
+              isDifferent: newPrompt !== prompt
+            })
+            
+            // Always update the prompt when subject changes, regardless of whether it's different
+            setPrompt(newPrompt)
+            setOriginalPrompt(newPrompt)
+            setIsPromptModified(false)
+            setIsSubjectUpdating(false)
+          }).catch((error) => {
+            console.error('🎯 Error generating prompt from subject:', error)
+            setIsSubjectUpdating(false)
           })
-          
-          // Always update the prompt when subject changes, regardless of whether it's different
-          setPrompt(newPrompt)
-          setOriginalPrompt(newPrompt)
+        } else {
+          // No style selected, just use the subject as the prompt
+          const simplePrompt = userSubject.trim()
+          setPrompt(simplePrompt)
+          setOriginalPrompt(simplePrompt)
           setIsPromptModified(false)
           setIsSubjectUpdating(false)
-        }).catch((error) => {
-          console.error('🎯 Error generating prompt from subject:', error)
-          setIsSubjectUpdating(false)
-        })
+        }
       }
     }
   }, [userSubject, style, currentGenerationMode, isPromptModified, isUserTypingSubject, generateEnhancedPrompt, currentPreset])
@@ -2052,6 +2157,12 @@ export default function UnifiedImageGenerationPanel({
                 <div className="text-xs text-primary flex items-center gap-1">
                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
                   Updating prompt...
+                </div>
+              )}
+              {currentPreset && !currentPreset.prompt_template.includes('{subject}') && (
+                <div className="text-xs text-blue-600 flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  Preset active - subject won't modify prompt
                 </div>
               )}
             </div>

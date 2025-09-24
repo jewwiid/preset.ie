@@ -64,40 +64,7 @@ export async function GET(request: NextRequest) {
         status,
         expires_at,
         created_at,
-        updated_at,
-        listings!offers_listing_id_fkey (
-          id,
-          title,
-          category,
-          condition,
-          mode,
-          rent_day_cents,
-          sale_price_cents,
-          location_city,
-          location_country,
-          owner_id,
-          users_profile!listings_owner_id_fkey (
-            id,
-            display_name,
-            handle,
-            avatar_url,
-            verified_id
-          )
-        ),
-        users_profile!offers_from_user_fkey (
-          id,
-          display_name,
-          handle,
-          avatar_url,
-          verified_id
-        ),
-        users_profile!offers_to_user_fkey (
-          id,
-          display_name,
-          handle,
-          avatar_url,
-          verified_id
-        )
+        updated_at
       `)
       .range(offset, offset + limit - 1)
       .order('created_at', { ascending: false });

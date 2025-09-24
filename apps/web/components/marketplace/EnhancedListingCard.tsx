@@ -37,7 +37,7 @@ export default function EnhancedListingCard({
   const getEnhancementBadge = () => {
     if (listing.current_enhancement_type === 'premium_bump') {
       return (
-        <Badge className="bg-gradient-to-r from-pink-500 to-red-600 text-white border-0">
+        <Badge variant="secondary">
           <Crown className="w-3 h-3 mr-1" />
           Premium
         </Badge>
@@ -45,7 +45,7 @@ export default function EnhancedListingCard({
     }
     if (listing.current_enhancement_type === 'priority_bump') {
       return (
-        <Badge className="bg-gradient-to-r from-purple-500 to-purple-700 text-white border-0">
+        <Badge variant="default">
           <Zap className="w-3 h-3 mr-1" />
           Priority
         </Badge>
@@ -53,9 +53,9 @@ export default function EnhancedListingCard({
     }
     if (listing.current_enhancement_type === 'basic_bump') {
       return (
-        <Badge className="bg-gray-600 text-white border-0">
+        <Badge variant="outline">
           <TrendingUp className="w-3 h-3 mr-1" />
-          Bumped
+          Boosted
         </Badge>
       );
     }
@@ -65,10 +65,10 @@ export default function EnhancedListingCard({
   const getBoostIndicator = () => {
     if (listing.boost_level > 0) {
       return (
-        <div className="flex items-center space-x-1 text-primary-600 bg-primary-50 px-2 py-1 rounded-full">
-          <Star className="w-4 h-4 fill-current" />
-          <span className="text-sm font-medium">Boosted</span>
-        </div>
+        <Badge variant="outline">
+          <Star className="w-3 h-3 mr-1" />
+          Boosted
+        </Badge>
       );
     }
     return null;
@@ -81,12 +81,10 @@ export default function EnhancedListingCard({
       
       if (expiresAt > now) {
         return (
-          <div className="flex items-center space-x-1 text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
-            <Clock className="w-3 h-3" />
-            <span className="text-xs font-medium">
-              {formatDistanceToNow(expiresAt, { addSuffix: true })}
-            </span>
-          </div>
+          <Badge variant="outline" className="text-xs">
+            <Clock className="w-3 h-3 mr-1" />
+            {formatDistanceToNow(expiresAt, { addSuffix: true })}
+          </Badge>
         );
       }
     }
@@ -107,7 +105,7 @@ export default function EnhancedListingCard({
     
     if (listing.premium_badge) {
       badges.push(
-        <Badge key="premium" className="bg-gradient-to-r from-pink-500 to-red-600 text-white text-xs border-0">
+        <Badge key="premium" variant="secondary" className="text-xs">
           Premium
         </Badge>
       );
@@ -166,7 +164,7 @@ export default function EnhancedListingCard({
           
           {/* Price and User Badges */}
           <div className="flex items-center justify-between">
-            <div className="text-lg font-bold text-primary-600">
+            <div className="text-lg font-bold text-foreground">
               €{(listing.price_cents / 100).toFixed(2)}/day
             </div>
             
@@ -190,16 +188,16 @@ export default function EnhancedListingCard({
               size="sm"
               className="w-full mt-3"
             >
-              {listing.current_enhancement_type ? 'Extend Enhancement' : 'Boost Listing'}
+              {listing.current_enhancement_type ? 'Extend Boost' : 'Boost Listing'}
             </Button>
           )}
 
           {/* Enhancement Status */}
           {listing.current_enhancement_type && (
             <div className="text-xs text-gray-500 text-center pt-2 border-t border-gray-100">
-              {listing.current_enhancement_type === 'premium_bump' && 'Premium enhancement active'}
-              {listing.current_enhancement_type === 'priority_bump' && 'Priority enhancement active'}
-              {listing.current_enhancement_type === 'basic_bump' && 'Basic enhancement active'}
+              {listing.current_enhancement_type === 'premium_bump' && 'Premium boost active'}
+              {listing.current_enhancement_type === 'priority_bump' && 'Priority boost active'}
+              {listing.current_enhancement_type === 'basic_bump' && 'Basic boost active'}
             </div>
           )}
         </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../lib/auth-context'
-import { Palette, Wand2, Save, Eye, Upload, X, Plus, Settings, Info } from 'lucide-react'
+import { Palette, Wand2, Save, Eye, Upload, X, Plus, Settings, Info, Store, Copy, RefreshCw } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Input } from '../../../components/ui/input'
 import { Textarea } from '../../../components/ui/textarea'
@@ -20,6 +20,10 @@ interface PresetData {
   category: string
   prompt_template: string
   negative_prompt?: string
+  // Dynamic prompt fields
+  prompt_subject: string
+  prompt_image_url?: string
+  enhanced_prompt: string
   style_settings: {
     model: string
     steps: number
@@ -44,6 +48,12 @@ interface PresetData {
   }
   is_public: boolean
   is_featured: boolean
+  // Marketplace fields
+  is_for_sale: boolean
+  sale_price: number
+  marketplace_title: string
+  marketplace_description: string
+  marketplace_tags: string[]
 }
 
 const CATEGORIES = [
@@ -53,6 +63,16 @@ const CATEGORIES = [
   { value: 'portrait', label: 'Portrait', icon: '👤' },
   { value: 'landscape', label: 'Landscape', icon: '🏞️' },
   { value: 'commercial', label: 'Commercial', icon: '💼' },
+  { value: 'headshot', label: 'Headshot', icon: '📷' },
+  { value: 'product_photography', label: 'Product Photography', icon: '📦' },
+  { value: 'ecommerce', label: 'E-commerce', icon: '🛒' },
+  { value: 'corporate_portrait', label: 'Corporate Portrait', icon: '👔' },
+  { value: 'linkedin_photo', label: 'LinkedIn Photo', icon: '💼' },
+  { value: 'professional_portrait', label: 'Professional Portrait', icon: '👤' },
+  { value: 'business_headshot', label: 'Business Headshot', icon: '📸' },
+  { value: 'product_catalog', label: 'Product Catalog', icon: '📋' },
+  { value: 'product_lifestyle', label: 'Product Lifestyle', icon: '🏠' },
+  { value: 'product_studio', label: 'Product Studio', icon: '🎬' },
   { value: 'abstract', label: 'Abstract', icon: '🌀' },
   { value: 'custom', label: 'Custom', icon: '⚙️' }
 ]
@@ -69,7 +89,7 @@ const STYLES = [
 
 export default function CreatePresetPage() {
   const router = useRouter()
-  const { user, session } = useAuth()
+  const { user, session, userRole } = useAuth()
   
   const [presetData, setPresetData] = useState<PresetData>({
     name: '',
@@ -77,6 +97,10 @@ export default function CreatePresetPage() {
     category: 'photography',
     prompt_template: '',
     negative_prompt: '',
+    // Dynamic prompt fields
+    prompt_subject: '',
+    prompt_image_url: '',
+    enhanced_prompt: '',
     style_settings: {
       model: 'seedream-v4',
       steps: 20,
@@ -99,14 +123,42 @@ export default function CreatePresetPage() {
       enhancement_settings: {}
     },
     is_public: false,
-    is_featured: false
+    is_featured: false,
+    // Marketplace fields
+    is_for_sale: false,
+    sale_price: 0,
+    marketplace_title: '',
+    marketplace_description: '',
+    marketplace_tags: []
   })
   
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
   const [generatedPreview, setGeneratedPreview] = useState<string | null>(null)
+
+  // Generate enhanced prompt by replacing placeholders
+  const generateEnhancedPrompt = () => {
+    let enhancedPrompt = presetData.prompt_template;
+    
+    // Replace placeholders with actual values from Basic Info tab
+    enhancedPrompt = enhancedPrompt.replace(/\{subject\}/g, presetData.prompt_subject || '{subject}');
+    enhancedPrompt = enhancedPrompt.replace(/\{style\}/g, presetData.ai_metadata.style || '{style}');
+    enhancedPrompt = enhancedPrompt.replace(/\{mood\}/g, presetData.ai_metadata.mood || '{mood}');
+    
+    // Add image reference if provided
+    if (presetData.prompt_image_url) {
+      enhancedPrompt += ` [Image: ${presetData.prompt_image_url}]`;
+    }
+    
+    setPresetData(prev => ({ ...prev, enhanced_prompt: enhancedPrompt }));
+  }
   const [currentTag, setCurrentTag] = useState('')
+
+  // Generate enhanced prompt on component mount and when template changes
+  useEffect(() => {
+    generateEnhancedPrompt();
+  }, [presetData.prompt_template, presetData.prompt_subject, presetData.ai_metadata.style, presetData.ai_metadata.mood, presetData.prompt_image_url])
 
   const addTag = () => {
     if (currentTag.trim() && !presetData.ai_metadata.tags.includes(currentTag.trim())) {
@@ -183,17 +235,82 @@ export default function CreatePresetPage() {
 
     setSaving(true)
     try {
+      // First, save the preset (without featured status)
+      const presetToSave = {
+        ...presetData,
+        is_featured: false // Always save as non-featured initially
+      }
+
       const response = await fetch('/api/presets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify(presetData)
+        body: JSON.stringify(presetToSave)
       })
 
       if (response.ok) {
         const { id } = await response.json()
+        
+        // If user requested featured status, submit a featured request
+        if (presetData.is_featured) {
+          try {
+            const featuredResponse = await fetch('/api/presets/featured-requests', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session?.access_token}`
+              },
+              body: JSON.stringify({
+                preset_id: id,
+                requester_id: user?.id
+              })
+            })
+
+            if (featuredResponse.ok) {
+              alert('Preset saved successfully! Your featured request has been submitted for review.')
+            } else {
+              alert('Preset saved successfully! However, there was an issue submitting your featured request. You can request featured status later.')
+            }
+          } catch (featuredError) {
+            console.error('Featured request failed:', featuredError)
+            alert('Preset saved successfully! However, there was an issue submitting your featured request. You can request featured status later.')
+          }
+        } else {
+          alert('Preset saved successfully!')
+        }
+
+        // If user wants to sell the preset, create marketplace listing (admin only)
+        if (userRole?.isAdmin && presetData.is_for_sale && presetData.sale_price > 0 && presetData.marketplace_title.trim()) {
+          try {
+            const marketplaceResponse = await fetch('/api/marketplace/listings', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session?.access_token}`
+              },
+              body: JSON.stringify({
+                presetId: id,
+                salePrice: presetData.sale_price,
+                marketplaceTitle: presetData.marketplace_title,
+                marketplaceDescription: presetData.marketplace_description,
+                tags: presetData.marketplace_tags
+              })
+            })
+
+            if (marketplaceResponse.ok) {
+              alert('Preset saved and marketplace listing created successfully! Your listing is pending review.')
+            } else {
+              const errorData = await marketplaceResponse.json()
+              alert(`Preset saved successfully! However, there was an issue creating your marketplace listing: ${errorData.error}`)
+            }
+          } catch (marketplaceError) {
+            console.error('Marketplace listing creation failed:', marketplaceError)
+            alert('Preset saved successfully! However, there was an issue creating your marketplace listing. You can create it later.')
+          }
+        }
+        
         router.push(`/presets/${id}`)
       } else {
         const errorData = await response.json()
@@ -286,10 +403,13 @@ export default function CreatePresetPage() {
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className={`grid w-full ${userRole?.isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="prompts">Prompts</TabsTrigger>
                 <TabsTrigger value="settings">Settings</TabsTrigger>
+                {userRole?.isAdmin && (
+                  <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
+                )}
                 <TabsTrigger value="preview">Preview</TabsTrigger>
               </TabsList>
 
@@ -445,27 +565,148 @@ export default function CreatePresetPage() {
 
               {/* Prompts Tab */}
               <TabsContent value="prompts" className="space-y-6">
+                {/* Prompt Template */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Prompt Templates</CardTitle>
+                    <CardTitle>Prompt Template</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="prompt_template">Prompt Template *</Label>
+                      <Label htmlFor="prompt_template">Base Prompt Template *</Label>
                       <Textarea
                         id="prompt_template"
                         value={presetData.prompt_template}
-                        onChange={(e) => setPresetData(prev => ({ ...prev, prompt_template: e.target.value }))}
-                        placeholder="Enter your prompt template. Use {subject}, {style}, {mood} as placeholders..."
+                        onChange={(e) => {
+                          setPresetData(prev => ({ ...prev, prompt_template: e.target.value }));
+                          generateEnhancedPrompt();
+                        }}
+                        placeholder="Enter your base prompt template. Use {subject}, {style}, {mood} as placeholders..."
                         rows={4}
                       />
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         Use placeholders like {'{subject}'}, {'{style}'}, {'{mood}'} for dynamic content
                       </p>
                     </div>
+                  </CardContent>
+                </Card>
 
+                {/* Dynamic Fields */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dynamic Prompt Fields</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="prompt_subject">Subject</Label>
+                        <Input
+                          id="prompt_subject"
+                          value={presetData.prompt_subject}
+                          onChange={(e) => {
+                            setPresetData(prev => ({ ...prev, prompt_subject: e.target.value }));
+                            generateEnhancedPrompt();
+                          }}
+                          placeholder="e.g., portrait, landscape, object"
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Main subject of your prompt
+                        </p>
+                      </div>
+
+                      {/* Image Insertion for Text-to-Image */}
+                      <div>
+                        <Label htmlFor="prompt_image_url">Reference Image URL (Optional)</Label>
+                        <Input
+                          id="prompt_image_url"
+                          value={presetData.prompt_image_url || ''}
+                          onChange={(e) => {
+                            setPresetData(prev => ({ ...prev, prompt_image_url: e.target.value }));
+                            generateEnhancedPrompt();
+                          }}
+                          placeholder="https://example.com/image.jpg"
+                          type="url"
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Add a reference image URL for text-to-image prompts
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Info about using Basic Info fields */}
+                    <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-start">
+                        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 mr-2" />
+                        <div className="text-sm text-blue-800 dark:text-blue-200">
+                          <p className="font-medium">Using Basic Info Fields:</p>
+                          <p className="mt-1">
+                            Style and Mood are automatically pulled from the Basic Info tab. 
+                            Use {'{style}'} and {'{mood}'} placeholders in your template to include them.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Enhanced Prompt Preview */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Eye className="h-5 w-5" />
+                      <span>Enhanced Prompt Preview</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="negative_prompt">Negative Prompt</Label>
+                      <Label htmlFor="enhanced_prompt">Final Enhanced Prompt</Label>
+                      <Textarea
+                        id="enhanced_prompt"
+                        value={presetData.enhanced_prompt}
+                        readOnly
+                        className="bg-muted/50 border-dashed"
+                        rows={4}
+                        placeholder="Enhanced prompt will appear here..."
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        This is the final prompt that will be used for generation
+                      </p>
+                    </div>
+
+                    <div className="flex space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(presetData.enhanced_prompt);
+                          alert('Enhanced prompt copied to clipboard!');
+                        }}
+                        disabled={!presetData.enhanced_prompt}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Prompt
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={generateEnhancedPrompt}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Regenerate
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Negative Prompt */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Negative Prompt</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="negative_prompt">What to Avoid</Label>
                       <Textarea
                         id="negative_prompt"
                         value={presetData.negative_prompt}
@@ -474,23 +715,25 @@ export default function CreatePresetPage() {
                         rows={2}
                       />
                     </div>
-
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="flex items-start">
-                        <Info className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
-                        <div className="text-sm text-blue-800">
-                          <p className="font-medium">Prompt Tips:</p>
-                          <ul className="mt-1 space-y-1">
-                            <li>• Be specific about style and mood</li>
-                            <li>• Include technical terms for better results</li>
-                            <li>• Use placeholders for flexibility</li>
-                            <li>• Test your prompt in the playground first</li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
+
+                {/* Tips */}
+                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start">
+                    <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-2" />
+                    <div className="text-sm text-blue-800 dark:text-blue-200">
+                      <p className="font-medium">Enhanced Prompt Tips:</p>
+                      <ul className="mt-1 space-y-1">
+                        <li>• Fill in the dynamic fields to see your enhanced prompt</li>
+                        <li>• The system automatically replaces placeholders with your values</li>
+                        <li>• Add reference images for better text-to-image results</li>
+                        <li>• Use specific, descriptive terms for better AI understanding</li>
+                        <li>• Test your enhanced prompt in the playground before saving</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </TabsContent>
 
               {/* Settings Tab */}
@@ -567,6 +810,131 @@ export default function CreatePresetPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {/* Marketplace Tab - Admin Only */}
+              {userRole?.isAdmin && (
+                <TabsContent value="marketplace" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Store className="h-5 w-5" />
+                      <span>Marketplace Listing</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Enable Marketplace Toggle */}
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="is-for-sale"
+                        checked={presetData.is_for_sale}
+                        onCheckedChange={(checked) => 
+                          setPresetData(prev => ({ 
+                            ...prev, 
+                            is_for_sale: checked,
+                            marketplace_title: checked && !prev.marketplace_title ? prev.name : prev.marketplace_title,
+                            marketplace_description: checked && !prev.marketplace_description ? prev.description : prev.marketplace_description
+                          }))
+                        }
+                      />
+                      <Label htmlFor="is-for-sale">Put this preset up for sale</Label>
+                    </div>
+
+                    {presetData.is_for_sale && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                        {/* Sale Price */}
+                        <div>
+                          <Label htmlFor="sale-price">Sale Price (Credits)</Label>
+                          <Input
+                            id="sale-price"
+                            type="number"
+                            min="1"
+                            max="1000"
+                            value={presetData.sale_price}
+                            onChange={(e) => setPresetData(prev => ({ 
+                              ...prev, 
+                              sale_price: parseInt(e.target.value) || 0 
+                            }))}
+                            placeholder="Enter price in credits"
+                          />
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Minimum 1 credit, maximum 1000 credits
+                          </p>
+                        </div>
+
+                        {/* Marketplace Title */}
+                        <div>
+                          <Label htmlFor="marketplace-title">Marketplace Title</Label>
+                          <Input
+                            id="marketplace-title"
+                            value={presetData.marketplace_title}
+                            onChange={(e) => setPresetData(prev => ({ 
+                              ...prev, 
+                              marketplace_title: e.target.value 
+                            }))}
+                            placeholder="Enter a compelling title for the marketplace"
+                            maxLength={150}
+                          />
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {presetData.marketplace_title.length}/150 characters
+                          </p>
+                        </div>
+
+                        {/* Marketplace Description */}
+                        <div>
+                          <Label htmlFor="marketplace-description">Marketplace Description</Label>
+                          <Textarea
+                            id="marketplace-description"
+                            value={presetData.marketplace_description}
+                            onChange={(e) => setPresetData(prev => ({ 
+                              ...prev, 
+                              marketplace_description: e.target.value 
+                            }))}
+                            placeholder="Describe what makes this preset special and how to use it"
+                            rows={4}
+                          />
+                        </div>
+
+                        {/* Marketplace Tags */}
+                        <div>
+                          <Label htmlFor="marketplace-tags">Tags (comma-separated)</Label>
+                          <Input
+                            id="marketplace-tags"
+                            value={presetData.marketplace_tags.join(', ')}
+                            onChange={(e) => {
+                              const tags = e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+                              setPresetData(prev => ({ 
+                                ...prev, 
+                                marketplace_tags: tags 
+                              }));
+                            }}
+                            placeholder="e.g., portrait, professional, studio"
+                          />
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Add relevant tags to help buyers find your preset
+                          </p>
+                        </div>
+
+                        {/* Marketplace Info */}
+                        <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                          <div className="flex items-start space-x-2">
+                            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                            <div className="text-sm text-blue-800 dark:text-blue-200">
+                              <p className="font-medium">Marketplace Guidelines:</p>
+                              <ul className="mt-1 space-y-1 text-xs">
+                                <li>• Your preset will be reviewed before going live</li>
+                                <li>• You'll earn credits when someone purchases your preset</li>
+                                <li>• Set a fair price based on quality and uniqueness</li>
+                                <li>• Provide clear descriptions and helpful tags</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                </TabsContent>
+              )}
 
               {/* Preview Tab */}
               <TabsContent value="preview" className="space-y-6">

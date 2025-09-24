@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/auth-context'
-import { Palette, Plus, Search, Filter, Grid, List, Star, Users, PlayCircle, Camera, Wand2, Bell, CheckCircle, Eye } from 'lucide-react'
+import { Palette, Plus, Search, Filter, Grid, List, Star, Users, PlayCircle, Camera, Wand2, Bell, CheckCircle, Eye, Store } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Badge } from '../../components/ui/badge'
@@ -53,7 +53,7 @@ interface GeneratedImage {
 
 // Component to show generated content from user's presets
 function MyPresetsGeneratedContent() {
-  const { user, session } = useAuth()
+  const { user, session, userRole } = useAuth()
   const router = useRouter()
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([])
   const [loading, setLoading] = useState(true)
@@ -229,7 +229,7 @@ function MyPresetsGeneratedContent() {
 
 export default function PresetsPage() {
   const router = useRouter()
-  const { user, session } = useAuth()
+  const { user, session, userRole } = useAuth()
   const [presets, setPresets] = useState<Preset[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -247,16 +247,30 @@ export default function PresetsPage() {
 
   const categories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'photography', label: 'Photography' },
-    { value: 'cinematic', label: 'Cinematic' },
-    { value: 'artistic', label: 'Artistic' },
-    { value: 'custom', label: 'Custom' }
+    { value: 'photography', label: '📸 Photography' },
+    { value: 'cinematic', label: '🎬 Cinematic' },
+    { value: 'artistic', label: '🎨 Artistic' },
+    { value: 'portrait', label: '👤 Portrait' },
+    { value: 'landscape', label: '🏞️ Landscape' },
+    { value: 'commercial', label: '💼 Commercial' },
+    { value: 'headshot', label: '📷 Headshot' },
+    { value: 'product_photography', label: '📦 Product Photography' },
+    { value: 'ecommerce', label: '🛒 E-commerce' },
+    { value: 'corporate_portrait', label: '👔 Corporate Portrait' },
+    { value: 'linkedin_photo', label: '💼 LinkedIn Photo' },
+    { value: 'professional_portrait', label: '👤 Professional Portrait' },
+    { value: 'business_headshot', label: '📸 Business Headshot' },
+    { value: 'product_catalog', label: '📋 Product Catalog' },
+    { value: 'product_lifestyle', label: '🏠 Product Lifestyle' },
+    { value: 'product_studio', label: '🎬 Product Studio' },
+    { value: 'custom', label: '⚙️ Custom' }
   ]
 
   const presetTypes = [
     { value: 'all', label: 'All Types' },
     { value: 'cinematic', label: 'Cinematic Presets' },
-    { value: 'regular', label: 'Style Presets' }
+    { value: 'regular', label: 'Style Presets' },
+    { value: 'specialized', label: 'Specialized Presets' }
   ]
 
   const sortOptions = [
@@ -409,7 +423,23 @@ export default function PresetsPage() {
   }
 
   const getPresetType = (presetId: string) => {
-    return presetId.startsWith('cinematic_') ? 'cinematic' : 'regular'
+    if (presetId.startsWith('cinematic_')) return 'cinematic'
+    
+    // Check if it's a specialized preset by looking at the category
+    // We'll need to get the preset data to check the category
+    const preset = presets.find(p => p.id === presetId)
+    if (preset) {
+      const specializedCategories = [
+        'headshot', 'product_photography', 'ecommerce', 'corporate_portrait',
+        'linkedin_photo', 'professional_portrait', 'business_headshot',
+        'product_catalog', 'product_lifestyle', 'product_studio'
+      ]
+      if (specializedCategories.includes(preset.category)) {
+        return 'specialized'
+      }
+    }
+    
+    return 'regular'
   }
 
   const getPresetTypeBadge = (presetId: string) => {
@@ -419,6 +449,14 @@ export default function PresetsPage() {
         <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
           <Camera className="h-3 w-3 mr-1" />
           Cinematic
+        </Badge>
+      )
+    }
+    if (type === 'specialized') {
+      return (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <Camera className="h-3 w-3 mr-1" />
+          Specialized
         </Badge>
       )
     }
@@ -474,6 +512,25 @@ export default function PresetsPage() {
                   )}
                 </Button>
               )}
+              {userRole?.isAdmin ? (
+                <Button asChild variant="outline">
+                  <a href="/presets/marketplace">
+                    <Store className="h-4 w-4 mr-2" />
+                    Marketplace
+                  </a>
+                </Button>
+              ) : (
+                <Button variant="outline" disabled>
+                  <Store className="h-4 w-4 mr-2" />
+                  Marketplace (Coming Soon)
+                </Button>
+              )}
+              <Button asChild variant="outline">
+                <a href="/gear">
+                  <Camera className="h-4 w-4 mr-2" />
+                  Equipment
+                </a>
+              </Button>
               <Button asChild>
                 <a href="/presets/create">
                   <Plus className="h-4 w-4 mr-2" />
@@ -486,10 +543,9 @@ export default function PresetsPage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="browse">Browse Presets</TabsTrigger>
             <TabsTrigger value="my-presets">My Presets</TabsTrigger>
-            <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
           </TabsList>
 
           <TabsContent value="browse" className="mt-6">
@@ -803,16 +859,6 @@ export default function PresetsPage() {
             )}
           </TabsContent>
 
-          <TabsContent value="marketplace" className="mt-6">
-            <div className="text-center py-12">
-              <Palette className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">Preset Marketplace</h3>
-              <p className="text-muted-foreground mb-4">Discover featured presets from the community</p>
-              <Button asChild>
-                <a href="/presets/marketplace">Browse Marketplace</a>
-              </Button>
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
       

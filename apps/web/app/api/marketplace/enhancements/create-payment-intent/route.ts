@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { stripe } from '@/lib/stripe';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,26 +45,28 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    // TODO: Integrate with Stripe
-    // For now, we'll create a mock payment intent
-    const mockPaymentIntent = {
-      id: `pi_mock_${Date.now()}`,
-      client_secret: `pi_mock_${Date.now()}_secret`,
+    // Create real Stripe payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
       amount: pricing.amount,
       currency: 'eur',
-      status: 'requires_payment_method',
+      automatic_payment_methods: {
+        enabled: true,
+      },
       metadata: {
         listing_id: listingId,
         enhancement_type: enhancementType,
-        user_id: userId
-      }
-    };
+        user_id: userId,
+        type: 'listing_enhancement'
+      },
+      description: `Boost listing - ${enhancementType.replace('_', ' ')} (${pricing.duration_days} days)`,
+    });
     
     return NextResponse.json({
-      client_secret: mockPaymentIntent.client_secret,
+      client_secret: paymentIntent.client_secret,
       amount: pricing.amount,
       duration_days: pricing.duration_days,
-      enhancement_type: enhancementType
+      enhancement_type: enhancementType,
+      payment_intent_id: paymentIntent.id
     });
     
   } catch (error) {

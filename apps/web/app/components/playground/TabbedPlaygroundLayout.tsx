@@ -59,6 +59,12 @@ interface TabbedPlaygroundLayoutProps {
     consistencyLevel: string
     numImages: number
     customPreset?: any
+    // Additional parameters for full context
+    generationMode?: 'text-to-image' | 'image-to-image'
+    baseImage?: string
+    aspectRatio?: string
+    selectedProvider?: string
+    enhancedPrompt?: string
   }) => Promise<void>
   
   // Tab change callback
@@ -153,7 +159,7 @@ export default function TabbedPlaygroundLayout({
     resolution: '1024',
     baseImageAspectRatio: undefined as string | undefined,
     baseImageUrl: undefined as string | undefined,
-    style: 'photorealistic' as string,
+    style: '' as string,
     generationMode: 'text-to-image' as 'text-to-image' | 'image-to-image',
     selectedProvider: 'nanobanana' as string,
     consistencyLevel: 'high' as string,
@@ -182,14 +188,24 @@ export default function TabbedPlaygroundLayout({
 
   // Handle regenerate action
   const handleRegenerate = useCallback(() => {
-    // Trigger the same generation as the main generate button
+    // Trigger the same generation as the main generate button with full context
     if (onGenerate && currentSettings.prompt) {
       onGenerate({
         prompt: currentSettings.prompt,
-        style: currentSettings.style || 'photorealistic',
+        style: currentSettings.style || '',
         resolution: currentSettings.resolution || '1024',
         consistencyLevel: currentSettings.consistencyLevel || 'high',
-        numImages: 1
+        numImages: 1,
+        // Preserve generation mode context
+        generationMode: currentSettings.generationMode || 'text-to-image',
+        // Preserve base image for image-to-image mode
+        baseImage: currentSettings.generationMode === 'image-to-image' ? currentSettings.baseImageUrl : undefined,
+        // Preserve aspect ratio
+        aspectRatio: currentSettings.aspectRatio || '1:1',
+        // Preserve provider selection
+        selectedProvider: currentSettings.selectedProvider || 'nanobanana',
+        // Preserve enhanced prompt if available
+        enhancedPrompt: currentSettings.enhancedPrompt || undefined
       })
     }
   }, [onGenerate, currentSettings])
@@ -272,7 +288,20 @@ export default function TabbedPlaygroundLayout({
 
   const [removeBaseImageCallback, setRemoveBaseImageCallback] = useState<(() => void) | undefined>(undefined)
 
-  const handleSettingsChange = useCallback((settings: { resolution: string; aspectRatio?: string; baseImageAspectRatio?: string; baseImageUrl?: string; onRemoveBaseImage?: () => void }) => {
+  const handleSettingsChange = useCallback((settings: { 
+    resolution: string; 
+    aspectRatio?: string; 
+    baseImageAspectRatio?: string; 
+    baseImageUrl?: string; 
+    onRemoveBaseImage?: () => void;
+    // Additional context for regeneration
+    generationMode?: 'text-to-image' | 'image-to-image';
+    style?: string;
+    selectedProvider?: string;
+    consistencyLevel?: string;
+    prompt?: string;
+    enhancedPrompt?: string;
+  }) => {
     console.log('🎯 Parent received settings change:', settings)
     setCurrentSettings(prev => {
       const newSettings = {
@@ -280,7 +309,14 @@ export default function TabbedPlaygroundLayout({
         resolution: settings.resolution,
         aspectRatio: settings.aspectRatio || prev.aspectRatio,
         baseImageAspectRatio: settings.baseImageAspectRatio,
-        baseImageUrl: settings.baseImageUrl
+        baseImageUrl: settings.baseImageUrl,
+        // Update additional context
+        generationMode: settings.generationMode || prev.generationMode,
+        style: settings.style !== undefined ? settings.style : prev.style,
+        selectedProvider: settings.selectedProvider || prev.selectedProvider,
+        consistencyLevel: settings.consistencyLevel || prev.consistencyLevel,
+        prompt: settings.prompt !== undefined ? settings.prompt : prev.prompt,
+        enhancedPrompt: settings.enhancedPrompt !== undefined ? settings.enhancedPrompt : prev.enhancedPrompt
       }
       console.log('🎯 Parent updating settings to:', newSettings)
       return newSettings
@@ -630,7 +666,7 @@ export default function TabbedPlaygroundLayout({
                 subscriptionTier={userSubscriptionTier as 'free' | 'plus' | 'pro'}
                 onRemoveBaseImage={removeBaseImageCallback}
                 fullWidth={true}
-                currentStyle={currentSettings.style || 'photorealistic'}
+                currentStyle={currentSettings.style || ''}
                 onStyleChange={handleStyleChange}
                 generationMode={currentSettings.generationMode}
                 onGenerationModeChange={handleGenerationModeChange}

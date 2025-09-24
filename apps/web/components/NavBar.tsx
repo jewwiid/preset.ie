@@ -332,7 +332,7 @@ export function NavBar() {
                     <button
                       className={`
                         inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                        ${(isActive('/marketplace'))
+                        ${(isActive('/gear'))
                           ? 'text-primary bg-primary/10'
                           : 'nav-item'
                         }
@@ -345,25 +345,25 @@ export function NavBar() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-48" align="start">
                     <DropdownMenuItem asChild>
-                      <Link href="/marketplace" className="flex items-center">
+                      <Link href="/gear" className="flex items-center">
                         <Store className="mr-2 h-4 w-4" />
                         Browse Marketplace
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/marketplace/create" className="flex items-center">
+                      <Link href="/gear/create" className="flex items-center">
                         <Plus className="mr-2 h-4 w-4" />
                         Create Listing
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/marketplace/my-listings" className="flex items-center">
+                      <Link href="/gear/my-listings" className="flex items-center">
                         <ShoppingBag className="mr-2 h-4 w-4" />
                         My Listings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/marketplace/orders" className="flex items-center">
+                      <Link href="/gear/orders" className="flex items-center">
                         <Briefcase className="mr-2 h-4 w-4" />
                         My Orders
                       </Link>
@@ -748,10 +748,10 @@ export function NavBar() {
                   Marketplace
                 </div>
                 <Link
-                  href="/marketplace"
+                  href="/gear"
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
-                    ${isActive('/marketplace')
+                    ${isActive('/gear')
                       ? 'text-primary bg-primary/10'
                       : 'nav-item'
                     }
@@ -762,10 +762,10 @@ export function NavBar() {
                   Browse Marketplace
                 </Link>
                 <Link
-                  href="/marketplace/create"
+                  href="/gear/create"
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
-                    ${isActive('/marketplace/create')
+                    ${isActive('/gear/create')
                       ? 'text-primary bg-primary/10'
                       : 'nav-item'
                     }
@@ -776,10 +776,10 @@ export function NavBar() {
                   Create Listing
                 </Link>
                 <Link
-                  href="/marketplace/my-listings"
+                  href="/gear/my-listings"
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
-                    ${isActive('/marketplace/my-listings')
+                    ${isActive('/gear/my-listings')
                       ? 'text-primary bg-primary/10'
                       : 'nav-item'
                     }
@@ -790,10 +790,10 @@ export function NavBar() {
                   My Listings
                 </Link>
                 <Link
-                  href="/marketplace/orders"
+                  href="/gear/orders"
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
-                    ${isActive('/marketplace/orders')
+                    ${isActive('/gear/orders')
                       ? 'text-primary bg-primary/10'
                       : 'nav-item'
                     }

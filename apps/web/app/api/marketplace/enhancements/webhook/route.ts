@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { stripe, STRIPE_CONFIG } from '@/lib/stripe';
+import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
-import { supabase } from '@/lib/supabase';
 import { EnhancementService } from '@/lib/services/enhancement.service';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +17,7 @@ export async function POST(request: NextRequest) {
     let event: Stripe.Event;
 
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      event = stripe.webhooks.constructEvent(body, signature, STRIPE_CONFIG.webhookSecret!);
     } catch (err) {
       console.error('Webhook signature verification failed:', err);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -23,6 +26,10 @@ export async function POST(request: NextRequest) {
     console.log('Processing Stripe webhook event:', event.type);
 
     switch (event.type) {
+      case 'checkout.session.completed':
+        await handleCheckoutSuccess(event.data.object as Stripe.Checkout.Session);
+        break;
+      
       case 'payment_intent.succeeded':
         await handlePaymentSuccess(event.data.object as Stripe.PaymentIntent);
         break;
@@ -39,6 +46,52 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Webhook error:', error);
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
+  }
+}
+
+async function handleCheckoutSuccess(session: Stripe.Checkout.Session) {
+  try {
+    const { listing_id, enhancement_type, user_id } = session.metadata || {};
+    
+    if (!listing_id || !enhancement_type || !user_id) {
+      console.error('Missing required metadata in checkout session:', session.id);
+      return;
+    }
+
+    console.log(`Checkout completed for enhancement: ${enhancement_type} on listing: ${listing_id}`);
+
+    // Create the enhancement record
+    const enhancementData = {
+      listingId: listing_id,
+      userId: user_id,
+      enhancementType: enhancement_type as 'basic_bump' | 'priority_bump' | 'premium_bump',
+      paymentIntentId: session.payment_intent as string,
+      amountCents: session.amount_total || 0,
+      durationDays: getDurationDays(enhancement_type)
+    };
+
+    await EnhancementService.createListingEnhancement(enhancementData);
+
+    // Send success notification to user
+    if (supabase) {
+      await supabase.functions.invoke('create-notification', {
+        body: {
+          user_id,
+          type: 'enhancement_applied',
+          title: 'Boost Applied Successfully!',
+          message: `Your ${enhancement_type.replace('_', ' ')} boost has been applied to your listing.`,
+          metadata: {
+            listing_id,
+            enhancement_type,
+            session_id: session.id
+          }
+        }
+      });
+    }
+
+    console.log(`Enhancement created successfully for listing: ${listing_id}`);
+  } catch (error) {
+    console.error('Error handling checkout success:', error);
   }
 }
 
@@ -126,13 +179,13 @@ async function handlePaymentFailure(paymentIntent: Stripe.PaymentIntent) {
 function getDurationDays(enhancementType: string): number {
   switch (enhancementType) {
     case 'basic_bump':
-      return 7; // 1 week
+      return 1; // 1 day
     case 'priority_bump':
-      return 14; // 2 weeks
+      return 3; // 3 days
     case 'premium_bump':
-      return 30; // 1 month
+      return 7; // 7 days
     default:
-      return 7;
+      return 1;
   }
 }
 

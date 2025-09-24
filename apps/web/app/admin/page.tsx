@@ -12,7 +12,8 @@ import {
   CreditCard, 
   BarChart3, 
   FileText, 
-  CheckCircle 
+  CheckCircle,
+  Star
 } from 'lucide-react'
 
 // Import admin components
@@ -22,6 +23,7 @@ import { VerificationQueue } from '../components/admin/VerificationQueue'
 import { AgeVerificationQueue } from '../components/admin/AgeVerificationQueue'
 import { ModerationQueue } from '../components/admin/ModerationQueue'
 import { ModerationAnalytics } from '../components/admin/ModerationAnalytics'
+import { FeaturedPresetsQueue } from '../components/admin/FeaturedPresetsQueue'
 
 interface PlatformStats {
   totalUsers: number
@@ -307,6 +309,7 @@ export default function AdminDashboard() {
     { id: 'users', label: 'Users', icon: Users },
     { id: 'age-verification', label: 'Age Verification', icon: Shield },
     { id: 'verification', label: 'ID Verification', icon: CheckCircle },
+    { id: 'featured-presets', label: 'Featured Presets', icon: Star },
     { id: 'credits', label: 'Credits', icon: CreditCard },
   ]
 
@@ -462,6 +465,13 @@ export default function AdminDashboard() {
 
         {/* ID Verification Tab */}
         {activeTab === 'verification' && <VerificationQueue />}
+
+        {/* Featured Presets Tab */}
+        {activeTab === 'featured-presets' && (
+          <div className="space-y-6">
+            <FeaturedPresetsQueue />
+          </div>
+        )}
 
         {/* Credits Tab */}
         {activeTab === 'credits' && (

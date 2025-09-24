@@ -10,7 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Upload, X, Plus, Euro } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { NumberInput } from '@/components/ui/number-input';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { ImageUpload } from '@/components/ui/image-upload';
+import { Upload, X, Plus, Info, MapPin, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CreateListingFormProps {
@@ -71,24 +76,6 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    const validFiles = files.filter(file => {
-      const isValidType = file.type.startsWith('image/');
-      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
-      return isValidType && isValidSize;
-    });
-
-    if (validFiles.length !== files.length) {
-      toast.error('Some files were skipped. Only images under 5MB are allowed.');
-    }
-
-    setImages(prev => [...prev, ...validFiles].slice(0, 10)); // Max 10 images
-  };
-
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-  };
 
   const validateForm = () => {
     if (!formData.title.trim()) {
@@ -112,6 +99,29 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
       }
     }
     return true;
+  };
+
+  const uploadImages = async (listingId: string, files: File[]) => {
+    if (files.length === 0) return [];
+
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+    formData.append('listingId', listingId);
+
+    const response = await fetch('/api/marketplace/upload-images', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to upload images');
+    }
+
+    const data = await response.json();
+    return data.images;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,6 +150,7 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
         }
       });
 
+      // First, create the listing
       const response = await fetch('/api/marketplace/listings', {
         method: 'POST',
         headers: {
@@ -151,27 +162,48 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
 
       const data = await response.json();
 
-      if (response.ok) {
-        toast.success('Listing created successfully!');
-        if (onSuccess) {
-          onSuccess(data.listing);
-        } else {
-          router.push(`/marketplace/listings/${data.listing.id}`);
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create listing');
+      }
+
+      // Then upload images if any
+      if (images.length > 0) {
+        try {
+          await uploadImages(data.listing.id, images);
+          toast.success('Listing created and images uploaded successfully!');
+        } catch (imageError) {
+          console.error('Image upload error:', imageError);
+          toast.warning('Listing created but failed to upload some images. You can add them later.');
         }
       } else {
-        toast.error(data.error || 'Failed to create listing');
+        toast.success('Listing created successfully!');
+      }
+
+      if (onSuccess) {
+        onSuccess(data.listing);
+      } else {
+        router.push(`/marketplace/listings/${data.listing.id}`);
       }
     } catch (error) {
       console.error('Error creating listing:', error);
-      toast.error('An unexpected error occurred');
+      toast.error(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Basic Information */}
+    <div className="space-y-6">
+      {/* Information Alert */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Fill out the form below to create your listing. Required fields are marked with an asterisk (*).
+        </AlertDescription>
+      </Alert>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Information */}
       <Card>
         <CardHeader>
           <CardTitle>Basic Information</CardTitle>
@@ -241,16 +273,18 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
 
           <div>
             <Label htmlFor="quantity">Quantity</Label>
-            <Input
-              id="quantity"
-              type="number"
-              min="1"
-              value={formData.quantity}
-              onChange={(e) => handleInputChange('quantity', e.target.value)}
+            <NumberInput
+              value={Number(formData.quantity)}
+              onChange={(value) => handleInputChange('quantity', value.toString())}
+              min={1}
+              max={100}
+              step={1}
             />
           </div>
         </CardContent>
       </Card>
+
+      <Separator />
 
       {/* Pricing */}
       <Card>
@@ -279,35 +313,19 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="rent_day_cents">Daily Rent Price (€) *</Label>
-                <div className="relative">
-                  <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="rent_day_cents"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.rent_day_cents}
-                    onChange={(e) => handleInputChange('rent_day_cents', e.target.value)}
-                    className="pl-10"
-                    placeholder="0.00"
-                  />
-                </div>
+                <CurrencyInput
+                  value={formData.rent_day_cents ? Number(formData.rent_day_cents) / 100 : 0}
+                  onChange={(value) => handleInputChange('rent_day_cents', Math.round(value * 100).toString())}
+                  placeholder="0.00"
+                />
               </div>
               <div>
                 <Label htmlFor="rent_week_cents">Weekly Rent Price (€)</Label>
-                <div className="relative">
-                  <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="rent_week_cents"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.rent_week_cents}
-                    onChange={(e) => handleInputChange('rent_week_cents', e.target.value)}
-                    className="pl-10"
-                    placeholder="0.00"
-                  />
-                </div>
+                <CurrencyInput
+                  value={formData.rent_week_cents ? Number(formData.rent_week_cents) / 100 : 0}
+                  onChange={(value) => handleInputChange('rent_week_cents', Math.round(value * 100).toString())}
+                  placeholder="0.00"
+                />
               </div>
             </div>
           )}
@@ -315,19 +333,11 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
           {(formData.mode === 'sale' || formData.mode === 'both') && (
             <div>
               <Label htmlFor="sale_price_cents">Sale Price (€) *</Label>
-              <div className="relative">
-                <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="sale_price_cents"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.sale_price_cents}
-                  onChange={(e) => handleInputChange('sale_price_cents', e.target.value)}
-                  className="pl-10"
-                  placeholder="0.00"
-                />
-              </div>
+              <CurrencyInput
+                value={formData.sale_price_cents ? Number(formData.sale_price_cents) / 100 : 0}
+                onChange={(value) => handleInputChange('sale_price_cents', Math.round(value * 100).toString())}
+                placeholder="0.00"
+              />
             </div>
           )}
 
@@ -352,37 +362,21 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
             </div>
             <div>
               <Label htmlFor="retainer_cents">Retainer Amount (€)</Label>
-              <div className="relative">
-                <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="retainer_cents"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.retainer_cents}
-                  onChange={(e) => handleInputChange('retainer_cents', e.target.value)}
-                  className="pl-10"
-                  placeholder="0.00"
-                />
-              </div>
+              <CurrencyInput
+                value={formData.retainer_cents ? Number(formData.retainer_cents) / 100 : 0}
+                onChange={(value) => handleInputChange('retainer_cents', Math.round(value * 100).toString())}
+                placeholder="0.00"
+              />
             </div>
           </div>
 
           <div>
             <Label htmlFor="deposit_cents">Deposit Amount (€)</Label>
-            <div className="relative">
-              <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="deposit_cents"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.deposit_cents}
-                onChange={(e) => handleInputChange('deposit_cents', e.target.value)}
-                className="pl-10"
-                placeholder="0.00"
-              />
-            </div>
+            <CurrencyInput
+              value={formData.deposit_cents ? Number(formData.deposit_cents) / 100 : 0}
+              onChange={(value) => handleInputChange('deposit_cents', Math.round(value * 100).toString())}
+              placeholder="0.00"
+            />
           </div>
 
           <div className="flex items-center space-x-2">
@@ -396,6 +390,8 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
         </CardContent>
       </Card>
 
+      <Separator />
+
       {/* Location */}
       <Card>
         <CardHeader>
@@ -405,21 +401,29 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="location_city">City</Label>
-              <Input
-                id="location_city"
-                value={formData.location_city}
-                onChange={(e) => handleInputChange('location_city', e.target.value)}
-                placeholder="Enter city"
-              />
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="location_city"
+                  value={formData.location_city}
+                  onChange={(e) => handleInputChange('location_city', e.target.value)}
+                  placeholder="Enter city"
+                  className="pl-10"
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="location_country">Country</Label>
-              <Input
-                id="location_country"
-                value={formData.location_country}
-                onChange={(e) => handleInputChange('location_country', e.target.value)}
-                placeholder="Enter country"
-              />
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="location_country"
+                  value={formData.location_country}
+                  onChange={(e) => handleInputChange('location_country', e.target.value)}
+                  placeholder="Enter country"
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
 
@@ -450,46 +454,26 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
         </CardContent>
       </Card>
 
+      <Separator />
+
       {/* Images */}
       <Card>
         <CardHeader>
           <CardTitle>Images</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="images">Upload Images (max 10, 5MB each)</Label>
-            <Input
-              id="images"
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="mt-2"
-            />
-          </div>
-
-          {images.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {images.map((image, index) => (
-                <div key={index} className="relative group">
-                  <img
-                    src={URL.createObjectURL(image)}
-                    alt={`Upload ${index + 1}`}
-                    className="w-full h-24 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+        <CardContent>
+          <ImageUpload
+            value={images}
+            onChange={setImages}
+            maxFiles={10}
+            maxSize={5}
+            accept="image/*"
+            disabled={loading}
+          />
         </CardContent>
       </Card>
+
+      <Separator />
 
       {/* Settings */}
       <Card>
@@ -519,6 +503,7 @@ export default function CreateListingForm({ onSuccess, onCancel }: CreateListing
           {loading ? 'Creating...' : 'Create Listing'}
         </Button>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }
