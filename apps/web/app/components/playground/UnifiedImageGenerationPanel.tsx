@@ -493,7 +493,7 @@ export default function UnifiedImageGenerationPanel({
   const [subjectContext, setSubjectContext] = useState<string | null>(null)
   const [isSubjectUpdating, setIsSubjectUpdating] = useState(false)
   const [isUserTypingSubject, setIsUserTypingSubject] = useState(false)
-  const subjectUpdateTimeoutRef = useRef<number | null>(null)
+  const subjectUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Update prompt when userSubject changes and a preset is applied
   useEffect(() => {
