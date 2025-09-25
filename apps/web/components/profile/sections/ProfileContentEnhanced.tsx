@@ -35,6 +35,7 @@ import {
   Target,
   TrendingUp
 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
 
 export function ProfileContentEnhanced() {
   const { profile } = useProfile()
@@ -62,7 +63,7 @@ export function ProfileContentEnhanced() {
       if (!supabase || !profile?.id) return
 
       // Fetch gig count (gigs where user is owner)
-      const { data: gigsData, error: gigsError } = await supabase
+      const { data: gigsData, error: gigsError } = await (supabase as any)
         .from('gigs')
         .select('id', { count: 'exact' })
         .eq('owner_user_id', profile.id)
@@ -72,7 +73,7 @@ export function ProfileContentEnhanced() {
       }
 
       // Fetch showcase count (showcases where user is creator or talent)
-      const { data: showcasesData, error: showcasesError } = await supabase
+      const { data: showcasesData, error: showcasesError } = await (supabase as any)
         .from('showcases')
         .select('id', { count: 'exact' })
         .or(`creator_user_id.eq.${profile.id},talent_user_id.eq.${profile.id}`)
@@ -94,7 +95,7 @@ export function ProfileContentEnhanced() {
     try {
       if (!supabase || !profile?.id) return
 
-      const { data: reviews, error } = await supabase
+      const { data: reviews, error } = await (supabase as any)
         .from('reviews')
         .select('rating')
         .eq('reviewed_user_id', profile.id)
@@ -105,7 +106,7 @@ export function ProfileContentEnhanced() {
       }
 
       if (reviews && reviews.length > 0) {
-        const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
+        const totalRating = reviews.reduce((sum: number, review: any) => sum + (review as any).rating, 0)
         const averageRating = totalRating / reviews.length
         setUserRating({
           average: averageRating,
@@ -188,24 +189,24 @@ export function ProfileContentEnhanced() {
       title: 'Total Gigs',
       value: stats.totalGigs.toString(),
       icon: Briefcase,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20',
+      color: 'from-primary to-primary/90',
+      bgColor: 'from-primary/10 to-primary/20',
       description: 'Gigs you\'ve posted or applied to'
     },
     {
       title: 'Showcases',
       value: stats.totalShowcases.toString(),
       icon: Camera,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20',
+      color: 'from-primary to-primary/90',
+      bgColor: 'from-primary/10 to-primary/20',
       description: 'Portfolio showcases created'
     },
     {
       title: 'Rating',
       value: userRating ? userRating.average.toFixed(1) : 'N/A',
       icon: Star,
-      color: 'from-yellow-500 to-yellow-600',
-      bgColor: 'from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20',
+      color: 'from-primary to-primary/90',
+      bgColor: 'from-primary/10 to-primary/20',
       description: userRating ? `Based on ${userRating.total} review${userRating.total !== 1 ? 's' : ''}` : 'No ratings yet'
     }
   ]
@@ -329,7 +330,7 @@ export function ProfileContentEnhanced() {
           <input
             type="text"
             defaultValue={item.value}
-            className="flex-1 px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="flex-1 px-3 py-1 text-sm border border-border rounded-md bg-background text-foreground"
           />
           <button className="p-1 text-primary-600 hover:text-primary-700">
             <Save className="w-4 h-4" />
@@ -340,7 +341,7 @@ export function ProfileContentEnhanced() {
         </div>
       )
     }
-    return <span className="text-sm text-gray-600 dark:text-gray-400">{item.value}</span>
+    return <span className="text-sm text-muted-foreground">{item.value}</span>
   }
 
   return (
@@ -351,15 +352,15 @@ export function ProfileContentEnhanced() {
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {overviewCards.map((card, index) => (
-          <div key={index} className={`bg-gradient-to-br ${card.bgColor} rounded-xl p-6 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all duration-200`}>
+          <div key={index} className={`bg-gradient-to-br ${card.bgColor} rounded-xl p-6 border border-border hover:shadow-lg transition-all duration-200`}>
             <div className="flex items-center justify-between mb-4">
               <div className={`w-12 h-12 bg-gradient-to-br ${card.color} rounded-lg flex items-center justify-center`}>
                 <card.icon className="w-6 h-6 text-white" />
               </div>
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</span>
+              <span className="text-2xl font-bold text-foreground">{card.value}</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">{card.title}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{card.description}</p>
+            <h3 className="text-lg font-semibold text-foreground mb-1">{card.title}</h3>
+            <p className="text-sm text-muted-foreground">{card.description}</p>
           </div>
         ))}
       </div>
@@ -367,89 +368,22 @@ export function ProfileContentEnhanced() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Professional Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-              <Briefcase className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Professional Information</h2>
-          </div>
-          <div className="space-y-4">
-            {professionalInfo.map((item, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <item.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</label>
-                  <div className="mt-1">
-                    {renderEditableField(item)}
-                  </div>
-                </div>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+                <Briefcase className="w-5 h-5 text-white" />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Contact Information */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-primary to-primary-primary rounded-lg flex items-center justify-center">
-              <Mail className="w-5 h-5 text-white" />
+              <CardTitle>Professional Information</CardTitle>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Contact Information</h2>
-          </div>
-          <div className="space-y-4">
-            {contactInfo.map((item, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <item.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</label>
-                  <div className="mt-1">
-                    {renderEditableField(item)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Equipment & Software */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <Camera className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Equipment & Software</h2>
-          </div>
-          <div className="space-y-4">
-            {equipmentInfo.map((item, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <item.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</label>
-                  <div className="mt-1">
-                    {renderEditableField(item)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Physical Attributes (for talent) */}
-        {physicalInfo.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-pink-600 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Physical Attributes</h2>
-            </div>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              {physicalInfo.map((item, index) => (
+              {professionalInfo.map((item, index) => (
                 <div key={index} className="flex items-start gap-3">
-                  <item.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
+                  <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</label>
+                    <label className="text-sm font-medium text-foreground">{item.label}</label>
                     <div className="mt-1">
                       {renderEditableField(item)}
                     </div>
@@ -457,60 +391,150 @@ export function ProfileContentEnhanced() {
                 </div>
               ))}
             </div>
-          </div>
+          </CardContent>
+        </Card>
+
+        {/* Contact Information */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+                <Mail className="w-5 h-5 text-white" />
+              </div>
+              <CardTitle>Contact Information</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {contactInfo.map((item, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-foreground">{item.label}</label>
+                    <div className="mt-1">
+                      {renderEditableField(item)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Equipment & Software */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+                <Camera className="w-5 h-5 text-white" />
+              </div>
+              <CardTitle>Equipment & Software</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {equipmentInfo.map((item, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-foreground">{item.label}</label>
+                    <div className="mt-1">
+                      {renderEditableField(item)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Physical Attributes (for talent) */}
+        {physicalInfo.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-white" />
+                </div>
+                <CardTitle>Physical Attributes</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {physicalInfo.map((item, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <label className="text-sm font-medium text-foreground">{item.label}</label>
+                      <div className="mt-1">
+                        {renderEditableField(item)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 
       {/* Bio Section */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+              <User className="w-5 h-5 text-white" />
+            </div>
+            <CardTitle>About Me</CardTitle>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">About Me</h2>
-        </div>
-        {isEditing ? (
-          <textarea
-            defaultValue={profile?.bio || ''}
-            placeholder="Tell us about yourself..."
-            className="w-full h-32 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
-          />
-        ) : (
-          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-            {profile?.bio || 'No bio provided. Click "Edit Profile" to add your bio.'}
-          </p>
-        )}
-      </div>
+        </CardHeader>
+        <CardContent>
+          {isEditing ? (
+            <textarea
+              defaultValue={profile?.bio || ''}
+              placeholder="Tell us about yourself..."
+              className="w-full h-32 px-4 py-3 border border-border rounded-lg bg-background text-foreground resize-none"
+            />
+          ) : (
+            <p className="text-foreground leading-relaxed">
+              {profile?.bio || 'No bio provided. Click "Edit Profile" to add your bio.'}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Compatible Gigs Section - Only for Talent Users */}
       {profile?.talent_categories && profile.talent_categories.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-primary to-primary-primary rounded-lg flex items-center justify-center">
-              <Target className="w-5 h-5 text-white" />
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+                <Target className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <CardTitle>Compatible Gigs</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Gigs that match your profile and preferences
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {compatibleGigs.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-primary font-medium">
+                      {compatibleGigs.length} matches found
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Compatible Gigs</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Gigs that match your profile and preferences
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {compatibleGigs.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary-600" />
-                  <span className="text-sm text-primary-600 font-medium">
-                    {compatibleGigs.length} matches found
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
+          </CardHeader>
+          <CardContent>
 
           {matchmakingLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
-              <span className="ml-3 text-gray-600 dark:text-gray-400">Finding compatible gigs...</span>
+              <span className="ml-3 text-muted-foreground">Finding compatible gigs...</span>
             </div>
           ) : compatibleGigs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -527,11 +551,11 @@ export function ProfileContentEnhanced() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 No Compatible Gigs Found
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
+              <p className="text-muted-foreground mb-4">
                 Complete your profile to get better matches, or check back later for new opportunities.
               </p>
               <div className="flex items-center justify-center gap-4">
@@ -543,14 +567,15 @@ export function ProfileContentEnhanced() {
                 </button>
                 <button
                   onClick={() => window.location.href = '/gigs'}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors"
                 >
                   Browse All Gigs
                 </button>
               </div>
             </div>
           )}
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* User Ratings Section */}

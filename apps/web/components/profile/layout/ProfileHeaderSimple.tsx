@@ -94,7 +94,7 @@ export function ProfileHeaderSimple() {
   return (
     <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
       {/* Header Banner */}
-      <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
+      <div className="relative h-48 bg-gradient-to-r from-primary to-primary/90">
         {profile?.header_banner_url ? (
           <img
             src={profile.header_banner_url}
@@ -105,7 +105,7 @@ export function ProfileHeaderSimple() {
             }}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-blue-500 to-purple-600" />
+          <div className="w-full h-full bg-gradient-to-r from-primary to-primary/90" />
         )}
         <div className="absolute inset-0 bg-black bg-opacity-20" />
         
@@ -167,7 +167,7 @@ export function ProfileHeaderSimple() {
               <button
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full transition-colors shadow-lg disabled:opacity-50"
+                className="absolute -bottom-2 -right-2 bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded-full transition-colors shadow-lg disabled:opacity-50"
               >
                 {isUploadingAvatar ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

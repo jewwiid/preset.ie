@@ -225,11 +225,11 @@ export default function CreditsDashboard() {
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case 'purchase': return <ShoppingCart className="w-4 h-4 text-primary-600" />;
-      case 'consume': return <TrendingUp className="w-4 h-4 text-blue-600" />;
-      case 'refund': return <RefreshCw className="w-4 h-4 text-orange-600" />;
-      case 'bonus': return <Coins className="w-4 h-4 text-purple-600" />;
-      default: return <History className="w-4 h-4 text-gray-600" />;
+      case 'purchase': return <ShoppingCart className="w-4 h-4 text-primary" />;
+      case 'consume': return <TrendingUp className="w-4 h-4 text-primary" />;
+      case 'refund': return <RefreshCw className="w-4 h-4 text-primary" />;
+      case 'bonus': return <Coins className="w-4 h-4 text-primary" />;
+      default: return <History className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -252,10 +252,10 @@ export default function CreditsDashboard() {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-32 bg-gray-200 rounded-lg mb-6"></div>
+          <div className="h-32 bg-muted rounded-lg mb-6"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded-lg"></div>
+              <div key={i} className="h-24 bg-muted rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -267,22 +267,22 @@ export default function CreditsDashboard() {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-primary-primary/10 to-primary-primary/10 border-primary/20 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('purchase')}>
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/10 border-primary/20 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('purchase')}>
           <CardContent className="p-6">
             <div className="space-y-4">
               <div className="flex items-center">
-                <Coins className="w-8 h-8 text-primary-600" />
+                <Coins className="w-8 h-8 text-primary" />
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Credit Balance</p>
+                  <p className="text-sm font-medium text-muted-foreground">Credit Balance</p>
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary-700">{userCredits?.balance || 0}</p>
-                <p className="text-sm text-gray-500 mt-1">Available credits</p>
+                <p className="text-3xl font-bold text-primary">{userCredits?.balance || 0}</p>
+                <p className="text-sm text-muted-foreground mt-1">Available credits</p>
               </div>
               <Button
                 size="sm"
-                className="w-full bg-primary-600 hover:bg-primary/90 text-white"
+                className="w-full bg-primary hover:bg-primary/90 text-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveTab('purchase');
@@ -299,13 +299,13 @@ export default function CreditsDashboard() {
           <CardContent className="p-6">
             <div className="space-y-3">
               <div className="flex items-center">
-                <TrendingUp className="w-8 h-8 text-primary-600" />
+                <TrendingUp className="w-8 h-8 text-primary" />
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Total Earned</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Earned</p>
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-gray-900">{userCredits?.lifetime_earned || 0}</p>
+                <p className="text-3xl font-bold text-foreground">{userCredits?.lifetime_earned || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -315,13 +315,13 @@ export default function CreditsDashboard() {
           <CardContent className="p-6">
             <div className="space-y-3">
               <div className="flex items-center">
-                <History className="w-8 h-8 text-blue-600" />
+                <History className="w-8 h-8 text-primary" />
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Total Used</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Used</p>
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-gray-900">{userCredits?.lifetime_consumed || 0}</p>
+                <p className="text-3xl font-bold text-foreground">{userCredits?.lifetime_consumed || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -331,13 +331,13 @@ export default function CreditsDashboard() {
           <CardContent className="p-6">
             <div className="space-y-3">
               <div className="flex items-center">
-                <Calendar className="w-8 h-8 text-purple-600" />
+                <Calendar className="w-8 h-8 text-primary" />
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-600">Last Purchase</p>
+                  <p className="text-sm font-medium text-muted-foreground">Last Purchase</p>
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-lg font-bold text-foreground">
                   {userCredits?.last_purchase_at 
                     ? format(new Date(userCredits.last_purchase_at), 'MMM d')
                     : 'Never'
@@ -350,7 +350,7 @@ export default function CreditsDashboard() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+      <div className="flex space-x-1 bg-muted p-1 rounded-lg">
         {[
           { id: 'overview', label: 'Overview', icon: TrendingUp },
           { id: 'history', label: 'Transaction History', icon: History },
@@ -361,8 +361,8 @@ export default function CreditsDashboard() {
             onClick={() => setActiveTab(id as any)}
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md transition-colors ${
               activeTab === id
-                ? 'bg-white shadow-sm text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white shadow-sm text-primary'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -381,23 +381,23 @@ export default function CreditsDashboard() {
             </CardHeader>
             <CardContent>
               {transactions.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No transactions yet</p>
+                <p className="text-muted-foreground text-center py-8">No transactions yet</p>
               ) : (
                 <div className="space-y-4">
                   {transactions.slice(0, 5).map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                    <div key={transaction.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <div className="flex items-center gap-3">
                         {getTransactionIcon(transaction.type)}
                         <div>
                           <p className="font-medium capitalize">{transaction.type}</p>
-                          <p className="text-sm text-gray-500">{transaction.description}</p>
+                          <p className="text-sm text-muted-foreground">{transaction.description}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`font-medium ${transaction.amount > 0 ? 'text-primary-600' : 'text-red-600'}`}>
+                        <p className={`font-medium ${transaction.amount > 0 ? 'text-primary' : 'text-destructive'}`}>
                           {transaction.amount > 0 ? '+' : ''}{transaction.amount} credits
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           {format(new Date(transaction.created_at), 'MMM d, yyyy')}
                         </p>
                       </div>
@@ -419,17 +419,17 @@ export default function CreditsDashboard() {
             </CardHeader>
             <CardContent>
               {purchases.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No purchases yet</p>
+                <p className="text-muted-foreground text-center py-8">No purchases yet</p>
               ) : (
                 <div className="space-y-4">
                   {purchases.map((purchase) => (
-                    <div key={purchase.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                    <div key={purchase.id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
                       <div>
                         <p className="font-medium">{purchase.package_id} Package</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           {purchase.credits_purchased} credits • ${purchase.amount_paid_usd}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-muted-foreground">
                           {format(new Date(purchase.created_at), 'MMM d, yyyy at h:mm a')}
                         </p>
                       </div>
@@ -455,29 +455,29 @@ export default function CreditsDashboard() {
             </CardHeader>
             <CardContent>
               {transactions.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No transactions yet</p>
+                <p className="text-muted-foreground text-center py-8">No transactions yet</p>
               ) : (
                 <div className="space-y-4">
                   {transactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                    <div key={transaction.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                       <div className="flex items-center gap-3">
                         {getTransactionIcon(transaction.type)}
                         <div>
                           <p className="font-medium capitalize">{transaction.type}</p>
-                          <p className="text-sm text-gray-500">{transaction.description}</p>
+                          <p className="text-sm text-muted-foreground">{transaction.description}</p>
                           {transaction.reference_id && (
-                            <p className="text-xs text-gray-400">Ref: {transaction.reference_id}</p>
+                            <p className="text-xs text-muted-foreground">Ref: {transaction.reference_id}</p>
                           )}
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`font-medium ${transaction.amount > 0 ? 'text-primary-600' : 'text-red-600'}`}>
+                        <p className={`font-medium ${transaction.amount > 0 ? 'text-primary' : 'text-destructive'}`}>
                           {transaction.amount > 0 ? '+' : ''}{transaction.amount} credits
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           Balance: {transaction.balance_after}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-muted-foreground">
                           {format(new Date(transaction.created_at), 'MMM d, yyyy at h:mm a')}
                         </p>
                       </div>
@@ -492,21 +492,21 @@ export default function CreditsDashboard() {
 
       {activeTab === 'purchase' && (
         <div className="space-y-8">
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border-b border-gray-200">
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-background to-card">
+            <CardHeader className="bg-gradient-to-r from-primary/10 via-primary/10 to-primary/10 border-b border-border">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+                  <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent mb-2">
                     Choose a Credit Package
                   </CardTitle>
-                  <p className="text-gray-600 font-medium">Select the perfect package for your creative needs</p>
+                  <p className="text-muted-foreground font-medium">Select the perfect package for your creative needs</p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={loadCreditData}
                   disabled={loading}
-                  className="border-gray-300 hover:bg-white hover:border-gray-400 shadow-sm"
+                  className="border-border hover:bg-accent hover:border-border shadow-sm"
                 >
                   <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
@@ -516,19 +516,19 @@ export default function CreditsDashboard() {
             <CardContent className="p-8">
               {packages.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="bg-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                    <ShoppingCart className="w-10 h-10 text-gray-400" />
+                  <div className="bg-muted rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                    <ShoppingCart className="w-10 h-10 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">No Packages Available</h3>
-                  <p className="text-gray-500 mb-6 max-w-md mx-auto">We're currently updating our credit packages. Please check back soon or contact support for assistance.</p>
-                  <div className="text-xs text-gray-400 mb-6 bg-gray-50 px-4 py-2 rounded-lg inline-block">
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No Packages Available</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">We're currently updating our credit packages. Please check back soon or contact support for assistance.</p>
+                  <div className="text-xs text-muted-foreground mb-6 bg-muted px-4 py-2 rounded-lg inline-block">
                     Debug: packages.length = {packages.length}, loading = {loading.toString()}
                   </div>
                   <Button
                     variant="outline"
                     onClick={loadCreditData}
                     disabled={loading}
-                    className="border-gray-300 hover:bg-gray-50"
+                    className="border-border hover:bg-muted"
                   >
                     <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                     Try Again
@@ -537,33 +537,33 @@ export default function CreditsDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {packages.map((pkg) => (
-                    <Card key={pkg.id} className={`relative group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${pkg.is_popular ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:ring-2 hover:ring-gray-200 shadow-md'}`}>
+                    <Card key={pkg.id} className={`relative group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${pkg.is_popular ? 'ring-2 ring-primary shadow-lg' : 'hover:ring-2 hover:ring-border shadow-md'}`}>
                       {pkg.is_popular && (
-                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs px-3 py-1 shadow-lg">
+                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-primary/90 text-white text-xs px-3 py-1 shadow-lg">
                           MOST POPULAR
                         </Badge>
                       )}
                       <CardContent className="p-6">
                         {/* Header */}
                         <div className="text-center mb-4">
-                          <h3 className="text-lg font-bold text-gray-900 mb-2">{pkg.name}</h3>
+                          <h3 className="text-lg font-bold text-foreground mb-2">{pkg.name}</h3>
                           <div className="relative">
-                            <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-1">
+                            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent mb-1">
                               {pkg.credits}
                             </div>
-                            <p className="text-sm text-gray-500 font-medium">credits</p>
+                            <p className="text-sm text-muted-foreground font-medium">credits</p>
                           </div>
                         </div>
 
                         {/* Description */}
                         <div className="mb-4">
-                          <p className="text-sm text-gray-600 text-center leading-relaxed">{pkg.description}</p>
+                          <p className="text-sm text-muted-foreground text-center leading-relaxed">{pkg.description}</p>
                         </div>
 
                         {/* Price */}
                         <div className="text-center mb-6">
-                          <div className="text-2xl font-bold text-gray-900 mb-1">${pkg.price_usd}</div>
-                          <p className="text-xs text-gray-400">one-time payment</p>
+                          <div className="text-2xl font-bold text-foreground mb-1">${pkg.price_usd}</div>
+                          <p className="text-xs text-muted-foreground">one-time payment</p>
                         </div>
 
                         {/* Button */}
@@ -572,8 +572,8 @@ export default function CreditsDashboard() {
                           disabled={purchasing === pkg.id}
                           className={`w-full h-11 font-semibold transition-all duration-200 shadow-md hover:shadow-lg ${
                             pkg.is_popular 
-                              ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800' 
-                              : 'bg-gradient-to-r from-primary-primary to-primary-primary/90 hover:from-primary-primary/90 hover:to-primary-primary'
+                              ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary' 
+                              : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
                           }`}
                         >
                           {purchasing === pkg.id ? (

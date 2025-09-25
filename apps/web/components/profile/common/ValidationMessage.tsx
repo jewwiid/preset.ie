@@ -29,15 +29,15 @@ export function ValidationMessage({
     
     switch (type) {
       case 'success':
-        return `${baseClasses} bg-primary-50 dark:bg-primary-900/20 text-primary-800 dark:text-primary-200 border border-primary/20 dark:border-primary-800`
+        return `${baseClasses} bg-primary/10 text-primary border border-primary/20`
       case 'error':
-        return `${baseClasses} bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800`
+        return `${baseClasses} bg-destructive/10 text-destructive border border-destructive/20`
       case 'warning':
-        return `${baseClasses} bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800`
+        return `${baseClasses} bg-primary/10 text-primary border border-primary/20`
       case 'info':
-        return `${baseClasses} bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800`
+        return `${baseClasses} bg-primary/10 text-primary border border-primary/20`
       default:
-        return `${baseClasses} bg-gray-50 dark:bg-gray-900/20 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800`
+        return `${baseClasses} bg-muted text-muted-foreground border border-border`
     }
   }
 

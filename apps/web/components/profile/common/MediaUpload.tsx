@@ -114,14 +114,14 @@ export function MediaUpload({
     const baseClasses = "relative border-2 border-dashed rounded-lg p-6 text-center transition-colors duration-200"
     
     if (isDragging) {
-      return `${baseClasses} border-blue-400 bg-blue-50 dark:bg-blue-900/20`
+      return `${baseClasses} border-primary bg-primary/10`
     }
     
     if (currentUrl) {
       return `${baseClasses} border-gray-300 dark:border-gray-600`
     }
     
-    return `${baseClasses} border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20`
+    return `${baseClasses} border-border hover:border-primary hover:bg-primary/10`
   }
 
   return (
@@ -174,7 +174,7 @@ export function MediaUpload({
             <div className="space-y-2">
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-primary h-2 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>

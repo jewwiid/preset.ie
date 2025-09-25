@@ -17,19 +17,19 @@ export function FormField({
   max,
   step
 }: FormFieldProps) {
-  const baseInputClasses = "w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 dark:text-white transition-all duration-200"
+  const baseInputClasses = "w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 text-foreground transition-all duration-200"
   
   const getInputClasses = () => {
     if (error) {
-      return `${baseInputClasses} border-red-300 dark:border-red-600 focus:ring-red-500`
+      return `${baseInputClasses} border-destructive focus:ring-destructive`
     }
-    return `${baseInputClasses} border-gray-300 dark:border-gray-600 focus:ring-blue-500`
+    return `${baseInputClasses} border-border focus:ring-ring`
   }
 
   const getLabelClasses = () => {
-    const baseClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+    const baseClasses = "block text-sm font-medium text-foreground mb-1"
     if (error) {
-      return `${baseClasses} text-red-600 dark:text-red-400`
+      return `${baseClasses} text-destructive`
     }
     return baseClasses
   }
@@ -73,7 +73,7 @@ export function FormField({
             min={min}
             max={max}
             step={step}
-            className={`${getInputClasses()} h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer`}
+            className={`${getInputClasses()} h-2 bg-muted rounded-lg appearance-none cursor-pointer`}
           />
         )
       
@@ -115,19 +115,19 @@ export function FormField({
     <div className={`mb-4 ${className}`}>
       <label className={getLabelClasses()}>
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-destructive ml-1">*</span>}
       </label>
       
       {renderInput()}
       
       {error && (
-        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+        <p className="mt-1 text-sm text-destructive">
           {error}
         </p>
       )}
       
       {type === 'range' && typeof value === 'number' && (
-        <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <div className="mt-1 text-sm text-muted-foreground">
           Current value: {value}
         </div>
       )}
@@ -195,19 +195,19 @@ export function SelectField({
   className = '',
   description
 }: SelectFieldProps) {
-  const baseSelectClasses = "w-full px-3 py-2 bg-white dark:bg-gray-700 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 dark:text-white transition-all duration-200"
+  const baseSelectClasses = "w-full px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 text-foreground transition-all duration-200"
   
   const getSelectClasses = () => {
     if (error) {
-      return `${baseSelectClasses} border-red-300 dark:border-red-600 focus:ring-red-500`
+      return `${baseSelectClasses} border-destructive focus:ring-destructive`
     }
-    return `${baseSelectClasses} border-gray-300 dark:border-gray-600 focus:ring-blue-500`
+    return `${baseSelectClasses} border-border focus:ring-ring`
   }
 
   const getLabelClasses = () => {
-    const baseClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+    const baseClasses = "block text-sm font-medium text-foreground mb-1"
     if (error) {
-      return `${baseClasses} text-red-600 dark:text-red-400`
+      return `${baseClasses} text-destructive`
     }
     return baseClasses
   }
@@ -216,11 +216,11 @@ export function SelectField({
     <div className={`space-y-1 ${className}`}>
       <label className={getLabelClasses()}>
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-destructive ml-1">*</span>}
       </label>
       
       {description && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
       )}
       
       <select
@@ -243,7 +243,7 @@ export function SelectField({
       </select>
       
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
     </div>
   )
@@ -271,11 +271,11 @@ export function ToggleSwitch({
     <div className={`py-3 ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="text-sm font-medium text-foreground">
             {label}
           </label>
           {description && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {description}
             </p>
           )}
@@ -287,8 +287,8 @@ export function ToggleSwitch({
         className={`
           relative inline-flex h-6 w-11 items-center rounded-full transition-colors
           ${checked 
-            ? 'bg-primary-600 dark:bg-primary-500' 
-            : 'bg-gray-200 dark:bg-gray-700'
+            ? 'bg-primary' 
+            : 'bg-muted'
           }
           ${disabled 
             ? 'opacity-50 cursor-not-allowed' 
@@ -361,7 +361,7 @@ export function TagInput({
 
   return (
     <div className={`mb-4 ${className}`}>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label className="block text-sm font-medium text-foreground mb-2">
         {label}
       </label>
       
@@ -370,14 +370,14 @@ export function TagInput({
         {tags.map((tag, index) => (
           <span
             key={index}
-            className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+            className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
           >
             {tag}
             <button
               type="button"
               onClick={() => onRemoveTag(tag)}
               disabled={disabled}
-              className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+              className="ml-2 text-primary hover:text-primary/90"
             >
               ×
             </button>
@@ -396,18 +396,18 @@ export function TagInput({
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white transition-all duration-200"
+          className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
         />
         
         {/* Suggestions Dropdown */}
         {showSuggestions && filteredSuggestions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+          <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
             {filteredSuggestions.map((suggestion, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-600"
+                className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-600"
               >
                 {suggestion}
               </button>

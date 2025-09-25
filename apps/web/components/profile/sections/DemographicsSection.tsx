@@ -79,12 +79,12 @@ export function DemographicsSection() {
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
         <User className="h-5 w-5 text-primary-600" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Demographics</h2>
+        <h2 className="text-xl font-semibold text-foreground">Demographics</h2>
       </div>
 
       {/* Identity Information */}
       <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Identity</h3>
+        <h3 className="text-lg font-medium text-foreground">Identity</h3>
         
         <SelectField
           label="Gender Identity"
@@ -114,8 +114,8 @@ export function DemographicsSection() {
       </div>
 
       {/* Physical Attributes */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Physical Attributes</h3>
+      <div className="space-y-4 border-t border-border pt-6">
+        <h3 className="text-lg font-medium text-foreground">Physical Attributes</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <NumberField
@@ -168,8 +168,8 @@ export function DemographicsSection() {
       </div>
 
       {/* Professional Information */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Professional</h3>
+      <div className="space-y-4 border-t border-border pt-6">
+        <h3 className="text-lg font-medium text-foreground">Professional</h3>
         
         <SelectField
           label="Experience Level"
@@ -199,10 +199,10 @@ export function DemographicsSection() {
       </div>
 
       {/* Location Information */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Location</h3>
+          <h3 className="text-lg font-medium text-foreground">Location</h3>
         </div>
         
         <TextField
@@ -230,9 +230,9 @@ export function DemographicsSection() {
       </div>
 
       {/* Privacy Controls */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Privacy Settings</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="space-y-4 border-t border-border pt-6">
+        <h3 className="text-lg font-medium text-foreground">Privacy Settings</h3>
+        <p className="text-sm text-muted-foreground">
           Control what information is visible to other users
         </p>
         

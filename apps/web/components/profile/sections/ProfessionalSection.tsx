@@ -96,14 +96,14 @@ export function ProfessionalSection() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+      <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
         <Briefcase className="w-5 h-5" />
         Professional Information
       </h2>
 
       {/* Experience */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Experience</h3>
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4">Experience</h3>
         
         <RangeField
           label="Years of Experience"
@@ -127,8 +127,8 @@ export function ProfessionalSection() {
       </div>
 
       {/* Rates */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <DollarSign className="w-4 h-4" />
           Rates
         </h3>
@@ -155,8 +155,8 @@ export function ProfessionalSection() {
       </div>
 
       {/* Travel Preferences */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <MapPin className="w-4 h-4" />
           Travel Preferences
         </h3>
@@ -183,7 +183,7 @@ export function ProfessionalSection() {
               <button
                 type="button"
                 onClick={toggleTravelUnit}
-                className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                className="px-3 py-2 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors duration-200"
                 disabled={!isEditing}
               >
                 {isEditing ? (formData.travel_unit_preference || 'km') : (profile?.travel_unit_preference || 'km')}
@@ -194,8 +194,8 @@ export function ProfessionalSection() {
       </div>
 
       {/* Studio Information */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Building className="w-4 h-4" />
           Studio Information
         </h3>
@@ -228,8 +228,8 @@ export function ProfessionalSection() {
       </div>
 
       {/* Turnaround Time */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Clock className="w-4 h-4" />
           Turnaround Time
         </h3>
@@ -248,7 +248,7 @@ export function ProfessionalSection() {
           <button
             type="button"
             onClick={toggleTurnaroundUnit}
-            className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                className="px-3 py-2 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors duration-200"
             disabled={!isEditing}
           >
             {isEditing ? (formData.turnaround_unit_preference || 'days') : (profile?.turnaround_unit_preference || 'days')}
@@ -257,8 +257,8 @@ export function ProfessionalSection() {
       </div>
 
       {/* Languages */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Languages</h3>
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4">Languages</h3>
         
         <TagInput
           label="Languages Spoken"
@@ -272,8 +272,8 @@ export function ProfessionalSection() {
       </div>
 
       {/* Editing Software */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Editing Software</h3>
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4">Editing Software</h3>
         
         <TagInput
           label="Editing Software"
@@ -294,8 +294,8 @@ export function ProfessionalSection() {
       {/* Loading State */}
       {loadingPredefined && (
         <div className="text-center py-4">
-          <div className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400">
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="inline-flex items-center gap-2 text-muted-foreground">
+            <div className="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin"></div>
             Loading predefined options...
           </div>
         </div>

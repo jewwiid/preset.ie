@@ -73,12 +73,12 @@ export function NavBar() {
     ]
 
     // Role-specific additions
-    const roleSpecificItems = []
+    const roleSpecificItems: any[] = []
     
     // Contributor-specific items
     if (profile?.role_flags?.includes('CONTRIBUTOR')) {
       roleSpecificItems.push(
-        { label: 'My Gigs', href: '/gigs/my-gigs', icon: Calendar, requiresAuth: true }
+        // My Gigs is now accessible via Gigs dropdown, not as a standalone nav item
         // Showcases now accessible via Create menu
       )
     }
@@ -97,7 +97,9 @@ export function NavBar() {
       user: !!user,
       userRole: !!userRole, 
       loading,
-      condition: user && !loading
+      condition: user && !loading,
+      userEmail: user?.email,
+      userId: user?.id
     })
     
     if (user && !loading) {
@@ -112,11 +114,45 @@ export function NavBar() {
     }
   }, [user, loading, userRole])
 
+  // Listen for OAuth callback completion to retry profile fetch
+  useEffect(() => {
+    const handleOAuthCallbackComplete = () => {
+      console.log('🚀 NavBar: OAuth callback complete, retrying profile fetch')
+      // Add a small delay to ensure auth context has processed the session
+      setTimeout(() => {
+        if (user && !loading) {
+          console.log('🚀 NavBar: Retrying profile fetch after OAuth callback')
+          fetchProfileSimple()
+        } else {
+          console.log('🚀 NavBar: User not ready for profile fetch:', { user: !!user, loading })
+        }
+      }, 500)
+    }
+
+    window.addEventListener('oauth-callback-complete', handleOAuthCallbackComplete)
+    
+    return () => {
+      window.removeEventListener('oauth-callback-complete', handleOAuthCallbackComplete)
+    }
+  }, [user, loading])
+
   const fetchProfileSimple = async (retryCount = 0) => {
     if (!user) return
     if (!supabase) {
       console.error('Supabase client not available')
       return
+    }
+    
+    // Check if profile fetching is disabled (e.g., during OAuth callback)
+    if ((window as any).__disableNavBarProfileFetch) {
+      console.log('⏸️ NavBar: Profile fetching disabled, skipping...')
+      return
+    }
+    
+    // Check if we should trigger a retry (from OAuth callback)
+    if ((window as any).__triggerNavBarProfileFetch) {
+      console.log('🚀 NavBar: Triggered profile fetch retry from OAuth callback')
+      ;(window as any).__triggerNavBarProfileFetch = false
     }
     
     console.log(`🚀 NavBar: Simple profile fetch started${retryCount > 0 ? ` (retry ${retryCount})` : ''}`)

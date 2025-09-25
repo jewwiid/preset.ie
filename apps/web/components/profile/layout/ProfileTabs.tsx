@@ -38,7 +38,7 @@ export function ProfileTabs() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-1 mb-6">
+    <div className="bg-card rounded-xl shadow-lg p-1 mb-6">
       <div className="flex space-x-1">
         {tabs.map((tab) => {
           const Icon = tab.icon
@@ -50,8 +50,8 @@ export function ProfileTabs() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  ? 'bg-primary text-primary-foreground shadow-lg'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -88,7 +88,7 @@ interface ProfileSubTabsProps {
 
 export function ProfileSubTabs({ activeSubTab, onSubTabChange }: ProfileSubTabsProps) {
   return (
-    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-1 mb-6">
+    <div className="bg-muted rounded-lg p-1 mb-6">
       <div className="flex space-x-1">
         {profileSubTabs.map((tab) => {
           const Icon = tab.icon
@@ -100,8 +100,8 @@ export function ProfileSubTabs({ activeSubTab, onSubTabChange }: ProfileSubTabsP
               onClick={() => onSubTabChange(tab.id)}
               className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white dark:hover:bg-gray-800'
+                  ? 'bg-background text-primary shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background'
               }`}
             >
               <Icon className="w-4 h-4" />

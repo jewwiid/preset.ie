@@ -1,0 +1,358 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preset Email Templates Preview</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #00876f 0%, #2dd4bf 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.025em;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin: 10px 0 0 0;
+        }
+        
+        .category {
+            margin-bottom: 40px;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .category h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #00876f;
+            margin: 0 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .template-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f8fafc;
+            transition: all 0.2s ease;
+        }
+        
+        .template-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+            border-color: #00876f;
+        }
+        
+        .template-card h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 10px 0;
+        }
+        
+        .template-card p {
+            color: #64748b;
+            margin: 0 0 15px 0;
+            font-size: 0.9rem;
+        }
+        
+        .template-card .preview-btn {
+            background: linear-gradient(135deg, #00876f 0%, #2dd4bf 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .template-card .preview-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 135, 111, 0.3);
+        }
+        
+        .stats {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #00876f;
+            margin: 0 0 20px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00876f;
+            margin: 0;
+        }
+        
+        .stat-label {
+            color: #64748b;
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📧 Preset Email Templates</h1>
+            <p>Comprehensive email notification system with Preset branding</p>
+        </div>
+        
+        <div class="stats">
+            <h2>📊 Template Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">11</div>
+                    <div class="stat-label">Total Templates</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">7</div>
+                    <div class="stat-label">Categories</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Implementation Phases</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Brand Consistent</div>
+                </div>
+            </div>
+        </div>
+        
+        
+            <div class="category">
+                <h2>User Onboarding & Authentication</h2>
+                <div class="template-grid">
+                    
+                        <div class="template-card">
+                            <h3>Welcome Email</h3>
+                            <p>Onboarding email for new users with platform introduction</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generateWelcomeEmail', 'Welcome Email')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                        <div class="template-card">
+                            <h3>Email Verification</h3>
+                            <p>Account verification email with secure verification link</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generateEmailVerificationEmail', 'Email Verification')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                        <div class="template-card">
+                            <h3>Password Reset</h3>
+                            <p>Password reset email with temporary reset link</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generatePasswordResetEmail', 'Password Reset')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="category">
+                <h2>Payment & Transactions</h2>
+                <div class="template-grid">
+                    
+                        <div class="template-card">
+                            <h3>Payment Confirmation</h3>
+                            <p>Transaction confirmation with payment details</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generatePaymentConfirmationEmail', 'Payment Confirmation')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="category">
+                <h2>Marketplace (Gear Rent/Sell)</h2>
+                <div class="template-grid">
+                    
+                        <div class="template-card">
+                            <h3>Listing Created</h3>
+                            <p>Confirmation when equipment listing goes live</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generateListingCreatedEmail', 'Listing Created')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                        <div class="template-card">
+                            <h3>New Offer Received</h3>
+                            <p>Notification when someone makes an offer</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generateNewOfferEmail', 'New Offer Received')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="category">
+                <h2>Showcases & Portfolio</h2>
+                <div class="template-grid">
+                    
+                        <div class="template-card">
+                            <h3>Showcase Published</h3>
+                            <p>Confirmation when showcase is published</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generateShowcasePublishedEmail', 'Showcase Published')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="category">
+                <h2>Collaboration System</h2>
+                <div class="template-grid">
+                    
+                        <div class="template-card">
+                            <h3>Collaboration Invite</h3>
+                            <p>Invitation to join a creative project</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generateCollaborationInviteEmail', 'Collaboration Invite')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="category">
+                <h2>Gigs & Applications</h2>
+                <div class="template-grid">
+                    
+                        <div class="template-card">
+                            <h3>Gig Posted</h3>
+                            <p>Confirmation when gig is posted successfully</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generateGigPostedEmail', 'Gig Posted')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                </div>
+            </div>
+        
+            <div class="category">
+                <h2>Marketing & Engagement</h2>
+                <div class="template-grid">
+                    
+                        <div class="template-card">
+                            <h3>Weekly Digest</h3>
+                            <p>Weekly community activity summary</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generateWeeklyDigestEmail', 'Weekly Digest')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                        <div class="template-card">
+                            <h3>Feature Announcement</h3>
+                            <p>New feature release notification</p>
+                            <a href="#" class="preview-btn" onclick="previewTemplate('generateFeatureAnnouncementEmail', 'Feature Announcement')">
+                                Preview Template
+                            </a>
+                        </div>
+                    
+                </div>
+            </div>
+        
+        
+        <div class="footer">
+            <p>Generated on 9/24/2025 | Preset Platform Email System</p>
+        </div>
+    </div>
+    
+    <script>
+        function previewTemplate(method, name) {
+            alert(`Preview for ${name} template would open here.\n\nMethod: ${method}\n\nIn a real implementation, this would open a modal or new window showing the email preview.`);
+        }
+    </script>
+</body>
+</html>
+  

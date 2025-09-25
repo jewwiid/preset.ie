@@ -41,7 +41,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
       if (!supabase) return
 
       // Fetch all reviews for the user
-      const { data: reviews, error } = await supabase
+      const { data: reviews, error } = await (supabase as any)
         .from('reviews')
         .select(`
           id,
@@ -78,17 +78,17 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
       }
 
       // Calculate average rating
-      const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0)
-      const averageRating = totalRating / reviews.length
+      const totalRating = (reviews as any).reduce((sum: number, review: any) => sum + review.rating, 0)
+      const averageRating = totalRating / (reviews as any).length
 
       // Calculate rating distribution
-      const ratingDistribution = reviews.reduce((dist, review) => {
+      const ratingDistribution = (reviews as any).reduce((dist: any, review: any) => {
         dist[review.rating] = (dist[review.rating] || 0) + 1
         return dist
       }, {} as { [key: number]: number })
 
       // Get top tags
-      const tagCounts = reviews.reduce((counts, review) => {
+      const tagCounts = (reviews as any).reduce((counts: any, review: any) => {
         if (review.tags) {
           review.tags.forEach((tag: string) => {
             counts[tag] = (counts[tag] || 0) + 1
@@ -98,15 +98,15 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
       }, {} as { [key: string]: number })
 
       const topTags = Object.entries(tagCounts)
-        .sort(([, a], [, b]) => b - a)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
         .slice(0, 5)
-        .map(([tag, count]) => ({ tag, count }))
+        .map(([tag, count]) => ({ tag, count: count as number }))
 
       setRatingStats({
         averageRating,
-        totalReviews: reviews.length,
+        totalReviews: (reviews as any).length,
         ratingDistribution,
-        recentReviews: reviews.slice(0, 3),
+        recentReviews: (reviews as any).slice(0, 3),
         topTags
       })
     } catch (error) {
@@ -130,8 +130,8 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
             key={star}
             className={`${sizeClasses[size]} ${
               star <= rating
-                ? 'text-yellow-400 fill-current'
-                : 'text-gray-300'
+                ? 'text-primary fill-current'
+                : 'text-muted-foreground'
             }`}
           />
         ))}
@@ -141,10 +141,10 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
 
   const getRatingColor = (rating: number) => {
     if (rating >= 4.5) return 'text-primary-600'
-    if (rating >= 4.0) return 'text-blue-600'
-    if (rating >= 3.0) return 'text-yellow-600'
-    if (rating >= 2.0) return 'text-orange-600'
-    return 'text-red-600'
+    if (rating >= 4.0) return 'text-primary'
+    if (rating >= 3.0) return 'text-primary'
+    if (rating >= 2.0) return 'text-primary'
+    return 'text-destructive'
   }
 
   const getRatingLabel = (rating: number) => {
@@ -158,15 +158,15 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
   if (loading) {
     return (
       <div className="flex items-center gap-2">
-        <div className="animate-pulse bg-gray-200 rounded w-16 h-4"></div>
-        <div className="animate-pulse bg-gray-200 rounded w-12 h-4"></div>
+        <div className="animate-pulse bg-muted rounded w-16 h-4"></div>
+        <div className="animate-pulse bg-muted rounded w-12 h-4"></div>
       </div>
     )
   }
 
   if (!ratingStats || ratingStats.totalReviews === 0) {
     return (
-      <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-2 text-muted-foreground">
         <Star className="w-4 h-4" />
         <span className="text-sm">No ratings yet</span>
       </div>
@@ -180,7 +180,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
         <span className={`text-sm font-medium ${getRatingColor(ratingStats.averageRating)}`}>
           {ratingStats.averageRating.toFixed(1)}
         </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-muted-foreground">
           ({ratingStats.totalReviews})
         </span>
       </div>
@@ -188,18 +188,18 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 p-6">
+    <div className="bg-card rounded-xl border border-border p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/90 rounded-xl flex items-center justify-center">
             <Star className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-bold text-foreground">
               User Ratings
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Based on {ratingStats.totalReviews} review{ratingStats.totalReviews !== 1 ? 's' : ''}
             </p>
           </div>
@@ -212,7 +212,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
               {ratingStats.averageRating.toFixed(1)}
             </span>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             {getRatingLabel(ratingStats.averageRating)}
           </p>
         </div>
@@ -220,7 +220,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
 
       {/* Rating Distribution */}
       <div className="mb-6">
-        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+        <h4 className="text-sm font-semibold text-foreground mb-3">
           Rating Breakdown
         </h4>
         <div className="space-y-2">
@@ -230,15 +230,15 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
             
             return (
               <div key={rating} className="flex items-center gap-3">
-                <span className="text-sm text-gray-600 dark:text-gray-400 w-4">{rating}</span>
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <span className="text-sm text-muted-foreground w-4">{rating}</span>
+                <Star className="w-4 h-4 text-primary fill-current" />
+                <div className="flex-1 bg-muted rounded-full h-2">
                   <div 
-                    className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-2 rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-primary to-primary/90 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
-                <span className="text-sm text-gray-600 dark:text-gray-400 w-8 text-right">
+                <span className="text-sm text-muted-foreground w-8 text-right">
                   {count}
                 </span>
               </div>
@@ -250,14 +250,14 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
       {/* Top Tags */}
       {ratingStats.topTags.length > 0 && (
         <div className="mb-6">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <h4 className="text-sm font-semibold text-foreground mb-3">
             Most Mentioned
           </h4>
           <div className="flex flex-wrap gap-2">
             {ratingStats.topTags.map(({ tag, count }) => (
               <span
                 key={tag}
-                className="px-3 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium"
+                className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
               >
                 {tag} ({count})
               </span>
@@ -270,13 +270,13 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
       {ratingStats.recentReviews.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <h4 className="text-sm font-semibold text-foreground">
               Recent Reviews
             </h4>
             {ratingStats.totalReviews > 3 && (
               <button
                 onClick={() => setShowAllReviews(!showAllReviews)}
-                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                className="text-sm text-primary hover:text-primary/90"
               >
                 {showAllReviews ? 'Show Less' : `View All ${ratingStats.totalReviews}`}
               </button>
@@ -285,33 +285,33 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
           
           <div className="space-y-4">
             {(showAllReviews ? ratingStats.recentReviews : ratingStats.recentReviews.slice(0, 2)).map((review) => (
-              <div key={review.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+              <div key={review.id} className="border border-border rounded-lg p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-foreground">
                         {(review as any).reviewer?.display_name?.charAt(0) || 'U'}
                       </span>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-foreground">
                         {(review as any).reviewer?.display_name || 'Anonymous'}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         @{(review as any).reviewer?.handle || 'user'}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {renderStars(review.rating, 'sm')}
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    <span className="text-sm font-medium text-foreground">
                       {review.rating}
                     </span>
                   </div>
                 </div>
                 
                 {review.comment && (
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  <p className="text-sm text-foreground mb-2">
                     {review.comment}
                   </p>
                 )}
@@ -321,7 +321,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
                     {review.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs"
+                        className="px-2 py-1 bg-muted text-muted-foreground rounded text-xs"
                       >
                         {tag}
                       </span>

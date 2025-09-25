@@ -189,7 +189,7 @@ async function syncClothingDataWithProfile(userId: string, profileId: string) {
 
   try {
         // Fetch user's profile data (clothing sizes and measurements are stored directly in users_profile)
-        const { data: profileData, error: profileError } = await supabase
+        const { data: profileData, error: profileError } = await (supabase as any)
           .from('users_profile')
           .select('clothing_sizes, measurements, height_cm, shoe_size')
           .eq('id', profileId)
@@ -210,12 +210,12 @@ async function syncClothingDataWithProfile(userId: string, profileId: string) {
     }
 
     // Extract clothing sizes from the profile data (TEXT field)
-    const clothingSizes = profileData?.clothing_sizes || null
+    const clothingSizes = (profileData as any)?.clothing_sizes || null
     
     // Extract measurements from the profile data (TEXT field)
-    const measurements = profileData?.measurements || null
-    const heightCm = profileData?.height_cm
-    const shoeSize = profileData?.shoe_size
+    const measurements = (profileData as any)?.measurements || null
+    const heightCm = (profileData as any)?.height_cm
+    const shoeSize = (profileData as any)?.shoe_size
 
     // Format measurements for display
     const measurementStrings = []
@@ -233,7 +233,7 @@ async function syncClothingDataWithProfile(userId: string, profileId: string) {
     const measurementsString = measurementStrings.length > 0 ? measurementStrings.join(', ') : null
 
     // Update the profile with synced data
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('users_profile')
       .update({
         clothing_sizes: clothingSizes,
@@ -287,7 +287,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         }
         
         // Fetch from users_profile table (correct table name from schema)
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = await (supabase as any)
           .from('users_profile')
           .select('*')
           .eq('user_id', user.id)
@@ -339,9 +339,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
               talent_categories: [],
               vibe_tags: []
             }
-            const { data: newProfile, error: createError } = await supabase
+            const { data: newProfile, error: createError } = await (supabase as any)
               .from('users_profile')
-              .insert(defaultProfile)
+              .insert(defaultProfile as any)
               .select()
               .single()
             
@@ -350,7 +350,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
               dispatch({ type: 'SET_ERROR', payload: 'Failed to create profile' })
               return
             }
-            dispatch({ type: 'SET_PROFILE', payload: newProfile })
+            dispatch({ type: 'SET_PROFILE', payload: newProfile as any })
           } else {
             console.error('Unexpected profile error:', profileError)
             dispatch({ type: 'SET_ERROR', payload: 'Failed to load profile' })
@@ -360,37 +360,76 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
         } else {
           // Ensure clothing/measurement fields are properly initialized
           const initializedProfile = {
-            ...profile,
-            height_cm: profile.height_cm || null,
-            measurements: profile.measurements || null,
-            eye_color: profile.eye_color || null,
-            hair_color: profile.hair_color || null,
-            shoe_size: profile.shoe_size || null,
-            clothing_sizes: profile.clothing_sizes || null, // TEXT field, not array
-            tattoos: profile.tattoos || false,
-            piercings: profile.piercings || false,
-            talent_categories: profile.talent_categories || [],
-            style_tags: profile.style_tags || [],
-            vibe_tags: profile.vibe_tags || []
+            ...(profile as any),
+            height_cm: (profile as any).height_cm || null,
+            measurements: (profile as any).measurements || null,
+            eye_color: (profile as any).eye_color || null,
+            hair_color: (profile as any).hair_color || null,
+            shoe_size: (profile as any).shoe_size || null,
+            clothing_sizes: (profile as any).clothing_sizes || null, // TEXT field, not array
+            tattoos: (profile as any).tattoos || false,
+            piercings: (profile as any).piercings || false,
+            talent_categories: (profile as any).talent_categories || [],
+            style_tags: (profile as any).style_tags || [],
+            vibe_tags: (profile as any).vibe_tags || []
           }
           dispatch({ type: 'SET_PROFILE', payload: initializedProfile })
           
           // Sync detailed clothing data from separate tables
-          await syncClothingDataWithProfile(user.id, profile.id)
+          await syncClothingDataWithProfile(user.id, (profile as any).id)
         }
 
-        // Fetch user settings (only if profile exists)
+        // Fetch user settings with proper error handling
         if (profile) {
-          const { data: settings, error: settingsError } = await supabase
-            .from('user_settings')
-            .select('*')
-            .eq('profile_id', profile.id)
-            .maybeSingle() // Use maybeSingle() instead of single() to handle no rows gracefully
+          try {
+            if (!supabase) {
+              console.error('Supabase client not available')
+              dispatch({ type: 'SET_SETTINGS', payload: null })
+              return
+            }
 
-          if (settingsError) {
-            console.error('Error fetching settings:', settingsError)
-          } else {
-            dispatch({ type: 'SET_SETTINGS', payload: settings })
+            // Try to get existing settings
+            const { data: settings, error: settingsError } = await (supabase as any)
+              .from('user_settings')
+              .select('*')
+              .eq('user_id', (profile as any).user_id)
+              .maybeSingle()
+
+            if (settingsError) {
+              console.error('Error fetching settings:', settingsError)
+              
+              // If no settings found, create default settings
+              if (settingsError.code === 'PGRST116') {
+                console.log('No settings found, creating default settings...')
+                const { data: newSettings, error: createError } = await (supabase as any)
+                  .from('user_settings')
+                  .insert({
+                    user_id: (profile as any).user_id,
+                    email_notifications: true,
+                    push_notifications: true,
+                    marketing_emails: false,
+                    profile_visibility: 'public',
+                    show_contact_info: true,
+                    two_factor_enabled: false
+                  } as any)
+                  .select()
+                  .single()
+                
+                if (createError) {
+                  console.error('Error creating default settings:', createError)
+                  dispatch({ type: 'SET_SETTINGS', payload: null })
+                } else {
+                  dispatch({ type: 'SET_SETTINGS', payload: newSettings as any })
+                }
+              } else {
+                dispatch({ type: 'SET_SETTINGS', payload: null })
+              }
+            } else {
+              dispatch({ type: 'SET_SETTINGS', payload: settings as any })
+            }
+          } catch (error) {
+            console.error('Unexpected error fetching user settings:', error)
+            dispatch({ type: 'SET_SETTINGS', payload: null })
           }
         } else {
           // No profile exists, set settings to null
@@ -547,9 +586,9 @@ export function useProfileForm() {
         console.log('Profile ID:', state.profile.id)
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('users_profile')
-        .update(sanitizedFormData)
+        .update(sanitizedFormData as any)
         .eq('id', state.profile.id)
         .select()
         .single()
@@ -586,9 +625,9 @@ export function useProfileForm() {
       }
 
       // Update local state
-      dispatch({ type: 'SET_PROFILE', payload: data })
+      dispatch({ type: 'SET_PROFILE', payload: data as any })
       dispatch({ type: 'SET_EDITING', payload: false })
-      dispatch({ type: 'SET_FORM_DATA', payload: data })
+      dispatch({ type: 'SET_FORM_DATA', payload: data as any })
       dispatch({ type: 'SET_ERROR', payload: null })
     } catch (err) {
       console.error('Error saving profile:', err)

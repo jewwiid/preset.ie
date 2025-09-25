@@ -166,16 +166,16 @@ export function WorkPreferencesSection() {
       </div>
 
       {/* Information Notice */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
         <div className="flex">
           <div className="flex-shrink-0">
-            <Shield className="h-5 w-5 text-blue-400" />
+            <Shield className="h-5 w-5 text-primary" />
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+            <h3 className="text-sm font-medium text-primary">
               Privacy & Safety
             </h3>
-            <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+            <div className="mt-2 text-sm text-muted-foreground">
               <p>
                 Your work preferences help us match you with compatible opportunities. 
                 All information is kept private and only shared with potential collaborators 

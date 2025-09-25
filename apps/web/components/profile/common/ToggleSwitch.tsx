@@ -12,7 +12,7 @@ export function ToggleSwitch({
 }: ToggleSwitchProps) {
   return (
     <div className={`flex items-center justify-between ${className}`}>
-      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label className="text-sm font-medium text-foreground">
         {label}
       </label>
       
@@ -20,10 +20,10 @@ export function ToggleSwitch({
         type="button"
         onClick={() => onChange(!checked)}
         disabled={disabled}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
           checked 
-            ? 'bg-blue-600' 
-            : 'bg-gray-200 dark:bg-gray-700'
+            ? 'bg-primary' 
+            : 'bg-muted'
         } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span

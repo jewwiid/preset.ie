@@ -1,25 +1,27 @@
-// Email Service for Equipment Request Notifications
-// This service handles sending email notifications for equipment request events
+// Comprehensive Email Service for Preset Platform
+// Handles all email notifications across the platform
+// Updated to support Google Workspace Gmail API and comprehensive template system
 
-export interface EmailTemplate {
-  subject: string;
-  html: string;
-  text: string;
-}
+import { google } from 'googleapis';
+import { PresetEmailTemplates, EmailTemplate, EmailRecipient } from './email-templates';
 
-export interface EmailRecipient {
-  email: string;
-  name: string;
-}
+// Re-export types from email-templates for backward compatibility
+export type { EmailTemplate, EmailRecipient } from './email-templates';
 
 export class EmailService {
   private static instance: EmailService;
-  private apiKey: string;
+  private gmail: any;
   private fromEmail: string;
+  private fromName: string;
+  private domain: string;
 
   constructor() {
-    this.apiKey = process.env.EMAIL_API_KEY || '';
-    this.fromEmail = process.env.FROM_EMAIL || 'noreply@preset.ie';
+    this.fromEmail = process.env.FROM_EMAIL || 'support@presetie.com';
+    this.fromName = process.env.FROM_NAME || 'Preset Support';
+    this.domain = process.env.GOOGLE_WORKSPACE_DOMAIN || 'presetie.com';
+    
+    // Initialize Gmail API
+    this.initializeGmailAPI();
   }
 
   static getInstance(): EmailService {
@@ -27,6 +29,34 @@ export class EmailService {
       EmailService.instance = new EmailService();
     }
     return EmailService.instance;
+  }
+
+  private initializeGmailAPI(): void {
+    try {
+      // Check if we have the required environment variables
+      const serviceAccountEmail = process.env.GOOGLE_WORKSPACE_SERVICE_ACCOUNT_EMAIL;
+      const privateKey = process.env.GOOGLE_WORKSPACE_PRIVATE_KEY;
+      const projectId = process.env.GOOGLE_WORKSPACE_PROJECT_ID;
+
+      if (!serviceAccountEmail || !privateKey || !projectId) {
+        console.warn('⚠️ Google Workspace credentials not found. Email service will run in development mode.');
+        return;
+      }
+
+      // Create JWT client for service account
+      const auth = new google.auth.JWT({
+        email: serviceAccountEmail,
+        key: privateKey.replace(/\\n/g, '\n'),
+        scopes: ['https://www.googleapis.com/auth/gmail.send']
+      });
+
+      // Initialize Gmail API
+      this.gmail = google.gmail({ version: 'v1', auth });
+      
+      console.log('✅ Gmail API initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize Gmail API:', error);
+    }
   }
 
   // Generate email templates for equipment request events
@@ -87,7 +117,7 @@ export class EmailService {
             <div class="footer">
               <p>Best regards,<br>The Preset Team</p>
               <p><small>You're receiving this because you have an active equipment request. 
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/settings/notifications">Manage your notification preferences</a></small></p>
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com'}/settings/notifications">Manage your notification preferences</a></small></p>
             </div>
           </div>
         </body>
@@ -111,7 +141,7 @@ Best regards,
 The Preset Team
 
 You're receiving this because you have an active equipment request. 
-Manage your notification preferences: ${process.env.NEXT_PUBLIC_APP_URL}/settings/notifications
+Manage your notification preferences: ${process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com'}/settings/notifications
     `;
 
     return { subject, html, text };
@@ -174,7 +204,7 @@ Manage your notification preferences: ${process.env.NEXT_PUBLIC_APP_URL}/setting
             <div class="footer">
               <p>Best regards,<br>The Preset Team</p>
               <p><small>You're receiving this because you responded to an equipment request. 
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/settings/notifications">Manage your notification preferences</a></small></p>
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com'}/settings/notifications">Manage your notification preferences</a></small></p>
             </div>
           </div>
         </body>
@@ -198,7 +228,7 @@ Best regards,
 The Preset Team
 
 You're receiving this because you responded to an equipment request. 
-Manage your notification preferences: ${process.env.NEXT_PUBLIC_APP_URL}/settings/notifications
+Manage your notification preferences: ${process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com'}/settings/notifications
     `;
 
     return { subject, html, text };
@@ -260,7 +290,7 @@ Manage your notification preferences: ${process.env.NEXT_PUBLIC_APP_URL}/setting
             <div class="footer">
               <p>Best regards,<br>The Preset Team</p>
               <p><small>You're receiving this because you had an active equipment request. 
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/settings/notifications">Manage your notification preferences</a></small></p>
+              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com'}/settings/notifications">Manage your notification preferences</a></small></p>
             </div>
           </div>
         </body>
@@ -284,39 +314,213 @@ Best regards,
 The Preset Team
 
 You're receiving this because you had an active equipment request. 
-Manage your notification preferences: ${process.env.NEXT_PUBLIC_APP_URL}/settings/notifications
+Manage your notification preferences: ${process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com'}/settings/notifications
     `;
 
     return { subject, html, text };
   }
 
-  // Send email using external service (SendGrid, AWS SES, etc.)
+  // Send email using Google Workspace Gmail API
   async sendEmail(
     to: EmailRecipient,
     template: EmailTemplate,
     metadata?: Record<string, any>
   ): Promise<boolean> {
     try {
-      // TODO: Integrate with actual email service
-      // For now, we'll just log the email that would be sent
-      console.log('📧 EMAIL NOTIFICATION:', {
-        to: to.email,
-        subject: template.subject,
-        metadata
+      // If Gmail API is not initialized, log the email for development
+      if (!this.gmail) {
+        console.log('📧 EMAIL NOTIFICATION (Development Mode):', {
+          to: to.email,
+          subject: template.subject,
+          from: this.fromEmail,
+          metadata
+        });
+        return true;
+      }
+
+      // Create email message
+      const message = this.createEmailMessage(to, template);
+      
+      // Send email via Gmail API
+      const response = await this.gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: message
+        }
       });
 
-      // In production, you would use a service like:
-      // - SendGrid: https://sendgrid.com/
-      // - AWS SES: https://aws.amazon.com/ses/
-      // - Resend: https://resend.com/
-      // - Mailgun: https://www.mailgun.com/
+      console.log('✅ Email sent successfully:', {
+        messageId: response.data.id,
+        to: to.email,
+        subject: template.subject
+      });
 
       return true;
     } catch (error) {
-      console.error('Failed to send email:', error);
+      console.error('❌ Failed to send email:', error);
       return false;
     }
   }
+
+  private createEmailMessage(to: EmailRecipient, template: EmailTemplate): string {
+    const boundary = 'boundary_' + Math.random().toString(36).substr(2, 9);
+    
+    const headers = [
+      `From: ${this.fromName} <${this.fromEmail}>`,
+      `To: ${to.name} <${to.email}>`,
+      `Subject: ${template.subject}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: multipart/alternative; boundary="${boundary}"`,
+      `Reply-To: ${this.fromEmail}`,
+      `X-Mailer: Preset Platform`
+    ].join('\r\n');
+
+    const textPart = [
+      `--${boundary}`,
+      `Content-Type: text/plain; charset=utf-8`,
+      `Content-Transfer-Encoding: 7bit`,
+      ``,
+      template.text
+    ].join('\r\n');
+
+    const htmlPart = [
+      `--${boundary}`,
+      `Content-Type: text/html; charset=utf-8`,
+      `Content-Transfer-Encoding: 7bit`,
+      ``,
+      template.html
+    ].join('\r\n');
+
+    const message = [
+      headers,
+      '',
+      textPart,
+      '',
+      htmlPart,
+      `--${boundary}--`
+    ].join('\r\n');
+
+    // Encode message in base64url format
+    return Buffer.from(message)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+
+  // ===== COMPREHENSIVE EMAIL METHODS =====
+
+  // User Onboarding & Authentication
+  async sendWelcomeEmail(recipient: EmailRecipient, actionUrl: string): Promise<boolean> {
+    const template = PresetEmailTemplates.generateWelcomeEmail(recipient.name, actionUrl);
+    return await this.sendEmail(recipient, template, { type: 'welcome' });
+  }
+
+  async sendEmailVerification(recipient: EmailRecipient, verificationUrl: string): Promise<boolean> {
+    const template = PresetEmailTemplates.generateEmailVerificationEmail(recipient.name, verificationUrl);
+    return await this.sendEmail(recipient, template, { type: 'verification' });
+  }
+
+  async sendPasswordReset(recipient: EmailRecipient, resetUrl: string): Promise<boolean> {
+    const template = PresetEmailTemplates.generatePasswordResetEmail(recipient.name, resetUrl);
+    return await this.sendEmail(recipient, template, { type: 'password_reset' });
+  }
+
+  // Payment & Transaction Emails
+  async sendPaymentConfirmation(
+    recipient: EmailRecipient,
+    amount: string,
+    description: string,
+    transactionId: string,
+    actionUrl: string
+  ): Promise<boolean> {
+    const template = PresetEmailTemplates.generatePaymentConfirmationEmail(
+      recipient.name,
+      amount,
+      description,
+      transactionId,
+      actionUrl
+    );
+    return await this.sendEmail(recipient, template, { type: 'payment_confirmation' });
+  }
+
+  // Marketplace Emails
+  async sendListingCreated(recipient: EmailRecipient, listingTitle: string, actionUrl: string): Promise<boolean> {
+    const template = PresetEmailTemplates.generateListingCreatedEmail(recipient.name, listingTitle, actionUrl);
+    return await this.sendEmail(recipient, template, { type: 'listing_created' });
+  }
+
+  async sendNewOffer(
+    recipient: EmailRecipient,
+    offererName: string,
+    listingTitle: string,
+    offerAmount: string,
+    actionUrl: string
+  ): Promise<boolean> {
+    const template = PresetEmailTemplates.generateNewOfferEmail(
+      recipient.name,
+      offererName,
+      listingTitle,
+      offerAmount,
+      actionUrl
+    );
+    return await this.sendEmail(recipient, template, { type: 'new_offer' });
+  }
+
+  // Showcase & Portfolio Emails
+  async sendShowcasePublished(recipient: EmailRecipient, showcaseTitle: string, actionUrl: string): Promise<boolean> {
+    const template = PresetEmailTemplates.generateShowcasePublishedEmail(recipient.name, showcaseTitle, actionUrl);
+    return await this.sendEmail(recipient, template, { type: 'showcase_published' });
+  }
+
+  // Collaboration Emails
+  async sendCollaborationInvite(
+    recipient: EmailRecipient,
+    inviterName: string,
+    projectTitle: string,
+    actionUrl: string
+  ): Promise<boolean> {
+    const template = PresetEmailTemplates.generateCollaborationInviteEmail(
+      recipient.name,
+      inviterName,
+      projectTitle,
+      actionUrl
+    );
+    return await this.sendEmail(recipient, template, { type: 'collaboration_invite' });
+  }
+
+  // Gig Notifications
+  async sendGigPosted(recipient: EmailRecipient, gigTitle: string, actionUrl: string): Promise<boolean> {
+    const template = PresetEmailTemplates.generateGigPostedEmail(recipient.name, gigTitle, actionUrl);
+    return await this.sendEmail(recipient, template, { type: 'gig_posted' });
+  }
+
+  // Marketing & Engagement Emails
+  async sendWeeklyDigest(
+    recipient: EmailRecipient,
+    stats: { newGigs: number; newShowcases: number; newConnections: number },
+    actionUrl: string
+  ): Promise<boolean> {
+    const template = PresetEmailTemplates.generateWeeklyDigestEmail(recipient.name, stats, actionUrl);
+    return await this.sendEmail(recipient, template, { type: 'weekly_digest' });
+  }
+
+  async sendFeatureAnnouncement(
+    recipient: EmailRecipient,
+    featureName: string,
+    featureDescription: string,
+    actionUrl: string
+  ): Promise<boolean> {
+    const template = PresetEmailTemplates.generateFeatureAnnouncementEmail(
+      recipient.name,
+      featureName,
+      featureDescription,
+      actionUrl
+    );
+    return await this.sendEmail(recipient, template, { type: 'feature_announcement' });
+  }
+
+  // ===== LEGACY EQUIPMENT REQUEST METHODS (Backward Compatibility) =====
 
   // Send equipment request notification email
   async sendRequestNotification(

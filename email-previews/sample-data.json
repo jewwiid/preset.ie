@@ -1,0 +1,51 @@
+{
+  "user": {
+    "name": "Alex Johnson",
+    "email": "alex.johnson@example.com",
+    "id": "user_123"
+  },
+  "listing": {
+    "id": "listing_456",
+    "title": "Canon EOS R5 Camera Package",
+    "price": "$150/day"
+  },
+  "offer": {
+    "offererName": "Sarah Chen",
+    "amount": "$120/day",
+    "message": "Perfect for my weekend shoot!"
+  },
+  "showcase": {
+    "id": "showcase_789",
+    "title": "Urban Photography Portfolio",
+    "description": "Street photography collection from downtown"
+  },
+  "project": {
+    "id": "project_101",
+    "title": "Fashion Editorial Shoot",
+    "description": "High-end fashion photography project"
+  },
+  "gig": {
+    "id": "gig_202",
+    "title": "Wedding Photography - Summer 2024",
+    "location": "San Francisco, CA",
+    "budget": "$2,500"
+  },
+  "application": {
+    "applicantName": "Mike Rodriguez",
+    "portfolio": "Portrait specialist with 5 years experience"
+  },
+  "payment": {
+    "amount": "$299.00",
+    "description": "Pro Subscription - Monthly",
+    "transactionId": "txn_abc123def456"
+  },
+  "stats": {
+    "newGigs": 12,
+    "newShowcases": 8,
+    "newConnections": 15
+  },
+  "feature": {
+    "name": "AI-Powered Shot Suggestions",
+    "description": "Get intelligent recommendations for your photography based on location, time, and style preferences."
+  }
+}

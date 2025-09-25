@@ -13,6 +13,7 @@ export interface AuthContextType {
   loading: boolean
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null; needsEmailConfirmation?: boolean }>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null; redirectPath?: string }>
+  signInWithGoogle: () => Promise<{ error: AuthError | null; redirectPath?: string }>
   signOut: () => Promise<{ error: AuthError | null }>
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>
 }
@@ -87,7 +88,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event)
+        console.log('Auth state changed:', event, {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userEmail: session?.user?.email,
+          userId: session?.user?.id
+        })
         setSession(session)
         setUser(session?.user ?? null)
         
@@ -217,6 +223,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const signInWithGoogle = async () => {
+    if (!supabase) {
+      return { error: null }
+    }
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      }
+    })
+    
+    let redirectPath = '/dashboard'
+    
+    // Note: OAuth flow doesn't provide user data immediately
+    // User role will be determined after callback in the auth callback page
+    
+    return { error, redirectPath }
+  }
+
   const resetPassword = async (email: string) => {
     if (!supabase) {
       return { error: null }
@@ -236,6 +266,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     resetPassword,
   }

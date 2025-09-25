@@ -158,11 +158,11 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-4">Sign In Required</h2>
-            <p className="text-gray-600 mb-4">Please sign in to view your profile.</p>
+            <p className="text-muted-foreground mb-4">Please sign in to view your profile.</p>
           </CardContent>
         </Card>
       </div>
@@ -171,10 +171,10 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading profile...</p>
         </div>
       </div>
     );
@@ -182,11 +182,11 @@ export default function ProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-4">Profile Not Found</h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-muted-foreground mb-4">
               {error || "Your profile couldn't be loaded."}
             </p>
             <Button onClick={() => router.push('/auth/create-profile')}>
@@ -199,11 +199,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-32 relative">
+        <div className="bg-card rounded-lg shadow-sm overflow-hidden mb-6">
+          <div className="bg-primary h-32 relative">
             {/* Action buttons positioned at top right of banner */}
             <div className="absolute top-4 right-4 flex space-x-2">
               <Button variant="outline" size="sm" asChild>
@@ -220,7 +220,7 @@ export default function ProfilePage() {
           </div>
           <div className="px-6 pb-6">
             <div className="flex items-end -mt-16 mb-4">
-              <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
+              <Avatar className="w-24 h-24 border-4 border-border shadow-lg">
                 <AvatarImage src={profile.avatar_url} alt={profile.display_name} />
                 <AvatarFallback className="text-2xl">
                   {profile.display_name.split(' ').map(n => n[0]).join('').toUpperCase()}
@@ -228,14 +228,14 @@ export default function ProfilePage() {
               </Avatar>
               <div className="ml-4 flex-1">
                 <div className="flex items-center space-x-2 mb-2">
-                  <h1 className="text-2xl font-bold text-gray-900">{profile.display_name}</h1>
+                  <h1 className="text-2xl font-bold text-foreground">{profile.display_name}</h1>
                   {profile.verified_id && (
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                    <CheckCircle className="h-5 w-5 text-primary" />
                   )}
                 </div>
-                <p className="text-lg text-gray-600">@{profile.handle}</p>
+                <p className="text-lg text-muted-foreground">@{profile.handle}</p>
                 {profile.city && (
-                  <div className="flex items-center text-gray-500 mt-1">
+                  <div className="flex items-center text-muted-foreground mt-1">
                     <MapPin className="h-4 w-4 mr-1" />
                     <span>{profile.city}{profile.country && `, ${profile.country}`}</span>
                   </div>
@@ -245,7 +245,7 @@ export default function ProfilePage() {
 
             {/* Bio */}
             {profile.bio && (
-              <p className="text-gray-700 mb-4">{profile.bio}</p>
+              <p className="text-foreground mb-4">{profile.bio}</p>
             )}
 
             {/* Role badges */}
@@ -285,8 +285,8 @@ export default function ProfilePage() {
               <CardContent className="space-y-4">
                 {profile.years_experience && (
                   <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                    <span className="text-sm text-gray-600">
+                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
                       <strong>{profile.years_experience} {profile.years_experience === 1 ? 'year' : 'years'}</strong> of experience
                     </span>
                   </div>
@@ -294,8 +294,8 @@ export default function ProfilePage() {
 
                 {formatRate(profile.hourly_rate_min, profile.hourly_rate_max) && (
                   <div className="flex items-center">
-                    <Star className="h-4 w-4 mr-2 text-gray-500" />
-                    <span className="text-sm text-gray-600">
+                    <Star className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
                       <strong>{formatRate(profile.hourly_rate_min, profile.hourly_rate_max)}</strong>
                     </span>
                   </div>
@@ -304,7 +304,7 @@ export default function ProfilePage() {
                 {/* Specializations */}
                 {profile.specializations && profile.specializations.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Specializations</h4>
+                    <h4 className="font-medium text-foreground mb-2">Specializations</h4>
                     <div className="flex flex-wrap gap-2">
                       {profile.specializations.map((spec) => (
                         <Badge key={spec} variant="secondary">
@@ -318,7 +318,7 @@ export default function ProfilePage() {
                 {/* Languages */}
                 {profile.languages && profile.languages.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Languages</h4>
+                    <h4 className="font-medium text-foreground mb-2">Languages</h4>
                     <div className="flex flex-wrap gap-2">
                       {profile.languages.map((lang) => (
                         <Badge key={lang} variant="outline">
@@ -332,13 +332,13 @@ export default function ProfilePage() {
                 {/* Additional Info */}
                 <div className="space-y-2">
                   {profile.available_for_travel && (
-                    <div className="flex items-center text-primary-600">
+                    <div className="flex items-center text-primary">
                       <Globe className="h-4 w-4 mr-2" />
                       <span className="text-sm">Available for travel</span>
                     </div>
                   )}
                   {profile.has_studio && (
-                    <div className="flex items-center text-purple-600">
+                    <div className="flex items-center text-primary">
                       <Camera className="h-4 w-4 mr-2" />
                       <span className="text-sm">Has studio {profile.studio_name && `(${profile.studio_name})`}</span>
                     </div>
@@ -359,8 +359,8 @@ export default function ProfilePage() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {profile.equipment_list.map((item) => (
-                      <div key={item} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                        <Award className="h-4 w-4 mr-2 text-gray-500" />
+                      <div key={item} className="flex items-center p-3 bg-background rounded-lg">
+                        <Award className="h-4 w-4 mr-2 text-muted-foreground" />
                         <span className="text-sm">{item}</span>
                       </div>
                     ))}
@@ -405,7 +405,7 @@ export default function ProfilePage() {
                       href={profile.portfolio_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-blue-600 hover:text-blue-800 text-sm"
+                      className="flex items-center text-primary hover:text-primary/90 text-sm"
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       Portfolio
@@ -416,7 +416,7 @@ export default function ProfilePage() {
                       href={profile.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-blue-600 hover:text-blue-800 text-sm"
+                      className="flex items-center text-primary hover:text-primary/90 text-sm"
                     >
                       <Globe className="h-4 w-4 mr-2" />
                       Website
@@ -427,7 +427,7 @@ export default function ProfilePage() {
                       href={`https://instagram.com/${profile.instagram_handle}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-primary-600 hover:text-primary-800 text-sm"
+                      className="flex items-center text-primary hover:text-primary/90 text-sm"
                     >
                       <Instagram className="h-4 w-4 mr-2" />
                       @{profile.instagram_handle}
@@ -438,7 +438,7 @@ export default function ProfilePage() {
                       href={`https://tiktok.com/@${profile.tiktok_handle}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-gray-800 hover:text-gray-900 text-sm"
+                      className="flex items-center text-foreground hover:text-foreground text-sm"
                     >
                       <span className="mr-2">📱</span>
                       @{profile.tiktok_handle}
@@ -451,7 +451,7 @@ export default function ProfilePage() {
             {/* Member since */}
             <Card>
               <CardContent className="pt-6">
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   Member since {formatDate(profile.created_at)}
                 </div>
               </CardContent>

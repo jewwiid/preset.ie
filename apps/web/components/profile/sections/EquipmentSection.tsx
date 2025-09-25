@@ -75,7 +75,7 @@ export function EquipmentSection() {
     setLoadingEquipmentData(true)
     try {
       // Check if equipment tables exist by trying to query them
-      const { error: typesError } = await supabase
+      const { error: typesError } = await (supabase as any)
         .from('equipment_types')
         .select('id')
         .limit(1)
@@ -91,40 +91,40 @@ export function EquipmentSection() {
       }
 
       // Fetch equipment types
-      const { data: typesData, error: typesError2 } = await supabase
+      const { data: typesData, error: typesError2 } = await (supabase as any)
         .from('equipment_types')
         .select('*')
         .eq('is_active', true)
         .order('sort_order')
 
       if (typesError2) throw typesError2
-      setEquipmentTypes(typesData || [])
+      setEquipmentTypes((typesData as any) || [])
 
       // Fetch predefined brands and models
-      const { data: brandsData, error: brandsError } = await supabase
+      const { data: brandsData, error: brandsError } = await (supabase as any)
         .from('equipment_brands')
         .select('*')
         .order('sort_order')
 
       if (brandsError) throw brandsError
-      setEquipmentBrands(brandsData || [])
+      setEquipmentBrands((brandsData as any) || [])
 
-      const { data: modelsData, error: modelsError } = await supabase
+      const { data: modelsData, error: modelsError } = await (supabase as any)
         .from('equipment_predefined_models')
         .select('*')
         .order('sort_order')
 
       if (modelsError) throw modelsError
-      setEquipmentModels(modelsData || [])
+      setEquipmentModels((modelsData as any) || [])
 
       // Fetch user equipment using the view
-      const { data: equipmentData, error: equipmentError } = await supabase
+      const { data: equipmentData, error: equipmentError } = await (supabase as any)
         .from('user_equipment_view')
         .select('*')
         .eq('profile_id', profile.id)
 
       if (equipmentError) throw equipmentError
-      setUserEquipment(equipmentData || [])
+      setUserEquipment((equipmentData as any) || [])
 
       // Sync equipment with profile on load
       await syncEquipmentWithProfile()
@@ -145,7 +145,7 @@ export function EquipmentSection() {
     if (!user || !supabase || !selectedEquipmentType) return
     
     // Check if equipment tables exist
-    const { error: checkError } = await supabase
+    const { error: checkError } = await (supabase as any)
       .from('user_equipment')
       .select('id')
       .limit(1)
@@ -198,7 +198,7 @@ export function EquipmentSection() {
 
     try {
       // Create equipment model
-      const { data: modelData, error: modelError } = await supabase
+      const { data: modelData, error: modelError } = await (supabase as any)
         .from('equipment_models')
         .insert({
           user_id: user.id,
@@ -207,21 +207,21 @@ export function EquipmentSection() {
           model: modelToUse,
           description: null,
           condition: 'good'
-        })
+        } as any)
         .select()
         .single()
 
       if (modelError) throw modelError
 
       // Link to user equipment
-      const { error: userEquipmentError } = await supabase
+      const { error: userEquipmentError } = await (supabase as any)
         .from('user_equipment')
         .insert({
           profile_id: profile!.id, // Use profile ID instead of auth user ID
-          equipment_model_id: modelData.id,
+          equipment_model_id: (modelData as any).id,
           is_primary: false,
           display_order: userEquipment.length
-        })
+        } as any)
 
       if (userEquipmentError) throw userEquipmentError
 
@@ -250,7 +250,7 @@ export function EquipmentSection() {
     if (!user || !supabase) return
 
     // Check if equipment tables exist
-    const { error: checkError } = await supabase
+    const { error: checkError } = await (supabase as any)
       .from('user_equipment')
       .select('id')
       .limit(1)
@@ -262,7 +262,7 @@ export function EquipmentSection() {
 
     try {
       // Remove from user_equipment (this will cascade delete the equipment_model)
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('user_equipment')
         .delete()
         .eq('id', equipmentId)
@@ -287,7 +287,7 @@ export function EquipmentSection() {
 
     try {
       // Check if equipment tables exist
-      const { error: checkError } = await supabase
+      const { error: checkError } = await (supabase as any)
         .from('user_equipment_view')
         .select('id')
         .limit(1)
@@ -299,7 +299,7 @@ export function EquipmentSection() {
       }
 
       // Get current user equipment
-      const { data: equipmentData, error: equipmentError } = await supabase
+      const { data: equipmentData, error: equipmentError } = await (supabase as any)
         .from('user_equipment_view')
         .select('*')
         .eq('profile_id', profile.id)
@@ -307,17 +307,17 @@ export function EquipmentSection() {
       if (equipmentError) throw equipmentError
 
       // Create equipment list array from user equipment
-      const equipmentList = equipmentData?.map(equipment => 
+      const equipmentList = equipmentData?.map((equipment: any) => 
         `${equipment.brand} ${equipment.model}`
       ) || []
 
       // Update profile equipment_list field
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('users_profile')
         .update({ 
           equipment_list: equipmentList,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('id', profile.id)
 
       if (updateError) throw updateError
@@ -575,7 +575,7 @@ export function EquipmentSection() {
     if (!supabase) return false
     
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('equipment_brands')
         .select('id')
         .eq('name', brandName.toLowerCase().trim())
@@ -593,7 +593,7 @@ export function EquipmentSection() {
     if (!supabase) return false
     
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('equipment_predefined_models')
         .select('id')
         .eq('model_name', modelName.toLowerCase().trim())
@@ -655,7 +655,7 @@ export function EquipmentSection() {
                 <div key={equipment.id} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow">
                   <div className="flex items-center gap-3 flex-1">
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
                         <EquipmentIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                       </div>
                     </div>
@@ -664,7 +664,7 @@ export function EquipmentSection() {
                         <span className="text-sm font-medium text-gray-900 dark:text-white">{equipment.brand}</span>
                         <span className="text-sm text-gray-600 dark:text-gray-400">{equipment.model}</span>
                         {equipment.is_primary && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                             Primary
                           </span>
                         )}
@@ -691,7 +691,7 @@ export function EquipmentSection() {
       {isEditing && (
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
               <Plus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
@@ -829,7 +829,7 @@ export function EquipmentSection() {
             <button
               onClick={addEquipment}
               disabled={!selectedEquipmentType || (!allowCustomModel && (!selectedEquipmentBrand || !selectedEquipmentModel)) || (allowCustomModel && (!newEquipmentBrand.trim() || !newEquipmentModel.trim()))}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Add Equipment

@@ -382,13 +382,13 @@ select {
 input[type="checkbox"],
 input[type="radio"] {
   color-scheme: light !important;
-  accent-color: #10b981 !important;
+  accent-color: hsl(var(--primary)) !important;
 }
 
 /* Ensure placeholders are visible */
 input::placeholder,
 textarea::placeholder {
-  color: #94a3b8 !important;
+  color: hsl(var(--muted-foreground)) !important;
   opacity: 1 !important;
 }
 

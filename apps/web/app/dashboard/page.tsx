@@ -235,7 +235,7 @@ export default function Dashboard() {
         return
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('users_profile')
         .select('*')
         .eq('user_id', user.id)
@@ -252,10 +252,10 @@ export default function Dashboard() {
         console.error('Error fetching profile:', error)
       } else {
         console.log('✅ Profile fetched successfully:', data)
-        setProfile(data)
+        setProfile(data as any)
         // Load additional data after profile is set
         console.log('📊 Starting dashboard data load...')
-        await loadDashboardData(data) // Pass profile directly to avoid state race condition
+        await loadDashboardData(data as any) // Pass profile directly to avoid state race condition
         await loadRecentMessages() // Load recent messages
       }
     } catch (err) {
@@ -274,7 +274,7 @@ export default function Dashboard() {
     setMessagesLoading(true)
     try {
       // Get user's profile ID
-      const { data: userProfile } = await supabase
+      const { data: userProfile } = await (supabase as any)
         .from('users_profile')
         .select('id')
         .eq('user_id', user.id)
@@ -286,7 +286,7 @@ export default function Dashboard() {
       }
 
       // Fetch recent messages where user is either sender or receiver
-      const { data: messages, error } = await supabase
+      const { data: messages, error } = await (supabase as any)
         .from('messages')
         .select(`
           id,
@@ -310,7 +310,7 @@ export default function Dashboard() {
             avatar_url
           )
         `)
-        .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
+        .or(`from_user_id.eq.${(userProfile as any).id},to_user_id.eq.${(userProfile as any).id}`)
         .order('created_at', { ascending: false })
         .limit(5)
 
@@ -320,21 +320,21 @@ export default function Dashboard() {
       }
 
       // Group messages by conversation (gig_id + other user)
-      const conversations = new Map()
+      const conversations = {} as any
       
-      messages?.forEach((message) => {
-        const otherUserId = message.from_user_id === userProfile.id 
+      (messages as any)?.forEach((message: any) => {
+        const otherUserId = message.from_user_id === (userProfile as any).id 
           ? message.to_user_id 
           : message.from_user_id
         
-        const otherUser = message.from_user_id === userProfile.id 
+        const otherUser = message.from_user_id === (userProfile as any).id 
           ? message.to_user 
           : message.from_user
 
         const conversationKey = `${message.gig_id}-${otherUserId}`
         
-        if (!conversations.has(conversationKey)) {
-          conversations.set(conversationKey, {
+        if (!conversations[conversationKey]) {
+          conversations[conversationKey] = {
             id: message.id,
             gig_id: message.gig_id,
             gig_title: Array.isArray(message.gigs) ? message.gigs[0]?.title : (message.gigs as any)?.title || 'Untitled Gig',
@@ -342,12 +342,12 @@ export default function Dashboard() {
             last_message: message.body,
             last_message_time: message.created_at,
             is_read: !!message.read_at,
-            is_from_me: message.from_user_id === userProfile.id
-          })
+            is_from_me: message.from_user_id === (userProfile as any).id
+          }
         }
       })
 
-      setRecentMessages(Array.from(conversations.values()))
+      setRecentMessages(Object.values(conversations))
     } catch (error) {
       console.error('Error loading recent messages:', error)
     } finally {
@@ -380,7 +380,7 @@ export default function Dashboard() {
       }
       
       // Debug: Check what gigs exist in the database first
-      const { data: allGigs, error: allGigsError } = await supabase
+      const { data: allGigs, error: allGigsError } = await (supabase as any)
         .from('gigs')
         .select('id, title, owner_user_id')
         .order('created_at', { ascending: false })
@@ -391,14 +391,14 @@ export default function Dashboard() {
       
       // Debug: Show the actual owner_user_id values from all gigs
       if (allGigs) {
-        allGigs.forEach((gig, index) => {
+        (allGigs as any).forEach((gig: any, index: number) => {
           console.log(`🔍 Gig ${index + 1}: "${gig.title}" owner_user_id: "${gig.owner_user_id}"`)
           console.log(`🔍 Does "${gig.owner_user_id}" === "${user.id}"?`, gig.owner_user_id === user.id)
         })
       }
       
       // Load recent gigs - for contributors show their own, for talent show published gigs
-      let gigsQuery = supabase
+      let gigsQuery = (supabase as any)
         .from('gigs')
         .select('id, title, description, comp_type, location_text, created_at, status')
         .order('created_at', { ascending: false })
@@ -427,7 +427,7 @@ export default function Dashboard() {
         })
       } else {
         console.log('✅ Fetched filtered gigs:', gigs)
-        setRecentGigs(gigs || [])
+        setRecentGigs((gigs as any) || [])
       }
 
       // Load real user statistics
@@ -436,7 +436,7 @@ export default function Dashboard() {
       // Count user's gigs (if contributor)
       if (isContributor) {
         console.log('🔢 Counting gigs for contributor user.id:', user.id)
-        const gigsCountQuery = supabase
+        const gigsCountQuery = (supabase as any)
           .from('gigs')
           .select('id', { count: 'exact' })
           .eq('owner_user_id', user.id)
@@ -449,7 +449,7 @@ export default function Dashboard() {
       // Count user's applications (if talent)
       if (isTalent) {
         statsPromises.push(
-          supabase
+          (supabase as any)
             .from('applications')
             .select('id', { count: 'exact' })
             .eq('applicant_user_id', user.id)
@@ -460,7 +460,7 @@ export default function Dashboard() {
 
       // Count user's showcases
       statsPromises.push(
-        supabase
+        (supabase as any)
           .from('showcases')
           .select('id', { count: 'exact' })
           .or(`creator_user_id.eq.${user.id},talent_user_id.eq.${user.id}`)
@@ -468,14 +468,14 @@ export default function Dashboard() {
 
       // Count user's messages (both sent and received)
       statsPromises.push(
-        supabase
+        (supabase as any)
           .from('messages')
           .select('id', { count: 'exact' })
           .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
       )
 
       // Also fetch user credits with proper error handling
-      const creditsQuery = supabase
+      const creditsQuery = (supabase as any)
         .from('user_credits')
         .select('current_balance, monthly_allowance, consumed_this_month')
         .eq('user_id', user.id)
@@ -511,17 +511,17 @@ export default function Dashboard() {
         })
       } else {
         // Initialize credits for new user
-        const { data: profile } = await supabase
+        const { data: profile } = await (supabase as any)
           .from('users_profile')
           .select('subscription_tier')
           .eq('user_id', user.id)
           .single()
         
-        const tier = profile?.subscription_tier || 'free'
+        const tier = (profile as any)?.subscription_tier || 'free'
         const allowance = tier === 'pro' ? 25 : tier === 'plus' ? 10 : 0
         
         // Create credit record
-        await supabase
+        await (supabase as any)
           .from('user_credits')
           .insert({
             user_id: user.id,
@@ -558,7 +558,7 @@ export default function Dashboard() {
 
       // For talent users, get compatible gigs
       if (isTalent) {
-        const { data: compatibleGigs, error: gigsError } = await supabase
+        const { data: compatibleGigs, error: gigsError } = await (supabase as any)
           .rpc('find_compatible_gigs_for_user', {
             p_profile_id: profileData.id,
             p_limit: 3
@@ -567,7 +567,7 @@ export default function Dashboard() {
         if (gigsError && gigsError.code === 'PGRST202') {
           // Function doesn't exist, use fallback query
           console.log('⚠️ Matchmaking function not found, using fallback query')
-          const { data: fallbackGigs, error: fallbackError } = await supabase
+          const { data: fallbackGigs, error: fallbackError } = await (supabase as any)
             .from('gigs')
             .select('*')
             .eq('status', 'PUBLISHED')
@@ -645,7 +645,7 @@ export default function Dashboard() {
       // For contributors, get compatible users
       if (isContributor) {
         // Get compatible users for recent gigs
-        const { data: recentGigs } = await supabase
+        const { data: recentGigs } = await (supabase as any)
           .from('gigs')
           .select('id')
           .eq('owner_user_id', user.id)
@@ -653,9 +653,9 @@ export default function Dashboard() {
           .limit(1)
 
         if (recentGigs && recentGigs.length > 0) {
-          const { data: compatibleUsers, error: usersError } = await supabase
+          const { data: compatibleUsers, error: usersError } = await (supabase as any)
             .rpc('find_compatible_users_for_gig', {
-              p_gig_id: recentGigs[0].id,
+              p_gig_id: (recentGigs as any)[0].id,
               p_limit: 3
             })
 
@@ -725,8 +725,8 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-preset-200"></div>
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-preset-500 border-t-transparent absolute top-0"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-muted"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent absolute top-0"></div>
         </div>
       </div>
     )
@@ -768,8 +768,8 @@ export default function Dashboard() {
             <div className="absolute inset-0 bg-black/40"></div>
           </div>
         ) : (
-          <div className="absolute inset-0 bg-primary">
-            <div className="absolute inset-0 bg-primary/90"></div>
+          <div className="absolute inset-0 bg-background">
+            <div className="absolute inset-0 bg-background"></div>
           </div>
         )}
         
@@ -781,7 +781,7 @@ export default function Dashboard() {
               {isAdmin && (
                 <button
                   onClick={() => router.push('/admin')}
-                  className="bg-white/20 hover:bg-white/30 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-medium backdrop-blur-sm border border-white/20 transition-all flex-shrink-0"
+                  className="bg-muted hover:bg-accent text-foreground px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border border-border transition-all flex-shrink-0"
                 >
                   Admin Dashboard
                 </button>
@@ -794,7 +794,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={handleSignOut}
-                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-xs sm:text-sm font-medium backdrop-blur-sm border border-white/20 transition-all flex-shrink-0"
+                className="bg-muted hover:bg-accent text-foreground px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border border-border transition-all flex-shrink-0"
               >
                 Sign Out
               </button>
@@ -818,7 +818,7 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Enhanced Profile & Status Card */}
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+              <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
               {/* Profile Header with Avatar Integration */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
@@ -828,7 +828,7 @@ export default function Dashboard() {
                       <img 
                         src={profile.avatar_url} 
                         alt={profile.display_name}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-preset-200 shadow-lg"
+                        className="w-16 h-16 rounded-full object-cover border-2 border-border shadow-lg"
                       />
                     ) : (
                       <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center border-2 border-primary/20 shadow-lg">
@@ -837,7 +837,7 @@ export default function Dashboard() {
                         </span>
                       </div>
                     )}
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary border-2 border-white dark:border-gray-800 rounded-full flex items-center justify-center">
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary border-2 border-background rounded-full flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                   </div>
@@ -845,12 +845,12 @@ export default function Dashboard() {
                   {/* User Info & Role */}
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white">{profile.display_name}</h3>
+                      <h3 className="text-xl font-bold text-foreground">{profile.display_name}</h3>
                       <span className="px-3 py-1 bg-primary text-primary-foreground text-sm font-bold rounded-full uppercase tracking-wide">
                         {profile.subscription_tier}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       <span className="text-sm">@{profile.handle}</span>
                       <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
                       <div className="flex items-center gap-2">
@@ -866,7 +866,7 @@ export default function Dashboard() {
 
                 {/* Verification Badge */}
                 {(profile.verification_status === 'id_verified' || profile.verification_status === 'fully_verified') && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-preset-50 dark:bg-preset-900/20 text-preset-600 dark:text-preset-400 rounded-lg border border-preset-100 dark:border-preset-800">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 dark:bg-preset-900/20 text-primary rounded-lg border border-preset-100 dark:border-preset-800">
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -890,8 +890,8 @@ export default function Dashboard() {
                     <div className="flex-1 min-w-0">
                       <p className="text-primary text-xs sm:text-sm font-medium mb-1 truncate">Available Credits</p>
                       <div className="flex items-baseline gap-1 sm:gap-2">
-                        <p className="text-gray-900 dark:text-white text-lg sm:text-2xl font-bold">{credits.current_balance}</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">
+                        <p className="text-foreground text-lg sm:text-2xl font-bold">{credits.current_balance}</p>
+                        <p className="text-muted-foreground text-xs sm:text-sm">
                           of {credits.monthly_allowance || 'unlimited'}
                         </p>
                       </div>
@@ -910,10 +910,10 @@ export default function Dashboard() {
                       </svg>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-medium mb-1 truncate">Account Balance</p>
+                      <p className="text-primary text-xs sm:text-sm font-medium mb-1 truncate">Account Balance</p>
                       <div className="flex items-baseline gap-1 sm:gap-2">
-                        <p className="text-gray-900 dark:text-white text-lg sm:text-2xl font-bold">€{calculateCreditValue(credits.current_balance).toFixed(2)}</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm">EUR</p>
+                        <p className="text-foreground text-lg sm:text-2xl font-bold">€{calculateCreditValue(credits.current_balance).toFixed(2)}</p>
+                        <p className="text-muted-foreground text-xs sm:text-sm">EUR</p>
                       </div>
                     </div>
                   </div>
@@ -921,7 +921,7 @@ export default function Dashboard() {
               </div>
 
               {/* Profile Completion Progress */}
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="mt-4 pt-4 border-t border-border">
                 <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -929,18 +929,18 @@ export default function Dashboard() {
                         <User className="w-4 h-4 text-white" />
                       </div>
                       <div>
-                        <p className="text-blue-600 dark:text-blue-400 text-sm font-medium">Profile Completion</p>
-                        <p className="text-gray-500 dark:text-gray-400 text-xs">Complete your profile to get more gigs</p>
+                        <p className="text-primary text-sm font-medium">Profile Completion</p>
+                        <p className="text-muted-foreground text-xs">Complete your profile to get more gigs</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-gray-900 dark:text-white text-xl font-bold">{calculateProfileCompletion(profile).percentage}%</p>
+                      <p className="text-foreground text-xl font-bold">{calculateProfileCompletion(profile).percentage}%</p>
                     </div>
                   </div>
                   
                   {/* Progress Bar */}
                   <div className="mb-3">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-2">
                       <div 
                         className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${calculateProfileCompletion(profile).percentage}%` }}
@@ -951,18 +951,18 @@ export default function Dashboard() {
                   {/* Missing Fields */}
                   {calculateProfileCompletion(profile).missingFields.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300">Missing information:</p>
+                      <p className="text-xs font-medium text-muted-foreground">Missing information:</p>
                       <div className="flex flex-wrap gap-1">
                         {calculateProfileCompletion(profile).missingFields.slice(0, 4).map((field, index) => (
                           <span 
                             key={index}
-                            className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full"
+                            className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full"
                           >
                             {field}
                           </span>
                         ))}
                         {calculateProfileCompletion(profile).missingFields.length > 4 && (
-                          <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-full">
+                          <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full">
                             +{calculateProfileCompletion(profile).missingFields.length - 4} more
                           </span>
                         )}
@@ -972,7 +972,7 @@ export default function Dashboard() {
 
                   <button 
                     onClick={() => router.push('/auth/complete-profile')}
-                    className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                    className="w-full mt-3 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                   >
                     Complete Profile
                   </button>
@@ -981,9 +981,9 @@ export default function Dashboard() {
 
               {/* Location Row */}
               {profile.city && (
-                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex items-center justify-end">
-                    <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -996,21 +996,21 @@ export default function Dashboard() {
             </div>
           
           {/* My Recent Gigs - Second Column */}
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+          <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h3 className="text-lg font-bold text-foreground">
                     {isContributor ? 'My Recent Gigs' : 'Recent Gigs'}
                   </h3>
                   {/* Mobile summary when collapsed */}
                   {!isRecentGigsExpanded && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 lg:hidden">
+                    <p className="text-xs text-muted-foreground mt-1 lg:hidden">
                       {recentGigs.length > 0 
                         ? `${recentGigs.length} recent ${recentGigs.length === 1 ? 'gig' : 'gigs'}` 
                         : 'No recent gigs'
@@ -1027,7 +1027,7 @@ export default function Dashboard() {
                 aria-label={isRecentGigsExpanded ? 'Collapse gigs' : 'Expand gigs'}
               >
                 <svg 
-                  className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform duration-200 ${
+                  className={`w-5 h-5 text-gray-600 dark:text-muted-foreground transition-transform duration-200 ${
                     isRecentGigsExpanded ? 'rotate-180' : ''
                   }`} 
                   fill="none" 
@@ -1043,15 +1043,15 @@ export default function Dashboard() {
             }`}>
               {recentGigs.length > 0 ? (
                 recentGigs.map((gig) => (
-                  <div key={gig.id} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
-                    <h4 className="font-medium text-gray-900 dark:text-white text-sm mb-1">{gig.title}</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">{gig.description}</p>
+                  <div key={gig.id} className="p-4 bg-muted rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
+                    <h4 className="font-medium text-foreground text-sm mb-1">{gig.title}</h4>
+                    <p className="text-xs text-muted-foreground mb-2">{gig.description}</p>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-preset-600 dark:text-preset-400">{gig.comp_type}</span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{gig.location_text}</span>
+                      <span className="text-xs font-medium text-primary">{gig.comp_type}</span>
+                      <span className="text-xs text-muted-foreground">{gig.location_text}</span>
                     </div>
                     <div className="flex justify-between items-center mt-1">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         {new Date(gig.created_at).toLocaleDateString()}
                       </span>
                       <span className={`text-xs px-2 py-1 rounded-full ${
@@ -1065,7 +1065,7 @@ export default function Dashboard() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <div className="text-center py-8 text-muted-foreground">
                   <p className="text-sm">
                     {isContributor ? 'No gigs created yet' : 'No recent gigs available'}
                   </p>
@@ -1074,7 +1074,7 @@ export default function Dashboard() {
               {recentGigs.length > 0 && (
                 <button 
                   onClick={() => router.push(isContributor ? '/gigs/my-gigs' : '/gigs')}
-                  className="w-full text-center py-3 text-sm text-preset-600 dark:text-preset-400 hover:text-preset-700 dark:hover:text-preset-300 font-medium"
+                  className="w-full text-center py-3 text-sm text-primary hover:text-preset-700 dark:hover:text-preset-300 font-medium"
                 >
                   {isContributor ? 'View All My Gigs' : 'Browse All Gigs'} →
                 </button>
@@ -1090,21 +1090,21 @@ export default function Dashboard() {
           <div className="mb-6 max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Recent Messages */}
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+              <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Messages</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Your latest conversations</p>
+                    <h3 className="text-lg font-bold text-foreground">Recent Messages</h3>
+                    <p className="text-sm text-muted-foreground">Your latest conversations</p>
                   </div>
                   <div className="ml-auto">
                     <button
                       onClick={() => router.push('/messages')}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      className="text-sm text-primary hover:text-blue-700 font-medium"
                     >
                       View All →
                     </button>
@@ -1115,16 +1115,16 @@ export default function Dashboard() {
                 <div className="space-y-3">
                   {messagesLoading ? (
                     <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     </div>
                   ) : recentMessages.length > 0 ? (
                     recentMessages.map((conversation, index) => {
                       const colors = [
-                        'from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-100 dark:border-blue-800/50 hover:bg-blue-100 dark:hover:bg-blue-900/30',
-                        'from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 border-primary/20 dark:border-primary/30 hover:bg-primary/20 dark:hover:bg-primary/40',
-                        'from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-100 dark:border-purple-800/50 hover:bg-purple-100 dark:hover:bg-purple-900/30',
-                        'from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 border-orange-100 dark:border-orange-800/50 hover:bg-orange-100 dark:hover:bg-orange-900/30',
-                        'from-secondary/10 to-secondary/20 dark:from-secondary/20 dark:to-secondary/30 border-secondary/20 dark:border-secondary/30 hover:bg-secondary/20 dark:hover:bg-secondary/40'
+                        'from-primary/10 to-primary/20 border-primary/20 hover:bg-primary/20',
+                        'from-primary/10 to-primary/20 border-primary/20 hover:bg-primary/20',
+                        'from-primary/20 to-primary/30 border-primary/20 hover:bg-primary/30',
+                        'from-primary/10 to-primary/20 border-primary/20 hover:bg-primary/20',
+                        'from-secondary/10 to-secondary/20 border-secondary/20 hover:bg-secondary/20'
                       ]
                       const colorClass = colors[index % colors.length]
                       
@@ -1154,7 +1154,7 @@ export default function Dashboard() {
                           onClick={() => router.push(`/messages?gig=${conversation.gig_id}&user=${conversation.other_user?.id}`)}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                               {conversation.other_user?.avatar_url ? (
                                 <img 
                                   src={conversation.other_user.avatar_url} 
@@ -1167,23 +1167,23 @@ export default function Dashboard() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-1">
-                                <p className="text-sm font-medium text-blue-800 dark:text-blue-200 truncate">
+                                <p className="text-sm font-medium text-primary truncate">
                                   {conversation.other_user?.display_name || 'Unknown User'}
                                 </p>
-                                <span className="text-xs text-blue-600 dark:text-blue-300">
+                                <span className="text-xs text-primary">
                                   {timeAgo}
                                 </span>
                               </div>
-                              <p className="text-xs text-blue-600 dark:text-blue-300 truncate mb-1">
+                              <p className="text-xs text-primary truncate mb-1">
                                 {conversation.gig_title}
                               </p>
-                              <p className="text-xs text-blue-600 dark:text-blue-300 truncate">
+                              <p className="text-xs text-primary truncate">
                                 {conversation.is_from_me ? 'You: ' : ''}{conversation.last_message}
                               </p>
                               {!conversation.is_read && !conversation.is_from_me && (
                                 <div className="flex items-center gap-1 mt-1">
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                  <span className="text-xs text-blue-600 dark:text-blue-300 font-medium">New</span>
+                                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                                  <span className="text-xs text-primary font-medium">New</span>
                                 </div>
                               )}
                             </div>
@@ -1193,13 +1193,13 @@ export default function Dashboard() {
                     })
                   ) : (
                     <div className="text-center py-6">
-                      <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-6 h-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                         </svg>
                       </div>
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">No recent messages</h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                      <h4 className="text-sm font-medium text-foreground mb-1">No recent messages</h4>
+                      <p className="text-xs text-muted-foreground mb-3">
                         Start conversations with other creators
                       </p>
                       <button
@@ -1217,23 +1217,23 @@ export default function Dashboard() {
               </div>
 
               {/* Smart Suggestions - Second Column */}
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl">
+              <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                     <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Smart Suggestions</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Based on your experience and profile</p>
+                    <h3 className="text-lg font-bold text-foreground">Smart Suggestions</h3>
+                    <p className="text-sm text-muted-foreground">Based on your experience and profile</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   {/* Experience-based suggestions */}
                   {profile.years_experience && profile.years_experience >= 3 && (
-                    <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-xl border border-primary/20 dark:border-primary/30">
+                    <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                       <div className="flex items-start gap-3">
                         <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1254,18 +1254,18 @@ export default function Dashboard() {
 
                   {/* Specialization suggestions */}
                   {profile.specializations && profile.specializations.length > 0 && (
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                    <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                       <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                          <p className="text-sm font-medium text-primary">
                             Specialization Opportunities
                           </p>
-                          <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                          <p className="text-xs text-primary mt-1">
                             Your specializations in {profile.specializations.slice(0, 2).join(', ')} are in high demand. Consider creating targeted gigs.
                           </p>
                         </div>
@@ -1275,18 +1275,18 @@ export default function Dashboard() {
 
                   {/* Rate optimization suggestions */}
                   {profile.hourly_rate_min && profile.hourly_rate_max && (
-                    <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl border border-yellow-100 dark:border-yellow-800/50">
+                    <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                       <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                          <p className="text-sm font-medium text-primary">
                             Rate Optimization
                           </p>
-                          <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
+                          <p className="text-xs text-primary mt-1">
                             Your rate range (€{profile.hourly_rate_min}-{profile.hourly_rate_max}/hour) is competitive. Consider adjusting based on project complexity.
                           </p>
                         </div>
@@ -1296,7 +1296,7 @@ export default function Dashboard() {
 
                   {/* Travel availability suggestions */}
                   {profile.available_for_travel && (
-                    <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/20 dark:from-primary/20 dark:to-primary/30 rounded-xl border border-primary/20 dark:border-primary/30">
+                    <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                       <div className="flex items-start gap-3">
                         <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1305,10 +1305,10 @@ export default function Dashboard() {
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                          <p className="text-sm font-medium text-primary">
                             Travel Opportunities
                           </p>
-                          <p className="text-xs text-purple-600 dark:text-purple-300 mt-1">
+                          <p className="text-xs text-primary mt-1">
                             Your travel availability (up to {profile.travel_radius_km || 'unlimited'}km) opens up more gig opportunities. Highlight this in your profile.
                           </p>
                         </div>
@@ -1318,7 +1318,7 @@ export default function Dashboard() {
 
                   {/* Default suggestion for new users */}
                   {(!profile.years_experience || !profile.specializations || profile.specializations.length === 0) && (
-                    <div className="p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 rounded-xl border border-gray-100 dark:border-gray-800/50">
+                    <div className="p-4 bg-muted rounded-xl border border-border">
                       <div className="flex items-start gap-3">
                         <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1326,10 +1326,10 @@ export default function Dashboard() {
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                          <p className="text-sm font-medium text-foreground">
                             Complete Your Profile
                           </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Add your experience, specializations, and rate information to get personalized suggestions and more gig opportunities.
                           </p>
                         </div>
@@ -1342,22 +1342,22 @@ export default function Dashboard() {
           </div>
 
           {/* Saved Images Gallery */}
-          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl mb-6">
+          <div className="bg-card rounded-2xl p-6 border border-border shadow-xl mb-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">My Saved Images</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Images saved from the playground for use in moodboards, showcases, and profiles</p>
+                  <h3 className="text-lg font-bold text-foreground">My Saved Images</h3>
+                  <p className="text-sm text-muted-foreground">Images saved from the playground for use in moodboards, showcases, and profiles</p>
                 </div>
               </div>
               <button
                 onClick={() => router.push('/playground')}
-                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                className="text-sm text-primary hover:text-purple-700 font-medium"
               >
                 Generate More →
               </button>
@@ -1375,14 +1375,14 @@ export default function Dashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <button
               onClick={() => router.push(isContributor ? '/gigs/my-gigs' : '/gigs')}
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-preset-300 dark:hover:border-preset-600 transition-all hover:scale-105 hover:shadow-lg group cursor-pointer text-left"
+              className="bg-card rounded-2xl p-6 border border-border hover:border-primary transition-all hover:scale-105 hover:shadow-lg group cursor-pointer text-left"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Gigs</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalGigs}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Gigs</p>
+                  <p className="text-3xl font-bold text-foreground">{stats.totalGigs}</p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-preset-400 to-preset-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
@@ -1392,14 +1392,14 @@ export default function Dashboard() {
 
             <button
               onClick={() => router.push('/applications')}
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-blue-300 dark:hover:border-blue-600 transition-all hover:scale-105 hover:shadow-lg group cursor-pointer text-left"
+              className="bg-card rounded-2xl p-6 border border-border hover:border-primary transition-all hover:scale-105 hover:shadow-lg group cursor-pointer text-left"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Applications</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalApplications}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Applications</p>
+                  <p className="text-3xl font-bold text-foreground">{stats.totalApplications}</p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -1409,14 +1409,14 @@ export default function Dashboard() {
 
             <button
               onClick={() => router.push('/showcases')}
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-purple-300 dark:hover:border-purple-600 transition-all hover:scale-105 hover:shadow-lg group cursor-pointer text-left"
+              className="bg-card rounded-2xl p-6 border border-border hover:border-primary transition-all hover:scale-105 hover:shadow-lg group cursor-pointer text-left"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Showcases</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalShowcases}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Showcases</p>
+                  <p className="text-3xl font-bold text-foreground">{stats.totalShowcases}</p>
                 </div>
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -1426,12 +1426,12 @@ export default function Dashboard() {
 
             <button
               onClick={() => router.push('/messages')}
-              className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:border-primary transition-all hover:scale-105 hover:shadow-lg group cursor-pointer text-left"
+              className="bg-card rounded-2xl p-6 border border-border hover:border-primary transition-all hover:scale-105 hover:shadow-lg group cursor-pointer text-left"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Messages</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalMessages}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Messages</p>
+                  <p className="text-3xl font-bold text-foreground">{stats.totalMessages}</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1446,33 +1446,33 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Contributor Actions */}
             {isContributor && (
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+              <div className="bg-card rounded-2xl p-8 border border-border shadow-xl">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-preset-400 to-preset-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
                     <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Contributor Actions</h3>
+                  <h3 className="text-xl font-bold text-foreground">Contributor Actions</h3>
                 </div>
                 <div className="space-y-4">
                   <button 
                     onClick={() => router.push('/gigs/create')}
-                    className="group relative overflow-hidden bg-gradient-to-r from-preset-500 to-preset-600 text-white px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 hover:shadow-lg w-full"
+                    className="group relative overflow-hidden bg-primary text-primary-foreground px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 hover:shadow-lg w-full"
                   >
                     <span className="relative z-10">Create New Gig</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-preset-600 to-preset-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                    <div className="absolute inset-0 bg-primary/90 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                   </button>
                   <div className="grid grid-cols-2 gap-4">
                     <button 
                       onClick={() => router.push('/gigs/my-gigs')}
-                      className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
+                      className="bg-muted hover:bg-muted/80 text-foreground px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
                     >
                       My Gigs
                     </button>
                     <button 
                       onClick={() => router.push('/applications')}
-                      className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
+                      className="bg-muted hover:bg-muted/80 text-foreground px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
                     >
                       Applications
                     </button>
@@ -1483,33 +1483,33 @@ export default function Dashboard() {
 
             {/* Talent Actions */}
             {isTalent && (
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl">
+              <div className="bg-card rounded-2xl p-8 border border-border shadow-xl">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
                     <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Talent Actions</h3>
+                  <h3 className="text-xl font-bold text-foreground">Talent Actions</h3>
                 </div>
                 <div className="space-y-4">
                   <button 
                     onClick={() => router.push('/gigs')}
-                    className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 hover:shadow-lg w-full"
+                    className="group relative overflow-hidden bg-primary text-primary-foreground px-6 py-4 rounded-xl font-medium transition-all hover:scale-105 hover:shadow-lg w-full"
                   >
                     <span className="relative z-10">Browse Gigs</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                    <div className="absolute inset-0 bg-primary/90 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
                   </button>
                   <div className="grid grid-cols-2 gap-4">
                     <button 
                       onClick={() => router.push('/applications/my-applications')}
-                      className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
+                      className="bg-muted hover:bg-muted/80 text-foreground px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
                     >
                       My Applications
                     </button>
                     <button 
                       onClick={() => router.push('/showcases')}
-                      className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
+                      className="bg-muted hover:bg-muted/80 text-foreground px-6 py-4 rounded-xl font-medium transition-all hover:scale-105"
                     >
                       Showcases
                     </button>

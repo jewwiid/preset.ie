@@ -157,7 +157,7 @@ export default function CatchAllPage() {
       }
 
       // Check if this slug corresponds to a user profile
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await (supabase as any)
         .from('users_profile')
         .select(`
           id,
@@ -207,7 +207,7 @@ export default function CatchAllPage() {
       setProfile(profileData);
 
       // Fetch public showcases for this user
-      const { data: showcasesData, error: showcasesError } = await supabase
+      const { data: showcasesData, error: showcasesError } = await (supabase as any)
         .from('showcases')
         .select(`
           id,

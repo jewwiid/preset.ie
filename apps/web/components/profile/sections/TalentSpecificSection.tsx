@@ -111,36 +111,36 @@ export function TalentSpecificSection() {
         if (!supabase) return
 
         // Fetch talent categories
-        const { data: talentCategories, error: talentError } = await supabase
+        const { data: talentCategories, error: talentError } = await (supabase as any)
           .from('predefined_talent_categories')
           .select('category_name')
           .eq('is_active', true)
           .order('sort_order')
 
         if (!talentError && talentCategories) {
-          setPredefinedTalentCategories(talentCategories.map(c => c.category_name))
+          setPredefinedTalentCategories((talentCategories as any).map((c: any) => c.category_name))
         }
 
         // Fetch eye colors
-        const { data: eyeColors, error: eyeError } = await supabase
+        const { data: eyeColors, error: eyeError } = await (supabase as any)
           .from('predefined_eye_colors')
           .select('color_name')
           .eq('is_active', true)
           .order('sort_order')
 
         if (!eyeError && eyeColors) {
-          setPredefinedEyeColors(eyeColors.map(c => c.color_name))
+          setPredefinedEyeColors((eyeColors as any).map((c: any) => c.color_name))
         }
 
         // Fetch hair colors
-        const { data: hairColors, error: hairError } = await supabase
+        const { data: hairColors, error: hairError } = await (supabase as any)
           .from('predefined_hair_colors')
           .select('color_name')
           .eq('is_active', true)
           .order('sort_order')
 
         if (!hairError && hairColors) {
-          setPredefinedHairColors(hairColors.map(c => c.color_name))
+          setPredefinedHairColors((hairColors as any).map((c: any) => c.color_name))
         }
 
       } catch (error) {
@@ -173,67 +173,67 @@ export function TalentSpecificSection() {
         if (!supabase || !user) return
 
         // Fetch clothing size systems
-        const { data: systemsData, error: systemsError } = await supabase
+        const { data: systemsData, error: systemsError } = await (supabase as any)
           .from('predefined_clothing_size_systems')
           .select('*')
           .eq('is_active', true)
           .order('sort_order')
 
         if (!systemsError && systemsData) {
-          setClothingSizeSystems(systemsData)
+          setClothingSizeSystems(systemsData as any)
         }
 
         // Fetch clothing sizes
-        const { data: sizesData, error: sizesError } = await supabase
+        const { data: sizesData, error: sizesError } = await (supabase as any)
           .from('predefined_clothing_sizes')
           .select('*')
           .eq('is_active', true)
           .order('sort_order')
 
         if (!sizesError && sizesData) {
-          setClothingSizes(sizesData)
+          setClothingSizes(sizesData as any)
         }
 
         // Fetch shoe size systems
-        const { data: shoeSystemsData, error: shoeSystemsError } = await supabase
+        const { data: shoeSystemsData, error: shoeSystemsError } = await (supabase as any)
           .from('predefined_shoe_size_systems')
           .select('*')
           .eq('is_active', true)
           .order('sort_order')
 
         if (!shoeSystemsError && shoeSystemsData) {
-          setShoeSizeSystems(shoeSystemsData)
+          setShoeSizeSystems(shoeSystemsData as any)
         }
 
         // Fetch shoe sizes
-        const { data: shoeSizesData, error: shoeSizesError } = await supabase
+        const { data: shoeSizesData, error: shoeSizesError } = await (supabase as any)
           .from('predefined_shoe_sizes')
           .select('*')
           .eq('is_active', true)
           .order('sort_order')
 
         if (!shoeSizesError && shoeSizesData) {
-          setShoeSizes(shoeSizesData)
+          setShoeSizes(shoeSizesData as any)
         }
 
         // Fetch user's existing clothing sizes
-        const { data: userClothingData, error: userClothingError } = await supabase
+        const { data: userClothingData, error: userClothingError } = await (supabase as any)
           .from('user_clothing_sizes')
           .select('*')
           .eq('profile_id', profile!.id)
 
         if (!userClothingError && userClothingData) {
-          setUserClothingSizes(userClothingData)
+          setUserClothingSizes(userClothingData as any)
         }
 
         // Fetch user's existing measurements
-        const { data: userMeasurementData, error: userMeasurementError } = await supabase
+        const { data: userMeasurementData, error: userMeasurementError } = await (supabase as any)
           .from('user_measurements')
           .select('*')
           .eq('profile_id', profile!.id)
 
         if (!userMeasurementError && userMeasurementData) {
-          setUserMeasurements(userMeasurementData)
+          setUserMeasurements(userMeasurementData as any)
         }
 
       } catch (error) {
@@ -267,7 +267,7 @@ export function TalentSpecificSection() {
     if (!supabase || !user || !profile || !newClothingType || !newClothingSizeSystem || !newClothingSizeValue) return
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_clothing_sizes')
         .insert({
           profile_id: profile.id, // Use profile ID instead of user ID
@@ -275,7 +275,7 @@ export function TalentSpecificSection() {
           size_system_id: newClothingSizeSystem, // This is already a UUID from the dropdown
           size_value: newClothingSizeValue,
           notes: newCustomSizeDescription || null
-        })
+        } as any)
         .select()
         .single()
 
@@ -285,7 +285,7 @@ export function TalentSpecificSection() {
       }
 
       // Update local state
-      setUserClothingSizes(prev => [...prev, data])
+      setUserClothingSizes(prev => [...prev, data as any])
       
       // Clear form
       setNewClothingType('')
@@ -302,7 +302,7 @@ export function TalentSpecificSection() {
     if (!supabase) return
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('user_clothing_sizes')
         .delete()
         .eq('id', clothingSizeId)
@@ -325,7 +325,7 @@ export function TalentSpecificSection() {
     if (!supabase || !user || !profile || !newMeasurementType || !newMeasurementValue) return
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_measurements')
         .insert({
           profile_id: profile.id, // Use profile ID instead of user ID
@@ -333,7 +333,7 @@ export function TalentSpecificSection() {
           measurement_value: parseFloat(newMeasurementValue),
           unit: newMeasurementUnit,
           notes: newMeasurementNotes || null
-        })
+        } as any)
         .select()
         .single()
 
@@ -343,7 +343,7 @@ export function TalentSpecificSection() {
       }
 
       // Update local state
-      setUserMeasurements(prev => [...prev, data])
+      setUserMeasurements(prev => [...prev, data as any])
       
       // Clear form
       setNewMeasurementType('')
@@ -360,7 +360,7 @@ export function TalentSpecificSection() {
     if (!supabase) return
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('user_measurements')
         .delete()
         .eq('id', measurementId)
@@ -394,11 +394,11 @@ export function TalentSpecificSection() {
       // Store shoe size in the profile's shoe_size field with system info
       const shoeSizeDisplay = `${newShoeSizeValue} (${selectedSystem.system_name} - ${selectedSystem.region})`
       
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('users_profile')
         .update({
           shoe_size: shoeSizeDisplay
-        })
+        } as any)
         .eq('id', profile.id)
 
       if (error) {
@@ -432,14 +432,14 @@ export function TalentSpecificSection() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+      <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
         <Star className="w-5 h-5" />
         Talent-Specific Information
       </h2>
 
       {/* Physical Attributes */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Ruler className="w-4 h-4" />
           Physical Attributes
         </h3>
@@ -466,22 +466,22 @@ export function TalentSpecificSection() {
       </div>
 
       {/* Appearance */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Eye className="w-4 h-4" />
           Appearance
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Eye Color
             </label>
             <select
               value={isEditing ? (formData.eye_color || '') : (profile?.eye_color || '')}
               onChange={(e) => handleFieldChange('eye_color', e.target.value)}
               disabled={!isEditing}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white transition-all duration-200"
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
             >
               <option value="">Select eye color</option>
               {predefinedEyeColors.map((color) => (
@@ -493,14 +493,14 @@ export function TalentSpecificSection() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Hair Color
             </label>
             <select
               value={isEditing ? (formData.hair_color || '') : (profile?.hair_color || '')}
               onChange={(e) => handleFieldChange('hair_color', e.target.value)}
               disabled={!isEditing}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white transition-all duration-200"
+              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
             >
               <option value="">Select hair color</option>
               {predefinedHairColors.map((color) => (
@@ -514,8 +514,8 @@ export function TalentSpecificSection() {
       </div>
 
       {/* Clothing Sizes */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Shirt className="w-4 h-4" />
           Clothing & Sizes
         </h3>
@@ -523,17 +523,17 @@ export function TalentSpecificSection() {
         {/* Current Clothing Sizes */}
         {userClothingSizes.length > 0 && (
           <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Clothing Sizes</h4>
+            <h4 className="text-sm font-medium text-foreground mb-2">Current Clothing Sizes</h4>
             <div className="space-y-2">
               {userClothingSizes.map((size) => {
                 const system = clothingSizeSystems.find(s => s.id.toString() === size.size_system_id)
                 return (
-                  <div key={size.id} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                  <div key={size.id} className="flex items-center justify-between p-2 bg-card rounded border">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      <span className="text-sm font-medium text-foreground">
                         {size.clothing_type}: {size.size_value}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         ({system?.region} {system?.system_type})
                       </span>
                     </div>
@@ -554,18 +554,18 @@ export function TalentSpecificSection() {
 
         {/* Add New Clothing Size */}
         {isEditing && (
-          <div className="space-y-3 p-3 bg-white dark:bg-gray-800 rounded border">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Add Clothing Size</h4>
+          <div className="space-y-3 p-3 bg-card rounded border">
+            <h4 className="text-sm font-medium text-foreground">Add Clothing Size</h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Clothing Type
                 </label>
                 <select
                   value={newClothingType}
                   onChange={(e) => setNewClothingType(e.target.value)}
-                  className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                 >
                   <option value="">Select type</option>
                   <option value="tops">Tops</option>
@@ -579,7 +579,7 @@ export function TalentSpecificSection() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Size System
                 </label>
                 <select
@@ -588,7 +588,7 @@ export function TalentSpecificSection() {
                     setNewClothingSizeSystem(e.target.value)
                     setNewClothingSizeValue('')
                   }}
-                  className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                 >
                   <option value="">Select system</option>
                   {clothingSizeSystems.map((system) => (
@@ -600,7 +600,7 @@ export function TalentSpecificSection() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Size Value
                 </label>
                 <select
@@ -619,7 +619,7 @@ export function TalentSpecificSection() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Custom Description (Optional)
                 </label>
                 <input
@@ -627,7 +627,7 @@ export function TalentSpecificSection() {
                   value={newCustomSizeDescription}
                   onChange={(e) => setNewCustomSizeDescription(e.target.value)}
                   placeholder="e.g., Fits loose"
-                  className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                 />
               </div>
             </div>
@@ -635,7 +635,7 @@ export function TalentSpecificSection() {
             <button
               onClick={addClothingSize}
               disabled={!newClothingType || !newClothingSizeSystem || !newClothingSizeValue}
-              className="flex items-center gap-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm rounded transition-colors"
+              className="flex items-center gap-2 px-3 py-1 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground text-sm rounded transition-colors"
             >
               <Plus className="w-4 h-4" />
               Add Clothing Size
@@ -645,19 +645,19 @@ export function TalentSpecificSection() {
 
         {/* Measurements */}
         <div className="mt-4">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Body Measurements</h4>
+          <h4 className="text-sm font-medium text-foreground mb-2">Body Measurements</h4>
           
           {/* Current Measurements */}
           {userMeasurements.length > 0 && (
             <div className="mb-3 space-y-2">
               {userMeasurements.map((measurement) => (
-                <div key={measurement.id} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+                <div key={measurement.id} className="flex items-center justify-between p-2 bg-card rounded border">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                    <span className="text-sm font-medium text-foreground capitalize">
                       {measurement.measurement_type}: {measurement.measurement_value} {measurement.unit}
                     </span>
                     {measurement.notes && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         ({measurement.notes})
                       </span>
                     )}
@@ -677,18 +677,18 @@ export function TalentSpecificSection() {
 
           {/* Add New Measurement */}
           {isEditing && (
-            <div className="space-y-3 p-3 bg-white dark:bg-gray-800 rounded border">
-              <h5 className="text-xs font-medium text-gray-600 dark:text-gray-400">Add Measurement</h5>
+            <div className="space-y-3 p-3 bg-card rounded border">
+              <h5 className="text-xs font-medium text-muted-foreground">Add Measurement</h5>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                     Type
                   </label>
                   <select
                     value={newMeasurementType}
                     onChange={(e) => setNewMeasurementType(e.target.value)}
-                    className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                   >
                     <option value="">Select type</option>
                     <option value="chest">Chest</option>
@@ -702,7 +702,7 @@ export function TalentSpecificSection() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                     Value
                   </label>
                   <input
@@ -711,18 +711,18 @@ export function TalentSpecificSection() {
                     value={newMeasurementValue}
                     onChange={(e) => setNewMeasurementValue(e.target.value)}
                     placeholder="e.g., 36"
-                    className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                     Unit
                   </label>
                   <select
                     value={newMeasurementUnit}
                     onChange={(e) => setNewMeasurementUnit(e.target.value)}
-                    className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                   >
                     <option value="in">Inches</option>
                     <option value="cm">Centimeters</option>
@@ -731,7 +731,7 @@ export function TalentSpecificSection() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Notes (Optional)
                 </label>
                 <input
@@ -739,14 +739,14 @@ export function TalentSpecificSection() {
                   value={newMeasurementNotes}
                   onChange={(e) => setNewMeasurementNotes(e.target.value)}
                   placeholder="e.g., Relaxed fit"
-                  className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                 />
               </div>
 
               <button
                 onClick={addMeasurement}
                 disabled={!newMeasurementType || !newMeasurementValue}
-                className="flex items-center gap-2 px-3 py-1 bg-primary-600 hover:bg-primary/90 disabled:bg-gray-400 text-white text-sm rounded transition-colors"
+                className="flex items-center gap-2 px-3 py-1 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground text-sm rounded transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Add Measurement
@@ -757,12 +757,12 @@ export function TalentSpecificSection() {
         
         {/* Shoe Sizes */}
         <div className="mt-4">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shoe Sizes</h4>
+          <h4 className="text-sm font-medium text-foreground mb-2">Shoe Sizes</h4>
           
           {/* Current Shoe Sizes */}
           {profile?.shoe_size && (
             <div className="mb-3">
-              <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
+              <div className="flex items-center justify-between p-2 bg-card rounded border">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {profile.shoe_size}
@@ -782,12 +782,12 @@ export function TalentSpecificSection() {
 
           {/* Add New Shoe Size */}
           {isEditing && (
-            <div className="space-y-3 p-3 bg-white dark:bg-gray-800 rounded border">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Add Shoe Size</h4>
+            <div className="space-y-3 p-3 bg-card rounded border">
+              <h4 className="text-sm font-medium text-foreground">Add Shoe Size</h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                     Size System
                   </label>
                   <select
@@ -796,7 +796,7 @@ export function TalentSpecificSection() {
                       setNewShoeSizeSystem(e.target.value)
                       setNewShoeSizeValue('')
                     }}
-                    className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white"
+                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                   >
                     <option value="">Select system</option>
                     {shoeSizeSystems.map((system) => (
@@ -808,7 +808,7 @@ export function TalentSpecificSection() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
                     Size Value
                   </label>
                   <select
@@ -830,7 +830,7 @@ export function TalentSpecificSection() {
               <button
                 onClick={addShoeSize}
                 disabled={!newShoeSizeSystem || !newShoeSizeValue}
-                className="flex items-center gap-2 px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white text-sm rounded transition-colors"
+                className="flex items-center gap-2 px-3 py-1 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground text-sm rounded transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Add Shoe Size
@@ -841,8 +841,8 @@ export function TalentSpecificSection() {
       </div>
 
       {/* Body Modifications */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Palette className="w-4 h-4" />
           Body Modifications
         </h3>
@@ -863,8 +863,8 @@ export function TalentSpecificSection() {
       </div>
 
       {/* Talent Categories */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Talent Categories</h3>
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4">Talent Categories</h3>
         
         <TagInput
           label="Talent Categories"
@@ -876,7 +876,7 @@ export function TalentSpecificSection() {
           className={isEditing ? '' : 'pointer-events-none'}
         />
         
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-sm text-muted-foreground mt-2">
           Select the types of talent work you're interested in (e.g., Model, Actor, Dancer)
         </p>
       </div>
@@ -885,30 +885,30 @@ export function TalentSpecificSection() {
       {!isEditing && (
         <div className="space-y-4">
           {/* Physical Attributes Display */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Physical Attributes</h3>
+          <div className="bg-card rounded-lg p-4 border border-border">
+            <h3 className="text-sm font-medium text-foreground mb-3">Physical Attributes</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-600 dark:text-gray-400">Height:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">
+                <span className="text-muted-foreground">Height:</span>
+                <span className="ml-2 text-foreground">
                   {profile?.height_cm ? `${profile.height_cm} cm` : 'Not specified'}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600 dark:text-gray-400">Measurements:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">
+                <span className="text-muted-foreground">Measurements:</span>
+                <span className="ml-2 text-foreground">
                   {profile?.measurements || 'Not specified'}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600 dark:text-gray-400">Eye Color:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">
+                <span className="text-muted-foreground">Eye Color:</span>
+                <span className="ml-2 text-foreground">
                   {profile?.eye_color || 'Not specified'}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600 dark:text-gray-400">Hair Color:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">
+                <span className="text-muted-foreground">Hair Color:</span>
+                <span className="ml-2 text-foreground">
                   {profile?.hair_color || 'Not specified'}
                 </span>
               </div>
@@ -916,20 +916,20 @@ export function TalentSpecificSection() {
           </div>
 
           {/* Body Modifications Display */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Body Modifications</h3>
+          <div className="bg-card rounded-lg p-4 border border-border">
+            <h3 className="text-sm font-medium text-foreground mb-3">Body Modifications</h3>
             <div className="flex gap-4 text-sm">
               <span className={`px-2 py-1 rounded-full text-xs ${
                 profile?.tattoos 
                   ? 'bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200' 
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  : 'bg-muted text-muted-foreground'
               }`}>
                 Tattoos: {profile?.tattoos ? 'Yes' : 'No'}
               </span>
               <span className={`px-2 py-1 rounded-full text-xs ${
                 profile?.piercings 
                   ? 'bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200' 
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                  : 'bg-muted text-muted-foreground'
               }`}>
                 Piercings: {profile?.piercings ? 'Yes' : 'No'}
               </span>
@@ -941,8 +941,8 @@ export function TalentSpecificSection() {
       {/* Loading State */}
       {loadingPredefined && (
         <div className="text-center py-4">
-          <div className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400">
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="inline-flex items-center gap-2 text-muted-foreground">
+            <div className="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin"></div>
             Loading predefined options...
           </div>
         </div>

@@ -39,7 +39,7 @@ export async function POST(
     }
 
     // Get user profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await (supabase as any)
       .from('users_profile')
       .select('id')
       .eq('user_id', user.id)
@@ -53,11 +53,11 @@ export async function POST(
     }
 
     // Find the gig and verify ownership
-    const { data: gig, error: gigError } = await supabase
+    const { data: gig, error: gigError } = await (supabase as any)
       .from('gigs')
       .select('*')
       .eq('id', gigId)
-      .eq('owner_user_id', profile.id)
+      .eq('owner_user_id', (profile as any).id)
       .single();
 
     if (gigError || !gig) {
@@ -68,7 +68,7 @@ export async function POST(
     }
 
     // Validate gig status
-    if (gig.status !== 'BOOKED') {
+    if ((gig as any).status !== 'BOOKED') {
       return NextResponse.json(
         { error: 'Can only complete gigs that are in BOOKED status' },
         { status: 400 }
@@ -76,7 +76,7 @@ export async function POST(
     }
 
     // Update gig status to COMPLETED
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('gigs')
       .update({
         status: 'COMPLETED',

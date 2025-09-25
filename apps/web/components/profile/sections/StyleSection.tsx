@@ -64,13 +64,13 @@ export function StyleSection() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+      <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
         <Palette className="w-5 h-5" />
         Style & Vibe
       </h2>
 
       {/* Style Tags */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+      <div className="bg-muted rounded-lg p-4">
         <TagInput
           label="Style Tags"
           tags={isEditing ? (formData.style_tags || []) : (profile?.style_tags || [])}
@@ -82,13 +82,13 @@ export function StyleSection() {
           className={isEditing ? '' : 'pointer-events-none'}
         />
         
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-sm text-muted-foreground mt-2">
           Add tags that describe your photography style (e.g., Portrait, Fashion, Editorial)
         </p>
       </div>
 
       {/* Vibe Tags */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+      <div className="bg-muted rounded-lg p-4">
         <TagInput
           label="Vibe Tags"
           tags={isEditing ? (formData.vibe_tags || []) : (profile?.vibe_tags || [])}
@@ -100,7 +100,7 @@ export function StyleSection() {
           className={isEditing ? '' : 'pointer-events-none'}
         />
         
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-sm text-muted-foreground mt-2">
           Add tags that describe the mood or feeling of your work (e.g., Professional, Creative, Dramatic)
         </p>
       </div>
@@ -111,12 +111,12 @@ export function StyleSection() {
           {/* Style Tags Display */}
           {(profile?.style_tags && profile.style_tags.length > 0) && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Style Tags</h3>
+              <h3 className="text-sm font-medium text-foreground mb-2">Style Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.style_tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
                   >
                     {tag}
                   </span>
@@ -128,12 +128,12 @@ export function StyleSection() {
           {/* Vibe Tags Display */}
           {(profile?.vibe_tags && profile.vibe_tags.length > 0) && (
             <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vibe Tags</h3>
+              <h3 className="text-sm font-medium text-foreground mb-2">Vibe Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {profile.vibe_tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
                   >
                     <Sparkles className="w-3 h-3 mr-1" />
                     {tag}
@@ -146,7 +146,7 @@ export function StyleSection() {
           {/* Empty State */}
           {(!profile?.style_tags || profile.style_tags.length === 0) && 
            (!profile?.vibe_tags || profile.vibe_tags.length === 0) && (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div className="text-center py-8 text-muted-foreground">
               <Palette className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No style or vibe tags added yet</p>
               <p className="text-sm">Add tags to help clients understand your style</p>
@@ -158,8 +158,8 @@ export function StyleSection() {
       {/* Loading State */}
       {loadingPredefined && (
         <div className="text-center py-4">
-          <div className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-400">
-            <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="inline-flex items-center gap-2 text-muted-foreground">
+            <div className="w-4 h-4 border-2 border-border border-t-primary rounded-full animate-spin"></div>
             Loading predefined options...
           </div>
         </div>

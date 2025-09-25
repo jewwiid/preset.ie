@@ -40,22 +40,22 @@ function ProfileLayoutContent({ children }: ProfileLayoutProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading profile...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Back button */}
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 mb-6 transition-colors duration-200"
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors duration-200"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -68,10 +68,10 @@ function ProfileLayoutContent({ children }: ProfileLayoutProps) {
         <ProfileTabs />
 
         {/* Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <div className="bg-card rounded-xl shadow-lg p-6">
           <Suspense fallback={
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
           }>
             {renderTabContent()}

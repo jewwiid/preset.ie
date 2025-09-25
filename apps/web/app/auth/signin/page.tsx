@@ -14,6 +14,7 @@ import {
   EyeOff
 } from 'lucide-react'
 import { Logo } from '../../../components/Logo'
+import { GoogleSignInButton } from '../../../components/auth/GoogleSignInButton'
 
 function SignInContent() {
   const [email, setEmail] = useState('')
@@ -81,6 +82,21 @@ function SignInContent() {
             <span className="text-sm">{successMessage}</span>
           </div>
         )}
+
+        {/* Google Sign-In */}
+        <div className="mb-6">
+          <GoogleSignInButton mode="signin" />
+        </div>
+
+        {/* Divider */}
+        <div className="relative mb-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-card text-muted-foreground">Or continue with email</span>
+          </div>
+        </div>
 
         {/* Sign In Form */}
         <form className="space-y-6" onSubmit={handleSubmit}>

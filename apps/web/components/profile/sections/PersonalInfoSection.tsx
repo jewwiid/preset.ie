@@ -16,7 +16,7 @@ export function PersonalInfoSection() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Personal Information</h2>
+      <h2 className="text-xl font-semibold text-foreground mb-6">Personal Information</h2>
 
       {/* Display Name */}
       <TextField
@@ -81,8 +81,8 @@ export function PersonalInfoSection() {
       />
 
       {/* Contact Information */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Contact Information</h3>
+      <div className="border-t border-border pt-6">
+        <h3 className="text-lg font-medium text-foreground mb-4">Contact Information</h3>
         
         <TextField
           label="Phone Number"

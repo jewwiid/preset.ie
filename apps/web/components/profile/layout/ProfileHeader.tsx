@@ -49,7 +49,7 @@ export function ProfileHeader() {
   return (
     <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
       {/* Header Banner */}
-      <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
+      <div className="relative h-48 bg-gradient-to-r from-primary to-primary/90">
         {profile?.header_banner_url && (
           <img
             src={profile.header_banner_url}
@@ -183,7 +183,7 @@ export function ProfileHeader() {
           
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                 {formData.avatar_url ? (
                   <img
                     src={formData.avatar_url}

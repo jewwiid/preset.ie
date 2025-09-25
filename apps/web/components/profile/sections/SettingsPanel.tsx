@@ -86,13 +86,13 @@ export function SettingsPanel() {
       }
 
       // Update user settings
-      const { data: settingsData, error: settingsError } = await supabase
+      const { data: settingsData, error: settingsError } = await (supabase as any)
         .from('user_settings')
         .upsert({
-          profile_id: profile.id,
+          user_id: profile.user_id,
           ...formSettings,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .select()
         .single()
 
@@ -101,13 +101,13 @@ export function SettingsPanel() {
       }
 
       // Update notification preferences
-      const { data: notificationData, error: notificationError } = await supabase
+      const { data: notificationData, error: notificationError } = await (supabase as any)
         .from('notification_preferences')
         .upsert({
           user_id: user.id,
           ...formNotificationPrefs,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .select()
         .single()
 
@@ -116,8 +116,8 @@ export function SettingsPanel() {
       }
 
       // Update context
-      setSettings(settingsData)
-      setNotificationPrefs(notificationData)
+      setSettings(settingsData as any)
+      setNotificationPrefs(notificationData as any)
       setSuccess('Settings saved successfully!')
 
     } catch (err) {
@@ -130,7 +130,7 @@ export function SettingsPanel() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+      <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
         <Settings className="w-5 h-5" />
         Settings
       </h2>
@@ -145,8 +145,8 @@ export function SettingsPanel() {
       )}
 
       {/* Notification Settings */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Bell className="w-4 h-4" />
           Notification Settings
         </h3>
@@ -173,8 +173,8 @@ export function SettingsPanel() {
       </div>
 
       {/* Privacy Settings */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Shield className="w-4 h-4" />
           Privacy Settings
         </h3>
@@ -195,8 +195,8 @@ export function SettingsPanel() {
       </div>
 
       {/* Notification Preferences */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Eye className="w-4 h-4" />
           Notification Preferences
         </h3>
@@ -213,7 +213,7 @@ export function SettingsPanel() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Minimum Budget ($)
               </label>
               <input
@@ -221,12 +221,12 @@ export function SettingsPanel() {
                 value={formNotificationPrefs.min_budget || ''}
                 onChange={(e) => handleNotificationPrefsChange('min_budget', e.target.value ? parseInt(e.target.value) : null)}
                 placeholder="No minimum"
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white transition-all duration-200"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Maximum Budget ($)
               </label>
               <input
@@ -234,7 +234,7 @@ export function SettingsPanel() {
                 value={formNotificationPrefs.max_budget || ''}
                 onChange={(e) => handleNotificationPrefsChange('max_budget', e.target.value ? parseInt(e.target.value) : null)}
                 placeholder="No maximum"
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white transition-all duration-200"
+                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
               />
             </div>
           </div>
@@ -246,7 +246,7 @@ export function SettingsPanel() {
         <button
           onClick={handleSaveSettings}
           disabled={saving}
-          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
+          className="bg-primary hover:bg-primary/90 disabled:bg-muted text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
         >
           {saving ? (
             <>
@@ -263,38 +263,38 @@ export function SettingsPanel() {
       </div>
 
       {/* Current Settings Display */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Current Settings</h3>
+      <div className="bg-card rounded-lg p-4 border border-border">
+        <h3 className="text-lg font-medium text-foreground mb-4">Current Settings</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="space-y-2">
-            <h4 className="font-medium text-gray-700 dark:text-gray-300">Notifications</h4>
+            <h4 className="font-medium text-foreground">Notifications</h4>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.email_notifications ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
-                <span className="text-gray-600 dark:text-gray-400">Email Notifications</span>
+                <div className={`w-2 h-2 rounded-full ${formSettings.email_notifications ? 'bg-primary' : 'bg-muted'}`}></div>
+                <span className="text-muted-foreground">Email Notifications</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.push_notifications ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
-                <span className="text-gray-600 dark:text-gray-400">Push Notifications</span>
+                <div className={`w-2 h-2 rounded-full ${formSettings.push_notifications ? 'bg-primary' : 'bg-muted'}`}></div>
+                <span className="text-muted-foreground">Push Notifications</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.marketing_emails ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
-                <span className="text-gray-600 dark:text-gray-400">Marketing Emails</span>
+                <div className={`w-2 h-2 rounded-full ${formSettings.marketing_emails ? 'bg-primary' : 'bg-muted'}`}></div>
+                <span className="text-muted-foreground">Marketing Emails</span>
               </div>
             </div>
           </div>
           
           <div className="space-y-2">
-            <h4 className="font-medium text-gray-700 dark:text-gray-300">Privacy</h4>
+            <h4 className="font-medium text-foreground">Privacy</h4>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.location_visibility ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
-                <span className="text-gray-600 dark:text-gray-400">Location Visible</span>
+                <div className={`w-2 h-2 rounded-full ${formSettings.location_visibility ? 'bg-primary' : 'bg-muted'}`}></div>
+                <span className="text-muted-foreground">Location Visible</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.profile_visibility ? 'bg-primary-500' : 'bg-gray-400'}`}></div>
-                <span className="text-gray-600 dark:text-gray-400">Profile Visible</span>
+                <div className={`w-2 h-2 rounded-full ${formSettings.profile_visibility ? 'bg-primary' : 'bg-muted'}`}></div>
+                <span className="text-muted-foreground">Profile Visible</span>
               </div>
             </div>
           </div>

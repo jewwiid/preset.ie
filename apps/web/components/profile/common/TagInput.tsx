@@ -86,13 +86,13 @@ export function TagInput({
           {tags.map((tag, index) => (
             <span
               key={index}
-              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
             >
               {tag}
               <button
                 type="button"
                 onClick={() => onRemoveTag(tag)}
-                className="ml-2 text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100"
+                className="ml-2 text-primary hover:text-primary/90"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -110,17 +110,17 @@ export function TagInput({
           onKeyPress={handleKeyPress}
           placeholder={placeholder}
           disabled={isValidating}
-          className={`flex-1 px-3 py-2 bg-white dark:bg-gray-700 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 dark:text-white transition-all duration-200 ${
+          className={`flex-1 px-3 py-2 bg-background border rounded-lg focus:outline-none focus:ring-2 text-foreground transition-all duration-200 ${
             error || tagError 
-              ? 'border-red-300 dark:border-red-600 focus:ring-red-500' 
-              : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+              ? 'border-destructive focus:ring-destructive' 
+              : 'border-border focus:ring-ring'
           }`}
         />
         <button
           type="button"
           onClick={handleAddTag}
           disabled={!newTag.trim() || isValidating}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors duration-200 flex items-center gap-1"
+          className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground rounded-lg transition-colors duration-200 flex items-center gap-1"
         >
           <Plus className="w-4 h-4" />
           {isValidating ? 'Adding...' : 'Add'}
@@ -130,7 +130,7 @@ export function TagInput({
       {/* Predefined options */}
       {predefinedOptions.length > 0 && (
         <div className="mt-3">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Suggested tags:</p>
+          <p className="text-sm text-muted-foreground mb-2">Suggested tags:</p>
           <div className="flex flex-wrap gap-2">
             {predefinedOptions
               .filter(option => !tags.includes(option))
@@ -140,7 +140,7 @@ export function TagInput({
                   key={index}
                   type="button"
                   onClick={() => handlePredefinedTagClick(option)}
-                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
+                  className="px-3 py-1 text-sm bg-muted text-muted-foreground rounded-full hover:bg-accent transition-colors duration-200"
                 >
                   {option}
                 </button>
@@ -151,7 +151,7 @@ export function TagInput({
 
       {/* Error messages */}
       {(error || tagError) && (
-        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+        <p className="mt-1 text-sm text-destructive">
           {error || tagError}
         </p>
       )}

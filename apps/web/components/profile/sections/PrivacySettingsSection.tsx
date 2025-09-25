@@ -17,20 +17,20 @@ export function PrivacySettingsSection() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
-        <Shield className="h-5 w-5 text-primary-600" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Privacy Settings</h2>
+        <Shield className="h-5 w-5 text-primary" />
+        <h2 className="text-xl font-semibold text-foreground">Privacy Settings</h2>
       </div>
 
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
         <div className="flex">
           <div className="flex-shrink-0">
-            <Lock className="h-5 w-5 text-blue-400" />
+            <Lock className="h-5 w-5 text-primary" />
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+            <h3 className="text-sm font-medium text-primary">
               Your Privacy Matters
             </h3>
-            <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+            <div className="mt-2 text-sm text-muted-foreground">
               <p>
                 Control what information is visible to other users. You can change these settings 
                 at any time, and they will be applied immediately.
@@ -43,8 +43,8 @@ export function PrivacySettingsSection() {
       {/* Profile Visibility */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
-          <Eye className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Profile Visibility</h3>
+          <Eye className="h-4 w-4 text-primary" />
+          <h3 className="text-lg font-medium text-foreground">Profile Visibility</h3>
         </div>
         
         <div className="space-y-3">
@@ -72,10 +72,10 @@ export function PrivacySettingsSection() {
       </div>
 
       {/* Contact Information */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <User className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Contact Information</h3>
+          <User className="h-4 w-4 text-primary" />
+          <h3 className="text-lg font-medium text-foreground">Contact Information</h3>
         </div>
         
         <div className="space-y-3">
@@ -103,10 +103,10 @@ export function PrivacySettingsSection() {
       </div>
 
       {/* Professional Information */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <Globe className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Professional Information</h3>
+          <Globe className="h-4 w-4 text-primary" />
+          <h3 className="text-lg font-medium text-foreground">Professional Information</h3>
         </div>
         
         <div className="space-y-3">
@@ -141,10 +141,10 @@ export function PrivacySettingsSection() {
       </div>
 
       {/* Search & Discovery */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <MapPin className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Search & Discovery</h3>
+          <MapPin className="h-4 w-4 text-primary" />
+          <h3 className="text-lg font-medium text-foreground">Search & Discovery</h3>
         </div>
         
         <div className="space-y-3">
@@ -172,10 +172,10 @@ export function PrivacySettingsSection() {
       </div>
 
       {/* Data & Analytics */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <div className="flex items-center gap-2 mb-4">
-          <Shield className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Data & Analytics</h3>
+          <Shield className="h-4 w-4 text-primary" />
+          <h3 className="text-lg font-medium text-foreground">Data & Analytics</h3>
         </div>
         
         <div className="space-y-3">
@@ -196,16 +196,16 @@ export function PrivacySettingsSection() {
       </div>
 
       {/* Privacy Notice */}
-      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+      <div className="bg-muted border border-border rounded-lg p-4">
         <div className="flex">
           <div className="flex-shrink-0">
-            <Shield className="h-5 w-5 text-gray-400" />
+            <Shield className="h-5 w-5 text-muted-foreground" />
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200">
+            <h3 className="text-sm font-medium text-foreground">
               Privacy Notice
             </h3>
-            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="mt-2 text-sm text-muted-foreground">
               <p>
                 Your privacy settings control what information is visible to other users on the platform. 
                 Some information may still be visible to Preset administrators for moderation and support purposes. 

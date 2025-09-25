@@ -142,12 +142,12 @@ export function ProfileCompletionCard() {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'basic': return 'from-blue-500 to-blue-600'
-      case 'professional': return 'from-primary-primary to-primary-primary'
-      case 'contact': return 'from-purple-500 to-purple-600'
-      case 'social': return 'from-pink-500 to-pink-600'
-      case 'equipment': return 'from-orange-500 to-orange-600'
-      default: return 'from-gray-500 to-gray-600'
+      case 'basic': return 'from-primary to-primary/90'
+      case 'professional': return 'from-primary to-primary/90'
+      case 'contact': return 'from-primary to-primary/90'
+      case 'social': return 'from-primary to-primary/90'
+      case 'equipment': return 'from-primary to-primary/90'
+      default: return 'from-primary to-primary/90'
     }
   }
 
@@ -179,15 +179,15 @@ export function ProfileCompletionCard() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
+    <div className="bg-card rounded-xl border border-border overflow-hidden">
       {/* Header - Always Visible */}
-      <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+      <div className="p-6 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
               isComplete 
-                ? 'bg-gradient-to-br from-primary-primary to-primary-primary' 
-                : 'bg-gradient-to-br from-blue-500 to-blue-600'
+                ? 'bg-gradient-to-br from-primary to-primary/90' 
+                : 'bg-gradient-to-br from-primary to-primary/90'
             }`}>
               {isComplete ? (
                 <CheckCircle className="w-6 h-6 text-white" />
@@ -196,10 +196,10 @@ export function ProfileCompletionCard() {
               )}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h3 className="text-lg font-bold text-foreground">
                 Profile Completion
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 {isComplete 
                   ? '🎉 Your profile is complete!' 
                   : `${completion.missingFields.length} fields remaining`
@@ -219,7 +219,7 @@ export function ProfileCompletionCard() {
             {/* Expand/Collapse Button */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <span className="text-sm font-medium">
                 {isExpanded ? 'Hide Details' : 'Show Details'}
@@ -236,15 +236,15 @@ export function ProfileCompletionCard() {
         {/* Progress Bar */}
         <div className="mt-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Progress</span>
-            <span className="text-sm font-bold text-gray-900 dark:text-white">{completion.percentage}%</span>
+            <span className="text-sm font-medium text-foreground">Overall Progress</span>
+            <span className="text-sm font-bold text-foreground">{completion.percentage}%</span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+          <div className="w-full bg-muted rounded-full h-3">
             <div 
               className={`h-3 rounded-full transition-all duration-500 ${
                 isComplete 
-                  ? 'bg-gradient-to-r from-primary-primary to-primary-primary' 
-                  : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                  ? 'bg-gradient-to-r from-primary to-primary/90' 
+                  : 'bg-gradient-to-r from-primary to-primary/90'
               }`}
               style={{ width: `${completion.percentage}%` }}
             />
@@ -270,18 +270,18 @@ export function ProfileCompletionCard() {
                   onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
                   className={`p-4 rounded-lg border transition-all duration-200 ${
                     selectedCategory === category
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-border'
                   }`}
                 >
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 mx-auto bg-gradient-to-br ${colorClass}`}>
                     <Icon className="w-4 h-4 text-white" />
                   </div>
                   <div className="text-center">
-                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300 capitalize mb-1">
+                    <p className="text-xs font-medium text-foreground capitalize mb-1">
                       {category}
                     </p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm font-bold text-foreground">
                       {progress.percentage}%
                     </p>
                   </div>
@@ -293,25 +293,25 @@ export function ProfileCompletionCard() {
           {/* Priority Actions */}
           {!isComplete && (
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              <h4 className="text-sm font-semibold text-foreground mb-3">
                 Complete these to improve your profile:
               </h4>
               {getPriorityFields().map((field, index) => (
-                <div key={field.key} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div key={field.key} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <div className="flex items-center gap-3">
-                    <field.icon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                    <field.icon className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-sm font-medium text-foreground">
                         {field.label}
                       </p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {field.description}
                       </p>
                     </div>
                   </div>
                   <button 
                     onClick={() => handleFieldAction(field)}
-                    className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors"
+                    className="flex items-center gap-1 px-3 py-1 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium rounded-md transition-colors"
                   >
                     {field.actionText}
                     <ArrowRight className="w-3 h-3" />
@@ -324,7 +324,7 @@ export function ProfileCompletionCard() {
           {/* Show All Fields Button */}
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="w-full mt-4 flex items-center justify-center gap-2 p-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+            className="w-full mt-4 flex items-center justify-center gap-2 p-3 text-muted-foreground hover:text-foreground transition-colors"
           >
             <span className="text-sm font-medium">
               {showDetails ? 'Hide All Fields' : 'Show All Fields'}
@@ -339,24 +339,24 @@ export function ProfileCompletionCard() {
 
         {/* Detailed View */}
         {showDetails && (
-          <div className="border-t border-gray-100 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-700/50">
+          <div className="border-t border-border p-6 bg-muted">
             <div className="space-y-4">
               {Object.entries(completion.categoryProgress).map(([category, progress]) => (
                 <div key={category} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {React.createElement(getCategoryIcon(category), { 
-                        className: "w-4 h-4 text-gray-500 dark:text-gray-400" 
+                        className: "w-4 h-4 text-muted-foreground" 
                       })}
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                      <span className="text-sm font-medium text-foreground capitalize">
                         {category} ({progress.completed}/{progress.total} points)
                       </span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    <span className="text-sm font-bold text-foreground">
                       {progress.percentage}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div 
                       className={`h-2 rounded-full bg-gradient-to-r ${getCategoryColor(category)}`}
                       style={{ width: `${progress.percentage}%` }}

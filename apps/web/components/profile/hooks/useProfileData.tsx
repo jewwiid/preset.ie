@@ -56,7 +56,7 @@ export function useProfileData(): UseProfileDataReturn {
         supabase
           .from('user_settings')
           .select('*')
-          .eq('profile_id', profile.id)
+          .eq('user_id', profile.user_id) // Use user_id instead of profile_id since migration hasn't been applied
           .single(),
         supabase
           .from('notification_preferences')
