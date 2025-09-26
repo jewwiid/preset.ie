@@ -106,29 +106,29 @@ export default function EnhancementPreview({
           <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
             {/* Animated Processing Effect */}
             <div className="relative w-32 h-32 mb-6">
-              <div className="absolute inset-0 border-4 border-blue-500 rounded-full animate-ping opacity-25"></div>
-              <div className="absolute inset-0 border-4 border-blue-500 rounded-full animate-spin"></div>
-              <div className="absolute inset-2 border-4 border-white rounded-full animate-pulse"></div>
+              <div className="absolute inset-0 border-4 border-primary-500 rounded-full animate-ping opacity-25"></div>
+              <div className="absolute inset-0 border-4 border-primary-500 rounded-full animate-spin"></div>
+              <div className="absolute inset-2 border-4 border-border rounded-full animate-pulse"></div>
             </div>
 
             {/* Progress Bar */}
             <div className="w-3/4 max-w-md mb-4">
-              <div className="bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div className="bg-muted-700 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-1000 ease-out"
+                  className="bg-gradient-to-r from-primary to-primary/90 h-full transition-all duration-1000 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>
             </div>
 
             {/* Status Text */}
-            <p className="text-white text-sm font-medium mb-2">{status}</p>
-            <p className="text-gray-300 text-xs">{progress}% Complete</p>
+            <p className="text-primary-foreground text-sm font-medium mb-2">{status}</p>
+            <p className="text-muted-foreground-300 text-xs">{progress}% Complete</p>
 
             {/* Prompt Display */}
-            <div className="mt-6 px-6 py-3 bg-white bg-opacity-10 rounded-lg backdrop-blur">
-              <p className="text-gray-200 text-xs">Enhancement Type: <span className="font-semibold">{enhancementType}</span></p>
-              <p className="text-gray-200 text-xs mt-1">Prompt: <span className="font-semibold">{prompt}</span></p>
+            <div className="mt-6 px-6 py-3 bg-background bg-opacity-10 rounded-lg backdrop-blur">
+              <p className="text-muted-foreground-200 text-xs">Enhancement Type: <span className="font-semibold">{enhancementType}</span></p>
+              <p className="text-muted-foreground-200 text-xs mt-1">Prompt: <span className="font-semibold">{prompt}</span></p>
             </div>
           </div>
         )}
@@ -141,7 +141,7 @@ export default function EnhancementPreview({
               alt="Enhanced"
               className="w-full h-full object-cover animate-fadeIn"
             />
-            <div className="absolute bottom-4 right-4 bg-primary-500 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
+            <div className="absolute bottom-4 right-4 bg-primary-500 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium flex items-center">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
@@ -152,18 +152,18 @@ export default function EnhancementPreview({
 
         {/* Error State */}
         {error && (
-          <div className="absolute inset-0 bg-red-500 bg-opacity-90 flex flex-col items-center justify-center">
-            <svg className="w-16 h-16 text-white mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="absolute inset-0 bg-destructive-500 bg-opacity-90 flex flex-col items-center justify-center">
+            <svg className="w-16 h-16 text-primary-foreground mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-white font-semibold mb-2">Enhancement Failed</p>
-            <p className="text-gray-200 text-sm px-6 text-center">{error}</p>
+            <p className="text-primary-foreground font-semibold mb-2">Enhancement Failed</p>
+            <p className="text-muted-foreground-200 text-sm px-6 text-center">{error}</p>
           </div>
         )}
       </div>
 
       {/* Task ID Display */}
-      <div className="mt-2 text-xs text-gray-500 text-center">
+      <div className="mt-2 text-xs text-muted-foreground-500 text-center">
         Task ID: {taskId}
       </div>
     </div>

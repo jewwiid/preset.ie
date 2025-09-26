@@ -134,17 +134,17 @@ export default function OrderManagement({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending_payment':
-        return 'text-yellow-600 bg-yellow-50';
+        return 'text-primary-600 bg-primary-50';
       case 'confirmed':
-        return 'text-blue-600 bg-blue-50';
+        return 'text-primary-600 bg-primary-50';
       case 'in_progress':
-        return 'text-purple-600 bg-purple-50';
+        return 'text-primary-600 bg-primary-50';
       case 'completed':
         return 'text-primary-600 bg-primary-50';
       case 'cancelled':
-        return 'text-red-600 bg-red-50';
+        return 'text-destructive-600 bg-destructive-50';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-muted-foreground-600 bg-muted-50';
     }
   };
 
@@ -169,8 +169,8 @@ export default function OrderManagement({
     <Card key={order.id} className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-start space-x-4">
-          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-            <Package className="h-8 w-8 text-gray-400" />
+          <div className="w-16 h-16 bg-muted-100 rounded-lg flex items-center justify-center">
+            <Package className="h-8 w-8 text-muted-foreground-400" />
           </div>
           
           <div className="flex-1 min-w-0">
@@ -185,9 +185,9 @@ export default function OrderManagement({
               </Badge>
             </div>
             
-            <p className="text-sm text-gray-500 mb-2">{order.listing.category}</p>
+            <p className="text-sm text-muted-foreground-500 mb-2">{order.listing.category}</p>
             
-            <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground-500 mb-2">
               <div className="flex items-center">
                 <Calendar className="h-3 w-3 mr-1" />
                 {formatDate(order.created_at)}
@@ -222,7 +222,7 @@ export default function OrderManagement({
                     )}
                   </div>
                   {order.listing.owner.rating && (
-                    <div className="flex items-center text-xs text-gray-500">
+                    <div className="flex items-center text-xs text-muted-foreground-500">
                       <Star className="h-3 w-3 mr-1 fill-current" />
                       {order.listing.owner.rating.toFixed(1)}
                     </div>
@@ -235,7 +235,7 @@ export default function OrderManagement({
                   {formatPrice(order.total_amount_cents)}
                 </div>
                 {order.order_type === 'rental' && order.daily_rate_cents && (
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground-500">
                     {formatPrice(order.daily_rate_cents)}/day
                   </div>
                 )}
@@ -311,9 +311,9 @@ export default function OrderManagement({
   if (error) {
     return (
       <div className="text-center py-8">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Orders</h3>
-        <p className="text-gray-500 mb-4">{error}</p>
+        <AlertCircle className="h-12 w-12 text-destructive-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">Failed to Load Orders</h3>
+        <p className="text-muted-foreground-500 mb-4">{error}</p>
         <Button onClick={loadOrders}>Try Again</Button>
       </div>
     );
@@ -340,9 +340,9 @@ export default function OrderManagement({
         <TabsContent value="all" className="mt-4">
           {orders.length === 0 ? (
             <div className="text-center py-8">
-              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders</h3>
-              <p className="text-gray-500">You don't have any orders yet.</p>
+              <Package className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No Orders</h3>
+              <p className="text-muted-foreground-500">You don't have any orders yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -354,9 +354,9 @@ export default function OrderManagement({
         <TabsContent value="rental" className="mt-4">
           {rentalOrders.length === 0 ? (
             <div className="text-center py-8">
-              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Rentals</h3>
-              <p className="text-gray-500">You don't have any rental orders yet.</p>
+              <Clock className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No Rentals</h3>
+              <p className="text-muted-foreground-500">You don't have any rental orders yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -368,9 +368,9 @@ export default function OrderManagement({
         <TabsContent value="sale" className="mt-4">
           {saleOrders.length === 0 ? (
             <div className="text-center py-8">
-              <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Sales</h3>
-              <p className="text-gray-500">You don't have any sale orders yet.</p>
+              <CheckCircle className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No Sales</h3>
+              <p className="text-muted-foreground-500">You don't have any sale orders yet.</p>
             </div>
           ) : (
             <div className="space-y-4">

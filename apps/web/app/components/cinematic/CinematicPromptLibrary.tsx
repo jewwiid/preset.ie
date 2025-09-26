@@ -311,9 +311,9 @@ export default function CinematicPromptLibrary({
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'beginner': return 'bg-primary-100 text-primary-800';
-      case 'intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'advanced': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'intermediate': return 'bg-primary-100 text-primary-800';
+      case 'advanced': return 'bg-destructive-100 text-destructive-800';
+      default: return 'bg-muted-100 text-muted-foreground-800';
     }
   };
 

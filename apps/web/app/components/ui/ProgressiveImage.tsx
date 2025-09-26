@@ -77,7 +77,7 @@ export default function ProgressiveImage({
     <div ref={ref as React.RefObject<HTMLDivElement>} className={`relative overflow-hidden ${className}`}>
       {/* Blur placeholder */}
       {!imageLoaded && !imageError && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center">
+        <div className="absolute inset-0 bg-muted-200 animate-pulse flex items-center justify-center">
           {blurDataURL ? (
             <img
               src={blurDataURL}
@@ -86,7 +86,7 @@ export default function ProgressiveImage({
               aria-hidden="true"
             />
           ) : (
-            <div className="w-8 h-8 border-2 border-gray-300 border-t-purple-500 rounded-full animate-spin"></div>
+            <div className="w-8 h-8 border-2 border-border-300 border-t-primary-primary rounded-full animate-spin"></div>
           )}
         </div>
       )}
@@ -108,8 +108,8 @@ export default function ProgressiveImage({
 
       {/* Error state */}
       {imageError && (
-        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-          <div className="text-gray-400 text-center">
+        <div className="absolute inset-0 bg-muted-100 flex items-center justify-center">
+          <div className="text-muted-foreground-400 text-center">
             <div className="w-8 h-8 mx-auto mb-2">
               <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>

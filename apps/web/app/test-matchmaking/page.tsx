@@ -65,11 +65,11 @@ const TestMatchmakingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-muted-50 p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Matchmaking Components Test</h1>
-          <p className="text-gray-600">Testing the matchmaking UI components</p>
+          <h1 className="text-3xl font-bold text-muted-foreground-900 mb-2">Matchmaking Components Test</h1>
+          <p className="text-muted-foreground-600">Testing the matchmaking UI components</p>
         </div>
 
         {/* Compatibility Score Tests */}

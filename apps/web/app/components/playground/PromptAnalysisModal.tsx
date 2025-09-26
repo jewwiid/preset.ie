@@ -699,7 +699,7 @@ export default function PromptAnalysisModal({
                         <ul className="space-y-2">
                           {analysis.professionalInsights.map((insight, index) => (
                             <li key={index} className="text-sm text-foreground flex items-start gap-2">
-                              <span className="text-yellow-500 mt-1">💡</span>
+                              <span className="text-primary-500 mt-1">💡</span>
                               {insight}
                             </li>
                           ))}
@@ -756,7 +756,7 @@ export default function PromptAnalysisModal({
                     <ul className="space-y-2">
                       {analysis.improvements.map((improvement, index) => (
                         <li key={index} className="text-sm text-foreground flex items-start gap-2">
-                          <span className="text-yellow-500 mt-1">💡</span>
+                          <span className="text-primary-500 mt-1">💡</span>
                           {improvement}
                         </li>
                       ))}
@@ -875,13 +875,13 @@ export default function PromptAnalysisModal({
 
           {/* Subscription Notice */}
           {subscriptionTier === 'free' && (
-            <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+            <Card className="border-primary-200 bg-primary-50 dark:border-primary-800 dark:bg-primary-950">
               <CardContent className="pt-6">
-                <div className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+                <div className="flex items-center gap-2 text-primary-800 dark:text-primary-200">
                   <Zap className="w-5 h-5" />
                   <span className="font-medium">Premium Feature</span>
                 </div>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-2">
+                <p className="text-sm text-primary-700 dark:text-primary-300 mt-2">
                   Prompt analysis is only available for Plus and Pro subscribers. 
                   Upgrade to get AI-powered insights for better image generation.
                 </p>

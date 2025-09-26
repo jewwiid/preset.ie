@@ -326,12 +326,12 @@ export default function DraggableMasonryGrid({
                   {task?.status === 'completed' ? (
                     <>
                       <CheckCircle className="w-8 h-8 text-primary mb-2" />
-                      <span className="text-sm text-white font-medium">Enhanced!</span>
+                      <span className="text-sm text-primary-foreground font-medium">Enhanced!</span>
                     </>
                   ) : task?.status === 'failed' ? (
                     <>
-                      <X className="w-8 h-8 text-red-400 mb-2" />
-                      <span className="text-sm text-white font-medium">Failed</span>
+                      <X className="w-8 h-8 text-destructive-400 mb-2" />
+                      <span className="text-sm text-primary-foreground font-medium">Failed</span>
                     </>
                   ) : (
                     <>

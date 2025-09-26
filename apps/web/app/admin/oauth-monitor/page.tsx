@@ -176,9 +176,9 @@ export default function OAuthMonitorPage() {
   }, [])
 
   const getStatusColor = (successRate: number) => {
-    if (successRate >= 90) return 'text-green-600'
-    if (successRate >= 70) return 'text-yellow-600'
-    return 'text-red-600'
+    if (successRate >= 90) return 'text-primary-600'
+    if (successRate >= 70) return 'text-primary-600'
+    return 'text-destructive-600'
   }
 
   const getStatusIcon = (successRate: number) => {
@@ -192,12 +192,12 @@ export default function OAuthMonitorPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">OAuth Monitor</h1>
-          <p className="text-gray-600">Real-time monitoring of Google OAuth flow</p>
+          <p className="text-muted-foreground-600">Real-time monitoring of Google OAuth flow</p>
         </div>
         
         <div className="flex items-center gap-4">
           {lastRefresh && (
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground-500">
               Last updated: {lastRefresh.toLocaleTimeString()}
             </span>
           )}
@@ -214,9 +214,9 @@ export default function OAuthMonitorPage() {
       </div>
 
       {error && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-destructive-200 bg-destructive-50">
           <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-red-600">
+            <div className="flex items-center gap-2 text-destructive-600">
               <AlertTriangle className="w-4 h-4" />
               <span>Error: {error}</span>
             </div>
@@ -239,7 +239,7 @@ export default function OAuthMonitorPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Google Users</CardTitle>
-            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+            <div className="w-4 h-4 rounded-full bg-primary-500"></div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics?.googleUsers || 0}</div>
@@ -288,7 +288,7 @@ export default function OAuthMonitorPage() {
                 <div className="flex items-center gap-3">
                   <div>
                     <div className="font-medium">{user.email}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground-500">
                       {user.full_name || 'No display name'}
                     </div>
                   </div>
@@ -300,13 +300,13 @@ export default function OAuthMonitorPage() {
                   <Badge variant={user.has_profile ? 'default' : 'destructive'}>
                     {user.has_profile ? 'Profile ✓' : 'No Profile'}
                   </Badge>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-muted-foreground-500">
                     {new Date(user.created_at).toLocaleString()}
                   </span>
                 </div>
               </div>
             )) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground-500">
                 No recent users found
               </div>
             )}
@@ -325,20 +325,20 @@ export default function OAuthMonitorPage() {
             {recentAttempts.length > 0 ? recentAttempts.map((attempt) => (
               <div key={attempt.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-3">
-                  <Database className="w-4 h-4 text-gray-400" />
+                  <Database className="w-4 h-4 text-muted-foreground-400" />
                   <div>
                     <div className="font-medium">Auth Event</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground-500">
                       IP: {attempt.ip_address || 'Unknown'}
                     </div>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground-500">
                   {new Date(attempt.created_at).toLocaleString()}
                 </div>
               </div>
             )) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground-500">
                 No recent attempts found
               </div>
             )}

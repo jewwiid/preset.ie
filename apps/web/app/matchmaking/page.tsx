@@ -55,14 +55,14 @@ const MatchmakingDashboardContent: React.FC = () => {
   const lowPriorityRecommendations = recommendations.filter(r => r.priority === 'low')
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Matchmaking</h1>
-              <p className="text-gray-600 mt-2">
+              <h1 className="text-3xl font-bold text-muted-foreground-900">Matchmaking</h1>
+              <p className="text-muted-foreground-600 mt-2">
                 Discover gigs that match your profile and preferences
               </p>
             </div>
@@ -95,8 +95,8 @@ const MatchmakingDashboardContent: React.FC = () => {
                   <Star className="w-6 h-6 text-primary-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{highPriorityRecommendations.length}</p>
-                  <p className="text-sm text-gray-600">Perfect Matches</p>
+                  <p className="text-2xl font-bold text-muted-foreground-900">{highPriorityRecommendations.length}</p>
+                  <p className="text-sm text-muted-foreground-600">Perfect Matches</p>
                 </div>
               </div>
             </CardContent>
@@ -105,12 +105,12 @@ const MatchmakingDashboardContent: React.FC = () => {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-yellow-600" />
+                <div className="p-2 bg-primary-100 rounded-lg">
+                  <TrendingUp className="w-6 h-6 text-primary-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{mediumPriorityRecommendations.length}</p>
-                  <p className="text-sm text-gray-600">Good Matches</p>
+                  <p className="text-2xl font-bold text-muted-foreground-900">{mediumPriorityRecommendations.length}</p>
+                  <p className="text-sm text-muted-foreground-600">Good Matches</p>
                 </div>
               </div>
             </CardContent>
@@ -119,12 +119,12 @@ const MatchmakingDashboardContent: React.FC = () => {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-600" />
+                <div className="p-2 bg-primary-100 rounded-lg">
+                  <Users className="w-6 h-6 text-primary-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{recommendations.length}</p>
-                  <p className="text-sm text-gray-600">Total Opportunities</p>
+                  <p className="text-2xl font-bold text-muted-foreground-900">{recommendations.length}</p>
+                  <p className="text-sm text-muted-foreground-600">Total Opportunities</p>
                 </div>
               </div>
             </CardContent>
@@ -133,14 +133,14 @@ const MatchmakingDashboardContent: React.FC = () => {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <MapPin className="w-6 h-6 text-purple-600" />
+                <div className="p-2 bg-primary-100 rounded-lg">
+                  <MapPin className="w-6 h-6 text-primary-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-muted-foreground-900">
                     {recommendations.length > 0 ? Math.round(recommendations.reduce((acc, r) => acc + r.compatibility_score, 0) / recommendations.length) : 0}%
                   </p>
-                  <p className="text-sm text-gray-600">Avg Compatibility</p>
+                  <p className="text-sm text-muted-foreground-600">Avg Compatibility</p>
                 </div>
               </div>
             </CardContent>
@@ -186,7 +186,7 @@ const MatchmakingDashboardContent: React.FC = () => {
                 <CardTitle>Saved Searches</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-muted-foreground">
                   Your saved searches will appear here. Use the Advanced Search tab to create and save new searches.
                 </p>
               </CardContent>

@@ -148,15 +148,15 @@ export function ModerationQueue() {
   }
 
   const getSeverityColor = (score: number) => {
-    if (score >= 80) return 'bg-red-100 text-red-800 border-red-200'
-    if (score >= 60) return 'bg-orange-100 text-orange-800 border-orange-200'
-    if (score >= 40) return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    if (score >= 80) return 'bg-destructive-100 text-destructive-800 border-destructive-200'
+    if (score >= 60) return 'bg-primary-100 text-primary-800 border-primary-200'
+    if (score >= 40) return 'bg-primary-100 text-primary-800 border-primary-200'
     return 'bg-primary-100 text-primary-800 border-primary/20'
   }
 
   const getRiskColor = (score: number) => {
-    if (score >= 70) return 'text-red-600'
-    if (score >= 40) return 'text-orange-600'
+    if (score >= 70) return 'text-destructive-600'
+    if (score >= 40) return 'text-primary-600'
     return 'text-primary-600'
   }
 
@@ -175,7 +175,7 @@ export function ModerationQueue() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-gray-500">Loading moderation queue...</div>
+        <div className="text-muted-foreground-500">Loading moderation queue...</div>
       </div>
     )
   }
@@ -185,47 +185,47 @@ export function ModerationQueue() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-background rounded-lg shadow p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Pending Review</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending_items}</p>
+                <p className="text-sm text-muted-foreground-500">Pending Review</p>
+                <p className="text-2xl font-bold text-muted-foreground-900">{stats.pending_items}</p>
               </div>
-              <AlertTriangle className="w-8 h-8 text-yellow-500" />
+              <AlertTriangle className="w-8 h-8 text-primary-500" />
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-background rounded-lg shadow p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Resolved Today</p>
+                <p className="text-sm text-muted-foreground-500">Resolved Today</p>
                 <p className="text-2xl font-bold text-primary-600">{stats.resolved_today}</p>
               </div>
               <CheckCircle className="w-8 h-8 text-primary-500" />
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-background rounded-lg shadow p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Avg Severity</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.average_severity.toFixed(1)}</p>
+                <p className="text-sm text-muted-foreground-500">Avg Severity</p>
+                <p className="text-2xl font-bold text-muted-foreground-900">{stats.average_severity.toFixed(1)}</p>
               </div>
-              <AlertTriangle className="w-8 h-8 text-blue-500" />
+              <AlertTriangle className="w-8 h-8 text-primary-500" />
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-background rounded-lg shadow p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Avg Resolution</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.resolution_time_hours.toFixed(1)}h</p>
+                <p className="text-sm text-muted-foreground-500">Avg Resolution</p>
+                <p className="text-2xl font-bold text-muted-foreground-900">{stats.resolution_time_hours.toFixed(1)}h</p>
               </div>
-              <Clock className="w-8 h-8 text-purple-500" />
+              <Clock className="w-8 h-8 text-primary-500" />
             </div>
           </div>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-background rounded-lg shadow p-4">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           {/* Status Filter */}
           <div className="flex gap-2 flex-wrap">
@@ -235,8 +235,8 @@ export function ModerationQueue() {
                 onClick={() => setFilter(status)}
                 className={`px-4 py-2 rounded-lg capitalize transition-colors text-sm font-medium ${
                   filter === status 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-primary-600 text-primary-foreground' 
+                    : 'bg-muted-200 text-muted-foreground-700 hover:bg-muted-300'
                 }`}
               >
                 {status}
@@ -246,11 +246,11 @@ export function ModerationQueue() {
           
           {/* Severity Filter */}
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Min Severity:</label>
+            <label className="text-sm text-muted-foreground-600">Min Severity:</label>
             <select
               value={severityFilter}
               onChange={(e) => setSeverityFilter(parseInt(e.target.value))}
-              className="border border-gray-300 rounded px-2 py-1 text-sm"
+              className="border border-border-300 rounded px-2 py-1 text-sm"
             >
               <option value={0}>All</option>
               <option value={40}>Medium (40+)</option>
@@ -266,14 +266,14 @@ export function ModerationQueue() {
             <button
               onClick={() => handleBulkAction('approved')}
               disabled={processingAction === 'bulk'}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               {processingAction === 'bulk' ? 'Processing...' : `Approve Selected (${selectedItems.size})`}
             </button>
             <button
               onClick={() => handleBulkAction('rejected')}
               disabled={processingAction === 'bulk'}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 bg-destructive-600 text-primary-foreground rounded-lg hover:bg-destructive-700 disabled:opacity-50 transition-colors"
             >
               {processingAction === 'bulk' ? 'Processing...' : `Reject Selected (${selectedItems.size})`}
             </button>
@@ -282,17 +282,17 @@ export function ModerationQueue() {
       </div>
 
       {/* Queue Items */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-background rounded-lg shadow overflow-hidden">
         {items.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-muted-foreground-500">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No items in moderation queue</p>
             <p className="text-sm">All content is currently approved or no content matches your filters.</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-muted-primary/30">
             {/* Header */}
-            <div className="px-6 py-3 bg-gray-50 flex items-center gap-4">
+            <div className="px-6 py-3 bg-muted-50 flex items-center gap-4">
               <input
                 type="checkbox"
                 onChange={(e) => {
@@ -303,16 +303,16 @@ export function ModerationQueue() {
                   }
                 }}
                 checked={selectedItems.size === items.length && items.length > 0}
-                className="rounded border-gray-300"
+                className="rounded border-border-300"
               />
-              <span className="text-sm font-medium text-gray-600">
+              <span className="text-sm font-medium text-muted-foreground-600">
                 Select All ({items.length} items)
               </span>
             </div>
             
             {/* Items */}
             {items.map((item) => (
-              <div key={item.id} className="px-6 py-4 hover:bg-gray-50">
+              <div key={item.id} className="px-6 py-4 hover:bg-muted-50">
                 <div className="flex items-start gap-4">
                   {/* Checkbox */}
                   <input
@@ -327,7 +327,7 @@ export function ModerationQueue() {
                       }
                       setSelectedItems(newSelected)
                     }}
-                    className="rounded border-gray-300 mt-1"
+                    className="rounded border-border-300 mt-1"
                   />
                   
                   {/* Content */}
@@ -337,17 +337,17 @@ export function ModerationQueue() {
                         <span className={`px-2 py-1 text-xs font-medium rounded border ${getSeverityColor(item.severity_score)}`}>
                           {item.severity_score}
                         </span>
-                        <span className="text-sm text-gray-600 capitalize">
+                        <span className="text-sm text-muted-foreground-600 capitalize">
                           {item.content_type}
                         </span>
-                        <span className="text-sm text-gray-400">•</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground-400">•</span>
+                        <span className="text-sm text-muted-foreground-500">
                           {formatRelativeTime(item.auto_flagged_at)}
                         </span>
                       </div>
                       
                       {/* User Info */}
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground-600">
                         <User className="w-4 h-4" />
                         <span>{item.user_name || item.user_handle}</span>
                         {item.user_stats && (
@@ -359,8 +359,8 @@ export function ModerationQueue() {
                     </div>
                     
                     {/* Content Preview */}
-                    <div className="bg-gray-50 rounded p-3 mb-3">
-                      <p className="text-sm text-gray-900 line-clamp-3">
+                    <div className="bg-muted-50 rounded p-3 mb-3">
+                      <p className="text-sm text-muted-foreground-900 line-clamp-3">
                         {item.content_text || 'No text content available'}
                       </p>
                     </div>
@@ -368,7 +368,7 @@ export function ModerationQueue() {
                     {/* Flags */}
                     <div className="flex flex-wrap gap-1 mb-3">
                       {item.flagged_reason.map((reason) => (
-                        <span key={reason} className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded">
+                        <span key={reason} className="px-2 py-1 text-xs bg-destructive-100 text-destructive-700 rounded">
                           {reason.replace('_', ' ')}
                         </span>
                       ))}
@@ -388,7 +388,7 @@ export function ModerationQueue() {
                       <button
                         onClick={() => handleAction(item.id, 'rejected')}
                         disabled={processingAction === item.id}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-700 bg-red-100 hover:bg-red-200 rounded transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-destructive-700 bg-destructive-100 hover:bg-destructive-200 rounded transition-colors disabled:opacity-50"
                         title="Reject and delete content"
                       >
                         <XCircle className="w-4 h-4" />
@@ -397,14 +397,14 @@ export function ModerationQueue() {
                       <button
                         onClick={() => handleAction(item.id, 'escalated')}
                         disabled={processingAction === item.id}
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-orange-700 bg-orange-100 hover:bg-orange-200 rounded transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-700 bg-primary-100 hover:bg-primary-200 rounded transition-colors disabled:opacity-50"
                         title="Escalate for senior review"
                       >
                         <AlertTriangle className="w-4 h-4" />
                         Escalate
                       </button>
                       <button
-                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-muted-foreground-600 hover:bg-muted-100 rounded transition-colors"
                         title="View full content"
                       >
                         <Eye className="w-4 h-4" />

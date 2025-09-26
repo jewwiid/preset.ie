@@ -105,18 +105,18 @@ export default function CinematicMetadataDisplay({
       case 'lensType':
       case 'shotSize':
       case 'cameraMovement':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
+        return 'bg-primary-100 text-primary-800 border-primary-200'
       case 'lightingStyle':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        return 'bg-primary-100 text-primary-800 border-primary-200'
       case 'colorPalette':
-        return 'bg-purple-100 text-purple-800 border-purple-200'
+        return 'bg-primary-100 text-primary-800 border-primary-200'
       case 'directorStyle':
       case 'eraEmulation':
         return 'bg-primary-100 text-primary-800 border-primary/20'
       case 'sceneMood':
         return 'bg-primary-100 text-primary-800 border-primary/20'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'bg-muted-100 text-muted-foreground-800 border-border-200'
     }
   }
 
@@ -172,7 +172,7 @@ export default function CinematicMetadataDisplay({
           )
         })}
         {activeParams.length > 3 && (
-          <Badge variant="outline" className="text-xs bg-gray-100 text-gray-600">
+          <Badge variant="outline" className="text-xs bg-muted-100 text-muted-foreground-600">
             +{activeParams.length - 3} more
           </Badge>
         )}
@@ -185,8 +185,8 @@ export default function CinematicMetadataDisplay({
       <CardContent className="p-3">
         <div className="space-y-2">
           <div className="flex items-center space-x-2 mb-2">
-            <Film className="h-4 w-4 text-purple-600" />
-            <span className="text-sm font-medium text-gray-700">Cinematic Parameters</span>
+            <Film className="h-4 w-4 text-primary-600" />
+            <span className="text-sm font-medium text-muted-foreground-700">Cinematic Parameters</span>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -198,7 +198,7 @@ export default function CinematicMetadataDisplay({
                     {getIconForParameter(param)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs text-gray-500 capitalize">
+                    <span className="text-xs text-muted-foreground-500 capitalize">
                       {param.replace(/([A-Z])/g, ' $1').trim()}:
                     </span>
                     <span className="text-xs font-medium ml-1">
@@ -212,8 +212,8 @@ export default function CinematicMetadataDisplay({
 
           {/* Technical Details */}
           {(metadata.generation_metadata?.provider || metadata.generation_metadata?.credits_used || (aiMetadata as any).aiProvider || (aiMetadata as any).generationCost) && (
-            <div className="pt-2 mt-2 border-t border-gray-200">
-              <div className="flex items-center justify-between text-xs text-gray-500">
+            <div className="pt-2 mt-2 border-t border-border-200">
+              <div className="flex items-center justify-between text-xs text-muted-foreground-500">
                 {(metadata.generation_metadata?.provider || (aiMetadata as any).aiProvider) && (
                   <span>AI: {metadata.generation_metadata?.provider || (aiMetadata as any).aiProvider}</span>
                 )}

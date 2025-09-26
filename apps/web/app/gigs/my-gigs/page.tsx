@@ -122,9 +122,9 @@ export default function MyGigsPage() {
       case 'draft':
         return 'bg-muted text-muted-foreground'
       case 'closed':
-        return 'bg-red-100 text-red-800'
+        return 'bg-destructive-100 text-destructive-800'
       case 'completed':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-primary-100 text-primary-800'
       default:
         return 'bg-muted text-muted-foreground'
     }
@@ -160,7 +160,7 @@ export default function MyGigsPage() {
             </div>
             <button
               onClick={() => router.push('/gigs/create')}
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90"
+              className="inline-flex items-center px-4 py-2 bg-primary-600 text-primary-foreground rounded-md hover:bg-primary/90"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create New Gig
@@ -178,7 +178,7 @@ export default function MyGigsPage() {
               onClick={() => setFilter(filterOption as any)}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                 filter === filterOption
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-primary-600 text-primary-foreground'
                   : 'bg-card text-foreground hover:bg-muted'
               }`}
             >
@@ -200,7 +200,7 @@ export default function MyGigsPage() {
             </p>
             <button
               onClick={() => router.push('/gigs/create')}
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90"
+              className="inline-flex items-center px-4 py-2 bg-primary-600 text-primary-foreground rounded-md hover:bg-primary/90"
             >
               <Plus className="w-5 h-5 mr-2" />
               Create Your First Gig
@@ -242,7 +242,7 @@ export default function MyGigsPage() {
                         </div>
                         
                         {isPastDeadline && gig.status === 'PUBLISHED' && (
-                          <div className="mt-2 text-sm text-orange-600">
+                          <div className="mt-2 text-sm text-primary-600">
                             ⚠️ Applications closed (deadline passed)
                           </div>
                         )}

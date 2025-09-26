@@ -124,19 +124,19 @@ export default function ResetPasswordPage() {
         {/* Logo Section */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-primary to-secondary-primary rounded-full mb-4">
-            <Camera className="w-8 h-8 text-white" />
+            <Camera className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-muted-foreground-900">
             Reset your password
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-muted-foreground-600">
             Enter your new password below
           </p>
         </div>
 
         {/* Alert Messages */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
+          <div className="mb-6 bg-destructive-50 border border-destructive-200 text-destructive-700 px-4 py-3 rounded-lg flex items-start">
             <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
             <span className="text-sm">{error}</span>
           </div>
@@ -150,14 +150,14 @@ export default function ResetPasswordPage() {
         )}
 
         {/* Main Card */}
-        <div className="bg-white shadow-xl rounded-2xl p-8">
+        <div className="bg-background shadow-xl rounded-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-muted-foreground-700 mb-1">
                 New password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -166,15 +166,15 @@ export default function ResetPasswordPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   onFocus={() => setPasswordFocused(true)}
                   onBlur={() => setPasswordFocused(false)}
-                  className={`pl-10 pr-10 w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary bg-white text-gray-900 transition-all ${
-                    password && !isPasswordValid ? 'border-red-300' : 'border-gray-300'
+                  className={`pl-10 pr-10 w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-muted-foreground-900 transition-all ${
+                    password && !isPasswordValid ? 'border-destructive-300' : 'border-border-300'
                   }`}
                   placeholder="Create a strong password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground-400 hover:text-muted-foreground-600"
                 >
                   {showPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -188,22 +188,22 @@ export default function ResetPasswordPage() {
               {password && (
                 <div className="mt-2">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs text-gray-600">Password strength:</span>
+                    <span className="text-xs text-muted-foreground-600">Password strength:</span>
                     <span className={`text-xs font-medium ${
-                      passwordStrength.color === 'red' ? 'text-red-600' :
-                      passwordStrength.color === 'yellow' ? 'text-yellow-600' :
-                      passwordStrength.color === 'blue' ? 'text-blue-600' :
+                      passwordStrength.color === 'red' ? 'text-destructive-600' :
+                      passwordStrength.color === 'yellow' ? 'text-primary-600' :
+                      passwordStrength.color === 'blue' ? 'text-primary-600' :
                       'text-primary-600'
                     }`}>
                       {passwordStrength.level}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div className="w-full bg-muted-200 rounded-full h-1.5">
                     <div 
                       className={`h-1.5 rounded-full transition-all duration-300 ${
-                        passwordStrength.color === 'red' ? 'bg-red-500' :
-                        passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
-                        passwordStrength.color === 'blue' ? 'bg-blue-500' :
+                        passwordStrength.color === 'red' ? 'bg-destructive-500' :
+                        passwordStrength.color === 'yellow' ? 'bg-primary-500' :
+                        passwordStrength.color === 'blue' ? 'bg-primary-500' :
                         'bg-primary-500'
                       }`}
                       style={{ width: passwordStrength.width }}
@@ -215,43 +215,43 @@ export default function ResetPasswordPage() {
               {/* Password requirements checklist */}
               {(passwordFocused || password) && (
                 <div className="mt-2 space-y-1 text-xs">
-                  <div className={`flex items-center ${passwordValidations.minLength ? 'text-primary-600' : 'text-gray-400'}`}>
+                  <div className={`flex items-center ${passwordValidations.minLength ? 'text-primary-600' : 'text-muted-foreground-400'}`}>
                     {passwordValidations.minLength ? (
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                     ) : (
-                      <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                      <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                     )}
                     At least 8 characters
                   </div>
-                  <div className={`flex items-center ${passwordValidations.hasUpperCase ? 'text-primary-600' : 'text-gray-400'}`}>
+                  <div className={`flex items-center ${passwordValidations.hasUpperCase ? 'text-primary-600' : 'text-muted-foreground-400'}`}>
                     {passwordValidations.hasUpperCase ? (
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                     ) : (
-                      <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                      <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                     )}
                     One uppercase letter
                   </div>
-                  <div className={`flex items-center ${passwordValidations.hasLowerCase ? 'text-primary-600' : 'text-gray-400'}`}>
+                  <div className={`flex items-center ${passwordValidations.hasLowerCase ? 'text-primary-600' : 'text-muted-foreground-400'}`}>
                     {passwordValidations.hasLowerCase ? (
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                     ) : (
-                      <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                      <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                     )}
                     One lowercase letter
                   </div>
-                  <div className={`flex items-center ${passwordValidations.hasNumber ? 'text-primary-600' : 'text-gray-400'}`}>
+                  <div className={`flex items-center ${passwordValidations.hasNumber ? 'text-primary-600' : 'text-muted-foreground-400'}`}>
                     {passwordValidations.hasNumber ? (
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                     ) : (
-                      <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                      <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                     )}
                     One number
                   </div>
-                  <div className={`flex items-center ${passwordValidations.hasSpecialChar ? 'text-primary-600' : 'text-gray-400'}`}>
+                  <div className={`flex items-center ${passwordValidations.hasSpecialChar ? 'text-primary-600' : 'text-muted-foreground-400'}`}>
                     {passwordValidations.hasSpecialChar ? (
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                     ) : (
-                      <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                      <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                     )}
                     One special character (optional but recommended)
                   </div>
@@ -260,26 +260,26 @@ export default function ResetPasswordPage() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-muted-foreground-700 mb-1">
                 Confirm new password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                 <input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`pl-10 pr-10 w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary bg-white text-gray-900 transition-all ${
-                    confirmPassword && !passwordsMatch ? 'border-red-300' : 'border-gray-300'
+                  className={`pl-10 pr-10 w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-muted-foreground-900 transition-all ${
+                    confirmPassword && !passwordsMatch ? 'border-destructive-300' : 'border-border-300'
                   }`}
                   placeholder="Re-enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground-400 hover:text-muted-foreground-600"
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="w-5 h-5" />
@@ -289,7 +289,7 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
               {confirmPassword && !passwordsMatch && (
-                <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
+                <p className="mt-1 text-xs text-destructive-600">Passwords do not match</p>
               )}
               {confirmPassword && passwordsMatch && (
                 <p className="mt-1 text-xs text-primary-600">Passwords match</p>
@@ -299,11 +299,11 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading || !isPasswordValid || !passwordsMatch}
-              className="w-full flex items-center justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primary-primary to-secondary-primary hover:from-primary-primary/90 hover:to-secondary-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+              className="w-full flex items-center justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-primary-foreground bg-gradient-to-r from-primary-primary to-secondary-primary hover:from-primary-primary/90 hover:to-secondary-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
             >
               {loading ? (
                 <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                   Resetting password...
                 </div>
               ) : (

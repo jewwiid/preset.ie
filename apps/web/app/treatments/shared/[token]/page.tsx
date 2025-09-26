@@ -140,10 +140,10 @@ export default function SharedTreatmentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading treatment...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground-600">Loading treatment...</p>
         </div>
       </div>
     );
@@ -151,12 +151,12 @@ export default function SharedTreatmentPage() {
 
   if (error || !treatment) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <FileText className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Treatment Not Found</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <p className="text-muted-foreground-600 mb-4">{error}</p>
             <Button onClick={() => window.location.href = '/'}>
               Go Home
             </Button>
@@ -167,16 +167,16 @@ export default function SharedTreatmentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
-              <FileText className="h-8 w-8 text-blue-600 mr-3" />
+              <FileText className="h-8 w-8 text-primary-600 mr-3" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{treatment.title}</h1>
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                <h1 className="text-2xl font-bold text-muted-foreground-900">{treatment.title}</h1>
+                <div className="flex items-center space-x-4 text-sm text-muted-foreground-600">
                   <span>{TREATMENT_FORMATS[treatment.format as keyof typeof TREATMENT_FORMATS]?.label}</span>
                   <span>•</span>
                   <span>{TREATMENT_THEMES[treatment.theme as keyof typeof TREATMENT_THEMES]?.label}</span>
@@ -217,8 +217,8 @@ export default function SharedTreatmentPage() {
                     <h2 className="text-2xl font-semibold mb-4">Loglines</h2>
                     <div className="space-y-3">
                       {treatment.loglines.map((logline, index) => (
-                        <div key={index} className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                          <p className="text-gray-800">{logline.text}</p>
+                        <div key={index} className="p-4 bg-primary-50 rounded-lg border-l-4 border-primary-400">
+                          <p className="text-muted-foreground-800">{logline.text}</p>
                         </div>
                       ))}
                     </div>
@@ -229,11 +229,11 @@ export default function SharedTreatmentPage() {
                 {treatment.sections.map((section) => (
                   <div key={section.id} className="mb-8">
                     <h2 className="text-2xl font-semibold mb-4">{section.heading}</h2>
-                    <div className="text-gray-700 leading-relaxed">
+                    <div className="text-muted-foreground-700 leading-relaxed">
                       {section.content ? (
                         <div className="whitespace-pre-wrap">{section.content}</div>
                       ) : (
-                        <p className="text-gray-400 italic">No content available</p>
+                        <p className="text-muted-foreground-400 italic">No content available</p>
                       )}
                     </div>
                     
@@ -266,8 +266,8 @@ export default function SharedTreatmentPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-gray-500">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <div className="text-center py-8 text-muted-foreground-500">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground-300" />
                   <p>Comments feature coming soon!</p>
                 </div>
               </CardContent>
@@ -275,13 +275,13 @@ export default function SharedTreatmentPage() {
           )}
 
           {/* Footer */}
-          <div className="text-center text-sm text-gray-500">
+          <div className="text-center text-sm text-muted-foreground-500">
             <p>
               Treatment created by {treatment.creator.display_name} on{' '}
               {new Date(treatment.created_at).toLocaleDateString()}
             </p>
             <p className="mt-1">
-              Powered by <span className="font-semibold text-blue-600">Preset</span>
+              Powered by <span className="font-semibold text-primary-600">Preset</span>
             </p>
           </div>
         </div>

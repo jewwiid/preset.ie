@@ -59,7 +59,7 @@ export default function DebugAuth() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Auth Context State */}
-        <div className="bg-white p-6 rounded-lg border">
+        <div className="bg-background p-6 rounded-lg border">
           <h2 className="text-lg font-semibold mb-4">Auth Context State</h2>
           <div className="space-y-2 text-sm">
             <div><strong>Loading:</strong> {loading.toString()}</div>
@@ -70,7 +70,7 @@ export default function DebugAuth() {
         </div>
 
         {/* Session Details */}
-        <div className="bg-white p-6 rounded-lg border">
+        <div className="bg-background p-6 rounded-lg border">
           <h2 className="text-lg font-semibold mb-4">Session Details</h2>
           {session ? (
             <div className="space-y-2 text-sm">
@@ -80,41 +80,41 @@ export default function DebugAuth() {
               <div><strong>User ID:</strong> {session.user?.id || 'unknown'}</div>
             </div>
           ) : (
-            <p className="text-gray-500">No session found</p>
+            <p className="text-muted-foreground-500">No session found</p>
           )}
         </div>
 
         {/* LocalStorage Keys */}
-        <div className="bg-white p-6 rounded-lg border">
+        <div className="bg-background p-6 rounded-lg border">
           <h2 className="text-lg font-semibold mb-4">LocalStorage Keys</h2>
           <div className="space-y-1 text-sm">
             {storageKeys.length > 0 ? (
               storageKeys.map(key => (
-                <div key={key} className={key.includes('supabase') || key.includes('auth') || key.includes('sb-') ? 'text-blue-600 font-medium' : ''}>
+                <div key={key} className={key.includes('supabase') || key.includes('auth') || key.includes('sb-') ? 'text-primary-600 font-medium' : ''}>
                   {key}
                 </div>
               ))
             ) : (
-              <p className="text-gray-500">No keys found</p>
+              <p className="text-muted-foreground-500">No keys found</p>
             )}
           </div>
         </div>
 
         {/* Auth Storage Data */}
-        <div className="bg-white p-6 rounded-lg border">
+        <div className="bg-background p-6 rounded-lg border">
           <h2 className="text-lg font-semibold mb-4">Auth Storage Data</h2>
           <div className="space-y-2 text-xs">
             {Object.keys(storageData).length > 0 ? (
               Object.entries(storageData).map(([key, value]) => (
                 <div key={key} className="border-b pb-2">
-                  <div className="font-medium text-blue-600">{key}:</div>
-                  <pre className="mt-1 bg-gray-100 p-2 rounded text-xs overflow-auto">
+                  <div className="font-medium text-primary-600">{key}:</div>
+                  <pre className="mt-1 bg-muted-100 p-2 rounded text-xs overflow-auto">
                     {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
                   </pre>
                 </div>
               ))
             ) : (
-              <p className="text-gray-500">No auth-related data found</p>
+              <p className="text-muted-foreground-500">No auth-related data found</p>
             )}
           </div>
         </div>
@@ -124,19 +124,19 @@ export default function DebugAuth() {
       <div className="mt-6 flex gap-4">
         <button 
           onClick={handleSignOut}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          className="px-4 py-2 bg-destructive-500 text-primary-foreground rounded hover:bg-destructive-600"
         >
           Sign Out
         </button>
         <button 
           onClick={handleRefresh}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-4 py-2 bg-primary-500 text-primary-foreground rounded hover:bg-primary-600"
         >
           Refresh Session
         </button>
         <button 
           onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+          className="px-4 py-2 bg-muted-500 text-primary-foreground rounded hover:bg-muted-600"
         >
           Reload Page
         </button>

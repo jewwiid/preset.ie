@@ -195,9 +195,9 @@ export default function SavedGigsPage() {
       case 'PAID':
         return 'bg-primary-100 text-primary-800';
       case 'TFP':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary-100 text-primary-800';
       case 'EXPENSES':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-primary-100 text-primary-800';
       default:
         return 'bg-muted text-muted-foreground';
     }
@@ -228,7 +228,7 @@ export default function SavedGigsPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -251,7 +251,7 @@ export default function SavedGigsPage() {
             <div className="flex-shrink-0">
               <Link
                 href="/gigs"
-                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm sm:text-base whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary-700 transition-colors text-sm sm:text-base whitespace-nowrap"
               >
                 <ExternalLink className="w-4 h-4 flex-shrink-0" />
                 <span className="hidden sm:inline">Browse More Gigs</span>
@@ -267,14 +267,14 @@ export default function SavedGigsPage() {
         {savedGigs.length === 0 ? (
           /* Empty State */
           <div className="text-center py-16">
-            <Heart className="w-20 h-20 text-gray-300 mx-auto mb-6" />
+            <Heart className="w-20 h-20 text-muted-foreground-300 mx-auto mb-6" />
             <h3 className="text-xl font-semibold text-foreground mb-2">No saved gigs yet</h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
               Start browsing gigs and click the heart icon on any gig you'd like to save for later.
             </p>
             <Link
               href="/gigs"
-              className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm sm:text-base"
+              className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary-700 transition-colors text-sm sm:text-base"
             >
               <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
               Browse Gigs
@@ -294,8 +294,8 @@ export default function SavedGigsPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
-                      <Camera className="w-12 h-12 text-indigo-400" />
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20">
+                      <Camera className="w-12 h-12 text-primary" />
                     </div>
                   )}
 
@@ -303,11 +303,11 @@ export default function SavedGigsPage() {
                   <button
                     onClick={() => removeSavedGig(savedGig.id, savedGig.gig.id)}
                     disabled={removingGigs.has(savedGig.gig.id)}
-                    className="absolute top-3 right-3 p-2 bg-card rounded-full shadow-md hover:shadow-lg transition-all hover:bg-red-50 group disabled:opacity-50"
+                    className="absolute top-3 right-3 p-2 bg-card rounded-full shadow-md hover:shadow-lg transition-all hover:bg-destructive-50 group disabled:opacity-50"
                     title="Remove from saved"
                   >
                     {removingGigs.has(savedGig.gig.id) ? (
-                      <div className="w-5 h-5 animate-spin border-2 border-red-500 border-t-transparent rounded-full" />
+                      <div className="w-5 h-5 animate-spin border-2 border-destructive-500 border-t-transparent rounded-full" />
                     ) : (
                       <Trash2 className="w-5 h-5 text-muted-foreground group-hover:text-destructive transition-colors" />
                     )}
@@ -320,7 +320,7 @@ export default function SavedGigsPage() {
                   </div>
 
                   {/* Saved Date Badge */}
-                  <div className="absolute bottom-3 left-3 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                  <div className="absolute bottom-3 left-3 bg-black/70 text-primary-foreground px-2 py-1 rounded text-xs">
                     Saved {formatSavedDate(savedGig.saved_at)}
                   </div>
                 </div>
@@ -329,7 +329,7 @@ export default function SavedGigsPage() {
                 <div className="p-4">
                   {/* Title and Owner */}
                   <Link href={`/gigs/${savedGig.gig.id}`}>
-                    <h3 className="font-semibold text-lg hover:text-indigo-600 transition-colors line-clamp-2">
+                    <h3 className="font-semibold text-lg hover:text-primary-600 transition-colors line-clamp-2">
                       {savedGig.gig.title}
                     </h3>
                   </Link>
@@ -346,7 +346,7 @@ export default function SavedGigsPage() {
                           {savedGig.gig.users_profile?.display_name || 'Anonymous'}
                         </h4>
                         {savedGig.gig.users_profile?.verified_id && (
-                          <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full text-xs font-medium">
+                          <div className="flex items-center gap-1 bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full text-xs font-medium">
                             <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
@@ -375,7 +375,7 @@ export default function SavedGigsPage() {
                   {/* Purpose Tag */}
                   {savedGig.gig.purpose && (
                     <div className="mt-3">
-                      <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full">
                         {savedGig.gig.purpose.replace('_', ' ')}
                       </span>
                     </div>
@@ -395,7 +395,7 @@ export default function SavedGigsPage() {
                     </div>
                     <Link
                       href={`/gigs/${savedGig.gig.id}`}
-                      className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                      className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                     >
                       View Details →
                     </Link>

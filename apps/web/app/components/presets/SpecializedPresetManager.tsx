@@ -76,7 +76,7 @@ export default function SpecializedPresetManager({
             <p className="text-sm text-muted-foreground line-clamp-2">{preset.description}</p>
           </div>
           {preset.is_featured && (
-            <Star className="h-5 w-5 text-yellow-500 fill-current" />
+            <Star className="h-5 w-5 text-primary-500 fill-current" />
           )}
         </div>
       </CardHeader>
@@ -232,21 +232,21 @@ export default function SpecializedPresetManager({
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{headshotPresets.length}</div>
+                <div className="text-2xl font-bold text-primary-600">{headshotPresets.length}</div>
                 <div className="text-sm text-muted-foreground">Headshot Presets</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{productPresets.length}</div>
+                <div className="text-2xl font-bold text-primary-600">{productPresets.length}</div>
                 <div className="text-sm text-muted-foreground">Product Presets</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
+                <div className="text-2xl font-bold text-primary-600">
                   {headshotPresets.filter(p => p.is_featured).length + productPresets.filter(p => p.is_featured).length}
                 </div>
                 <div className="text-sm text-muted-foreground">Featured Presets</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">
+                <div className="text-2xl font-bold text-primary-600">
                   {headshotPresets.reduce((sum, p) => sum + p.usage_count, 0) + 
                    productPresets.reduce((sum, p) => sum + p.usage_count, 0)}
                 </div>

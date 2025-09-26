@@ -75,7 +75,7 @@ export function BlockUserDialog({ isOpen, onClose, targetUser, onBlockSuccess }:
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-red-500" />
+            <Shield className="h-5 w-5 text-destructive-500" />
             Block User
           </DialogTitle>
           <DialogDescription>

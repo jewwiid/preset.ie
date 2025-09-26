@@ -122,20 +122,20 @@ export default function SaleOrderFlow({
 
         <CardContent className="space-y-6">
           {/* Listing Info */}
-          <div className="p-4 bg-gray-50 rounded-lg">
+          <div className="p-4 bg-muted-50 rounded-lg">
             <div className="flex items-start space-x-4">
-              <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                <Package className="h-8 w-8 text-gray-400" />
+              <div className="w-16 h-16 bg-muted-200 rounded-lg flex items-center justify-center">
+                <Package className="h-8 w-8 text-muted-foreground-400" />
               </div>
               <div className="flex-1">
                 <h3 className="font-medium">{listing.title}</h3>
-                <p className="text-sm text-gray-600 mb-2">{listing.category}</p>
+                <p className="text-sm text-muted-foreground-600 mb-2">{listing.category}</p>
                 <div className="flex items-center space-x-4 text-sm">
-                  <span className="text-blue-600 font-medium text-lg">
+                  <span className="text-primary-600 font-medium text-lg">
                     {formatPrice(listing.sale_price_cents)}
                   </span>
                   {(listing.location_city || listing.location_country) && (
-                    <div className="flex items-center text-gray-500">
+                    <div className="flex items-center text-muted-foreground-500">
                       <MapPin className="h-3 w-3 mr-1" />
                       {[listing.location_city, listing.location_country].filter(Boolean).join(', ')}
                     </div>
@@ -150,7 +150,7 @@ export default function SaleOrderFlow({
                   )}
                 </div>
                 {listing.owner.rating && (
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-muted-foreground-500">
                     <Star className="h-3 w-3 mr-1 fill-current" />
                     {listing.owner.rating.toFixed(1)}
                   </div>
@@ -165,19 +165,19 @@ export default function SaleOrderFlow({
               <div key={stepNumber} className="flex items-center">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   step >= stepNumber 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 text-gray-500'
+                    ? 'bg-primary-600 text-primary-foreground' 
+                    : 'bg-muted-200 text-muted-foreground-500'
                 }`}>
                   {stepNumber}
                 </div>
                 {stepNumber < 2 && (
                   <div className={`w-12 h-0.5 mx-2 ${
-                    step > stepNumber ? 'bg-blue-600' : 'bg-gray-200'
+                    step > stepNumber ? 'bg-primary-600' : 'bg-muted-200'
                   }`} />
                 )}
               </div>
             ))}
-            <div className="ml-4 text-sm text-gray-600">
+            <div className="ml-4 text-sm text-muted-foreground-600">
               {step === 1 && 'Delivery Options'}
               {step === 2 && 'Review & Pay'}
             </div>
@@ -185,10 +185,10 @@ export default function SaleOrderFlow({
 
           {/* Error */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+            <div className="p-3 bg-destructive-50 border border-destructive-200 rounded-md">
               <div className="flex items-center">
-                <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
-                <p className="text-red-600 text-sm">{error}</p>
+                <AlertCircle className="h-4 w-4 text-destructive-600 mr-2" />
+                <p className="text-destructive-600 text-sm">{error}</p>
               </div>
             </div>
           )}
@@ -241,7 +241,7 @@ export default function SaleOrderFlow({
           {step === 2 && (
             <div className="space-y-4">
               <h3 className="font-medium">Review Your Purchase</h3>
-              <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+              <div className="p-4 bg-muted-50 rounded-lg space-y-3">
                 <div className="flex justify-between">
                   <span>Item:</span>
                   <span>{listing.title}</span>
@@ -257,7 +257,7 @@ export default function SaleOrderFlow({
                 {formData.deliveryMethod === 'delivery' && formData.deliveryAddress && (
                   <div className="flex justify-between">
                     <span>Address:</span>
-                    <span className="text-sm text-gray-600 max-w-xs truncate">
+                    <span className="text-sm text-muted-foreground-600 max-w-xs truncate">
                       {formData.deliveryAddress}
                     </span>
                   </div>
@@ -271,10 +271,10 @@ export default function SaleOrderFlow({
               </div>
 
               {/* Important Notice */}
-              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="p-4 bg-primary-50 border border-primary-200 rounded-lg">
                 <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" />
-                  <div className="text-sm text-yellow-800">
+                  <AlertCircle className="h-5 w-5 text-primary-600 mr-2 mt-0.5" />
+                  <div className="text-sm text-primary-800">
                     <p className="font-medium mb-1">Important:</p>
                     <ul className="space-y-1 text-xs">
                       <li>• Payment will be processed immediately upon confirmation</li>
@@ -302,7 +302,7 @@ export default function SaleOrderFlow({
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                   Processing...
                 </>
               ) : step < 2 ? (

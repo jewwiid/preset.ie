@@ -137,7 +137,7 @@ export function FeaturedPresetsQueue() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-gray-500">Loading featured preset requests...</div>
+        <div className="text-muted-foreground-500">Loading featured preset requests...</div>
       </div>
     )
   }
@@ -145,9 +145,9 @@ export function FeaturedPresetsQueue() {
   if (requests.length === 0) {
     return (
       <div className="text-center py-8">
-        <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No Featured Requests</h3>
-        <p className="text-gray-500">There are no pending featured preset requests to review.</p>
+        <Star className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No Featured Requests</h3>
+        <p className="text-muted-foreground-500">There are no pending featured preset requests to review.</p>
       </div>
     )
   }
@@ -156,10 +156,10 @@ export function FeaturedPresetsQueue() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Featured Preset Requests</h2>
-          <p className="text-gray-600">Review and approve requests for featured preset status</p>
+          <h2 className="text-2xl font-bold text-muted-foreground-900">Featured Preset Requests</h2>
+          <p className="text-muted-foreground-600">Review and approve requests for featured preset status</p>
         </div>
-        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+        <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
           <Clock className="h-3 w-3 mr-1" />
           {requests.length} Pending
         </Badge>
@@ -167,7 +167,7 @@ export function FeaturedPresetsQueue() {
 
       <div className="space-y-4">
         {requests.map((request) => (
-          <Card key={request.id} className="border-l-4 border-l-yellow-400">
+          <Card key={request.id} className="border-l-4 border-l-primary-primary">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
@@ -184,7 +184,7 @@ export function FeaturedPresetsQueue() {
                     </div>
                   </div>
                 </div>
-                <div className="text-right text-sm text-gray-500">
+                <div className="text-right text-sm text-muted-foreground-500">
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     {formatDate(request.requested_at)}
@@ -196,27 +196,27 @@ export function FeaturedPresetsQueue() {
             <CardContent className="space-y-4">
               {/* Preset Details */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Preset Description</h4>
-                <p className="text-gray-700 text-sm">{request.presets.description}</p>
+                <h4 className="font-medium text-muted-foreground-900 mb-2">Preset Description</h4>
+                <p className="text-muted-foreground-700 text-sm">{request.presets.description}</p>
               </div>
 
               {/* Prompt Template */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Prompt Template</h4>
-                <div className="bg-gray-50 p-3 rounded-md">
-                  <code className="text-sm text-gray-800">{request.presets.prompt_template}</code>
+                <h4 className="font-medium text-muted-foreground-900 mb-2">Prompt Template</h4>
+                <div className="bg-muted-50 p-3 rounded-md">
+                  <code className="text-sm text-muted-foreground-800">{request.presets.prompt_template}</code>
                 </div>
               </div>
 
               {/* Requester Info */}
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Requested By</h4>
+                <h4 className="font-medium text-muted-foreground-900 mb-2">Requested By</h4>
                 <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-700">
+                  <User className="h-4 w-4 text-muted-foreground-500" />
+                  <span className="text-sm text-muted-foreground-700">
                     {request.requester.raw_user_meta_data?.full_name || 'Unknown User'}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground-500">
                     ({request.requester.email})
                   </span>
                 </div>
@@ -243,7 +243,7 @@ export function FeaturedPresetsQueue() {
                 <Button
                   onClick={() => handleApproval(request.id, 'approved')}
                   disabled={processing === request.id}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-primary-600 hover:bg-primary-700 text-primary-foreground"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   {processing === request.id ? 'Processing...' : 'Approve'}
@@ -252,7 +252,7 @@ export function FeaturedPresetsQueue() {
                   onClick={() => handleApproval(request.id, 'rejected')}
                   disabled={processing === request.id}
                   variant="outline"
-                  className="border-red-300 text-red-600 hover:bg-red-50"
+                  className="border-destructive-300 text-destructive-600 hover:bg-destructive-50"
                 >
                   <XCircle className="h-4 w-4 mr-2" />
                   {processing === request.id ? 'Processing...' : 'Reject'}

@@ -173,7 +173,7 @@ export default function MosaicGrid({
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-muted-foreground-500">
         <div className="text-6xl mb-4">📸</div>
         <p>No images added yet</p>
         <p className="text-sm">Upload some images to create your moodboard</p>
@@ -258,36 +258,36 @@ export default function MosaicGrid({
                       return (
                         <>
                           <CheckCircle className="w-8 h-8 text-primary-400 mb-2" />
-                          <span className="text-sm text-white font-medium">Enhanced!</span>
+                          <span className="text-sm text-primary-foreground font-medium">Enhanced!</span>
                         </>
                       )
                     } else if (task?.status === 'failed') {
                       return (
                         <>
-                          <X className="w-8 h-8 text-red-400 mb-2" />
-                          <span className="text-sm text-white font-medium">Failed</span>
+                          <X className="w-8 h-8 text-destructive-400 mb-2" />
+                          <span className="text-sm text-primary-foreground font-medium">Failed</span>
                         </>
                       )
                     } else {
                       return (
                         <>
                           <div className="relative mb-4">
-                            <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
+                            <Loader2 className="w-10 h-10 text-primary-400 animate-spin" />
                             {task && (
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <span className="text-sm font-bold text-white">
+                                <span className="text-sm font-bold text-primary-foreground">
                                   {Math.round(task.progress)}%
                                 </span>
                               </div>
                             )}
                           </div>
-                          <div className="w-24 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                          <div className="w-24 h-1.5 bg-muted-700 rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-500"
+                              className="h-full bg-gradient-to-r from-primary to-primary/90 transition-all duration-500"
                               style={{ width: `${task?.progress || 0}%` }}
                             />
                           </div>
-                          <span className="text-xs text-gray-300 mt-2">
+                          <span className="text-xs text-muted-foreground-300 mt-2">
                             {task?.status === 'processing' ? 'Initializing...' : 'Enhancing...'}
                           </span>
                         </>
@@ -299,7 +299,7 @@ export default function MosaicGrid({
 
               {/* Enhancement badge */}
               {item.enhancement_status === 'completed' && !isEnhancing && (
-                <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                <div className="absolute top-2 left-2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
                   {item.showing_original ? 'Original' : 'Enhanced'}
                 </div>
@@ -313,7 +313,7 @@ export default function MosaicGrid({
                     e.stopPropagation()
                     onRemove(item.id)
                   }}
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 hover:bg-red-600 flex items-center justify-center text-xs font-bold"
+                  className="absolute top-2 right-2 bg-destructive-500 text-primary-foreground rounded-full w-6 h-6 hover:bg-destructive-600 flex items-center justify-center text-xs font-bold"
                 >
                   ×
                 </button>
@@ -325,7 +325,7 @@ export default function MosaicGrid({
                       e.stopPropagation()
                       onToggleOriginal?.(item.id)
                     }}
-                    className="absolute top-2 right-10 bg-white bg-opacity-90 text-gray-700 rounded px-2 py-1 text-xs hover:bg-opacity-100 whitespace-nowrap"
+                    className="absolute top-2 right-10 bg-background bg-opacity-90 text-muted-foreground-700 rounded px-2 py-1 text-xs hover:bg-opacity-100 whitespace-nowrap"
                     title={item.showing_original ? "Show Enhanced" : "Show Original"}
                   >
                     {item.showing_original ? "Enhanced" : "Original"}
@@ -339,7 +339,7 @@ export default function MosaicGrid({
                       e.stopPropagation()
                       onEnhance(item.id)
                     }}
-                    className="absolute bottom-2 left-2 bg-purple-500 text-white rounded px-2 py-1 text-xs hover:bg-purple-600 whitespace-nowrap flex items-center gap-1"
+                    className="absolute bottom-2 left-2 bg-primary-500 text-primary-foreground rounded px-2 py-1 text-xs hover:bg-primary-600 whitespace-nowrap flex items-center gap-1"
                     title="Enhance with AI"
                   >
                     <Sparkles className="w-3 h-3" />
@@ -354,7 +354,7 @@ export default function MosaicGrid({
                       e.stopPropagation()
                       onRedoEnhancement(item.id)
                     }}
-                    className="absolute bottom-2 right-2 bg-orange-500 text-white rounded px-2 py-1 text-xs hover:bg-orange-600 whitespace-nowrap"
+                    className="absolute bottom-2 right-2 bg-primary-500 text-primary-foreground rounded px-2 py-1 text-xs hover:bg-primary-600 whitespace-nowrap"
                     title="Redo Enhancement"
                   >
                     Redo
@@ -363,7 +363,7 @@ export default function MosaicGrid({
 
                 {/* Attribution */}
                 {(item.photographer || item.original_url) && (
-                  <div className="absolute bottom-2 left-2 text-xs text-white bg-black bg-opacity-50 px-2 py-1 rounded">
+                  <div className="absolute bottom-2 left-2 text-xs text-primary-foreground bg-black bg-opacity-50 px-2 py-1 rounded">
                     📷 {item.photographer || 'Original'}
                   </div>
                 )}

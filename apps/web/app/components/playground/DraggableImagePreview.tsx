@@ -206,18 +206,18 @@ export default function DraggableImagePreview({
           <div className="absolute inset-0 pointer-events-none z-20">
             {gridType === 'horizontal' && (
               /* Horizontal center line */
-              <div className="absolute top-1/2 left-0 right-0 h-px bg-green-500/90 transform -translate-y-1/2 shadow-lg" />
+              <div className="absolute top-1/2 left-0 right-0 h-px bg-primary-500/90 transform -translate-y-1/2 shadow-lg" />
             )}
             
             {gridType === 'rule-of-thirds' && (
               <>
                 {/* Rule of thirds grid - horizontal lines */}
-                <div className="absolute top-1/3 left-0 right-0 h-px bg-green-500/90 transform -translate-y-1/2 shadow-lg" />
-                <div className="absolute top-2/3 left-0 right-0 h-px bg-green-500/90 transform -translate-y-1/2 shadow-lg" />
+                <div className="absolute top-1/3 left-0 right-0 h-px bg-primary-500/90 transform -translate-y-1/2 shadow-lg" />
+                <div className="absolute top-2/3 left-0 right-0 h-px bg-primary-500/90 transform -translate-y-1/2 shadow-lg" />
                 
                 {/* Rule of thirds grid - vertical lines */}
-                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-green-500/90 transform -translate-x-1/2 shadow-lg" />
-                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-green-500/90 transform -translate-x-1/2 shadow-lg" />
+                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-primary-500/90 transform -translate-x-1/2 shadow-lg" />
+                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-primary-500/90 transform -translate-x-1/2 shadow-lg" />
               </>
             )}
           </div>
@@ -283,15 +283,15 @@ export default function DraggableImagePreview({
       </div>
 
       {/* Info display */}
-      <div className="mt-2 text-xs text-gray-500">
+      <div className="mt-2 text-xs text-muted-foreground-500">
         <div>Preview: {dimensions.width} × {dimensions.height}</div>
-        <div className="text-blue-600">
+        <div className="text-primary-600">
           Y Position: {yPosition.toFixed(0)}px {yPosition !== 0 && `(${yPosition > 0 ? 'down' : 'up'})`}
         </div>
       </div>
 
       {/* Instructions */}
-      <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700">
+      <div className="mt-2 p-2 bg-primary-50 rounded text-xs text-primary-700">
         <strong>💡 Tip:</strong> Hover over the image to see the drag option, then drag to adjust framing. Click "Save Framing" when ready.
       </div>
     </div>

@@ -265,13 +265,13 @@ export default function SubscriptionPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted-50">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in Required</h2>
-          <p className="text-gray-600 mb-4">Please sign in to view subscription plans</p>
+          <h2 className="text-2xl font-bold text-muted-foreground-900 mb-2">Sign in Required</h2>
+          <p className="text-muted-foreground-600 mb-4">Please sign in to view subscription plans</p>
           <button 
             onClick={() => window.location.href = '/auth/signin'}
-            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90"
+            className="px-4 py-2 bg-primary-600 text-primary-foreground rounded-md hover:bg-primary/90"
           >
             Sign In
           </button>
@@ -281,14 +281,14 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-muted-50 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-muted-foreground-900 mb-4">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground-600 max-w-2xl mx-auto">
             Unlock the full potential of Preset with our subscription plans. 
             Get more credits, enhanced features, and priority support.
           </p>
@@ -309,7 +309,7 @@ export default function SubscriptionPage() {
               <button
                 onClick={handleCancelSubscription}
                 disabled={loading}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                className="px-4 py-2 bg-destructive-600 text-primary-foreground rounded-md hover:bg-destructive-700 disabled:opacity-50"
               >
                 {loading ? 'Canceling...' : 'Cancel Subscription'}
               </button>
@@ -319,9 +319,9 @@ export default function SubscriptionPage() {
 
         {/* Error/Success Messages */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
-            <X className="w-5 h-5 text-red-500" />
-            <p className="text-red-700">{error}</p>
+          <div className="mb-6 p-4 bg-destructive-50 border border-destructive-200 rounded-md flex items-center gap-2">
+            <X className="w-5 h-5 text-destructive-500" />
+            <p className="text-destructive-700">{error}</p>
           </div>
         )}
         
@@ -337,15 +337,15 @@ export default function SubscriptionPage() {
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`relative bg-white rounded-2xl shadow-lg border-2 p-8 flex flex-col ${
+              className={`relative bg-background rounded-2xl shadow-lg border-2 p-8 flex flex-col ${
                 plan.popular 
                   ? 'border-primary-500 transform scale-105' 
-                  : 'border-gray-200'
+                  : 'border-border-200'
               } ${currentPlan === plan.tier ? 'ring-2 ring-primary-primary' : ''}`}
             >
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-primary-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                  <span className="bg-primary-500 text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
                     Most Popular
                   </span>
                 </div>
@@ -353,7 +353,7 @@ export default function SubscriptionPage() {
 
               {currentPlan === plan.tier && (
                 <div className="absolute -top-4 right-4">
-                  <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                  <span className="bg-primary-500 text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">
                     Current Plan
                   </span>
                 </div>
@@ -362,16 +362,16 @@ export default function SubscriptionPage() {
               {/* Plan Header */}
               <div className="text-center mb-8">
                 <div className="flex justify-center mb-4">
-                  {plan.tier === 'FREE' && <Star className="w-8 h-8 text-gray-400" />}
+                  {plan.tier === 'FREE' && <Star className="w-8 h-8 text-muted-foreground-400" />}
                   {plan.tier === 'PLUS' && <Zap className="w-8 h-8 text-primary-500" />}
-                  {plan.tier === 'PRO' && <Crown className="w-8 h-8 text-purple-500" />}
+                  {plan.tier === 'PRO' && <Crown className="w-8 h-8 text-primary-500" />}
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-2">
+                <h3 className="text-2xl font-bold text-muted-foreground-900 mb-2">{plan.name}</h3>
+                <div className="text-4xl font-bold text-muted-foreground-900 mb-2">
                   ${plan.price}
-                  <span className="text-lg text-gray-500">/{plan.period}</span>
+                  <span className="text-lg text-muted-foreground-500">/{plan.period}</span>
                 </div>
-                <p className="text-gray-600">{plan.credits} credits per month</p>
+                <p className="text-muted-foreground-600">{plan.credits} credits per month</p>
               </div>
 
               {/* Features */}
@@ -379,7 +379,7 @@ export default function SubscriptionPage() {
                 {plan.features.map((feature, index) => (
                   <div key={index} className="flex items-center gap-3">
                     <Check className="w-5 h-5 text-primary-500 flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
+                    <span className="text-muted-foreground-700">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -390,10 +390,10 @@ export default function SubscriptionPage() {
                 disabled={loading || currentPlan === plan.tier}
                 className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 ${
                   currentPlan === plan.tier
-                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                    ? 'bg-muted-100 text-muted-foreground-500 cursor-not-allowed'
                     : plan.popular
-                    ? 'bg-primary-600 text-white hover:bg-primary/90 hover:shadow-lg'
-                    : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg'
+                    ? 'bg-primary-600 text-primary-foreground hover:bg-primary/90 hover:shadow-lg'
+                    : 'bg-muted-900 text-primary-foreground hover:bg-muted-800 hover:shadow-lg'
                 }`}
               >
                 {loading ? 'Processing...' : 
@@ -407,33 +407,33 @@ export default function SubscriptionPage() {
 
         {/* FAQ Section */}
         <div className="mt-16 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
+          <h2 className="text-3xl font-bold text-center text-muted-foreground-900 mb-8">
             Frequently Asked Questions
           </h2>
           <div className="space-y-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="bg-background rounded-lg p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">
                 What are credits used for?
               </h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground-600">
                 Credits are used for AI image enhancements, premium marketplace features, 
                 and advanced tools. Each credit represents one enhancement or premium action.
               </p>
             </div>
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="bg-background rounded-lg p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">
                 Can I change my plan anytime?
               </h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground-600">
                 Yes! You can upgrade or downgrade your subscription at any time. 
                 Changes take effect immediately, and you'll be charged or credited accordingly.
               </p>
             </div>
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="bg-background rounded-lg p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">
                 What happens to unused credits?
               </h3>
-              <p className="text-gray-600">
+              <p className="text-muted-foreground-600">
                 Credits reset monthly and don't roll over. However, you can always 
                 purchase additional credit packages if you need more.
               </p>

@@ -259,10 +259,10 @@ export default function CatchAllPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-muted-foreground-600">Loading...</p>
         </div>
       </div>
     );
@@ -271,11 +271,11 @@ export default function CatchAllPage() {
   // If not a user profile, show 404
   if (!isUserProfile || error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Page Not Found</h2>
-          <p className="text-gray-600 mb-4">
+          <AlertCircle className="h-12 w-12 text-destructive-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-muted-foreground-900 mb-2">Page Not Found</h2>
+          <p className="text-muted-foreground-600 mb-4">
             {error || "The page you're looking for doesn't exist."}
           </p>
           <Button onClick={() => router.push('/')}>
@@ -288,14 +288,14 @@ export default function CatchAllPage() {
 
   // Render user profile
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted-50">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-32"></div>
+        <div className="bg-background rounded-lg shadow-sm overflow-hidden mb-6">
+          <div className="bg-gradient-to-r from-primary to-primary/90 h-32"></div>
           <div className="px-6 pb-6">
             <div className="flex items-end -mt-16 mb-4">
-              <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
+              <Avatar className="w-24 h-24 border-4 border-border shadow-lg">
                 <AvatarImage src={profile!.avatar_url} alt={profile!.display_name} />
                 <AvatarFallback className="text-2xl">
                   {profile!.display_name.split(' ').map(n => n[0]).join('').toUpperCase()}
@@ -303,14 +303,14 @@ export default function CatchAllPage() {
               </Avatar>
               <div className="ml-4 flex-1">
                 <div className="flex items-center space-x-2 mb-2">
-                  <h1 className="text-2xl font-bold text-gray-900">{profile!.display_name}</h1>
+                  <h1 className="text-2xl font-bold text-muted-foreground-900">{profile!.display_name}</h1>
                   {profile!.verified_id && (
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                    <CheckCircle className="h-5 w-5 text-primary-600" />
                   )}
                 </div>
-                <p className="text-lg text-gray-600">@{profile!.handle}</p>
+                <p className="text-lg text-muted-foreground-600">@{profile!.handle}</p>
                 {profile!.city && (
-                  <div className="flex items-center text-gray-500 mt-1">
+                  <div className="flex items-center text-muted-foreground-500 mt-1">
                     <MapPin className="h-4 w-4 mr-1" />
                     <span>{profile!.city}{profile!.country && `, ${profile!.country}`}</span>
                   </div>
@@ -326,7 +326,7 @@ export default function CatchAllPage() {
 
             {/* Bio */}
             {profile!.bio && (
-              <p className="text-gray-700 mb-4">{profile!.bio}</p>
+              <p className="text-muted-foreground-700 mb-4">{profile!.bio}</p>
             )}
 
             {/* Role badges */}
@@ -352,8 +352,8 @@ export default function CatchAllPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow-sm mb-6">
-          <div className="border-b border-gray-200">
+        <div className="bg-background rounded-lg shadow-sm mb-6">
+          <div className="border-b border-border-200">
             <nav className="flex space-x-8 px-6">
               {[
                 { id: 'about', label: 'About', icon: User },
@@ -365,8 +365,8 @@ export default function CatchAllPage() {
                   onClick={() => setActiveTab(id as any)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
                     activeTab === id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-muted-foreground-500 hover:text-muted-foreground-700 hover:border-border-300'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -391,7 +391,7 @@ export default function CatchAllPage() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-2xl font-bold text-blue-600">
+                        <p className="text-2xl font-bold text-primary-600">
                           {profile!.years_experience} {profile!.years_experience === 1 ? 'year' : 'years'}
                         </p>
                       </CardContent>
@@ -446,13 +446,13 @@ export default function CatchAllPage() {
                 {/* Additional Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {profile!.available_for_travel && (
-                    <div className="flex items-center text-blue-600">
+                    <div className="flex items-center text-primary-600">
                       <Globe className="h-4 w-4 mr-2" />
                       <span>Available for travel</span>
                     </div>
                   )}
                   {profile!.has_studio && (
-                    <div className="flex items-center text-purple-600">
+                    <div className="flex items-center text-primary-600">
                       <Camera className="h-4 w-4 mr-2" />
                       <span>Has studio {profile!.studio_name && `(${profile!.studio_name})`}</span>
                     </div>
@@ -466,7 +466,7 @@ export default function CatchAllPage() {
                       href={profile!.portfolio_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-blue-600 hover:text-blue-800"
+                      className="flex items-center text-primary-600 hover:text-primary-800"
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
                       Portfolio
@@ -477,7 +477,7 @@ export default function CatchAllPage() {
                       href={profile!.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-blue-600 hover:text-blue-800"
+                      className="flex items-center text-primary-600 hover:text-primary-800"
                     >
                       <Globe className="h-4 w-4 mr-2" />
                       Website
@@ -499,7 +499,7 @@ export default function CatchAllPage() {
                       href={`https://tiktok.com/@${profile!.tiktok_handle}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center text-gray-800 hover:text-gray-900"
+                      className="flex items-center text-muted-foreground-800 hover:text-muted-foreground-900"
                     >
                       <span className="mr-2">📱</span>
                       @{profile!.tiktok_handle}
@@ -508,7 +508,7 @@ export default function CatchAllPage() {
                 </div>
 
                 {/* Member since */}
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground-500">
                   Member since {formatDate(profile!.created_at)}
                 </div>
               </div>
@@ -519,9 +519,9 @@ export default function CatchAllPage() {
               <div>
                 {showcases.length === 0 ? (
                   <div className="text-center py-12">
-                    <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No showcases yet</h3>
-                    <p className="text-gray-500">This user hasn't published any showcases yet.</p>
+                    <Camera className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No showcases yet</h3>
+                    <p className="text-muted-foreground-500">This user hasn't published any showcases yet.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -532,7 +532,7 @@ export default function CatchAllPage() {
                             {showcase.gig?.[0]?.title || 'Showcase'}
                           </CardTitle>
                           {showcase.gig?.[0]?.location_text && (
-                            <div className="flex items-center text-sm text-gray-500">
+                            <div className="flex items-center text-sm text-muted-foreground-500">
                               <MapPin className="h-4 w-4 mr-1" />
                               {showcase.gig[0].location_text}
                             </div>
@@ -540,7 +540,7 @@ export default function CatchAllPage() {
                         </CardHeader>
                         <CardContent>
                           {showcase.caption && (
-                            <p className="text-gray-600 mb-3">{showcase.caption}</p>
+                            <p className="text-muted-foreground-600 mb-3">{showcase.caption}</p>
                           )}
                           {showcase.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1">
@@ -551,7 +551,7 @@ export default function CatchAllPage() {
                               ))}
                             </div>
                           )}
-                          <div className="text-xs text-gray-500 mt-3">
+                          <div className="text-xs text-muted-foreground-500 mt-3">
                             {formatDate(showcase.created_at)}
                           </div>
                         </CardContent>
@@ -570,8 +570,8 @@ export default function CatchAllPage() {
                     <h3 className="text-lg font-semibold mb-3">Equipment</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {profile!.equipment_list.map((item) => (
-                        <div key={item} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                          <Award className="h-4 w-4 mr-2 text-gray-500" />
+                        <div key={item} className="flex items-center p-3 bg-muted-50 rounded-lg">
+                          <Award className="h-4 w-4 mr-2 text-muted-foreground-500" />
                           <span>{item}</span>
                         </div>
                       ))}
@@ -579,8 +579,8 @@ export default function CatchAllPage() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Award className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">No equipment information available.</p>
+                    <Award className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+                    <p className="text-muted-foreground-500">No equipment information available.</p>
                   </div>
                 )}
 

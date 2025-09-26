@@ -452,7 +452,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
   if (loading) {
     return (
       <div className={`flex justify-center items-center py-12 ${className}`}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
         <span className="ml-2 text-sm text-muted-foreground">Loading showcases...</span>
       </div>
     )
@@ -461,7 +461,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
   if (error) {
     return (
       <div className={`text-center py-12 ${className}`}>
-        <p className="text-red-500 mb-4">{error}</p>
+        <p className="text-destructive-500 mb-4">{error}</p>
         <button 
           onClick={fetchShowcases}
           className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
@@ -622,7 +622,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
                   )
                 })()}
                 {showcase.individual_image_title && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-3 rounded-b-lg">
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-primary-foreground p-3 rounded-b-lg">
                     <p className="font-medium">{showcase.individual_image_title}</p>
                     {showcase.individual_image_description && (
                       <p className="text-sm opacity-90">{showcase.individual_image_description}</p>
@@ -643,7 +643,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
                     }
                     handleViewMetadata(mockMedia, showcase)
                   }}
-                  className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-primary-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                   title="View treatment details"
                 >
                   <Info className="h-3 w-3" />
@@ -704,7 +704,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
                       )}
                       {showcase.media.length > 4 && index === 3 && (
                         <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
-                          <span className="text-white font-semibold">
+                          <span className="text-primary-foreground font-semibold">
                             +{showcase.media.length - 4} more
                           </span>
                         </div>
@@ -713,7 +713,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
                       {/* Info button overlay */}
                       <button
                         onClick={() => handleViewMetadata(media, showcase)}
-                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-primary-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                         title="View treatment details"
                       >
                         <Info className="h-3 w-3" />

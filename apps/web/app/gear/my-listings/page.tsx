@@ -26,13 +26,16 @@ interface Listing {
   title: string;
   description?: string;
   category: string;
-  mode: 'rent' | 'sell';
-  price_cents: number;
+  mode: 'rent' | 'sale' | 'both';
+  rent_day_cents?: number;
+  rent_week_cents?: number;
+  sale_price_cents?: number;
   status: 'active' | 'inactive' | 'archived';
-  location?: string;
+  location_city?: string;
+  location_country?: string;
   created_at: string;
   updated_at: string;
-  images?: Array<{
+  listing_images?: Array<{
     id: string;
     url: string;
     alt_text?: string;
@@ -56,13 +59,18 @@ export default function MyListingsPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/marketplace/listings?my_listings=true', {
+      console.log('Fetching my listings with session:', !!session, 'token:', !!session?.access_token);
+
+      const response = await fetch('/api/equipment/listings?my_listings=true', {
         headers: {
           'Authorization': `Bearer ${session?.access_token}`
         }
       });
 
+      console.log('My listings response status:', response.status);
+
       const data = await response.json();
+      console.log('My listings response data:', data);
 
       if (response.ok) {
         setListings(data.listings || []);
@@ -197,10 +205,10 @@ export default function MyListingsPage() {
                 <Card key={listing.id} className="overflow-hidden">
                   {/* Image */}
                   <div className="aspect-w-16 aspect-h-9 bg-muted">
-                    {listing.images && listing.images.length > 0 ? (
+                    {listing.listing_images && listing.listing_images.length > 0 ? (
                       <img
-                        src={listing.images[0].url}
-                        alt={listing.images[0].alt_text || listing.title}
+                        src={listing.listing_images[0].url}
+                        alt={listing.listing_images[0].alt_text || listing.title}
                         className="w-full h-48 object-cover"
                       />
                     ) : (
@@ -232,9 +240,16 @@ export default function MyListingsPage() {
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center text-sm text-muted-foreground">
                         <Euro className="h-4 w-4 mr-2" />
-                        <span className="font-medium">{formatPrice(listing.price_cents)}</span>
+                        <span className="font-medium">
+                          {listing.mode === 'rent' || listing.mode === 'both' 
+                            ? formatPrice(listing.rent_day_cents || 0)
+                            : formatPrice(listing.sale_price_cents || 0)
+                          }
+                        </span>
                         <span className="ml-1 text-muted-foreground/70">
-                          {listing.mode === 'rent' ? '/day' : 'one-time'}
+                          {listing.mode === 'rent' ? '/day' : 
+                           listing.mode === 'sale' ? 'one-time' : 
+                           listing.mode === 'both' ? '/day' : 'one-time'}
                         </span>
                       </div>
                       
@@ -243,10 +258,14 @@ export default function MyListingsPage() {
                         <span className="capitalize">{listing.category}</span>
                       </div>
 
-                      {listing.location && (
+                      {(listing.location_city || listing.location_country) && (
                         <div className="flex items-center text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4 mr-2" />
-                          <span>{listing.location}</span>
+                          <span>
+                            {[listing.location_city, listing.location_country]
+                              .filter(Boolean)
+                              .join(', ')}
+                          </span>
                         </div>
                       )}
 
@@ -259,13 +278,13 @@ export default function MyListingsPage() {
                     {/* Actions */}
                     <div className="flex space-x-2">
                       <Button variant="outline" size="sm" asChild className="flex-1">
-                        <Link href={`/marketplace/listings/${listing.id}`}>
+                        <Link href={`/gear/listings/${listing.id}`}>
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Link>
                       </Button>
                       <Button variant="outline" size="sm" asChild className="flex-1">
-                        <Link href={`/marketplace/listings/${listing.id}/edit`}>
+                        <Link href={`/gear/listings/${listing.id}/edit`}>
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Link>

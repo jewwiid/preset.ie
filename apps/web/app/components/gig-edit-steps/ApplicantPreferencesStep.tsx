@@ -775,7 +775,7 @@ export default function ApplicantPreferencesStep({
                       <div className="space-y-4">
                         <div>
                           <Label className="text-base font-medium flex items-center gap-2">
-                            <Target className="w-4 h-4 text-red-500" />
+                            <Target className="w-4 h-4 text-destructive-500" />
                             Required Specializations
                           </Label>
                           <p className="text-sm text-muted-foreground mt-1">Must have these skills</p>
@@ -809,7 +809,7 @@ export default function ApplicantPreferencesStep({
                       <div className="space-y-4">
                         <div>
                           <Label className="text-base font-medium flex items-center gap-2">
-                            <Heart className="w-4 h-4 text-blue-500" />
+                            <Heart className="w-4 h-4 text-primary-500" />
                             Preferred Talent Categories
                           </Label>
                           <p className="text-sm text-muted-foreground mt-1">Nice to have these roles</p>
@@ -874,7 +874,7 @@ export default function ApplicantPreferencesStep({
                     <div className="space-y-4">
                       <div>
                         <Label className="text-base font-medium flex items-center gap-2">
-                          <Target className="w-4 h-4 text-red-500" />
+                          <Target className="w-4 h-4 text-destructive-500" />
                           Required Equipment
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">Must have access to</p>
@@ -908,7 +908,7 @@ export default function ApplicantPreferencesStep({
                     <div className="space-y-4">
                       <div>
                         <Label className="text-base font-medium flex items-center gap-2">
-                          <Heart className="w-4 h-4 text-blue-500" />
+                          <Heart className="w-4 h-4 text-primary-500" />
                           Preferred Equipment
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">Nice to have access to</p>
@@ -972,7 +972,7 @@ export default function ApplicantPreferencesStep({
                     <div className="space-y-4">
                       <div>
                         <Label className="text-base font-medium flex items-center gap-2">
-                          <Target className="w-4 h-4 text-red-500" />
+                          <Target className="w-4 h-4 text-destructive-500" />
                           Required Software
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">Must be proficient in</p>
@@ -1006,7 +1006,7 @@ export default function ApplicantPreferencesStep({
                     <div className="space-y-4">
                       <div>
                         <Label className="text-base font-medium flex items-center gap-2">
-                          <Heart className="w-4 h-4 text-blue-500" />
+                          <Heart className="w-4 h-4 text-primary-500" />
                           Preferred Software
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">Nice to be proficient in</p>
@@ -1137,7 +1137,7 @@ export default function ApplicantPreferencesStep({
                     <div className="space-y-4">
                       <div>
                         <Label className="text-base font-medium flex items-center gap-2">
-                          <Target className="w-4 h-4 text-red-500" />
+                          <Target className="w-4 h-4 text-destructive-500" />
                           Required Languages
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">Must speak fluently (English pre-selected)</p>
@@ -1171,7 +1171,7 @@ export default function ApplicantPreferencesStep({
                     <div className="space-y-4">
                       <div>
                         <Label className="text-base font-medium flex items-center gap-2">
-                          <Heart className="w-4 h-4 text-blue-500" />
+                          <Heart className="w-4 h-4 text-primary-500" />
                           Preferred Languages
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">Nice to speak</p>

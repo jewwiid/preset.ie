@@ -219,7 +219,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       {currentBannerUrl && (
         <div className="relative">
           <div 
-            className={`w-full aspect-[2/1] bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg overflow-hidden relative ${isAdjusting ? 'cursor-ns-resize' : ''}`}
+            className={`w-full aspect-[2/1] bg-gradient-to-r from-muted-primary/30 to-muted-primary/40 rounded-lg overflow-hidden relative ${isAdjusting ? 'cursor-ns-resize' : ''}`}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -247,8 +247,8 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
                   onClick={isAdjusting ? handleFinishAdjusting : () => setIsAdjusting(true)}
                   className={`p-2 rounded-lg transition-colors ${
                     isAdjusting 
-                      ? 'bg-primary-600 text-white' 
-                      : 'bg-white bg-opacity-90 text-gray-700 hover:bg-opacity-100'
+                      ? 'bg-primary-600 text-primary-foreground' 
+                      : 'bg-background bg-opacity-90 text-muted-foreground-700 hover:bg-opacity-100'
                   }`}
                   title={isAdjusting ? 'Finish adjusting' : 'Adjust position'}
                 >
@@ -258,7 +258,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
                 {isAdjusting && (
                   <button
                     onClick={resetPosition}
-                    className="p-2 bg-white bg-opacity-90 text-gray-700 hover:bg-opacity-100 rounded-lg transition-colors"
+                    className="p-2 bg-background bg-opacity-90 text-muted-foreground-700 hover:bg-opacity-100 rounded-lg transition-colors"
                     title="Reset position"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -269,7 +269,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
               <button
                 onClick={handleRemoveBanner}
                 disabled={uploading}
-                className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
+                className="absolute top-2 right-2 p-2 bg-destructive-500 hover:bg-destructive-600 text-primary-foreground rounded-lg transition-colors disabled:opacity-50 opacity-0 group-hover:opacity-100"
                 title="Remove banner"
               >
                 <X className="w-4 h-4" />
@@ -278,7 +278,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
             
             {/* Adjustment Instructions */}
             {isAdjusting && (
-              <div className="absolute bottom-2 left-2 right-2 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
+              <div className="absolute bottom-2 left-2 right-2 bg-black bg-opacity-75 text-primary-foreground text-xs p-2 rounded">
                 <div className="flex items-center justify-between">
                   <span>Drag up/down to move • Scroll to zoom</span>
                   <span>Scale: {Math.round(bannerPosition.scale * 100)}%</span>
@@ -290,7 +290,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
       )}
 
       {/* Upload Area */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+      <div className="border-2 border-dashed border-border-300 rounded-lg p-6 text-center hover:border-border-400 transition-colors">
         <input
           ref={fileInputRef}
           type="file"
@@ -300,19 +300,19 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
         />
         
         <div className="space-y-3">
-          <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-            <Camera className="w-6 h-6 text-gray-400" />
+          <div className="mx-auto w-12 h-12 bg-muted-100 rounded-full flex items-center justify-center">
+            <Camera className="w-6 h-6 text-muted-foreground-400" />
           </div>
           
           <div className="flex justify-center">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary/90 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+              className="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary/90 text-primary-foreground text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
             >
               {uploading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                   Uploading...
                 </>
               ) : (
@@ -324,7 +324,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
             </button>
           </div>
           
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground-500">
             Recommended: 1200x600px, max 5MB
             {isAdjusting && (
               <span className="block mt-1 text-primary-600">
@@ -337,7 +337,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
 
       {/* Status Messages */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-destructive-50 border border-destructive-200 rounded-lg text-destructive-700">
           <AlertCircle className="w-4 h-4" />
           <span className="text-sm">{error}</span>
         </div>

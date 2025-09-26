@@ -193,7 +193,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/90 rounded-xl flex items-center justify-center">
-            <Star className="w-6 h-6 text-white" />
+            <Star className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground">

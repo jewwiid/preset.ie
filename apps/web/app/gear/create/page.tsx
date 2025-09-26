@@ -13,11 +13,11 @@ export default function CreateListingPage() {
 
   const handleSuccess = (listing: any) => {
     toast.success('Listing created successfully!');
-    router.push(`/marketplace/listings/${listing.id}`);
+    router.push(`/gear/listings/${listing.id}`);
   };
 
   const handleCancel = () => {
-    router.push('/marketplace');
+    router.push('/gear');
   };
 
   return (
@@ -30,7 +30,7 @@ export default function CreateListingPage() {
               <ShoppingBag className="h-8 w-8 mr-3" />
               <div>
                 <h1 className="text-5xl font-bold mb-2">Create New Listing</h1>
-                <p className="text-xl text-muted-foreground">List your equipment for rent or sale in the Preset marketplace</p>
+                <p className="text-xl text-muted-foreground">List your equipment for rent or sale in the equipment marketplace</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">

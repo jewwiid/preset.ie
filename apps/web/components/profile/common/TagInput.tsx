@@ -66,9 +66,9 @@ export function TagInput({
   }
 
   const getLabelClasses = () => {
-    const baseClasses = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+    const baseClasses = "block text-sm font-medium text-foreground mb-2"
     if (error || tagError) {
-      return `${baseClasses} text-red-600 dark:text-red-400`
+      return `${baseClasses} text-destructive`
     }
     return baseClasses
   }

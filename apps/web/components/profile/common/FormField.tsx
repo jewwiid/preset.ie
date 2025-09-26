@@ -298,7 +298,7 @@ export function ToggleSwitch({
       >
         <span
           className={`
-            inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+            inline-block h-4 w-4 transform rounded-full bg-background transition-transform
             ${checked ? 'translate-x-6' : 'translate-x-1'}
           `}
         />
@@ -407,7 +407,7 @@ export function TagInput({
                 key={index}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-600"
+                className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-muted-100 dark:hover:bg-muted-600 focus:outline-none focus:bg-muted-100 dark:focus:bg-muted-600"
               >
                 {suggestion}
               </button>

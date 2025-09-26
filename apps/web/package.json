@@ -8,7 +8,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint --max-warnings 2000",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "design:apply": "node ../../scripts/apply-design-config.js",
+    "design:apply:backup": "node ../../scripts/apply-design-config.js --backup",
+    "design:apply:dry": "node ../../scripts/apply-design-config.js --dry-run",
+    "design:audit": "node ../../scripts/color-audit.js",
+    "design:fix": "node ../../scripts/fix-all-hardcoded-colors.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.8",

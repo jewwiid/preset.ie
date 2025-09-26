@@ -89,13 +89,13 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'preset_used':
-        return <Palette className="h-4 w-4 text-blue-500" />
+        return <Palette className="h-4 w-4 text-primary-500" />
       case 'sample_created':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <CheckCircle className="h-4 w-4 text-primary-500" />
       case 'verification_requested':
-        return <Shield className="h-4 w-4 text-orange-500" />
+        return <Shield className="h-4 w-4 text-primary-500" />
       default:
-        return <Bell className="h-4 w-4 text-gray-500" />
+        return <Bell className="h-4 w-4 text-muted-foreground-500" />
     }
   }
 
@@ -203,7 +203,7 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
                               {notification.title}
                             </h4>
                             {!notification.is_read && (
-                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                              <div className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0" />
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">

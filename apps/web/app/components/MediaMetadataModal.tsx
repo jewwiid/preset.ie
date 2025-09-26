@@ -164,7 +164,7 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
       
       cinematicTerms.forEach(term => {
         const regex = new RegExp(`\\b${term}\\b`, 'gi')
-        highlightedText = highlightedText.replace(regex, `<span class="text-blue-400 font-medium bg-blue-400/10 px-1 rounded">${term}</span>`)
+        highlightedText = highlightedText.replace(regex, `<span class="text-primary-400 font-medium bg-primary-400/10 px-1 rounded">${term}</span>`)
       })
     }
     
@@ -423,18 +423,18 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
       case 'lensType':
       case 'shotSize':
       case 'cameraMovement':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
+        return 'bg-primary-100 text-primary-800 border-primary-200'
       case 'lightingStyle':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        return 'bg-primary-100 text-primary-800 border-primary-200'
       case 'colorPalette':
-        return 'bg-purple-100 text-purple-800 border-purple-200'
+        return 'bg-primary-100 text-primary-800 border-primary-200'
       case 'directorStyle':
       case 'eraEmulation':
         return 'bg-primary-100 text-primary-800 border-primary/20'
       case 'sceneMood':
         return 'bg-primary-100 text-primary-800 border-primary/20'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'bg-muted-100 text-muted-foreground-800 border-border-200'
     }
   }
 
@@ -955,14 +955,14 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
                       
                   {/* Subject */}
                   {components.detectedSubject && (
-                    <div className="flex items-center gap-2 p-2 bg-green-500/5 rounded-lg border border-green-500/20">
-                      <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/30">
+                    <div className="flex items-center gap-2 p-2 bg-primary-500/5 rounded-lg border border-primary-500/20">
+                      <Badge variant="outline" className="text-xs bg-primary-500/10 text-primary-600 border-primary-500/30">
                         {components.detectedSubject === 'image' ? 'Image-to-Image' : 'Subject'}
                       </Badge>
                       <span className="text-sm font-medium">
                         {components.detectedSubject === 'image' ? 'Generation Mode:' : 'Custom Subject:'}
                       </span>
-                      <span className="text-sm text-green-600 font-medium">
+                      <span className="text-sm text-primary-600 font-medium">
                         {components.detectedSubject === 'image' ? 'Image Modification' : components.detectedSubject}
                       </span>
                     </div>
@@ -970,12 +970,12 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
                       
                       {/* Cinematic Parameters */}
                       {components.hasCinematic && (
-                        <div className="flex items-center gap-2 p-2 bg-blue-500/5 rounded-lg border border-blue-500/20">
-                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-500/30">
+                        <div className="flex items-center gap-2 p-2 bg-primary-500/5 rounded-lg border border-primary-500/20">
+                          <Badge variant="outline" className="text-xs bg-primary-500/10 text-primary-600 border-primary-500/30">
                             Cinematic
                           </Badge>
                           <span className="text-sm font-medium">Cinematic Parameters:</span>
-                          <span className="text-sm text-blue-600">{Object.keys(components.cinematicParams).length} settings</span>
+                          <span className="text-sm text-primary-600">{Object.keys(components.cinematicParams).length} settings</span>
                         </div>
                       )}
                     </div>

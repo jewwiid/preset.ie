@@ -190,9 +190,9 @@ export function ProfileCompletionCard() {
                 : 'bg-gradient-to-br from-primary to-primary/90'
             }`}>
               {isComplete ? (
-                <CheckCircle className="w-6 h-6 text-white" />
+                <CheckCircle className="w-6 h-6 text-primary-foreground" />
               ) : (
-                <Award className="w-6 h-6 text-white" />
+                <Award className="w-6 h-6 text-primary-foreground" />
               )}
             </div>
             <div>
@@ -275,7 +275,7 @@ export function ProfileCompletionCard() {
                   }`}
                 >
                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 mx-auto bg-gradient-to-br ${colorClass}`}>
-                    <Icon className="w-4 h-4 text-white" />
+                    <Icon className="w-4 h-4 text-primary-foreground" />
                   </div>
                   <div className="text-center">
                     <p className="text-xs font-medium text-foreground capitalize mb-1">

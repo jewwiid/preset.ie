@@ -260,17 +260,17 @@ export default function VerificationPage() {
   // Type-specific field components
   const renderIdentityFields = () => (
     <div className="space-y-4">
-      <h3 className="font-medium text-gray-900 flex items-center">
+      <h3 className="font-medium text-muted-foreground-900 flex items-center">
         <User className="w-4 h-4 mr-2" />
         Identity Verification Details
       </h3>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-muted-foreground-600">
         Provide social media profiles to help verify your identity. At least one is required.
       </p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Instagram Profile
           </label>
           <input
@@ -278,12 +278,12 @@ export default function VerificationPage() {
             value={formData.instagram_url || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, instagram_url: e.target.value }))}
             placeholder="https://instagram.com/yourusername"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             LinkedIn Profile
           </label>
           <input
@@ -291,12 +291,12 @@ export default function VerificationPage() {
             value={formData.linkedin_url || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
             placeholder="https://linkedin.com/in/yourname"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             TikTok Profile (Optional)
           </label>
           <input
@@ -304,12 +304,12 @@ export default function VerificationPage() {
             value={formData.tiktok_url || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, tiktok_url: e.target.value }))}
             placeholder="https://tiktok.com/@yourusername"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Phone Number (Optional)
           </label>
           <input
@@ -317,7 +317,7 @@ export default function VerificationPage() {
             value={formData.phone_number || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
             placeholder="+1 (555) 123-4567"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
       </div>
@@ -326,43 +326,43 @@ export default function VerificationPage() {
 
   const renderProfessionalFields = () => (
     <div className="space-y-4">
-      <h3 className="font-medium text-gray-900 flex items-center">
+      <h3 className="font-medium text-muted-foreground-900 flex items-center">
         <Briefcase className="w-4 h-4 mr-2" />
         Professional Verification Details
       </h3>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-muted-foreground-600">
         Provide professional credentials and portfolio. Portfolio URL or LinkedIn is required.
       </p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Portfolio Website <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
+            Portfolio Website <span className="text-destructive-500">*</span>
           </label>
           <input
             type="url"
             value={formData.portfolio_url || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, portfolio_url: e.target.value }))}
             placeholder="https://yourportfolio.com"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            LinkedIn Profile <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
+            LinkedIn Profile <span className="text-destructive-500">*</span>
           </label>
           <input
             type="url"
             value={formData.linkedin_url || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
             placeholder="https://linkedin.com/in/yourname"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Years of Experience
           </label>
           <input
@@ -372,12 +372,12 @@ export default function VerificationPage() {
             value={formData.years_experience || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, years_experience: parseInt(e.target.value) || undefined }))}
             placeholder="5"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Professional License Number (Optional)
           </label>
           <input
@@ -385,12 +385,12 @@ export default function VerificationPage() {
             value={formData.professional_license_number || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, professional_license_number: e.target.value }))}
             placeholder="PHO123456"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Instagram Profile (Optional)
           </label>
           <input
@@ -398,12 +398,12 @@ export default function VerificationPage() {
             value={formData.instagram_url || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, instagram_url: e.target.value }))}
             placeholder="https://instagram.com/yourwork"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Professional Reference Contact (Optional)
           </label>
           <input
@@ -411,7 +411,7 @@ export default function VerificationPage() {
             value={formData.references_contact || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, references_contact: e.target.value }))}
             placeholder="reference@company.com"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
       </div>
@@ -420,45 +420,45 @@ export default function VerificationPage() {
 
   const renderBusinessFields = () => (
     <div className="space-y-4">
-      <h3 className="font-medium text-gray-900 flex items-center">
+      <h3 className="font-medium text-muted-foreground-900 flex items-center">
         <Building className="w-4 h-4 mr-2" />
         Business Verification Details
       </h3>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-muted-foreground-600">
         Provide business information for verification. Business name and website are required.
       </p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Business Name <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
+            Business Name <span className="text-destructive-500">*</span>
           </label>
           <input
             type="text"
             value={formData.business_name || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, business_name: e.target.value }))}
             placeholder="Your Business LLC"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
             required
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Business Website <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
+            Business Website <span className="text-destructive-500">*</span>
           </label>
           <input
             type="url"
             value={formData.business_website || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, business_website: e.target.value }))}
             placeholder="https://yourbusiness.com"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
             required
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Business Registration Number
           </label>
           <input
@@ -466,18 +466,18 @@ export default function VerificationPage() {
             value={formData.business_registration_number || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, business_registration_number: e.target.value }))}
             placeholder="LLC123456789"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Business Type
           </label>
           <select
             value={formData.business_type || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, business_type: e.target.value }))}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           >
             <option value="">Select business type</option>
             <option value="Photography Services">Photography Services</option>
@@ -489,7 +489,7 @@ export default function VerificationPage() {
         </div>
         
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Business Address
           </label>
           <input
@@ -497,12 +497,12 @@ export default function VerificationPage() {
             value={formData.business_address || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, business_address: e.target.value }))}
             placeholder="123 Business St, City, State, ZIP"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Tax ID / VAT Number (Optional)
           </label>
           <input
@@ -510,12 +510,12 @@ export default function VerificationPage() {
             value={formData.tax_id || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, tax_id: e.target.value }))}
             placeholder="12-3456789"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Business Instagram (Optional)
           </label>
           <input
@@ -523,7 +523,7 @@ export default function VerificationPage() {
             value={formData.instagram_url || ''}
             onChange={(e) => setFormData(prev => ({ ...prev, instagram_url: e.target.value }))}
             placeholder="https://instagram.com/yourbusiness"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
           />
         </div>
       </div>
@@ -532,18 +532,18 @@ export default function VerificationPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+      <div className="min-h-screen bg-muted-50 flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full bg-background rounded-lg shadow-lg p-8 text-center">
           <CheckCircle className="w-16 h-16 text-primary-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+          <h2 className="text-2xl font-semibold text-muted-foreground-900 mb-4">
             Verification Submitted!
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground-600 mb-6">
             Your {formData.request_type} verification request has been submitted. 
             Our team will review it within 2-3 business days.
           </p>
-          <div className="bg-blue-50 p-4 rounded-lg mb-6">
-            <p className="text-sm text-blue-800">
+          <div className="bg-primary-50 p-4 rounded-lg mb-6">
+            <p className="text-sm text-primary-800">
               <Shield className="w-4 h-4 inline mr-1" />
               Your document will be automatically deleted after verification for security and GDPR compliance.
               You'll receive an email notification once your verification is processed.
@@ -551,7 +551,7 @@ export default function VerificationPage() {
           </div>
           <button
             onClick={() => window.location.href = '/profile'}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="bg-primary-600 text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
           >
             Go to Profile
           </button>
@@ -561,16 +561,16 @@ export default function VerificationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-muted-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-background rounded-lg shadow-lg overflow-hidden">
           {/* Header */}
-          <div className="bg-blue-600 text-white p-6">
+          <div className="bg-primary-600 text-primary-foreground p-6">
             <div className="flex items-center">
               <Shield className="w-8 h-8 mr-3" />
               <div>
                 <h1 className="text-2xl font-semibold">Account Verification</h1>
-                <p className="text-blue-100">Verify your identity to unlock premium features and build trust</p>
+                <p className="text-primary-100">Verify your identity to unlock premium features and build trust</p>
               </div>
             </div>
           </div>
@@ -578,7 +578,7 @@ export default function VerificationPage() {
           <form onSubmit={handleSubmit} className="p-6">
             {/* Verification Type Selection */}
             <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-4">
+              <label className="block text-sm font-medium text-muted-foreground-700 mb-4">
                 Verification Type
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -617,7 +617,7 @@ export default function VerificationPage() {
                     className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
                       formData.request_type === type
                         ? `border-${color}-500 bg-${color}-50 shadow-md`
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-border-200 hover:border-border-300'
                     }`}
                   >
                     <input
@@ -635,11 +635,11 @@ export default function VerificationPage() {
                       <Icon className={`w-5 h-5 mr-3 mt-0.5 ${
                         formData.request_type === type 
                           ? `text-${color}-600` 
-                          : 'text-gray-400'
+                          : 'text-muted-foreground-400'
                       }`} />
                       <div>
-                        <div className="font-medium text-gray-900 text-sm">{label}</div>
-                        <div className="text-gray-600 text-xs mt-1">{desc}</div>
+                        <div className="font-medium text-muted-foreground-900 text-sm">{label}</div>
+                        <div className="text-muted-foreground-600 text-xs mt-1">{desc}</div>
                       </div>
                     </div>
                   </label>
@@ -654,8 +654,8 @@ export default function VerificationPage() {
             
             {/* Age verification has no additional fields */}
             {formData.request_type === 'age' && (
-              <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                <p className="text-sm text-blue-800">
+              <div className="bg-primary-50 p-4 rounded-lg mb-6">
+                <p className="text-sm text-primary-800">
                   <Shield className="w-4 h-4 inline mr-1" />
                   For age verification, please upload a government-issued ID showing your birth date.
                 </p>
@@ -664,16 +664,16 @@ export default function VerificationPage() {
 
             {/* Document Upload */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Verification Document <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-muted-foreground-700 mb-3">
+                Verification Document <span className="text-destructive-500">*</span>
               </label>
               <div
                 className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                   dragOver
-                    ? 'border-blue-400 bg-blue-50'
+                    ? 'border-primary-400 bg-primary-50'
                     : formData.document_file
                     ? 'border-primary-400 bg-primary-50'
-                    : 'border-gray-300 hover:border-gray-400'
+                    : 'border-border-300 hover:border-border-400'
                 }`}
                 onDrop={handleDrop}
                 onDragOver={(e) => {
@@ -691,19 +691,19 @@ export default function VerificationPage() {
                   <div className="flex items-center justify-center">
                     <CheckCircle className="w-8 h-8 text-primary-500 mr-3" />
                     <div className="text-left">
-                      <p className="font-medium text-gray-900">{formData.document_file.name}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="font-medium text-muted-foreground-900">{formData.document_file.name}</p>
+                      <p className="text-sm text-muted-foreground-600">
                         {(formData.document_file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-2">
+                    <Camera className="w-12 h-12 text-muted-foreground-400 mx-auto mb-4" />
+                    <p className="text-muted-foreground-600 mb-2">
                       Drag & drop your document here, or click to browse
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground-500">
                       Supported formats: JPG, PNG, WebP, PDF (Max 5MB)
                     </p>
                   </div>
@@ -723,7 +723,7 @@ export default function VerificationPage() {
 
             {/* Additional Information */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                 Additional Information (Optional)
               </label>
               <textarea
@@ -731,17 +731,17 @@ export default function VerificationPage() {
                 onChange={(e) => setFormData(prev => ({ ...prev, additional_info: e.target.value }))}
                 placeholder="Any additional information you'd like to provide..."
                 rows={3}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-border-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-primary focus:border-primary-500"
               />
             </div>
 
             {/* GDPR Notice */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6">
               <div className="flex">
-                <Shield className="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+                <Shield className="w-5 h-5 text-primary-600 mr-3 mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
-                  <p className="text-yellow-800 font-medium mb-1">Privacy & Security Notice</p>
-                  <p className="text-yellow-700">
+                  <p className="text-primary-800 font-medium mb-1">Privacy & Security Notice</p>
+                  <p className="text-primary-700">
                     Your documents are stored securely and will be <strong>automatically deleted</strong> after 
                     verification is complete. We comply with GDPR and data protection regulations. 
                     Only authorized admins can view your documents during the verification process.
@@ -752,10 +752,10 @@ export default function VerificationPage() {
 
             {/* Error Display */}
             {error && (
-              <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="mb-6 bg-destructive-50 border border-destructive-200 rounded-lg p-4">
                 <div className="flex">
-                  <AlertCircle className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" />
-                  <p className="text-sm text-red-700">{error}</p>
+                  <AlertCircle className="w-5 h-5 text-destructive-500 mr-3 flex-shrink-0" />
+                  <p className="text-sm text-destructive-700">{error}</p>
                 </div>
               </div>
             )}
@@ -766,13 +766,13 @@ export default function VerificationPage() {
               disabled={uploading || !formData.document_file}
               className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
                 uploading || !formData.document_file
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-muted-300 text-muted-foreground-500 cursor-not-allowed'
+                  : 'bg-primary-600 text-primary-foreground hover:bg-primary-700'
               }`}
             >
               {uploading ? (
                 <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-border border-t-transparent mr-2"></div>
                   Submitting Verification...
                 </div>
               ) : (

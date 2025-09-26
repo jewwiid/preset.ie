@@ -359,7 +359,7 @@ export default function ImagePreviewArea({
                   }}
                 >
                   <div className="text-center space-y-4">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary-200 border-t-primary-primary mx-auto"></div>
                     <div className="space-y-2">
                       <h3 className="text-lg font-semibold text-primary">Video Generation Started!</h3>
                       <p className="text-sm text-primary">Creating your video from the selected image...</p>
@@ -443,7 +443,7 @@ export default function ImagePreviewArea({
                           title="Save to Gallery"
                         >
                           {savingImage === generatedVideoUrl ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
                           ) : (
                             <Heart className="h-4 w-4" />
                           )}
@@ -465,7 +465,7 @@ export default function ImagePreviewArea({
                 </div>
               ) : selectedImage ? (
                 <div 
-                  className="relative w-full bg-white border-2 border-solid border-gray-300 rounded-lg overflow-hidden transition-all duration-300 shadow-sm"
+                  className="relative w-full bg-background border-2 border-solid border-border-300 rounded-lg overflow-hidden transition-all duration-300 shadow-sm"
                   style={{ 
                     aspectRatio: previewAspectRatio,
                     maxWidth: '100%'
@@ -561,7 +561,7 @@ export default function ImagePreviewArea({
                           title="Save to Gallery"
                         >
                           {savingImage === selectedImage ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
                           ) : (
                             <Heart className="h-4 w-4" />
                           )}
@@ -591,7 +591,7 @@ export default function ImagePreviewArea({
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 text-white shadow-md"
+                        className="h-8 w-8 p-0 bg-destructive-500/90 hover:bg-destructive-500 text-primary-foreground shadow-md"
                         onClick={() => onSelectImage(null)}
                         title="Deselect Image"
                       >
@@ -607,15 +607,15 @@ export default function ImagePreviewArea({
                 </div>
               ) : (
                 <div 
-                  className="w-full bg-white border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center"
+                  className="w-full bg-background border-2 border-dashed border-border-300 rounded-lg flex items-center justify-center"
                   style={{ 
                     aspectRatio: previewAspectRatio,
                     maxWidth: '100%'
                   }}
                 >
-                  <div className="text-center text-gray-500">
-                    <div className="w-12 h-12 mx-auto mb-2 bg-gray-200 rounded-full flex items-center justify-center">
-                      <Settings className="h-6 w-6 text-gray-400" />
+                  <div className="text-center text-muted-foreground-500">
+                    <div className="w-12 h-12 mx-auto mb-2 bg-muted-200 rounded-full flex items-center justify-center">
+                      <Settings className="h-6 w-6 text-muted-foreground-400" />
                     </div>
                     <p className="text-sm">Click an image below to view it here</p>
                   </div>
@@ -630,10 +630,10 @@ export default function ImagePreviewArea({
                 {images.map((image, index) => (
                   <div
                     key={index}
-                    className={`relative flex-shrink-0 cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 bg-gray-100 ${
+                    className={`relative flex-shrink-0 cursor-pointer rounded-lg overflow-hidden border-2 transition-all duration-200 bg-muted-100 ${
                       selectedImage === getImageUrl(image.url) 
-                        ? 'border-purple-500 ring-2 ring-purple-200' 
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-primary-500 ring-2 ring-primary-primary/30' 
+                        : 'border-border-200 hover:border-border-300'
                     }`}
                     style={{ 
                       aspectRatio: previewAspectRatio,
@@ -672,7 +672,7 @@ export default function ImagePreviewArea({
                     )}
                     
                     {/* Image number badge */}
-                    <div className="absolute top-1 left-1 bg-black/70 text-white text-xs px-1 py-0.5 rounded text-[10px]">
+                    <div className="absolute top-1 left-1 bg-black/70 text-primary-foreground text-xs px-1 py-0.5 rounded text-[10px]">
                       {index + 1}
                     </div>
                     
@@ -689,7 +689,7 @@ export default function ImagePreviewArea({
                         <Button
                           size="sm"
                           variant="destructive"
-                          className="h-5 w-5 p-0 bg-red-500 hover:bg-red-600"
+                          className="h-5 w-5 p-0 bg-destructive-500 hover:bg-destructive-600"
                           onClick={(e) => {
                             e.stopPropagation()
                             handleRemoveImage(getImageUrl(image.url))
@@ -707,7 +707,7 @@ export default function ImagePreviewArea({
 
             {/* Bottom Controls and Info */}
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground-600">
                 {showDimensions && (
                   <>
                     {selectedImage ? (
@@ -719,7 +719,7 @@ export default function ImagePreviewArea({
                         return (
                           <>
                             <span>Dimensions: {actualDimensions}</span>
-                            <span className="mx-2 text-gray-400">|</span>
+                            <span className="mx-2 text-muted-foreground-400">|</span>
                             <span>{images.length} image{images.length > 1 ? 's' : ''}</span>
                           </>
                         )
@@ -727,7 +727,7 @@ export default function ImagePreviewArea({
                     ) : (
                       <>
                         <span>Dimensions: {dimensions.width} × {dimensions.height}</span>
-                        <span className="mx-2 text-gray-400">|</span>
+                        <span className="mx-2 text-muted-foreground-400">|</span>
                         <span>{images.length} image{images.length > 1 ? 's' : ''}</span>
                       </>
                     )}
@@ -738,20 +738,20 @@ export default function ImagePreviewArea({
           </div>
         ) : (
           <div 
-            className="flex flex-col items-center justify-center py-12 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg bg-white"
+            className="flex flex-col items-center justify-center py-12 text-muted-foreground-500 border-2 border-dashed border-border-300 rounded-lg bg-background"
             style={{ 
               aspectRatio: previewAspectRatio,
               maxWidth: '100%'
             }}
           >
             <div className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                <Settings className="h-8 w-8 text-gray-400" />
+              <div className="w-16 h-16 mx-auto mb-4 bg-muted-100 rounded-full flex items-center justify-center">
+                <Settings className="h-8 w-8 text-muted-foreground-400" />
               </div>
               <p className="text-lg font-medium mb-2">{emptyStateMessage}</p>
               {loading && (
                 <div className="flex items-center justify-center mt-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
                   <span className="ml-2 text-sm">Generating...</span>
                 </div>
               )}
@@ -769,7 +769,7 @@ export default function ImagePreviewArea({
               onClick={() => setFullScreenImage(null)}
               className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
             >
-              <X className="h-6 w-6 text-white" />
+              <X className="h-6 w-6 text-primary-foreground" />
             </button>
 
             {/* Media */}
@@ -797,11 +797,11 @@ export default function ImagePreviewArea({
             )}
 
             {/* Image info */}
-            <div className="absolute bottom-4 left-4 right-4 bg-black/50 text-white p-4 rounded-lg">
+            <div className="absolute bottom-4 left-4 right-4 bg-black/50 text-primary-foreground p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-medium">{fullScreenImage.title}</h3>
-                  <p className="text-sm text-gray-300">Image {fullScreenImage.index + 1} of {images.length}</p>
+                  <p className="text-sm text-muted-foreground-300">Image {fullScreenImage.index + 1} of {images.length}</p>
                 </div>
                 <div className="flex gap-2">
                   {showSaveButton && (
@@ -810,10 +810,10 @@ export default function ImagePreviewArea({
                       variant="secondary"
                       onClick={() => handleSaveToGallery(fullScreenImage.url)}
                       disabled={savingImage === fullScreenImage.url}
-                      className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                      className="bg-background/20 hover:bg-background/30 text-primary-foreground border-border/30"
                     >
                       {savingImage === fullScreenImage.url ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
                       ) : (
                         <Heart className="h-4 w-4" />
                       )}
@@ -831,7 +831,7 @@ export default function ImagePreviewArea({
                           handleDownloadImage(fullScreenImage.url, `generated-image-${fullScreenImage.index + 1}.png`)
                         }
                       }}
-                      className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                      className="bg-background/20 hover:bg-background/30 text-primary-foreground border-border/30"
                       title={(() => {
                         const imageData = images.find(img => img.url === fullScreenImage.url);
                         return imageData?.type === 'video' ? "Download Video" : "Download Image";
@@ -844,7 +844,7 @@ export default function ImagePreviewArea({
                     size="sm"
                     variant="secondary"
                     onClick={() => onSelectImage(fullScreenImage.url)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    className="bg-primary-600 hover:bg-primary-700 text-primary-foreground"
                   >
                     Select This Image
                   </Button>
@@ -866,7 +866,7 @@ export default function ImagePreviewArea({
                   }}
                   className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
                 >
-                  <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-6 w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
@@ -881,7 +881,7 @@ export default function ImagePreviewArea({
                   }}
                   className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 hover:bg-black/70 rounded-full transition-colors"
                 >
-                  <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-6 w-6 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
@@ -914,7 +914,7 @@ export default function ImagePreviewArea({
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmRemoveImage}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive-600 hover:bg-destructive-700"
             >
               Remove Image
             </AlertDialogAction>

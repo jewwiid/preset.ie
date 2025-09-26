@@ -278,7 +278,7 @@ export function NotificationsPanel() {
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                         notificationPrefs?.email_enabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -301,7 +301,7 @@ export function NotificationsPanel() {
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                         notificationPrefs?.push_enabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -324,7 +324,7 @@ export function NotificationsPanel() {
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                         notificationPrefs?.in_app_enabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -365,7 +365,7 @@ export function NotificationsPanel() {
                       }`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                           notificationPrefs?.[key as keyof NotificationPreferences] ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
@@ -402,7 +402,7 @@ export function NotificationsPanel() {
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                         notificationPrefs?.badge_count_enabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -429,7 +429,7 @@ export function NotificationsPanel() {
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                         notificationPrefs?.sound_enabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -452,7 +452,7 @@ export function NotificationsPanel() {
                     }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                         notificationPrefs?.vibration_enabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
@@ -486,7 +486,7 @@ export function NotificationsPanel() {
                       disabled={saving}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         notificationPrefs?.digest_frequency === value
-                          ? 'bg-primary text-white'
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-foreground hover:bg-muted'
                       }`}
                     >
@@ -534,7 +534,7 @@ export function NotificationsPanel() {
                   <p className="text-muted-foreground">You'll see notifications here when you receive them.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-muted-primary/20">
                   {notifications.slice(0, 20).map((notification) => (
                     <div key={notification.id} className="p-4 hover:bg-muted transition-colors">
                       <div className="flex items-start gap-3">

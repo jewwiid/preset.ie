@@ -112,11 +112,11 @@ const BatchProgressTracker: React.FC<BatchProgressTrackerProps> = ({
       case 'completed':
         return <CheckCircle className="h-5 w-5 text-primary-500" />
       case 'failed':
-        return <AlertCircle className="h-5 w-5 text-red-500" />
+        return <AlertCircle className="h-5 w-5 text-destructive-500" />
       case 'processing':
-        return <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500" />
+        return <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500" />
       default:
-        return <div className="h-5 w-5 rounded-full bg-gray-400" />
+        return <div className="h-5 w-5 rounded-full bg-muted-400" />
     }
   }
 
@@ -171,7 +171,7 @@ const BatchProgressTracker: React.FC<BatchProgressTrackerProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <div className="flex justify-between text-sm text-gray-600 mb-1">
+          <div className="flex justify-between text-sm text-muted-foreground-600 mb-1">
             <span>Progress</span>
             <span>{batchJob.progress_percentage.toFixed(1)}%</span>
           </div>
@@ -181,29 +181,29 @@ const BatchProgressTracker: React.FC<BatchProgressTrackerProps> = ({
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div className="text-center">
             <div className="font-semibold text-lg">{batchJob.processed_items}</div>
-            <div className="text-gray-600">Processed</div>
+            <div className="text-muted-foreground-600">Processed</div>
           </div>
           <div className="text-center">
-            <div className="font-semibold text-lg text-red-500">{batchJob.failed_items}</div>
-            <div className="text-gray-600">Failed</div>
+            <div className="font-semibold text-lg text-destructive-500">{batchJob.failed_items}</div>
+            <div className="text-muted-foreground-600">Failed</div>
           </div>
           <div className="text-center">
             <div className="font-semibold text-lg">{batchJob.total_items}</div>
-            <div className="text-gray-600">Total</div>
+            <div className="text-muted-foreground-600">Total</div>
           </div>
         </div>
 
         {batchJob.errors.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
-            <h4 className="text-sm font-medium text-red-800 mb-2">Errors:</h4>
+          <div className="bg-destructive-50 border border-destructive-200 rounded-md p-3">
+            <h4 className="text-sm font-medium text-destructive-800 mb-2">Errors:</h4>
             <div className="space-y-1">
               {batchJob.errors.slice(0, 3).map((error, index) => (
-                <div key={index} className="text-xs text-red-700">
+                <div key={index} className="text-xs text-destructive-700">
                   {error.message || 'Unknown error'}
                 </div>
               ))}
               {batchJob.errors.length > 3 && (
-                <div className="text-xs text-red-600">
+                <div className="text-xs text-destructive-600">
                   +{batchJob.errors.length - 3} more errors
                 </div>
               )}

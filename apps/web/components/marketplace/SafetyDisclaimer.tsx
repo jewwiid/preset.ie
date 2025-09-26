@@ -87,12 +87,12 @@ export default function SafetyDisclaimer({
 
   if (compact) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+      <div className="bg-primary-50 border border-primary-200 rounded-lg p-3">
         <div className="flex items-start space-x-2">
-          <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <AlertTriangle className="h-4 w-4 text-primary-600 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="text-yellow-800 font-medium">{content.title}</p>
-            <p className="text-yellow-700">{content.summary}</p>
+            <p className="text-primary-800 font-medium">{content.title}</p>
+            <p className="text-primary-700">{content.summary}</p>
           </div>
         </div>
       </div>
@@ -100,24 +100,24 @@ export default function SafetyDisclaimer({
   }
 
   return (
-    <Card className="border-yellow-200 bg-yellow-50">
+    <Card className="border-primary-200 bg-primary-50">
       <CardContent className="p-4">
         <div className="flex items-start space-x-3">
-          <Shield className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+          <Shield className="h-5 w-5 text-primary-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-yellow-800 mb-2">
+            <h3 className="text-sm font-semibold text-primary-800 mb-2">
               {content.title}
             </h3>
-            <p className="text-sm text-yellow-700 mb-3">
+            <p className="text-sm text-primary-700 mb-3">
               {content.summary}
             </p>
             
             {showDetails && (
               <div className="mb-4">
-                <ul className="text-sm text-yellow-700 space-y-1">
+                <ul className="text-sm text-primary-700 space-y-1">
                   {content.details.map((detail, index) => (
                     <li key={index} className="flex items-start space-x-2">
-                      <CheckCircle className="h-3 w-3 text-yellow-600 mt-1 flex-shrink-0" />
+                      <CheckCircle className="h-3 w-3 text-primary-600 mt-1 flex-shrink-0" />
                       <span>{detail}</span>
                     </li>
                   ))}
@@ -130,7 +130,7 @@ export default function SafetyDisclaimer({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowDetails(!showDetails)}
-                className="text-yellow-700 hover:text-yellow-800 hover:bg-yellow-100"
+                className="text-primary-700 hover:text-primary-800 hover:bg-primary-100"
               >
                 {showDetails ? 'Hide Details' : 'Show Details'}
               </Button>
@@ -141,14 +141,14 @@ export default function SafetyDisclaimer({
                     variant="outline"
                     size="sm"
                     onClick={handleDecline}
-                    className="text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+                    className="text-primary-700 border-primary-300 hover:bg-primary-100"
                   >
                     Decline
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleAccept}
-                    className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                    className="bg-primary-600 hover:bg-primary-700 text-primary-foreground"
                   >
                     Accept & Continue
                   </Button>

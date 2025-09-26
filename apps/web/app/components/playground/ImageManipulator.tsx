@@ -400,7 +400,7 @@ export default function ImageManipulator({
                   >
                     {isProcessing ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                         Processing...
                       </>
                     ) : (

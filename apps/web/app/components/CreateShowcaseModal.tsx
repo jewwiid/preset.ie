@@ -157,7 +157,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   />
                 )}
                 {item.is_promoted && (
-                  <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-1 py-0.5 rounded">
+                  <div className="absolute top-1 right-1 bg-primary-500 text-primary-foreground text-xs px-1 py-0.5 rounded">
                     ✓
                   </div>
                 )}
@@ -170,7 +170,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     promoteToMedia(item.id);
                   }}
                   disabled={promotingImage === item.id || loading}
-                  className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute bottom-1 left-1 bg-primary-500 text-primary-foreground text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   {promotingImage === item.id ? '...' : 'Promote'}
                 </button>

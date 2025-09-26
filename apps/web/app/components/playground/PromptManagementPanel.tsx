@@ -500,7 +500,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
                 {duplicateCheck.message && (
                   <div className={`mt-2 p-2 rounded-md text-xs ${
                     duplicateCheck.isDuplicate 
-                      ? 'bg-orange-500/10 border border-orange-500/20 text-orange-600' 
+                      ? 'bg-primary-500/10 border border-primary-500/20 text-primary-600' 
                       : duplicateCheck.isNameConflict
                       ? 'bg-destructive/10 border border-destructive/20 text-destructive'
                       : 'bg-primary/10 border border-primary/20 text-primary'
@@ -784,7 +784,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
               {duplicateCheck.message && (
                 <div className={`mt-2 p-2 rounded-md text-xs ${
                   duplicateCheck.isDuplicate 
-                    ? 'bg-orange-500/10 border border-orange-500/20 text-orange-600' 
+                    ? 'bg-primary-500/10 border border-primary-500/20 text-primary-600' 
                     : duplicateCheck.isNameConflict
                     ? 'bg-destructive/10 border border-destructive/20 text-destructive'
                     : 'bg-primary/10 border border-primary/20 text-primary'

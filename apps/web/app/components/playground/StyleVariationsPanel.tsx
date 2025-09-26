@@ -50,7 +50,7 @@ export default function StyleVariationsPanel({
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wand2 className="h-5 w-5 text-purple-500" />
+          <Wand2 className="h-5 w-5 text-primary-500" />
           Style Variations
         </CardTitle>
         <CardDescription>
@@ -106,7 +106,7 @@ export default function StyleVariationsPanel({
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
               Generating...
             </>
           ) : (

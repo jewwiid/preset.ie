@@ -146,28 +146,28 @@ export default function ProjectDetailPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'published': return 'bg-primary-100 text-primary-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-yellow-100 text-yellow-800';
+      case 'in_progress': return 'bg-primary-100 text-primary-800';
+      case 'completed': return 'bg-muted-100 text-muted-foreground-800';
+      case 'cancelled': return 'bg-destructive-100 text-destructive-800';
+      default: return 'bg-primary-100 text-primary-800';
     }
   };
 
   const getRoleStatusColor = (status: string) => {
     switch (status) {
       case 'open': return 'bg-primary-100 text-primary-800';
-      case 'filled': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-yellow-100 text-yellow-800';
+      case 'filled': return 'bg-muted-100 text-muted-foreground-800';
+      case 'cancelled': return 'bg-destructive-100 text-destructive-800';
+      default: return 'bg-primary-100 text-primary-800';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading project...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground-600">Loading project...</p>
         </div>
       </div>
     );
@@ -175,9 +175,9 @@ export default function ProjectDetailPage() {
 
   if (error || !project) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error || 'Project not found'}</p>
+          <p className="text-destructive-600 mb-4">{error || 'Project not found'}</p>
           <Button onClick={() => router.push('/collaborate')}>
             Back to Projects
           </Button>
@@ -187,9 +187,9 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center py-6">
             <Button
@@ -200,7 +200,7 @@ export default function ProjectDetailPage() {
               ← Back
             </Button>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900">{project.title}</h1>
+              <h1 className="text-3xl font-bold text-muted-foreground-900">{project.title}</h1>
               <div className="flex items-center space-x-4 mt-2">
                 <Badge className={getStatusColor(project.status)}>
                   {project.status.replace('_', ' ')}
@@ -227,27 +227,27 @@ export default function ProjectDetailPage() {
                 {project.description && (
                   <div>
                     <h4 className="font-medium mb-2">Description</h4>
-                    <p className="text-gray-600 whitespace-pre-wrap">{project.description}</p>
+                    <p className="text-muted-foreground-600 whitespace-pre-wrap">{project.description}</p>
                   </div>
                 )}
                 
                 {project.synopsis && (
                   <div>
                     <h4 className="font-medium mb-2">Synopsis</h4>
-                    <p className="text-gray-600">{project.synopsis}</p>
+                    <p className="text-muted-foreground-600">{project.synopsis}</p>
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(project.city || project.country) && (
-                    <div className="flex items-center text-gray-600">
+                    <div className="flex items-center text-muted-foreground-600">
                       <MapPin className="h-4 w-4 mr-2" />
                       {[project.city, project.country].filter(Boolean).join(', ')}
                     </div>
                   )}
                   
                   {(project.start_date || project.end_date) && (
-                    <div className="flex items-center text-gray-600">
+                    <div className="flex items-center text-muted-foreground-600">
                       <Calendar className="h-4 w-4 mr-2" />
                       {project.start_date && format(new Date(project.start_date), "MMM d, yyyy")}
                       {project.start_date && project.end_date && ' - '}
@@ -270,8 +270,8 @@ export default function ProjectDetailPage() {
                 {project.collab_roles.length === 0 ? (
                   <Card>
                     <CardContent className="text-center py-8">
-                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No roles defined for this project</p>
+                      <Users className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+                      <p className="text-muted-foreground-500">No roles defined for this project</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -320,7 +320,7 @@ export default function ProjectDetailPage() {
                         {role.compensation_details && (
                           <div>
                             <span className="font-medium">Compensation:</span>
-                            <p className="text-gray-600 mt-1">{role.compensation_details}</p>
+                            <p className="text-muted-foreground-600 mt-1">{role.compensation_details}</p>
                           </div>
                         )}
                       </CardContent>
@@ -333,8 +333,8 @@ export default function ProjectDetailPage() {
                 {project.collab_gear_requests.length === 0 ? (
                   <Card>
                     <CardContent className="text-center py-8">
-                      <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No equipment requests for this project</p>
+                      <Camera className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+                      <p className="text-muted-foreground-500">No equipment requests for this project</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -347,7 +347,7 @@ export default function ProjectDetailPage() {
                         {request.equipment_spec && (
                           <div>
                             <span className="font-medium">Specification:</span>
-                            <p className="text-gray-600 mt-1">{request.equipment_spec}</p>
+                            <p className="text-muted-foreground-600 mt-1">{request.equipment_spec}</p>
                           </div>
                         )}
                         
@@ -363,7 +363,7 @@ export default function ProjectDetailPage() {
                             </div>
                           )}
                           {request.retainer_acceptable && (
-                            <div className="flex items-center text-blue-600">
+                            <div className="flex items-center text-primary-600">
                               <CheckCircle className="h-4 w-4 mr-1" />
                               Retainer acceptable
                             </div>
@@ -385,8 +385,8 @@ export default function ProjectDetailPage() {
                 {project.collab_participants.length === 0 ? (
                   <Card>
                     <CardContent className="text-center py-8">
-                      <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-500">No team members yet</p>
+                      <Users className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+                      <p className="text-muted-foreground-500">No team members yet</p>
                     </CardContent>
                   </Card>
                 ) : (
@@ -407,21 +407,21 @@ export default function ProjectDetailPage() {
                                 <Badge variant="secondary" className="text-xs">Verified</Badge>
                               )}
                               {participant.user.rating && (
-                                <div className="flex items-center text-sm text-gray-500">
+                                <div className="flex items-center text-sm text-muted-foreground-500">
                                   <Star className="h-3 w-3 mr-1 fill-current" />
                                   {participant.user.rating.toFixed(1)}
                                 </div>
                               )}
                             </div>
-                            <p className="text-sm text-gray-500 capitalize">
+                            <p className="text-sm text-muted-foreground-500 capitalize">
                               {participant.role_type.replace('_', ' ')}
                             </p>
                           </div>
                           <div className="text-right">
-                            <Badge className={participant.status === 'active' ? 'bg-primary-100 text-primary-800' : 'bg-gray-100 text-gray-800'}>
+                            <Badge className={participant.status === 'active' ? 'bg-primary-100 text-primary-800' : 'bg-muted-100 text-muted-foreground-800'}>
                               {participant.status}
                             </Badge>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-muted-foreground-400 mt-1">
                               Joined {format(new Date(participant.joined_at), "MMM d")}
                             </p>
                           </div>
@@ -451,12 +451,12 @@ export default function ProjectDetailPage() {
                   </Avatar>
                   <div className="flex-1">
                     <h3 className="font-medium">{project.creator.display_name}</h3>
-                    <p className="text-sm text-gray-500">@{project.creator.username}</p>
+                    <p className="text-sm text-muted-foreground-500">@{project.creator.username}</p>
                     {project.creator.verified && (
                       <Badge variant="secondary" className="mt-1">Verified</Badge>
                     )}
                     {project.creator.rating && (
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
+                      <div className="flex items-center text-sm text-muted-foreground-500 mt-1">
                         <Star className="h-3 w-3 mr-1 fill-current" />
                         {project.creator.rating.toFixed(1)} rating
                       </div>
@@ -465,7 +465,7 @@ export default function ProjectDetailPage() {
                 </div>
                 
                 {project.creator.bio && (
-                  <p className="text-sm text-gray-600 mt-4">{project.creator.bio}</p>
+                  <p className="text-sm text-muted-foreground-600 mt-4">{project.creator.bio}</p>
                 )}
                 
                 {project.creator.specializations && project.creator.specializations.length > 0 && (
@@ -514,21 +514,21 @@ export default function ProjectDetailPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Created</span>
+                  <span className="text-sm text-muted-foreground-500">Created</span>
                   <span className="text-sm font-medium">
                     {format(new Date(project.created_at), "MMM d, yyyy")}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Roles</span>
+                  <span className="text-sm text-muted-foreground-500">Roles</span>
                   <span className="text-sm font-medium">{project.collab_roles.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Equipment Requests</span>
+                  <span className="text-sm text-muted-foreground-500">Equipment Requests</span>
                   <span className="text-sm font-medium">{project.collab_gear_requests.length}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Team Members</span>
+                  <span className="text-sm text-muted-foreground-500">Team Members</span>
                   <span className="text-sm font-medium">{project.collab_participants.length}</span>
                 </div>
               </CardContent>

@@ -62,7 +62,7 @@ const tabInfo: Record<string, TabInfo> = {
     description: 'Bring your images to life with AI-generated video animations',
     features: ['Image to Video', 'Motion Control', 'Duration Settings', 'Multiple Resolutions'],
     creditCost: '8-10 credits per video',
-    color: 'text-orange-600',
+    color: 'text-primary-600',
     gradient: 'bg-primary'
   },
   prompts: {
@@ -219,7 +219,7 @@ export default function EnhancedPlaygroundHeader({
                   
                   {/* Status Indicator */}
                   <div className="flex items-center justify-center gap-2 mb-3">
-                    <div className={`w-2 h-2 rounded-full ${creditStatus.status === 'critical' ? 'bg-destructive' : creditStatus.status === 'low' ? 'bg-yellow-500' : 'bg-primary'}`}></div>
+                    <div className={`w-2 h-2 rounded-full ${creditStatus.status === 'critical' ? 'bg-destructive' : creditStatus.status === 'low' ? 'bg-primary-500' : 'bg-primary'}`}></div>
                     <span className="text-xs font-medium text-muted-foreground capitalize">{creditStatus.status}</span>
                   </div>
 

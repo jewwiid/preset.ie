@@ -112,7 +112,7 @@ export default function MasonryGrid({
               return (
                 <div
                   key={item.id}
-                  className="relative group rounded-lg overflow-hidden bg-gray-50 cursor-pointer hover:shadow-lg transition-all duration-300"
+                  className="relative group rounded-lg overflow-hidden bg-muted-50 cursor-pointer hover:shadow-lg transition-all duration-300"
                   onClick={() => onItemClick?.(item)}
                 >
                   {/* Image with natural height */}
@@ -122,7 +122,7 @@ export default function MasonryGrid({
                       alt={item.caption || ''}
                       className={`w-full h-auto block ${
                         isEnhancing ? 'opacity-50' : 'opacity-100'
-                      } ${!loadedImages.has(item.id) ? 'animate-pulse bg-gray-200' : ''}`}
+                      } ${!loadedImages.has(item.id) ? 'animate-pulse bg-muted-200' : ''}`}
                       loading="lazy"
                       onLoad={() => handleImageLoad(item.id)}
                     />
@@ -143,23 +143,23 @@ export default function MasonryGrid({
                       {task?.status === 'completed' ? (
                         <>
                           <CheckCircle className="w-8 h-8 text-primary-400 mb-2" />
-                          <span className="text-sm text-white font-medium">Enhanced!</span>
+                          <span className="text-sm text-primary-foreground font-medium">Enhanced!</span>
                         </>
                       ) : task?.status === 'failed' ? (
                         <>
-                          <X className="w-8 h-8 text-red-400 mb-2" />
-                          <span className="text-sm text-white font-medium">Failed</span>
+                          <X className="w-8 h-8 text-destructive-400 mb-2" />
+                          <span className="text-sm text-primary-foreground font-medium">Failed</span>
                         </>
                       ) : (
                         <>
-                          <Loader2 className="w-10 h-10 text-purple-400 animate-spin mb-2" />
-                          <div className="w-24 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                          <Loader2 className="w-10 h-10 text-primary-400 animate-spin mb-2" />
+                          <div className="w-24 h-1.5 bg-muted-700 rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-gradient-to-r from-purple-400 to-pink-400 transition-all duration-500"
+                              className="h-full bg-gradient-to-r from-primary to-primary/90 transition-all duration-500"
                               style={{ width: `${task?.progress || 0}%` }}
                             />
                           </div>
-                          <span className="text-xs text-gray-300 mt-2">Enhancing...</span>
+                          <span className="text-xs text-muted-foreground-300 mt-2">Enhancing...</span>
                         </>
                       )}
                     </div>
@@ -167,7 +167,7 @@ export default function MasonryGrid({
 
                   {/* Enhancement badge */}
                   {item.enhancement_status === 'completed' && !isEnhancing && (
-                    <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <div className="absolute top-2 left-2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
                       <Sparkles className="w-3 h-3" />
                       {item.showing_original ? 'Original' : 'Enhanced'}
                     </div>
@@ -183,7 +183,7 @@ export default function MasonryGrid({
                             e.stopPropagation()
                             onRemove(item.id)
                           }}
-                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 hover:bg-red-600 flex items-center justify-center"
+                          className="absolute top-2 right-2 bg-destructive-500 text-primary-foreground rounded-full w-8 h-8 hover:bg-destructive-600 flex items-center justify-center"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -196,7 +196,7 @@ export default function MasonryGrid({
                             e.stopPropagation()
                             onToggleOriginal(item.id)
                           }}
-                          className="absolute top-2 right-12 bg-white/90 text-gray-700 rounded px-2 py-1 text-xs hover:bg-white"
+                          className="absolute top-2 right-12 bg-background/90 text-muted-foreground-700 rounded px-2 py-1 text-xs hover:bg-background"
                         >
                           {item.showing_original ? "Enhanced" : "Original"}
                         </button>
@@ -211,7 +211,7 @@ export default function MasonryGrid({
                               e.stopPropagation()
                               onEnhance(item.id)
                             }}
-                            className="bg-purple-500 text-white rounded px-3 py-1 text-xs hover:bg-purple-600 flex items-center gap-1"
+                            className="bg-primary-500 text-primary-foreground rounded px-3 py-1 text-xs hover:bg-primary-600 flex items-center gap-1"
                           >
                             <Sparkles className="w-3 h-3" />
                             Enhance
@@ -225,7 +225,7 @@ export default function MasonryGrid({
                               e.stopPropagation()
                               onRedoEnhancement(item.id)
                             }}
-                            className="bg-orange-500 text-white rounded px-3 py-1 text-xs hover:bg-orange-600"
+                            className="bg-primary-500 text-primary-foreground rounded px-3 py-1 text-xs hover:bg-primary-600"
                           >
                             Redo
                           </button>
@@ -233,7 +233,7 @@ export default function MasonryGrid({
 
                         {/* Attribution */}
                         {item.photographer && (
-                          <div className="text-xs text-white">
+                          <div className="text-xs text-primary-foreground">
                             📷 {item.photographer}
                           </div>
                         )}
@@ -243,7 +243,7 @@ export default function MasonryGrid({
 
                   {/* Non-editable attribution */}
                   {!editable && item.photographer && (
-                    <div className="absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded">
+                    <div className="absolute bottom-2 left-2 text-xs text-primary-foreground bg-black/50 px-2 py-1 rounded">
                       📷 {item.photographer}
                     </div>
                   )}
@@ -256,7 +256,7 @@ export default function MasonryGrid({
 
       {/* Empty state */}
       {items.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground-500">
           <div className="text-6xl mb-4">📸</div>
           <p>No images added yet</p>
           <p className="text-sm">Upload some images to create your moodboard</p>

@@ -119,7 +119,7 @@ export default function BatchProcessingPanel({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <Wand2 className="h-5 w-5 mr-2 text-purple-500" />
+          <Wand2 className="h-5 w-5 mr-2 text-primary-500" />
           Batch Processing
         </CardTitle>
         <CardDescription>
@@ -226,7 +226,7 @@ export default function BatchProcessingPanel({
                   <Upload className="h-4 w-4 mr-2" />
                   Choose Files
                 </Button>
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-muted-foreground-500 text-center">
                   Supports multiple image files
                 </p>
               </div>
@@ -235,7 +235,7 @@ export default function BatchProcessingPanel({
             <TabsContent value="saved" className="mt-4">
               <div className="space-y-2">
                 {savedImages.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-4">
+                  <p className="text-sm text-muted-foreground-500 text-center py-4">
                     No saved images available
                   </p>
                 ) : (
@@ -246,7 +246,7 @@ export default function BatchProcessingPanel({
                         className="relative group cursor-pointer"
                         onClick={() => addSavedImage(image.image_url)}
                       >
-                        <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-purple-300 transition-colors">
+                        <div className="aspect-square rounded-lg overflow-hidden border-2 border-border-200 hover:border-primary-300 transition-colors">
                           <img
                             src={image.image_url}
                             alt={image.title}
@@ -257,7 +257,7 @@ export default function BatchProcessingPanel({
                           <Button 
                             size="sm" 
                             variant="secondary"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/90 hover:bg-white"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-background/90 hover:bg-background"
                           >
                             Add
                           </Button>
@@ -284,7 +284,7 @@ export default function BatchProcessingPanel({
               <div className="grid grid-cols-3 gap-2 h-64 overflow-y-auto">
                 {batchImages.map((image) => (
                   <div key={image.id} className="relative group">
-                    <div className="aspect-square rounded-lg overflow-hidden border border-gray-200">
+                    <div className="aspect-square rounded-lg overflow-hidden border border-border-200">
                       <img
                         src={image.url}
                         alt={image.name}
@@ -305,7 +305,7 @@ export default function BatchProcessingPanel({
                       <p className="text-xs font-medium truncate" title={image.name}>
                         {image.name}
                       </p>
-                      <p className="text-xs text-gray-500 capitalize">{image.source}</p>
+                      <p className="text-xs text-muted-foreground-500 capitalize">{image.source}</p>
                     </div>
                   </div>
                 ))}
@@ -318,11 +318,11 @@ export default function BatchProcessingPanel({
         <Button
           onClick={handleBatchEdit}
           disabled={loading || batchImages.length === 0 || !editPrompt.trim()}
-          className="w-full bg-orange-600 hover:bg-orange-700"
+          className="w-full bg-primary-600 hover:bg-primary-700"
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
               Processing...
             </>
           ) : (

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preset Platform - Complete Color System Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            /* Light Mode Colors */
+            --background: oklch(1.0000 0 0);
+            --foreground: oklch(0.1448 0 0);
+            --card: oklch(0.9900 0.0030 174.3329);
+            --card-foreground: oklch(0.1448 0 0);
+            --popover: oklch(0.9850 0.0040 174.3329);
+            --popover-foreground: oklch(0.1448 0 0);
+            --primary: oklch(0.5563 0.1055 174.3329);
+            --primary-foreground: oklch(1.0000 0 0);
+            --secondary: oklch(0.9750 0.0050 174.3329);
+            --secondary-foreground: oklch(0.1448 0 0);
+            --muted: oklch(0.9800 0.0035 174.3329);
+            --muted-foreground: oklch(0.5544 0.0407 257.4166);
+            --accent: oklch(0.9750 0.0050 174.3329);
+            --accent-foreground: oklch(0.1448 0 0);
+            --destructive: oklch(0.6368 0.2078 25.3313);
+            --destructive-foreground: oklch(1.0000 0 0);
+            --border: oklch(0.9288 0.0126 255.5078);
+            --input: oklch(0.9288 0.0126 255.5078);
+            --ring: oklch(0.6665 0.2081 16.4383);
+        }
+
+        .dark {
+            /* Dark Mode Colors */
+            --background: oklch(0.1448 0 0);
+            --foreground: oklch(0.9851 0 0);
+            --card: oklch(0.2103 0.0059 285.8852);
+            --card-foreground: oklch(0.9851 0 0);
+            --popover: oklch(0.2739 0.0055 286.0326);
+            --popover-foreground: oklch(0.9851 0 0);
+            --primary: oklch(0.5563 0.1055 174.3329);
+            --primary-foreground: oklch(1.0000 0 0);
+            --secondary: oklch(0.2739 0.0055 286.0326);
+            --secondary-foreground: oklch(0.9851 0 0);
+            --muted: oklch(0.2739 0.0055 286.0326);
+            --muted-foreground: oklch(0.7118 0.0129 286.0665);
+            --accent: oklch(0.2739 0.0055 286.0326);
+            --accent-foreground: oklch(0.9851 0 0);
+            --destructive: oklch(0.3958 0.1331 25.7230);
+            --destructive-foreground: oklch(0.9851 0 0);
+            --border: oklch(0.2739 0.0055 286.0326);
+            --input: oklch(0.2739 0.0055 286.0326);
+            --ring: oklch(0.6665 0.2081 16.4383);
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--foreground);
+            transition: all 0.3s ease;
+        }
+
+        .color-swatch {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .color-card {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--primary);
+            opacity: 0.9;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 5px;
+            display: inline-block;
+        }
+
+        .button-demo {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .input-demo {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+            background-color: var(--background);
+            color: var(--foreground);
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .input-demo:focus {
+            outline: none;
+            border-color: var(--ring);
+            box-shadow: 0 0 0 3px var(--ring);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙 Dark Mode</button>
+    
+    <div class="container mx-auto p-8">
+        <h1 class="text-4xl font-bold mb-8" style="color: var(--foreground);">Preset Platform Color System</h1>
+        
+        <!-- Core Colors -->
+        <div class="color-card">
+            <h2 class="text-2xl font-bold mb-4" style="color: var(--foreground);">Core Colors</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--primary); color: var(--primary-foreground);">Primary</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">Primary</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--background); color: var(--foreground);">Background</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">Background</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--card); color: var(--card-foreground);">Card</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">Card</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--muted); color: var(--muted-foreground);">Muted</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">Muted</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Semantic Colors -->
+        <div class="color-card">
+            <h2 class="text-2xl font-bold mb-4" style="color: var(--foreground);">Semantic Colors</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--destructive); color: var(--destructive-foreground);">Error</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">Destructive</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--secondary); color: var(--secondary-foreground);">Secondary</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">Secondary</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--accent); color: var(--accent-foreground);">Accent</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">Accent</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--border); color: var(--foreground);">Border</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">Border</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Badges -->
+        <div class="color-card">
+            <h2 class="text-2xl font-bold mb-4" style="color: var(--foreground);">Status Badges</h2>
+            <div class="flex flex-wrap">
+                <span class="status-badge" style="background-color: var(--primary); color: var(--primary-foreground);">Active</span>
+                <span class="status-badge" style="background-color: var(--primary); color: var(--primary-foreground);">Success</span>
+                <span class="status-badge" style="background-color: var(--destructive); color: var(--destructive-foreground);">Error</span>
+                <span class="status-badge" style="background-color: var(--muted); color: var(--muted-foreground);">Inactive</span>
+                <span class="status-badge" style="background-color: var(--primary); color: var(--primary-foreground); opacity: 0.1;">Warning</span>
+            </div>
+        </div>
+
+        <!-- Interactive Elements -->
+        <div class="color-card">
+            <h2 class="text-2xl font-bold mb-4" style="color: var(--foreground);">Interactive Elements</h2>
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-lg font-semibold mb-2" style="color: var(--foreground);">Buttons</h3>
+                    <button class="button-demo" style="background-color: var(--primary); color: var(--primary-foreground);">Primary Button</button>
+                    <button class="button-demo" style="background-color: var(--secondary); color: var(--secondary-foreground);">Secondary Button</button>
+                    <button class="button-demo" style="background-color: var(--destructive); color: var(--destructive-foreground);">Destructive Button</button>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-2" style="color: var(--foreground);">Input Fields</h3>
+                    <input class="input-demo" type="text" placeholder="Enter text..." style="background-color: var(--background); color: var(--foreground); border-color: var(--border);">
+                    <input class="input-demo" type="email" placeholder="Enter email..." style="background-color: var(--background); color: var(--foreground); border-color: var(--border);">
+                </div>
+            </div>
+        </div>
+
+        <!-- Text Colors -->
+        <div class="color-card">
+            <h2 class="text-2xl font-bold mb-4" style="color: var(--foreground);">Text Colors</h2>
+            <div class="space-y-2">
+                <p style="color: var(--foreground); font-size: 18px;">Primary Text - Main content and headings</p>
+                <p style="color: var(--muted-foreground); font-size: 16px;">Muted Text - Secondary content and descriptions</p>
+                <p style="color: var(--primary); font-size: 16px;">Primary Color Text - Brand elements and links</p>
+                <p style="color: var(--destructive); font-size: 16px;">Destructive Text - Error messages and warnings</p>
+            </div>
+        </div>
+
+        <!-- Opacity Variations -->
+        <div class="color-card">
+            <h2 class="text-2xl font-bold mb-4" style="color: var(--foreground);">Primary Color Opacity Variations</h2>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--primary); opacity: 0.1; color: var(--foreground);">10%</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">bg-primary/10</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--primary); opacity: 0.2; color: var(--foreground);">20%</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">bg-primary/20</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--primary); opacity: 0.3; color: var(--foreground);">30%</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">bg-primary/30</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--primary); opacity: 0.5; color: var(--foreground);">50%</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">bg-primary/50</p>
+                </div>
+                <div class="text-center">
+                    <div class="color-swatch" style="background-color: var(--primary); opacity: 0.9; color: var(--foreground);">90%</div>
+                    <p class="text-sm mt-2" style="color: var(--muted-foreground);">bg-primary/90</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Color Values -->
+        <div class="color-card">
+            <h2 class="text-2xl font-bold mb-4" style="color: var(--foreground);">Color Values</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold mb-2" style="color: var(--foreground);">Light Mode</h3>
+                    <div class="space-y-1 text-sm" style="color: var(--muted-foreground);">
+                        <p><strong>Primary:</strong> oklch(0.5563 0.1055 174.3329) = #00876f</p>
+                        <p><strong>Background:</strong> oklch(1.0000 0 0) = #ffffff</p>
+                        <p><strong>Foreground:</strong> oklch(0.1448 0 0) = #252525</p>
+                        <p><strong>Muted:</strong> oklch(0.9800 0.0035 174.3329) = #fafafa</p>
+                        <p><strong>Destructive:</strong> oklch(0.6368 0.2078 25.3313) = #dc2626</p>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-2" style="color: var(--foreground);">Dark Mode</h3>
+                    <div class="space-y-1 text-sm" style="color: var(--muted-foreground);">
+                        <p><strong>Primary:</strong> oklch(0.5563 0.1055 174.3329) = #00876f</p>
+                        <p><strong>Background:</strong> oklch(0.1448 0 0) = #252525</p>
+                        <p><strong>Foreground:</strong> oklch(0.9851 0 0) = #fafafa</p>
+                        <p><strong>Muted:</strong> oklch(0.2739 0.0055 286.0326) = #454545</p>
+                        <p><strong>Destructive:</strong> oklch(0.3958 0.1331 25.7230) = #ef4444</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const button = document.querySelector('.theme-toggle');
+            
+            if (body.classList.contains('dark')) {
+                body.classList.remove('dark');
+                button.textContent = '🌙 Dark Mode';
+            } else {
+                body.classList.add('dark');
+                button.textContent = '☀️ Light Mode';
+            }
+        }
+
+        // Initialize theme based on system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.classList.add('dark');
+            document.querySelector('.theme-toggle').textContent = '☀️ Light Mode';
+        }
+    </script>
+</body>
+</html>

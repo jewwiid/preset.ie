@@ -468,14 +468,14 @@ export default function PresetSelector({
     const type = getPresetType(presetId)
     if (type === 'cinematic') {
       return (
-        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+        <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
           <Camera className="h-3 w-3 mr-1" />
           Cinematic
         </Badge>
       )
     }
     return (
-      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+      <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
         <Wand2 className="h-3 w-3 mr-1" />
         Style
       </Badge>
@@ -999,7 +999,7 @@ export default function PresetSelector({
                                   />
                                   {selectedSampleImages.before_images.includes(image.image_url) && (
                                     <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                                      <span className="text-white text-xs">✓</span>
+                                      <span className="text-primary-foreground text-xs">✓</span>
                                     </div>
                                   )}
                                 </div>
@@ -1039,8 +1039,8 @@ export default function PresetSelector({
                                     }}
                                   />
                                   {selectedSampleImages.after_images.includes(image.image_url) && (
-                                    <div className="absolute top-1 right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                                      <span className="text-white text-xs">✓</span>
+                                    <div className="absolute top-1 right-1 w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center">
+                                      <span className="text-primary-foreground text-xs">✓</span>
                                     </div>
                                   )}
                                 </div>

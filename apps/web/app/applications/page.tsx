@@ -481,15 +481,15 @@ export default function ApplicationsPage() {
   const getStatusColor = (status: ApplicationStatus) => {
     switch (status) {
       case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-primary-100 text-primary-800';
       case 'SHORTLISTED':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary-100 text-primary-800';
       case 'ACCEPTED':
         return 'bg-primary-100 text-primary-800';
       case 'DECLINED':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive-100 text-destructive-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted-100 text-muted-foreground-800';
     }
   };
 
@@ -519,24 +519,24 @@ export default function ApplicationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted-50">
       {/* Header */}
-      <div className="bg-white border-b">
+      <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-muted-foreground-900">
                 {viewMode === 'admin' ? 'Platform Applications - Admin View' :
                  viewMode === 'contributor' ? 'Manage Applications' : 'My Applications'}
               </h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-muted-foreground-600 mt-1">
                 {viewMode === 'admin' 
                   ? 'Monitor and moderate applications across the platform'
                   : viewMode === 'contributor' 
@@ -548,15 +548,15 @@ export default function ApplicationsPage() {
             {/* View Mode Toggle */}
             {(userRole?.isAdmin || (userRole?.isContributor && userRole?.isTalent)) && (
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-0">
-                <span className="text-sm font-medium text-gray-700 sm:hidden">View As:</span>
-                <div className="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
+                <span className="text-sm font-medium text-muted-foreground-700 sm:hidden">View As:</span>
+                <div className="flex bg-muted-100 rounded-lg p-1 w-full sm:w-auto">
                   {userRole?.isAdmin && (
                     <button
                       onClick={() => setViewMode('admin')}
                       className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                         viewMode === 'admin'
-                          ? 'bg-red-600 text-white shadow'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-destructive-600 text-primary-foreground shadow'
+                          : 'text-muted-foreground-600 hover:text-muted-foreground-900'
                       }`}
                     >
                       <Shield className="w-4 h-4 mr-1 inline" />
@@ -568,8 +568,8 @@ export default function ApplicationsPage() {
                       onClick={() => setViewMode('contributor')}
                       className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                         viewMode === 'contributor'
-                          ? 'bg-white text-gray-900 shadow'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-background text-muted-foreground-900 shadow'
+                          : 'text-muted-foreground-600 hover:text-muted-foreground-900'
                       }`}
                     >
                       <span className="hidden sm:inline">As </span>Contributor
@@ -580,8 +580,8 @@ export default function ApplicationsPage() {
                       onClick={() => setViewMode('talent')}
                       className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                         viewMode === 'talent'
-                          ? 'bg-white text-gray-900 shadow'
-                          : 'text-gray-600 hover:text-gray-900'
+                          ? 'bg-background text-muted-foreground-900 shadow'
+                          : 'text-muted-foreground-600 hover:text-muted-foreground-900'
                       }`}
                     >
                       <span className="hidden sm:inline">As </span>Talent
@@ -595,22 +595,22 @@ export default function ApplicationsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-b">
+      <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Search by gig title or applicant name..."
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-primary"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             
             <select
-              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-primary"
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as ApplicationStatus | 'ALL')}
             >
@@ -626,30 +626,30 @@ export default function ApplicationsPage() {
           {viewMode === 'admin' ? (
             <div className="mt-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="bg-primary-50 p-3 rounded-lg">
                   <div className="flex items-center">
-                    <BarChart3 className="w-5 h-5 text-blue-600 mr-2" />
+                    <BarChart3 className="w-5 h-5 text-primary-600 mr-2" />
                     <div>
-                      <p className="text-blue-600 text-sm font-medium">Total Applications</p>
-                      <p className="text-2xl font-bold text-blue-800">{adminStats.totalApplications}</p>
+                      <p className="text-primary-600 text-sm font-medium">Total Applications</p>
+                      <p className="text-2xl font-bold text-primary-800">{adminStats.totalApplications}</p>
                     </div>
                   </div>
                 </div>
-                <div className="bg-yellow-50 p-3 rounded-lg">
+                <div className="bg-primary-50 p-3 rounded-lg">
                   <div className="flex items-center">
-                    <Clock className="w-5 h-5 text-yellow-600 mr-2" />
+                    <Clock className="w-5 h-5 text-primary-600 mr-2" />
                     <div>
-                      <p className="text-yellow-600 text-sm font-medium">Pending Review</p>
-                      <p className="text-2xl font-bold text-yellow-800">{adminStats.pendingReview}</p>
+                      <p className="text-primary-600 text-sm font-medium">Pending Review</p>
+                      <p className="text-2xl font-bold text-primary-800">{adminStats.pendingReview}</p>
                     </div>
                   </div>
                 </div>
-                <div className="bg-red-50 p-3 rounded-lg">
+                <div className="bg-destructive-50 p-3 rounded-lg">
                   <div className="flex items-center">
-                    <Ban className="w-5 h-5 text-red-600 mr-2" />
+                    <Ban className="w-5 h-5 text-destructive-600 mr-2" />
                     <div>
-                      <p className="text-red-600 text-sm font-medium">Banned Users</p>
-                      <p className="text-2xl font-bold text-red-800">{adminStats.recentBans}</p>
+                      <p className="text-destructive-600 text-sm font-medium">Banned Users</p>
+                      <p className="text-2xl font-bold text-destructive-800">{adminStats.recentBans}</p>
                     </div>
                   </div>
                 </div>
@@ -671,23 +671,23 @@ export default function ApplicationsPage() {
           ) : (
             <div className="flex gap-6 mt-4 text-sm">
               <div>
-                <span className="text-gray-600">Total:</span>
+                <span className="text-muted-foreground-600">Total:</span>
                 <span className="ml-2 font-semibold">{applications.length}</span>
               </div>
               <div>
-                <span className="text-gray-600">Pending:</span>
-                <span className="ml-2 font-semibold text-yellow-600">
+                <span className="text-muted-foreground-600">Pending:</span>
+                <span className="ml-2 font-semibold text-primary-600">
                   {applications.filter(a => a.status === 'PENDING').length}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Shortlisted:</span>
-                <span className="ml-2 font-semibold text-blue-600">
+                <span className="text-muted-foreground-600">Shortlisted:</span>
+                <span className="ml-2 font-semibold text-primary-600">
                   {applications.filter(a => a.status === 'SHORTLISTED').length}
                 </span>
               </div>
               <div>
-                <span className="text-gray-600">Accepted:</span>
+                <span className="text-muted-foreground-600">Accepted:</span>
                 <span className="ml-2 font-semibold text-primary-600">
                   {applications.filter(a => a.status === 'ACCEPTED').length}
                 </span>
@@ -700,10 +700,10 @@ export default function ApplicationsPage() {
       {/* Applications List */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {filteredApplications.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg">
-            <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
-            <p className="text-gray-600">
+          <div className="text-center py-12 bg-background rounded-lg">
+            <Briefcase className="w-16 h-16 text-muted-foreground-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No applications found</h3>
+            <p className="text-muted-foreground-600">
               {viewMode === 'admin'
                 ? 'Platform applications will appear here when users apply to gigs'
                 : viewMode === 'contributor' 
@@ -714,7 +714,7 @@ export default function ApplicationsPage() {
         ) : (
           <div className="grid gap-4">
             {filteredApplications.map((application) => (
-              <div key={application.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <div key={application.id} className="bg-background rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex gap-4">
@@ -729,15 +729,15 @@ export default function ApplicationsPage() {
                         {/* Gig Title */}
                         <Link
                           href={`/gigs/${application.gig.id}`}
-                          className="text-lg font-semibold text-gray-900 hover:text-indigo-600"
+                          className="text-lg font-semibold text-muted-foreground-900 hover:text-primary-600"
                         >
                           {application.gig.title}
                         </Link>
                         
                         {/* Admin-only: Show gig owner */}
                         {viewMode === 'admin' && application.gig.users_profile && (
-                          <div className="text-sm text-gray-500 mt-1">
-                            Gig by: <span className="font-medium text-gray-700">
+                          <div className="text-sm text-muted-foreground-500 mt-1">
+                            Gig by: <span className="font-medium text-muted-foreground-700">
                               {application.gig.users_profile.display_name}
                             </span> (@{application.gig.users_profile.handle})
                           </div>
@@ -745,12 +745,12 @@ export default function ApplicationsPage() {
                         
                         {/* Applicant Info */}
                         <div className="flex items-center gap-3 mt-1">
-                          <span className="font-medium text-gray-900">
+                          <span className="font-medium text-muted-foreground-900">
                             {application.applicant.display_name}
                           </span>
-                          <span className="text-gray-600">@{application.applicant.handle}</span>
+                          <span className="text-muted-foreground-600">@{application.applicant.handle}</span>
                           {application.applicant.city && (
-                            <span className="text-gray-500 flex items-center gap-1">
+                            <span className="text-muted-foreground-500 flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
                               {application.applicant.city}
                             </span>
@@ -761,15 +761,15 @@ export default function ApplicationsPage() {
                             <>
                               {application.applicant.subscription_tier && (
                                 <span className={`px-2 py-1 text-xs rounded-full ${
-                                  application.applicant.subscription_tier === 'PRO' ? 'bg-purple-100 text-purple-800' :
-                                  application.applicant.subscription_tier === 'PLUS' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-gray-100 text-gray-800'
+                                  application.applicant.subscription_tier === 'PRO' ? 'bg-primary-100 text-primary-800' :
+                                  application.applicant.subscription_tier === 'PLUS' ? 'bg-primary-100 text-primary-800' :
+                                  'bg-muted-100 text-muted-foreground-800'
                                 }`}>
                                   {application.applicant.subscription_tier}
                                 </span>
                               )}
                               {application.applicant.role_flags?.includes('BANNED') && (
-                                <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
+                                <span className="px-2 py-1 text-xs rounded-full bg-destructive-100 text-destructive-800">
                                   BANNED
                                 </span>
                               )}
@@ -785,7 +785,7 @@ export default function ApplicationsPage() {
                         
                         {/* Application Note */}
                         {application.note && (
-                          <p className="text-gray-700 mt-2 line-clamp-2">{application.note}</p>
+                          <p className="text-muted-foreground-700 mt-2 line-clamp-2">{application.note}</p>
                         )}
                         
                         {/* Applicant Tags */}
@@ -794,7 +794,7 @@ export default function ApplicationsPage() {
                             {application.applicant.style_tags.slice(0, 5).map((tag, index) => (
                               <span
                                 key={index}
-                                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
+                                className="text-xs bg-muted-100 text-muted-foreground-700 px-2 py-1 rounded-full"
                               >
                                 {tag}
                               </span>
@@ -803,7 +803,7 @@ export default function ApplicationsPage() {
                         )}
                         
                         {/* Meta Info */}
-                        <div className="flex items-center gap-4 mt-3 text-sm text-gray-600">
+                        <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground-600">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
                             Applied {formatDate(application.applied_at)}
@@ -830,7 +830,7 @@ export default function ApplicationsPage() {
                               setSelectedApplication(application);
                               setShowDetailModal(true);
                             }}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                            className="p-2 text-muted-foreground-600 hover:bg-muted-100 rounded-lg"
                             title="View Details"
                           >
                             <Eye className="w-5 h-5" />
@@ -840,7 +840,7 @@ export default function ApplicationsPage() {
                             <>
                               <button
                                 onClick={() => updateApplicationStatus(application.id, 'SHORTLISTED')}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                                className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
                                 disabled={updating}
                               >
                                 <Star className="w-5 h-5" />
@@ -854,7 +854,7 @@ export default function ApplicationsPage() {
                               </button>
                               <button
                                 onClick={() => updateApplicationStatus(application.id, 'DECLINED')}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                className="p-2 text-destructive-600 hover:bg-destructive-50 rounded-lg"
                                 disabled={updating}
                               >
                                 <XCircle className="w-5 h-5" />
@@ -873,7 +873,7 @@ export default function ApplicationsPage() {
                               </button>
                               <button
                                 onClick={() => updateApplicationStatus(application.id, 'DECLINED')}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                className="p-2 text-destructive-600 hover:bg-destructive-50 rounded-lg"
                                 disabled={updating}
                               >
                                 <XCircle className="w-5 h-5" />
@@ -886,7 +886,7 @@ export default function ApplicationsPage() {
                             <>
                               <button
                                 onClick={() => banUser(application.applicant.id, application.applicant.display_name)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                className="p-2 text-destructive-600 hover:bg-destructive-50 rounded-lg"
                                 disabled={updating}
                                 title="Ban User"
                               >
@@ -894,7 +894,7 @@ export default function ApplicationsPage() {
                               </button>
                               <button
                                 onClick={() => deleteApplication(application.id)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                className="p-2 text-destructive-600 hover:bg-destructive-50 rounded-lg"
                                 disabled={updating}
                                 title="Delete Application"
                               >
@@ -916,13 +916,13 @@ export default function ApplicationsPage() {
       {/* Application Detail Modal */}
       {showDetailModal && selectedApplication && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-6">
+          <div className="bg-background rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-background border-b p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Application Details</h2>
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  className="p-2 hover:bg-muted-100 rounded-lg"
                 >
                   <XCircle className="w-5 h-5" />
                 </button>
@@ -939,9 +939,9 @@ export default function ApplicationsPage() {
                 />
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold">{selectedApplication.applicant.display_name}</h3>
-                  <p className="text-gray-600">@{selectedApplication.applicant.handle}</p>
+                  <p className="text-muted-foreground-600">@{selectedApplication.applicant.handle}</p>
                   {selectedApplication.applicant.bio && (
-                    <p className="text-gray-700 mt-2">{selectedApplication.applicant.bio}</p>
+                    <p className="text-muted-foreground-700 mt-2">{selectedApplication.applicant.bio}</p>
                   )}
                   
                 </div>
@@ -950,20 +950,20 @@ export default function ApplicationsPage() {
               {/* Application Note */}
               {selectedApplication.note && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Application Note</h4>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedApplication.note}</p>
+                  <h4 className="font-medium text-muted-foreground-900 mb-2">Application Note</h4>
+                  <p className="text-muted-foreground-700 whitespace-pre-wrap">{selectedApplication.note}</p>
                 </div>
               )}
               
               {/* Style Tags */}
               {selectedApplication.applicant.style_tags && selectedApplication.applicant.style_tags.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Style Tags</h4>
+                  <h4 className="font-medium text-muted-foreground-900 mb-2">Style Tags</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedApplication.applicant.style_tags.map((tag, index) => (
                       <span
                         key={index}
-                        className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm"
+                        className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm"
                       >
                         {tag}
                       </span>
@@ -982,7 +982,7 @@ export default function ApplicationsPage() {
                           updateApplicationStatus(selectedApplication.id, 'SHORTLISTED');
                           setShowDetailModal(false);
                         }}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        className="flex-1 px-4 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary-700"
                         disabled={updating}
                       >
                         Shortlist Applicant
@@ -992,7 +992,7 @@ export default function ApplicationsPage() {
                           updateApplicationStatus(selectedApplication.id, 'ACCEPTED');
                           setShowDetailModal(false);
                         }}
-                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
+                        className="flex-1 px-4 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90"
                         disabled={updating}
                       >
                         Accept Application
@@ -1002,7 +1002,7 @@ export default function ApplicationsPage() {
                           updateApplicationStatus(selectedApplication.id, 'DECLINED');
                           setShowDetailModal(false);
                         }}
-                        className="flex-1 px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
+                        className="flex-1 px-4 py-2 border border-destructive-600 text-destructive-600 rounded-lg hover:bg-destructive-50"
                         disabled={updating}
                       >
                         Decline
@@ -1017,7 +1017,7 @@ export default function ApplicationsPage() {
                           updateApplicationStatus(selectedApplication.id, 'ACCEPTED');
                           setShowDetailModal(false);
                         }}
-                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
+                        className="flex-1 px-4 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90"
                         disabled={updating}
                       >
                         Accept Application
@@ -1027,7 +1027,7 @@ export default function ApplicationsPage() {
                           updateApplicationStatus(selectedApplication.id, 'DECLINED');
                           setShowDetailModal(false);
                         }}
-                        className="flex-1 px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50"
+                        className="flex-1 px-4 py-2 border border-destructive-600 text-destructive-600 rounded-lg hover:bg-destructive-50"
                         disabled={updating}
                       >
                         Decline
@@ -1037,7 +1037,7 @@ export default function ApplicationsPage() {
                   
                   <button
                     onClick={() => setShowDetailModal(false)}
-                    className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                    className="px-4 py-2 border rounded-lg hover:bg-muted-50"
                   >
                     Close
                   </button>

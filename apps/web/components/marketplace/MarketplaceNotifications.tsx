@@ -165,13 +165,13 @@ export default function MarketplaceNotifications({
       case 'rental_cancelled':
       case 'sale_cancelled':
       case 'payment_failed':
-        return 'text-red-600 bg-red-100';
+        return 'text-destructive-600 bg-destructive-100';
       case 'offer_received':
       case 'rental_request':
       case 'sale_request':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-primary-600 bg-primary-100';
       default:
-        return 'text-gray-600 bg-gray-100';
+        return 'text-muted-foreground-600 bg-muted-100';
     }
   };
 
@@ -205,9 +205,9 @@ export default function MarketplaceNotifications({
     return (
       <Card>
         <CardContent className="p-6 text-center">
-          <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign in to view notifications</h3>
-          <p className="text-gray-600">You need to be signed in to see your marketplace notifications.</p>
+          <Bell className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">Sign in to view notifications</h3>
+          <p className="text-muted-foreground-600">You need to be signed in to see your marketplace notifications.</p>
         </CardContent>
       </Card>
     );
@@ -221,7 +221,7 @@ export default function MarketplaceNotifications({
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="text-center p-4 text-gray-500">
+          <div className="text-center p-4 text-muted-foreground-500">
             <Bell className="h-8 w-8 mx-auto mb-2" />
             <p className="text-sm">No marketplace notifications</p>
           </div>
@@ -229,8 +229,8 @@ export default function MarketplaceNotifications({
           filteredNotifications.slice(0, 3).map((notification) => (
             <div
               key={notification.id}
-              className={`flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer ${
-                !notification.read_at ? 'bg-blue-50' : ''
+              className={`flex items-start space-x-3 p-3 rounded-lg hover:bg-muted-50 cursor-pointer ${
+                !notification.read_at ? 'bg-primary-50' : ''
               }`}
               onClick={() => {
                 if (!notification.read_at) {
@@ -245,20 +245,20 @@ export default function MarketplaceNotifications({
                 {getNotificationIcon(notification.type)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-muted-foreground-900 truncate">
                   {notification.title}
                 </p>
                 {notification.message && (
-                  <p className="text-xs text-gray-600 truncate">
+                  <p className="text-xs text-muted-foreground-600 truncate">
                     {notification.message}
                   </p>
                 )}
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-muted-foreground-400 mt-1">
                   {formatTime(notification.created_at)}
                 </p>
               </div>
               {!notification.read_at && (
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <div className="w-2 h-2 bg-primary-500 rounded-full mt-2"></div>
               )}
             </div>
           ))
@@ -292,9 +292,9 @@ export default function MarketplaceNotifications({
           </div>
         ) : error ? (
           <div className="text-center p-8">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error loading notifications</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <AlertCircle className="h-12 w-12 text-destructive-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">Error loading notifications</h3>
+            <p className="text-muted-foreground-600 mb-4">{error}</p>
             <Button onClick={fetchNotifications}>
               Try Again
             </Button>
@@ -315,9 +315,9 @@ export default function MarketplaceNotifications({
 
             {filteredNotifications.length === 0 ? (
               <div className="text-center p-8">
-                <Bell className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications</h3>
-                <p className="text-gray-600">
+                <Bell className="h-12 w-12 text-muted-foreground-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">No notifications</h3>
+                <p className="text-muted-foreground-600">
                   {activeTab === 'all' 
                     ? "You don't have any marketplace notifications yet."
                     : `No ${activeTab} notifications found.`
@@ -329,8 +329,8 @@ export default function MarketplaceNotifications({
                 {filteredNotifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`flex items-start space-x-3 p-4 rounded-lg border hover:bg-gray-50 cursor-pointer transition-colors ${
-                      !notification.read_at ? 'border-blue-200 bg-blue-50' : 'border-gray-200'
+                    className={`flex items-start space-x-3 p-4 rounded-lg border hover:bg-muted-50 cursor-pointer transition-colors ${
+                      !notification.read_at ? 'border-primary-200 bg-primary-50' : 'border-border-200'
                     }`}
                     onClick={() => {
                       if (!notification.read_at) {
@@ -348,22 +348,22 @@ export default function MarketplaceNotifications({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900">
+                          <h4 className="text-sm font-medium text-muted-foreground-900">
                             {notification.title}
                           </h4>
                           {notification.message && (
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-muted-foreground-600 mt-1">
                               {notification.message}
                             </p>
                           )}
                           <div className="flex items-center space-x-4 mt-2">
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-muted-foreground-400">
                               {formatTime(notification.created_at)}
                             </p>
                             {notification.users_profile && (
                               <div className="flex items-center space-x-1">
-                                <User className="h-3 w-3 text-gray-400" />
-                                <span className="text-xs text-gray-500">
+                                <User className="h-3 w-3 text-muted-foreground-400" />
+                                <span className="text-xs text-muted-foreground-500">
                                   {notification.users_profile.display_name}
                                 </span>
                               </div>

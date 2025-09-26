@@ -124,29 +124,29 @@ function DefaultMessagingErrorFallback({
   const [showDetails, setShowDetails] = React.useState(false)
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-red-50 rounded-lg border border-red-200 min-h-[200px]">
+    <div className="flex flex-col items-center justify-center p-8 bg-destructive-50 rounded-lg border border-destructive-200 min-h-[200px]">
       <div className="text-center max-w-md">
-        <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <AlertTriangle className="h-12 w-12 text-destructive-500 mx-auto mb-4" />
         
-        <h3 className="text-lg font-semibold text-red-900 mb-2">
+        <h3 className="text-lg font-semibold text-destructive-900 mb-2">
           Messaging Error
         </h3>
         
-        <p className="text-red-700 mb-4">
+        <p className="text-destructive-700 mb-4">
           {context 
             ? `Something went wrong with ${context.toLowerCase()}.`
             : 'Something went wrong with the messaging system.'
           }
         </p>
 
-        <p className="text-sm text-red-600 mb-6">
+        <p className="text-sm text-destructive-600 mb-6">
           {error?.message || 'An unexpected error occurred.'}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={resetError}
-            className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-destructive-600 text-primary-foreground rounded-lg hover:bg-destructive-700 transition-colors"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Try Again
@@ -154,7 +154,7 @@ function DefaultMessagingErrorFallback({
           
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-muted-600 text-primary-foreground rounded-lg hover:bg-muted-700 transition-colors"
           >
             <Bug className="h-4 w-4 mr-2" />
             {showDetails ? 'Hide' : 'Show'} Details
@@ -163,31 +163,31 @@ function DefaultMessagingErrorFallback({
 
         {showDetails && (
           <div className="mt-6 text-left">
-            <details className="bg-white rounded-lg p-4 border border-red-300">
-              <summary className="cursor-pointer font-medium text-red-900 mb-2">
+            <details className="bg-background rounded-lg p-4 border border-destructive-300">
+              <summary className="cursor-pointer font-medium text-destructive-900 mb-2">
                 Error Details
               </summary>
               
               {errorId && (
                 <div className="mb-3">
-                  <p className="text-xs font-medium text-gray-600">Error ID:</p>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                  <p className="text-xs font-medium text-muted-foreground-600">Error ID:</p>
+                  <code className="text-xs bg-muted-100 px-2 py-1 rounded font-mono">
                     {errorId}
                   </code>
                 </div>
               )}
               
               <div className="mb-3">
-                <p className="text-xs font-medium text-gray-600">Error Message:</p>
-                <code className="text-xs text-red-800 bg-red-100 px-2 py-1 rounded block">
+                <p className="text-xs font-medium text-muted-foreground-600">Error Message:</p>
+                <code className="text-xs text-destructive-800 bg-destructive-100 px-2 py-1 rounded block">
                   {error?.message}
                 </code>
               </div>
               
               {error?.stack && (
                 <div className="mb-3">
-                  <p className="text-xs font-medium text-gray-600">Stack Trace:</p>
-                  <pre className="text-xs text-gray-700 bg-gray-100 p-2 rounded overflow-auto max-h-32">
+                  <p className="text-xs font-medium text-muted-foreground-600">Stack Trace:</p>
+                  <pre className="text-xs text-muted-foreground-700 bg-muted-100 p-2 rounded overflow-auto max-h-32">
                     {error.stack}
                   </pre>
                 </div>
@@ -195,8 +195,8 @@ function DefaultMessagingErrorFallback({
               
               {errorInfo?.componentStack && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600">Component Stack:</p>
-                  <pre className="text-xs text-gray-700 bg-gray-100 p-2 rounded overflow-auto max-h-32">
+                  <p className="text-xs font-medium text-muted-foreground-600">Component Stack:</p>
+                  <pre className="text-xs text-muted-foreground-700 bg-muted-100 p-2 rounded overflow-auto max-h-32">
                     {errorInfo.componentStack}
                   </pre>
                 </div>
@@ -205,7 +205,7 @@ function DefaultMessagingErrorFallback({
           </div>
         )}
         
-        <p className="text-xs text-red-500 mt-4">
+        <p className="text-xs text-destructive-500 mt-4">
           If this problem persists, please contact support.
         </p>
       </div>
@@ -216,13 +216,13 @@ function DefaultMessagingErrorFallback({
 // Specialized error fallbacks for different messaging components
 export function ConversationErrorFallback(props: MessagingErrorFallbackProps) {
   return (
-    <div className="flex items-center justify-center p-4 bg-red-50 rounded-lg border border-red-200">
+    <div className="flex items-center justify-center p-4 bg-destructive-50 rounded-lg border border-destructive-200">
       <div className="text-center">
-        <AlertTriangle className="h-6 w-6 text-red-500 mx-auto mb-2" />
-        <p className="text-sm text-red-700 mb-2">Failed to load conversation</p>
+        <AlertTriangle className="h-6 w-6 text-destructive-500 mx-auto mb-2" />
+        <p className="text-sm text-destructive-700 mb-2">Failed to load conversation</p>
         <button
           onClick={props.resetError}
-          className="text-xs text-red-600 underline hover:text-red-800"
+          className="text-xs text-destructive-600 underline hover:text-destructive-800"
         >
           Try again
         </button>
@@ -233,13 +233,13 @@ export function ConversationErrorFallback(props: MessagingErrorFallbackProps) {
 
 export function MessageErrorFallback(props: MessagingErrorFallbackProps) {
   return (
-    <div className="flex items-center justify-center p-2 bg-red-50 rounded border border-red-200">
+    <div className="flex items-center justify-center p-2 bg-destructive-50 rounded border border-destructive-200">
       <div className="text-center">
-        <AlertTriangle className="h-4 w-4 text-red-500 mx-auto mb-1" />
-        <p className="text-xs text-red-600">Message error</p>
+        <AlertTriangle className="h-4 w-4 text-destructive-500 mx-auto mb-1" />
+        <p className="text-xs text-destructive-600">Message error</p>
         <button
           onClick={props.resetError}
-          className="text-xs text-red-500 underline"
+          className="text-xs text-destructive-500 underline"
         >
           Retry
         </button>
@@ -250,7 +250,7 @@ export function MessageErrorFallback(props: MessagingErrorFallbackProps) {
 
 export function TypingIndicatorErrorFallback(props: MessagingErrorFallbackProps) {
   return (
-    <span className="text-xs text-red-500 italic">
+    <span className="text-xs text-destructive-500 italic">
       typing status unavailable
     </span>
   )

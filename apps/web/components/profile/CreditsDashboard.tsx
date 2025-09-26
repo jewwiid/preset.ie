@@ -53,10 +53,12 @@ interface CreditPurchase {
 interface CreditPackage {
   id: string;
   name: string;
-  description: string;
   credits: number;
   price_usd: number;
-  is_popular: boolean;
+  is_active: boolean;
+  created_at: string;
+  description?: string; // Optional field for future use
+  is_popular?: boolean; // Optional field for future use
 }
 
 export default function CreditsDashboard() {
@@ -143,7 +145,7 @@ export default function CreditsDashboard() {
         .from('credit_packages')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order');
+        .order('credits');
 
       if (packagesError) {
         console.error('❌ Error loading packages:', packagesError);
@@ -282,7 +284,7 @@ export default function CreditsDashboard() {
               </div>
               <Button
                 size="sm"
-                className="w-full bg-primary hover:bg-primary/90 text-white"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveTab('purchase');
@@ -361,7 +363,7 @@ export default function CreditsDashboard() {
             onClick={() => setActiveTab(id as any)}
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md transition-colors ${
               activeTab === id
-                ? 'bg-white shadow-sm text-primary'
+                ? 'bg-background shadow-sm text-primary'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -537,9 +539,9 @@ export default function CreditsDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {packages.map((pkg) => (
-                    <Card key={pkg.id} className={`relative group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${pkg.is_popular ? 'ring-2 ring-primary shadow-lg' : 'hover:ring-2 hover:ring-border shadow-md'}`}>
-                      {pkg.is_popular && (
-                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-primary/90 text-white text-xs px-3 py-1 shadow-lg">
+                    <Card key={pkg.id} className={`relative group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${(pkg as any).is_popular ? 'ring-2 ring-primary shadow-lg' : 'hover:ring-2 hover:ring-border shadow-md'}`}>
+                      {(pkg as any).is_popular && (
+                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-xs px-3 py-1 shadow-lg">
                           MOST POPULAR
                         </Badge>
                       )}
@@ -557,7 +559,7 @@ export default function CreditsDashboard() {
 
                         {/* Description */}
                         <div className="mb-4">
-                          <p className="text-sm text-muted-foreground text-center leading-relaxed">{pkg.description}</p>
+                          <p className="text-sm text-muted-foreground text-center leading-relaxed">{(pkg as any).description || `Get ${pkg.credits} credits for your creative projects`}</p>
                         </div>
 
                         {/* Price */}
@@ -571,7 +573,7 @@ export default function CreditsDashboard() {
                           onClick={() => handlePurchaseCredits(pkg.id)}
                           disabled={purchasing === pkg.id}
                           className={`w-full h-11 font-semibold transition-all duration-200 shadow-md hover:shadow-lg ${
-                            pkg.is_popular 
+                            (pkg as any).is_popular 
                               ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary' 
                               : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
                           }`}

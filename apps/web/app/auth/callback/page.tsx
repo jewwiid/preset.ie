@@ -236,15 +236,15 @@ function AuthCallbackContent() {
   }, [router, searchParams])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg text-center">
+    <div className="min-h-screen bg-muted-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 bg-background p-8 rounded-xl shadow-lg text-center">
         {status === 'loading' && (
           <>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-muted-foreground-900 mb-2">
               {message.includes('Confirming') ? 'Confirming your email...' : message}
             </h1>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground-600">
               Please wait while we verify your account.
             </p>
           </>
@@ -252,15 +252,15 @@ function AuthCallbackContent() {
 
         {status === 'success' && (
           <>
-            <div className="h-12 w-12 text-green-500 mx-auto mb-4">
+            <div className="h-12 w-12 text-primary-500 mx-auto mb-4">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-muted-foreground-900 mb-2">
               Success!
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground-600 mb-6">
               {message}
             </p>
           </>
@@ -268,20 +268,20 @@ function AuthCallbackContent() {
 
         {status === 'error' && (
           <>
-            <div className="h-12 w-12 text-red-500 mx-auto mb-4">
+            <div className="h-12 w-12 text-destructive-500 mx-auto mb-4">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-muted-foreground-900 mb-2">
               Confirmation Failed
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground-600 mb-6">
               {message}
             </p>
             <button
               onClick={() => router.push('/auth/signup')}
-              className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
+              className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
             >
               Try Again
             </button>
@@ -295,10 +295,10 @@ function AuthCallbackContent() {
 export default function AuthCallbackPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
+      <div className="min-h-screen flex items-center justify-center bg-muted-50">
+        <div className="max-w-md w-full bg-background rounded-lg shadow-lg p-6 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-muted-foreground-600">Loading...</p>
         </div>
       </div>
     }>

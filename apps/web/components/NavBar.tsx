@@ -40,7 +40,8 @@ import {
   Sparkles,
   Camera,
   Video,
-  Wand2
+  Wand2,
+  Clock
 } from 'lucide-react'
 import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
@@ -393,6 +394,12 @@ export function NavBar() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link href="/gear/requests?create=true" className="flex items-center">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Create Request
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link href="/gear/my-listings" className="flex items-center">
                         <ShoppingBag className="mr-2 h-4 w-4" />
                         My Listings
@@ -402,6 +409,18 @@ export function NavBar() {
                       <Link href="/gear/orders" className="flex items-center">
                         <Briefcase className="mr-2 h-4 w-4" />
                         My Orders
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/gear/requests" className="flex items-center">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Browse Requests
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/gear/my-requests" className="flex items-center">
+                        <Clock className="mr-2 h-4 w-4" />
+                        My Requests
                       </Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -486,8 +505,8 @@ export function NavBar() {
             {loading ? (
               // Show loading state
               <div className="animate-pulse flex space-x-3">
-                <div className="hidden md:block h-9 w-24 bg-gray-200 rounded-md"></div>
-                <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                <div className="hidden md:block h-9 w-24 bg-muted-200 rounded-md"></div>
+                <div className="h-8 w-8 bg-muted-200 rounded-full"></div>
               </div>
             ) : user ? (
               <>
@@ -516,7 +535,7 @@ export function NavBar() {
                           if (profileLoading) {
                             return (
                               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
                               </div>
                             )
                           } else if (profile?.avatar_url) {
@@ -539,14 +558,14 @@ export function NavBar() {
                                   }}
                                 />
                                 <div className="fallback-avatar absolute inset-0 w-8 h-8 bg-primary rounded-full items-center justify-center hidden">
-                                  <User className="w-4 h-4 text-white" />
+                                  <User className="w-4 h-4 text-primary-foreground" />
                                 </div>
                               </div>
                             )
                           } else {
                             return (
                               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                                <User className="w-4 h-4 text-white" />
+                                <User className="w-4 h-4 text-primary-foreground" />
                               </div>
                             )
                           }
@@ -559,7 +578,7 @@ export function NavBar() {
                         {profileLoading ? (
                           <div className="flex items-center">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                            <span className="text-sm text-gray-500">Loading...</span>
+                            <span className="text-sm text-muted-foreground-500">Loading...</span>
                           </div>
                         ) : profile ? (
                           <>
@@ -573,17 +592,17 @@ export function NavBar() {
                             </div>
                             <div className="flex gap-1 mt-2">
                               {profile?.role_flags?.includes('CONTRIBUTOR') && (
-                                <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                                <Badge variant="secondary" className="text-xs bg-primary-100 text-primary-800">
                                   Contributor
                                 </Badge>
                               )}
                               {!profile?.role_flags?.includes('CONTRIBUTOR') && (
-                                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                                <Badge variant="secondary" className="text-xs bg-primary-100 text-primary-800">
                                   Talent
                                 </Badge>
                               )}
                               {isAdmin && (
-                                <Badge variant="secondary" className="text-xs bg-red-100 text-red-800">
+                                <Badge variant="secondary" className="text-xs bg-destructive-100 text-destructive-800">
                                   Admin
                                 </Badge>
                               )}
@@ -627,7 +646,7 @@ export function NavBar() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive-600">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign Out
                     </DropdownMenuItem>
@@ -658,11 +677,11 @@ export function NavBar() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 pb-3 pt-2">
+          <div className="md:hidden border-t border-border-200 pb-3 pt-2">
             {/* Dashboard Section */}
             {user && (
               <>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground-500 uppercase tracking-wider">
                   Dashboard
                 </div>
                 <Link
@@ -727,7 +746,7 @@ export function NavBar() {
             {/* Gigs Section */}
             {user && (
               <>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground-500 uppercase tracking-wider">
                   Gigs
                 </div>
                 <Link
@@ -780,7 +799,7 @@ export function NavBar() {
             {/* Marketplace Section */}
             {user && (
               <>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground-500 uppercase tracking-wider">
                   Marketplace
                 </div>
                 <Link
@@ -812,6 +831,20 @@ export function NavBar() {
                   Create Listing
                 </Link>
                 <Link
+                  href="/gear/requests?create=true"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/gear/requests')
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <MessageSquare className="w-5 h-5 inline mr-3" />
+                  Create Request
+                </Link>
+                <Link
                   href="/gear/my-listings"
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
@@ -839,13 +872,41 @@ export function NavBar() {
                   <Briefcase className="w-5 h-5 inline mr-3" />
                   My Orders
                 </Link>
+                <Link
+                  href="/gear/requests"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/gear/requests')
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <MessageSquare className="w-5 h-5 inline mr-3" />
+                  Equipment Requests
+                </Link>
+                <Link
+                  href="/gear/my-requests"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/gear/my-requests')
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Clock className="w-5 h-5 inline mr-3" />
+                  My Requests
+                </Link>
               </>
             )}
 
             {/* Create & Browse Section */}
             {user && (
               <>
-                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground-500 uppercase tracking-wider">
                   Create
                 </div>
                 <Link
@@ -942,7 +1003,7 @@ export function NavBar() {
             )}
 
             {!loading && user && (
-              <div className="mt-3 border-t border-gray-200 pt-3">
+              <div className="mt-3 border-t border-border-200 pt-3">
                 {isAdmin && (
                   <Link
                     href="/admin"
@@ -955,7 +1016,7 @@ export function NavBar() {
                 )}
                 <Link
                   href="/profile"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900"
+                  className="block px-3 py-2 text-base font-medium text-muted-foreground-600 hover:text-muted-foreground-900"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="w-5 h-5 inline mr-3" />
@@ -963,7 +1024,7 @@ export function NavBar() {
                 </Link>
                 <Link
                   href="/settings"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900"
+                  className="block px-3 py-2 text-base font-medium text-muted-foreground-600 hover:text-muted-foreground-900"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Settings className="w-5 h-5 inline mr-3" />
@@ -971,7 +1032,7 @@ export function NavBar() {
                 </Link>
                 <button
                   onClick={handleSignOut}
-                  className="block w-full text-left px-3 py-2 text-base font-medium text-red-600 hover:text-red-900"
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-destructive-600 hover:text-destructive-900"
                 >
                   <LogOut className="w-5 h-5 inline mr-3" />
                   Sign Out
@@ -980,18 +1041,18 @@ export function NavBar() {
             )}
 
             {/* Theme Toggle for Mobile */}
-            <div className="mt-3 border-t border-gray-200 pt-3">
+            <div className="mt-3 border-t border-border-200 pt-3">
               <div className="flex items-center justify-between px-3 py-2">
-                <span className="text-sm font-medium text-gray-600">Theme</span>
+                <span className="text-sm font-medium text-muted-foreground-600">Theme</span>
                 <ThemeToggle />
               </div>
             </div>
 
             {!loading && !user && (
-              <div className="mt-3 border-t border-gray-200 pt-3">
+              <div className="mt-3 border-t border-border-200 pt-3">
                 <Link
                   href="/auth/signin"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900"
+                  className="block px-3 py-2 text-base font-medium text-muted-foreground-600 hover:text-muted-foreground-900"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign In

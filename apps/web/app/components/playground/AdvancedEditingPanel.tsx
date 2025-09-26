@@ -393,8 +393,8 @@ export default function AdvancedEditingPanel({
                     key={image.id}
                     className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all group ${
                       selectedImage === image.image_url 
-                        ? 'border-purple-500 ring-2 ring-purple-200 shadow-lg' 
-                        : 'border-gray-200 hover:border-purple-300 hover:shadow-md'
+                        ? 'border-primary-500 ring-2 ring-primary-primary/30 shadow-lg' 
+                        : 'border-border-200 hover:border-primary-300 hover:shadow-md'
                     }`}
                     onClick={() => onSelectSavedImage?.(image.image_url)}
                   >
@@ -405,13 +405,13 @@ export default function AdvancedEditingPanel({
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute bottom-0 left-0 right-0 p-2 text-white">
+                        <div className="absolute bottom-0 left-0 right-0 p-2 text-primary-foreground">
                           <p className="text-xs font-medium truncate">{image.title}</p>
-                          <p className="text-xs text-gray-300">{image.width} × {image.height}</p>
+                          <p className="text-xs text-muted-foreground-300">{image.width} × {image.height}</p>
                         </div>
                       </div>
                       {selectedImage === image.image_url && (
-                        <div className="absolute top-2 right-2 bg-purple-500 text-white rounded-full p-1">
+                        <div className="absolute top-2 right-2 bg-primary-500 text-primary-foreground rounded-full p-1">
                           <ImageIcon className="h-3 w-3" />
                         </div>
                       )}
@@ -433,9 +433,9 @@ export default function AdvancedEditingPanel({
         )}
 
         {imageSource === 'upload' && !uploadedImage && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex items-center text-sm text-blue-800">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+          <div className="p-3 bg-primary-50 border border-primary-200 rounded-md">
+            <div className="flex items-center text-sm text-primary-800">
+              <div className="w-2 h-2 bg-primary-500 rounded-full mr-2"></div>
               Upload an image to edit
             </div>
           </div>
@@ -454,9 +454,9 @@ export default function AdvancedEditingPanel({
         )}
         
         {imageSource === 'pexels' && !selectedImage && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex items-center text-sm text-blue-800">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+          <div className="p-3 bg-primary-50 border border-primary-200 rounded-md">
+            <div className="flex items-center text-sm text-primary-800">
+              <div className="w-2 h-2 bg-primary-500 rounded-full mr-2"></div>
               Search and select an image from Pexels to edit
             </div>
           </div>
@@ -471,7 +471,7 @@ export default function AdvancedEditingPanel({
           </label>
           
           {!uploadedImage ? (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+            <div className="border-2 border-dashed border-border-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
               <input
                 ref={baseImageInputRef}
                 type="file"
@@ -479,20 +479,20 @@ export default function AdvancedEditingPanel({
                 onChange={handleBaseImageUpload}
                 className="hidden"
               />
-              <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-              <p className="text-sm text-gray-600 mb-2">
+              <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground-400 mb-2" />
+              <p className="text-sm text-muted-foreground-600 mb-2">
                 Upload an image to apply editing functions like background removal, upscale, etc.
               </p>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => baseImageInputRef.current?.click()}
-                className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                className="text-primary-600 border-primary-200 hover:bg-primary-50"
                 disabled={uploadingImage}
               >
                 {uploadingImage ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
                     Uploading...
                   </>
                 ) : (
@@ -524,7 +524,7 @@ export default function AdvancedEditingPanel({
                   Uploaded Image
                 </span>
               </div>
-              <div className="mt-2 text-xs text-gray-500">
+              <div className="mt-2 text-xs text-muted-foreground-500">
                 Image uploaded successfully and ready for editing
               </div>
             </div>
@@ -542,7 +542,7 @@ export default function AdvancedEditingPanel({
           <div className="space-y-3">
             {/* Search Input */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground-400" />
               <Input
                 type="text"
                 placeholder="Search for images..."
@@ -552,7 +552,7 @@ export default function AdvancedEditingPanel({
               />
               {pexelsLoading && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground-400" />
                 </div>
               )}
             </div>
@@ -615,7 +615,7 @@ export default function AdvancedEditingPanel({
             {/* Results */}
             {pexelsResults.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground-600">
                   Showing {pexelsResults.length} of {pexelsTotalResults.toLocaleString()} results for "{pexelsQuery}"
                 </p>
                 <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
@@ -624,12 +624,12 @@ export default function AdvancedEditingPanel({
                       <img
                         src={photo.src.medium}
                         alt={photo.alt}
-                        className="w-full h-32 object-cover rounded-lg border-2 border-transparent group-hover:border-purple-300 transition-colors"
+                        className="w-full h-32 object-cover rounded-lg border-2 border-transparent group-hover:border-primary-300 transition-colors"
                       />
                       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="bg-white rounded-full p-2">
-                            <ImageIcon className="h-4 w-4 text-purple-600" />
+                          <div className="bg-background rounded-full p-2">
+                            <ImageIcon className="h-4 w-4 text-primary-600" />
                           </div>
                         </div>
                       </div>
@@ -658,16 +658,16 @@ export default function AdvancedEditingPanel({
             )}
 
             {pexelsQuery && pexelsResults.length === 0 && !pexelsLoading && (
-              <div className="text-center py-8 text-gray-500">
-                <ImageIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <div className="text-center py-8 text-muted-foreground-500">
+                <ImageIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground-300" />
                 <p className="text-sm">No images found for "{pexelsQuery}"</p>
                 <p className="text-xs">Try different keywords or filters</p>
               </div>
             )}
 
             {!pexelsQuery && (
-              <div className="text-center py-8 text-gray-500">
-                <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <div className="text-center py-8 text-muted-foreground-500">
+                <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground-300" />
                 <p className="text-sm">Search for images to edit</p>
                 <p className="text-xs">Enter keywords to find stock photos</p>
               </div>
@@ -678,13 +678,13 @@ export default function AdvancedEditingPanel({
       
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Edit Type
           </label>
           <select
             value={editType}
             onChange={(e) => handleEditTypeChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary"
           >
             <option value="enhance">✨ Enhance (2 credits)</option>
             <option value="inpaint">🎨 Inpaint (3 credits)</option>
@@ -704,19 +704,19 @@ export default function AdvancedEditingPanel({
             <option value="gender_swap">⚧ Gender Swap (4 credits)</option>
             <option value="expression_change">😊 Change Expression (2 credits)</option>
           </select>
-          <p className="mt-1 text-xs text-gray-600">
+          <p className="mt-1 text-xs text-muted-foreground-600">
             {getEditTypeDescription(editType)}
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Edit Prompt
           </label>
           <textarea
             value={editPrompt}
             onChange={(e) => setEditPrompt(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary"
             placeholder={getEditPromptPlaceholder(editType)}
             rows={3}
           />
@@ -725,10 +725,10 @@ export default function AdvancedEditingPanel({
         {/* Reference Image Upload Section */}
         {requiresReferenceImage(editType) && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Reference Image <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
+              Reference Image <span className="text-destructive-500">*</span>
             </label>
-            <p className="text-xs text-gray-600 mb-3">
+            <p className="text-xs text-muted-foreground-600 mb-3">
               {editType === 'face_swap' && 'Upload a face image to swap with the main image (different from the image you selected above)'}
               {editType === 'style_transfer' && 'Upload an image with the desired artistic style to apply (different from the image you selected above)'}
               {editType === 'gender_swap' && 'Upload an image showing the target gender appearance (different from the image you selected above)'}
@@ -761,7 +761,7 @@ export default function AdvancedEditingPanel({
                 <>
                   {/* Upload Section */}
                   {referenceImageSource === 'upload' && (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+                    <div className="border-2 border-dashed border-border-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -769,8 +769,8 @@ export default function AdvancedEditingPanel({
                         onChange={handleFileUpload}
                         className="hidden"
                       />
-                      <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600 mb-2">
+                      <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground-400 mb-2" />
+                      <p className="text-sm text-muted-foreground-600 mb-2">
                         {editType === 'face_swap' && 'Upload a clear face image to swap with the main image. Ensure good lighting and frontal view.'}
                         {editType === 'style_transfer' && 'Upload an image with the artistic style you want to apply. This could be a painting, artwork, or styled photo.'}
                         {editType === 'gender_swap' && 'Upload an image showing the target gender appearance you want to achieve.'}
@@ -780,7 +780,7 @@ export default function AdvancedEditingPanel({
                         type="button"
                         variant="outline"
                         onClick={() => fileInputRef.current?.click()}
-                        className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                        className="text-primary-600 border-primary-200 hover:bg-primary-50"
                       >
                         <Upload className="h-4 w-4 mr-2" />
                         Choose Reference Image
@@ -796,14 +796,14 @@ export default function AdvancedEditingPanel({
                       </label>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {savedImages.length === 0 ? (
-                          <p className="text-sm text-gray-500 text-center py-4">
+                          <p className="text-sm text-muted-foreground-500 text-center py-4">
                             No saved images available
                           </p>
                         ) : (
                           savedImages.map((image) => (
                             <div
                               key={image.id}
-                              className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                              className="flex items-center space-x-3 p-2 border rounded-lg hover:bg-muted-50 cursor-pointer"
                               onClick={() => selectSavedReferenceImage(image.image_url)}
                             >
                               <img
@@ -846,7 +846,7 @@ export default function AdvancedEditingPanel({
                       {referenceImageSource === 'saved' && 'Saved Image'}
                     </span>
                   </div>
-                  <div className="mt-2 text-xs text-gray-500">
+                  <div className="mt-2 text-xs text-muted-foreground-500">
                     Reference image {referenceImageSource === 'upload' ? 'uploaded' : 'selected'} successfully
                   </div>
                 </div>
@@ -856,7 +856,7 @@ export default function AdvancedEditingPanel({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Strength: {editStrength}
           </label>
           <input
@@ -874,11 +874,11 @@ export default function AdvancedEditingPanel({
         <button
           onClick={handleEdit}
           disabled={loading || !editPrompt.trim() || (requiresReferenceImage(editType) && !referenceImage) || (imageSource === 'saved' && !selectedImage) || (imageSource === 'upload' && !uploadedImage) || (imageSource === 'pexels' && !selectedImage)}
-          className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
               Editing...
             </>
           ) : (

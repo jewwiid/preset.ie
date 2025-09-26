@@ -85,7 +85,7 @@ export default function SimilarTalentSlim({ gigId, className = "" }: SimilarTale
 
   const getCompatibilityColor = (score: number) => {
     if (score >= 80) return 'text-primary'
-    if (score >= 60) return 'text-yellow-600 dark:text-yellow-400'
+    if (score >= 60) return 'text-primary'
     return 'text-muted-foreground'
   }
 

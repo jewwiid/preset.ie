@@ -135,14 +135,14 @@ export default function ListingEnhancementModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
+        <div className="sticky top-0 bg-background border-b border-border-200 px-6 py-4 rounded-t-2xl">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Select Boost Type</h2>
+            <h2 className="text-2xl font-bold text-muted-foreground-900">Select Boost Type</h2>
             <button 
               onClick={onClose} 
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-muted-foreground-400 hover:text-muted-foreground-600 transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -160,7 +160,7 @@ export default function ListingEnhancementModal({
                 className={`cursor-pointer transition-all border-2 ${
                   selectedOption === option.type 
                     ? 'border-primary-500 shadow-lg' 
-                    : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                    : 'border-border-200 hover:border-border-300 hover:shadow-md'
                 }`}
                 onClick={() => setSelectedOption(option.type)}
               >
@@ -172,12 +172,12 @@ export default function ListingEnhancementModal({
                         {option.icon}
                         <div>
                           <h3 className="text-xl font-bold">{option.sellMultiplier}</h3>
-                          <p className="text-white/90 text-sm">{option.subtitle}</p>
+                          <p className="text-primary-foreground/90 text-sm">{option.subtitle}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold">€{option.price}</div>
-                        <div className="text-sm text-white/80">{option.duration}</div>
+                        <div className="text-sm text-primary-foreground/80">{option.duration}</div>
                       </div>
                     </div>
                   </div>
@@ -234,11 +234,11 @@ export default function ListingEnhancementModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 rounded-b-2xl">
+        <div className="sticky bottom-0 bg-background border-t border-border-200 px-6 py-4 rounded-b-2xl">
           <div className="text-center">
             <a 
               href="#" 
-              className="text-blue-600 hover:text-blue-800 text-sm transition-colors"
+              className="text-primary-600 hover:text-primary-800 text-sm transition-colors"
               onClick={(e) => {
                 e.preventDefault();
                 // TODO: Show help modal about free bumps

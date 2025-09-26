@@ -41,7 +41,23 @@ export async function GET(request: NextRequest) {
         status,
         created_at,
         updated_at,
-        owner_id
+        owner_id,
+        users_profile!listings_owner_id_fkey (
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        ),
+        listing_images (
+          id,
+          path,
+          url,
+          alt_text,
+          sort_order,
+          file_size,
+          mime_type
+        )
       `)
       .eq('status', 'active')
       .range(offset, offset + limit - 1);
@@ -73,12 +89,12 @@ export async function GET(request: NextRequest) {
 
     const city = searchParams.get('city');
     if (city) {
-      query = query.eq('location_city', city);
+      query = query.ilike('location_city', `%${city}%`);
     }
 
     const country = searchParams.get('country');
     if (country) {
-      query = query.eq('location_country', country);
+      query = query.ilike('location_country', `%${country}%`);
     }
 
     const verifiedOnly = searchParams.get('verified_only');
@@ -96,7 +112,132 @@ export async function GET(request: NextRequest) {
       query = query.lte('rent_day_cents', parseInt(maxPrice));
     }
 
-    const { data: listings, error, count } = await query;
+    // Additional filters
+    const borrowOk = searchParams.get('borrow_ok');
+    if (borrowOk === 'true') {
+      query = query.eq('borrow_ok', true);
+    }
+
+    const retainerMode = searchParams.get('retainer_mode');
+    if (retainerMode) {
+      query = query.eq('retainer_mode', retainerMode);
+    }
+
+    const minQuantity = searchParams.get('min_quantity');
+    if (minQuantity) {
+      query = query.gte('quantity', parseInt(minQuantity));
+    }
+
+    const minDeposit = searchParams.get('min_deposit');
+    if (minDeposit) {
+      query = query.gte('deposit_cents', parseInt(minDeposit));
+    }
+
+    const maxDeposit = searchParams.get('max_deposit');
+    if (maxDeposit) {
+      query = query.lte('deposit_cents', parseInt(maxDeposit));
+    }
+
+    // Handle my_listings parameter - requires authentication
+    const myListings = searchParams.get('my_listings');
+    let userProfile: any = null;
+    
+    if (myListings === 'true') {
+      // Get user from Authorization header
+      const authHeader = request.headers.get('authorization');
+      if (!authHeader) {
+        return NextResponse.json({ error: 'Authentication required for my_listings' }, { status: 401 });
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 });
+      }
+
+      // Get user profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('users_profile')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError || !profileData) {
+        return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+      }
+
+      userProfile = profileData;
+      // Filter by owner_id
+      query = query.eq('owner_id', userProfile.id);
+    }
+
+    // Get count first with same filters
+    let countQuery = supabase
+      .from('listings')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active');
+
+    // Apply same filters to count query
+    if (search) {
+      countQuery = countQuery.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+    if (category) {
+      countQuery = countQuery.eq('category', category);
+    }
+    if (mode) {
+      countQuery = countQuery.eq('mode', mode);
+    }
+    if (condition) {
+      countQuery = countQuery.eq('condition', condition);
+    }
+    if (city) {
+      countQuery = countQuery.ilike('location_city', `%${city}%`);
+    }
+    if (country) {
+      countQuery = countQuery.ilike('location_country', `%${country}%`);
+    }
+    if (verifiedOnly) {
+      countQuery = countQuery.eq('verified_only', true);
+    }
+    if (minPrice) {
+      countQuery = countQuery.gte('rent_day_cents', parseInt(minPrice));
+    }
+    if (maxPrice) {
+      countQuery = countQuery.lte('rent_day_cents', parseInt(maxPrice));
+    }
+    if (borrowOk === 'true') {
+      countQuery = countQuery.eq('borrow_ok', true);
+    }
+    if (retainerMode) {
+      countQuery = countQuery.eq('retainer_mode', retainerMode);
+    }
+    if (minQuantity) {
+      countQuery = countQuery.gte('quantity', parseInt(minQuantity));
+    }
+    if (minDeposit) {
+      countQuery = countQuery.gte('deposit_cents', parseInt(minDeposit));
+    }
+    if (maxDeposit) {
+      countQuery = countQuery.lte('deposit_cents', parseInt(maxDeposit));
+    }
+    if (myListings === 'true' && userProfile) {
+      // Apply the same owner_id filter to count query
+      countQuery = countQuery.eq('owner_id', userProfile.id);
+    }
+
+    const { count, error: countError } = await countQuery;
+
+    if (countError) {
+      console.error('Error getting count:', countError);
+      return NextResponse.json(
+        { error: 'Failed to get listings count' },
+        { status: 500 }
+      );
+    }
+
+    // Then get the actual data
+    const { data: listings, error } = await query;
 
     if (error) {
       console.error('Error fetching equipment listings:', error);

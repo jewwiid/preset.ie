@@ -91,9 +91,9 @@ export default function ProjectMarketplaceIntegration({
       case 'fulfilled':
         return 'text-primary-600 bg-primary-50';
       case 'open':
-        return 'text-blue-600 bg-blue-50';
+        return 'text-primary-600 bg-primary-50';
       default:
-        return 'text-gray-600 bg-gray-50';
+        return 'text-muted-foreground-600 bg-muted-50';
     }
   };
 
@@ -111,10 +111,10 @@ export default function ProjectMarketplaceIntegration({
             </div>
             
             {gearRequest.equipment_spec && (
-              <p className="text-sm text-gray-600 mb-2">{gearRequest.equipment_spec}</p>
+              <p className="text-sm text-muted-foreground-600 mb-2">{gearRequest.equipment_spec}</p>
             )}
             
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground-500">
               <span>Qty: {gearRequest.quantity}</span>
               <span>
                 {gearRequest.borrow_preferred ? 'Borrow preferred' : 'Rent preferred'}
@@ -169,7 +169,7 @@ export default function ProjectMarketplaceIntegration({
                       <span className="font-medium text-sm">{listing.title}</span>
                       <Badge variant="outline" className="text-xs">{listing.condition}</Badge>
                     </div>
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                    <div className="flex items-center space-x-4 text-xs text-muted-foreground-500 mt-1">
                       <span>{listing.owner.display_name}</span>
                       {listing.rent_day_cents && (
                         <span className="text-primary-600 font-medium">
@@ -191,21 +191,21 @@ export default function ProjectMarketplaceIntegration({
         {/* Suggested Listings */}
         {gearRequest.suggested_listings.length > 0 && (
           <div className="mt-3">
-            <h4 className="text-sm font-medium text-blue-600 mb-2">
+            <h4 className="text-sm font-medium text-primary-600 mb-2">
               Suggestions ({gearRequest.suggested_listings.length})
             </h4>
             <div className="space-y-2">
               {gearRequest.suggested_listings.slice(0, 2).map((listing) => (
-                <div key={listing.id} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
+                <div key={listing.id} className="flex items-center justify-between p-2 bg-primary-50 rounded border border-primary-200">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-sm">{listing.title}</span>
                       <Badge variant="outline" className="text-xs">{listing.condition}</Badge>
                     </div>
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                    <div className="flex items-center space-x-4 text-xs text-muted-foreground-500 mt-1">
                       <span>{listing.owner.display_name}</span>
                       {listing.rent_day_cents && (
-                        <span className="text-blue-600 font-medium">
+                        <span className="text-primary-600 font-medium">
                           {formatPrice(listing.rent_day_cents)}/day
                         </span>
                       )}
@@ -221,8 +221,8 @@ export default function ProjectMarketplaceIntegration({
         )}
 
         {gearRequest.matching_listings.length === 0 && gearRequest.suggested_listings.length === 0 && (
-          <div className="mt-3 p-3 bg-gray-50 rounded border border-gray-200">
-            <div className="flex items-center text-sm text-gray-500">
+          <div className="mt-3 p-3 bg-muted-50 rounded border border-border-200">
+            <div className="flex items-center text-sm text-muted-foreground-500">
               <AlertCircle className="h-4 w-4 mr-2" />
               No matching listings found. Consider creating a listing or expanding your search criteria.
             </div>
@@ -257,9 +257,9 @@ export default function ProjectMarketplaceIntegration({
   if (error) {
     return (
       <div className="text-center py-8">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Marketplace Data</h3>
-        <p className="text-gray-500 mb-4">{error}</p>
+        <AlertCircle className="h-12 w-12 text-destructive-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">Failed to Load Marketplace Data</h3>
+        <p className="text-muted-foreground-500 mb-4">{error}</p>
         <Button onClick={loadMarketplaceData}>Try Again</Button>
       </div>
     );
@@ -278,10 +278,10 @@ export default function ProjectMarketplaceIntegration({
           <Card>
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center mb-2">
-                <Package className="h-8 w-8 text-blue-500" />
+                <Package className="h-8 w-8 text-primary-500" />
               </div>
               <div className="text-2xl font-bold">{stats.totalGearRequests}</div>
-              <div className="text-sm text-gray-500">Gear Requests</div>
+              <div className="text-sm text-muted-foreground-500">Gear Requests</div>
             </CardContent>
           </Card>
           
@@ -291,27 +291,27 @@ export default function ProjectMarketplaceIntegration({
                 <CheckCircle className="h-8 w-8 text-primary-500" />
               </div>
               <div className="text-2xl font-bold">{stats.fulfilledRequests}</div>
-              <div className="text-sm text-gray-500">Fulfilled</div>
+              <div className="text-sm text-muted-foreground-500">Fulfilled</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center mb-2">
-                <Clock className="h-8 w-8 text-yellow-500" />
+                <Clock className="h-8 w-8 text-primary-500" />
               </div>
               <div className="text-2xl font-bold">{stats.pendingOffers}</div>
-              <div className="text-sm text-gray-500">Pending Offers</div>
+              <div className="text-sm text-muted-foreground-500">Pending Offers</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center mb-2">
-                <TrendingUp className="h-8 w-8 text-purple-500" />
+                <TrendingUp className="h-8 w-8 text-primary-500" />
               </div>
               <div className="text-2xl font-bold">{stats.matchingListings}</div>
-              <div className="text-sm text-gray-500">Matching Listings</div>
+              <div className="text-sm text-muted-foreground-500">Matching Listings</div>
             </CardContent>
           </Card>
         </div>
@@ -328,9 +328,9 @@ export default function ProjectMarketplaceIntegration({
         <TabsContent value="all" className="mt-4">
           {gearRequests.length === 0 ? (
             <div className="text-center py-8">
-              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Gear Requests</h3>
-              <p className="text-gray-500">This project doesn't have any equipment requirements yet.</p>
+              <Package className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No Gear Requests</h3>
+              <p className="text-muted-foreground-500">This project doesn't have any equipment requirements yet.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -343,8 +343,8 @@ export default function ProjectMarketplaceIntegration({
           {gearRequests.filter(r => r.status === 'open').length === 0 ? (
             <div className="text-center py-8">
               <CheckCircle className="h-12 w-12 text-primary-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">All Requests Fulfilled</h3>
-              <p className="text-gray-500">All gear requests for this project have been fulfilled.</p>
+              <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">All Requests Fulfilled</h3>
+              <p className="text-muted-foreground-500">All gear requests for this project have been fulfilled.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -356,9 +356,9 @@ export default function ProjectMarketplaceIntegration({
         <TabsContent value="fulfilled" className="mt-4">
           {gearRequests.filter(r => r.status === 'fulfilled').length === 0 ? (
             <div className="text-center py-8">
-              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Fulfilled Requests</h3>
-              <p className="text-gray-500">No gear requests have been fulfilled yet.</p>
+              <Clock className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No Fulfilled Requests</h3>
+              <p className="text-muted-foreground-500">No gear requests have been fulfilled yet.</p>
             </div>
           ) : (
             <div className="space-y-4">

@@ -216,7 +216,7 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
                     step={5}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-sm text-gray-600 mt-2">
+                  <div className="flex justify-between text-sm text-muted-foreground-600 mt-2">
                     <span>{filters.compatibility_min}%</span>
                     <span>{filters.compatibility_max}%</span>
                   </div>
@@ -226,7 +226,7 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
               {/* Location Radius */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-blue-600" />
+                  <MapPin className="w-4 h-4 text-primary-600" />
                   <h4 className="font-medium">Location Radius</h4>
                 </div>
                 <div className="px-3">
@@ -238,7 +238,7 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
                     step={5}
                     className="w-full"
                   />
-                  <div className="text-sm text-gray-600 mt-2 text-center">
+                  <div className="text-sm text-muted-foreground-600 mt-2 text-center">
                     {filters.location_radius} km
                   </div>
                 </div>
@@ -247,7 +247,7 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
               {/* Date Range */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4 text-purple-600" />
+                  <CalendarIcon className="w-4 h-4 text-primary-600" />
                   <h4 className="font-medium">Date Range</h4>
                 </div>
                 <div className="space-y-2">
@@ -315,7 +315,7 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
               {/* Specializations */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-orange-600" />
+                  <Award className="w-4 h-4 text-primary-600" />
                   <h4 className="font-medium">Specializations</h4>
                 </div>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -340,7 +340,7 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
               {/* Experience Levels */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-indigo-600" />
+                  <Clock className="w-4 h-4 text-primary-600" />
                   <h4 className="font-medium">Experience Level</h4>
                 </div>
                 <div className="space-y-2">
@@ -365,7 +365,7 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
               {/* Availability Status */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-red-600" />
+                  <Clock className="w-4 h-4 text-destructive-600" />
                   <h4 className="font-medium">Availability</h4>
                 </div>
                 <div className="space-y-2">

@@ -38,10 +38,10 @@ export function MessageStatusIndicator({
   className = '',
   iconClassName = '',
   textClassName = '',
-  sentColor = 'text-gray-400',
-  deliveredColor = 'text-gray-500',
-  readColor = 'text-blue-500',
-  failedColor = 'text-red-500'
+  sentColor = 'text-muted-foreground-400',
+  deliveredColor = 'text-muted-foreground-500',
+  readColor = 'text-primary-500',
+  failedColor = 'text-destructive-500'
 }: MessageStatusIndicatorProps) {
   
   const { getMessageStatus, isMessageDelivered, isMessageRead } = useMessageStatus()
@@ -130,7 +130,7 @@ export function MessageStatusIndicator({
   )
 
   const renderDetailed = () => (
-    <div className={`inline-flex items-center space-x-2 px-2 py-1 rounded-full bg-gray-100 ${className}`}>
+    <div className={`inline-flex items-center space-x-2 px-2 py-1 rounded-full bg-muted-100 ${className}`}>
       <IconComponent 
         className={`${currentSize.icon} ${config.color} ${iconClassName}`}
       />
@@ -246,7 +246,7 @@ export function BatchStatusIndicator({
         size="sm"
       />
       {readCount > 0 && (
-        <span className="text-blue-500 font-medium">
+        <span className="text-primary-500 font-medium">
           {readCount}/{totalCount}
         </span>
       )}
@@ -279,13 +279,13 @@ export function ConversationStatus({
   return (
     <div className={`inline-flex items-center space-x-2 text-xs ${className}`}>
       {unreadCount > 0 && (
-        <div className="flex items-center space-x-1 text-red-500">
+        <div className="flex items-center space-x-1 text-destructive-500">
           <AlertCircle className="w-3 h-3" />
           <span>{unreadCount} unread</span>
         </div>
       )}
       {deliveredCount > 0 && (
-        <div className="flex items-center space-x-1 text-gray-500">
+        <div className="flex items-center space-x-1 text-muted-foreground-500">
           <CheckCheck className="w-3 h-3" />
           <span>{deliveredCount} delivered</span>
         </div>

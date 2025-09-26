@@ -153,15 +153,15 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
 
   const getTrendIcon = (current: number, previous: number) => {
     if (current > previous) return <TrendingUp className="w-4 h-4 text-primary-500" />
-    if (current < previous) return <TrendingDown className="w-4 h-4 text-red-500" />
-    return <Activity className="w-4 h-4 text-gray-500" />
+    if (current < previous) return <TrendingDown className="w-4 h-4 text-destructive-500" />
+    return <Activity className="w-4 h-4 text-muted-foreground-500" />
   }
 
   const getEngagementLevel = (score: number) => {
     if (score >= 80) return { level: 'Excellent', color: 'text-primary-600', bg: 'bg-primary-100' }
-    if (score >= 60) return { level: 'Good', color: 'text-blue-600', bg: 'bg-blue-100' }
-    if (score >= 40) return { level: 'Fair', color: 'text-yellow-600', bg: 'bg-yellow-100' }
-    return { level: 'Needs Improvement', color: 'text-red-600', bg: 'bg-red-100' }
+    if (score >= 60) return { level: 'Good', color: 'text-primary-600', bg: 'bg-primary-100' }
+    if (score >= 40) return { level: 'Fair', color: 'text-primary-600', bg: 'bg-primary-100' }
+    return { level: 'Needs Improvement', color: 'text-destructive-600', bg: 'bg-destructive-100' }
   }
 
   if (loading) {
@@ -170,7 +170,7 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
             <Activity className="w-8 h-8 animate-pulse mx-auto mb-4 text-primary-500" />
-            <p className="text-gray-600 dark:text-gray-400">Loading analytics...</p>
+            <p className="text-muted-foreground">Loading analytics...</p>
           </div>
         </div>
       </div>
@@ -182,13 +182,13 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
       <div className={`space-y-6 ${className}`}>
         <Card>
           <CardContent className="p-6 text-center">
-            <div className="text-red-500 mb-4">
+            <div className="text-destructive-500 mb-4">
               <BarChart3 className="w-12 h-12 mx-auto" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            <h3 className="text-lg font-semibold text-muted-foreground-900 dark:text-primary-foreground mb-2">
               Error Loading Analytics
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+            <p className="text-muted-foreground mb-4">{error}</p>
             <Button onClick={fetchAnalyticsData} variant="outline">
               Try Again
             </Button>
@@ -203,11 +203,11 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
       <div className={`space-y-6 ${className}`}>
         <Card>
           <CardContent className="p-6 text-center">
-            <BarChart3 className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            <BarChart3 className="w-12 h-12 mx-auto mb-4 text-muted-foreground-400" />
+            <h3 className="text-lg font-semibold text-muted-foreground-900 dark:text-primary-foreground mb-2">
               No Analytics Data
             </h3>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Start using the matchmaking features to see your analytics here.
             </p>
           </CardContent>
@@ -223,8 +223,8 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Matchmaking Analytics</h2>
-          <p className="text-gray-600 dark:text-gray-400">
+          <h2 className="text-2xl font-bold text-muted-foreground-900 dark:text-primary-foreground">Matchmaking Analytics</h2>
+          <p className="text-muted-foreground">
             Your performance over the last {timeRange}
           </p>
         </div>
@@ -248,10 +248,10 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
                 <Target className="w-6 h-6 text-primary-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-2xl font-bold text-muted-foreground-900 dark:text-primary-foreground">
                   {Math.round(analyticsData.avgCompatibility)}%
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Avg Compatibility</p>
+                <p className="text-sm text-muted-foreground">Avg Compatibility</p>
               </div>
             </div>
           </CardContent>
@@ -260,14 +260,14 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
+                <Users className="w-6 h-6 text-primary-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-2xl font-bold text-muted-foreground-900 dark:text-primary-foreground">
                   {analyticsData.totalInteractions}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Interactions</p>
+                <p className="text-sm text-muted-foreground">Total Interactions</p>
               </div>
             </div>
           </CardContent>
@@ -276,14 +276,14 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                <MessageSquare className="w-6 h-6 text-purple-600" />
+              <div className="p-2 bg-primary-100 dark:bg-primary-900/20 rounded-lg">
+                <MessageSquare className="w-6 h-6 text-primary-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-2xl font-bold text-muted-foreground-900 dark:text-primary-foreground">
                   {analyticsData.applicationsSent}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Applications Sent</p>
+                <p className="text-sm text-muted-foreground">Applications Sent</p>
               </div>
             </div>
           </CardContent>
@@ -296,10 +296,10 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
                 <Award className={`w-6 h-6 ${engagement.color}`} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-2xl font-bold text-muted-foreground-900 dark:text-primary-foreground">
                   {Math.round(analyticsData.engagementScore)}%
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Engagement Score</p>
+                <p className="text-sm text-muted-foreground">Engagement Score</p>
               </div>
             </div>
           </CardContent>
@@ -326,13 +326,13 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
               {analyticsData.compatibilityTrends.length > 0 ? (
                 <div className="space-y-4">
                   {analyticsData.compatibilityTrends.slice(0, 7).map((trend, index) => (
-                    <div key={trend.date} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div key={trend.date} className="flex items-center justify-between p-3 bg-muted-50 dark:bg-muted-800 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <Calendar className="w-4 h-4 text-muted-foreground-500" />
                         <span className="font-medium">{new Date(trend.date).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                        <span className="text-sm text-muted-foreground">
                           {trend.total_calculations} calculations
                         </span>
                         <Badge variant="outline">
@@ -344,8 +344,8 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <TrendingUp className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600 dark:text-gray-400">No trend data available yet</p>
+                  <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground-400" />
+                  <p className="text-muted-foreground">No trend data available yet</p>
                 </div>
               )}
             </CardContent>
@@ -356,7 +356,7 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-blue-600" />
+                <Target className="w-5 h-5 text-primary-600" />
                 Top Match Factors
               </CardTitle>
             </CardHeader>
@@ -364,7 +364,7 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
               {analyticsData.topMatchFactors.length > 0 ? (
                 <div className="space-y-4">
                   {analyticsData.topMatchFactors.map((factor, index) => (
-                    <div key={factor.factor} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div key={factor.factor} className="flex items-center justify-between p-3 bg-muted-50 dark:bg-muted-800 rounded-lg">
                       <div className="flex items-center gap-3">
                         <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center">
                           {index + 1}
@@ -372,9 +372,9 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
                         <span className="font-medium">{factor.factor}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="w-24 bg-muted rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                            className="bg-primary-600 h-2 rounded-full" 
                             style={{ width: `${factor.percentage}%` }}
                           />
                         </div>
@@ -387,8 +387,8 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Target className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-gray-600 dark:text-gray-400">No match factor data available yet</p>
+                  <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground-400" />
+                  <p className="text-muted-foreground">No match factor data available yet</p>
                 </div>
               )}
             </CardContent>
@@ -406,12 +406,12 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <p className="text-3xl font-bold text-muted-foreground-900 dark:text-primary-foreground">
                     {analyticsData.applicationsSent > 0 
                       ? Math.round((analyticsData.successfulMatches / analyticsData.applicationsSent) * 100)
                       : 0}%
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     {analyticsData.successfulMatches} successful out of {analyticsData.applicationsSent} applications
                   </p>
                 </div>
@@ -421,7 +421,7 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-purple-600" />
+                  <Clock className="w-5 h-5 text-primary-600" />
                   Engagement Level
                 </CardTitle>
               </CardHeader>
@@ -430,7 +430,7 @@ const MatchmakingAnalytics: React.FC<MatchmakingAnalyticsProps> = ({
                   <Badge className={`${engagement.bg} ${engagement.color} text-lg px-4 py-2`}>
                     {engagement.level}
                   </Badge>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  <p className="text-sm text-muted-foreground mt-2">
                     Based on your interaction patterns
                   </p>
                 </div>

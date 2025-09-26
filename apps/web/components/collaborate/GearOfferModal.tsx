@@ -184,10 +184,10 @@ export default function GearOfferModal({
           <div className="space-y-4">
             <div>
               <h3 className="font-medium text-lg">{project.title}</h3>
-              <p className="text-sm text-gray-600">{project.description}</p>
+              <p className="text-sm text-muted-foreground-600">{project.description}</p>
             </div>
 
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground-500">
               {(project.city || project.country) && (
                 <div className="flex items-center">
                   <MapPin className="h-4 w-4 mr-1" />
@@ -206,7 +206,7 @@ export default function GearOfferModal({
             </div>
 
             {/* Creator Info */}
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-muted-50 rounded-lg">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={project.creator.avatar_url} />
                 <AvatarFallback>
@@ -220,12 +220,12 @@ export default function GearOfferModal({
                     <Badge variant="secondary" className="text-xs">Verified</Badge>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">@{project.creator.username}</p>
+                <p className="text-sm text-muted-foreground-500">@{project.creator.username}</p>
               </div>
             </div>
 
             {/* Gear Request Details */}
-            <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="p-4 border border-border-200 rounded-lg">
               <div className="flex items-center mb-2">
                 <Package className="h-4 w-4 mr-2" />
                 <h4 className="font-medium">{gearRequest.category}</h4>
@@ -233,17 +233,17 @@ export default function GearOfferModal({
               <div className="space-y-2 text-sm">
                 {gearRequest.equipment_spec && (
                   <div>
-                    <span className="text-gray-500">Specification:</span> {gearRequest.equipment_spec}
+                    <span className="text-muted-foreground-500">Specification:</span> {gearRequest.equipment_spec}
                   </div>
                 )}
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Quantity:</span>
+                  <span className="text-muted-foreground-500">Quantity:</span>
                   <span>{gearRequest.quantity}</span>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Preference:</span>
+                  <span className="text-muted-foreground-500">Preference:</span>
                   <span>
                     {gearRequest.borrow_preferred ? 'Borrow preferred' : 'Rent preferred'}
                     {gearRequest.retainer_acceptable && ' (Retainer OK)'}
@@ -252,7 +252,7 @@ export default function GearOfferModal({
                 
                 {gearRequest.max_daily_rate_cents && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Max daily rate:</span>
+                    <span className="text-muted-foreground-500">Max daily rate:</span>
                     <span className="text-primary-600 font-medium">
                       {formatPrice(gearRequest.max_daily_rate_cents)}
                     </span>
@@ -265,8 +265,8 @@ export default function GearOfferModal({
           {/* Offer Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="p-3 bg-destructive-50 border border-destructive-200 rounded-md">
+                <p className="text-destructive-600 text-sm">{error}</p>
               </div>
             )}
 
@@ -357,7 +357,7 @@ export default function GearOfferModal({
               <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                     Submitting...
                   </>
                 ) : (

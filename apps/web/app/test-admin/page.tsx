@@ -211,21 +211,21 @@ export default function TestAdmin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-muted-50 p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Admin Account Test</h1>
         
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-background rounded-lg shadow p-6 mb-6">
           <h2 className="text-lg font-semibold mb-4">Admin Credentials:</h2>
-          <p className="font-mono bg-gray-100 p-2 rounded mb-2">Email: admin@preset.ie</p>
-          <p className="font-mono bg-gray-100 p-2 rounded">Password: Admin123!@#</p>
+          <p className="font-mono bg-muted-100 p-2 rounded mb-2">Email: admin@preset.ie</p>
+          <p className="font-mono bg-muted-100 p-2 rounded">Password: Admin123!@#</p>
         </div>
 
         <div className="flex flex-col space-y-4">
           <button
             onClick={createTestAdmin}
             disabled={loading}
-            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-6 py-3 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Processing...' : '1. Create/Update Admin Account'}
           </button>
@@ -233,7 +233,7 @@ export default function TestAdmin() {
           <button
             onClick={testSignIn}
             disabled={loading}
-            className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-6 py-3 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Processing...' : '2. Test Sign In'}
           </button>
@@ -241,26 +241,26 @@ export default function TestAdmin() {
           <button
             onClick={resetPassword}
             disabled={loading}
-            className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full px-6 py-3 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? 'Processing...' : '3. Create New Admin Account (Fresh)'}
           </button>
         </div>
 
         {status && (
-          <div className="mt-6 bg-gray-100 rounded-lg p-4">
+          <div className="mt-6 bg-muted-100 rounded-lg p-4">
             <h3 className="font-semibold mb-2">Status:</h3>
             <pre className="whitespace-pre-wrap font-mono text-sm">{status}</pre>
           </div>
         )}
 
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+        <div className="mt-8 p-4 bg-primary-50 rounded-lg">
           <h3 className="font-semibold mb-2">Instructions:</h3>
           <ol className="list-decimal list-inside space-y-2 text-sm">
             <li>Click "Create/Update Admin Account" first</li>
             <li>Then click "Test Sign In" to verify it works</li>
             <li>If sign in fails, try "Send Password Reset" to reset the password</li>
-            <li>Once working, go to <a href="/auth/signin" className="text-blue-600 underline">/auth/signin</a> to login normally</li>
+            <li>Once working, go to <a href="/auth/signin" className="text-primary-600 underline">/auth/signin</a> to login normally</li>
           </ol>
         </div>
       </div>

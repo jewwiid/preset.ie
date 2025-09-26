@@ -259,7 +259,7 @@ export default function EnhancedCinematicPlayground({
                   >
                     {isEnhancing ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2" />
                         Enhancing...
                       </>
                     ) : (

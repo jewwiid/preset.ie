@@ -62,7 +62,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
       case 'buy':
         return <Badge variant="outline">Purchase Request</Badge>;
       case 'both':
-        return <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">Rent or Buy</Badge>;
+        return <Badge className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">Rent or Buy</Badge>;
       default:
         return null;
     }
@@ -72,16 +72,16 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
     if (!request.category) return null;
     
     const categoryColors: { [key: string]: string } = {
-      'camera': 'bg-red-100 text-red-800',
-      'lens': 'bg-blue-100 text-blue-800',
-      'lighting': 'bg-yellow-100 text-yellow-800',
+      'camera': 'bg-destructive-100 text-destructive-800',
+      'lens': 'bg-primary-100 text-primary-800',
+      'lighting': 'bg-primary-100 text-primary-800',
       'audio': 'bg-primary-100 text-primary-800',
-      'accessories': 'bg-purple-100 text-purple-800',
-      'other': 'bg-gray-100 text-gray-800'
+      'accessories': 'bg-primary-100 text-primary-800',
+      'other': 'bg-muted-100 text-muted-foreground-800'
     };
 
     return (
-      <Badge className={categoryColors[request.category] || 'bg-gray-100 text-gray-800'}>
+      <Badge className={categoryColors[request.category] || 'bg-muted-100 text-muted-foreground-800'}>
         {request.category}
       </Badge>
     );
@@ -122,11 +122,11 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
   };
 
   return (
-    <Card className={`relative overflow-hidden ${request.urgent ? 'ring-2 ring-orange-500' : ''}`}>
+    <Card className={`relative overflow-hidden ${request.urgent ? 'ring-2 ring-primary-primary' : ''}`}>
       {/* Urgent Badge */}
       {request.urgent && (
         <div className="absolute top-2 left-2 z-10">
-          <Badge className="bg-orange-500 text-white">
+          <Badge className="bg-primary-500 text-primary-foreground">
             <AlertCircle className="w-3 h-3 mr-1" />
             Urgent
           </Badge>
@@ -166,7 +166,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
       <CardContent className="pt-0">
         {/* Description */}
         {request.description && (
-          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+          <p className="text-muted-foreground-600 text-sm mb-4 line-clamp-3">
             {request.description}
           </p>
         )}
@@ -174,28 +174,28 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
         {/* Equipment Type */}
         {request.equipment_type && (
           <div className="mb-3">
-            <span className="text-sm font-medium text-gray-700">Looking for: </span>
-            <span className="text-sm text-gray-600">{request.equipment_type}</span>
+            <span className="text-sm font-medium text-muted-foreground-700">Looking for: </span>
+            <span className="text-sm text-muted-foreground-600">{request.equipment_type}</span>
           </div>
         )}
 
         {/* Price Range */}
         <div className="mb-3">
-          <span className="text-sm font-medium text-gray-700">Budget: </span>
+          <span className="text-sm font-medium text-muted-foreground-700">Budget: </span>
           <span className="text-sm text-primary-600 font-medium">{getPriceRange()}</span>
         </div>
 
         {/* Rental Period */}
         {getRentalPeriod() && (
           <div className="mb-3">
-            <span className="text-sm font-medium text-gray-700">Dates: </span>
-            <span className="text-sm text-gray-600">{getRentalPeriod()}</span>
+            <span className="text-sm font-medium text-muted-foreground-700">Dates: </span>
+            <span className="text-sm text-muted-foreground-600">{getRentalPeriod()}</span>
           </div>
         )}
 
         {/* Location */}
         {request.location_city && (
-          <div className="flex items-center text-sm text-gray-600 mb-3">
+          <div className="flex items-center text-sm text-muted-foreground-600 mb-3">
             <MapPin className="w-4 h-4 mr-1" />
             <span>{request.location_city}{request.location_country && `, ${request.location_country}`}</span>
           </div>
@@ -204,7 +204,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
         {/* Requester Info */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-muted-200 flex items-center justify-center">
               {request.requester.avatar_url ? (
                 <img
                   src={request.requester.avatar_url}
@@ -212,7 +212,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
                   className="w-8 h-8 rounded-full object-cover"
                 />
               ) : (
-                <User className="w-4 h-4 text-gray-500" />
+                <User className="w-4 h-4 text-muted-foreground-500" />
               )}
             </div>
             <div>
@@ -223,7 +223,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
                 )}
               </div>
               {request.requester.rating && (
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-muted-foreground-500">
                   ⭐ {request.requester.rating.toFixed(1)}
                 </div>
               )}
@@ -231,7 +231,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
           </div>
 
           {/* Response Count */}
-          <div className="flex items-center text-sm text-gray-500">
+          <div className="flex items-center text-sm text-muted-foreground-500">
             <MessageCircle className="w-4 h-4 mr-1" />
             <span>{request.response_count} response{request.response_count !== 1 ? 's' : ''}</span>
           </div>
@@ -262,7 +262,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
         )}
 
         {/* Expiry Info */}
-        <div className="mt-3 pt-3 border-t text-xs text-gray-500">
+        <div className="mt-3 pt-3 border-t text-xs text-muted-foreground-500">
           <div className="flex items-center justify-between">
             <span>Expires {formatDate(request.expires_at)}</span>
             <span>Posted {formatDate(request.created_at)}</span>

@@ -131,9 +131,9 @@ export default function CollaborationNotifications({
 
   const getNotificationColor = (type: string) => {
     if (type.includes('accepted') || type.includes('completed')) return 'text-primary-600 bg-primary-50';
-    if (type.includes('rejected') || type.includes('cancelled')) return 'text-red-600 bg-red-50';
-    if (type.includes('received') || type.includes('published')) return 'text-blue-600 bg-blue-50';
-    return 'text-gray-600 bg-gray-50';
+    if (type.includes('rejected') || type.includes('cancelled')) return 'text-destructive-600 bg-destructive-50';
+    if (type.includes('received') || type.includes('published')) return 'text-primary-600 bg-primary-50';
+    return 'text-muted-foreground-600 bg-muted-50';
   };
 
   const getNotificationTitle = (type: string) => {
@@ -169,8 +169,8 @@ export default function CollaborationNotifications({
   const renderNotification = (notification: CollaborationNotification) => (
     <div
       key={notification.id}
-      className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-        !notification.read ? 'bg-blue-50' : ''
+      className={`p-4 border-b border-border-100 hover:bg-muted-50 cursor-pointer ${
+        !notification.read ? 'bg-primary-50' : ''
       }`}
       onClick={() => !notification.read && markAsRead([notification.id])}
     >
@@ -183,14 +183,14 @@ export default function CollaborationNotifications({
           <div className="flex items-center justify-between mb-1">
             <h4 className="font-medium text-sm">{getNotificationTitle(notification.type)}</h4>
             <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-500">{formatDate(notification.created_at)}</span>
+              <span className="text-xs text-muted-foreground-500">{formatDate(notification.created_at)}</span>
               {!notification.read && (
-                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
               )}
             </div>
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground-600">
             {notification.type === 'collab_project_published' && (
               <p>
                 <strong>{notification.metadata.project_title}</strong> has been published
@@ -275,25 +275,25 @@ export default function CollaborationNotifications({
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading notifications...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+              <p className="text-muted-foreground-500">Loading notifications...</p>
             </div>
           ) : error ? (
             <div className="p-8 text-center">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Notifications</h3>
-              <p className="text-gray-500 mb-4">{error}</p>
+              <AlertCircle className="h-12 w-12 text-destructive-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">Failed to Load Notifications</h3>
+              <p className="text-muted-foreground-500 mb-4">{error}</p>
               <Button onClick={loadNotifications}>Try Again</Button>
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-8 text-center">
-              <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Notifications</h3>
-              <p className="text-gray-500">You don't have any collaboration notifications yet.</p>
+              <Bell className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No Notifications</h3>
+              <p className="text-muted-foreground-500">You don't have any collaboration notifications yet.</p>
             </div>
           ) : (
             <ScrollArea className="h-96">
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-muted-primary/20">
                 {notifications.map(renderNotification)}
               </div>
             </ScrollArea>

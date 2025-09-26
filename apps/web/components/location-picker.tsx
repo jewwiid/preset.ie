@@ -143,7 +143,7 @@ export default function LocationPicker({
     <div className="relative">
       <div className="relative">
         <div className="relative">
-          <svg className="absolute left-3 top-3 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3 top-3 w-4 h-4 text-muted-foreground-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
@@ -154,7 +154,7 @@ export default function LocationPicker({
             onChange={handleInputChange}
             onFocus={handleFocus}
             placeholder={placeholder}
-            className={`w-full pl-10 pr-12 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all ${className}`}
+            className={`w-full pl-10 pr-12 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all ${className}`}
           />
         </div>
         
@@ -163,11 +163,11 @@ export default function LocationPicker({
             type="button"
             onClick={handleCurrentLocation}
             disabled={isLoading}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 text-gray-400 hover:text-primary hover:bg-primary/10 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 text-muted-foreground-400 hover:text-primary hover:bg-primary/10 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             title="Use current location"
           >
             {isLoading ? (
-              <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-primary-primary rounded-full"></div>
+              <div className="animate-spin h-4 w-4 border-2 border-border-300 border-t-primary-primary rounded-full"></div>
             ) : (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="3" />
@@ -182,13 +182,13 @@ export default function LocationPicker({
       {(isOpen || showPopular) && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-64 overflow-auto"
+          className="absolute z-50 w-full mt-2 bg-background border border-border-200 rounded-lg shadow-xl max-h-64 overflow-auto"
         >
           {/* Loading state */}
           {isLoading && (
-            <div className="px-4 py-3 text-gray-500 text-center">
+            <div className="px-4 py-3 text-muted-foreground-500 text-center">
               <div className="inline-flex items-center">
-                <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-primary-primary rounded-full mr-2"></div>
+                <div className="animate-spin h-4 w-4 border-2 border-border-300 border-t-primary-primary rounded-full mr-2"></div>
                 Searching locations...
               </div>
             </div>
@@ -197,7 +197,7 @@ export default function LocationPicker({
           {/* Popular cities */}
           {showPopular && !isLoading && (
             <>
-              <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground-500 uppercase tracking-wide border-b border-border-100 bg-muted-50">
                 Popular Cities
               </div>
               {popularCities.map((city) => (
@@ -207,8 +207,8 @@ export default function LocationPicker({
                   onClick={() => handleLocationSelect(city)}
                   className="w-full px-4 py-3 text-left hover:bg-primary/10 focus:bg-primary-50 focus:outline-none transition-colors"
                 >
-                  <div className="font-medium text-gray-900">{city.city}</div>
-                  <div className="text-sm text-gray-500">{city.country}</div>
+                  <div className="font-medium text-muted-foreground-900">{city.city}</div>
+                  <div className="text-sm text-muted-foreground-500">{city.country}</div>
                 </button>
               ))}
             </>
@@ -217,7 +217,7 @@ export default function LocationPicker({
           {/* Search results */}
           {!showPopular && suggestions.length > 0 && !isLoading && (
             <>
-              <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 bg-gray-50">
+              <div className="px-4 py-2 text-xs font-semibold text-muted-foreground-500 uppercase tracking-wide border-b border-border-100 bg-muted-50">
                 Search Results
               </div>
               {suggestions.map((location) => (
@@ -227,11 +227,11 @@ export default function LocationPicker({
                   onClick={() => handleLocationSelect(location)}
                   className="w-full px-4 py-3 text-left hover:bg-primary/10 focus:bg-primary-50 focus:outline-none transition-colors"
                 >
-                  <div className="font-medium text-gray-900 truncate">
+                  <div className="font-medium text-muted-foreground-900 truncate">
                     {location.address.city || location.address.town || location.address.village}
                     {location.address.city && location.address.county && ', ' + location.address.county}
                   </div>
-                  <div className="text-sm text-gray-500 truncate">
+                  <div className="text-sm text-muted-foreground-500 truncate">
                     {location.display_name}
                   </div>
                 </button>
@@ -241,9 +241,9 @@ export default function LocationPicker({
 
           {/* No results */}
           {!showPopular && !isLoading && inputValue.length >= 2 && suggestions.length === 0 && (
-            <div className="px-4 py-4 text-gray-500 text-center">
+            <div className="px-4 py-4 text-muted-foreground-500 text-center">
               <div className="text-sm">No locations found</div>
-              <div className="text-xs text-gray-400 mt-1">Try a different search term</div>
+              <div className="text-xs text-muted-foreground-400 mt-1">Try a different search term</div>
             </div>
           )}
         </div>

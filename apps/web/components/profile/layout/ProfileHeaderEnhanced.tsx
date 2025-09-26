@@ -398,24 +398,24 @@ export function ProfileHeaderEnhanced() {
               <button 
                 onClick={() => bannerInputRef.current?.click()}
                 disabled={isUploadingBanner}
-                className="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 disabled:opacity-50"
+                className="p-2 bg-background bg-opacity-20 hover:bg-opacity-30 text-primary-foreground rounded-lg transition-all duration-200 disabled:opacity-50"
               >
                 {isUploadingBanner ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Camera className="w-4 h-4" />
                 )}
               </button>
               <button 
                 onClick={handleCancel}
-                className="px-3 py-2 bg-muted hover:bg-muted/80 text-white rounded-lg text-sm font-medium transition-all"
+                className="px-3 py-2 bg-muted hover:bg-muted/80 text-primary-foreground rounded-lg text-sm font-medium transition-all"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSave}
                 disabled={saving}
-                className="px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                className="px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-all disabled:opacity-50"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
@@ -423,7 +423,7 @@ export function ProfileHeaderEnhanced() {
           ) : (
             <button 
               onClick={handleEditToggle}
-              className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
             >
               <Edit3 className="w-4 h-4" />
               Edit Profile
@@ -470,10 +470,10 @@ export function ProfileHeaderEnhanced() {
               <button
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="absolute -bottom-2 -right-2 bg-primary hover:bg-primary/90 text-white p-2 rounded-full transition-colors shadow-lg disabled:opacity-50"
+                className="absolute -bottom-2 -right-2 bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded-full transition-colors shadow-lg disabled:opacity-50"
               >
                 {isUploadingAvatar ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Camera className="w-4 h-4" />
                 )}
@@ -537,7 +537,7 @@ export function ProfileHeaderEnhanced() {
                         className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-muted to-muted/80 rounded-lg hover:shadow-md transition-all duration-200 group"
                       >
                         <div className={`w-6 h-6 bg-gradient-to-r ${link.color} rounded-full flex items-center justify-center`}>
-                          <link.icon className="w-3 h-3 text-white" />
+                          <link.icon className="w-3 h-3 text-primary-foreground" />
                         </div>
                         <span className="text-sm font-medium text-foreground">
                           {link.name}
@@ -579,7 +579,7 @@ export function ProfileHeaderEnhanced() {
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+                <User className="w-4 h-4 text-primary-foreground" />
               </div>
               <div className="text-left">
                 <h3 className="text-sm font-semibold text-foreground">

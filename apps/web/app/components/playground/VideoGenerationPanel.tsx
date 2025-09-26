@@ -239,7 +239,7 @@ export default function VideoGenerationPanel({
 
         {/* Image Source Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
             Image Source
           </label>
           <div className="flex space-x-2">
@@ -296,11 +296,11 @@ export default function VideoGenerationPanel({
             />
             {!uploadedImage ? (
               <div 
-                className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors cursor-pointer"
+                className="border-2 border-dashed border-border-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <ImageIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-600 mb-2">
+                <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground-400 mb-2" />
+                <p className="text-sm text-muted-foreground-600 mb-2">
                   Click to upload an image or drag and drop
                 </p>
                 <Button
@@ -310,7 +310,7 @@ export default function VideoGenerationPanel({
                     e.stopPropagation()
                     fileInputRef.current?.click()
                   }}
-                  className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                  className="text-primary-600 border-primary-200 hover:bg-primary-50"
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Choose Image
@@ -319,7 +319,7 @@ export default function VideoGenerationPanel({
             ) : (
               <div className="relative">
                 <div 
-                  className="w-full bg-gray-200 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden transition-all duration-300"
+                  className="w-full bg-muted-200 border-2 border-dashed border-border-300 rounded-lg overflow-hidden transition-all duration-300"
                   style={{ 
                     aspectRatio: 'auto',
                     maxWidth: '100%'
@@ -348,7 +348,7 @@ export default function VideoGenerationPanel({
                 >
                   <X className="h-4 w-4" />
                 </Button>
-                <div className="mt-2 text-xs text-gray-500">
+                <div className="mt-2 text-xs text-muted-foreground-500">
                   Image uploaded successfully
                 </div>
               </div>
@@ -362,26 +362,26 @@ export default function VideoGenerationPanel({
             <label className="block text-sm font-medium text-foreground mb-2">
               Select from Saved Images
             </label>
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="text-xs text-muted-foreground-500 mb-3">
               Click on any image or the + button to add it to the video preview
             </p>
             <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
               {savedImages.length === 0 ? (
                 <div className="col-span-3 text-center py-8">
-                  <ImageIcon className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-500">No saved images available</p>
-                  <p className="text-xs text-gray-400 mt-1">Generate some images first!</p>
+                  <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground-300 mb-2" />
+                  <p className="text-sm text-muted-foreground-500">No saved images available</p>
+                  <p className="text-xs text-muted-foreground-400 mt-1">Generate some images first!</p>
                 </div>
               ) : (
                 savedImages.map((image) => (
                   <div
                     key={image.id}
                     className={`group relative border rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer ${
-                      selectedImage === image.image_url ? 'ring-2 ring-purple-500 border-purple-500' : 'border-gray-200'
+                      selectedImage === image.image_url ? 'ring-2 ring-primary-primary border-primary-500' : 'border-border-200'
                     }`}
                     onClick={() => selectSavedImage(image.image_url)}
                   >
-                    <div className="aspect-square bg-gray-100">
+                    <div className="aspect-square bg-muted-100">
                       <img
                         src={image.image_url}
                         alt={image.title}
@@ -390,7 +390,7 @@ export default function VideoGenerationPanel({
                     </div>
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200" />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1">
-                      <p className="text-white text-xs font-medium truncate">{image.title}</p>
+                      <p className="text-primary-foreground text-xs font-medium truncate">{image.title}</p>
                     </div>
                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <Button 
@@ -403,7 +403,7 @@ export default function VideoGenerationPanel({
                       </Button>
                     </div>
                     {selectedImage === image.image_url && (
-                      <div className="absolute top-1 left-1 bg-purple-500 text-white text-xs px-2 py-1 rounded">
+                      <div className="absolute top-1 left-1 bg-primary-500 text-primary-foreground text-xs px-2 py-1 rounded">
                         Selected
                       </div>
                     )}
@@ -418,7 +418,7 @@ export default function VideoGenerationPanel({
         <div className="grid grid-cols-2 gap-4">
           {/* Aspect Ratio */}
           <div>
-            <Label htmlFor="aspectRatio" className="text-sm font-medium text-gray-700 mb-1">
+            <Label htmlFor="aspectRatio" className="text-sm font-medium text-muted-foreground-700 mb-1">
               <Settings className="h-4 w-4 inline mr-1" />
               Aspect Ratio
             </Label>
@@ -435,20 +435,20 @@ export default function VideoGenerationPanel({
                 <SelectItem value="21:9">21:9 (Ultrawide)</SelectItem>
               </SelectContent>
             </Select>
-            <div className="text-xs text-gray-500 mt-1">
+            <div className="text-xs text-muted-foreground-500 mt-1">
               Target: {calculateDimensions(selectedAspectRatio, videoResolution).width} × {calculateDimensions(selectedAspectRatio, videoResolution).height}
             </div>
           </div>
 
           {/* Resolution */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
               Resolution
             </label>
             <select
               value={videoResolution}
               onChange={(e) => setVideoResolution(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary"
             >
               <option value="480p">480p (854x480)</option>
               <option value="720p">720p (1280x720)</option>
@@ -458,37 +458,37 @@ export default function VideoGenerationPanel({
 
         {/* Video Prompt */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
             Video Prompt (Optional)
           </label>
           <textarea
             value={videoPrompt}
             onChange={(e) => setVideoPrompt(e.target.value)}
             placeholder="Describe the motion, camera movement, or action you want in the video. For example: 'Gentle zoom in on the subject, camera slowly rotates around the scene'"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+            className="w-full px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary resize-none"
             rows={3}
             maxLength={2000}
           />
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-xs text-muted-foreground-500 mt-1">
             {videoPrompt.length}/2000 characters. Leave empty to use default motion based on your selection.
           </div>
-          <div className="text-xs text-gray-400 mt-2">
+          <div className="text-xs text-muted-foreground-400 mt-2">
             <strong>Tips:</strong> Describe motion, camera movement, or actions. Examples: "Gentle zoom in", "Camera rotates around subject", "Slow pan left", "Dramatic zoom out"
           </div>
           
           {/* Enhanced Prompt Preview */}
           {enableCinematicMode && enhancedPrompt && enhancedPrompt !== videoPrompt && (
-            <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-md">
+            <div className="mt-4 p-3 bg-primary-50 border border-primary-200 rounded-md">
               <div className="flex items-center gap-2 mb-2">
-                <Wand2 className="h-4 w-4 text-purple-600" />
-                <label className="text-sm font-medium text-purple-700">
+                <Wand2 className="h-4 w-4 text-primary-600" />
+                <label className="text-sm font-medium text-primary-700">
                   Enhanced Prompt Preview
                 </label>
               </div>
-              <div className="text-sm text-gray-700 bg-white p-2 rounded border">
+              <div className="text-sm text-muted-foreground-700 bg-background p-2 rounded border">
                 {enhancedPrompt}
               </div>
-              <div className="text-xs text-purple-600 mt-1">
+              <div className="text-xs text-primary-600 mt-1">
                 This enhanced prompt will be sent to the video generation API
               </div>
             </div>
@@ -529,7 +529,7 @@ export default function VideoGenerationPanel({
         </Card>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Duration: {videoDuration}s
           </label>
           <input
@@ -540,7 +540,7 @@ export default function VideoGenerationPanel({
             onChange={(e) => setVideoDuration(parseInt(e.target.value))}
             className="w-full"
           />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs text-muted-foreground-500 mt-1">
             <span>5s</span>
             <span>10s</span>
           </div>
@@ -548,13 +548,13 @@ export default function VideoGenerationPanel({
 
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
             Motion Type
           </label>
           <select
             value={motionType}
             onChange={(e) => setMotionType(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary"
           >
             <option value="subtle">Subtle</option>
             <option value="moderate">Moderate</option>
@@ -566,11 +566,11 @@ export default function VideoGenerationPanel({
         <button
           onClick={handleGenerateVideo}
           disabled={loading || !getCurrentImage()}
-          className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full bg-destructive-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-destructive-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
               Generating...
             </>
           ) : (

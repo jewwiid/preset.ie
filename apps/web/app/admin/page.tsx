@@ -315,40 +315,40 @@ export default function AdminDashboard() {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Loading admin dashboard...</div>
+      <div className="min-h-screen bg-muted-900 flex items-center justify-center">
+        <div className="text-primary-foreground">Loading admin dashboard...</div>
       </div>
     )
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Access denied. Admin privileges required.</div>
+      <div className="min-h-screen bg-muted-900 flex items-center justify-center">
+        <div className="text-primary-foreground">Access denied. Admin privileges required.</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-muted-100">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-background shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 gap-4">
             <div className="flex items-center">
-              <Shield className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <Shield className="h-8 w-8 text-primary-600 mr-3" />
+              <h1 className="text-xl sm:text-2xl font-bold text-muted-foreground-900">Admin Dashboard</h1>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Link 
                 href="/dashboard"
-                className="px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors text-sm sm:text-base"
+                className="px-3 sm:px-4 py-2 text-muted-foreground-600 hover:text-muted-foreground-900 transition-colors text-sm sm:text-base"
               >
                 User Dashboard
               </Link>
               <button
                 onClick={handleSignOut}
-                className="px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md text-sm font-medium"
+                className="px-3 sm:px-4 py-2 bg-muted-100 hover:bg-muted-200 text-muted-foreground-800 rounded-md text-sm font-medium"
               >
                 Sign Out
               </button>
@@ -358,7 +358,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Tabs */}
-      <div className="bg-white border-b">
+      <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <div className="flex space-x-2 sm:space-x-8 min-w-max">
@@ -369,8 +369,8 @@ export default function AdminDashboard() {
                   className={`
                     flex items-center gap-1 sm:gap-2 py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap
                     ${activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-muted-foreground-500 hover:text-muted-foreground-700 hover:border-border-300'
                     }
                   `}
                 >
@@ -391,39 +391,39 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.totalUsers || 0}</p>
+              <div className="bg-background rounded-lg shadow p-6">
+                <p className="text-sm font-medium text-muted-foreground-600">Total Users</p>
+                <p className="text-3xl font-bold text-muted-foreground-900">{stats?.totalUsers || 0}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-sm font-medium text-gray-600">Total Gigs</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.totalGigs || 0}</p>
+              <div className="bg-background rounded-lg shadow p-6">
+                <p className="text-sm font-medium text-muted-foreground-600">Total Gigs</p>
+                <p className="text-3xl font-bold text-muted-foreground-900">{stats?.totalGigs || 0}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-sm font-medium text-gray-600">Applications</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.totalApplications || 0}</p>
+              <div className="bg-background rounded-lg shadow p-6">
+                <p className="text-sm font-medium text-muted-foreground-600">Applications</p>
+                <p className="text-3xl font-bold text-muted-foreground-900">{stats?.totalApplications || 0}</p>
               </div>
-              <div className="bg-white rounded-lg shadow p-6">
-                <p className="text-sm font-medium text-gray-600">Showcases</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.totalShowcases || 0}</p>
+              <div className="bg-background rounded-lg shadow p-6">
+                <p className="text-sm font-medium text-muted-foreground-600">Showcases</p>
+                <p className="text-3xl font-bold text-muted-foreground-900">{stats?.totalShowcases || 0}</p>
               </div>
             </div>
 
             {/* Subscription Distribution */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Subscriptions</h2>
+            <div className="bg-background rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-muted-foreground-900 mb-4">Active Subscriptions</h2>
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{stats?.activeSubscriptions?.free || 0}</p>
-                  <p className="text-sm text-gray-600">Free</p>
+                  <p className="text-2xl font-bold text-muted-foreground-900">{stats?.activeSubscriptions?.free || 0}</p>
+                  <p className="text-sm text-muted-foreground-600">Free</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">{stats?.activeSubscriptions?.plus || 0}</p>
-                  <p className="text-sm text-gray-600">Plus</p>
+                  <p className="text-2xl font-bold text-primary-600">{stats?.activeSubscriptions?.plus || 0}</p>
+                  <p className="text-sm text-muted-foreground-600">Plus</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-purple-600">{stats?.activeSubscriptions?.pro || 0}</p>
-                  <p className="text-sm text-gray-600">Pro</p>
+                  <p className="text-2xl font-bold text-primary-600">{stats?.activeSubscriptions?.pro || 0}</p>
+                  <p className="text-sm text-muted-foreground-600">Pro</p>
                 </div>
               </div>
             </div>
@@ -435,19 +435,19 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Content Moderation</h2>
-                <p className="text-gray-600">Review and moderate flagged content across the platform</p>
+                <h2 className="text-2xl font-bold text-muted-foreground-900">Content Moderation</h2>
+                <p className="text-muted-foreground-600">Review and moderate flagged content across the platform</p>
               </div>
             </div>
             
             {/* Moderation Analytics */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-background rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4">Analytics Overview</h3>
               <ModerationAnalytics />
             </div>
             
             {/* Moderation Queue */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-background rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold mb-4">Content Queue</h3>
               <ModerationQueue />
             </div>
@@ -477,13 +477,13 @@ export default function AdminDashboard() {
         {activeTab === 'credits' && (
           <div className="space-y-6">
             {/* Platform Credits Overview */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-background rounded-lg shadow p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-gray-900">Platform Credits</h2>
+                <h2 className="text-lg font-semibold text-muted-foreground-900">Platform Credits</h2>
                 <button
                   onClick={syncNanoBananaCredits}
                   disabled={syncingCredits}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 bg-primary-600 text-primary-foreground rounded-md hover:bg-primary-700 disabled:opacity-50 transition-colors"
                 >
                   {syncingCredits ? 'Syncing...' : 'Sync Credits'}
                 </button>
@@ -491,31 +491,31 @@ export default function AdminDashboard() {
               
               {platformCredits.map((credit) => (
                 <div key={credit.provider} className="mb-6 p-4 border rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-2">{credit.provider}</h3>
+                  <h3 className="font-semibold text-muted-foreground-900 mb-2">{credit.provider}</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">Current Balance</p>
+                      <p className="text-sm text-muted-foreground-600">Current Balance</p>
                       <p className="text-xl font-bold text-primary-600">{credit.current_balance}</p>
                       {credit.current_balance < credit.low_balance_threshold && (
-                        <p className="text-xs text-red-600">⚠️ Low balance!</p>
+                        <p className="text-xs text-destructive-600">⚠️ Low balance!</p>
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Total Purchased</p>
+                      <p className="text-sm text-muted-foreground-600">Total Purchased</p>
                       <p className="text-xl font-bold">{credit.total_purchased}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Total Consumed</p>
+                      <p className="text-sm text-muted-foreground-600">Total Consumed</p>
                       <p className="text-xl font-bold">{credit.total_consumed}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Credit Ratio</p>
+                      <p className="text-sm text-muted-foreground-600">Credit Ratio</p>
                       <p className="text-xl font-bold">1:{credit.credit_ratio}</p>
-                      <p className="text-xs text-gray-500">User:Provider</p>
+                      <p className="text-xs text-muted-foreground-500">User:Provider</p>
                     </div>
                   </div>
                   {credit.metadata?.last_api_balance !== undefined && (
-                    <div className="mt-2 text-sm text-gray-500">
+                    <div className="mt-2 text-sm text-muted-foreground-500">
                       Last API Balance: {credit.metadata.last_api_balance} credits
                     </div>
                   )}
@@ -523,23 +523,23 @@ export default function AdminDashboard() {
               ))}
               
               {lastSync && (
-                <p className="text-sm text-gray-500">Last synced: {lastSync}</p>
+                <p className="text-sm text-muted-foreground-500">Last synced: {lastSync}</p>
               )}
             </div>
 
             {/* Credit Packages */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Credit Packages</h2>
+            <div className="bg-background rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-muted-foreground-900 mb-4">Credit Packages</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {creditPackages.map((pkg) => (
-                  <div key={pkg.id} className={`p-4 border rounded-lg ${pkg.is_active ? 'border-primary-500' : 'border-gray-300 opacity-50'}`}>
-                    <h3 className="font-semibold text-gray-900">{pkg.name}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{pkg.description}</p>
-                    <p className="text-2xl font-bold text-gray-900">{pkg.user_credits} credits</p>
+                  <div key={pkg.id} className={`p-4 border rounded-lg ${pkg.is_active ? 'border-primary-500' : 'border-border-300 opacity-50'}`}>
+                    <h3 className="font-semibold text-muted-foreground-900">{pkg.name}</h3>
+                    <p className="text-sm text-muted-foreground-600 mb-2">{pkg.description}</p>
+                    <p className="text-2xl font-bold text-muted-foreground-900">{pkg.user_credits} credits</p>
                     <p className="text-lg text-primary-600">${pkg.price_usd}</p>
-                    <p className="text-xs text-gray-500">${(pkg.price_usd / pkg.user_credits).toFixed(2)} per credit</p>
+                    <p className="text-xs text-muted-foreground-500">${(pkg.price_usd / pkg.user_credits).toFixed(2)} per credit</p>
                     {!pkg.is_active && (
-                      <span className="inline-block mt-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">Inactive</span>
+                      <span className="inline-block mt-2 px-2 py-1 text-xs bg-muted-100 text-muted-foreground-600 rounded">Inactive</span>
                     )}
                   </div>
                 ))}
@@ -547,58 +547,58 @@ export default function AdminDashboard() {
             </div>
 
             {/* Refund Metrics */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Refund Metrics</h2>
+            <div className="bg-background rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-muted-foreground-900 mb-4">Refund Metrics</h2>
               
               {refundMetrics ? (
                 <div>
                   {/* Key Metrics */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">Total Refunds</p>
-                      <p className="text-2xl font-bold text-gray-900">{refundMetrics.totalRefunds}</p>
+                    <div className="bg-muted-50 rounded-lg p-4">
+                      <p className="text-sm text-muted-foreground-600">Total Refunds</p>
+                      <p className="text-2xl font-bold text-muted-foreground-900">{refundMetrics.totalRefunds}</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">Credits Refunded</p>
+                    <div className="bg-muted-50 rounded-lg p-4">
+                      <p className="text-sm text-muted-foreground-600">Credits Refunded</p>
                       <p className="text-2xl font-bold text-primary-600">{refundMetrics.totalCreditsRefunded}</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">Platform Loss</p>
-                      <p className="text-2xl font-bold text-red-600">{refundMetrics.platformLoss} NB</p>
-                      <p className="text-xs text-gray-500">NanoBanana credits lost</p>
+                    <div className="bg-muted-50 rounded-lg p-4">
+                      <p className="text-sm text-muted-foreground-600">Platform Loss</p>
+                      <p className="text-2xl font-bold text-destructive-600">{refundMetrics.platformLoss} NB</p>
+                      <p className="text-xs text-muted-foreground-500">NanoBanana credits lost</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">Refund Rate</p>
-                      <p className="text-2xl font-bold text-yellow-600">{refundMetrics.refundRate.toFixed(2)}%</p>
+                    <div className="bg-muted-50 rounded-lg p-4">
+                      <p className="text-sm text-muted-foreground-600">Refund Rate</p>
+                      <p className="text-2xl font-bold text-primary-600">{refundMetrics.refundRate.toFixed(2)}%</p>
                     </div>
                   </div>
 
                   {/* Recent Refunds */}
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">Recent Refunds</h3>
+                    <h3 className="font-semibold text-muted-foreground-900 mb-3">Recent Refunds</h3>
                     <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                      <table className="min-w-full divide-y divide-muted-primary/30">
+                        <thead className="bg-muted-50">
                           <tr>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Task ID</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Credits</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
-                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground-500 uppercase">Task ID</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground-500 uppercase">Credits</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground-500 uppercase">Reason</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground-500 uppercase">Date</th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-background divide-y divide-muted-primary/30">
                           {refundMetrics.recentRefunds.map((refund) => (
                             <tr key={refund.id}>
-                              <td className="px-4 py-2 text-sm text-gray-900">
+                              <td className="px-4 py-2 text-sm text-muted-foreground-900">
                                 {refund.task_id?.substring(0, 8)}...
                               </td>
                               <td className="px-4 py-2 text-sm text-primary-600">
                                 {refund.credits_refunded}
                               </td>
-                              <td className="px-4 py-2 text-sm text-gray-900">
+                              <td className="px-4 py-2 text-sm text-muted-foreground-900">
                                 {refund.refund_reason}
                               </td>
-                              <td className="px-4 py-2 text-sm text-gray-500">
+                              <td className="px-4 py-2 text-sm text-muted-foreground-500">
                                 {new Date(refund.created_at).toLocaleDateString()}
                               </td>
                             </tr>
@@ -609,7 +609,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-500">Loading refund metrics...</p>
+                <p className="text-muted-foreground-500">Loading refund metrics...</p>
               )}
             </div>
           </div>

@@ -117,7 +117,7 @@ export default function ImageGenerationPanel({
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wand2 className="h-5 w-5 text-purple-500" />
+          <Wand2 className="h-5 w-5 text-primary-500" />
           Generate Images
         </CardTitle>
         <CardDescription>
@@ -201,7 +201,7 @@ export default function ImageGenerationPanel({
                       <SelectItem key={preset.id} value={preset.id}>
                         <div className="flex items-center space-x-2">
                           <span>{preset.name}</span>
-                          {preset.is_public && <Users className="h-3 w-3 text-blue-500" />}
+                          {preset.is_public && <Users className="h-3 w-3 text-primary-500" />}
                           <Badge variant="outline" className="text-xs">
                             {preset.style_type}
                           </Badge>
@@ -212,12 +212,12 @@ export default function ImageGenerationPanel({
                 </Select>
                 
                 {selectedCustomPreset && (
-                  <div className="p-2 bg-blue-50 border border-blue-200 rounded-md">
-                    <p className="text-xs text-blue-800 font-medium">{selectedCustomPreset.name}</p>
-                    <p className="text-xs text-blue-600">{selectedCustomPreset.description}</p>
+                  <div className="p-2 bg-primary-50 border border-primary-200 rounded-md">
+                    <p className="text-xs text-primary-800 font-medium">{selectedCustomPreset.name}</p>
+                    <p className="text-xs text-primary-600">{selectedCustomPreset.description}</p>
                     <div className="flex items-center space-x-2 mt-1">
-                      <Star className="h-3 w-3 text-yellow-500" />
-                      <span className="text-xs text-blue-600">{selectedCustomPreset.usage_count} uses</span>
+                      <Star className="h-3 w-3 text-primary-500" />
+                      <span className="text-xs text-primary-600">{selectedCustomPreset.usage_count} uses</span>
                     </div>
                   </div>
                 )}
@@ -261,9 +261,9 @@ export default function ImageGenerationPanel({
           </div>
 
           {/* Resolution Preview */}
-          <div className="p-3 bg-gray-50 rounded-md border">
+          <div className="p-3 bg-muted-50 rounded-md border">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Generated size:</span>
+              <span className="text-muted-foreground-600">Generated size:</span>
               <Badge variant="outline" className="font-mono">
                 {calculateResolution(aspectRatio, resolution).replace('*', ' × ')}
               </Badge>
@@ -283,7 +283,7 @@ export default function ImageGenerationPanel({
               <SelectItem value="high">🎯 High (Less Variation)</SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-muted-foreground-600">
             {consistencyLevel === 'low' && 'More creative variation, less predictable results'}
             {consistencyLevel === 'medium' && 'Balanced creativity and consistency'}
             {consistencyLevel === 'high' && 'More consistent results, less variation'}
@@ -308,7 +308,7 @@ export default function ImageGenerationPanel({
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
               Generating...
             </>
           ) : (

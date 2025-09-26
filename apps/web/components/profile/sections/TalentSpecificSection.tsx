@@ -540,7 +540,7 @@ export function TalentSpecificSection() {
                     {isEditing && (
                       <button
                         onClick={() => removeClothingSize(size.id)}
-                        className="text-red-500 hover:text-red-700 transition-colors"
+                        className="text-destructive-500 hover:text-destructive-700 transition-colors"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -607,7 +607,7 @@ export function TalentSpecificSection() {
                   value={newClothingSizeValue}
                   onChange={(e) => setNewClothingSizeValue(e.target.value)}
                   disabled={!newClothingSizeSystem}
-                  className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white disabled:opacity-50"
+                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground disabled:opacity-50"
                 >
                   <option value="">Select size</option>
                   {getAvailableSizes(newClothingSizeSystem).map((size) => (
@@ -665,7 +665,7 @@ export function TalentSpecificSection() {
                   {isEditing && (
                     <button
                       onClick={() => removeMeasurement(measurement.id)}
-                      className="text-red-500 hover:text-red-700 transition-colors"
+                      className="text-destructive-500 hover:text-destructive-700 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -764,14 +764,14 @@ export function TalentSpecificSection() {
             <div className="mb-3">
               <div className="flex items-center justify-between p-2 bg-card rounded border">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  <span className="text-sm font-medium text-foreground">
                     {profile.shoe_size}
                   </span>
                 </div>
                 {isEditing && (
                   <button
                     onClick={() => handleFieldChange('shoe_size', '')}
-                    className="text-red-500 hover:text-red-700 transition-colors"
+                    className="text-destructive-500 hover:text-destructive-700 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -815,7 +815,7 @@ export function TalentSpecificSection() {
                     value={newShoeSizeValue}
                     onChange={(e) => setNewShoeSizeValue(e.target.value)}
                     disabled={!newShoeSizeSystem}
-                    className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 dark:text-white disabled:opacity-50"
+                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground disabled:opacity-50"
                   >
                     <option value="">Select size</option>
                     {getAvailableShoeSizes(newShoeSizeSystem).map((size) => (

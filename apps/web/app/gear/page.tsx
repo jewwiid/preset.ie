@@ -43,11 +43,14 @@ interface Listing {
     avatar_url?: string;
     verified_id?: boolean;
   };
-  images?: Array<{
+  listing_images?: Array<{
     id: string;
     path: string;
+    url: string;
     sort_order: number;
     alt_text?: string;
+    file_size?: number;
+    mime_type?: string;
   }>;
 }
 

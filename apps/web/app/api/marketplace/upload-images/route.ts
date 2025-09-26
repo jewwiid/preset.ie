@@ -1,25 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user from session
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      cookieStore.get('sb-access-token')?.value
-    );
+    // Get user from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 });
     }
 
     const formData = await request.formData();
@@ -69,7 +68,7 @@ export async function POST(request: NextRequest) {
       const fileName = `${user.id}/${listingId}/${Date.now()}-${i}.${fileExt}`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('marketplace-images')
+        .from('listings')
         .upload(fileName, file, {
           cacheControl: '3600',
           upsert: false
@@ -85,7 +84,7 @@ export async function POST(request: NextRequest) {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from('marketplace-images')
+        .from('listings')
         .getPublicUrl(fileName);
 
       uploadedImages.push({
@@ -109,14 +108,20 @@ export async function POST(request: NextRequest) {
       mime_type: img.type
     }));
 
-    const { error: dbError } = await supabase
+    console.log('Attempting to insert image records:', imageRecords);
+    
+    // Use service role to bypass RLS for image metadata insertion
+    const serviceSupabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { error: dbError } = await serviceSupabase
       .from('listing_images')
       .insert(imageRecords);
 
     if (dbError) {
       console.error('Database error:', dbError);
+      console.error('Image records that failed:', imageRecords);
       return NextResponse.json(
-        { error: 'Failed to save image metadata' },
+        { error: `Failed to save image metadata: ${dbError.message}` },
         { status: 500 }
       );
     }

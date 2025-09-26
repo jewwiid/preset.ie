@@ -246,11 +246,11 @@ export function SettingsPanel() {
         <button
           onClick={handleSaveSettings}
           disabled={saving}
-          className="bg-primary hover:bg-primary/90 disabled:bg-muted text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
+          className="bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground px-6 py-2 rounded-lg transition-colors duration-200 flex items-center gap-2"
         >
           {saving ? (
             <>
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
               Saving...
             </>
           ) : (

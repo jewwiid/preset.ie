@@ -735,7 +735,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                               title="Delete generation"
                             >
                               {deletingId === generation.id ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
                               ) : (
                                 <Trash2 className="h-4 w-4" />
                               )}
@@ -900,13 +900,13 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                           </Badge>
                         )}
                         {selectedImageForInfo.is_edit && (
-                          <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-500">
+                          <Badge variant="secondary" className="text-xs bg-primary-500/10 text-primary-500">
                             <Edit3 className="h-3 w-3 mr-1" />
                             Edit
                           </Badge>
                         )}
                         {selectedImageForInfo.is_video && (
-                          <Badge variant="secondary" className="text-xs bg-purple-500/10 text-purple-500">
+                          <Badge variant="secondary" className="text-xs bg-primary-500/10 text-primary-500">
                             <Video className="h-3 w-3 mr-1" />
                             Video
                           </Badge>
@@ -1041,7 +1041,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                     )}
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
                       <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center space-y-2">
-                        <span className="text-white text-sm font-medium bg-black bg-opacity-70 px-2 py-1 rounded">
+                        <span className="text-primary-foreground text-sm font-medium bg-black bg-opacity-70 px-2 py-1 rounded">
                           {image.type === 'video' ? 'Video' : 'Image'} {index + 1}
                         </span>
                         <div className="flex flex-col space-y-1">
@@ -1056,7 +1056,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                           <button
                             onClick={() => promoteImageToMedia(image.url, viewingImages.title, viewingImages)}
                             disabled={promotingImage === image.url}
-                            className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50"
+                            className="flex items-center space-x-1 px-3 py-1.5 text-xs font-medium text-primary-foreground bg-primary-600 hover:bg-primary-700 rounded-md transition-colors disabled:opacity-50"
                           >
                             <ArrowUp className="h-3 w-3" />
                             <span>{promotingImage === image.url ? 'Promoting...' : 'Promote'}</span>
@@ -1105,7 +1105,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                       })
                     }}
                     disabled={promotingImage !== null}
-                    className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors disabled:opacity-50"
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary-600 hover:bg-primary-700 rounded-md transition-colors disabled:opacity-50"
                   >
                     <ArrowUp className="h-4 w-4" />
                     <span>{promotingImage ? 'Promoting...' : 'Promote All'}</span>
@@ -1171,7 +1171,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                 >
                   {deletingId === itemToDelete ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                       Deleting...
                     </>
                   ) : (

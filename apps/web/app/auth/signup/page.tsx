@@ -477,11 +477,11 @@ export default function SignUpPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="password" className="block text-sm font-medium text-muted-foreground-700 mb-1">
                     Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                     <input
                       id="password"
                       type={showPassword ? "text" : "password"}
@@ -490,15 +490,15 @@ export default function SignUpPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setPasswordFocused(true)}
                       onBlur={() => setPasswordFocused(false)}
-                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-white text-gray-900 ${
-                        password && !isPasswordValid ? 'border-red-300' : 'border-gray-300'
+                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-muted-foreground-900 ${
+                        password && !isPasswordValid ? 'border-destructive-300' : 'border-border-300'
                       }`}
                       placeholder="Create a strong password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground-400 hover:text-muted-foreground-600 focus:outline-none focus:text-muted-foreground-600"
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? (
@@ -512,7 +512,7 @@ export default function SignUpPage() {
                         {isPasswordValid ? (
                           <CheckCircle2 className="w-5 h-5 text-primary" />
                         ) : (
-                          <X className="w-5 h-5 text-red-500" />
+                          <X className="w-5 h-5 text-destructive-500" />
                         )}
                       </div>
                     )}
@@ -522,22 +522,22 @@ export default function SignUpPage() {
                   {password && (
                     <div className="mt-2">
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs text-gray-600">Password strength:</span>
+                        <span className="text-xs text-muted-foreground-600">Password strength:</span>
                         <span className={`text-xs font-medium ${
-                          passwordStrength.color === 'red' ? 'text-red-600' :
-                          passwordStrength.color === 'yellow' ? 'text-yellow-600' :
-                          passwordStrength.color === 'blue' ? 'text-blue-600' :
+                          passwordStrength.color === 'red' ? 'text-destructive-600' :
+                          passwordStrength.color === 'yellow' ? 'text-primary-600' :
+                          passwordStrength.color === 'blue' ? 'text-primary-600' :
                           'text-primary'
                         }`}>
                           {passwordStrength.level}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div className="w-full bg-muted-200 rounded-full h-1.5">
                         <div 
                           className={`h-1.5 rounded-full transition-all duration-300 ${
-                            passwordStrength.color === 'red' ? 'bg-red-500' :
-                            passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
-                            passwordStrength.color === 'blue' ? 'bg-blue-500' :
+                            passwordStrength.color === 'red' ? 'bg-destructive-500' :
+                            passwordStrength.color === 'yellow' ? 'bg-primary-500' :
+                            passwordStrength.color === 'blue' ? 'bg-primary-500' :
                             'bg-primary'
                           }`}
                           style={{ width: passwordStrength.width }}
@@ -549,43 +549,43 @@ export default function SignUpPage() {
                   {/* Password requirements checklist */}
                   {(passwordFocused || password) && (
                     <div className="mt-2 space-y-1 text-xs">
-                      <div className={`flex items-center ${passwordValidations.minLength ? 'text-primary' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.minLength ? 'text-primary' : 'text-muted-foreground-400'}`}>
                         {passwordValidations.minLength ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
-                          <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                          <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                         )}
                         At least 8 characters
                       </div>
-                      <div className={`flex items-center ${passwordValidations.hasUpperCase ? 'text-primary' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.hasUpperCase ? 'text-primary' : 'text-muted-foreground-400'}`}>
                         {passwordValidations.hasUpperCase ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
-                          <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                          <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                         )}
                         One uppercase letter
                       </div>
-                      <div className={`flex items-center ${passwordValidations.hasLowerCase ? 'text-primary' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.hasLowerCase ? 'text-primary' : 'text-muted-foreground-400'}`}>
                         {passwordValidations.hasLowerCase ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
-                          <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                          <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                         )}
                         One lowercase letter
                       </div>
-                      <div className={`flex items-center ${passwordValidations.hasNumber ? 'text-primary' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.hasNumber ? 'text-primary' : 'text-muted-foreground-400'}`}>
                         {passwordValidations.hasNumber ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
-                          <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                          <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                         )}
                         One number
                       </div>
-                      <div className={`flex items-center ${passwordValidations.hasSpecialChar ? 'text-primary' : 'text-gray-400'}`}>
+                      <div className={`flex items-center ${passwordValidations.hasSpecialChar ? 'text-primary' : 'text-muted-foreground-400'}`}>
                         {passwordValidations.hasSpecialChar ? (
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                         ) : (
-                          <div className="w-3 h-3 mr-1 border border-gray-300 rounded-full" />
+                          <div className="w-3 h-3 mr-1 border border-border-300 rounded-full" />
                         )}
                         One special character (optional but recommended)
                       </div>
@@ -594,11 +594,11 @@ export default function SignUpPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-muted-foreground-700 mb-1">
                     Confirm password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                     <input
                       id="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
@@ -607,15 +607,15 @@ export default function SignUpPage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       onFocus={() => setConfirmPasswordFocused(true)}
                       onBlur={() => setConfirmPasswordFocused(false)}
-                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-white text-gray-900 ${
-                        confirmPassword && !passwordsMatch ? 'border-red-300' : 'border-gray-300'
+                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-muted-foreground-900 ${
+                        confirmPassword && !passwordsMatch ? 'border-destructive-300' : 'border-border-300'
                       }`}
                       placeholder="Re-enter your password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground-400 hover:text-muted-foreground-600 focus:outline-none focus:text-muted-foreground-600"
                       aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                     >
                       {showConfirmPassword ? (
@@ -629,13 +629,13 @@ export default function SignUpPage() {
                         {passwordsMatch ? (
                           <CheckCircle2 className="w-5 h-5 text-primary" />
                         ) : (
-                          <X className="w-5 h-5 text-red-500" />
+                          <X className="w-5 h-5 text-destructive-500" />
                         )}
                       </div>
                     )}
                   </div>
                   {confirmPassword && !passwordsMatch && (
-                    <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
+                    <p className="mt-1 text-xs text-destructive-600">Passwords do not match</p>
                   )}
                   {confirmPassword && passwordsMatch && (
                     <p className="mt-1 text-xs text-primary">Passwords match</p>
@@ -645,8 +645,8 @@ export default function SignUpPage() {
 
               {/* Date of Birth Field */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Date of Birth <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                  Date of Birth <span className="text-destructive-500">*</span>
                 </label>
                 <DatePicker
                   date={dateOfBirth}
@@ -656,7 +656,7 @@ export default function SignUpPage() {
                   className="w-full"
                 />
                 {dateOfBirth && (
-                  <div className={`mt-2 text-sm ${isOver18 ? 'text-primary' : 'text-red-600'}`}>
+                  <div className={`mt-2 text-sm ${isOver18 ? 'text-primary' : 'text-destructive-600'}`}>
                     {isOver18 ? (
                       <span className="flex items-center">
                         <CheckCircle2 className="w-4 h-4 mr-1" />
@@ -679,9 +679,9 @@ export default function SignUpPage() {
                     type="checkbox"
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-1 h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                    className="mt-1 h-4 w-4 text-primary focus:ring-primary border-border-300 rounded"
                   />
-                  <span className="ml-2 text-sm text-gray-700">
+                  <span className="ml-2 text-sm text-muted-foreground-700">
                     I agree to the{' '}
                     <Link href="/terms" className="text-primary hover:text-primary/80">
                       Terms of Service
@@ -699,7 +699,7 @@ export default function SignUpPage() {
                       type="button"
                       onClick={() => setCurrentStep('role')}
                       disabled={loading}
-                      className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                      className="flex-1 py-2 px-4 border border-border-300 rounded-lg text-muted-foreground-700 hover:bg-muted-50 disabled:opacity-50"
                     >
                       Back
                     </button>

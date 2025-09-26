@@ -109,12 +109,12 @@ export default function GearRequestToListingModal({
 
         <CardContent className="space-y-6">
           {/* Gear Request Info */}
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="p-4 bg-primary-50 rounded-lg border border-primary-200">
             <div className="flex items-center mb-2">
-              <Package className="h-4 w-4 mr-2 text-blue-600" />
-              <h3 className="font-medium text-blue-900">Converting Gear Request</h3>
+              <Package className="h-4 w-4 mr-2 text-primary-600" />
+              <h3 className="font-medium text-primary-900">Converting Gear Request</h3>
             </div>
-            <div className="space-y-1 text-sm text-blue-800">
+            <div className="space-y-1 text-sm text-primary-800">
               <div><strong>Category:</strong> {gearRequest.category}</div>
               {gearRequest.equipment_spec && (
                 <div><strong>Specification:</strong> {gearRequest.equipment_spec}</div>
@@ -130,8 +130,8 @@ export default function GearRequestToListingModal({
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="p-3 bg-destructive-50 border border-destructive-200 rounded-md">
+                <p className="text-destructive-600 text-sm">{error}</p>
               </div>
             )}
 
@@ -180,7 +180,7 @@ export default function GearRequestToListingModal({
               <div>
                 <Label htmlFor="rent_day_cents">Daily Rental Rate (€)</Label>
                 <div className="relative">
-                  <Euro className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Euro className="absolute left-3 top-3 h-4 w-4 text-muted-foreground-400" />
                   <Input
                     id="rent_day_cents"
                     type="number"
@@ -196,7 +196,7 @@ export default function GearRequestToListingModal({
               <div>
                 <Label htmlFor="sale_price_cents">Sale Price (€)</Label>
                 <div className="relative">
-                  <Euro className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Euro className="absolute left-3 top-3 h-4 w-4 text-muted-foreground-400" />
                   <Input
                     id="sale_price_cents"
                     type="number"
@@ -214,7 +214,7 @@ export default function GearRequestToListingModal({
               <div>
                 <Label htmlFor="location_city">City</Label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground-400" />
                   <Input
                     id="location_city"
                     placeholder="Dublin"
@@ -243,7 +243,7 @@ export default function GearRequestToListingModal({
               <Button type="submit" disabled={loading || !formData.title.trim()}>
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                     Creating...
                   </>
                 ) : (

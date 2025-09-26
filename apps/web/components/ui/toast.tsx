@@ -42,30 +42,30 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <CheckCircle className="h-5 w-5 text-preset-500" />
+        return <CheckCircle className="h-5 w-5 text-primary" />
       case 'error':
-        return <AlertCircle className="h-5 w-5 text-red-500" />
+        return <AlertCircle className="h-5 w-5 text-destructive" />
       case 'warning':
-        return <AlertCircle className="h-5 w-5 text-amber-500" />
+        return <AlertCircle className="h-5 w-5 text-primary" />
       case 'info':
-        return <Info className="h-5 w-5 text-preset-500" />
+        return <Info className="h-5 w-5 text-primary" />
       default:
-        return <Info className="h-5 w-5 text-preset-500" />
+        return <Info className="h-5 w-5 text-primary" />
     }
   }
 
   const getBackgroundColor = () => {
     switch (toast.type) {
       case 'success':
-        return 'bg-preset-50 border-preset-200'
+        return 'bg-primary/10 border-primary/20'
       case 'error':
-        return 'bg-red-50 border-red-200'
+        return 'bg-destructive/10 border-destructive/20'
       case 'warning':
-        return 'bg-amber-50 border-amber-200'
+        return 'bg-primary/10 border-primary/20'
       case 'info':
-        return 'bg-preset-50 border-preset-200'
+        return 'bg-primary/10 border-primary/20'
       default:
-        return 'bg-preset-50 border-preset-200'
+        return 'bg-primary/10 border-primary/20'
     }
   }
 
@@ -83,11 +83,11 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
           {getIcon()}
         </div>
         <div className="ml-3 flex-1">
-          <p className="text-sm font-semibold text-gray-900">
+          <p className="text-sm font-semibold text-foreground">
             {toast.title}
           </p>
           {toast.description && (
-            <p className="mt-1 text-sm text-gray-700">
+            <p className="mt-1 text-sm text-muted-foreground">
               {toast.description}
             </p>
           )}
@@ -95,7 +95,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
             <div className="mt-3">
               <button
                 onClick={toast.action.onClick}
-                className="text-sm font-medium text-preset-600 hover:text-preset-700 transition-colors"
+                className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
               >
                 {toast.action.label}
               </button>
@@ -108,7 +108,7 @@ function ToastComponent({ toast, onRemove }: ToastProps) {
               setIsVisible(false)
               setTimeout(() => onRemove(toast.id), 300)
             }}
-            className="inline-flex text-gray-400 hover:text-gray-600 transition-colors"
+            className="inline-flex text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-4 w-4" />
           </button>

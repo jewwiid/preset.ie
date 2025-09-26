@@ -149,13 +149,13 @@ export default function EnhancementModal({
       }}
     >
       <div 
-        className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden popover-fixed"
+        className="bg-background rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden popover-fixed"
         onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-border-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-600" />
-            <h2 className="text-lg font-semibold text-gray-900">AI Image Enhancement</h2>
+            <Sparkles className="w-5 h-5 text-primary-600" />
+            <h2 className="text-lg font-semibold text-muted-foreground-900">AI Image Enhancement</h2>
           </div>
           <button
             onClick={onClose}
@@ -171,7 +171,7 @@ export default function EnhancementModal({
           {/* Preview */}
           <div className="flex gap-4">
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-700 mb-2">Original</p>
+              <p className="text-sm font-medium text-muted-foreground-700 mb-2">Original</p>
               <img
                 src={itemUrl}
                 alt={itemCaption || 'Original image'}
@@ -179,14 +179,14 @@ export default function EnhancementModal({
               />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-700 mb-2">
+              <p className="text-sm font-medium text-muted-foreground-700 mb-2">
                 {status === 'completed' ? 'Enhanced' : 'Preview'}
               </p>
-              <div className="relative w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="relative w-full h-48 bg-muted-100 rounded-lg flex items-center justify-center">
                 {status === 'idle' && !enhancedUrl && (
                   <div className="text-center">
-                    <Sparkles className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">Enhancement preview</p>
+                    <Sparkles className="w-8 h-8 text-muted-foreground-400 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground-500">Enhancement preview</p>
                   </div>
                 )}
                 
@@ -205,19 +205,19 @@ export default function EnhancementModal({
                 {(status === 'processing' || status === 'polling') && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div className="relative">
-                      <Loader2 className="w-12 h-12 text-purple-600 animate-spin" />
+                      <Loader2 className="w-12 h-12 text-primary-600 animate-spin" />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs font-medium text-purple-600">
+                        <span className="text-xs font-medium text-primary-600">
                           {Math.round(progress)}%
                         </span>
                       </div>
                     </div>
-                    <p className="mt-3 text-sm text-gray-600">
+                    <p className="mt-3 text-sm text-muted-foreground-600">
                       {status === 'processing' ? 'Initializing enhancement...' : 'Processing with AI...'}
                     </p>
-                    <div className="w-48 h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
+                    <div className="w-48 h-2 bg-muted-200 rounded-full mt-2 overflow-hidden">
                       <div 
-                        className="h-full bg-purple-600 transition-all duration-500 ease-out"
+                        className="h-full bg-primary-600 transition-all duration-500 ease-out"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -233,8 +233,8 @@ export default function EnhancementModal({
 
                 {status === 'failed' && (
                   <div className="text-center">
-                    <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />
-                    <p className="text-sm text-red-600">{error || 'Enhancement failed'}</p>
+                    <AlertCircle className="w-12 h-12 text-destructive-500 mx-auto mb-2" />
+                    <p className="text-sm text-destructive-600">{error || 'Enhancement failed'}</p>
                   </div>
                 )}
               </div>
@@ -243,7 +243,7 @@ export default function EnhancementModal({
 
           {/* Enhancement Type Selection */}
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-3">Enhancement Type</p>
+            <p className="text-sm font-medium text-muted-foreground-700 mb-3">Enhancement Type</p>
             <div className="grid grid-cols-2 gap-3">
               {enhancementTypes.map((type) => {
                 const TypeIcon = type.icon
@@ -259,15 +259,15 @@ export default function EnhancementModal({
                     disabled={isProcessing}
                     className={`p-3 rounded-lg border-2 transition-all ${
                       selectedType === type.id
-                        ? 'border-purple-500 bg-purple-50'
+                        ? 'border-primary-500 bg-primary-50'
                         : 'border-border hover-border'
                     } disabled:opacity-50`}
                   >
                     <TypeIcon className={`w-5 h-5 mb-1 ${
-                      selectedType === type.id ? 'text-purple-600' : 'text-gray-600'
+                      selectedType === type.id ? 'text-primary-600' : 'text-muted-foreground-600'
                     }`} />
                     <p className="font-medium text-sm">{type.label}</p>
-                    <p className="text-xs text-gray-500 mt-1">{type.description}</p>
+                    <p className="text-xs text-muted-foreground-500 mt-1">{type.description}</p>
                   </button>
                 )
               })}
@@ -276,7 +276,7 @@ export default function EnhancementModal({
 
           {/* Prompt Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
               Enhancement Prompt
             </label>
             <textarea
@@ -284,13 +284,13 @@ export default function EnhancementModal({
               onChange={(e) => setPrompt(e.target.value)}
               disabled={isProcessing}
               placeholder={`Describe the ${selectedType} enhancement you want...`}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+              className="w-full px-3 py-2 border border-border-300 rounded-lg focus:ring-2 focus:ring-primary-primary focus:border-transparent disabled:opacity-50"
               rows={3}
             />
             
             {/* Quick prompts */}
             <div className="mt-2 flex flex-wrap gap-2">
-              <p className="text-xs text-gray-500 w-full">Quick prompts:</p>
+              <p className="text-xs text-muted-foreground-500 w-full">Quick prompts:</p>
               {selectedTypeData?.prompts.map((quickPrompt) => (
                 <button
                   key={quickPrompt}
@@ -310,18 +310,18 @@ export default function EnhancementModal({
           </div>
 
           {/* Credits Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-primary-50 border border-primary-200 rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-blue-600" />
-                <span className="text-sm text-blue-900">Enhancement Cost: 1 credit</span>
+                <Zap className="w-4 h-4 text-primary-600" />
+                <span className="text-sm text-primary-900">Enhancement Cost: 1 credit</span>
               </div>
-              <span className="text-sm font-medium text-blue-900">
+              <span className="text-sm font-medium text-primary-900">
                 Available: {credits} credits
               </span>
             </div>
             {credits < 1 && (
-              <p className="text-xs text-red-600 mt-2">
+              <p className="text-xs text-destructive-600 mt-2">
                 Insufficient credits. Please upgrade your plan or purchase more credits.
               </p>
             )}
@@ -329,8 +329,8 @@ export default function EnhancementModal({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <p className="text-xs text-gray-500">
+        <div className="px-6 py-4 border-t border-border-200 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground-500">
             Processing time: 30-60 seconds
           </p>
           <div className="flex gap-3">
@@ -352,7 +352,7 @@ export default function EnhancementModal({
                 handleEnhance()
               }}
               disabled={!prompt.trim() || credits < 1 || isProcessing}
-              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isProcessing ? (
                 <>

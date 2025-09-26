@@ -359,11 +359,11 @@ export default function CreatePresetPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-4">Sign In Required</h2>
-            <p className="text-gray-600 mb-4">Please sign in to create presets.</p>
+            <p className="text-muted-foreground-600 mb-4">Please sign in to create presets.</p>
             <Button onClick={() => router.push('/auth/signin')}>
               Sign In
             </Button>
@@ -527,7 +527,7 @@ export default function CreatePresetPage() {
                             {tag}
                             <button
                               onClick={() => removeTag(tag)}
-                              className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
+                              className="ml-1 hover:bg-muted-300 rounded-full p-0.5"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -541,7 +541,7 @@ export default function CreatePresetPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Label>Make Public</Label>
-                          <p className="text-sm text-gray-500">Allow others to discover and use this preset</p>
+                          <p className="text-sm text-muted-foreground-500">Allow others to discover and use this preset</p>
                         </div>
                         <Switch
                           checked={presetData.is_public}
@@ -551,7 +551,7 @@ export default function CreatePresetPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Label>Featured</Label>
-                          <p className="text-sm text-gray-500">Highlight this preset (requires approval)</p>
+                          <p className="text-sm text-muted-foreground-500">Highlight this preset (requires approval)</p>
                         </div>
                         <Switch
                           checked={presetData.is_featured}
@@ -633,10 +633,10 @@ export default function CreatePresetPage() {
                     </div>
 
                     {/* Info about using Basic Info fields */}
-                    <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="bg-primary-50 dark:bg-primary-950/20 p-3 rounded-lg border border-primary-200 dark:border-primary-800">
                       <div className="flex items-start">
-                        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 mr-2" />
-                        <div className="text-sm text-blue-800 dark:text-blue-200">
+                        <Info className="h-4 w-4 text-primary mt-0.5 mr-2" />
+                        <div className="text-sm text-primary-800 dark:text-primary-200">
                           <p className="font-medium">Using Basic Info Fields:</p>
                           <p className="mt-1">
                             Style and Mood are automatically pulled from the Basic Info tab. 
@@ -719,10 +719,10 @@ export default function CreatePresetPage() {
                 </Card>
 
                 {/* Tips */}
-                <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="bg-primary-50 dark:bg-primary-950/20 p-4 rounded-lg border border-primary-200 dark:border-primary-800">
                   <div className="flex items-start">
-                    <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 mr-2" />
-                    <div className="text-sm text-blue-800 dark:text-blue-200">
+                    <Info className="h-5 w-5 text-primary mt-0.5 mr-2" />
+                    <div className="text-sm text-primary-800 dark:text-primary-200">
                       <p className="font-medium">Enhanced Prompt Tips:</p>
                       <ul className="mt-1 space-y-1">
                         <li>• Fill in the dynamic fields to see your enhanced prompt</li>
@@ -915,10 +915,10 @@ export default function CreatePresetPage() {
                         </div>
 
                         {/* Marketplace Info */}
-                        <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div className="p-3 bg-primary-50 dark:bg-primary-950/20 border border-primary-200 dark:border-primary-800 rounded-lg">
                           <div className="flex items-start space-x-2">
-                            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
-                            <div className="text-sm text-blue-800 dark:text-blue-200">
+                            <Info className="h-4 w-4 text-primary mt-0.5" />
+                            <div className="text-sm text-primary-800 dark:text-primary-200">
                               <p className="font-medium">Marketplace Guidelines:</p>
                               <ul className="mt-1 space-y-1 text-xs">
                                 <li>• Your preset will be reviewed before going live</li>
@@ -945,7 +945,7 @@ export default function CreatePresetPage() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground-600">
                           Generate a preview image to test your preset settings
                         </p>
                       </div>
@@ -965,10 +965,10 @@ export default function CreatePresetPage() {
                       </div>
                     )}
 
-                    <div className="bg-yellow-50 p-4 rounded-lg">
+                    <div className="bg-primary-50 p-4 rounded-lg">
                       <div className="flex items-start">
-                        <Info className="h-5 w-5 text-yellow-600 mt-0.5 mr-2" />
-                        <div className="text-sm text-yellow-800">
+                        <Info className="h-5 w-5 text-primary-600 mt-0.5 mr-2" />
+                        <div className="text-sm text-primary-800">
                           <p className="font-medium">Preview Note:</p>
                           <p>This will use your current credits. Make sure your preset settings are correct before generating.</p>
                         </div>
@@ -1014,25 +1014,25 @@ export default function CreatePresetPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Category:</span>
+                  <span className="text-sm text-muted-foreground-600">Category:</span>
                   <Badge variant="secondary">
                     {CATEGORIES.find(c => c.value === presetData.category)?.icon} {CATEGORIES.find(c => c.value === presetData.category)?.label}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Style:</span>
+                  <span className="text-sm text-muted-foreground-600">Style:</span>
                   <span className="text-sm font-medium">{presetData.ai_metadata.style}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Mood:</span>
+                  <span className="text-sm text-muted-foreground-600">Mood:</span>
                   <span className="text-sm font-medium">{presetData.ai_metadata.mood}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Resolution:</span>
+                  <span className="text-sm text-muted-foreground-600">Resolution:</span>
                   <span className="text-sm font-medium">{presetData.technical_settings.width}x{presetData.technical_settings.height}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Visibility:</span>
+                  <span className="text-sm text-muted-foreground-600">Visibility:</span>
                   <Badge variant={presetData.is_public ? "default" : "secondary"}>
                     {presetData.is_public ? "Public" : "Private"}
                   </Badge>
@@ -1046,7 +1046,7 @@ export default function CreatePresetPage() {
                 <CardTitle>Tips</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm text-gray-600">
+                <div className="space-y-2 text-sm text-muted-foreground-600">
                   <p>• Test your preset in the playground before saving</p>
                   <p>• Use descriptive names and tags for discoverability</p>
                   <p>• Include helpful descriptions for other users</p>

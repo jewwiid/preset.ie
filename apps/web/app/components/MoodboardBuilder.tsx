@@ -1658,17 +1658,17 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
       
       {!compactMode && (
         // Subscription Tier Info (only show in non-compact mode)
-        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
+        <div className="mb-4 p-3 bg-primary-500/10 border border-primary-500/20 rounded-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+            <span className="text-sm font-medium text-primary">
               {subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1).toLowerCase()} Plan
             </span>
-            <span className="text-xs text-blue-600/80 dark:text-blue-400/80">
+            <span className="text-xs text-primary-600/80 dark:text-primary-400/80">
               {limits?.userUploads || 0} uploads • {limits?.aiEnhancements || 0} AI enhancements
             </span>
           </div>
-          <div className="text-xs text-blue-600/80 dark:text-blue-400/80">
+          <div className="text-xs text-primary-600/80 dark:text-primary-400/80">
             {userCredits ? (
               <>
                 <span>Credits: {userCredits.current}/{userCredits.monthly}</span>
@@ -1903,12 +1903,12 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity rounded-lg flex items-center justify-center">
-                            <span className="text-white opacity-0 group-hover:opacity-100 font-medium">+ Add</span>
+                            <span className="text-primary-foreground opacity-0 group-hover:opacity-100 font-medium">+ Add</span>
                           </div>
                         </div>
                         {/* Photographer attribution */}
                         <div className="absolute bottom-0 left-0 right-0 bg-backdrop p-2 rounded-b-lg">
-                          <div className="text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="text-xs text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                             Photo by {photo.photographer}
                           </div>
                         </div>
@@ -2005,41 +2005,41 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
 
           {activeTab === 'enhance' && subscriptionTier !== 'free' && (
             <div className="space-y-4">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground-600">
                 Select images to enhance with AI. Each enhancement costs $0.025.
               </div>
 
               {/* Provider Selection for Enhancements */}
-              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="p-4 border border-border-200 rounded-lg bg-muted-50">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">AI Enhancement Provider</h3>
-                    <p className="text-xs text-gray-600">Choose your preferred AI provider for enhancements</p>
+                    <h3 className="text-sm font-medium text-muted-foreground-900">AI Enhancement Provider</h3>
+                    <p className="text-xs text-muted-foreground-600">Choose your preferred AI provider for enhancements</p>
                   </div>
                   <button
                     onClick={() => setShowEnhancementProviderSelector(!showEnhancementProviderSelector)}
-                    className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                    className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                   >
                     {showEnhancementProviderSelector ? 'Hide' : 'Change'} Provider
                   </button>
                 </div>
                 
                 {/* Current Provider Display */}
-                <div className="flex items-center justify-between p-2 bg-white rounded border">
+                <div className="flex items-center justify-between p-2 bg-background rounded border">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary rounded-full"></div>
                     <span className="text-sm font-medium">
                       Using: {selectedEnhancementProvider === 'nanobanana' ? '🍌 NanoBanana' : '🌟 Seedream V4'}
                     </span>
                   </div>
-                  <div className="text-xs text-gray-600">
+                  <div className="text-xs text-muted-foreground-600">
                     {selectedEnhancementProvider === 'seedream' ? '2 credits' : '1 credit'} per enhancement
                   </div>
                 </div>
 
                 {/* Provider Selection */}
                 {showEnhancementProviderSelector && (
-                  <div className="mt-3 p-3 bg-white rounded border">
+                  <div className="mt-3 p-3 bg-background rounded border">
                     <ImageProviderSelector
                       selectedProvider={selectedEnhancementProvider}
                       onProviderChange={(provider) => {
@@ -2053,23 +2053,23 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
               </div>
               
               {items.filter(item => item.source !== 'ai-enhanced').map((item, index) => (
-                <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
+                <div key={item.id} className="flex items-center gap-4 p-3 border border-border-200 rounded-lg">
                   <img
                     src={item.thumbnail_url || item.url}
                     alt={item.caption || ''}
                     className="w-16 h-16 object-cover rounded"
                   />
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-muted-foreground-900">
                       {item.caption || `Image ${index + 1}`}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground-500">
                       {item.width}x{item.height} • {item.source}
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <select
-                      className="px-2 py-1 border border-gray-300 rounded text-sm"
+                      className="px-2 py-1 border border-border-300 rounded text-sm"
                       onChange={(e) => {
                         if (e.target.value) {
                           addEnhancementRequest(item.id, e.target.value, '')
@@ -2088,15 +2088,15 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
 
               {enhancementRequests.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="font-medium text-gray-900">Enhancement Requests</h4>
+                  <h4 className="font-medium text-muted-foreground-900">Enhancement Requests</h4>
                   {enhancementRequests.map((request, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 bg-blue-50 rounded">
-                      <span className="text-sm text-blue-900">
+                    <div key={index} className="flex items-center gap-2 p-2 bg-primary-50 rounded">
+                      <span className="text-sm text-primary-900">
                         {request.enhancementType}: {request.prompt || 'Default prompt'}
                       </span>
                       <button
                         onClick={() => removeEnhancementRequest(index)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-destructive-500 hover:text-destructive-700"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -2228,7 +2228,7 @@ export default function MoodboardBuilder({ gigId, moodboardId, onSave, onCancel,
                 </>
               ) : hasUnsavedChanges ? (
                 <>
-                  <div className="h-2 w-2 bg-yellow-500 dark:bg-yellow-400 rounded-full"></div>
+                  <div className="h-2 w-2 bg-primary-500 dark:bg-primary-400 rounded-full"></div>
                   <span>Unsaved changes</span>
                 </>
               ) : null}

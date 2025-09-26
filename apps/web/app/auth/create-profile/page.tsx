@@ -559,8 +559,8 @@ export default function CreateProfilePage() {
                   value={formData.handle}
                   onChange={(e) => setFormData(prev => ({ ...prev, handle: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') }))}
                   className={`mt-1 block w-full px-3 py-2 bg-background border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-input text-foreground placeholder:text-muted-foreground ${
-                    handleAvailable === true ? 'border-green-500' : 
-                    handleAvailable === false ? 'border-red-500' : 
+                    handleAvailable === true ? 'border-primary-500' : 
+                    handleAvailable === false ? 'border-destructive-500' : 
                     'border-input'
                   }`}
                   placeholder="username"
@@ -572,14 +572,14 @@ export default function CreateProfilePage() {
                 )}
                 {!checkingHandle && handleAvailable === true && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <svg className="h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                 )}
                 {!checkingHandle && handleAvailable === false && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <svg className="h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-4 w-4 text-destructive-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </div>
@@ -588,10 +588,10 @@ export default function CreateProfilePage() {
               <div className="mt-1">
                 <p className="text-xs text-muted-foreground">Letters, numbers, and underscores only</p>
                 {handleAvailable === true && (
-                  <p className="text-xs text-green-600">✓ Handle is available</p>
+                  <p className="text-xs text-primary-600">✓ Handle is available</p>
                 )}
                 {handleAvailable === false && (
-                  <p className="text-xs text-red-600">✗ Handle is already taken</p>
+                  <p className="text-xs text-destructive-600">✗ Handle is already taken</p>
                 )}
               </div>
             </div>

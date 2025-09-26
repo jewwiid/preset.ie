@@ -335,7 +335,7 @@ export function ProfileContentEnhanced() {
           <button className="p-1 text-primary-600 hover:text-primary-700">
             <Save className="w-4 h-4" />
           </button>
-          <button className="p-1 text-red-600 hover:text-red-700">
+          <button className="p-1 text-destructive-600 hover:text-destructive-700">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -355,7 +355,7 @@ export function ProfileContentEnhanced() {
           <div key={index} className={`bg-gradient-to-br ${card.bgColor} rounded-xl p-6 border border-border hover:shadow-lg transition-all duration-200`}>
             <div className="flex items-center justify-between mb-4">
               <div className={`w-12 h-12 bg-gradient-to-br ${card.color} rounded-lg flex items-center justify-center`}>
-                <card.icon className="w-6 h-6 text-white" />
+                <card.icon className="w-6 h-6 text-primary-foreground" />
               </div>
               <span className="text-2xl font-bold text-foreground">{card.value}</span>
             </div>
@@ -372,7 +372,7 @@ export function ProfileContentEnhanced() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
-                <Briefcase className="w-5 h-5 text-white" />
+                <Briefcase className="w-5 h-5 text-primary-foreground" />
               </div>
               <CardTitle>Professional Information</CardTitle>
             </div>
@@ -399,7 +399,7 @@ export function ProfileContentEnhanced() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
-                <Mail className="w-5 h-5 text-white" />
+                <Mail className="w-5 h-5 text-primary-foreground" />
               </div>
               <CardTitle>Contact Information</CardTitle>
             </div>
@@ -426,7 +426,7 @@ export function ProfileContentEnhanced() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
-                <Camera className="w-5 h-5 text-white" />
+                <Camera className="w-5 h-5 text-primary-foreground" />
               </div>
               <CardTitle>Equipment & Software</CardTitle>
             </div>
@@ -454,7 +454,7 @@ export function ProfileContentEnhanced() {
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-white" />
+                  <Users className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <CardTitle>Physical Attributes</CardTitle>
               </div>
@@ -483,7 +483,7 @@ export function ProfileContentEnhanced() {
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
+              <User className="w-5 h-5 text-primary-foreground" />
             </div>
             <CardTitle>About Me</CardTitle>
           </div>
@@ -509,7 +509,7 @@ export function ProfileContentEnhanced() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
-                <Target className="w-5 h-5 text-white" />
+                <Target className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="flex-1">
                 <CardTitle>Compatible Gigs</CardTitle>
@@ -561,7 +561,7 @@ export function ProfileContentEnhanced() {
               <div className="flex items-center justify-center gap-4">
                 <button
                   onClick={() => window.location.href = '/profile?edit=true'}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 transition-colors"
+                  className="px-4 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   Complete Profile
                 </button>

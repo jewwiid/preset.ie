@@ -47,7 +47,7 @@ export function ProfileHeader() {
   }
 
   return (
-    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+    <div className="relative bg-background dark:bg-muted-800 rounded-xl shadow-lg overflow-hidden mb-6">
       {/* Header Banner */}
       <div className="relative h-48 bg-gradient-to-r from-primary to-primary/90">
         {profile?.header_banner_url && (
@@ -68,7 +68,7 @@ export function ProfileHeader() {
         {/* Banner edit button */}
         <button
           onClick={handleHeaderEditToggle}
-          className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200"
+          className="absolute top-4 right-4 p-2 bg-background bg-opacity-20 hover:bg-opacity-30 text-primary-foreground rounded-lg transition-all duration-200"
         >
           <Edit3 className="w-4 h-4" />
         </button>
@@ -86,7 +86,7 @@ export function ProfileHeader() {
                 className="w-32 h-32"
               />
             ) : (
-              <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 overflow-hidden">
+              <div className="w-32 h-32 rounded-full border-4 border-border dark:border-border-800 overflow-hidden">
                 {profile?.avatar_url ? (
                   <img
                     src={profile.avatar_url}
@@ -94,8 +94,8 @@ export function ProfileHeader() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                    <User className="w-16 h-16 text-gray-500 dark:text-gray-400" />
+                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <User className="w-16 h-16 text-muted-foreground-500 dark:text-muted-foreground-400" />
                   </div>
                 )}
               </div>
@@ -106,20 +106,20 @@ export function ProfileHeader() {
           <div className="flex-1 pt-16">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                <h1 className="text-2xl font-bold text-muted-foreground-900 dark:text-primary-foreground mb-1">
                   {isEditing ? (formData.display_name || 'Display Name') : (profile?.display_name || 'Display Name')}
                 </h1>
                 
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <div className="text-sm text-muted-foreground mb-1">
                   @{isEditing ? (formData.handle || 'handle') : (profile?.handle || 'handle')}
                 </div>
                 
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+                <p className="text-sm text-foreground leading-relaxed mb-3">
                   {isEditing ? (formData.bio || 'Tell us about yourself...') : (profile?.bio || 'No bio provided')}
                 </p>
 
                 {/* Location */}
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     {showLocation ? (
                       <>
@@ -143,7 +143,7 @@ export function ProfileHeader() {
                 {!isEditing && !isEditingHeader && (
                   <button
                     onClick={handleEditToggle}
-                    className="bg-primary-600 hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                    className="bg-primary-600 hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                   >
                     <Edit3 className="w-4 h-4" />
                     Edit Profile
@@ -154,7 +154,7 @@ export function ProfileHeader() {
                   <>
                     <button
                       onClick={handleCancel}
-                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                      className="bg-muted-500 hover:bg-muted-600 text-primary-foreground px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                     >
                       <X className="w-4 h-4" />
                       Cancel
@@ -163,7 +163,7 @@ export function ProfileHeader() {
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      className="bg-primary-600 hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center gap-2"
+                      className="bg-primary-600 hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center gap-2"
                     >
                       <Save className="w-4 h-4" />
                       {saving ? 'Saving...' : 'Save Changes'}
@@ -178,10 +178,10 @@ export function ProfileHeader() {
 
       {/* Live Preview (when editing) */}
       {isEditing && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-6 border-t border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Live Preview</h3>
+        <div className="bg-background dark:bg-muted-800 rounded-xl shadow-lg p-6 mb-6 border-t border-border">
+          <h3 className="text-lg font-semibold text-muted-foreground-900 dark:text-primary-foreground mb-4">Live Preview</h3>
           
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+          <div className="bg-muted-50 dark:bg-muted-700 rounded-lg p-4">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                 {formData.avatar_url ? (
@@ -191,20 +191,20 @@ export function ProfileHeader() {
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <User className="w-6 h-6 text-gray-500 dark:text-gray-400" />
+                  <User className="w-6 h-6 text-muted-foreground-500 dark:text-muted-foreground-400" />
                 )}
               </div>
               <div>
-                <div className="font-semibold text-gray-900 dark:text-white">
+                <div className="font-semibold text-muted-foreground-900 dark:text-primary-foreground">
                   {formData.display_name || 'Display Name'}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div className="text-sm text-muted-foreground">
                   @{formData.handle || 'handle'}
                 </div>
               </div>
             </div>
             
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+            <p className="text-sm text-foreground">
               {formData.bio || 'Tell us about yourself...'}
             </p>
           </div>

@@ -61,7 +61,7 @@ const TREATMENT_FORMATS = {
 };
 
 const TREATMENT_STATUSES = {
-  draft: { label: 'Draft', color: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400' },
+  draft: { label: 'Draft', color: 'bg-primary/10 text-primary' },
   published: { label: 'Published', color: 'bg-primary/10 text-primary' },
   archived: { label: 'Archived', color: 'bg-muted text-muted-foreground' }
 };

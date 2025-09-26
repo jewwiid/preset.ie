@@ -93,9 +93,9 @@ export default function SafetyFeatures({
       case 'high':
         return 'bg-primary-100 text-primary-800 border-primary/20';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-primary-100 text-primary-800 border-primary-200';
       default:
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-destructive-100 text-destructive-800 border-destructive-200';
     }
   };
 
@@ -112,7 +112,7 @@ export default function SafetyFeatures({
         <CardContent className="space-y-4">
           {/* Trust Score Badge */}
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Trust Score</span>
+            <span className="text-sm font-medium text-muted-foreground-700">Trust Score</span>
             <Badge className={`${getTrustColor()} flex items-center space-x-1`}>
               <Shield className="h-3 w-3" />
               <span>{trustScore}%</span>
@@ -121,7 +121,7 @@ export default function SafetyFeatures({
 
           {/* Verification Status */}
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-700">Verification Status</h4>
+            <h4 className="text-sm font-medium text-muted-foreground-700">Verification Status</h4>
             <div className="flex flex-wrap gap-2">
               <VerificationBadge 
                 verified={user.verified_id} 
@@ -144,14 +144,14 @@ export default function SafetyFeatures({
           {/* Account Info */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="flex items-center space-x-2">
-              <Calendar className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-600">
+              <Calendar className="h-4 w-4 text-muted-foreground-500" />
+              <span className="text-muted-foreground-600">
                 {getAccountAgeText(user.account_age_days)}
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              <Star className="h-4 w-4 text-gray-500" />
-              <span className="text-gray-600">
+              <Star className="h-4 w-4 text-muted-foreground-500" />
+              <span className="text-muted-foreground-600">
                 {user.total_reviews} reviews
                 {user.average_rating > 0 && (
                   <span className="ml-1">({user.average_rating.toFixed(1)}★)</span>
@@ -183,7 +183,7 @@ export default function SafetyFeatures({
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+              <AlertTriangle className="h-5 w-5 text-primary-600" />
               <span>Safety Tips</span>
             </CardTitle>
           </CardHeader>
@@ -194,8 +194,8 @@ export default function SafetyFeatures({
               <div className="mt-4 space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div className="space-y-2">
-                    <h4 className="font-medium text-gray-900">Before Meeting</h4>
-                    <ul className="space-y-1 text-gray-600">
+                    <h4 className="font-medium text-muted-foreground-900">Before Meeting</h4>
+                    <ul className="space-y-1 text-muted-foreground-600">
                       <li>• Verify user identity</li>
                       <li>• Check item photos carefully</li>
                       <li>• Agree on meeting location</li>
@@ -203,8 +203,8 @@ export default function SafetyFeatures({
                     </ul>
                   </div>
                   <div className="space-y-2">
-                    <h4 className="font-medium text-gray-900">During Transaction</h4>
-                    <ul className="space-y-1 text-gray-600">
+                    <h4 className="font-medium text-muted-foreground-900">During Transaction</h4>
+                    <ul className="space-y-1 text-muted-foreground-600">
                       <li>• Meet in public, well-lit areas</li>
                       <li>• Bring a friend if possible</li>
                       <li>• Inspect items thoroughly</li>
@@ -219,7 +219,7 @@ export default function SafetyFeatures({
               variant="ghost"
               size="sm"
               onClick={() => setShowSafetyTips(!showSafetyTips)}
-              className="mt-3 text-yellow-700 hover:text-yellow-800"
+              className="mt-3 text-primary-700 hover:text-primary-800"
             >
               {showSafetyTips ? 'Hide Safety Tips' : 'Show Safety Tips'}
             </Button>
@@ -229,15 +229,15 @@ export default function SafetyFeatures({
 
       {/* Red Flags Warning */}
       {trustLevel === 'low' && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-destructive-200 bg-destructive-50">
           <CardContent className="p-4">
             <div className="flex items-start space-x-3">
-              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <AlertTriangle className="h-5 w-5 text-destructive-600 mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="text-sm font-medium text-red-800 mb-1">
+                <h4 className="text-sm font-medium text-destructive-800 mb-1">
                   Exercise Caution
                 </h4>
-                <p className="text-sm text-red-700">
+                <p className="text-sm text-destructive-700">
                   This user has a low trust score. Please verify all details carefully 
                   and consider meeting in a public location with additional safety measures.
                 </p>

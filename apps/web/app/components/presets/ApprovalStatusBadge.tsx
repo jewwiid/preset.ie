@@ -55,21 +55,21 @@ export function ApprovalStatusBadge({ presetId, isCreator = false }: ApprovalSta
     switch (approvalStatus.status) {
       case 'pending':
         return (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
             <Clock className="h-3 w-3 mr-1" />
             Featured Request Pending
           </Badge>
         )
       case 'approved':
         return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
             <CheckCircle className="h-3 w-3 mr-1" />
             Featured Request Approved
           </Badge>
         )
       case 'rejected':
         return (
-          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
             <XCircle className="h-3 w-3 mr-1" />
             Featured Request Rejected
           </Badge>
@@ -92,13 +92,13 @@ export function ApprovalStatusBadge({ presetId, isCreator = false }: ApprovalSta
       {getStatusBadge()}
       
       {approvalStatus.status === 'pending' && approvalStatus.requested_at && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Requested on {formatDate(approvalStatus.requested_at)}
         </p>
       )}
       
       {approvalStatus.status === 'approved' && approvalStatus.reviewed_at && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Approved on {formatDate(approvalStatus.reviewed_at)}
         </p>
       )}
@@ -106,14 +106,14 @@ export function ApprovalStatusBadge({ presetId, isCreator = false }: ApprovalSta
       {approvalStatus.status === 'rejected' && (
         <div className="space-y-1">
           {approvalStatus.reviewed_at && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Rejected on {formatDate(approvalStatus.reviewed_at)}
             </p>
           )}
           {approvalStatus.admin_notes && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-2">
-              <p className="text-xs text-red-700 font-medium">Admin Notes:</p>
-              <p className="text-xs text-red-600">{approvalStatus.admin_notes}</p>
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2">
+              <p className="text-xs text-destructive font-medium">Admin Notes:</p>
+              <p className="text-xs text-destructive">{approvalStatus.admin_notes}</p>
             </div>
           )}
         </div>

@@ -22,6 +22,16 @@ const marketplaceNavItems = [
     description: 'Manage your listings'
   },
   {
+    name: 'Requests',
+    href: '/gear/requests',
+    description: 'Browse and create equipment requests'
+  },
+  {
+    name: 'My Requests',
+    href: '/gear/my-requests',
+    description: 'View your rental requests and offers'
+  },
+  {
     name: 'Orders',
     href: '/gear/orders',
     description: 'Track your orders'
@@ -30,11 +40,6 @@ const marketplaceNavItems = [
     name: 'Offers',
     href: '/gear/offers',
     description: 'Manage offers'
-  },
-  {
-    name: 'Requests',
-    href: '/gear/requests',
-    description: 'Equipment requests'
   },
   {
     name: 'Reviews',

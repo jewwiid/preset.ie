@@ -67,7 +67,7 @@ export default function VerificationBadge({
     if (verified) {
       return 'bg-primary-100 text-primary-800 border-primary/20';
     }
-    return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return 'bg-primary/10 text-primary border-primary/20';
   };
 
   return (

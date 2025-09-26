@@ -25,8 +25,8 @@ export default function AuthGuard({
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     )
@@ -39,21 +39,21 @@ export default function AuthGuard({
     }
 
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center max-w-md mx-auto p-8 bg-white rounded-2xl shadow-xl">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+        <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl shadow-xl border border-border">
           <div className="mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lock className="h-8 w-8 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="h-8 w-8 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Required</h1>
-            <p className="text-gray-600 mb-6">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Access Required</h1>
+            <p className="text-muted-foreground mb-6">
               You need to be signed in to access this page. This feature requires authentication to ensure secure access.
             </p>
           </div>
           <div className="space-y-3">
             <Button 
               onClick={() => window.location.href = redirectTo} 
-              className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+              className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
             >
               <User className="h-4 w-4 mr-2" />
               Sign In
@@ -81,21 +81,21 @@ export function PlaygroundAuthGuard({ children }: { children: React.ReactNode })
     <AuthGuard 
       requireAuth={true}
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-100">
-          <div className="text-center max-w-md mx-auto p-8 bg-white rounded-2xl shadow-xl">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+          <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl shadow-xl border border-border">
             <div className="mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="h-8 w-8 text-primary-foreground" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Playground Access</h1>
-              <p className="text-gray-600 mb-6">
+              <h1 className="text-2xl font-bold text-foreground mb-2">Playground Access</h1>
+              <p className="text-muted-foreground mb-6">
                 You need to be signed in to access the Playground. This feature requires authentication to ensure secure access to AI generation tools.
               </p>
             </div>
             <div className="space-y-3">
               <Button 
                 onClick={() => window.location.href = '/auth/signin'} 
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 Sign In to Playground
@@ -122,21 +122,21 @@ export function DashboardAuthGuard({ children }: { children: React.ReactNode }) 
     <AuthGuard 
       requireAuth={true}
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-primary/10 to-blue-100">
-          <div className="text-center max-w-md mx-auto p-8 bg-white rounded-2xl shadow-xl">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
+          <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl shadow-xl border border-border">
             <div className="mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary-primary to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User className="h-8 w-8 text-primary-foreground" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard Access</h1>
-              <p className="text-gray-600 mb-6">
+              <h1 className="text-2xl font-bold text-foreground mb-2">Dashboard Access</h1>
+              <p className="text-muted-foreground mb-6">
                 You need to be signed in to access your dashboard. This feature requires authentication to view your personal data and settings.
               </p>
             </div>
             <div className="space-y-3">
               <Button 
                 onClick={() => window.location.href = '/auth/signin'} 
-                className="w-full bg-gradient-to-r from-primary-primary to-blue-600 hover:from-primary-primary hover:to-blue-700"
+                className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
               >
                 <User className="h-4 w-4 mr-2" />
                 Sign In to Dashboard

@@ -120,10 +120,10 @@ export default function RoleApplicationModal({
           <div className="space-y-4">
             <div>
               <h3 className="font-medium text-lg">{project.title}</h3>
-              <p className="text-sm text-gray-600">{project.description}</p>
+              <p className="text-sm text-muted-foreground-600">{project.description}</p>
             </div>
 
-            <div className="flex items-center space-x-4 text-sm text-gray-500">
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground-500">
               {(project.city || project.country) && (
                 <div className="flex items-center">
                   <MapPin className="h-4 w-4 mr-1" />
@@ -142,7 +142,7 @@ export default function RoleApplicationModal({
             </div>
 
             {/* Creator Info */}
-            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-3 p-3 bg-muted-50 rounded-lg">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={project.creator.avatar_url} />
                 <AvatarFallback>
@@ -156,41 +156,41 @@ export default function RoleApplicationModal({
                     <Badge variant="secondary" className="text-xs">Verified</Badge>
                   )}
                   {project.creator.rating && (
-                    <div className="flex items-center text-sm text-gray-500">
+                    <div className="flex items-center text-sm text-muted-foreground-500">
                       <Star className="h-3 w-3 mr-1 fill-current" />
                       {project.creator.rating.toFixed(1)}
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">@{project.creator.username}</p>
+                <p className="text-sm text-muted-foreground-500">@{project.creator.username}</p>
               </div>
             </div>
 
             {/* Role Details */}
-            <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="p-4 border border-border-200 rounded-lg">
               <h4 className="font-medium mb-2">{role.role_name}</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Positions:</span>
+                  <span className="text-muted-foreground-500">Positions:</span>
                   <span>{role.headcount} position{role.headcount !== 1 ? 's' : ''}</span>
                 </div>
                 
                 {role.is_paid && (
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-500">Compensation:</span>
+                    <span className="text-muted-foreground-500">Compensation:</span>
                     <span className="text-primary-600 font-medium">Paid</span>
                   </div>
                 )}
                 
                 {role.compensation_details && (
-                  <div className="text-gray-600">
-                    <span className="text-gray-500">Details:</span> {role.compensation_details}
+                  <div className="text-muted-foreground-600">
+                    <span className="text-muted-foreground-500">Details:</span> {role.compensation_details}
                   </div>
                 )}
                 
                 {role.skills_required.length > 0 && (
                   <div>
-                    <span className="text-gray-500">Required Skills:</span>
+                    <span className="text-muted-foreground-500">Required Skills:</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {role.skills_required.map((skill) => (
                         <Badge key={skill} variant="outline" className="text-xs">
@@ -207,8 +207,8 @@ export default function RoleApplicationModal({
           {/* Application Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="p-3 bg-destructive-50 border border-destructive-200 rounded-md">
+                <p className="text-destructive-600 text-sm">{error}</p>
               </div>
             )}
 
@@ -242,7 +242,7 @@ export default function RoleApplicationModal({
               <Button type="submit" disabled={loading || !formData.message.trim()}>
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                     Submitting...
                   </>
                 ) : (

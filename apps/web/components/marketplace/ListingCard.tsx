@@ -38,11 +38,14 @@ interface ListingCardProps {
       avatar_url?: string;
       verified_id?: boolean;
     };
-    images?: Array<{
+    listing_images?: Array<{
       id: string;
       path: string;
+      url: string;
       sort_order: number;
       alt_text?: string;
+      file_size?: number;
+      mime_type?: string;
     }>;
   };
   showOwner?: boolean;
@@ -88,8 +91,8 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
   };
 
   const getPrimaryImage = () => {
-    if (listing.images && listing.images.length > 0) {
-      const sortedImages = listing.images.sort((a, b) => a.sort_order - b.sort_order);
+    if (listing.listing_images && listing.listing_images.length > 0) {
+      const sortedImages = listing.listing_images.sort((a, b) => a.sort_order - b.sort_order);
       return sortedImages[0];
     }
     return null;
@@ -147,10 +150,10 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
       <div className="relative">
         {/* Image */}
-        <div className="aspect-w-16 aspect-h-9 bg-muted rounded-t-lg overflow-hidden">
+        <div className="relative w-full h-48 bg-muted rounded-t-lg overflow-hidden">
           {getPrimaryImage() ? (
             <Image
-              src={getPrimaryImage()!.path}
+              src={getPrimaryImage()!.url}
               alt={getPrimaryImage()!.alt_text || listing.title}
               fill
               className="object-cover"
@@ -257,7 +260,7 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <Link href={`/equipment/listings/${listing.id}`} className="w-full">
+        <Link href={`/gear/listings/${listing.id}`} className="w-full">
           <Button className="w-full" variant="outline">
             View Details
           </Button>

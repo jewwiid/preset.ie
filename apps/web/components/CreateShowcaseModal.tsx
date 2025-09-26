@@ -296,7 +296,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                         </div>
                       </div>
                     )}
-                    <Badge className="absolute bottom-1 right-1 bg-black/70 text-white text-xs">
+                    <Badge className="absolute bottom-1 right-1 bg-black/70 text-primary-foreground text-xs">
                       {media.type === 'video' ? <Video className="h-2 w-2" /> : <ImageIcon className="h-2 w-2" />}
                     </Badge>
                   </button>

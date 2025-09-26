@@ -29,7 +29,7 @@ function BoostSuccessContent() {
     switch (status) {
       case 'success':
         return {
-          icon: <CheckCircle className="h-16 w-16 text-green-600" />,
+          icon: <CheckCircle className="h-16 w-16 text-primary-600" />,
           title: 'Boost Applied Successfully!',
           message: 'Your listing boost has been applied and is now active.',
           buttonText: 'View Your Listings',
@@ -37,7 +37,7 @@ function BoostSuccessContent() {
         };
       case 'canceled':
         return {
-          icon: <XCircle className="h-16 w-16 text-yellow-600" />,
+          icon: <XCircle className="h-16 w-16 text-primary-600" />,
           title: 'Payment Canceled',
           message: 'Your payment was canceled. You can try again anytime.',
           buttonText: 'Try Again',
@@ -45,7 +45,7 @@ function BoostSuccessContent() {
         };
       case 'error':
         return {
-          icon: <XCircle className="h-16 w-16 text-red-600" />,
+          icon: <XCircle className="h-16 w-16 text-destructive-600" />,
           title: 'Payment Failed',
           message: 'There was an error processing your payment. Please try again.',
           buttonText: 'Try Again',

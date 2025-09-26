@@ -588,18 +588,18 @@ export default function PlaygroundPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Preset Playground</h1>
-          <p className="text-gray-600">Create and edit AI-generated images with Seedream</p>
+          <h1 className="text-3xl font-bold text-muted-foreground-900 mb-2">Preset Playground</h1>
+          <p className="text-muted-foreground-600">Create and edit AI-generated images with Seedream</p>
           <div className="flex items-center space-x-4 mt-4">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Sparkles className="h-4 w-4 text-purple-500" />
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground-600">
+              <Sparkles className="h-4 w-4 text-primary-500" />
               <span>Credits: {userCredits}</span>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground-500">
               Generation: 2 credits | Basic Edit: 2 credits | Advanced Edit: 1-4 credits | Sequential: 3/image | Style Variations: 2/style | Batch: 3/image | Video: 8-10 credits
             </div>
           </div>
@@ -608,21 +608,21 @@ export default function PlaygroundPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Generation Panel */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-background rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <Wand2 className="h-5 w-5 mr-2 text-purple-500" />
+                <Wand2 className="h-5 w-5 mr-2 text-primary-500" />
                 Generate Images
               </h2>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
                     Prompt
                   </label>
                   <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary"
                     placeholder="Describe the image you want to create..."
                     rows={3}
                   />
@@ -630,13 +630,13 @@ export default function PlaygroundPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
                       Style
                     </label>
                     <select
                       value={style}
                       onChange={(e) => setStyle(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary"
                     >
                       <option value="realistic">Realistic</option>
                       <option value="artistic">Artistic</option>
@@ -647,13 +647,13 @@ export default function PlaygroundPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
                       Resolution
                     </label>
                     <select
                       value={resolution}
                       onChange={(e) => setResolution(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary"
                     >
                       <option value="1024*1024">1024*1024</option>
                       <option value="2048*2048">2048*2048</option>
@@ -666,11 +666,11 @@ export default function PlaygroundPage() {
                 <button
                   onClick={generateImages}
                   disabled={loading || !prompt.trim() || userCredits < 2}
-                  className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {loading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                       Generating...
                     </>
                   ) : (
@@ -686,9 +686,9 @@ export default function PlaygroundPage() {
 
           {/* Advanced Features */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-background rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <Sparkles className="h-5 w-5 mr-2 text-purple-500" />
+                <Sparkles className="h-5 w-5 mr-2 text-primary-500" />
                 Advanced Features
               </h2>
               
@@ -712,7 +712,7 @@ export default function PlaygroundPage() {
                   <h3 className="text-lg font-medium mb-2">Sequential Generation</h3>
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-muted-foreground-600 mb-1">
                         Number of Images: {numSequentialImages}
                       </label>
                       <input
@@ -727,11 +727,11 @@ export default function PlaygroundPage() {
                     <button
                       onClick={generateSequentialImages}
                       disabled={loading || !prompt.trim()}
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       {loading ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                           Generating...
                         </>
                       ) : (
@@ -749,7 +749,7 @@ export default function PlaygroundPage() {
                   <h3 className="text-lg font-medium mb-2">Sequential Editing</h3>
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-muted-foreground-600 mb-1">
                         Number of Variations: {numSequentialImages}
                       </label>
                       <input
@@ -764,11 +764,11 @@ export default function PlaygroundPage() {
                     <button
                       onClick={generateSequentialEdits}
                       disabled={loading || !selectedImage}
-                      className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       {loading ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                           Editing...
                         </>
                       ) : (
@@ -788,7 +788,7 @@ export default function PlaygroundPage() {
                     <select
                       value={editType}
                       onChange={(e) => setEditType(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      className="w-full px-3 py-2 border border-border-300 rounded-md text-sm"
                     >
                       <option value="enhance">Enhance (2 credits)</option>
                       <option value="inpaint">Inpaint (3 credits)</option>
@@ -803,11 +803,11 @@ export default function PlaygroundPage() {
                     <button
                       onClick={performAdvancedEdit}
                       disabled={loading || !selectedImage}
-                      className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       {loading ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                           Editing...
                         </>
                       ) : (
@@ -825,7 +825,7 @@ export default function PlaygroundPage() {
                   <h3 className="text-lg font-medium mb-2">Video Generation</h3>
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-muted-foreground-600 mb-1">
                         Duration: {videoDuration}s
                       </label>
                       <input
@@ -840,11 +840,11 @@ export default function PlaygroundPage() {
                     <button
                       onClick={generateVideo}
                       disabled={loading || !selectedImage}
-                      className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-full bg-destructive-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-destructive-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       {loading ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                           Generating...
                         </>
                       ) : (
@@ -870,7 +870,7 @@ export default function PlaygroundPage() {
                   <h3 className="text-lg font-medium mb-2">Style Variations</h3>
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-muted-foreground-600 mb-1">
                         Select Styles:
                       </label>
                       <div className="grid grid-cols-2 gap-1 text-xs">
@@ -896,11 +896,11 @@ export default function PlaygroundPage() {
                     <button
                       onClick={generateStyleVariations}
                       disabled={loading || !selectedImage || (selectedStyles.length === 0 && !selectedStylePreset)}
-                      className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       {loading ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                           Generating...
                         </>
                       ) : (
@@ -918,7 +918,7 @@ export default function PlaygroundPage() {
                   <h3 className="text-lg font-medium mb-2">Batch Processing</h3>
                   <div className="space-y-2">
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-muted-foreground-600 mb-1">
                         Images to Process: {batchImages.length}/10
                       </label>
                       <div className="space-y-1">
@@ -933,11 +933,11 @@ export default function PlaygroundPage() {
                                 setBatchImages(newUrls)
                               }}
                               placeholder={`Image URL ${index + 1}`}
-                              className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded"
+                              className="flex-1 px-2 py-1 text-xs border border-border-300 rounded"
                             />
                             <button
                               onClick={() => setBatchImages(batchImages.filter((_, i) => i !== index))}
-                              className="text-red-600 hover:bg-red-50 px-1 py-1 rounded text-xs"
+                              className="text-destructive-600 hover:bg-destructive-50 px-1 py-1 rounded text-xs"
                             >
                               ×
                             </button>
@@ -946,7 +946,7 @@ export default function PlaygroundPage() {
                         {batchImages.length < 10 && (
                           <button
                             onClick={() => setBatchImages([...batchImages, ''])}
-                            className="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs"
+                            className="text-primary-600 hover:bg-primary-50 px-2 py-1 rounded text-xs"
                           >
                             + Add Image
                           </button>
@@ -956,11 +956,11 @@ export default function PlaygroundPage() {
                     <button
                       onClick={performBatchEdit}
                       disabled={loading || batchImages.length === 0}
-                      className="w-full bg-orange-600 text-white py-2 px-4 rounded-md hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                     >
                       {loading ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                           Processing...
                         </>
                       ) : (
@@ -978,7 +978,7 @@ export default function PlaygroundPage() {
 
           {/* Generated Images */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-background rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold mb-4">Generated Images</h2>
               
               {currentProject?.generated_images && currentProject.generated_images.length > 0 ? (
@@ -987,7 +987,7 @@ export default function PlaygroundPage() {
                     <div 
                       key={index}
                       className={`relative group cursor-pointer rounded-lg overflow-hidden ${
-                        selectedImage === image.url ? 'ring-2 ring-purple-500' : ''
+                        selectedImage === image.url ? 'ring-2 ring-primary-primary' : ''
                       }`}
                       onClick={() => setSelectedImage(image.url)}
                     >
@@ -1006,11 +1006,11 @@ export default function PlaygroundPage() {
                               saveToGallery(image.url)
                             }}
                             disabled={savingImage === image.url}
-                            className="bg-white text-gray-800 px-3 py-1 rounded-md text-sm hover:bg-gray-100 flex items-center disabled:opacity-50"
+                            className="bg-background text-muted-foreground-800 px-3 py-1 rounded-md text-sm hover:bg-muted-100 flex items-center disabled:opacity-50"
                           >
                             {savingImage === image.url ? (
                               <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-800 mr-1"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-800 mr-1"></div>
                                 Saving...
                               </>
                             ) : (
@@ -1024,7 +1024,7 @@ export default function PlaygroundPage() {
                             href={image.url}
                             download
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white text-gray-800 px-3 py-1 rounded-md text-sm hover:bg-gray-100 flex items-center"
+                            className="bg-background text-muted-foreground-800 px-3 py-1 rounded-md text-sm hover:bg-muted-100 flex items-center"
                           >
                             <Download className="h-4 w-4 mr-1" />
                             Download
@@ -1035,8 +1035,8 @@ export default function PlaygroundPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <Wand2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <div className="text-center py-12 text-muted-foreground-500">
+                  <Wand2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground-300" />
                   <p>No images generated yet. Create your first image!</p>
                 </div>
               )}

@@ -192,7 +192,7 @@ export default function VideoViewer({
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-white hover:bg-white/20"
+                        className="text-primary-foreground hover:bg-background/20"
                         onClick={handlePlayPause}
                       >
                         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -207,7 +207,7 @@ export default function VideoViewer({
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-white hover:bg-white/20"
+                        className="text-primary-foreground hover:bg-background/20"
                         onClick={handleMuteToggle}
                       >
                         {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -220,16 +220,16 @@ export default function VideoViewer({
                         step="0.1"
                         value={volume}
                         onChange={handleVolumeChange}
-                        className="w-16 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer"
+                        className="w-16 h-1 bg-background/30 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                   </div>
                   
                   {/* Progress Bar */}
                   <div className="mt-2">
-                    <div className="w-full bg-white/30 rounded-full h-1">
+                    <div className="w-full bg-background/30 rounded-full h-1">
                       <div 
-                        className="bg-white h-1 rounded-full transition-all duration-300"
+                        className="bg-background h-1 rounded-full transition-all duration-300"
                         style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
                       />
                     </div>
@@ -241,7 +241,7 @@ export default function VideoViewer({
                   <Button
                     size="sm"
                     variant="secondary"
-                    className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                    className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                     onClick={() => {
                       const video = document.querySelector('video')
                       if (video) {
@@ -257,13 +257,13 @@ export default function VideoViewer({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                      className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                       onClick={() => handleSave(selectedVideo)}
                       disabled={savingVideo === selectedVideo}
                       title="Save to Gallery"
                     >
                       {savingVideo === selectedVideo ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
                       ) : (
                         <Heart className="h-4 w-4" />
                       )}
@@ -274,7 +274,7 @@ export default function VideoViewer({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-md"
+                      className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                       onClick={() => handleDownload(selectedVideo)}
                       title="Download Video"
                     >
@@ -286,13 +286,13 @@ export default function VideoViewer({
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="h-8 w-8 p-0 bg-red-500/90 hover:bg-red-600 shadow-md"
+                      className="h-8 w-8 p-0 bg-destructive-500/90 hover:bg-destructive-600 shadow-md"
                       onClick={(e) => handleDeleteClick(selectedVideo, e)}
                       disabled={deletingVideo === selectedVideo}
                       title="Remove Video"
                     >
                       {deletingVideo === selectedVideo ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
                       ) : (
                         <X className="h-4 w-4" />
                       )}
@@ -302,11 +302,11 @@ export default function VideoViewer({
               </div>
 
               {/* Video Info */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-2">
+              <div className="bg-muted-50 rounded-lg p-4">
+                <h4 className="font-medium text-muted-foreground-900 mb-2">
                   {selectedVideoData.title || 'Generated Video'}
                 </h4>
-                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground-600">
                   <div>
                     <span className="font-medium">Duration:</span> {selectedVideoData.duration ? `${selectedVideoData.duration}s` : 'Unknown'}
                   </div>
@@ -323,8 +323,8 @@ export default function VideoViewer({
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <Play className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+            <div className="text-center py-8 text-muted-foreground-500">
+              <Play className="h-12 w-12 mx-auto mb-2 text-muted-foreground-400" />
               <p>Select a video to view</p>
             </div>
           )}
@@ -332,7 +332,7 @@ export default function VideoViewer({
           {/* Video Thumbnails */}
           {videos.length > 1 && (
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">All Videos</h4>
+              <h4 className="text-sm font-medium text-muted-foreground-700 mb-3">All Videos</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[minmax(100px,auto)]">
                 {videos.map((video, index) => {
                   const aspectRatio = convertAspectRatio(video.aspectRatio || '16:9')
@@ -342,8 +342,8 @@ export default function VideoViewer({
                       key={video.url}
                       className={`relative border rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${
                         selectedVideo === video.url 
-                          ? 'border-purple-500 ring-2 ring-purple-200' 
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-primary-500 ring-2 ring-primary-primary/30' 
+                          : 'border-border-200 hover:border-border-300'
                       }`}
                       style={{ aspectRatio }}
                       onClick={() => onSelectVideo(video.url)}
@@ -366,12 +366,12 @@ export default function VideoViewer({
                         )}
                       </div>
                       <div className="absolute top-1 left-1">
-                        <span className="bg-black/50 text-white text-xs px-1 py-0.5 rounded">
+                        <span className="bg-black/50 text-primary-foreground text-xs px-1 py-0.5 rounded">
                           {video.resolution || 'Unknown'}
                         </span>
                       </div>
                       <div className="absolute top-1 right-1">
-                        <span className="bg-black/50 text-white text-xs px-1 py-0.5 rounded">
+                        <span className="bg-black/50 text-primary-foreground text-xs px-1 py-0.5 rounded">
                           {video.aspectRatio || '16:9'}
                         </span>
                       </div>
@@ -382,13 +382,13 @@ export default function VideoViewer({
                           <Button
                             size="sm"
                             variant="destructive"
-                            className="h-6 w-6 p-0 bg-red-500/80 hover:bg-red-600 shadow-md"
+                            className="h-6 w-6 p-0 bg-destructive-500/80 hover:bg-destructive-600 shadow-md"
                             onClick={(e) => handleDeleteClick(video.url, e)}
                             disabled={deletingVideo === video.url}
                             title="Remove Video"
                           >
                             {deletingVideo === video.url ? (
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-border"></div>
                             ) : (
                               <X className="h-3 w-3" />
                             )}
@@ -407,9 +407,9 @@ export default function VideoViewer({
       {/* Remove Video Confirmation Dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Remove Video</h3>
+              <h3 className="text-lg font-semibold text-muted-foreground-900">Remove Video</h3>
               <Button
                 size="sm"
                 variant="ghost"
@@ -420,7 +420,7 @@ export default function VideoViewer({
               </Button>
             </div>
             
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground-600 mb-6">
               Remove this video from your generated videos list? You can always restore it from Past Generations if needed.
             </p>
             
@@ -439,7 +439,7 @@ export default function VideoViewer({
               >
                 {deletingVideo === videoToDelete ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                     Removing...
                   </>
                 ) : (

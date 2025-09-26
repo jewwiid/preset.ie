@@ -65,14 +65,14 @@ const MatchmakingCard: React.FC<MatchmakingCardProps> = ({
             </CardTitle>
             
             {isGig && (
-              <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground-600">
                 <MapPin className="w-4 h-4" />
                 <span>{gig?.location_text}</span>
               </div>
             )}
             
             {!isGig && user?.city && (
-              <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
+              <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground-600">
                 <MapPin className="w-4 h-4" />
                 <span>{user.city}, {user.country}</span>
               </div>
@@ -91,7 +91,7 @@ const MatchmakingCard: React.FC<MatchmakingCardProps> = ({
 
       <CardContent className="pt-0">
         {/* Description/Bio */}
-        <p className="text-sm text-gray-700 line-clamp-2 mb-4">
+        <p className="text-sm text-muted-foreground-700 line-clamp-2 mb-4">
           {isGig ? gig?.description : user?.bio}
         </p>
 
@@ -100,17 +100,17 @@ const MatchmakingCard: React.FC<MatchmakingCardProps> = ({
           <div className="space-y-3 mb-4">
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4 text-gray-500" />
+                <Calendar className="w-4 h-4 text-muted-foreground-500" />
                 <span>{formatDate(gig.start_time)}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4 text-gray-500" />
+                <Clock className="w-4 h-4 text-muted-foreground-500" />
                 <span>{formatTime(gig.start_time)}</span>
               </div>
             </div>
             
             <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-gray-500" />
+              <DollarSign className="w-4 h-4 text-muted-foreground-500" />
               <Badge variant={getCompensationBadge(gig.comp_type).variant}>
                 {getCompensationBadge(gig.comp_type).label}
               </Badge>
@@ -178,12 +178,12 @@ const MatchmakingCard: React.FC<MatchmakingCardProps> = ({
         </div>
 
         {/* Compatibility Indicators */}
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="mt-3 pt-3 border-t border-border-100">
+          <div className="flex items-center justify-between text-xs text-muted-foreground-500">
             <span>Match Quality</span>
             <div className="flex items-center gap-1">
-              {compatibilityScore >= 80 && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
-              {compatibilityScore >= 60 && <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />}
+              {compatibilityScore >= 80 && <Star className="w-3 h-3 fill-primary-primary text-primary-400" />}
+              {compatibilityScore >= 60 && <Star className="w-3 h-3 fill-primary-primary text-primary-400" />}
               <span className="ml-1">{compatibilityScore}%</span>
             </div>
           </div>

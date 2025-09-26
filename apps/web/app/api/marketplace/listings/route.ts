@@ -38,22 +38,45 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    // Build query
+    // Build query for equipment listings with enhanced filtering
+    const category = searchParams.get('category');
+    const brand = searchParams.get('brand');
+    const model = searchParams.get('model');
+    const condition = searchParams.get('condition');
+    const location = searchParams.get('location');
+
     let query = supabase
-      .from('preset_marketplace_listings')
+      .from('listings')
       .select(`
         *,
-        presets:preset_id (
+        users_profile!listings_owner_id_fkey (
           id,
-          name,
-          description,
-          category,
-          usage_count
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
         )
       `)
-      .eq('seller_user_id', user.id)
+      .eq('owner_id', user.id)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
+
+    // Apply enhanced filters
+    if (category) {
+      query = query.eq('category', category);
+    }
+    if (brand) {
+      query = query.ilike('title', `%${brand}%`);
+    }
+    if (model) {
+      query = query.ilike('title', `%${model}%`);
+    }
+    if (condition) {
+      query = query.eq('condition', condition);
+    }
+    if (location) {
+      query = query.ilike('location_city', `%${location}%`);
+    }
 
     // Filter by status if specified
     if (status !== 'all') {
@@ -122,59 +145,97 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      presetId,
-      salePrice,
-      marketplaceTitle,
-      marketplaceDescription,
-      tags = []
+      title,
+      description,
+      category,
+      condition,
+      mode,
+      rentDayCents,
+      salePriceCents,
+      locationCity,
+      locationCountry,
+      quantity = 1,
+      equipment_type
     } = body;
 
     // Validate required fields
-    if (!presetId || !salePrice || !marketplaceTitle) {
+    if (!title || !category || !mode) {
       return NextResponse.json(
-        { error: 'Missing required fields: presetId, salePrice, marketplaceTitle' },
+        { error: 'Missing required fields: title, category, mode' },
         { status: 400 }
       );
     }
 
-    // Validate price
-    if (salePrice <= 0) {
+    // Validate pricing based on mode
+    if (mode === 'rent' && (!rentDayCents || rentDayCents <= 0)) {
       return NextResponse.json(
-        { error: 'Sale price must be greater than 0' },
+        { error: 'Rent day price must be greater than 0 for rent mode' },
         { status: 400 }
       );
     }
 
-    // Use the database function to create marketplace listing
-    const { data, error } = await supabase.rpc('create_marketplace_listing', {
-      p_preset_id: presetId,
-      p_seller_user_id: user.id,
-      p_sale_price: salePrice,
-      p_marketplace_title: marketplaceTitle,
-      p_marketplace_description: marketplaceDescription || '',
-      p_tags: tags
-    });
+    if (mode === 'sale' && (!salePriceCents || salePriceCents <= 0)) {
+      return NextResponse.json(
+        { error: 'Sale price must be greater than 0 for sale mode' },
+        { status: 400 }
+      );
+    }
+
+    if (mode === 'both' && ((!rentDayCents || rentDayCents <= 0) || (!salePriceCents || salePriceCents <= 0))) {
+      return NextResponse.json(
+        { error: 'Both rent and sale prices must be greater than 0 for both mode' },
+        { status: 400 }
+      );
+    }
+
+    // Get user profile
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users_profile')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json(
+        { error: 'User profile not found' },
+        { status: 404 }
+      );
+    }
+
+    // Create equipment listing
+    const listingTitle = equipment_type ? `${title} (${equipment_type})` : title;
+    
+    const { data: listing, error } = await supabase
+      .from('listings')
+      .insert({
+        owner_id: userProfile.id,
+        title: listingTitle,
+        description,
+        category,
+        condition: condition || 'good',
+        mode,
+        rent_day_cents: rentDayCents,
+        sale_price_cents: salePriceCents,
+        location_city: locationCity,
+        location_country: locationCountry,
+        quantity,
+        status: 'active'
+      })
+      .select('id')
+      .single();
 
     if (error) {
-      console.error('Error creating marketplace listing:', error);
+      console.error('Error creating equipment listing:', error);
       return NextResponse.json(
-        { error: 'Failed to create marketplace listing' },
+        { error: 'Failed to create equipment listing' },
         { status: 500 }
-      );
-    }
-
-    // Check if the function returned an error
-    if (data && data.length > 0 && !data[0].success) {
-      return NextResponse.json(
-        { error: data[0].message },
-        { status: 400 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      listingId: data[0]?.listing_id,
-      message: 'Marketplace listing created successfully'
+      listingId: listing.id,
+      message: 'Equipment listing created successfully'
     });
 
   } catch (error) {

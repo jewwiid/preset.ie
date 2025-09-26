@@ -164,13 +164,13 @@ export function VerificationGate({ feature, children, fallback }: VerificationGa
   return (
     <div className="min-h-[400px] flex items-center justify-center p-8">
       <div className="max-w-md text-center">
-        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <Icon className="w-8 h-8 text-gray-500" />
+        <div className="mx-auto w-16 h-16 bg-muted-100 rounded-full flex items-center justify-center mb-4">
+          <Icon className="w-8 h-8 text-muted-foreground-500" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-xl font-semibold text-muted-foreground-900 mb-2">
           {blockedInfo.title}
         </h3>
-        <p className="text-gray-600 mb-6">
+        <p className="text-muted-foreground-600 mb-6">
           {blockedInfo.message}
         </p>
         
@@ -195,7 +195,7 @@ export function VerificationGate({ feature, children, fallback }: VerificationGa
         {blockedInfo.action && (
           <button
             onClick={blockedInfo.action}
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 transition"
+            className="px-6 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90 transition"
           >
             Continue
           </button>

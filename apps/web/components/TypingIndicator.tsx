@@ -124,7 +124,7 @@ export function TypingIndicator({
   const renderBubble = () => (
     <div className={`
       inline-flex items-center ${currentSize.gap} ${currentSize.container}
-      bg-gray-100 text-gray-600 rounded-lg
+      bg-muted-100 text-muted-foreground-600 rounded-lg
       ${className}
     `}>
       <AnimatedDots />
@@ -137,7 +137,7 @@ export function TypingIndicator({
   )
 
   const renderInline = () => (
-    <div className={`inline-flex items-center ${currentSize.gap} text-gray-500 ${className}`}>
+    <div className={`inline-flex items-center ${currentSize.gap} text-muted-foreground-500 ${className}`}>
       <AnimatedDots />
       {showUserNames && (
         <span className={`${currentSize.text} italic ${textClassName}`}>
@@ -148,7 +148,7 @@ export function TypingIndicator({
   )
 
   const renderMinimal = () => (
-    <div className={`inline-flex items-center text-gray-400 ${className}`}>
+    <div className={`inline-flex items-center text-muted-foreground-400 ${className}`}>
       <AnimatedDots />
     </div>
   )
@@ -156,7 +156,7 @@ export function TypingIndicator({
   const renderBadge = () => (
     <div className={`
       inline-flex items-center ${currentSize.gap} px-2 py-1
-      bg-blue-100 text-blue-600 rounded-full text-xs font-medium
+      bg-primary-100 text-primary-600 rounded-full text-xs font-medium
       ${className}
     `}>
       <AnimatedDots />
@@ -236,8 +236,8 @@ export function MessageTypingIndicator({
               className="w-8 h-8 rounded-full"
             />
           ) : (
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <span className="text-xs text-gray-600 font-medium">
+            <div className="w-8 h-8 bg-muted-300 rounded-full flex items-center justify-center">
+              <span className="text-xs text-muted-foreground-600 font-medium">
                 {(userName || 'U').charAt(0).toUpperCase()}
               </span>
             </div>
@@ -245,12 +245,12 @@ export function MessageTypingIndicator({
         </div>
       )}
       
-      <div className="max-w-xs lg:max-w-md px-4 py-2 bg-gray-100 rounded-lg">
+      <div className="max-w-xs lg:max-w-md px-4 py-2 bg-muted-100 rounded-lg">
         <TypingIndicator
           conversationId={conversationId}
           variant="minimal"
           size="sm"
-          className="text-gray-400"
+          className="text-muted-foreground-400"
         />
       </div>
     </div>
@@ -270,7 +270,7 @@ export function ConversationTypingIndicator({ conversationId, className = '' }: 
       variant="inline"
       size="sm"
       showUserNames={false}
-      className={`italic text-blue-600 ${className}`}
+      className={`italic text-primary-600 ${className}`}
       anonymousText="typing..."
     />
   )

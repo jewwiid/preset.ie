@@ -416,7 +416,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 step={5}
                 className="w-32"
               />
-              <span className="text-sm text-gray-600 w-16">
+              <span className="text-sm text-muted-foreground-600 w-16">
                 {filters.compatibility_min}-{filters.compatibility_max}%
               </span>
             </div>
@@ -498,7 +498,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
               {/* Specializations */}
               <div className="space-y-3">
                 <h4 className="font-medium flex items-center gap-2">
-                  <Award className="w-4 h-4 text-orange-600" />
+                  <Award className="w-4 h-4 text-primary-600" />
                   Specializations
                 </h4>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -525,7 +525,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
               {/* Experience Levels */}
               <div className="space-y-3">
                 <h4 className="font-medium flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-indigo-600" />
+                  <Clock className="w-4 h-4 text-primary-600" />
                   Experience
                 </h4>
                 <div className="space-y-2">
@@ -559,7 +559,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-blue-600" />
+                <Target className="w-5 h-5 text-primary-600" />
                 Search Results ({results.length})
               </CardTitle>
               <Button variant="outline" size="sm" onClick={exportResults}>
@@ -592,11 +592,11 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       {!loading && results.length === 0 && filters.query && (
         <Card>
           <CardContent className="p-12 text-center">
-            <Search className="w-16 h-16 mx-auto mb-6 text-gray-300" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            <Search className="w-16 h-16 mx-auto mb-6 text-muted-foreground-300" />
+            <h3 className="text-xl font-semibold text-muted-foreground-900 dark:text-primary-foreground mb-2">
               No Results Found
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-muted-foreground mb-6">
               Try adjusting your search criteria or filters to find more {userType === 'talent' ? 'gigs' : 'talent'}.
             </p>
             <Button onClick={performSearch} variant="outline">

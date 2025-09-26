@@ -23,8 +23,8 @@ export default function CompatibilityScore({
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-primary-600'
-    if (score >= 60) return 'text-yellow-600'
-    return 'text-red-600'
+    if (score >= 60) return 'text-primary-600'
+    return 'text-destructive-600'
   }
 
   const getScoreLabel = (score: number) => {

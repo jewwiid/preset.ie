@@ -81,33 +81,33 @@ export function DatePicker({
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal h-10 px-3 py-2",
-            "border-gray-300 hover:border-primary-500 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20",
+            "border-border-300 hover:border-primary-500 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-20",
             "transition-all duration-200",
-            !date && "text-gray-500",
-            error && "border-red-300 focus:border-red-500 focus:ring-red-500",
+            !date && "text-muted-foreground-500",
+            error && "border-destructive-300 focus:border-destructive-500 focus:ring-destructive-primary",
             className
           )}
           disabled={disabled}
         >
-          <CalendarIcon className="mr-2 h-4 w-4 text-gray-400" />
+          <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground-400" />
           {date ? (
-            <span className="text-gray-900">{format(date, "MM/dd/yyyy")}</span>
+            <span className="text-muted-foreground-900">{format(date, "MM/dd/yyyy")}</span>
           ) : (
-            <span className="text-gray-500">{placeholder}</span>
+            <span className="text-muted-foreground-500">{placeholder}</span>
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-auto p-0 border-gray-200 shadow-lg max-w-[95vw] sm:max-w-none" 
+        className="w-auto p-0 border-border-200 shadow-lg max-w-[95vw] sm:max-w-none" 
         align="start"
         sideOffset={5}
       >
-        <div className="p-3 border-b border-gray-200 bg-gray-50">
+        <div className="p-3 border-b border-border-200 bg-muted-50">
           <div className="flex items-center justify-between gap-1 sm:gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 sm:h-7 sm:w-7 hover:bg-gray-100 shrink-0"
+              className="h-8 w-8 sm:h-7 sm:w-7 hover:bg-muted-100 shrink-0"
               onClick={handlePreviousMonth}
               aria-label="Previous month"
             >
@@ -159,7 +159,7 @@ export function DatePicker({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 sm:h-7 sm:w-7 hover:bg-gray-100 shrink-0"
+              className="h-8 w-8 sm:h-7 sm:w-7 hover:bg-muted-100 shrink-0"
               onClick={handleNextMonth}
               aria-label="Next month"
             >
@@ -193,7 +193,7 @@ export function DatePicker({
             table: "w-full border-collapse",
             head_row: "flex justify-around",
             head_cell: cn(
-              "text-gray-500 rounded-md font-normal text-[0.8rem]",
+              "text-muted-foreground-500 rounded-md font-normal text-[0.8rem]",
               "w-10 h-8 sm:w-9 sm:h-auto", // Larger on mobile for better touch
               "flex items-center justify-center"
             ),
@@ -209,7 +209,7 @@ export function DatePicker({
               "h-10 w-10 sm:h-9 sm:w-9 p-0 font-normal",
               "inline-flex items-center justify-center rounded-md text-sm",
               "ring-offset-white transition-colors",
-              "hover:bg-gray-100 hover:text-gray-900",
+              "hover:bg-muted-100 hover:text-muted-foreground-900",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-primary focus-visible:ring-offset-2",
               "aria-selected:opacity-100",
               // Mobile touch optimization
@@ -218,14 +218,14 @@ export function DatePicker({
               "tap-highlight-transparent"
             ),
             day_selected: cn(
-              "bg-primary-600 text-white hover:bg-primary-600 hover:text-white",
-              "focus:bg-primary-600 focus:text-white",
+              "bg-primary-600 text-primary-foreground hover:bg-primary-600 hover:text-primary-foreground",
+              "focus:bg-primary-600 focus:text-primary-foreground",
               "font-semibold"
             ),
             day_today: "bg-primary-100 text-primary-900 font-semibold border border-primary/30",
-            day_outside: "text-gray-400 opacity-50",
-            day_disabled: "text-gray-400 opacity-50 cursor-not-allowed",
-            day_range_middle: "aria-selected:bg-gray-100 aria-selected:text-gray-900",
+            day_outside: "text-muted-foreground-400 opacity-50",
+            day_disabled: "text-muted-foreground-400 opacity-50 cursor-not-allowed",
+            day_range_middle: "aria-selected:bg-muted-100 aria-selected:text-muted-foreground-900",
             day_hidden: "invisible",
           }}
         />

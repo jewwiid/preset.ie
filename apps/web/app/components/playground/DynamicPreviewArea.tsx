@@ -478,7 +478,7 @@ export default function DynamicPreviewArea({
                       title="Save to Gallery"
                     >
                       {savingImage === baseImages[0].url ? (
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-border-600"></div>
                       ) : (
                         <Heart className="h-3 w-3" />
                       )}
@@ -679,7 +679,7 @@ export default function DynamicPreviewArea({
                             title="Save to Gallery"
                           >
                             {savingImage === image.url ? (
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-border-600"></div>
                             ) : (
                               <Heart className="h-3 w-3" />
                             )}
@@ -894,7 +894,7 @@ export default function DynamicPreviewArea({
                       title="Save to Gallery"
                     >
                       {savingImage === imagesToDisplay[0].url ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
                       ) : (
                         <Heart className="h-4 w-4" />
                       )}
@@ -941,8 +941,8 @@ export default function DynamicPreviewArea({
                   <div
                     className={`absolute inset-0 cursor-pointer transition-all duration-200 ${
                       selectedImage === imagesToDisplay[0].url 
-                        ? 'ring-2 ring-purple-500 ring-offset-2' 
-                        : 'hover:ring-1 hover:ring-gray-400'
+                        ? 'ring-2 ring-primary-primary ring-offset-2' 
+                        : 'hover:ring-1 hover:ring-muted-primary'
                     }`}
                     onClick={() => onSelectImage(imagesToDisplay[0].url)}
                   >
@@ -979,7 +979,7 @@ export default function DynamicPreviewArea({
                         title="Save to Gallery"
                       >
                         {savingImage === imagesToDisplay[0].url ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
                         ) : (
                           <Heart className="h-4 w-4" />
                         )}
@@ -1080,7 +1080,7 @@ export default function DynamicPreviewArea({
                         title="Save to Gallery"
                       >
                         {savingImage === image.url ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
                         ) : (
                           <Heart className="h-4 w-4" />
                         )}

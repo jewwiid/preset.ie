@@ -502,18 +502,18 @@ export default function PlaygroundPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Preset Playground</h1>
-          <p className="text-gray-600">Create and edit AI-generated images with Seedream</p>
+          <h1 className="text-3xl font-bold text-muted-foreground-900 mb-2">Preset Playground</h1>
+          <p className="text-muted-foreground-600">Create and edit AI-generated images with Seedream</p>
           <div className="flex items-center space-x-4 mt-4">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Sparkles className="h-4 w-4 text-purple-500" />
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground-600">
+              <Sparkles className="h-4 w-4 text-primary-500" />
               <span>Credits: {userCredits}</span>
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground-500">
               Generation: 2 credits | Basic Edit: 2 credits | Advanced Edit: 1-4 credits | Sequential: 3/image | Style Variations: 2/style | Batch: 3/image | Video: 8-10 credits
             </div>
           </div>

@@ -92,7 +92,7 @@ export function ProfileHeaderSimple() {
   }
 
   return (
-    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
+    <div className="relative bg-background dark:bg-muted-800 rounded-xl shadow-lg overflow-hidden mb-6">
       {/* Header Banner */}
       <div className="relative h-48 bg-gradient-to-r from-primary to-primary/90">
         {profile?.header_banner_url ? (
@@ -114,16 +114,16 @@ export function ProfileHeaderSimple() {
           <button 
             onClick={() => bannerInputRef.current?.click()}
             disabled={isUploadingBanner}
-            className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 disabled:opacity-50"
+            className="absolute top-4 right-4 p-2 bg-background bg-opacity-20 hover:bg-opacity-30 text-primary-foreground rounded-lg transition-all duration-200 disabled:opacity-50"
           >
             {isUploadingBanner ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
             ) : (
               <Camera className="w-4 h-4" />
             )}
           </button>
         ) : (
-          <button className="absolute top-4 right-4 p-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200">
+          <button className="absolute top-4 right-4 p-2 bg-background bg-opacity-20 hover:bg-opacity-30 text-primary-foreground rounded-lg transition-all duration-200">
             <Edit3 className="w-4 h-4" />
           </button>
         )}
@@ -148,7 +148,7 @@ export function ProfileHeaderSimple() {
         {/* Avatar */}
         <div className="flex items-start gap-4 -mt-16 relative z-10">
           <div className="relative group">
-            <div className="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 overflow-hidden">
+            <div className="w-32 h-32 rounded-full border-4 border-border dark:border-border-800 overflow-hidden">
               {profile?.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -156,8 +156,8 @@ export function ProfileHeaderSimple() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                  <User className="w-16 h-16 text-gray-500 dark:text-gray-400" />
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <User className="w-16 h-16 text-muted-foreground-500 dark:text-muted-foreground-400" />
                 </div>
               )}
             </div>
@@ -170,7 +170,7 @@ export function ProfileHeaderSimple() {
                 className="absolute -bottom-2 -right-2 bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded-full transition-colors shadow-lg disabled:opacity-50"
               >
                 {isUploadingAvatar ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Camera className="w-4 h-4" />
                 )}
@@ -196,20 +196,20 @@ export function ProfileHeaderSimple() {
           <div className="flex-1 pt-16">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                <h1 className="text-2xl font-bold text-muted-foreground-900 dark:text-primary-foreground mb-1">
                   {profile?.display_name || 'Display Name'}
                 </h1>
                 
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                <div className="text-sm text-muted-foreground mb-1">
                   @{profile?.handle || 'handle'}
                 </div>
                 
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+                <p className="text-sm text-foreground leading-relaxed mb-3">
                   {profile?.bio || 'No bio provided'}
                 </p>
 
                 {/* Location */}
-                <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     {showLocation ? (
                       <>
@@ -233,7 +233,7 @@ export function ProfileHeaderSimple() {
                 {!isEditing ? (
                   <button 
                     onClick={handleEditToggle}
-                    className="bg-primary-600 hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                    className="bg-primary-600 hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                   >
                     <Edit3 className="w-4 h-4" />
                     Edit Profile
@@ -242,14 +242,14 @@ export function ProfileHeaderSimple() {
                   <div className="flex gap-2">
                     <button 
                       onClick={handleCancel}
-                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl"
+                      className="bg-muted-500 hover:bg-muted-600 text-primary-foreground px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl"
                     >
                       Cancel
                     </button>
                     <button 
                       onClick={handleSave}
                       disabled={saving}
-                      className="bg-primary-600 hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
+                      className="bg-primary-600 hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
                     >
                       {saving ? 'Saving...' : 'Save Changes'}
                     </button>

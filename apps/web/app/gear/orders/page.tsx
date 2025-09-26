@@ -118,9 +118,20 @@ export default function OrdersPage() {
 
       console.log('API Response status:', response.status);
       console.log('API Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('Request URL:', response.url);
+      console.log('Request method:', 'GET');
 
-      const data = await response.json();
-      console.log('API Response data:', data);
+      let data;
+      try {
+        data = await response.json();
+        console.log('API Response data:', data);
+      } catch (jsonError) {
+        console.error('Failed to parse JSON response:', jsonError);
+        const textResponse = await response.text();
+        console.error('Raw response text:', textResponse);
+        setError(`Invalid response from server: ${response.status} ${response.statusText}`);
+        return;
+      }
 
       if (response.ok) {
         setOrders(data.orders || []);
@@ -129,9 +140,10 @@ export default function OrdersPage() {
           status: response.status,
           statusText: response.statusText,
           data: data,
-          error: data.error
+          error: data?.error || 'Unknown error',
+          responseBody: data
         });
-        setError(data.error || 'Failed to fetch orders');
+        setError(data?.error || `Failed to fetch orders (${response.status})`);
       }
     } catch (err) {
       console.error('Error fetching orders:', err);
@@ -330,7 +342,7 @@ export default function OrdersPage() {
                           {/* Actions */}
                           <div className="flex space-x-2 ml-4">
                             <Button variant="outline" size="sm" asChild>
-                              <Link href={`/marketplace/listings/${order.listing.id}`}>
+                              <Link href={`/gear/listings/${order.listing.id}`}>
                                 <Eye className="h-4 w-4 mr-1" />
                                 View Listing
                               </Link>

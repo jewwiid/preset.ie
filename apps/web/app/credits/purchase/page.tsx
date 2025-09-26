@@ -11,10 +11,10 @@ export default function CreditPurchasePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in Required</h2>
-          <p className="text-gray-600 mb-4">Please sign in to purchase credits</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Sign in Required</h2>
+          <p className="text-muted-foreground mb-4">Please sign in to purchase credits</p>
           <button
             onClick={() => router.push('/auth/signin')}
             className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90"
@@ -27,7 +27,7 @@ export default function CreditPurchasePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-muted py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back button */}
         <button

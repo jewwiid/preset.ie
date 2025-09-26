@@ -16,7 +16,7 @@ export default function Layout({ children }: LayoutProps) {
   const shouldShowNav = !noNavPages.includes(pathname)
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted-50">
       {shouldShowNav && <NavBar />}
       <main className={shouldShowNav ? '' : ''}>
         {children}

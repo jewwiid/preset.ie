@@ -18,7 +18,7 @@ export function RoleIndicator({ role, className = '', variant = 'default' }: Rol
           icon: Camera,
           description: 'Photographer, videographer, or cinematographer',
           variant: 'default' as const,
-          className: 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500'
+          className: 'bg-primary-500 hover:bg-primary-600 text-primary-foreground border-primary-500'
         }
       case 'TALENT':
         return {
@@ -26,7 +26,7 @@ export function RoleIndicator({ role, className = '', variant = 'default' }: Rol
           icon: Users,
           description: 'Model, actor, or creative professional',
           variant: 'secondary' as const,
-          className: 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500'
+          className: 'bg-primary-500 hover:bg-primary-600 text-primary-foreground border-primary-500'
         }
       case 'BOTH':
         return {
@@ -34,7 +34,7 @@ export function RoleIndicator({ role, className = '', variant = 'default' }: Rol
           icon: UserCheck,
           description: 'Creative professional and talent',
           variant: 'outline' as const,
-          className: 'bg-green-500 hover:bg-green-600 text-white border-green-500'
+          className: 'bg-primary-500 hover:bg-primary-600 text-primary-foreground border-primary-500'
         }
     }
   }

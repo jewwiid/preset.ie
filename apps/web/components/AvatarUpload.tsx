@@ -166,7 +166,7 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
         <div className={`${sizeClasses[size]} rounded-full bg-primary-500 flex items-center justify-center overflow-hidden relative`}>
           {isUploading && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-              <Loader2 className={`${iconSizes[size]} text-white animate-spin`} />
+              <Loader2 className={`${iconSizes[size]} text-primary-foreground animate-spin`} />
             </div>
           )}
           
@@ -177,7 +177,7 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
               className="w-full h-full object-cover"
             />
           ) : (
-            <Camera className={`${iconSizes[size]} text-white`} />
+            <Camera className={`${iconSizes[size]} text-primary-foreground`} />
           )}
         </div>
 
@@ -188,7 +188,7 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
             disabled={isUploading}
             className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity rounded-full flex items-center justify-center"
           >
-            <Upload className={`${iconSizes[size]} text-white`} />
+            <Upload className={`${iconSizes[size]} text-primary-foreground`} />
           </button>
         )}
       </div>
@@ -197,7 +197,7 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading || !user}
-          className="px-3 py-1.5 bg-primary-600 hover:bg-primary/90 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-3 py-1.5 bg-primary-600 hover:bg-primary/90 disabled:bg-muted-400 text-primary-foreground text-sm font-medium rounded-lg transition-colors"
           title={!user ? 'Please sign in to upload avatar' : ''}
         >
           {isUploading ? 'Uploading...' : !user ? 'Sign in to Upload' : 'Upload Photo'}
@@ -207,7 +207,7 @@ export function AvatarUpload({ currentAvatarUrl, onAvatarUpdate, size = 'md' }: 
           <button
             onClick={handleRemoveAvatar}
             disabled={isUploading}
-            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-3 py-1.5 bg-destructive-600 hover:bg-destructive-700 disabled:bg-muted-400 text-primary-foreground text-sm font-medium rounded-lg transition-colors"
           >
             Remove
           </button>

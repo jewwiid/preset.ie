@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -56,8 +56,9 @@ const GEAR_CATEGORIES = [
   'Accessories', 'Studio Equipment', 'Props', 'Costumes', 'Other'
 ];
 
-export default function CreateProjectPage() {
+function CreateProjectPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState<ProjectStep>('basics');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +77,47 @@ export default function CreateProjectPage() {
 
   const [roles, setRoles] = useState<RoleFormData[]>([]);
   const [gearRequests, setGearRequests] = useState<GearRequestFormData[]>([]);
+
+  // Handle prefilled data from equipment request
+  useEffect(() => {
+    const fromEquipmentRequest = searchParams.get('from') === 'equipment-request';
+    if (fromEquipmentRequest) {
+      const equipmentRequestData = sessionStorage.getItem('equipmentRequestData');
+      if (equipmentRequestData) {
+        try {
+          const data = JSON.parse(equipmentRequestData);
+          
+          // Prefill project data
+          setProjectData(prev => ({
+            ...prev,
+            title: data.title || '',
+            description: data.description || '',
+            city: data.location_city || '',
+            country: data.location_country || '',
+            start_date: data.rental_start_date || '',
+            end_date: data.rental_end_date || ''
+          }));
+
+          // Prefill gear request if equipment type is specified
+          if (data.equipment_type || data.category) {
+            setGearRequests([{
+              category: data.category || 'Other',
+              equipment_spec: data.equipment_type || '',
+              quantity: 1,
+              borrow_preferred: true,
+              retainer_acceptable: false,
+              max_daily_rate_cents: data.max_daily_rate_cents
+            }]);
+          }
+
+          // Clear the stored data
+          sessionStorage.removeItem('equipmentRequestData');
+        } catch (error) {
+          console.error('Error parsing equipment request data:', error);
+        }
+      }
+    }
+  }, [searchParams]);
 
   const steps = [
     { id: 'basics', title: 'Project Basics', description: 'Title, description, and location' },
@@ -354,7 +396,7 @@ export default function CreateProjectPage() {
             </div>
 
             {roles.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground-500">
                 <p>No roles added yet. Click "Add Role" to get started.</p>
               </div>
             ) : (
@@ -455,7 +497,7 @@ export default function CreateProjectPage() {
             </div>
 
             {gearRequests.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground-500">
                 <p>No equipment requests added yet. Click "Add Equipment Request" to get started.</p>
               </div>
             ) : (
@@ -562,14 +604,14 @@ export default function CreateProjectPage() {
                 {projectData.description && (
                   <div>
                     <Label className="font-medium">Description</Label>
-                    <p className="text-gray-600">{projectData.description}</p>
+                    <p className="text-muted-foreground-600">{projectData.description}</p>
                   </div>
                 )}
                 
                 {(projectData.city || projectData.country) && (
                   <div>
                     <Label className="font-medium">Location</Label>
-                    <p className="text-gray-600">
+                    <p className="text-muted-foreground-600">
                       {[projectData.city, projectData.country].filter(Boolean).join(', ')}
                     </p>
                   </div>
@@ -578,7 +620,7 @@ export default function CreateProjectPage() {
                 {(projectData.start_date || projectData.end_date) && (
                   <div>
                     <Label className="font-medium">Dates</Label>
-                    <p className="text-gray-600">
+                    <p className="text-muted-foreground-600">
                       {projectData.start_date && format(new Date(projectData.start_date), "PPP")}
                       {projectData.start_date && projectData.end_date && ' - '}
                       {projectData.end_date && format(new Date(projectData.end_date), "PPP")}
@@ -588,7 +630,7 @@ export default function CreateProjectPage() {
                 
                 <div>
                   <Label className="font-medium">Visibility</Label>
-                  <p className="text-gray-600 capitalize">{projectData.visibility.replace('_', ' ')}</p>
+                  <p className="text-muted-foreground-600 capitalize">{projectData.visibility.replace('_', ' ')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -601,16 +643,16 @@ export default function CreateProjectPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {roles.map((role, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <div key={index} className="flex justify-between items-center p-2 bg-muted-50 rounded">
                         <div>
                           <span className="font-medium">{role.role_name}</span>
                           {role.skills_required.length > 0 && (
-                            <span className="text-sm text-gray-500 ml-2">
+                            <span className="text-sm text-muted-foreground-500 ml-2">
                               ({role.skills_required.join(', ')})
                             </span>
                           )}
                         </div>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground-500">
                           {role.headcount} position{role.headcount !== 1 ? 's' : ''}
                           {role.is_paid && ' • Paid'}
                         </span>
@@ -629,16 +671,16 @@ export default function CreateProjectPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {gearRequests.map((request, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <div key={index} className="flex justify-between items-center p-2 bg-muted-50 rounded">
                         <div>
                           <span className="font-medium">{request.category}</span>
                           {request.equipment_spec && (
-                            <span className="text-sm text-gray-500 ml-2">
+                            <span className="text-sm text-muted-foreground-500 ml-2">
                               ({request.equipment_spec})
                             </span>
                           )}
                         </div>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground-500">
                           {request.quantity} item{request.quantity !== 1 ? 's' : ''}
                           {request.max_daily_rate_cents && ` • Max €${(request.max_daily_rate_cents / 100).toFixed(2)}/day`}
                         </span>
@@ -690,23 +732,23 @@ export default function CreateProjectPage() {
                 <div key={step.id} className="flex items-center">
                   <div className={cn(
                     "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium",
-                    isActive ? "bg-blue-600 text-white" : 
-                    isCompleted ? "bg-primary-600 text-white" : 
-                    "bg-gray-200 text-gray-600"
+                    isActive ? "bg-primary-600 text-primary-foreground" : 
+                    isCompleted ? "bg-primary-600 text-primary-foreground" : 
+                    "bg-muted-200 text-muted-foreground-600"
                   )}>
                     {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
                   </div>
                   <div className="ml-3">
                     <p className={cn(
                       "text-sm font-medium",
-                      isActive ? "text-blue-600" : "text-gray-500"
+                      isActive ? "text-primary-600" : "text-muted-foreground-500"
                     )}>
                       {step.title}
                     </p>
-                    <p className="text-xs text-gray-400">{step.description}</p>
+                    <p className="text-xs text-muted-foreground-400">{step.description}</p>
                   </div>
                   {index < steps.length - 1 && (
-                    <div className="flex-1 h-px bg-gray-200 mx-4" />
+                    <div className="flex-1 h-px bg-muted-200 mx-4" />
                   )}
                 </div>
               );
@@ -717,9 +759,21 @@ export default function CreateProjectPage() {
         {/* Form Content */}
         <Card>
           <CardContent className="p-6">
+            {searchParams.get('from') === 'equipment-request' && (
+              <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-md">
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-primary" />
+                  <p className="text-primary font-medium">Form prefilled from your equipment request</p>
+                </div>
+                <p className="text-sm text-primary/80 mt-1">
+                  Your equipment request details have been automatically filled in. You can modify any fields as needed.
+                </p>
+              </div>
+            )}
+
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-600">{error}</p>
+              <div className="mb-6 p-4 bg-destructive-50 border border-destructive-200 rounded-md">
+                <p className="text-destructive-600">{error}</p>
               </div>
             )}
             
@@ -751,5 +805,13 @@ export default function CreateProjectPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function CreateProjectPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateProjectPageContent />
+    </Suspense>
   );
 }

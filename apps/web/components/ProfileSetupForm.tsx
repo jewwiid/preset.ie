@@ -229,18 +229,18 @@ export default function ProfileSetupForm({
   
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Set up your profile</h2>
+      <div className="bg-background rounded-2xl shadow-lg p-8">
+        <h2 className="text-2xl font-bold text-muted-foreground-900 mb-6">Set up your profile</h2>
         
         {/* Profile Photo */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
             Profile Photo
           </label>
           <div className="flex items-center gap-4">
             <div className="relative">
               {avatarPreview ? (
-                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-muted-100">
                   <img 
                     src={avatarPreview} 
                     alt="Profile preview" 
@@ -248,8 +248,8 @@ export default function ProfileSetupForm({
                   />
                 </div>
               ) : (
-                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
-                  <ImageIcon className="w-10 h-10 text-gray-400" />
+                <div className="w-24 h-24 rounded-full bg-muted-100 flex items-center justify-center">
+                  <ImageIcon className="w-10 h-10 text-muted-foreground-400" />
                 </div>
               )}
               {avatarPreview && (
@@ -261,7 +261,7 @@ export default function ProfileSetupForm({
                     setSelectedFile(null)
                     if (fileInputRef.current) fileInputRef.current.value = ''
                   }}
-                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  className="absolute -top-1 -right-1 bg-destructive-500 text-primary-foreground rounded-full p-1 hover:bg-destructive-600"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -278,12 +278,12 @@ export default function ProfileSetupForm({
               />
               <label
                 htmlFor="photo-upload"
-                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-border-300 rounded-lg cursor-pointer hover:bg-muted-50 transition"
               >
                 <Upload className="w-4 h-4" />
                 <span className="text-sm">Choose Photo</span>
               </label>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-muted-foreground-500 mt-2">
                 JPG, PNG or GIF. Max 5MB.
               </p>
             </div>
@@ -294,16 +294,16 @@ export default function ProfileSetupForm({
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                 Display Name *
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="John Doe"
                   required
                 />
@@ -311,7 +311,7 @@ export default function ProfileSetupForm({
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                 Handle * {handleAvailable && handle && (
                   <span className="text-primary-600 text-xs ml-2">
                     <Check className="inline w-3 h-3" /> Available
@@ -319,32 +319,32 @@ export default function ProfileSetupForm({
                 )}
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">@</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground-400">@</span>
                 <input
                   type="text"
                   value={handle}
                   onChange={(e) => setHandle(e.target.value.toLowerCase())}
                   className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                    handleError ? 'border-red-500' : 'border-gray-300'
+                    handleError ? 'border-destructive-500' : 'border-border-300'
                   }`}
                   placeholder="johndoe"
                   required
                 />
               </div>
               {handleError && (
-                <p className="text-xs text-red-600 mt-1">{handleError}</p>
+                <p className="text-xs text-destructive-600 mt-1">{handleError}</p>
               )}
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
               Bio
             </label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
+              className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
               rows={3}
               placeholder="Tell us about yourself..."
             />
@@ -352,16 +352,16 @@ export default function ProfileSetupForm({
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                 City *
               </label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                 <input
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Dublin"
                   required
                 />
@@ -369,15 +369,15 @@ export default function ProfileSetupForm({
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                 Country *
               </label>
               <div className="relative">
-                <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
+                  className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
                 >
                   {COUNTRIES.map(c => (
                     <option key={c} value={c}>{c}</option>
@@ -389,68 +389,68 @@ export default function ProfileSetupForm({
           
           {/* Social Media & Contact */}
           <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Media & Contact</h3>
+            <h3 className="text-lg font-semibold text-muted-foreground-900 mb-4">Social Media & Contact</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                   Instagram
                 </label>
                 <div className="relative">
-                  <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                   <input
                     type="text"
                     value={instagramHandle}
                     onChange={(e) => setInstagramHandle(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="@username"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                   TikTok
                 </label>
                 <div className="relative">
-                  <Music2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Music2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                   <input
                     type="text"
                     value={tiktokHandle}
                     onChange={(e) => setTiktokHandle(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="@username"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                   Website
                 </label>
                 <div className="relative">
-                  <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                   <input
                     type="url"
                     value={websiteUrl}
                     onChange={(e) => setWebsiteUrl(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="https://..."
                   />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                   Phone
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
                   <input
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="+353..."
                   />
                 </div>
@@ -461,11 +461,11 @@ export default function ProfileSetupForm({
           {/* Contributor-specific fields */}
           {isContributor && (
             <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Creator Details</h3>
+              <h3 className="text-lg font-semibold text-muted-foreground-900 mb-4">Creator Details</h3>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                     Years of Experience
                   </label>
                   <input
@@ -474,12 +474,12 @@ export default function ProfileSetupForm({
                     onChange={(e) => setYearsExperience(parseInt(e.target.value) || 0)}
                     min="0"
                     max="50"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
+                    className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                     Equipment
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -490,8 +490,8 @@ export default function ProfileSetupForm({
                         onClick={() => toggleArrayItem(equipment, setEquipment, item)}
                         className={`px-3 py-2 text-sm rounded-lg transition ${
                           equipment.includes(item)
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-primary-600 text-primary-foreground'
+                            : 'bg-muted-100 text-muted-foreground-700 hover:bg-muted-200'
                         }`}
                       >
                         {item}
@@ -501,7 +501,7 @@ export default function ProfileSetupForm({
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                     Editing Software
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -512,8 +512,8 @@ export default function ProfileSetupForm({
                         onClick={() => toggleArrayItem(software, setSoftware, item)}
                         className={`px-3 py-2 text-sm rounded-lg transition ${
                           software.includes(item)
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-primary-600 text-primary-foreground'
+                            : 'bg-muted-100 text-muted-foreground-700 hover:bg-muted-200'
                         }`}
                       >
                         {item}
@@ -530,7 +530,7 @@ export default function ProfileSetupForm({
                       onChange={(e) => setHasStudio(e.target.checked)}
                       className="mr-2"
                     />
-                    <span className="text-sm font-medium text-gray-700">I have a studio</span>
+                    <span className="text-sm font-medium text-muted-foreground-700">I have a studio</span>
                   </label>
                   
                   {hasStudio && (
@@ -538,14 +538,14 @@ export default function ProfileSetupForm({
                       type="text"
                       value={studioName}
                       onChange={(e) => setStudioName(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="flex-1 px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                       placeholder="Studio name"
                     />
                   )}
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                     Typical Turnaround (days)
                   </label>
                   <input
@@ -554,7 +554,7 @@ export default function ProfileSetupForm({
                     onChange={(e) => setTurnaroundDays(parseInt(e.target.value) || 7)}
                     min="1"
                     max="30"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
+                    className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
                   />
                 </div>
               </div>
@@ -564,11 +564,11 @@ export default function ProfileSetupForm({
           {/* Talent-specific fields */}
           {isTalent && (
             <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Talent Details</h3>
+              <h3 className="text-lg font-semibold text-muted-foreground-900 mb-4">Talent Details</h3>
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                     Categories
                   </label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -579,8 +579,8 @@ export default function ProfileSetupForm({
                         onClick={() => toggleArrayItem(talentCategories, setTalentCategories, cat)}
                         className={`px-3 py-2 text-sm rounded-lg transition ${
                           talentCategories.includes(cat)
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-primary-600 text-primary-foreground'
+                            : 'bg-muted-100 text-muted-foreground-700 hover:bg-muted-200'
                         }`}
                       >
                         {cat}
@@ -591,7 +591,7 @@ export default function ProfileSetupForm({
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                       Height (cm)
                     </label>
                     <input
@@ -600,19 +600,19 @@ export default function ProfileSetupForm({
                       onChange={(e) => setHeightCm(e.target.value)}
                       min="100"
                       max="250"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
                       placeholder="175"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                       Eye Color
                     </label>
                     <select
                       value={eyeColor}
                       onChange={(e) => setEyeColor(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
                     >
                       <option value="">Select...</option>
                       {EYE_COLORS.map(color => (
@@ -622,13 +622,13 @@ export default function ProfileSetupForm({
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
                       Hair Color
                     </label>
                     <select
                       value={hairColor}
                       onChange={(e) => setHairColor(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-gray-900"
+                      className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
                     >
                       <option value="">Select...</option>
                       {HAIR_COLORS.map(color => (
@@ -646,7 +646,7 @@ export default function ProfileSetupForm({
                       onChange={(e) => setHasTattoos(e.target.checked)}
                       className="mr-2"
                     />
-                    <span className="text-sm font-medium text-gray-700">Has tattoos</span>
+                    <span className="text-sm font-medium text-muted-foreground-700">Has tattoos</span>
                   </label>
                   
                   <label className="flex items-center cursor-pointer">
@@ -656,7 +656,7 @@ export default function ProfileSetupForm({
                       onChange={(e) => setHasPiercings(e.target.checked)}
                       className="mr-2"
                     />
-                    <span className="text-sm font-medium text-gray-700">Has piercings</span>
+                    <span className="text-sm font-medium text-muted-foreground-700">Has piercings</span>
                   </label>
                 </div>
               </div>
@@ -673,21 +673,21 @@ export default function ProfileSetupForm({
                   onChange={(e) => setAvailableForTravel(e.target.checked)}
                   className="mr-2"
                 />
-                <span className="text-sm font-medium text-gray-700">Available for travel</span>
+                <span className="text-sm font-medium text-muted-foreground-700">Available for travel</span>
               </label>
               
               {availableForTravel && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Within</span>
+                  <span className="text-sm text-muted-foreground-600">Within</span>
                   <input
                     type="number"
                     value={travelRadiusKm}
                     onChange={(e) => setTravelRadiusKm(parseInt(e.target.value) || 50)}
                     min="10"
                     max="500"
-                    className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-20 px-2 py-1 border border-border-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  <span className="text-sm text-gray-600">km</span>
+                  <span className="text-sm text-muted-foreground-600">km</span>
                 </div>
               )}
             </div>
@@ -698,7 +698,7 @@ export default function ProfileSetupForm({
         <div className="flex justify-between mt-8">
           <button
             onClick={onBack}
-            className="px-6 py-2 text-gray-600 hover:text-gray-800 transition"
+            className="px-6 py-2 text-muted-foreground-600 hover:text-muted-foreground-800 transition"
           >
             Back
           </button>
@@ -706,7 +706,7 @@ export default function ProfileSetupForm({
           <button
             onClick={handleSave}
             disabled={!displayName || !handle || !handleAvailable || !city}
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Continue
           </button>

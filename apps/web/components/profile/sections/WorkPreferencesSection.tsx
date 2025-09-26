@@ -18,14 +18,14 @@ export function WorkPreferencesSection() {
     <div className="space-y-6">
       <div className="flex items-center gap-2 mb-6">
         <Briefcase className="h-5 w-5 text-primary-600" />
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Work Preferences</h2>
+        <h2 className="text-xl font-semibold text-muted-foreground-900 dark:text-primary-foreground">Work Preferences</h2>
       </div>
 
       {/* Compensation Preferences */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
           <DollarSign className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Compensation</h3>
+          <h3 className="text-lg font-medium text-muted-foreground-900 dark:text-primary-foreground">Compensation</h3>
         </div>
         
         <div className="space-y-3">
@@ -46,10 +46,10 @@ export function WorkPreferencesSection() {
       </div>
 
       {/* Location Preferences */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <div className="flex items-center gap-2 mb-4">
           <MapPin className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Location Preferences</h3>
+          <h3 className="text-lg font-medium text-muted-foreground-900 dark:text-primary-foreground">Location Preferences</h3>
         </div>
         
         <div className="space-y-3">
@@ -70,10 +70,10 @@ export function WorkPreferencesSection() {
       </div>
 
       {/* Schedule Preferences */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Schedule Preferences</h3>
+          <h3 className="text-lg font-medium text-muted-foreground-900 dark:text-primary-foreground">Schedule Preferences</h3>
         </div>
         
         <div className="space-y-3">
@@ -108,10 +108,10 @@ export function WorkPreferencesSection() {
       </div>
 
       {/* Collaboration Preferences */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <div className="flex items-center gap-2 mb-4">
           <Users className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Collaboration Style</h3>
+          <h3 className="text-lg font-medium text-muted-foreground-900 dark:text-primary-foreground">Collaboration Style</h3>
         </div>
         
         <div className="space-y-3">
@@ -132,12 +132,12 @@ export function WorkPreferencesSection() {
       </div>
 
       {/* Content Preferences */}
-      <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="space-y-4 border-t border-border pt-6">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Content Comfort</h3>
+          <h3 className="text-lg font-medium text-muted-foreground-900 dark:text-primary-foreground">Content Comfort</h3>
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Specify your comfort level with different types of content
         </p>
         

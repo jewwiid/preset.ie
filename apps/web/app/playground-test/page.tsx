@@ -63,17 +63,17 @@ export default function PlaygroundTestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4 text-center">Playground Test</h1>
+    <div className="min-h-screen bg-muted-50 flex items-center justify-center">
+      <div className="bg-background rounded-lg shadow-md p-8 max-w-md w-full">
+        <h1 className="text-2xl font-bold text-muted-foreground-900 mb-4 text-center">Playground Test</h1>
         
         {/* Authentication Status */}
-        <div className="mb-4 p-3 rounded-md bg-gray-50">
-          <p className="text-sm text-gray-600">
+        <div className="mb-4 p-3 rounded-md bg-muted-50">
+          <p className="text-sm text-muted-foreground-600">
             <strong>Status:</strong> {user ? `Signed in as ${user.email}` : 'Not signed in'}
           </p>
           {!user && (
-            <p className="text-xs text-red-600 mt-1">
+            <p className="text-xs text-destructive-600 mt-1">
               Please sign in to test the playground generation.
             </p>
           )}
@@ -82,11 +82,11 @@ export default function PlaygroundTestPage() {
         <button
           onClick={testGeneration}
           disabled={loading || !user}
-          className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
               Testing...
             </>
           ) : (

@@ -78,7 +78,7 @@ const CreditManagementDashboard = () => {
   if (!creditStats) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -87,10 +87,10 @@ const CreditManagementDashboard = () => {
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Credit Management</h1>
+        <h1 className="text-3xl font-bold text-muted-foreground-900">Credit Management</h1>
         <button
           onClick={fetchDashboardData}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+          className="px-4 py-2 bg-primary-600 text-primary-foreground rounded-md hover:bg-primary-700 flex items-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -116,66 +116,66 @@ const CreditManagementDashboard = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-background rounded-lg border border-border-200 p-6">
           <div className="flex items-center gap-2 mb-2">
             <DollarSign className="w-5 h-5 text-primary-600" />
-            <h3 className="font-semibold text-gray-900">Platform Credits</h3>
+            <h3 className="font-semibold text-muted-foreground-900">Platform Credits</h3>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{creditStats.platformCreditsRemaining}</p>
-          <p className="text-sm text-gray-600">Available credits</p>
+          <p className="text-3xl font-bold text-muted-foreground-900">{creditStats.platformCreditsRemaining}</p>
+          <p className="text-sm text-muted-foreground-600">Available credits</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-background rounded-lg border border-border-200 p-6">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-gray-900">Daily Usage</h3>
+            <TrendingUp className="w-5 h-5 text-primary-600" />
+            <h3 className="font-semibold text-muted-foreground-900">Daily Usage</h3>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{creditStats.dailyUsage}</p>
-          <p className="text-sm text-gray-600">Credits consumed today</p>
+          <p className="text-3xl font-bold text-muted-foreground-900">{creditStats.dailyUsage}</p>
+          <p className="text-sm text-muted-foreground-600">Credits consumed today</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-background rounded-lg border border-border-200 p-6">
           <div className="flex items-center gap-2 mb-2">
-            <Users className="w-5 h-5 text-purple-600" />
-            <h3 className="font-semibold text-gray-900">Active Users</h3>
+            <Users className="w-5 h-5 text-primary-600" />
+            <h3 className="font-semibold text-muted-foreground-900">Active Users</h3>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{creditStats.activeUsers}</p>
-          <p className="text-sm text-gray-600">Users with remaining credits</p>
+          <p className="text-3xl font-bold text-muted-foreground-900">{creditStats.activeUsers}</p>
+          <p className="text-sm text-muted-foreground-600">Users with remaining credits</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-background rounded-lg border border-border-200 p-6">
           <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="w-5 h-5 text-red-600" />
-            <h3 className="font-semibold text-gray-900">Monthly Cost</h3>
+            <DollarSign className="w-5 h-5 text-destructive-600" />
+            <h3 className="font-semibold text-muted-foreground-900">Monthly Cost</h3>
           </div>
-          <p className="text-3xl font-bold text-gray-900">${creditStats.monthlyCost}</p>
-          <p className="text-sm text-gray-600">AI provider costs</p>
+          <p className="text-3xl font-bold text-muted-foreground-900">${creditStats.monthlyCost}</p>
+          <p className="text-sm text-muted-foreground-600">AI provider costs</p>
         </div>
       </div>
 
       {/* Provider Status */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Provider Status</h3>
+      <div className="bg-background rounded-lg border border-border-200 p-6">
+        <h3 className="text-lg font-semibold text-muted-foreground-900 mb-4">Provider Status</h3>
         <div className="space-y-4">
           {creditStats.providers?.map((provider) => (
-            <div key={provider.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div key={provider.name} className="flex items-center justify-between p-4 bg-muted-50 rounded-lg">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${provider.isHealthy ? 'bg-primary-500' : 'bg-red-500'}`} />
+                <div className={`w-3 h-3 rounded-full ${provider.isHealthy ? 'bg-primary-500' : 'bg-destructive-500'}`} />
                 <div>
-                  <p className="font-medium text-gray-900">{provider.name}</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="font-medium text-muted-foreground-900">{provider.name}</p>
+                  <p className="text-sm text-muted-foreground-600">
                     ${provider.costPerRequest} per request • {provider.successRate}% success rate
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-muted-foreground-600">
                   {provider.creditsRemaining} credits
                 </span>
                 <button
                   onClick={() => handleManualRefill(provider.name, 500)}
                   disabled={isRefilling}
-                  className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+                  className="px-3 py-1 bg-primary-600 text-primary-foreground text-sm rounded hover:bg-primary-700 disabled:opacity-50"
                 >
                   Refill
                 </button>
@@ -186,13 +186,13 @@ const CreditManagementDashboard = () => {
       </div>
 
       {/* Manual Refill Section */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Manual Credit Refill</h3>
+      <div className="bg-background rounded-lg border border-border-200 p-6">
+        <h3 className="text-lg font-semibold text-muted-foreground-900 mb-4">Manual Credit Refill</h3>
         <div className="flex items-center gap-4">
           <select
             value={refillProvider}
             onChange={(e) => setRefillProvider(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary"
           >
             <option value="">Select Provider</option>
             {creditStats.providers?.map((provider) => (
@@ -206,12 +206,12 @@ const CreditManagementDashboard = () => {
             value={refillAmount}
             onChange={(e) => setRefillAmount(Number(e.target.value))}
             placeholder="Amount"
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-primary"
           />
           <button
             onClick={() => handleManualRefill(refillProvider, refillAmount)}
             disabled={!refillProvider || isRefilling}
-            className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary/90 disabled:opacity-50"
+            className="px-4 py-2 bg-primary-600 text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
           >
             {isRefilling ? 'Refilling...' : 'Refill Credits'}
           </button>

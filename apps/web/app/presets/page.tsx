@@ -144,7 +144,7 @@ function MyPresetsGeneratedContent() {
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{error}</p>
+        <p className="text-destructive-500 mb-4">{error}</p>
         <Button onClick={fetchGeneratedImages}>Try Again</Button>
       </div>
     )
@@ -414,8 +414,8 @@ export default function PresetsPage() {
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      photography: 'bg-blue-100 text-blue-800',
-      cinematic: 'bg-purple-100 text-purple-800',
+      photography: 'bg-primary-100 text-primary-800',
+      cinematic: 'bg-primary-100 text-primary-800',
       artistic: 'bg-primary-100 text-primary-800',
       custom: 'bg-primary/10 text-primary'
     }
@@ -446,7 +446,7 @@ export default function PresetsPage() {
     const type = getPresetType(presetId)
     if (type === 'cinematic') {
       return (
-        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+        <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
           <Camera className="h-3 w-3 mr-1" />
           Cinematic
         </Badge>
@@ -454,14 +454,14 @@ export default function PresetsPage() {
     }
     if (type === 'specialized') {
       return (
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+        <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
           <Camera className="h-3 w-3 mr-1" />
           Specialized
         </Badge>
       )
     }
     return (
-      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+      <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
         <Wand2 className="h-3 w-3 mr-1" />
         Style
       </Badge>
@@ -632,7 +632,7 @@ export default function PresetsPage() {
             {/* Presets Grid/List */}
             {error ? (
               <div className="text-center py-12">
-                <p className="text-red-500 mb-4">{error}</p>
+                <p className="text-destructive-500 mb-4">{error}</p>
                 <Button onClick={fetchPresets}>Try Again</Button>
               </div>
             ) : presets.length === 0 ? (
@@ -661,13 +661,13 @@ export default function PresetsPage() {
                             </Badge>
                             {getPresetTypeBadge(preset.id)}
                             {preset.is_featured && (
-                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                              <Badge variant="secondary" className="bg-primary-100 text-primary-800">
                                 <Star className="h-3 w-3 mr-1" />
                                 Featured
                               </Badge>
                             )}
                             {preset.is_public && (
-                              <Badge variant="outline" className="text-blue-600">
+                              <Badge variant="outline" className="text-primary-600">
                                 <Users className="h-3 w-3 mr-1" />
                                 Public
                               </Badge>
@@ -747,7 +747,7 @@ export default function PresetsPage() {
               </div>
             ) : myPresetsError ? (
               <div className="text-center py-12">
-                <p className="text-red-500 mb-4">{myPresetsError}</p>
+                <p className="text-destructive-500 mb-4">{myPresetsError}</p>
                 <Button onClick={fetchMyPresets}>Try Again</Button>
               </div>
             ) : myPresets.length === 0 ? (
@@ -805,12 +805,12 @@ export default function PresetsPage() {
                               </Badge>
                               {getPresetTypeBadge(preset.id)}
                               {preset.is_public ? (
-                                <Badge variant="outline" className="text-green-600">
+                                <Badge variant="outline" className="text-primary-600">
                                   <Users className="h-3 w-3 mr-1" />
                                   Public
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="text-gray-600">
+                                <Badge variant="outline" className="text-muted-foreground-600">
                                   <Users className="h-3 w-3 mr-1" />
                                   Private
                                 </Badge>

@@ -46,14 +46,14 @@ export default function TestOAuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+    <div className="min-h-screen bg-muted-50 flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-background rounded-lg shadow-md p-8 text-center">
+        <h1 className="text-2xl font-bold text-muted-foreground-900 mb-4">
           Test OAuth Flow
         </h1>
         
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="mb-4 bg-destructive-50 border border-destructive-200 text-destructive-700 px-4 py-3 rounded-lg">
             <p className="text-sm">{error}</p>
           </div>
         )}
@@ -61,12 +61,12 @@ export default function TestOAuthPage() {
         <button
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="w-full bg-primary-600 text-primary-foreground py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
         >
           {loading ? 'Initiating...' : 'Test Google OAuth'}
         </button>
 
-        <p className="mt-4 text-sm text-gray-600">
+        <p className="mt-4 text-sm text-muted-foreground-600">
           This will clear OAuth state and try a fresh flow
         </p>
       </div>

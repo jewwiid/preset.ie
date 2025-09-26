@@ -21,9 +21,9 @@ const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-primary-600 bg-primary-50 border-primary/20'
     if (score >= 80) return 'text-primary-500 bg-primary-50 border-primary/20'
-    if (score >= 70) return 'text-yellow-600 bg-yellow-50 border-yellow-200'
-    if (score >= 60) return 'text-orange-600 bg-orange-50 border-orange-200'
-    return 'text-red-600 bg-red-50 border-red-200'
+    if (score >= 70) return 'text-primary-600 bg-primary-50 border-primary-200'
+    if (score >= 60) return 'text-primary-600 bg-primary-50 border-primary-200'
+    return 'text-destructive-600 bg-destructive-50 border-destructive-200'
   }
 
   const getScoreLabel = (score: number) => {
@@ -98,14 +98,14 @@ const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
           <div className="mt-3">
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+              className="text-xs text-muted-foreground-500 hover:text-muted-foreground-700 flex items-center gap-1"
             >
               <Info className={iconSize[size]} />
               {showDetails ? 'Hide' : 'Show'} breakdown
             </button>
 
             {showDetails && (
-              <Card className="mt-2 p-3 bg-gray-50">
+              <Card className="mt-2 p-3 bg-muted-50">
                 <CardContent className="p-0 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1">
@@ -160,10 +160,10 @@ const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
           <TooltipContent>
             <div className="text-sm">
               <p className="font-medium">Compatibility Score: {score}%</p>
-              <p className="text-gray-600">{scoreLabel}</p>
+              <p className="text-muted-foreground-600">{scoreLabel}</p>
               {breakdown && (
                 <div className="mt-2 space-y-1">
-                  <p className="text-xs text-gray-500">Breakdown:</p>
+                  <p className="text-xs text-muted-foreground-500">Breakdown:</p>
                   <p className="text-xs">• Gender: {breakdown.gender}%</p>
                   <p className="text-xs">• Age: {breakdown.age}%</p>
                   <p className="text-xs">• Height: {breakdown.height}%</p>

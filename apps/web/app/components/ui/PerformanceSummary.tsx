@@ -100,10 +100,10 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
   }
 
   const score = getPerformanceScore()
-  const scoreColor = score >= 80 ? 'text-primary-500' : score >= 60 ? 'text-yellow-500' : 'text-red-500'
+  const scoreColor = score >= 80 ? 'text-primary-500' : score >= 60 ? 'text-primary-500' : 'text-destructive-500'
 
   return (
-    <div className="bg-white border rounded-lg p-4 space-y-4">
+    <div className="bg-background border rounded-lg p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Performance Analysis</h3>
         <div className={`text-2xl font-bold ${scoreColor}`}>
@@ -114,7 +114,7 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-blue-500" />
+            <Clock className="h-4 w-4 text-primary-500" />
             <span className="text-sm font-medium">Load Time</span>
           </div>
           <div className="text-lg font-mono">{metrics.loadTime.toFixed(0)}ms</div>
@@ -122,7 +122,7 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Database className="h-4 w-4 text-purple-500" />
+            <Database className="h-4 w-4 text-primary-500" />
             <span className="text-sm font-medium">DOM Nodes</span>
           </div>
           <div className="text-lg font-mono">{metrics.domNodes}</div>
@@ -138,7 +138,7 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Video className="h-4 w-4 text-red-500" />
+            <Video className="h-4 w-4 text-destructive-500" />
             <span className="text-sm font-medium">Videos</span>
           </div>
           <div className="text-lg font-mono">{metrics.videoCount}</div>
@@ -146,7 +146,7 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Wifi className="h-4 w-4 text-orange-500" />
+            <Wifi className="h-4 w-4 text-primary-500" />
             <span className="text-sm font-medium">Network</span>
           </div>
           <div className="text-lg font-mono">{metrics.networkRequests}</div>
@@ -154,7 +154,7 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
 
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-indigo-500" />
+            <TrendingUp className="h-4 w-4 text-primary-500" />
             <span className="text-sm font-medium">Memory</span>
           </div>
           <div className="text-lg font-mono">{formatBytes(metrics.memoryUsage)}</div>
@@ -180,14 +180,14 @@ export default function PerformanceSummary({ metrics, previousMetrics }: Perform
 
       {recommendations.length > 0 && (
         <div className="space-y-2">
-          <h4 className="font-medium text-orange-700 flex items-center gap-2">
+          <h4 className="font-medium text-primary-700 flex items-center gap-2">
             <TrendingDown className="h-4 w-4" />
             Recommendations
           </h4>
           <ul className="space-y-1">
             {recommendations.map((recommendation, index) => (
-              <li key={index} className="text-sm text-orange-600 flex items-start gap-2">
-                <span className="text-orange-500 mt-1">!</span>
+              <li key={index} className="text-sm text-primary-600 flex items-start gap-2">
+                <span className="text-primary-500 mt-1">!</span>
                 {recommendation}
               </li>
             ))}

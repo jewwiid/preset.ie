@@ -181,8 +181,8 @@ export default function MarketplaceMessaging({
 
   if (compact) {
     return (
-      <div className="fixed bottom-4 right-4 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-        <div className="p-4 border-b border-gray-200">
+      <div className="fixed bottom-4 right-4 w-80 bg-background rounded-lg shadow-lg border border-border-200 z-50">
+        <div className="p-4 border-b border-border-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               {recipientAvatar ? (
@@ -192,13 +192,13 @@ export default function MarketplaceMessaging({
                   className="w-8 h-8 rounded-full"
                 />
               ) : (
-                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-gray-600" />
+                <div className="w-8 h-8 bg-muted-300 rounded-full flex items-center justify-center">
+                  <User className="h-4 w-4 text-muted-foreground-600" />
                 </div>
               )}
               <div>
-                <h3 className="text-sm font-medium text-gray-900">{recipientName}</h3>
-                <p className="text-xs text-gray-500">@{recipientHandle}</p>
+                <h3 className="text-sm font-medium text-muted-foreground-900">{recipientName}</h3>
+                <p className="text-xs text-muted-foreground-500">@{recipientHandle}</p>
               </div>
             </div>
             {onClose && (
@@ -211,17 +211,17 @@ export default function MarketplaceMessaging({
 
         <div className="p-4 space-y-3 max-h-64 overflow-y-auto">
           {loading ? (
-            <div className="text-center text-gray-500">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="text-center text-muted-foreground-500">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto"></div>
               <p className="text-sm mt-2">Loading messages...</p>
             </div>
           ) : error ? (
-            <div className="text-center text-red-500">
+            <div className="text-center text-destructive-500">
               <AlertCircle className="h-6 w-6 mx-auto mb-2" />
               <p className="text-sm">{error}</p>
             </div>
           ) : messages.length === 0 ? (
-            <div className="text-center text-gray-500">
+            <div className="text-center text-muted-foreground-500">
               <MessageCircle className="h-6 w-6 mx-auto mb-2" />
               <p className="text-sm">No messages yet</p>
             </div>
@@ -234,13 +234,13 @@ export default function MarketplaceMessaging({
                 <div
                   className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
                     message.from_user_id === recipientId
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'bg-blue-600 text-white'
+                      ? 'bg-muted-100 text-muted-foreground-900'
+                      : 'bg-primary-600 text-primary-foreground'
                   }`}
                 >
                   <p>{message.body}</p>
                   <div className={`text-xs mt-1 ${
-                    message.from_user_id === recipientId ? 'text-gray-500' : 'text-blue-200'
+                    message.from_user_id === recipientId ? 'text-muted-foreground-500' : 'text-primary-200'
                   }`}>
                     {formatTime(message.created_at)}
                   </div>
@@ -250,7 +250,7 @@ export default function MarketplaceMessaging({
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-border-200">
           <div className="flex space-x-2">
             <Textarea
               value={newMessage}
@@ -267,7 +267,7 @@ export default function MarketplaceMessaging({
               size="sm"
             >
               {sending ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
               ) : (
                 <Send className="h-4 w-4" />
               )}
@@ -290,13 +290,13 @@ export default function MarketplaceMessaging({
                 className="w-10 h-10 rounded-full"
               />
             ) : (
-              <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                <User className="h-5 w-5 text-gray-600" />
+              <div className="w-10 h-10 bg-muted-300 rounded-full flex items-center justify-center">
+                <User className="h-5 w-5 text-muted-foreground-600" />
               </div>
             )}
             <div>
               <CardTitle className="text-lg">{recipientName}</CardTitle>
-              <p className="text-sm text-gray-500">@{recipientHandle}</p>
+              <p className="text-sm text-muted-foreground-500">@{recipientHandle}</p>
             </div>
           </div>
           {context && (
@@ -309,19 +309,19 @@ export default function MarketplaceMessaging({
 
       <CardContent className="space-y-4">
         {/* Messages */}
-        <div className="h-64 overflow-y-auto border border-gray-200 rounded-lg p-4 space-y-3">
+        <div className="h-64 overflow-y-auto border border-border-200 rounded-lg p-4 space-y-3">
           {loading ? (
-            <div className="text-center text-gray-500">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="text-center text-muted-foreground-500">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
               <p className="text-sm mt-2">Loading messages...</p>
             </div>
           ) : error ? (
-            <div className="text-center text-red-500">
+            <div className="text-center text-destructive-500">
               <AlertCircle className="h-8 w-8 mx-auto mb-2" />
               <p className="text-sm">{error}</p>
             </div>
           ) : messages.length === 0 ? (
-            <div className="text-center text-gray-500">
+            <div className="text-center text-muted-foreground-500">
               <MessageCircle className="h-8 w-8 mx-auto mb-2" />
               <p className="text-sm">No messages yet. Start the conversation!</p>
             </div>
@@ -334,13 +334,13 @@ export default function MarketplaceMessaging({
                 <div
                   className={`max-w-xs px-4 py-2 rounded-lg ${
                     message.from_user_id === recipientId
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'bg-blue-600 text-white'
+                      ? 'bg-muted-100 text-muted-foreground-900'
+                      : 'bg-primary-600 text-primary-foreground'
                   }`}
                 >
                   <p className="text-sm">{message.body}</p>
                   <div className={`flex items-center justify-between mt-1 text-xs ${
-                    message.from_user_id === recipientId ? 'text-gray-500' : 'text-blue-200'
+                    message.from_user_id === recipientId ? 'text-muted-foreground-500' : 'text-primary-200'
                   }`}>
                     <div className="flex items-center space-x-1">
                       <Clock className="h-3 w-3" />
@@ -378,7 +378,7 @@ export default function MarketplaceMessaging({
             disabled={!newMessage.trim() || sending}
           >
             {sending ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
             ) : (
               <Send className="h-4 w-4" />
             )}

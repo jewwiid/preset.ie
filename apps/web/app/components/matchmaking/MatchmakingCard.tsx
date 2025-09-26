@@ -71,7 +71,7 @@ export default function MatchmakingCard({
               {onApply && (
                 <button
                   onClick={onApply}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                  className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary-700 transition-colors"
                 >
                   Apply
                 </button>
@@ -94,7 +94,7 @@ export default function MatchmakingCard({
               alt={cardData?.name || 'User'}
               className="w-20 h-20 rounded-full object-cover"
             />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary-500 rounded-full border-2 border-white"></div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary-500 rounded-full border-2 border-border"></div>
           </div>
 
           {/* User Info */}
@@ -138,7 +138,7 @@ export default function MatchmakingCard({
           {onConnect && (
             <button
               onClick={onConnect}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              className="w-full bg-primary-600 text-primary-foreground py-2 px-4 rounded-md hover:bg-primary-700 transition-colors"
             >
               Connect
             </button>

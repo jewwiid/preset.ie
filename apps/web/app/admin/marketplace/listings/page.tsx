@@ -106,13 +106,13 @@ export default function AdminMarketplaceListingsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-100 text-green-800';
+        return 'bg-primary-100 text-primary-800';
       case 'rejected':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive-100 text-destructive-800';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-primary-100 text-primary-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted-100 text-muted-foreground-800';
     }
   };
 
@@ -207,7 +207,7 @@ export default function AdminMarketplaceListingsPage() {
                 {/* Listings */}
                 {error ? (
                   <div className="text-center py-12">
-                    <p className="text-red-500 mb-4">{error}</p>
+                    <p className="text-destructive-500 mb-4">{error}</p>
                     <Button onClick={fetchListings}>Try Again</Button>
                   </div>
                 ) : loading ? (
@@ -273,7 +273,7 @@ export default function AdminMarketplaceListingsPage() {
                               <>
                                 <Button 
                                   size="sm" 
-                                  className="flex-1 bg-green-600 hover:bg-green-700"
+                                  className="flex-1 bg-primary-600 hover:bg-primary-700"
                                   onClick={() => handleApprove(listing.id)}
                                 >
                                   <CheckCircle className="h-4 w-4 mr-2" />

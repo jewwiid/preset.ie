@@ -36,11 +36,11 @@ export default function ProfileShowcaseSection({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Showcases</h2>
+        <h2 className="text-2xl font-bold text-muted-foreground-900">Showcases</h2>
         {isOwnProfile && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
+            className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90"
           >
             <Plus className="h-4 w-4" />
             <span>Create Showcase</span>
@@ -51,18 +51,18 @@ export default function ProfileShowcaseSection({
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-gray-200 rounded-lg h-64 animate-pulse" />
+            <div key={i} className="bg-muted-200 rounded-lg h-64 animate-pulse" />
           ))}
         </div>
       ) : showcases.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Plus className="h-8 w-8 text-gray-400" />
+          <div className="w-16 h-16 bg-muted-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Plus className="h-8 w-8 text-muted-foreground-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">
             {isOwnProfile ? 'No showcases yet' : 'No showcases'}
           </h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground-600 mb-4">
             {isOwnProfile 
               ? 'Create your first showcase from your enhanced moodboard photos'
               : 'This user hasn\'t created any showcases yet'
@@ -71,7 +71,7 @@ export default function ProfileShowcaseSection({
           {isOwnProfile && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary/90"
+              className="px-6 py-3 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90"
             >
               Create Your First Showcase
             </button>
@@ -100,7 +100,7 @@ export default function ProfileShowcaseSection({
 
 function ShowcaseCard({ showcase }: { showcase: any }) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div className="bg-background rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       {/* Media Grid */}
       <div className="grid grid-cols-2 gap-1 p-2">
         {showcase.media?.slice(0, 4).map((media: any, index: number) => (
@@ -119,12 +119,12 @@ function ShowcaseCard({ showcase }: { showcase: any }) {
       
       {/* Content */}
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-1">
+        <h3 className="font-semibold text-muted-foreground-900 mb-2 line-clamp-1">
           {showcase.title}
         </h3>
         
         {/* Stats */}
-        <div className="flex items-center justify-between text-sm text-gray-500">
+        <div className="flex items-center justify-between text-sm text-muted-foreground-500">
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <Heart className="h-4 w-4" />

@@ -179,7 +179,7 @@ export function ReportMessageDialog({
       <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            <AlertTriangle className="h-5 w-5 text-primary-500" />
             Report Message
           </DialogTitle>
           <DialogDescription>
@@ -228,7 +228,7 @@ export function ReportMessageDialog({
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">
-              Additional details <span className="text-red-500">*</span>
+              Additional details <span className="text-destructive-500">*</span>
             </Label>
             <Textarea
               id="description"

@@ -73,17 +73,17 @@ export default function CreditBalance({ className = '', showPurchaseButton = tru
   if (loading) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <div className="w-4 h-4 bg-gray-300 rounded animate-pulse"></div>
-        <div className="w-8 h-4 bg-gray-300 rounded animate-pulse"></div>
+        <div className="w-4 h-4 bg-muted-300 rounded animate-pulse"></div>
+        <div className="w-8 h-4 bg-muted-300 rounded animate-pulse"></div>
       </div>
     );
   }
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-full">
-        <Coins className="w-4 h-4 text-blue-600" />
-        <span className="text-sm font-medium text-blue-900">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 border border-primary-200 rounded-full">
+        <Coins className="w-4 h-4 text-primary-600" />
+        <span className="text-sm font-medium text-primary-900">
           {balance || 0}
         </span>
       </div>

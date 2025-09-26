@@ -15,20 +15,16 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get('category');
     const city = searchParams.get('city');
     const urgent = searchParams.get('urgent') === 'true';
+    const minRating = searchParams.get('min_rating');
+    const purpose = searchParams.get('purpose');
+    const purposeCategory = searchParams.get('purpose_category');
     const offset = (page - 1) * limit;
 
     let query = supabase
-      .from('equipment_requests')
+      .from('equipment_requests_with_ratings')
       .select(`
         *,
-        requester:users_profile!equipment_requests_requester_id_fkey(
-          id,
-          display_name,
-          handle,
-          avatar_url,
-          verified_id
-        ),
-        responses:request_responses(
+        responses:request_responses!request_responses_request_id_fkey(
           id,
           responder_id,
           status,
@@ -50,6 +46,23 @@ export async function GET(request: NextRequest) {
     
     if (urgent) {
       query = query.eq('urgent', true);
+    }
+
+    // Apply minimum rating filter
+    if (minRating) {
+      const ratingValue = parseFloat(minRating);
+      if (ratingValue > 0) {
+        query = query.gte('requester_average_rating', ratingValue);
+      }
+    }
+
+    // Apply purpose filters
+    if (purpose) {
+      query = query.eq('purpose_name', purpose);
+    }
+    
+    if (purposeCategory) {
+      query = query.eq('purpose_category', purposeCategory);
     }
 
     // Pagination
@@ -82,11 +95,28 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Add response count to each request
+    // Add response count and format requester data to each request
     const requestsWithCounts = requests?.map(request => ({
       ...request,
       response_count: request.responses?.length || 0,
-      responses: undefined // Remove full response data from public view
+      responses: undefined, // Remove full response data from public view
+      requester: {
+        id: request.requester_profile_id,
+        display_name: request.requester_display_name,
+        handle: request.requester_handle,
+        avatar_url: request.requester_avatar_url,
+        verified_id: request.requester_verified_id,
+        average_rating: request.requester_average_rating,
+        review_count: request.requester_review_count
+      },
+      // Remove individual requester fields from root level
+      requester_profile_id: undefined,
+      requester_display_name: undefined,
+      requester_handle: undefined,
+      requester_avatar_url: undefined,
+      requester_verified_id: undefined,
+      requester_average_rating: undefined,
+      requester_review_count: undefined
     }));
 
     return NextResponse.json({ 
@@ -133,7 +163,13 @@ export async function POST(request: NextRequest) {
       verified_users_only,
       min_rating,
       urgent,
-      expires_at
+      expires_at,
+      purpose_id,
+      reference_type,
+      reference_title,
+      reference_url,
+      reference_description,
+      reference_thumbnail_url
     } = body;
 
     // Get user from session
@@ -171,11 +207,72 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate reference data if provided
+    if (reference_type && reference_url) {
+      // Validate reference data format
+      const { data: validationResult, error: validationError } = await supabase.rpc('validate_reference_data', {
+        p_reference_type: reference_type,
+        p_reference_title: reference_title,
+        p_reference_url: reference_url,
+        p_reference_description: reference_description
+      });
+
+      if (validationError) {
+        console.error('Reference validation error:', validationError);
+        return NextResponse.json({ 
+          error: 'Failed to validate reference data' 
+        }, { status: 500 });
+      }
+
+      const validation = validationResult as any;
+      if (!validation.success) {
+        return NextResponse.json({ 
+          error: validation.error 
+        }, { status: 400 });
+      }
+    }
+
+    // Get user profile
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users_profile')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json({ 
+        error: 'User profile not found' 
+      }, { status: 404 });
+    }
+
+    // Validate ownership for moodboards, treatments, and showcases
+    if (reference_type && reference_url && ['moodboard', 'treatment', 'showcase'].includes(reference_type)) {
+      const { data: ownershipResult, error: ownershipError } = await supabase.rpc('validate_reference_ownership', {
+        p_user_id: userProfile.id,
+        p_reference_type: reference_type,
+        p_reference_url: reference_url
+      });
+
+      if (ownershipError) {
+        console.error('Ownership validation error:', ownershipError);
+        return NextResponse.json({ 
+          error: 'Failed to validate reference ownership' 
+        }, { status: 500 });
+      }
+
+      const ownership = ownershipResult as any;
+      if (!ownership.success) {
+        return NextResponse.json({ 
+          error: ownership.error 
+        }, { status: 400 });
+      }
+    }
+
     // Create the request
     const { data: newRequest, error } = await supabase
       .from('equipment_requests')
       .insert({
-        requester_id: user.id,
+        requester_id: userProfile.id,
         title,
         description,
         category,
@@ -197,7 +294,13 @@ export async function POST(request: NextRequest) {
         verified_users_only: verified_users_only ?? false,
         min_rating: min_rating || 0.0,
         urgent: urgent ?? false,
-        expires_at: expires_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        expires_at: expires_at || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        purpose_id,
+        reference_type,
+        reference_title,
+        reference_url,
+        reference_description,
+        reference_thumbnail_url
       })
       .select(`
         *,

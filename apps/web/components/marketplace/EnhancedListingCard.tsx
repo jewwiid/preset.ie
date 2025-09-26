@@ -139,7 +139,7 @@ export default function EnhancedListingCard({
 
       <CardContent className="p-0">
         {/* Listing Image */}
-        <div className="aspect-square relative bg-gray-100">
+        <div className="aspect-square relative bg-muted-100">
           <img
             src={listing.images[0]?.url || '/placeholder-image.jpg'}
             alt={listing.images[0]?.alt_text || listing.title}
@@ -154,10 +154,10 @@ export default function EnhancedListingCard({
         <div className="p-4 space-y-3">
           {/* Title and Description */}
           <div>
-            <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-gray-900">
+            <h3 className="font-semibold text-lg mb-2 line-clamp-2 text-muted-foreground-900">
               {listing.title}
             </h3>
-            <p className="text-gray-600 text-sm line-clamp-2">
+            <p className="text-muted-foreground-600 text-sm line-clamp-2">
               {listing.description}
             </p>
           </div>
@@ -175,7 +175,7 @@ export default function EnhancedListingCard({
 
           {/* Owner Info */}
           {listing.owner && (
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground-500">
               <span>by {listing.owner.display_name}</span>
             </div>
           )}
@@ -194,7 +194,7 @@ export default function EnhancedListingCard({
 
           {/* Enhancement Status */}
           {listing.current_enhancement_type && (
-            <div className="text-xs text-gray-500 text-center pt-2 border-t border-gray-100">
+            <div className="text-xs text-muted-foreground-500 text-center pt-2 border-t border-border-100">
               {listing.current_enhancement_type === 'premium_bump' && 'Premium boost active'}
               {listing.current_enhancement_type === 'priority_bump' && 'Priority boost active'}
               {listing.current_enhancement_type === 'basic_bump' && 'Basic boost active'}

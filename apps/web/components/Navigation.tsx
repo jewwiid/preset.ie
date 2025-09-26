@@ -88,7 +88,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
   const isActive = (href: string) => pathname === href
 
   return (
-    <nav className={`bg-white shadow-lg ${className}`}>
+    <nav className={`bg-background shadow-lg ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo and main navigation */}
@@ -98,9 +98,9 @@ export default function Navigation({ className = '' }: NavigationProps) {
               <div className="flex-shrink-0 flex items-center">
                 <div className="flex items-center">
                   <div className="bg-primary rounded-lg p-2">
-                    <Camera className="h-6 w-6 text-white" />
+                    <Camera className="h-6 w-6 text-primary-foreground" />
                   </div>
-                  <span className="ml-2 text-xl font-bold text-gray-900">Preset</span>
+                  <span className="ml-2 text-xl font-bold text-muted-foreground-900">Preset</span>
                 </div>
               </div>
             </Link>
@@ -118,7 +118,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
                       className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                         isActive(item.href)
                           ? 'text-primary bg-primary/10'
-                          : 'text-gray-700 hover:text-primary hover:bg-primary/10'
+                          : 'text-muted-foreground-700 hover:text-primary hover:bg-primary/10'
                       }`}
                     >
                       <Icon className="h-4 w-4 mr-1.5" />
@@ -137,7 +137,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
                 {isContributor && (
                   <Link
                     href="/gigs/create"
-                    className="hidden md:flex items-center px-3 py-1.5 mr-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all text-sm font-medium"
+                    className="hidden md:flex items-center px-3 py-1.5 mr-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-all text-sm font-medium"
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Create Gig
@@ -147,12 +147,12 @@ export default function Navigation({ className = '' }: NavigationProps) {
 
                 {/* User menu */}
                 <HeadlessMenu as="div" className="relative ml-3">
-                  <HeadlessMenu.Button className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                  <HeadlessMenu.Button className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-primary">
                     <div className="flex items-center space-x-2 px-2 py-1 rounded-lg hover-bg transition-colors">
                       <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                        <User className="h-5 w-5 text-white" />
+                        <User className="h-5 w-5 text-primary-foreground" />
                       </div>
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground-500" />
                     </div>
                   </HeadlessMenu.Button>
 
@@ -165,14 +165,14 @@ export default function Navigation({ className = '' }: NavigationProps) {
                     leaveFrom="transform opacity-100 scale-100"
                     leaveTo="transform opacity-0 scale-95"
                   >
-                    <HeadlessMenu.Items className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-lg bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <HeadlessMenu.Items className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-lg bg-background py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                       <HeadlessMenu.Item>
                         {({ active, close }) => (
                           <Link
                             href="/profile"
                             onClick={close}
                             className={`${
-                              active ? 'bg-gray-100' : ''
+                              active ? 'bg-muted-100' : ''
                             } flex items-center px-4 py-2 text-sm text-foreground hover-bg transition-colors cursor-pointer`}
                           >
                             <User className="h-4 w-4 mr-2" />
@@ -186,7 +186,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
                             href="/settings"
                             onClick={close}
                             className={`${
-                              active ? 'bg-gray-100' : ''
+                              active ? 'bg-muted-100' : ''
                             } flex items-center px-4 py-2 text-sm text-foreground hover-bg transition-colors cursor-pointer`}
                           >
                             <Settings className="h-4 w-4 mr-2" />
@@ -196,14 +196,14 @@ export default function Navigation({ className = '' }: NavigationProps) {
                       </HeadlessMenu.Item>
                       {isAdmin && (
                         <>
-                          <div className="border-t border-gray-100 my-1"></div>
+                          <div className="border-t border-border-100 my-1"></div>
                           <HeadlessMenu.Item>
                             {({ active, close }) => (
                               <Link
                                 href="/admin"
                                 onClick={close}
                                 className={`${
-                                  active ? 'bg-gray-100' : ''
+                                  active ? 'bg-muted-100' : ''
                                 } flex items-center px-4 py-2 text-sm text-primary font-medium hover-bg transition-colors cursor-pointer`}
                               >
                                 <Settings className="h-4 w-4 mr-2" />
@@ -213,28 +213,28 @@ export default function Navigation({ className = '' }: NavigationProps) {
                           </HeadlessMenu.Item>
                         </>
                       )}
-                      <div className="border-t border-gray-100 my-1"></div>
+                      <div className="border-t border-border-100 my-1"></div>
                       <HeadlessMenu.Item>
                         {({ active, close }) => (
                           <Link
                             href="/profile"
                             onClick={close}
                             className={`${
-                              active ? 'bg-emerald-50' : ''
-                            } flex items-center px-4 py-2 text-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors cursor-pointer font-medium`}
+                              active ? 'bg-primary-50' : ''
+                            } flex items-center px-4 py-2 text-sm text-primary-foreground bg-primary-600 hover:bg-primary-700 transition-colors cursor-pointer font-medium`}
                           >
                             <User className="h-4 w-4 mr-2" />
                             Edit Profile
                           </Link>
                         )}
                       </HeadlessMenu.Item>
-                      <div className="border-t border-gray-100 my-1"></div>
+                      <div className="border-t border-border-100 my-1"></div>
                       <HeadlessMenu.Item>
                         {({ active }) => (
                           <button
                             onClick={handleSignOut}
                             className={`${
-                              active ? 'bg-gray-100' : ''
+                              active ? 'bg-muted-100' : ''
                             } flex items-center w-full px-4 py-2 text-sm text-foreground hover-bg transition-colors cursor-pointer text-left`}
                           >
                             <LogOut className="h-4 w-4 mr-2" />
@@ -250,13 +250,13 @@ export default function Navigation({ className = '' }: NavigationProps) {
               <div className="flex items-center space-x-3">
                 <Link
                   href="/auth/signin"
-                  className="text-gray-700 hover:text-emerald-600 px-3 py-2 text-sm font-medium"
+                  className="text-muted-foreground-700 hover:text-primary-600 px-3 py-2 text-sm font-medium"
                 >
                   Sign in
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-all text-sm font-medium"
+                  className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-all text-sm font-medium"
                 >
                   Get Started
                 </Link>
@@ -266,7 +266,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden ml-2 inline-flex items-center justify-center p-2 rounded-md nav-item focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald-500"
+              className="md:hidden ml-2 inline-flex items-center justify-center p-2 rounded-md nav-item focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-primary"
             >
               {mobileMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -300,8 +300,8 @@ export default function Navigation({ className = '' }: NavigationProps) {
                     href={item.href}
                     className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${
                       isActive(item.href)
-                        ? 'text-emerald-600 bg-emerald-50'
-                        : 'text-gray-700 hover:text-emerald-600 hover:bg-emerald-50'
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50'
                     }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -314,7 +314,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
             {isContributor && (
               <Link
                 href="/gigs/create"
-                className="flex items-center px-3 py-2 rounded-md text-base font-medium bg-emerald-600 text-white hover:bg-emerald-700"
+                className="flex items-center px-3 py-2 rounded-md text-base font-medium bg-primary-600 text-primary-foreground hover:bg-primary-700"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Plus className="h-5 w-5 mr-2" />
@@ -324,11 +324,11 @@ export default function Navigation({ className = '' }: NavigationProps) {
           </div>
 
           {user ? (
-            <div className="pt-4 pb-3 border-t border-gray-200">
+            <div className="pt-4 pb-3 border-t border-border-200">
               <div className="px-2 space-y-1">
                 <Link
                   href="/profile"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 cursor-pointer"
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50 cursor-pointer"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="h-5 w-5 mr-2" />
@@ -336,7 +336,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
                 </Link>
                 <Link
                   href="/settings"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 cursor-pointer"
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50 cursor-pointer"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <Settings className="h-5 w-5 mr-2" />
@@ -345,7 +345,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
                 {isAdmin && (
                   <Link
                     href="/admin"
-                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-emerald-600 hover:bg-emerald-50 cursor-pointer"
+                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-primary-600 hover:bg-primary-50 cursor-pointer"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Settings className="h-5 w-5 mr-2" />
@@ -354,7 +354,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
                 )}
                 <Link
                   href="/profile"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-white bg-emerald-600 hover:bg-emerald-700 cursor-pointer"
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-primary-foreground bg-primary-600 hover:bg-primary-700 cursor-pointer"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <User className="h-5 w-5 mr-2" />
@@ -365,7 +365,7 @@ export default function Navigation({ className = '' }: NavigationProps) {
                     handleSignOut()
                     setMobileMenuOpen(false)
                   }}
-                  className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-emerald-600 hover:bg-emerald-50"
+                  className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50"
                 >
                   <LogOut className="h-5 w-5 mr-2" />
                   Sign out
@@ -373,18 +373,18 @@ export default function Navigation({ className = '' }: NavigationProps) {
               </div>
             </div>
           ) : (
-            <div className="pt-4 pb-3 border-t border-gray-200">
+            <div className="pt-4 pb-3 border-t border-border-200">
               <div className="px-2 space-y-1">
                 <Link
                   href="/auth/signin"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-emerald-600 hover:bg-emerald-50"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign in
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="block px-3 py-2 rounded-md text-base font-medium bg-emerald-600 text-white hover:bg-emerald-700"
+                  className="block px-3 py-2 rounded-md text-base font-medium bg-primary-600 text-primary-foreground hover:bg-primary-700"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Get Started

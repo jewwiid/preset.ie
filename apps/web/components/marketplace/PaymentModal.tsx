@@ -137,18 +137,18 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
         <CardContent className="space-y-6">
           {/* Order Summary */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900">Order Summary</h3>
-            <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+            <h3 className="font-semibold text-muted-foreground-900">Order Summary</h3>
+            <div className="bg-muted-50 p-3 rounded-lg space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Item:</span>
+                <span className="text-sm text-muted-foreground-600">Item:</span>
                 <span className="text-sm font-medium">{order.title}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Owner:</span>
+                <span className="text-sm text-muted-foreground-600">Owner:</span>
                 <span className="text-sm font-medium">{order.owner_name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Type:</span>
+                <span className="text-sm text-muted-foreground-600">Type:</span>
                 <Badge variant="outline" className="text-xs">
                   {order.type}
                 </Badge>
@@ -158,21 +158,21 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
 
           {/* Payment Breakdown */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900">Payment Breakdown</h3>
+            <h3 className="font-semibold text-muted-foreground-900">Payment Breakdown</h3>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Base amount:</span>
+                <span className="text-sm text-muted-foreground-600">Base amount:</span>
                 <span className="text-sm font-medium">{formatPrice(order.amount_cents)}</span>
               </div>
               {order.retainer_cents && order.retainer_cents > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Retainer:</span>
+                  <span className="text-sm text-muted-foreground-600">Retainer:</span>
                   <span className="text-sm font-medium">{formatPrice(order.retainer_cents)}</span>
                 </div>
               )}
               {order.deposit_cents && order.deposit_cents > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Deposit:</span>
+                  <span className="text-sm text-muted-foreground-600">Deposit:</span>
                   <span className="text-sm font-medium">{formatPrice(order.deposit_cents)}</span>
                 </div>
               )}
@@ -186,15 +186,15 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
 
           {/* Payment Method Selection */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900">Payment Method</h3>
+            <h3 className="font-semibold text-muted-foreground-900">Payment Method</h3>
             <RadioGroup value={paymentMethod} onValueChange={(value: 'credits' | 'stripe') => setPaymentMethod(value)}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="credits" id="credits" />
                 <Label htmlFor="credits" className="flex items-center space-x-2 cursor-pointer">
-                  <Coins className="h-4 w-4 text-yellow-500" />
+                  <Coins className="h-4 w-4 text-primary-500" />
                   <span>Credits</span>
                   {userCredits && (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground-500">
                       ({userCredits.current_balance} available)
                     </span>
                   )}
@@ -203,7 +203,7 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="stripe" id="stripe" />
                 <Label htmlFor="stripe" className="flex items-center space-x-2 cursor-pointer">
-                  <CreditCard className="h-4 w-4 text-blue-500" />
+                  <CreditCard className="h-4 w-4 text-primary-500" />
                   <span>Credit Card</span>
                 </Label>
               </div>
@@ -213,22 +213,22 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
             {paymentMethod === 'credits' && (
               <div className="mt-3">
                 {creditsLoading ? (
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground-500">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-400"></div>
                     <span>Loading credit balance...</span>
                   </div>
                 ) : userCredits ? (
                   <div className={`p-3 rounded-lg ${
-                    canPayWithCredits() ? 'bg-primary-50 border border-primary/20' : 'bg-red-50 border border-red-200'
+                    canPayWithCredits() ? 'bg-primary-50 border border-primary/20' : 'bg-destructive-50 border border-destructive-200'
                   }`}>
                     <div className="flex items-center space-x-2">
                       {canPayWithCredits() ? (
                         <CheckCircle className="h-4 w-4 text-primary-600" />
                       ) : (
-                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <AlertCircle className="h-4 w-4 text-destructive-600" />
                       )}
                       <span className={`text-sm font-medium ${
-                        canPayWithCredits() ? 'text-primary-800' : 'text-red-800'
+                        canPayWithCredits() ? 'text-primary-800' : 'text-destructive-800'
                       }`}>
                         {canPayWithCredits() 
                           ? `Sufficient credits available (${userCredits.current_balance} credits)`
@@ -238,10 +238,10 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+                  <div className="p-3 rounded-lg bg-destructive-50 border border-destructive-200">
                     <div className="flex items-center space-x-2">
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                      <span className="text-sm font-medium text-red-800">
+                      <AlertCircle className="h-4 w-4 text-destructive-600" />
+                      <span className="text-sm font-medium text-destructive-800">
                         Unable to load credit balance
                       </span>
                     </div>
@@ -252,10 +252,10 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
           </div>
 
           {/* Security Notice */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-3 bg-primary-50 border border-primary-200 rounded-lg">
             <div className="flex items-start space-x-2">
-              <Shield className="h-4 w-4 text-blue-600 mt-0.5" />
-              <div className="text-sm text-blue-800">
+              <Shield className="h-4 w-4 text-primary-600 mt-0.5" />
+              <div className="text-sm text-primary-800">
                 <p className="font-medium">Secure Payment</p>
                 <p>Your payment is processed securely. Retainers are held until order completion.</p>
               </div>
@@ -275,7 +275,7 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
               disabled={loading || (paymentMethod === 'credits' && !canPayWithCredits())}
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
               ) : (
                 <>
                   <Euro className="h-4 w-4 mr-2" />

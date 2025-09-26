@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,6 +10,7 @@ import EquipmentRequestCard from '@/components/marketplace/EquipmentRequestCard'
 import CreateRequestModal from '@/components/marketplace/CreateRequestModal';
 import { Plus, Search, Filter, AlertCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { useSearchParams } from 'next/navigation';
 
 interface EquipmentRequest {
   id: string;
@@ -50,11 +51,12 @@ const CATEGORIES = [
   'other'
 ];
 
-export default function EquipmentRequestsPage() {
+function EquipmentRequestsPageContent() {
   const [requests, setRequests] = useState<EquipmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const searchParams = useSearchParams();
   
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,6 +65,17 @@ export default function EquipmentRequestsPage() {
   const [urgentOnly, setUrgentOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+
+  // Check for create query parameter
+  useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      setShowCreateModal(true);
+      // Clean up the URL by removing the query parameter
+      const url = new URL(window.location.href);
+      url.searchParams.delete('create');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
 
   const fetchRequests = async (pageNum = 1, reset = false) => {
     try {
@@ -382,5 +395,13 @@ export default function EquipmentRequestsPage() {
         onSuccess={handleCreateSuccess}
       />
     </div>
+  );
+}
+
+export default function EquipmentRequestsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EquipmentRequestsPageContent />
+    </Suspense>
   );
 }

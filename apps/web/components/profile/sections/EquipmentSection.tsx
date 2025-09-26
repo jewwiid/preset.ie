@@ -630,52 +630,52 @@ export function EquipmentSection() {
   return (
     <div className="space-y-6">
       {/* Equipment List */}
-      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-muted rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
           <Camera className="w-4 h-4" />
           Equipment
         </h3>
         
         {loadingEquipmentData ? (
           <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading equipment...</p>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+            <p className="text-sm text-muted-foreground mt-2">Loading equipment...</p>
           </div>
         ) : userEquipment.length === 0 ? (
           <div className="text-center py-8">
-            <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No equipment added yet</h4>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Add your photography and video equipment to showcase your capabilities.</p>
+            <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h4 className="text-lg font-medium text-foreground mb-2">No equipment added yet</h4>
+            <p className="text-muted-foreground text-sm">Add your photography and video equipment to showcase your capabilities.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {userEquipment.map((equipment) => {
               const EquipmentIcon = getEquipmentTypeIcon(equipment.equipment_type)
               return (
-                <div key={equipment.id} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow">
+                <div key={equipment.id} className="flex items-center justify-between bg-card rounded-lg p-4 border border-border hover:shadow-sm transition-shadow">
                   <div className="flex items-center gap-3 flex-1">
                     <div className="flex-shrink-0">
                       <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                        <EquipmentIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                        <EquipmentIcon className="w-5 h-5 text-muted-foreground" />
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">{equipment.brand}</span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">{equipment.model}</span>
+                        <span className="text-sm font-medium text-foreground">{equipment.brand}</span>
+                        <span className="text-sm text-muted-foreground">{equipment.model}</span>
                         {equipment.is_primary && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                             Primary
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatEquipmentTypeName(equipment.equipment_type)}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{formatEquipmentTypeName(equipment.equipment_type)}</div>
                     </div>
                   </div>
                   {isEditing && (
                     <button
                       onClick={() => removeEquipment(equipment.id)}
-                      className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1 flex-shrink-0"
+                      className="text-destructive-600 hover:text-destructive-800 dark:text-destructive-400 dark:hover:text-destructive-300 p-1 flex-shrink-0"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -689,27 +689,27 @@ export function EquipmentSection() {
 
       {/* Add Equipment Form */}
       {isEditing && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-6">
+        <div className="bg-card rounded-lg border border-border p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Plus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <Plus className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <h4 className="text-lg font-medium text-gray-900 dark:text-white">Add Equipment</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Add your photography and video equipment</p>
+              <h4 className="text-lg font-medium text-foreground">Add Equipment</h4>
+              <p className="text-sm text-muted-foreground">Add your photography and video equipment</p>
             </div>
           </div>
           
           <div className="space-y-4">
             {/* Equipment Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Equipment Type *
               </label>
               <select
                 value={selectedEquipmentType}
                 onChange={(e) => handleTypeChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
               >
                 <option value="">Select equipment type...</option>
                 {equipmentTypes.map((type) => (
@@ -723,13 +723,13 @@ export function EquipmentSection() {
             {/* Brand Selection */}
             {selectedEquipmentType && !allowCustomModel && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Brand *
                 </label>
                 <select
                   value={selectedEquipmentBrand}
                   onChange={(e) => handleBrandChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
                 >
                   <option value="">Select brand...</option>
                   {getBrandsForType(selectedEquipmentType).map((brand) => (
@@ -744,13 +744,13 @@ export function EquipmentSection() {
             {/* Model Selection */}
             {selectedEquipmentBrand && !allowCustomModel && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Model *
                 </label>
                 <select
                   value={selectedEquipmentModel}
                   onChange={(e) => setSelectedEquipmentModel(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
                 >
                   <option value="">Select model...</option>
                   {getModelsForBrand(selectedEquipmentBrand).map((model) => (
@@ -764,17 +764,17 @@ export function EquipmentSection() {
 
             {/* Custom Input Toggle */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-sm font-medium text-foreground">
                 Use custom brand/model
               </span>
               <button
                 onClick={toggleCustomMode}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  allowCustomModel ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-600'
+                  allowCustomModel ? 'bg-primary' : 'bg-muted'
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-background transition-transform ${
                     allowCustomModel ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -784,7 +784,7 @@ export function EquipmentSection() {
             {/* Custom Brand Input */}
             {allowCustomModel && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Brand Name *
                 </label>
                 <input
@@ -792,7 +792,7 @@ export function EquipmentSection() {
                   value={newEquipmentBrand}
                   onChange={(e) => setNewEquipmentBrand(e.target.value)}
                   placeholder="Enter brand name..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
             )}
@@ -800,7 +800,7 @@ export function EquipmentSection() {
             {/* Custom Model Input */}
             {allowCustomModel && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Model Name *
                 </label>
                 <input
@@ -808,17 +808,17 @@ export function EquipmentSection() {
                   value={newEquipmentModel}
                   onChange={(e) => setNewEquipmentModel(e.target.value)}
                   placeholder="Enter model name..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
                 />
               </div>
             )}
 
             {/* Error Display */}
             {equipmentValidationError && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+              <div className="bg-destructive-50 dark:bg-destructive-900/20 border border-destructive-200 dark:border-destructive-800 rounded-lg p-3">
                 <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                  <span className="text-sm text-red-600 dark:text-red-400">
+                  <AlertCircle className="w-4 h-4 text-destructive" />
+                  <span className="text-sm text-destructive">
                     {equipmentValidationError}
                   </span>
                 </div>

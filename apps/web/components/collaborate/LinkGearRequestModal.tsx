@@ -163,12 +163,12 @@ export default function LinkGearRequestModal({
 
         <CardContent className="space-y-6">
           {/* Gear Request Info */}
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="p-4 bg-primary-50 rounded-lg border border-primary-200">
             <div className="flex items-center mb-2">
-              <Package className="h-4 w-4 mr-2 text-blue-600" />
-              <h3 className="font-medium text-blue-900">Linking to Gear Request</h3>
+              <Package className="h-4 w-4 mr-2 text-primary-600" />
+              <h3 className="font-medium text-primary-900">Linking to Gear Request</h3>
             </div>
-            <div className="space-y-1 text-sm text-blue-800">
+            <div className="space-y-1 text-sm text-primary-800">
               <div><strong>Category:</strong> {gearRequest.category}</div>
               {gearRequest.equipment_spec && (
                 <div><strong>Specification:</strong> {gearRequest.equipment_spec}</div>
@@ -185,7 +185,7 @@ export default function LinkGearRequestModal({
           <form onSubmit={handleSearch} className="space-y-4">
             <div className="flex space-x-2">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground-400" />
                 <Input
                   placeholder="Search for equipment listings..."
                   value={searchQuery}
@@ -196,7 +196,7 @@ export default function LinkGearRequestModal({
               <Button type="submit" disabled={searching || !searchQuery.trim()}>
                 {searching ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                     Searching...
                   </>
                 ) : (
@@ -208,8 +208,8 @@ export default function LinkGearRequestModal({
 
           {/* Error */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-600 text-sm">{error}</p>
+            <div className="p-3 bg-destructive-50 border border-destructive-200 rounded-md">
+              <p className="text-destructive-600 text-sm">{error}</p>
             </div>
           )}
 
@@ -225,10 +225,10 @@ export default function LinkGearRequestModal({
                       key={listing.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                         selectedListing?.id === listing.id
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-primary-500 bg-primary-50'
                           : compatible
                           ? 'border-primary/20 bg-primary-50 hover:bg-primary/20'
-                          : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                          : 'border-border-200 bg-muted-50 hover:bg-muted-100'
                       }`}
                       onClick={() => setSelectedListing(listing)}
                     >
@@ -247,9 +247,9 @@ export default function LinkGearRequestModal({
                             )}
                           </div>
                           
-                          <p className="text-sm text-gray-600 mb-2">{listing.description}</p>
+                          <p className="text-sm text-muted-foreground-600 mb-2">{listing.description}</p>
                           
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground-500">
                             <span className="font-medium">{listing.category}</span>
                             {listing.rent_day_cents && (
                               <span className="text-primary-600 font-medium">
@@ -257,7 +257,7 @@ export default function LinkGearRequestModal({
                               </span>
                             )}
                             {listing.sale_price_cents && (
-                              <span className="text-blue-600 font-medium">
+                              <span className="text-primary-600 font-medium">
                                 {formatPrice(listing.sale_price_cents)} total
                               </span>
                             )}
@@ -285,7 +285,7 @@ export default function LinkGearRequestModal({
                               )}
                             </div>
                             {listing.owner.rating && (
-                              <div className="flex items-center text-xs text-gray-500">
+                              <div className="flex items-center text-xs text-muted-foreground-500">
                                 <Star className="h-3 w-3 mr-1 fill-current" />
                                 {listing.owner.rating.toFixed(1)}
                               </div>
@@ -302,9 +302,9 @@ export default function LinkGearRequestModal({
 
           {listings.length === 0 && !searching && searchQuery && (
             <div className="text-center py-8">
-              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Listings Found</h3>
-              <p className="text-gray-500">Try adjusting your search terms or create a new listing instead.</p>
+              <Package className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No Listings Found</h3>
+              <p className="text-muted-foreground-500">Try adjusting your search terms or create a new listing instead.</p>
             </div>
           )}
 
@@ -319,7 +319,7 @@ export default function LinkGearRequestModal({
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                   Linking...
                 </>
               ) : (

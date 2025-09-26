@@ -226,14 +226,14 @@ function PresetMarketplaceContent() {
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      headshot: 'bg-blue-100 text-blue-800',
-      product_photography: 'bg-green-100 text-green-800',
-      ecommerce: 'bg-orange-100 text-orange-800',
-      cinematic: 'bg-purple-100 text-purple-800',
-      artistic: 'bg-pink-100 text-pink-800',
-      portrait: 'bg-indigo-100 text-indigo-800'
+      headshot: 'bg-primary-100 text-primary-800',
+      product_photography: 'bg-primary-100 text-primary-800',
+      ecommerce: 'bg-primary-100 text-primary-800',
+      cinematic: 'bg-primary-100 text-primary-800',
+      artistic: 'bg-primary-100 text-primary-800',
+      portrait: 'bg-primary-100 text-primary-800'
     };
-    return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    return colors[category as keyof typeof colors] || 'bg-muted-100 text-muted-foreground-800';
   };
 
   return (
@@ -255,7 +255,7 @@ function PresetMarketplaceContent() {
               {user && (
                 <div className="flex items-center space-x-4 text-sm">
                   <div className="flex items-center space-x-1">
-                    <DollarSign className="h-4 w-4 text-green-600" />
+                    <DollarSign className="h-4 w-4 text-primary-600" />
                     <span className="font-medium">{userStats?.credits.current_balance || 0} credits</span>
                   </div>
                 </div>
@@ -319,15 +319,15 @@ function PresetMarketplaceContent() {
                           <div className="text-sm text-muted-foreground">Credits Available</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-green-600">{userStats.stats.total_purchases}</div>
+                          <div className="text-2xl font-bold text-primary-600">{userStats.stats.total_purchases}</div>
                           <div className="text-sm text-muted-foreground">Purchases Made</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">{userStats.stats.total_listings}</div>
+                          <div className="text-2xl font-bold text-primary-600">{userStats.stats.total_listings}</div>
                           <div className="text-sm text-muted-foreground">My Listings</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-2xl font-bold text-purple-600">{userStats.stats.total_revenue}</div>
+                          <div className="text-2xl font-bold text-primary-600">{userStats.stats.total_revenue}</div>
                           <div className="text-sm text-muted-foreground">Credits Earned</div>
                         </div>
                       </div>
@@ -449,7 +449,7 @@ function PresetMarketplaceContent() {
                 {/* Presets Grid */}
                 {error ? (
                   <div className="text-center py-12">
-                    <p className="text-red-500 mb-4">{error}</p>
+                    <p className="text-destructive-500 mb-4">{error}</p>
                     <Button onClick={() => fetchMarketplacePresets()}>Try Again</Button>
                   </div>
                 ) : loading ? (
@@ -482,13 +482,13 @@ function PresetMarketplaceContent() {
                                   {preset.category}
                                 </Badge>
                                 {preset.total_sales > 0 && (
-                                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                  <Badge variant="secondary" className="bg-primary-100 text-primary-800">
                                     <Star className="h-3 w-3 mr-1" />
                                     {preset.total_sales} sales
                                   </Badge>
                                 )}
                                 {preset.average_rating > 0 && (
-                                  <Badge variant="outline" className="text-yellow-600">
+                                  <Badge variant="outline" className="text-primary-600">
                                     ⭐ {preset.average_rating.toFixed(1)}
                                   </Badge>
                                 )}
@@ -551,7 +551,7 @@ function PresetMarketplaceContent() {
                               disabled={purchaseLoading === preset.preset_id}
                             >
                               {purchaseLoading === preset.preset_id ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
                               ) : (
                                 <>
                                   <ShoppingCart className="h-4 w-4 mr-2" />
@@ -675,7 +675,7 @@ function PresetMarketplaceContent() {
                             <h3 className="font-medium">Marketplace Status</h3>
                             <p className="text-sm text-muted-foreground">Current marketplace status and settings</p>
                           </div>
-                          <Badge variant="outline" className="bg-green-100 text-green-800">
+                          <Badge variant="outline" className="bg-primary-100 text-primary-800">
                             Active
                           </Badge>
                         </div>
@@ -685,7 +685,7 @@ function PresetMarketplaceContent() {
                             <h3 className="font-medium">Pending Approvals</h3>
                             <p className="text-sm text-muted-foreground">Listings waiting for admin approval</p>
                           </div>
-                          <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                          <Badge variant="outline" className="bg-primary-100 text-primary-800">
                             0 pending
                           </Badge>
                         </div>
@@ -695,7 +695,7 @@ function PresetMarketplaceContent() {
                             <h3 className="font-medium">Total Revenue</h3>
                             <p className="text-sm text-muted-foreground">Credits earned through marketplace</p>
                           </div>
-                          <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                          <Badge variant="outline" className="bg-primary-100 text-primary-800">
                             0 credits
                           </Badge>
                         </div>

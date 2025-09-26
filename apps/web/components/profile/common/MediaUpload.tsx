@@ -118,7 +118,7 @@ export function MediaUpload({
     }
     
     if (currentUrl) {
-      return `${baseClasses} border-gray-300 dark:border-gray-600`
+      return `${baseClasses} border-border`
     }
     
     return `${baseClasses} border-border hover:border-primary hover:bg-primary/10`
@@ -149,14 +149,14 @@ export function MediaUpload({
             <button
               type="button"
               onClick={handleClick}
-              className="p-2 bg-white text-gray-800 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-2 bg-background text-muted-foreground-800 rounded-full hover:bg-muted-100 transition-colors"
             >
               <Camera className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={handleRemove}
-              className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+              className="p-2 bg-destructive-500 text-primary-foreground rounded-full hover:bg-destructive-600 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -172,23 +172,23 @@ export function MediaUpload({
         >
           {uploadProgress > 0 ? (
             <div className="space-y-2">
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-2">
                 <div
                   className="bg-primary h-2 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Uploading... {uploadProgress}%
               </p>
             </div>
           ) : (
             <div className="space-y-2">
-              <Upload className="w-8 h-8 mx-auto text-gray-400" />
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <Upload className="w-8 h-8 mx-auto text-muted-foreground-400" />
+              <p className="text-sm text-muted-foreground">
                 {isDragging ? 'Drop image here' : 'Click to upload or drag and drop'}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 PNG, JPG, GIF up to 10MB
               </p>
             </div>

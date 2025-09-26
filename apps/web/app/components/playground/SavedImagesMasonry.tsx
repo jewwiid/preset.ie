@@ -580,7 +580,7 @@ export default function SavedMediaMasonry({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-green-500/10 hover:shadow-md hover:text-green-600"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-primary-500/10 hover:shadow-md hover:text-primary-600"
                       onClick={(e) => {
                         e.stopPropagation()
                         onDownload(image.image_url || image.video_url || '', image.title)
@@ -603,7 +603,7 @@ export default function SavedMediaMasonry({
                       title="Delete"
                     >
                       {deletingImage === image.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
                       ) : (
                         <Trash2 className="h-4 w-4" />
                       )}
@@ -613,7 +613,7 @@ export default function SavedMediaMasonry({
                     <Button
                       size="sm"
                       variant="default"
-                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-blue-600 hover:shadow-md bg-blue-500"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-primary-600 hover:shadow-md bg-primary-500"
                       onClick={(e) => {
                         e.stopPropagation()
                         onPromote(image.id)
@@ -622,7 +622,7 @@ export default function SavedMediaMasonry({
                       title="Promote to Media"
                     >
                       {promotingImage === image.id ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
                       ) : (
                         <ArrowUp className="h-4 w-4" />
                       )}
@@ -636,8 +636,8 @@ export default function SavedMediaMasonry({
             <div className="absolute bottom-0 left-0 right-0 bg-backdrop p-3 opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-white text-sm font-medium truncate">{image.title}</h4>
-                  <p className="text-white/80 text-xs truncate">{image.description}</p>
+                  <h4 className="text-primary-foreground text-sm font-medium truncate">{image.title}</h4>
+                  <p className="text-primary-foreground/80 text-xs truncate">{image.description}</p>
                 </div>
                 <div className="flex items-center gap-1 ml-2">
                   <Badge variant="secondary" className="text-xs bg-background/20 text-foreground border-border/30">

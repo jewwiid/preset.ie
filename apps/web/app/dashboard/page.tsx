@@ -801,7 +801,7 @@ export default function Dashboard() {
             </div>
             
             {/* Welcome Message - Below buttons on mobile */}
-            <div className="text-white lg:order-1">
+            <div className="text-primary-foreground lg:order-1">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2">
                 Welcome back, {isAdmin ? 'Admin' : profile.display_name}!
               </h1>
@@ -832,13 +832,13 @@ export default function Dashboard() {
                       />
                     ) : (
                       <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center border-2 border-primary/20 shadow-lg">
-                        <span className="text-white font-bold text-xl">
+                        <span className="text-primary-foreground font-bold text-xl">
                           {profile.display_name?.charAt(0)?.toUpperCase() || 'U'}
                         </span>
                       </div>
                     )}
                     <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary border-2 border-background rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                      <div className="w-2 h-2 bg-background rounded-full"></div>
                     </div>
                   </div>
                   
@@ -852,7 +852,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <span className="text-sm">@{profile.handle}</span>
-                      <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                      <span className="w-1 h-1 bg-muted-foreground rounded-full"></span>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="text-sm font-medium">
@@ -866,7 +866,7 @@ export default function Dashboard() {
 
                 {/* Verification Badge */}
                 {(profile.verification_status === 'id_verified' || profile.verification_status === 'fully_verified') && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 dark:bg-preset-900/20 text-primary rounded-lg border border-preset-100 dark:border-preset-800">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary rounded-lg border border-primary/20">
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
@@ -883,7 +883,7 @@ export default function Dashboard() {
                 >
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200 flex-shrink-0">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                       </svg>
                     </div>
@@ -905,7 +905,7 @@ export default function Dashboard() {
                 >
                   <div className="flex items-center gap-3 sm:gap-4">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200 flex-shrink-0">
-                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                       </svg>
                     </div>
@@ -926,7 +926,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
+                        <User className="w-4 h-4 text-primary-foreground" />
                       </div>
                       <div>
                         <p className="text-primary text-sm font-medium">Profile Completion</p>
@@ -1000,7 +1000,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
@@ -1023,11 +1023,11 @@ export default function Dashboard() {
               {/* Mobile expand/collapse button */}
               <button
                 onClick={() => setIsRecentGigsExpanded(!isRecentGigsExpanded)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="lg:hidden p-2 rounded-lg hover:bg-accent transition-colors"
                 aria-label={isRecentGigsExpanded ? 'Collapse gigs' : 'Expand gigs'}
               >
                 <svg 
-                  className={`w-5 h-5 text-gray-600 dark:text-muted-foreground transition-transform duration-200 ${
+                  className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${
                     isRecentGigsExpanded ? 'rotate-180' : ''
                   }`} 
                   fill="none" 
@@ -1043,7 +1043,7 @@ export default function Dashboard() {
             }`}>
               {recentGigs.length > 0 ? (
                 recentGigs.map((gig) => (
-                  <div key={gig.id} className="p-4 bg-muted rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer">
+                  <div key={gig.id} className="p-4 bg-muted rounded-xl hover:bg-accent transition-colors cursor-pointer">
                     <h4 className="font-medium text-foreground text-sm mb-1">{gig.title}</h4>
                     <p className="text-xs text-muted-foreground mb-2">{gig.description}</p>
                     <div className="flex justify-between items-center">
@@ -1057,7 +1057,7 @@ export default function Dashboard() {
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         gig.status === 'PUBLISHED' 
                           ? 'bg-primary/10 text-primary' 
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                          : 'bg-muted text-muted-foreground'
                       }`}>
                         {gig.status}
                       </span>
@@ -1074,7 +1074,7 @@ export default function Dashboard() {
               {recentGigs.length > 0 && (
                 <button 
                   onClick={() => router.push(isContributor ? '/gigs/my-gigs' : '/gigs')}
-                  className="w-full text-center py-3 text-sm text-primary hover:text-preset-700 dark:hover:text-preset-300 font-medium"
+                  className="w-full text-center py-3 text-sm text-primary hover:text-primary/80 font-medium"
                 >
                   {isContributor ? 'View All My Gigs' : 'Browse All Gigs'} →
                 </button>
@@ -1093,7 +1093,7 @@ export default function Dashboard() {
               <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                   </div>
@@ -1104,7 +1104,7 @@ export default function Dashboard() {
                   <div className="ml-auto">
                     <button
                       onClick={() => router.push('/messages')}
-                      className="text-sm text-primary hover:text-blue-700 font-medium"
+                      className="text-sm text-primary hover:text-primary/80 font-medium"
                     >
                       View All →
                     </button>
@@ -1124,7 +1124,7 @@ export default function Dashboard() {
                         'from-primary/10 to-primary/20 border-primary/20 hover:bg-primary/20',
                         'from-primary/20 to-primary/30 border-primary/20 hover:bg-primary/30',
                         'from-primary/10 to-primary/20 border-primary/20 hover:bg-primary/20',
-                        'from-secondary/10 to-secondary/20 border-secondary/20 hover:bg-secondary/20'
+                        'from-muted/10 to-muted/20 border-border hover:bg-muted/20'
                       ]
                       const colorClass = colors[index % colors.length]
                       
@@ -1162,7 +1162,7 @@ export default function Dashboard() {
                                   className="w-8 h-8 rounded-full object-cover"
                                 />
                               ) : (
-                                <span className="text-white text-sm font-bold">{initials}</span>
+                                <span className="text-primary-foreground text-sm font-bold">{initials}</span>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1204,7 +1204,7 @@ export default function Dashboard() {
                       </p>
                       <button
                         onClick={() => router.push('/messages')}
-                        className="inline-flex items-center px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                        className="inline-flex items-center px-3 py-2 bg-primary text-primary-foreground text-xs font-medium rounded-lg hover:bg-primary/90 transition-colors"
                       >
                         <svg className="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1220,7 +1220,7 @@ export default function Dashboard() {
               <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                   </div>
@@ -1236,7 +1236,7 @@ export default function Dashboard() {
                     <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                       <div className="flex items-start gap-3">
                         <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
@@ -1257,7 +1257,7 @@ export default function Dashboard() {
                     <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                       <div className="flex items-start gap-3">
                         <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
                         </div>
@@ -1278,7 +1278,7 @@ export default function Dashboard() {
                     <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                       <div className="flex items-start gap-3">
                         <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                           </svg>
                         </div>
@@ -1299,7 +1299,7 @@ export default function Dashboard() {
                     <div className="p-4 bg-primary/10 rounded-xl border border-primary/20">
                       <div className="flex items-start gap-3">
                         <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
@@ -1320,8 +1320,8 @@ export default function Dashboard() {
                   {(!profile.years_experience || !profile.specializations || profile.specializations.length === 0) && (
                     <div className="p-4 bg-muted rounded-xl border border-border">
                       <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         </div>
@@ -1346,7 +1346,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
@@ -1357,7 +1357,7 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => router.push('/playground')}
-                className="text-sm text-primary hover:text-purple-700 font-medium"
+                className="text-sm text-primary hover:text-primary/80 font-medium"
               >
                 Generate More →
               </button>
@@ -1383,7 +1383,7 @@ export default function Dashboard() {
                   <p className="text-3xl font-bold text-foreground">{stats.totalGigs}</p>
                 </div>
                 <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
@@ -1400,7 +1400,7 @@ export default function Dashboard() {
                   <p className="text-3xl font-bold text-foreground">{stats.totalApplications}</p>
                 </div>
                 <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
@@ -1417,7 +1417,7 @@ export default function Dashboard() {
                   <p className="text-3xl font-bold text-foreground">{stats.totalShowcases}</p>
                 </div>
                 <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
@@ -1434,7 +1434,7 @@ export default function Dashboard() {
                   <p className="text-3xl font-bold text-foreground">{stats.totalMessages}</p>
                 </div>
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
@@ -1449,7 +1449,7 @@ export default function Dashboard() {
               <div className="bg-card rounded-2xl p-8 border border-border shadow-xl">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
@@ -1486,7 +1486,7 @@ export default function Dashboard() {
               <div className="bg-card rounded-2xl p-8 border border-border shadow-xl">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>

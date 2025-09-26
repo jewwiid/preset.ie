@@ -96,19 +96,19 @@ function SignupSuccessContent() {
         {/* Logo Section */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-primary to-secondary-primary rounded-full mb-4">
-            <Camera className="w-8 h-8 text-white" />
+            <Camera className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-muted-foreground-900">
             Check your email
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-muted-foreground-600">
             We've sent a confirmation link to your email address
           </p>
         </div>
 
         {/* Email Display */}
         {email && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-primary-50 border border-primary-200 text-primary-700 px-4 py-3 rounded-lg">
             <div className="flex items-center">
               <Mail className="w-5 h-5 mr-2 flex-shrink-0" />
               <span className="text-sm font-medium">{email}</span>
@@ -118,14 +118,14 @@ function SignupSuccessContent() {
 
         {/* Alert Messages */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start">
+          <div className="mb-6 bg-destructive-50 border border-destructive-200 text-destructive-700 px-4 py-3 rounded-lg flex items-start">
             <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
             <span className="text-sm">{error}</span>
           </div>
         )}
 
         {/* Main Card */}
-        <div className="bg-white shadow-xl rounded-2xl p-8">
+        <div className="bg-background shadow-xl rounded-2xl p-8">
           <div className="text-center space-y-6">
             <div className="flex justify-center">
               <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
@@ -134,10 +134,10 @@ function SignupSuccessContent() {
             </div>
             
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-xl font-semibold text-muted-foreground-900 mb-2">
                 Almost there!
               </h2>
-              <p className="text-gray-600 text-sm">
+              <p className="text-muted-foreground-600 text-sm">
                 Click the link in your email to confirm your account, then you can complete your profile.
               </p>
             </div>
@@ -146,11 +146,11 @@ function SignupSuccessContent() {
               <button
                 onClick={handleCheckEmail}
                 disabled={loading}
-                className="w-full flex items-center justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-primary-primary to-secondary-primary hover:from-primary-primary/90 hover:to-secondary-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                className="w-full flex items-center justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-primary-foreground bg-gradient-to-r from-primary-primary to-secondary-primary hover:from-primary-primary/90 hover:to-secondary-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
               >
                 {loading ? (
                   <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
                     Checking...
                   </div>
                 ) : (
@@ -164,7 +164,7 @@ function SignupSuccessContent() {
               <button
                 onClick={handleResendEmail}
                 disabled={resending || !email}
-                className="w-full flex items-center justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="w-full flex items-center justify-center py-2 px-4 border border-border-300 text-sm font-medium rounded-lg text-muted-foreground-700 bg-background hover:bg-muted-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {resending ? (
                   <div className="flex items-center">
@@ -184,7 +184,7 @@ function SignupSuccessContent() {
 
         {/* Help Text */}
         <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground-600">
             Didn't receive the email? Check your spam folder or{' '}
             <button
               onClick={handleResendEmail}
@@ -200,7 +200,7 @@ function SignupSuccessContent() {
         <div className="text-center mt-6">
           <button
             onClick={() => router.push('/auth/signin')}
-            className="text-sm text-gray-600 hover:text-primary transition-colors"
+            className="text-sm text-muted-foreground-600 hover:text-primary transition-colors"
           >
             Back to sign in
           </button>

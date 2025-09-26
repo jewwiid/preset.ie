@@ -113,8 +113,8 @@ export default function MatchResults({
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-primary-600 bg-primary-50';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
+    if (score >= 60) return 'text-primary-600 bg-primary-50';
+    return 'text-destructive-600 bg-destructive-50';
   };
 
   const renderUserMatch = (user: UserMatch) => (
@@ -135,17 +135,17 @@ export default function MatchResults({
                 <Badge variant="secondary" className="text-xs">Verified</Badge>
               )}
               {user.rating && (
-                <div className="flex items-center text-sm text-gray-500">
+                <div className="flex items-center text-sm text-muted-foreground-500">
                   <Star className="h-3 w-3 mr-1 fill-current" />
                   {user.rating.toFixed(1)}
                 </div>
               )}
             </div>
             
-            <p className="text-sm text-gray-500 mb-2">@{user.username}</p>
+            <p className="text-sm text-muted-foreground-500 mb-2">@{user.username}</p>
             
             {(user.city || user.country) && (
-              <div className="flex items-center text-sm text-gray-500 mb-2">
+              <div className="flex items-center text-sm text-muted-foreground-500 mb-2">
                 <MapPin className="h-3 w-3 mr-1" />
                 {[user.city, user.country].filter(Boolean).join(', ')}
               </div>
@@ -197,8 +197,8 @@ export default function MatchResults({
     <Card key={equipment.listing_id} className="hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-start space-x-4">
-          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-            <Package className="h-8 w-8 text-gray-400" />
+          <div className="w-16 h-16 bg-muted-100 rounded-lg flex items-center justify-center">
+            <Package className="h-8 w-8 text-muted-foreground-400" />
           </div>
           
           <div className="flex-1 min-w-0">
@@ -209,10 +209,10 @@ export default function MatchResults({
               </Badge>
             </div>
             
-            <p className="text-sm text-gray-500 mb-2">{equipment.category}</p>
+            <p className="text-sm text-muted-foreground-500 mb-2">{equipment.category}</p>
             
             {(equipment.location_city || equipment.location_country) && (
-              <div className="flex items-center text-sm text-gray-500 mb-2">
+              <div className="flex items-center text-sm text-muted-foreground-500 mb-2">
                 <MapPin className="h-3 w-3 mr-1" />
                 {[equipment.location_city, equipment.location_country].filter(Boolean).join(', ')}
               </div>
@@ -225,7 +225,7 @@ export default function MatchResults({
                 </span>
               )}
               {equipment.sale_price_cents && (
-                <span className="text-blue-600 font-medium">
+                <span className="text-primary-600 font-medium">
                   {formatPrice(equipment.sale_price_cents)} total
                 </span>
               )}
@@ -244,7 +244,7 @@ export default function MatchResults({
                   <Badge variant="secondary" className="text-xs">Verified</Badge>
                 )}
                 {equipment.owner.rating && (
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-muted-foreground-500">
                     <Star className="h-3 w-3 mr-1 fill-current" />
                     {equipment.owner.rating.toFixed(1)}
                   </div>
@@ -307,9 +307,9 @@ export default function MatchResults({
   if (error) {
     return (
       <div className="text-center py-8">
-        <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Matches</h3>
-        <p className="text-gray-500 mb-4">{error}</p>
+        <AlertCircle className="h-12 w-12 text-destructive-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">Failed to Load Matches</h3>
+        <p className="text-muted-foreground-500 mb-4">{error}</p>
         <Button onClick={loadMatches}>Try Again</Button>
       </div>
     );
@@ -327,9 +327,9 @@ export default function MatchResults({
 
       {matches.length === 0 ? (
         <div className="text-center py-8">
-          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Matches Found</h3>
-          <p className="text-gray-500">
+          <Package className="h-12 w-12 text-muted-foreground-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No Matches Found</h3>
+          <p className="text-muted-foreground-500">
             {type === 'users_for_role' 
               ? 'No users match the requirements for this role.'
               : 'No equipment matches the requirements for this gear request.'

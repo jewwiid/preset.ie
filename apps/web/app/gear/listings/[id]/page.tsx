@@ -15,6 +15,8 @@ import MarketplaceMessaging from '@/components/marketplace/MarketplaceMessaging'
 import SafetyFeatures from '@/components/marketplace/SafetyFeatures';
 import VerificationBadge from '@/components/marketplace/VerificationBadge';
 import SafetyDisclaimer from '@/components/marketplace/SafetyDisclaimer';
+import RentalRequestForm from '@/components/marketplace/RentalRequestForm';
+import MakeOfferForm from '@/components/marketplace/MakeOfferForm';
 
 interface Listing {
   id: string;
@@ -50,11 +52,14 @@ interface Listing {
     verified_id?: boolean;
     created_at: string;
   };
-  images?: Array<{
+  listing_images?: Array<{
     id: string;
     path: string;
+    url: string;
     sort_order: number;
     alt_text?: string;
+    file_size?: number;
+    mime_type?: string;
   }>;
   availability?: Array<{
     id: string;
@@ -147,8 +152,8 @@ export default function ListingDetailPage() {
   };
 
   const getPrimaryImage = () => {
-    if (listing?.images && listing.images.length > 0) {
-      const sortedImages = listing.images.sort((a, b) => a.sort_order - b.sort_order);
+    if (listing?.listing_images && listing.listing_images.length > 0) {
+      const sortedImages = listing.listing_images.sort((a, b) => a.sort_order - b.sort_order);
       return sortedImages[selectedImageIndex] || sortedImages[0];
     }
     return null;
@@ -157,7 +162,7 @@ export default function ListingDetailPage() {
   const getPriceDisplay = () => {
     if (!listing) return null;
 
-    if (listing.mode === 'rent' || listing.mode === 'both') {
+    if (listing.mode === 'rent') {
       return (
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
@@ -171,6 +176,24 @@ export default function ListingDetailPage() {
               Weekly rate: {formatPrice(listing.rent_week_cents)}
             </div>
           )}
+          {/* Rental Additional Costs */}
+          <div className="space-y-1 pt-2 border-t border-border">
+            {listing.retainer_mode !== 'none' && (
+              <div className="text-sm text-muted-foreground">
+                Retainer: {formatPrice(listing.retainer_cents)}
+              </div>
+            )}
+            {listing.deposit_cents > 0 && (
+              <div className="text-sm text-muted-foreground">
+                Deposit: {formatPrice(listing.deposit_cents)}
+              </div>
+            )}
+            {listing.retainer_mode === 'none' && listing.borrow_ok && (
+              <div className="text-sm text-primary">
+                Free to borrow
+              </div>
+            )}
+          </div>
         </div>
       );
     } else if (listing.mode === 'sale') {
@@ -180,6 +203,55 @@ export default function ListingDetailPage() {
           <span className="text-2xl font-bold">
             {listing.sale_price_cents ? formatPrice(listing.sale_price_cents) : 'N/A'}
           </span>
+        </div>
+      );
+    } else if (listing.mode === 'both') {
+      return (
+        <div className="space-y-4">
+          {/* Rent Section */}
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-muted-foreground">Rent</div>
+            <div className="flex items-center space-x-2">
+              <Euro className="h-5 w-5 text-muted-foreground" />
+              <span className="text-2xl font-bold">
+                {listing.rent_day_cents ? formatPrice(listing.rent_day_cents) : 'N/A'}/day
+              </span>
+            </div>
+            {listing.rent_week_cents && (
+              <div className="text-sm text-muted-foreground">
+                Weekly rate: {formatPrice(listing.rent_week_cents)}
+              </div>
+            )}
+            {/* Rental Additional Costs */}
+            <div className="space-y-1 pt-2 border-t border-border">
+              {listing.retainer_mode !== 'none' && (
+                <div className="text-sm text-muted-foreground">
+                  Retainer: {formatPrice(listing.retainer_cents)}
+                </div>
+              )}
+              {listing.deposit_cents > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Deposit: {formatPrice(listing.deposit_cents)}
+                </div>
+              )}
+              {listing.retainer_mode === 'none' && listing.borrow_ok && (
+                <div className="text-sm text-primary">
+                  Free to borrow
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Sale Section */}
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-muted-foreground">Buy</div>
+            <div className="flex items-center space-x-2">
+              <Euro className="h-5 w-5 text-muted-foreground" />
+              <span className="text-2xl font-bold">
+                {listing.sale_price_cents ? formatPrice(listing.sale_price_cents) : 'N/A'}
+              </span>
+            </div>
+          </div>
         </div>
       );
     }
@@ -266,10 +338,10 @@ export default function ListingDetailPage() {
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-4">{listing.title}</h1>
               <div className="flex flex-wrap items-center gap-2 mb-4">
-                <Badge className={getConditionColor(listing.condition)}>
+                <Badge className={`${getConditionColor(listing.condition)} capitalize`}>
                   {listing.condition.replace('_', ' ')}
                 </Badge>
-                <Badge variant="outline">{listing.category}</Badge>
+                <Badge variant="outline" className="capitalize">{listing.category}</Badge>
                 {getModeBadges()}
                 {listing.verified_only && (
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
@@ -281,11 +353,11 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Images */}
-            {listing.images && listing.images.length > 0 && (
+            {listing.listing_images && listing.listing_images.length > 0 ? (
               <div className="space-y-4">
-                <div className="aspect-w-16 aspect-h-9 bg-muted rounded-lg overflow-hidden">
+                <div className="relative w-full h-64 sm:h-80 md:h-96 bg-muted rounded-lg overflow-hidden">
                   <Image
-                    src={getPrimaryImage()!.path}
+                    src={getPrimaryImage()!.url}
                     alt={getPrimaryImage()!.alt_text || listing.title}
                     fill
                     className="object-cover"
@@ -293,27 +365,43 @@ export default function ListingDetailPage() {
                   />
                 </div>
                 
-                {listing.images.length > 1 && (
+                {listing.listing_images.length > 1 && (
                   <div className="grid grid-cols-4 gap-2">
-                    {listing.images.slice(0, 4).map((image, index) => (
+                    {listing.listing_images.slice(0, 4).map((image, index) => (
                       <button
                         key={image.id}
                         onClick={() => setSelectedImageIndex(index)}
-                        className={`aspect-w-16 aspect-h-9 bg-muted rounded-lg overflow-hidden ${
-                          selectedImageIndex === index ? 'ring-2 ring-primary' : ''
+                        className={`relative w-full h-20 bg-muted rounded-lg overflow-hidden border-2 transition-all ${
+                          selectedImageIndex === index 
+                            ? 'border-primary ring-2 ring-primary ring-offset-2' 
+                            : 'border-transparent hover:border-muted-foreground/50'
                         }`}
                       >
                         <Image
-                          src={image.path}
+                          src={image.url}
                           alt={image.alt_text || listing.title}
                           fill
-                          className="object-cover"
+                          className="object-cover rounded-md"
                           sizes="(max-width: 768px) 25vw, (max-width: 1200px) 16vw, 12vw"
+                          onError={(e) => {
+                            console.error('Thumbnail image failed to load:', image.url, e);
+                          }}
+                          onLoad={() => {
+                            console.log('Thumbnail image loaded successfully:', image.url);
+                          }}
                         />
                       </button>
                     ))}
                   </div>
                 )}
+              </div>
+            ) : (
+              <div className="relative w-full h-64 sm:h-80 md:h-96 bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <div className="text-6xl mb-4">📷</div>
+                  <div className="text-lg font-medium">No images available</div>
+                  <div className="text-sm">Images will appear here when uploaded</div>
+                </div>
               </div>
             )}
 
@@ -342,11 +430,11 @@ export default function ListingDetailPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <span className="text-sm font-medium text-muted-foreground">Category</span>
-                        <p className="text-foreground">{listing.category}</p>
+                        <p className="text-foreground capitalize">{listing.category}</p>
                       </div>
                       <div>
                         <span className="text-sm font-medium text-muted-foreground">Condition</span>
-                        <p className="text-foreground">{listing.condition.replace('_', ' ')}</p>
+                        <p className="text-foreground capitalize">{listing.condition.replace('_', ' ')}</p>
                       </div>
                       <div>
                         <span className="text-sm font-medium text-muted-foreground">Quantity</span>
@@ -481,7 +569,7 @@ export default function ListingDetailPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 overflow-hidden">
             {/* Pricing Card */}
             <Card>
               <CardHeader>
@@ -489,18 +577,12 @@ export default function ListingDetailPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {getPriceDisplay()}
-                {getRetainerInfo()}
-                {listing.deposit_cents > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    Deposit: {formatPrice(listing.deposit_cents)}
-                  </div>
-                )}
               </CardContent>
             </Card>
 
             {/* Action Buttons */}
             <Card>
-              <CardContent className="p-6 space-y-3">
+              <CardContent className="p-6 space-y-3 overflow-hidden">
                 {(listing.mode === 'rent' || listing.mode === 'both') && (
                   <Button 
                     className="w-full" 
@@ -520,20 +602,57 @@ export default function ListingDetailPage() {
                   </Button>
                 )}
                 
-                <div className="flex space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
                   <Button 
                     variant="outline" 
-                    className="flex-1"
+                    className="flex-1 min-w-0"
                     onClick={() => setShowMessaging(true)}
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Message
                   </Button>
-                  <Button variant="outline" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 min-w-0"
+                    onClick={() => {
+                      // TODO: Implement save functionality
+                      toast.info('Save functionality coming soon');
+                    }}
+                  >
                     <Heart className="h-4 w-4 mr-2" />
                     Save
                   </Button>
-                  <Button variant="outline" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 min-w-0"
+                    onClick={async () => {
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({
+                            title: listing.title,
+                            text: `Check out this equipment listing: ${listing.title}`,
+                            url: window.location.href
+                          });
+                        } catch (error) {
+                          // Fallback to clipboard
+                          try {
+                            await navigator.clipboard.writeText(window.location.href);
+                            toast.success('Link copied to clipboard');
+                          } catch (clipboardError) {
+                            toast.error('Failed to copy link');
+                          }
+                        }
+                      } else {
+                        // Fallback to clipboard
+                        try {
+                          await navigator.clipboard.writeText(window.location.href);
+                          toast.success('Link copied to clipboard');
+                        } catch (error) {
+                          toast.error('Failed to copy link');
+                        }
+                      }
+                    }}
+                  >
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
@@ -551,7 +670,7 @@ export default function ListingDetailPage() {
                   {listing.owner_other_listings.map((otherListing) => (
                     <Link
                       key={otherListing.id}
-                      href={`/marketplace/listings/${otherListing.id}`}
+                      href={`/gear/listings/${otherListing.id}`}
                       className="block p-3 border border-border rounded-lg hover:bg-muted transition-colors"
                     >
                       <h4 className="font-medium text-foreground line-clamp-1">
@@ -598,6 +717,58 @@ export default function ListingDetailPage() {
                   title: listing.title
                 }}
                 onClose={() => setShowMessaging(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rental Request Modal */}
+      {showRentalForm && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Request Rental</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowRentalForm(false)}>
+                  ×
+                </Button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <RentalRequestForm 
+                listing={listing}
+                onClose={() => setShowRentalForm(false)}
+                onSuccess={() => {
+                  setShowRentalForm(false);
+                  // Optionally refresh data or show success message
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Make Offer Modal */}
+      {showOfferForm && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Make Offer</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowOfferForm(false)}>
+                  ×
+                </Button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6">
+              <MakeOfferForm 
+                listing={listing}
+                onClose={() => setShowOfferForm(false)}
+                onSuccess={() => {
+                  setShowOfferForm(false);
+                  // Optionally refresh data or show success message
+                }}
               />
             </div>
           </div>

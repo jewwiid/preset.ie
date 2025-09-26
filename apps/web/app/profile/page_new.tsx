@@ -25,7 +25,7 @@ function ProfilePageContent() {
       case 'credits':
         return (
           <div className="text-center py-8">
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Credits dashboard coming soon...
             </p>
           </div>
@@ -34,7 +34,7 @@ function ProfilePageContent() {
       case 'notifications':
         return (
           <div className="text-center py-8">
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Notifications settings coming soon...
             </p>
           </div>
@@ -43,7 +43,7 @@ function ProfilePageContent() {
       default:
         return (
           <div className="text-center py-8">
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Select a tab to get started
             </p>
           </div>

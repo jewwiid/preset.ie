@@ -76,7 +76,7 @@ export default function CinematicShowcaseFilters({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Film className="h-5 w-5 text-purple-600" />
+            <Film className="h-5 w-5 text-primary-600" />
             <CardTitle className="text-lg">Cinematic Filters</CardTitle>
             {hasActiveFilters && (
               <Badge variant="secondary" className="text-xs">
@@ -139,7 +139,7 @@ export default function CinematicShowcaseFilters({
                   onChange={(e) => handleFilterChange('cinematic_query', e.target.value)}
                   className="w-full"
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground-500">
                   Search across all cinematic parameters (e.g., "wes anderson", "low angle", "chiaroscuro")
                 </p>
               </div>
@@ -245,7 +245,7 @@ export default function CinematicShowcaseFilters({
                       {key.replace('_', ' ')}: {formatLabel(value)}
                       <button
                         onClick={() => handleFilterChange(key as keyof CinematicFilters, '')}
-                        className="ml-1 hover:text-red-500"
+                        className="ml-1 hover:text-destructive-500"
                       >
                         <X className="h-3 w-3" />
                       </button>

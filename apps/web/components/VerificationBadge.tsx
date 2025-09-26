@@ -31,25 +31,25 @@ const badgeConfig = {
   verified_email: {
     icon: CheckCircle,
     label: 'Email Verified',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
-    borderColor: 'border-blue-200',
+    color: 'text-primary-600',
+    bgColor: 'bg-primary-100',
+    borderColor: 'border-primary-200',
     tooltip: 'Email address has been verified'
   },
   verified_identity: {
     icon: Shield,
     label: 'ID Verified',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
-    borderColor: 'border-purple-200',
+    color: 'text-primary-600',
+    bgColor: 'bg-primary-100',
+    borderColor: 'border-primary-200',
     tooltip: 'Identity verified with government ID'
   },
   verified_professional: {
     icon: Briefcase,
     label: 'Pro Verified',
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-100',
-    borderColor: 'border-indigo-200',
+    color: 'text-primary-600',
+    bgColor: 'bg-primary-100',
+    borderColor: 'border-primary-200',
     tooltip: 'Professional credentials verified'
   },
   verified_business: {
@@ -63,17 +63,17 @@ const badgeConfig = {
   pending_verification: {
     icon: Clock,
     label: 'Pending Verification',
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-100',
-    borderColor: 'border-yellow-200',
+    color: 'text-primary-600',
+    bgColor: 'bg-primary-100',
+    borderColor: 'border-primary-200',
     tooltip: 'Verification in progress'
   },
   unverified: {
     icon: AlertCircle,
     label: 'Not Verified',
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-100',
-    borderColor: 'border-gray-200',
+    color: 'text-muted-foreground-500',
+    bgColor: 'bg-muted-100',
+    borderColor: 'border-border-200',
     tooltip: 'User has not completed verification'
   }
 }
@@ -171,7 +171,7 @@ export function VerificationStatus({
         />
       ))}
       {remainingCount > 0 && (
-        <span className="text-sm text-gray-500 ml-1">
+        <span className="text-sm text-muted-foreground-500 ml-1">
           +{remainingCount}
         </span>
       )}

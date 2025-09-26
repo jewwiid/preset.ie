@@ -126,7 +126,7 @@ export function BlockUserButton({
           size={size === 'md' ? 'default' : size}
           onClick={handleUnblock}
           disabled={isUnblocking}
-          className="text-red-600 hover:text-red-700 border-red-200"
+          className="text-destructive-600 hover:text-destructive-700 border-destructive-200"
         >
           <ShieldOff className="h-3 w-3 mr-1" />
           {isUnblocking ? 'Unblocking...' : 'Mutual Block - Unblock'}
@@ -159,7 +159,7 @@ export function BlockUserButton({
             variant="outline"
             size={size === 'md' ? 'default' : size}
             onClick={() => setShowBlockDialog(true)}
-            className="text-red-600 hover:text-red-700 border-red-200"
+            className="text-destructive-600 hover:text-destructive-700 border-destructive-200"
           >
             <Shield className="h-3 w-3 mr-1" />
             Block User
@@ -180,8 +180,8 @@ export function BlockUserButton({
     if (youBlockedThem.isBlocked) {
       return (
         <div className={`flex items-center gap-2 text-sm ${className}`}>
-          <Shield className="h-4 w-4 text-red-500" />
-          <span className="text-red-600">Blocked</span>
+          <Shield className="h-4 w-4 text-destructive-500" />
+          <span className="text-destructive-600">Blocked</span>
           <Button
             variant="link"
             size="sm"
@@ -219,7 +219,7 @@ export function BlockUserButton({
           ) : (
             <DropdownMenuItem 
               onClick={() => setShowBlockDialog(true)}
-              className="text-red-600 focus:text-red-700"
+              className="text-destructive-600 focus:text-destructive-700"
             >
               <Shield className="h-4 w-4 mr-2" />
               Block User

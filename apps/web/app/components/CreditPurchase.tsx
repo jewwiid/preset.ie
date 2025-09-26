@@ -292,8 +292,8 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
     return (
       <div className={`${embedded ? '' : 'min-h-screen'} flex items-center justify-center`}>
         <div className="text-center">
-          <p className="text-gray-500">Loading credit information...</p>
-          {error && <p className="text-red-500 mt-2">{error}</p>}
+          <p className="text-muted-foreground">Loading credit information...</p>
+          {error && <p className="text-destructive mt-2">{error}</p>}
         </div>
       </div>
     )
@@ -303,13 +303,13 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
     <div className={`${embedded ? '' : 'max-w-4xl mx-auto p-6'}`}>
       {!embedded && (
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Purchase Credits</h1>
-          <p className="text-gray-600">Buy additional credits for AI image enhancements</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Purchase Credits</h1>
+          <p className="text-muted-foreground">Buy additional credits for AI image enhancements</p>
         </div>
       )}
 
       {/* Current Balance - Row Layout */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl mb-6">
+      <div className="bg-background/90 backdrop-blur-sm rounded-2xl p-6 border border-border/20 shadow-xl mb-6">
         {/* Main Row Layout */}
         <div className="flex items-center gap-6">
           {/* Left: User Profile */}
@@ -321,31 +321,31 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   <img 
                     src={userProfile.avatar_url} 
                     alt={userProfile.display_name}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-preset-200 shadow-lg"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-primary/20 shadow-lg"
                   />
                 ) : (
-                  <div className="w-16 h-16 bg-gradient-to-br from-preset-400 to-preset-600 rounded-full flex items-center justify-center border-2 border-preset-200 shadow-lg">
-                    <span className="text-white font-bold text-xl">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center border-2 border-primary/20 shadow-lg">
+                    <span className="text-primary-foreground font-bold text-xl">
                       {userProfile.display_name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
                 )}
                 {/* Online status indicator */}
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-primary-500 border-2 border-white rounded-full"></div>
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-primary-500 border-2 border-border rounded-full"></div>
               </div>
               
               {/* User Info */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xl font-bold text-gray-900">{userProfile.display_name}</h2>
+                  <h2 className="text-xl font-bold text-foreground">{userProfile.display_name}</h2>
                   <span className="px-2 py-1 bg-primary-100 text-primary-800 text-xs font-semibold rounded-full">
                     {creditInfo?.subscriptionTier || 'FREE'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-500 text-sm">@{userProfile.handle}</span>
-                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                  <span className="text-gray-500 text-sm">Contributor & Talent</span>
+                  <span className="text-muted-foreground text-sm">@{userProfile.handle}</span>
+                  <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
+                  <span className="text-muted-foreground text-sm">Contributor & Talent</span>
                   <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
                 </div>
               </div>
@@ -400,12 +400,12 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     
                     if (creditInfo.currentBalance >= mediumThreshold) return 'text-primary-600'
                     if (creditInfo.currentBalance >= lowThreshold) return 'text-amber-600'
-                    return 'text-red-600'
+                    return 'text-destructive'
                   })()
                 }`}>
                   {creditInfo.currentBalance}
                 </div>
-                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">CREDITS</div>
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">CREDITS</div>
               </div>
             </div>
           </div>
@@ -413,35 +413,35 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
           {/* Right: Credit Details Cards */}
           <div className="flex gap-4">
             {/* Available Credits Card */}
-            <div className="bg-gradient-to-br from-primary-primary/10 to-primary-primary/10 rounded-xl p-4 border border-primary-100 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] min-w-[120px]">
+            <div className="bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl p-4 border border-primary/20 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] min-w-[120px]">
               <div className="flex flex-col items-center text-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-primary to-primary-primary rounded-full flex items-center justify-center mb-2 shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mb-2 shadow-lg">
+                  <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                   </svg>
                 </div>
                 <p className="text-primary-600 text-xs font-semibold mb-1">Available</p>
-                <p className="text-gray-900 text-xl font-bold">{creditInfo.currentBalance}</p>
+                <p className="text-muted-foreground-900 text-xl font-bold">{creditInfo.currentBalance}</p>
               </div>
             </div>
 
             {/* Usage Tracking Card */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] min-w-[120px]">
+            <div className="bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl p-4 border border-primary/20 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] min-w-[120px]">
               <div className="flex flex-col items-center text-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mb-2 shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mb-2 shadow-lg">
+                  <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <p className="text-blue-600 text-xs font-semibold mb-1">Used</p>
-                <p className="text-gray-900 text-xl font-bold">{creditInfo.consumedThisMonth}</p>
+                <p className="text-primary-600 text-xs font-semibold mb-1">Used</p>
+                <p className="text-muted-foreground-900 text-xl font-bold">{creditInfo.consumedThisMonth}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Row: Subscription Info */}
-        <div className="mt-6 pt-4 border-t border-gray-100">
+        <div className="mt-6 pt-4 border-t border-border-100">
           <div className="flex items-center justify-between">
             {/* Monthly Reset with Horizontal Progress */}
             <div className="flex flex-col gap-2">
@@ -503,21 +503,21 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                           </svg>
                         </div>
                         <div className="flex flex-col">
-                          <div className="text-lg font-bold text-gray-900">{lastResetDate.getDate()}</div>
-                          <div className="text-xs text-gray-500">{lastResetDate.toLocaleDateString('en-US', { month: 'short' })}</div>
+                          <div className="text-lg font-bold text-muted-foreground-900">{lastResetDate.getDate()}</div>
+                          <div className="text-xs text-muted-foreground-500">{lastResetDate.toLocaleDateString('en-US', { month: 'short' })}</div>
                         </div>
                       </div>
                       
                       {/* Progress Bar */}
                       <div className="flex-1 mx-6">
-                        <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="relative h-2 bg-muted-100 rounded-full overflow-hidden">
                           <div 
                             className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary-primary to-primary-primary rounded-full transition-all duration-500 ease-out"
                             style={{ width: `${cycleProgress * 100}%` }}
                           ></div>
                         </div>
                         <div className="text-center mt-1">
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-muted-foreground-500">
                             {daysUntilReset} days left
                           </span>
                         </div>
@@ -526,11 +526,11 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                       {/* Reset - Right Side */}
                       <div className="flex items-center gap-3">
                         <div className="flex flex-col text-right">
-                          <div className="text-lg font-bold text-gray-900">{nextResetDate.getDate()}</div>
-                          <div className="text-xs text-gray-500">{nextResetDate.toLocaleDateString('en-US', { month: 'short' })}</div>
+                          <div className="text-lg font-bold text-muted-foreground-900">{nextResetDate.getDate()}</div>
+                          <div className="text-xs text-muted-foreground-500">{nextResetDate.toLocaleDateString('en-US', { month: 'short' })}</div>
                         </div>
-                        <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center border border-gray-200">
-                          <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-10 h-10 bg-muted-50 rounded-lg flex items-center justify-center border border-border-200">
+                          <svg className="w-5 h-5 text-muted-foreground-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                         </div>
@@ -546,10 +546,10 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
               onClick={() => window.location.href = '/subscription'}
               className={`group relative inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md ${
                 creditInfo.subscriptionTier === 'PRO' 
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700' 
+                  ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary' 
                   : creditInfo.subscriptionTier === 'PLUS'
-                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700'
-                    : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white hover:from-gray-600 hover:to-gray-700'
+                    ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary'
+                    : 'bg-gradient-to-r from-muted to-muted/80 text-muted-foreground hover:from-muted/80 hover:to-muted'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -565,10 +565,10 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
               {/* Subtle glow effect */}
               <div className={`absolute inset-0 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-200 ${
                 creditInfo.subscriptionTier === 'PRO' 
-                  ? 'bg-purple-400' 
+                  ? 'bg-primary-400' 
                   : creditInfo.subscriptionTier === 'PLUS'
-                    ? 'bg-blue-400'
-                    : 'bg-gray-400'
+                    ? 'bg-primary-400'
+                    : 'bg-muted-400'
               }`}></div>
             </button>
           </div>
@@ -577,9 +577,9 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
 
       {/* Error/Success Messages */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
-          <X className="w-5 h-5 text-red-500" />
-          <p className="text-red-700">{error}</p>
+        <div className="mb-4 p-4 bg-destructive-50 border border-destructive-200 rounded-md flex items-center gap-2">
+          <X className="w-5 h-5 text-destructive-500" />
+          <p className="text-destructive-700">{error}</p>
         </div>
       )}
       
@@ -594,7 +594,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
       {creditInfo.canPurchase ? (
         <div>
         <div className="mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Credit Packages</h2>
+          <h2 className="text-2xl font-bold text-muted-foreground-900">Credit Packages</h2>
         </div>
           <div className="grid md:grid-cols-3 gap-4">
             {/* Regular Packages */}
@@ -607,28 +607,28 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   key={pkg.id}
                   className={`relative rounded-lg border-2 p-6 flex flex-col h-full ${
                     isPopular 
-                      ? 'border-purple-500 shadow-lg' 
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-primary-500 shadow-lg' 
+                      : 'border-border-200 hover:border-border-300'
                   } ${!pkg.available ? 'opacity-50' : ''}`}
                 >
                   {isPopular && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                      <span className="bg-primary-500 text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
                         MOST POPULAR
                       </span>
                     </div>
                   )}
                   
                   <div className="text-center flex-grow flex flex-col justify-center">
-                    <h3 className="text-xl font-bold text-gray-900">{pkg.name}</h3>
+                    <h3 className="text-xl font-bold text-muted-foreground-900">{pkg.name}</h3>
                     <div className="mt-2">
-                      <span className="text-3xl font-bold text-gray-900">{pkg.credits}</span>
-                      <span className="text-gray-600 ml-1">credits</span>
+                      <span className="text-3xl font-bold text-muted-foreground-900">{pkg.credits}</span>
+                      <span className="text-muted-foreground-600 ml-1">credits</span>
                     </div>
                     <div className="mt-1">
                       <span className="text-2xl font-bold text-primary-600">${pkg.price_usd.toFixed(2)}</span>
                     </div>
-                    <div className="text-sm text-gray-500 mt-1">
+                    <div className="text-sm text-muted-foreground-500 mt-1">
                       ${(pkg.price_usd / pkg.credits).toFixed(3)} per credit
                     </div>
                     {savings > 0 && (
@@ -640,7 +640,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     )}
                     {!pkg.available && (
                       <div className="mt-2">
-                        <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-semibold">
+                        <span className="inline-block bg-destructive-100 text-destructive-700 px-2 py-1 rounded-full text-xs font-semibold">
                           Temporarily Unavailable
                         </span>
                       </div>
@@ -652,8 +652,8 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     disabled={purchasing !== null || !pkg.available}
                     className={`w-full py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center gap-2 ${
                       isPopular
-                        ? 'bg-purple-600 text-white hover:bg-purple-700'
-                        : 'bg-gray-900 text-white hover:bg-gray-800'
+                        ? 'bg-primary-600 text-primary-foreground hover:bg-primary-700'
+                        : 'bg-muted-900 text-primary-foreground hover:bg-muted-800'
                     } disabled:opacity-50`}
                   >
                     {purchasing === pkg.id ? (
@@ -674,19 +674,19 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
 
             {/* Lootbox Status Card - Only show when no lootbox packages are available */}
             {(!creditInfo.lootboxPackages || creditInfo.lootboxPackages.length === 0) && (
-              <div className="relative rounded-lg border-2 p-6 flex flex-col h-full border-gray-200 hover:border-gray-300">
+              <div className="relative rounded-lg border-2 p-6 flex flex-col h-full border-border-200 hover:border-border-300">
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold shadow-md bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold shadow-md bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">
                     🎁 LOOTBOX
                   </span>
                 </div>
                 
                 <div className="text-center flex-grow flex flex-col justify-center">
-                  <h3 className="text-xl font-bold text-gray-900">Lootbox Status</h3>
+                  <h3 className="text-xl font-bold text-muted-foreground-900">Lootbox Status</h3>
                   <div className="mt-2">
-                    <span className="text-6xl font-bold text-gray-400">???</span>
+                    <span className="text-6xl font-bold text-muted-foreground-400">???</span>
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="text-sm text-muted-foreground-500 mt-1">
                     Special offers available
                   </div>
                 </div>
@@ -697,7 +697,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     e.stopPropagation()
                     checkLootboxAvailability()
                   }}
-                  className="w-full py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center gap-2 bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
+                  className="w-full py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center gap-2 bg-muted-900 text-primary-foreground hover:bg-muted-800 disabled:opacity-50 cursor-pointer"
                   style={{ pointerEvents: loading ? 'none' : 'auto' }}
                 >
                   {loading ? (
@@ -724,39 +724,39 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                 key={pkg.id}
                 className={`relative rounded-lg border-2 p-6 shadow-lg flex flex-col h-full ${
                   pkg.available 
-                    ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50' 
-                    : 'border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 opacity-75'
+                    ? 'border-primary bg-gradient-to-br from-primary/10 to-primary/20' 
+                    : 'border-border bg-gradient-to-br from-muted to-muted/80 opacity-75'
                 }`}
               >
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-md ${
                     pkg.available 
-                      ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' 
-                      : 'bg-gray-400 text-gray-100'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground' 
+                      : 'bg-muted text-muted-foreground'
                   }`}>
                     🎁 LOOTBOX
                   </span>
                 </div>
                 
                 <div className="text-center flex-grow flex flex-col justify-center">
-                  <h3 className={`text-xl font-bold ${pkg.available ? 'text-gray-900' : 'text-gray-500'}`}>
+                  <h3 className={`text-xl font-bold ${pkg.available ? 'text-muted-foreground-900' : 'text-muted-foreground-500'}`}>
                     {pkg.name}
                   </h3>
 
                   <div className="mt-2">
-                    <span className={`text-3xl font-bold ${pkg.available ? 'text-orange-600' : 'text-gray-400'}`}>
+                    <span className={`text-3xl font-bold ${pkg.available ? 'text-primary-600' : 'text-muted-foreground-400'}`}>
                       {pkg.user_credits}
                     </span>
-                    <span className={`ml-1 ${pkg.available ? 'text-gray-600' : 'text-gray-400'}`}>credits</span>
+                    <span className={`ml-1 ${pkg.available ? 'text-muted-foreground-600' : 'text-muted-foreground-400'}`}>credits</span>
                   </div>
 
                   <div className="mt-1">
-                    <span className={`text-2xl font-bold ${pkg.available ? 'text-primary-600' : 'text-gray-400'}`}>
+                    <span className={`text-2xl font-bold ${pkg.available ? 'text-primary-600' : 'text-muted-foreground-400'}`}>
                       ${pkg.price_usd.toFixed(2)}
                     </span>
                   </div>
 
-                  <div className={`text-sm mt-1 ${pkg.available ? 'text-gray-500' : 'text-gray-400'}`}>
+                  <div className={`text-sm mt-1 ${pkg.available ? 'text-muted-foreground-500' : 'text-muted-foreground-400'}`}>
                     ${pkg.price_per_credit.toFixed(3)} per credit
                   </div>
 
@@ -764,8 +764,8 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     <div className="mt-2">
                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold shadow-md ${
                         pkg.available
-                          ? 'bg-gradient-to-r from-primary-primary to-primary-primary text-white'
-                          : 'bg-gray-300 text-gray-600'
+                          ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground'
+                          : 'bg-muted-300 text-muted-foreground-600'
                       }`}>
                         💰 Save {pkg.savings_percentage}%
                       </span>
@@ -779,8 +779,8 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   disabled={purchasing !== null || !pkg.available}
                   className={`w-full py-2 px-4 rounded-md font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-md ${
                     pkg.available
-                      ? 'text-white bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600'
-                      : 'text-gray-400 bg-gray-200 cursor-not-allowed'
+                      ? 'text-primary-foreground bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
+                      : 'text-muted-foreground-400 bg-muted-200 cursor-not-allowed'
                   } disabled:opacity-50`}
                 >
                   {purchasing === pkg.id ? (
@@ -808,19 +808,19 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
           </div>
         </div>
       ) : (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <h3 className="text-lg font-semibold text-yellow-900 mb-2">
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 text-center">
+          <h3 className="text-lg font-semibold text-primary-900 mb-2">
             Upgrade to Purchase Credits
           </h3>
-          <p className="text-yellow-700 mb-4">
+          <p className="text-primary-700 mb-4">
             Credit purchases are available for Plus and Pro subscribers only.
           </p>
-          <p className="text-sm text-yellow-600 mb-4">
+          <p className="text-sm text-primary-600 mb-4">
             Your current tier: <span className="font-semibold">{creditInfo.subscriptionTier}</span>
           </p>
           <button
             onClick={() => window.location.href = '/subscription'}
-            className="px-6 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 font-medium"
+            className="px-6 py-2 bg-primary-600 text-primary-foreground rounded-md hover:bg-primary-700 font-medium"
           >
             Upgrade Now
           </button>
@@ -828,25 +828,25 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
       )}
 
       {/* How Credits Work Section */}
-      <div className="mt-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-6 shadow-sm">
+      <div className="mt-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl border border-primary/20 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h4 className="text-lg font-semibold text-gray-900">How Credits Work</h4>
+          <h4 className="text-lg font-semibold text-muted-foreground-900">How Credits Work</h4>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+              <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
               </div>
               <div>
-                <p className="font-medium text-gray-900">1 Credit = 1 Enhancement</p>
-                <p className="text-sm text-gray-600">Each credit powers one AI image enhancement in your moodboards</p>
+                <p className="font-medium text-muted-foreground-900">1 Credit = 1 Enhancement</p>
+                <p className="text-sm text-muted-foreground-600">Each credit powers one AI image enhancement in your moodboards</p>
               </div>
             </div>
             
@@ -855,30 +855,30 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                 <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Credits Never Expire</p>
-                <p className="text-sm text-gray-600">Your purchased credits remain in your account indefinitely</p>
+                <p className="font-medium text-muted-foreground-900">Credits Never Expire</p>
+                <p className="text-sm text-muted-foreground-600">Your purchased credits remain in your account indefinitely</p>
               </div>
             </div>
             
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <div className="w-2 h-2 bg-purple-600 rounded-full"></div>
+              <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Monthly Allowance</p>
-                <p className="text-sm text-gray-600">Free credits reset on the 1st of each month based on your subscription tier</p>
+                <p className="font-medium text-muted-foreground-900">Monthly Allowance</p>
+                <p className="text-sm text-muted-foreground-600">Free credits reset on the 1st of each month based on your subscription tier</p>
               </div>
             </div>
           </div>
           
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <div className="w-2 h-2 bg-orange-600 rounded-full"></div>
+              <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Instant Activation</p>
-                <p className="text-sm text-gray-600">Purchased credits are added to your balance immediately</p>
+                <p className="font-medium text-muted-foreground-900">Instant Activation</p>
+                <p className="text-sm text-muted-foreground-600">Purchased credits are added to your balance immediately</p>
               </div>
             </div>
             
@@ -887,8 +887,8 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                 <div className="w-2 h-2 bg-secondary-600 rounded-full"></div>
               </div>
               <div>
-                <p className="font-medium text-gray-900">AI-Powered</p>
-                <p className="text-sm text-gray-600">Powered by advanced AI technology for professional-quality enhancements</p>
+                <p className="font-medium text-muted-foreground-900">AI-Powered</p>
+                <p className="text-sm text-muted-foreground-600">Powered by advanced AI technology for professional-quality enhancements</p>
               </div>
             </div>
             
@@ -897,16 +897,16 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                 <div className="w-2 h-2 bg-primary-600 rounded-full"></div>
               </div>
               <div>
-                <p className="font-medium text-gray-900">Moodboard Integration</p>
-                <p className="text-sm text-gray-600">Use credits to enhance images in your creative moodboards</p>
+                <p className="font-medium text-muted-foreground-900">Moodboard Integration</p>
+                <p className="text-sm text-muted-foreground-600">Use credits to enhance images in your creative moodboards</p>
               </div>
             </div>
           </div>
         </div>
         
         {/* Additional Info */}
-        <div className="mt-4 pt-4 border-t border-blue-200">
-          <div className="flex items-center gap-2 text-sm text-blue-700">
+        <div className="mt-4 pt-4 border-t border-primary-200">
+          <div className="flex items-center gap-2 text-sm text-primary-700">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

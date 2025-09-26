@@ -1034,8 +1034,8 @@ export default function GigDiscoveryPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   
                   {/* Experience Range Filter */}
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800/50">
-                    <label className="block text-sm font-medium text-blue-800 dark:text-blue-200 mb-3">
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/20 rounded-xl p-4 border border-primary/20">
+                    <label className="block text-sm font-medium text-primary mb-3">
                       Experience (Years)
                     </label>
                     <div className="flex gap-2">
@@ -1061,8 +1061,8 @@ export default function GigDiscoveryPage() {
                   </div>
 
                   {/* Rate Range Filter */}
-                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-xl p-4 border border-yellow-100 dark:border-yellow-800/50">
-                    <label className="block text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-3">
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/20 rounded-xl p-4 border border-primary/20">
+                    <label className="block text-sm font-medium text-primary mb-3">
                       Hourly Rate ($)
                     </label>
                     <div className="flex gap-2">
@@ -1070,7 +1070,7 @@ export default function GigDiscoveryPage() {
                         type="number"
                         min="0"
                         placeholder="Min"
-                        className="w-full px-3 py-2 bg-card dark:bg-gray-700 border border-yellow-200 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-foreground"
+                        className="w-full px-3 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                         value={minRateFilter || ''}
                         onChange={(e) => setMinRateFilter(e.target.value ? parseInt(e.target.value) : null)}
                       />
@@ -1078,7 +1078,7 @@ export default function GigDiscoveryPage() {
                         type="number"
                         min="0"
                         placeholder="Max"
-                        className="w-full px-3 py-2 bg-card dark:bg-gray-700 border border-yellow-200 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-foreground"
+                        className="w-full px-3 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
                         value={maxRateFilter || ''}
                         onChange={(e) => setMaxRateFilter(e.target.value ? parseInt(e.target.value) : null)}
                       />
@@ -1086,8 +1086,8 @@ export default function GigDiscoveryPage() {
                   </div>
 
                   {/* Availability Filters */}
-                  <div className="bg-gradient-to-r from-primary-primary/10 to-primary-primary/10 dark:from-primary-primary/20 dark:to-primary-primary/20 rounded-xl p-4 border border-primary-100 dark:border-primary-800/50">
-                    <label className="block text-sm font-medium text-primary-800 dark:text-primary-200 mb-3">
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/20 rounded-xl p-4 border border-primary/20">
+                    <label className="block text-sm font-medium text-primary mb-3">
                       Availability
                     </label>
                     <div className="space-y-3">
@@ -1096,18 +1096,18 @@ export default function GigDiscoveryPage() {
                           type="checkbox"
                           checked={travelOnlyFilter}
                           onChange={(e) => setTravelOnlyFilter(e.target.checked)}
-                          className="mr-3 w-4 h-4 text-primary-600 bg-card dark:bg-gray-700 border-primary/30 dark:border-primary-600 rounded focus:ring-primary"
+                          className="mr-3 w-4 h-4 text-primary bg-card border-primary/30 rounded focus:ring-primary"
                         />
-                        <span className="text-sm text-foreground dark:text-gray-300">Available for Travel</span>
+                        <span className="text-sm text-foreground">Available for Travel</span>
                       </label>
                       <label className="flex items-center">
                         <input
                           type="checkbox"
                           checked={studioOnlyFilter}
                           onChange={(e) => setStudioOnlyFilter(e.target.checked)}
-                          className="mr-3 w-4 h-4 text-primary-600 bg-card dark:bg-gray-700 border-primary/30 dark:border-primary-600 rounded focus:ring-primary"
+                          className="mr-3 w-4 h-4 text-primary bg-card border-primary/30 rounded focus:ring-primary"
                         />
-                        <span className="text-sm text-foreground dark:text-gray-300">Has Studio</span>
+                        <span className="text-sm text-foreground dark:text-muted-foreground-300">Has Studio</span>
                       </label>
                     </div>
                   </div>
@@ -1115,8 +1115,8 @@ export default function GigDiscoveryPage() {
 
                 {/* Specializations Filter */}
                 {availableSpecializations.length > 0 && (
-                  <div className="mt-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800/50">
-                    <label className="block text-sm font-medium text-purple-800 dark:text-purple-200 mb-3">
+                  <div className="mt-4 bg-gradient-to-r from-primary/10 to-primary/20 rounded-xl p-4 border border-primary/20">
+                    <label className="block text-sm font-medium text-primary mb-3">
                       Specializations
                     </label>
                     <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
@@ -1132,8 +1132,8 @@ export default function GigDiscoveryPage() {
                           }}
                           className={`px-3 py-1 rounded-full text-sm transition-all hover:scale-105 ${
                             selectedSpecializations.includes(spec)
-                              ? 'bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 border-2 border-purple-500'
-                              : 'bg-card dark:bg-gray-700 text-foreground dark:text-gray-300 border-2 border-purple-200 dark:border-purple-600 hover:border-purple-400'
+                              ? 'bg-primary-100 dark:bg-primary-800 text-primary-800 dark:text-primary-200 border-2 border-primary-500'
+                              : 'bg-card dark:bg-muted-700 text-foreground dark:text-muted-foreground-300 border-2 border-primary-200 dark:border-primary-600 hover:border-primary-400'
                           }`}
                         >
                           <Tag className="w-3 h-3 inline mr-1" />
@@ -1146,13 +1146,13 @@ export default function GigDiscoveryPage() {
                         {selectedSpecializations.map((spec, index) => (
                           <span
                             key={index}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-200 text-xs rounded-full"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 dark:bg-primary-800 text-primary-700 dark:text-primary-200 text-xs rounded-full"
                           >
                             <Tag className="w-3 h-3" />
                             {spec}
                             <button
                               onClick={() => setSelectedSpecializations(prev => prev.filter(s => s !== spec))}
-                              className="hover:text-secondary-foreground/80 dark:hover:text-purple-100"
+                              className="hover:text-secondary-foreground/80 dark:hover:text-primary-100"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -1241,7 +1241,7 @@ export default function GigDiscoveryPage() {
           {currentGigs.map((gig) => (
             <div key={gig.id} className="bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
               {/* Gig Image/Moodboard Preview */}
-              <div className="relative h-48 bg-gray-200 rounded-t-lg overflow-hidden">
+              <div className="relative h-48 bg-muted-200 rounded-t-lg overflow-hidden">
                 {gig.moodboard_urls && gig.moodboard_urls.length > 0 ? (
                   <img
                     src={gig.moodboard_urls[0]}
@@ -1249,8 +1249,8 @@ export default function GigDiscoveryPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
-                    <Camera className="w-12 h-12 text-indigo-400" />
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20">
+                    <Camera className="w-12 h-12 text-primary" />
                   </div>
                 )}
 
@@ -1260,7 +1260,7 @@ export default function GigDiscoveryPage() {
                   className="absolute top-3 right-3 p-2 bg-card rounded-full shadow-md hover:shadow-lg transition-shadow"
                 >
                   <Heart
-                    className={`w-5 h-5 ${savedGigs.has(gig.id) ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`}
+                    className={`w-5 h-5 ${savedGigs.has(gig.id) ? 'fill-destructive-primary text-destructive-500' : 'text-muted-foreground'}`}
                   />
                 </button>
 
@@ -1289,11 +1289,11 @@ export default function GigDiscoveryPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-semibold text-gray-900 truncate">
+                        <h4 className="text-sm font-semibold text-muted-foreground-900 truncate">
                           {gig.users_profile?.display_name || 'Unknown User'}
                         </h4>
                         {gig.users_profile?.verified_id && (
-                          <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                          <div className="flex items-center gap-1 bg-primary-100 text-primary-700 px-2 py-1 rounded-full text-xs font-medium">
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
@@ -1379,7 +1379,7 @@ export default function GigDiscoveryPage() {
                       {gig.style_tags.slice(0, 3).map((tag, index) => (
                         <span
                           key={index}
-                          className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full flex items-center gap-1"
+                          className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full flex items-center gap-1"
                         >
                           <Tag className="w-2 h-2" />
                           {tag}
@@ -1424,7 +1424,7 @@ export default function GigDiscoveryPage() {
                         {gig.palette_colors.slice(0, 4).map((color, index) => (
                           <div
                             key={index}
-                            className="w-4 h-4 rounded-full border border-gray-200"
+                            className="w-4 h-4 rounded-full border border-border-200"
                             style={{ backgroundColor: color }}
                             title={color}
                           />
@@ -1453,7 +1453,7 @@ export default function GigDiscoveryPage() {
                   </div>
                   <Link
                     href={`/gigs/${gig.id}`}
-                    className="text-sm text-primary hover:text-indigo-700 font-medium"
+                    className="text-sm text-primary hover:text-primary-700 font-medium"
                   >
                     View Details →
                   </Link>
@@ -1467,7 +1467,7 @@ export default function GigDiscoveryPage() {
         {filteredGigs.length === 0 && (
           <div className="text-center py-12">
             <Camera className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No gigs found</h3>
+            <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No gigs found</h3>
             <p className="text-muted-foreground">Try adjusting your filters or search terms</p>
           </div>
         )}
