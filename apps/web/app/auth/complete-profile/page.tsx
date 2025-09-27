@@ -197,115 +197,24 @@ export default function CompleteProfilePage() {
         .single()
       
       if (profile) {
-        // User has a profile, populate form with existing data
-        setDisplayName(profile.display_name || '')
-        setHandle(profile.handle || '')
-        setBio(profile.bio || '')
-        setCity(profile.city || '')
-        setCountry(profile.country || 'Ireland')
-        setSelectedStyles(profile.style_tags || [])
-        setSelectedVibes(profile.vibe_tags || [])
-        
-        // Set role from existing profile
-        if (profile.role_flags && profile.role_flags.length > 0) {
-          if (profile.role_flags.includes('CONTRIBUTOR') && profile.role_flags.includes('TALENT')) {
-            setSelectedRole('BOTH')
-          } else if (profile.role_flags.includes('CONTRIBUTOR')) {
-            setSelectedRole('CONTRIBUTOR')
-          } else if (profile.role_flags.includes('TALENT')) {
-            setSelectedRole('TALENT')
-          }
-        }
-        
-        // Set existing avatar URL
-        setExistingAvatarUrl(profile.avatar_url || '')
-        
-        // Populate additional profile data
-        setProfileData({
-          // Social media & contact
-          instagramHandle: profile.instagram_handle || '',
-          tiktokHandle: profile.tiktok_handle || '',
-          websiteUrl: profile.website_url || '',
-          portfolioUrl: profile.portfolio_url || '',
-          phoneNumber: profile.phone_number || '',
-          
-          // Age & verification
-          dateOfBirth: profile.date_of_birth || '',
-          
-          // Enhanced demographics
-          genderIdentity: profile.gender_identity || '',
-          ethnicity: profile.ethnicity || '',
-          nationality: profile.nationality || '',
-          weightKg: profile.weight_kg || null,
-          bodyType: profile.body_type || '',
-          hairLength: profile.hair_length || '',
-          skinTone: profile.skin_tone || '',
-          experienceLevel: profile.experience_level || '',
-          stateProvince: profile.state_province || '',
-          timezone: profile.timezone || '',
-          
-          // Contributor fields
-          yearsExperience: profile.years_experience || 0,
-          specializations: profile.specializations || [],
-          equipment: profile.equipment_list || [],
-          editingSoftware: profile.editing_software || [],
-          languages: profile.languages || [],
-          hourlyRateMin: profile.hourly_rate_min || null,
-          hourlyRateMax: profile.hourly_rate_max || null,
-          availableForTravel: profile.available_for_travel || false,
-          travelRadius: profile.travel_radius_km || 50,
-          studioName: profile.studio_name || '',
-          hasStudio: profile.has_studio || false,
-          studioAddress: profile.studio_address || '',
-          typicalTurnaroundDays: profile.typical_turnaround_days || null,
-          
-          // Talent fields
-          heightCm: profile.height_cm || null,
-          measurements: profile.measurements || '',
-          eyeColor: profile.eye_color || '',
-          hairColor: profile.hair_color || '',
-          shoeSize: profile.shoe_size || '',
-          clothingSizes: profile.clothing_sizes || '',
-          tattoos: profile.tattoos || false,
-          piercings: profile.piercings || false,
-          talentCategories: profile.talent_categories || [],
-          
-          // Work preferences
-          availabilityStatus: profile.availability_status || '',
-          preferredWorkingHours: profile.preferred_working_hours || '',
-          acceptsTfp: profile.accepts_tfp || false,
-          acceptsExpensesOnly: profile.accepts_expenses_only || false,
-          prefersStudio: profile.prefers_studio || false,
-          prefersOutdoor: profile.prefers_outdoor || false,
-          availableWeekdays: profile.available_weekdays || false,
-          availableWeekends: profile.available_weekends || false,
-          availableEvenings: profile.available_evenings || false,
-          availableOvernight: profile.available_overnight || false,
-          worksWithTeams: profile.works_with_teams || false,
-          prefersSoloWork: profile.prefers_solo_work || false,
-          
-          // Content preferences
-          comfortableWithNudity: profile.comfortable_with_nudity || false,
-          comfortableWithIntimateContent: profile.comfortable_with_intimate_content || false,
-          requiresModelRelease: profile.requires_model_release || false,
-          
-          // Privacy settings
-          showAge: profile.show_age || true,
-          showLocation: profile.show_location || true,
-          showPhysicalAttributes: profile.show_physical_attributes || true,
-          
-          // Travel & documentation
-          passportValid: profile.passport_valid || false
-        })
-        
-        // Skip to profile step if user has basic info
-        if (profile.display_name && profile.handle) {
-          setCurrentStep('profile')
-        }
+        // User already has a complete profile, redirect to dashboard
+        console.log('User already has a profile, redirecting to dashboard')
+        router.push('/dashboard')
+        return
       }
     } catch (err) {
       // No profile exists, continue with setup
-      console.log('No existing profile found, continuing with setup')
+      console.log('No existing profile found, continuing with setup:', err)
+      
+      // Check if this is a database error vs no profile found
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'PGRST116') {
+        // This is the expected error when no profile exists
+        console.log('User has no profile, showing complete-profile form')
+      } else {
+        // This might be a database error
+        console.error('Error checking for existing profile:', err)
+        setError('Unable to check profile status. Please try again.')
+      }
     }
   }
 
