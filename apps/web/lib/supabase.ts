@@ -21,7 +21,7 @@ export const supabase = supabaseUrl && supabaseAnonKey
           eventsPerSecond: 10
         },
         heartbeatIntervalMs: 30000,
-        reconnectAfterMs: (tries) => Math.min(tries * 1000, 30000),
+        reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
         timeout: 10000
       }
     })
