@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+// Initialize Supabase client inside functions to avoid build-time issues
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Missing required Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey)
+}
 
 // GET /api/collab/projects/[id]/gear-requests - Get project gear requests
 export async function GET(
@@ -13,6 +24,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const supabase = getSupabaseClient();
 
     const { data: gearRequests, error } = await supabase
       .from('collab_gear_requests')
@@ -79,6 +91,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const supabase = getSupabaseClient();
     const body = await request.json();
     const {
       category,
