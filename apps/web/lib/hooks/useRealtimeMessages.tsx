@@ -156,7 +156,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
 
         if (error) {
           console.error('Error setting typing indicator:', error)
-          return
+          // Don't return early, still set the timeout for UI consistency
         }
 
         // Auto-clear typing after 3 seconds of inactivity
@@ -177,6 +177,11 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
       }
     } catch (error) {
       console.error('Error in setTyping:', error)
+      // Continue with timeout cleanup even if there's an error
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+        typingTimeoutRef.current = null
+      }
     }
   }, [user, enableTypingIndicators])
 
@@ -188,6 +193,14 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
     setConnectionError(null)
     
     console.log('Setting up realtime message subscriptions for user:', user.id)
+
+    // Check if user is authenticated before setting up subscriptions
+    if (!user.id) {
+      console.error('User not authenticated, cannot setup realtime subscriptions')
+      setIsConnecting(false)
+      setConnectionError('User not authenticated')
+      return
+    }
 
     // 1. Subscribe to new messages for conversations user participates in
     const messagesChannel = supabase
@@ -325,8 +338,37 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
     if (typingChannel) channels.push(typingChannel)
     channelsRef.current = channels
 
-    // Subscribe to all channels
-    Promise.all(channels.map(channel => channel.subscribe()))
+    // Subscribe to all channels with individual error handling
+    const subscribePromises = channels.map(async (channel) => {
+      try {
+        const result = await channel.subscribe()
+        
+        // Listen for subscription errors
+        channel.on('system', {}, (status) => {
+          console.log('Realtime channel status:', status)
+          if (status === 'CLOSED') {
+            console.error('Realtime channel closed unexpectedly')
+            setConnectionError('Connection lost')
+            setIsConnected(false)
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('Realtime channel error')
+            setConnectionError('Channel error')
+            setIsConnected(false)
+          } else if (status === 'TIMED_OUT') {
+            console.error('Realtime channel timed out')
+            setConnectionError('Connection timed out')
+            setIsConnected(false)
+          }
+        })
+        
+        return result
+      } catch (error) {
+        console.error('Error subscribing to channel:', error)
+        throw error
+      }
+    })
+
+    Promise.all(subscribePromises)
       .then((results) => {
         // All channels were subscribed successfully
         setIsConnected(true)
@@ -340,7 +382,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
       })
       .catch((error) => {
         console.error('Error establishing realtime subscriptions:', error)
-        setConnectionError(error.message)
+        setConnectionError(error.message || 'Failed to establish connection')
         setIsConnected(false)
         setIsConnecting(false)
         
@@ -348,10 +390,11 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
           onConnectionChange(false)
         }
 
-        // Attempt to reconnect after delay
+        // Attempt to reconnect after delay (exponential backoff)
+        const retryDelay = Math.min(5000 * Math.pow(2, 0), 30000) // Max 30 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnect()
-        }, 5000) as unknown as NodeJS.Timeout
+        }, retryDelay) as unknown as NodeJS.Timeout
       })
 
   }, [

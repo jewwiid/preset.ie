@@ -15,6 +15,11 @@ export const supabase = supabaseUrl && supabaseAnonKey
         storageKey: 'supabase.auth.token', // Use consistent key
         flowType: 'pkce',
         debug: process.env.NODE_ENV === 'development'
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10
+        }
       }
     })
   : null
