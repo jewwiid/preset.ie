@@ -150,6 +150,42 @@ export async function smartSignup(email: string, password: string, options?: any
 }
 
 /**
+ * Get auth token consistently across the app
+ * This ensures we use the same token source everywhere
+ */
+export async function getAuthToken(): Promise<string | null> {
+  try {
+    if (typeof window === 'undefined') {
+      return null
+    }
+
+    // Try to get from Supabase client first (preferred method)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token) {
+      return session.access_token
+    }
+
+    // Fallback to localStorage (for compatibility)
+    const token = localStorage.getItem('supabase.auth.token') || 
+                  localStorage.getItem('sb-preset-auth-token')
+    
+    if (token) {
+      try {
+        const parsed = JSON.parse(token)
+        return parsed.access_token || token
+      } catch {
+        return token
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error getting auth token:', error)
+    return null
+  }
+}
+
+/**
  * Extract user from NextRequest headers
  */
 export async function getUserFromRequest(request: NextRequest) {

@@ -5,6 +5,7 @@ import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { debugSession } from './session-debug'
 import { getUserRole, UserRole } from './auth-helpers'
+import { migrateAuthStorage } from './auth-migration'
 
 export interface AuthContextType {
   user: User | null
@@ -30,6 +31,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if we have a stored session
     const initializeAuth = async () => {
       try {
+        // Migrate auth storage first
+        migrateAuthStorage()
+        
         // Debug session storage
         if (process.env.NODE_ENV === 'development') {
           debugSession()
@@ -121,7 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for storage events to sync auth state across tabs
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sb-preset-auth-token' && e.newValue !== e.oldValue) {
+      // Listen for the consistent storage key
+      if (e.key === 'supabase.auth.token' && e.newValue !== e.oldValue) {
         console.log('Auth token changed in another tab, refreshing session...')
         // Refresh the session when storage changes
         supabase?.auth.getSession().then(({ data: { session } }) => {

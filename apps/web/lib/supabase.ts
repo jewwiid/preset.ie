@@ -12,7 +12,7 @@ export const supabase = supabaseUrl && supabaseAnonKey
         autoRefreshToken: true,
         detectSessionInUrl: true,
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-        storageKey: 'sb-preset-auth-token',
+        storageKey: 'supabase.auth.token', // Use consistent key
         flowType: 'pkce',
         debug: process.env.NODE_ENV === 'development'
       }

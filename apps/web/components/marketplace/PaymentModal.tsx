@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { CreditCard, Coins, Shield, Euro, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuthHeaders } from '@/lib/hooks/useAuthToken';
 
 interface PaymentModalProps {
   order: {
@@ -35,6 +36,7 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
   const [userCredits, setUserCredits] = useState<UserCredits | null>(null);
   const [loading, setLoading] = useState(false);
   const [creditsLoading, setCreditsLoading] = useState(true);
+  const authHeaders = useAuthHeaders();
 
   useEffect(() => {
     fetchUserCredits();
@@ -44,9 +46,7 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
     try {
       setCreditsLoading(true);
       const response = await fetch('/api/admin/credit-stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
-        }
+        headers: authHeaders
       });
 
       if (response.ok) {
@@ -96,8 +96,8 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
       const response = await fetch('/api/marketplace/payments/process', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          ...authHeaders,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(paymentData)
       });
