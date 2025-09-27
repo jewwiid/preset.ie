@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MatchingService } from '@/lib/services/matching.service';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 // GET /api/collab/matches - Get matches for various contexts
 export async function GET(request: NextRequest) {
   try {
