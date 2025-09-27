@@ -160,9 +160,11 @@ export async function getAuthToken(): Promise<string | null> {
     }
 
     // Try to get from Supabase client first (preferred method)
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.access_token) {
-      return session.access_token
+    if (supabase) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        return session.access_token
+      }
     }
 
     // Fallback to localStorage (for compatibility)
