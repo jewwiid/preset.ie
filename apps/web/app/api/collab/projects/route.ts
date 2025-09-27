@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+// Initialize Supabase client inside functions to avoid build-time issues
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Missing required Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey)
+}
 
 // GET /api/collab/projects - Browse projects with filters
 export async function GET(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient()
     const { searchParams } = new URL(request.url);
     
     // Extract filter parameters
@@ -141,6 +153,7 @@ export async function GET(request: NextRequest) {
 // POST /api/collab/projects - Create new project
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient()
     const body = await request.json();
     const {
       title,
