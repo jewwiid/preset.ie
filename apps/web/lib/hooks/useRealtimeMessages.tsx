@@ -186,7 +186,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
   }, [user, enableTypingIndicators])
 
   // Setup real-time subscriptions
-  const setupSubscriptions = useCallback(() => {
+  const setupSubscriptions = useCallback(async () => {
     if (!user || !supabase) return
 
     setIsConnecting(true)
@@ -199,6 +199,23 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
       console.error('User not authenticated, cannot setup realtime subscriptions')
       setIsConnecting(false)
       setConnectionError('User not authenticated')
+      return
+    }
+
+    // Ensure we have a valid session before establishing realtime connection
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        console.error('No valid session for realtime connection:', sessionError)
+        setIsConnecting(false)
+        setConnectionError('Authentication required for realtime connection')
+        return
+      }
+      console.log('Valid session found, proceeding with realtime setup')
+    } catch (error) {
+      console.error('Error checking session for realtime:', error)
+      setIsConnecting(false)
+      setConnectionError('Failed to verify authentication')
       return
     }
 
@@ -368,34 +385,48 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
       }
     })
 
-    Promise.all(subscribePromises)
-      .then((results) => {
-        // All channels were subscribed successfully
-        setIsConnected(true)
-        setIsConnecting(false)
-        setConnectionError(null)
-        console.log('All realtime subscriptions established')
-        
-        if (onConnectionChange) {
-          onConnectionChange(true)
-        }
-      })
-      .catch((error) => {
-        console.error('Error establishing realtime subscriptions:', error)
-        setConnectionError(error.message || 'Failed to establish connection')
-        setIsConnected(false)
-        setIsConnecting(false)
-        
-        if (onConnectionChange) {
-          onConnectionChange(false)
-        }
+         Promise.all(subscribePromises)
+           .then((results) => {
+             // All channels were subscribed successfully
+             setIsConnected(true)
+             setIsConnecting(false)
+             setConnectionError(null)
+             console.log('All realtime subscriptions established')
 
-        // Attempt to reconnect after delay (exponential backoff)
-        const retryDelay = Math.min(5000 * Math.pow(2, 0), 30000) // Max 30 seconds
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnect()
-        }, retryDelay) as unknown as NodeJS.Timeout
-      })
+             if (onConnectionChange) {
+               onConnectionChange(true)
+             }
+           })
+           .catch((error) => {
+             console.error('Error establishing realtime subscriptions:', error)
+             
+             // Handle specific error types
+             let errorMessage = 'Failed to establish connection'
+             if (error.message?.includes('401')) {
+               errorMessage = 'Authentication required for realtime connection'
+             } else if (error.message?.includes('WebSocket')) {
+               errorMessage = 'WebSocket connection failed - check network connectivity'
+             } else if (error.message?.includes('timeout')) {
+               errorMessage = 'Connection timeout - server may be unavailable'
+             }
+             
+             setConnectionError(errorMessage)
+             setIsConnected(false)
+             setIsConnecting(false)
+
+             if (onConnectionChange) {
+               onConnectionChange(false)
+             }
+
+             // Only attempt to reconnect for non-authentication errors
+             if (!error.message?.includes('401')) {
+               // Attempt to reconnect after delay (exponential backoff)
+               const retryDelay = Math.min(5000 * Math.pow(2, 0), 30000) // Max 30 seconds
+               reconnectTimeoutRef.current = setTimeout(() => {
+                 reconnect()
+               }, retryDelay) as unknown as NodeJS.Timeout
+             }
+           })
 
   }, [
     user, 
