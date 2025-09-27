@@ -3,15 +3,19 @@ import { createClient } from '@supabase/supabase-js';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+// Initialize Supabase client inside functions to avoid build-time issues
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseUrl || !supabaseServiceRoleKey) {
-  throw new Error('Missing required Supabase environment variables')
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Missing required Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey)
 }
-
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
 // GET /api/collab/projects/[id]/gear-offers - Get gear offers for project
 export async function GET(
@@ -20,6 +24,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const supabase = getSupabaseClient();
 
     // Get current user
     const authHeader = request.headers.get('authorization');
@@ -126,6 +131,7 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const supabase = getSupabaseClient();
     const body = await request.json();
     const {
       gear_request_id,
