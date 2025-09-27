@@ -42,6 +42,11 @@
         "@jpisnice/shadcn-ui-mcp-server"
       ],
       "description": "shadcn/ui component library access and management"
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest"],
+      "description": "Chrome DevTools debugging capabilities for web development"
     }
   },
   "contextSources": [

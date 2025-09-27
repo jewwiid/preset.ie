@@ -159,6 +159,7 @@ export default function CompleteProfilePage() {
   // Profile photo
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState('')
+  const [existingAvatarUrl, setExistingAvatarUrl] = useState('')
   
   // Handle validation
   const [handleError, setHandleError] = useState('')
@@ -205,6 +206,9 @@ export default function CompleteProfilePage() {
             setSelectedRole('TALENT')
           }
         }
+        
+        // Set existing avatar URL
+        setExistingAvatarUrl(profile.avatar_url || '')
         
         // Populate additional profile data
         setProfileData({
@@ -382,8 +386,8 @@ export default function CompleteProfilePage() {
     setError(null)
 
     try {
-      // Step 1: Upload profile photo if provided
-      let avatarUrl = null
+      // Step 1: Handle profile photo
+      let avatarUrl = existingAvatarUrl // Keep existing avatar if no new file selected
       if (selectedFile) {
         console.log('Uploading profile photo...')
         // TODO: Implement photo upload
@@ -703,17 +707,26 @@ export default function CompleteProfilePage() {
                           className="w-full h-full object-cover"
                         />
                       </div>
+                    ) : existingAvatarUrl ? (
+                      <div className="w-24 h-24 rounded-full overflow-hidden bg-muted-100">
+                        <img 
+                          src={existingAvatarUrl} 
+                          alt="Current profile" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     ) : (
                       <div className="w-24 h-24 rounded-full bg-muted-100 flex items-center justify-center">
                         <ImageIcon className="w-10 h-10 text-muted-foreground-400" />
                       </div>
                     )}
-                    {avatarPreview && (
+                    {(avatarPreview || existingAvatarUrl) && (
                       <button
                         type="button"
                         onClick={() => {
                           setAvatarPreview('')
                           setSelectedFile(null)
+                          setExistingAvatarUrl('')
                         }}
                         className="absolute -top-1 -right-1 bg-destructive-500 text-primary-foreground rounded-full p-1 hover:bg-destructive-600"
                       >
@@ -734,7 +747,7 @@ export default function CompleteProfilePage() {
                       className="inline-flex items-center gap-2 px-4 py-2 border border-border-300 rounded-lg cursor-pointer hover:bg-muted-50 transition"
                     >
                       <Upload className="w-4 h-4" />
-                      <span className="text-sm">Choose Photo</span>
+                      <span className="text-sm">{existingAvatarUrl ? 'Change Photo' : 'Choose Photo'}</span>
                     </label>
                     <p className="text-xs text-muted-foreground-500 mt-2">
                       JPG, PNG or GIF. Max 5MB.
