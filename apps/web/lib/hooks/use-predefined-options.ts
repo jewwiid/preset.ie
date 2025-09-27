@@ -213,3 +213,4 @@ export function getOptionNames(options: PredefinedOption[]): string[] {
 export function findOptionByName(options: PredefinedOption[], name: string): PredefinedOption | undefined {
   return options.find(option => option.name === name)
 }
+
