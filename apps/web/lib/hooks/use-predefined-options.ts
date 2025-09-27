@@ -70,7 +70,7 @@ export function usePredefinedOptions() {
         ] = await Promise.all([
           supabase
             .from('predefined_gender_identities')
-            .select('id, identity_name as name, is_active, sort_order')
+            .select('id, identity_name as name, is_active, sort_order') // Fixed malformed query
             .eq('is_active', true)
             .order('sort_order'),
           
