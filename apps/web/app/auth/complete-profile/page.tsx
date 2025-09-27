@@ -35,6 +35,16 @@ import {
   Clock,
   Settings
 } from 'lucide-react'
+import { Button } from '../../../components/ui/button'
+import { Input } from '../../../components/ui/input'
+import { Textarea } from '../../../components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { Checkbox } from '../../../components/ui/checkbox'
+import { Label } from '../../../components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card'
+import { Badge } from '../../../components/ui/badge'
+import { Alert, AlertDescription } from '../../../components/ui/alert'
+import { Progress } from '../../../components/ui/progress'
 
 type UserRole = 'CONTRIBUTOR' | 'TALENT' | 'BOTH'
 
@@ -602,10 +612,10 @@ export default function CompleteProfilePage() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 bg-destructive-50 border border-destructive-200 text-destructive-700 px-4 py-3 rounded-lg flex items-start">
-            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         {/* Step Content */}
@@ -623,13 +633,14 @@ export default function CompleteProfilePage() {
               </div>
 
               <div className="grid gap-4">
-                <button
+                <Button
                   onClick={() => handleRoleSelection('CONTRIBUTOR')}
-                  className="p-6 border-2 border-border-200 rounded-lg hover:border-primary-500 hover:bg-primary/10 transition-all text-left group"
+                  variant="outline"
+                  className="p-6 h-auto justify-start text-left group hover:border-primary-500 hover:bg-primary/10"
                 >
-                  <div className="flex items-start">
+                  <div className="flex items-start w-full">
                     <Camera className="w-8 h-8 text-primary-600 mr-4 flex-shrink-0" />
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">
                         I'm a Contributor
                       </h3>
@@ -639,15 +650,16 @@ export default function CompleteProfilePage() {
                     </div>
                     <ArrowRight className="w-5 h-5 text-muted-foreground-400 group-hover:text-primary ml-auto flex-shrink-0" />
                   </div>
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={() => handleRoleSelection('TALENT')}
-                  className="p-6 border-2 border-border-200 rounded-lg hover:border-primary-500 hover:bg-primary/10 transition-all text-left group"
+                  variant="outline"
+                  className="p-6 h-auto justify-start text-left group hover:border-primary-500 hover:bg-primary/10"
                 >
-                  <div className="flex items-start">
+                  <div className="flex items-start w-full">
                     <Users className="w-8 h-8 text-primary-600 mr-4 flex-shrink-0" />
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">
                         I'm Talent
                       </h3>
@@ -657,15 +669,16 @@ export default function CompleteProfilePage() {
                     </div>
                     <ArrowRight className="w-5 h-5 text-muted-foreground-400 group-hover:text-primary ml-auto flex-shrink-0" />
                   </div>
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={() => handleRoleSelection('BOTH')}
-                  className="p-6 border-2 border-border-200 rounded-lg hover:border-primary-500 hover:bg-primary/10 transition-all text-left group"
+                  variant="outline"
+                  className="p-6 h-auto justify-start text-left group hover:border-primary-500 hover:bg-primary/10"
                 >
-                  <div className="flex items-start">
+                  <div className="flex items-start w-full">
                     <Sparkles className="w-8 h-8 text-primary-600 mr-4 flex-shrink-0" />
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">
                         I do both
                       </h3>
@@ -675,7 +688,7 @@ export default function CompleteProfilePage() {
                     </div>
                     <ArrowRight className="w-5 h-5 text-muted-foreground-400 group-hover:text-primary ml-auto flex-shrink-0" />
                   </div>
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -757,117 +770,122 @@ export default function CompleteProfilePage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">
                     Display Name *
-                  </label>
+                  </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
-                    <input
+                    <Input
+                      id="displayName"
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="pl-10"
                       placeholder="John Doe"
                       required
                     />
                   </div>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                <div className="space-y-2">
+                  <Label htmlFor="handle">
                     Handle * {handleAvailable && handle && (
-                      <span className="text-primary-600 text-xs ml-2">
-                        <Check className="inline w-3 h-3" /> Available
-                      </span>
+                      <Badge variant="secondary" className="ml-2">
+                        <Check className="inline w-3 h-3 mr-1" /> Available
+                      </Badge>
                     )}
-                  </label>
+                  </Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground-400">@</span>
-                    <input
+                    <Input
+                      id="handle"
                       type="text"
                       value={handle}
                       onChange={(e) => setHandle(e.target.value.toLowerCase())}
-                      className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary ${
-                        handleError ? 'border-destructive-500' : 'border-border-300'
-                      }`}
+                      className={`pl-8 ${handleError ? 'border-destructive-500' : ''}`}
                       placeholder="johndoe"
                       required
                     />
                   </div>
                   {handleError && (
-                    <p className="text-xs text-destructive-600 mt-1">{handleError}</p>
+                    <p className="text-xs text-destructive-600">{handleError}</p>
                   )}
                 </div>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+              <div className="space-y-2">
+                <Label htmlFor="bio">
                   Bio
-                </label>
-                <textarea
+                </Label>
+                <Textarea
+                  id="bio"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
                   rows={3}
                   placeholder="Tell us about yourself..."
                 />
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                <div className="space-y-2">
+                  <Label htmlFor="city">
                     City *
-                  </label>
+                  </Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
-                    <input
+                    <Input
+                      id="city"
                       type="text"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="pl-10"
                       placeholder="Dublin"
                       required
                     />
                   </div>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                <div className="space-y-2">
+                  <Label htmlFor="country">
                     Country *
-                  </label>
+                  </Label>
                   <div className="relative">
-                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
-                    <select
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                      className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
-                    >
-                      {COUNTRIES.map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
+                    <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400 z-10" />
+                    <Select value={country} onValueChange={setCountry}>
+                      <SelectTrigger className="pl-10">
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRIES.map((c) => (
+                          <SelectItem key={c} value={c}>
+                            {c}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
 
               {/* Date of Birth - CRITICAL FIELD */}
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+              <div className="space-y-2">
+                <Label htmlFor="dateOfBirth">
                   Date of Birth * <span className="text-destructive-500">(Required for age verification)</span>
-                </label>
+                </Label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
-                  <input
+                  <Input
+                    id="dateOfBirth"
                     type="date"
                     value={profileData.dateOfBirth || ''}
                     onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, dateOfBirth: e.target.value }))}
-                    className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="pl-10"
                     required
                     max={new Date().toISOString().split('T')[0]} // Can't be in the future
                   />
                 </div>
-                <p className="text-xs text-muted-foreground-500 mt-1">
+                <p className="text-xs text-muted-foreground-500">
                   You must be 18 or older to use Preset. This information is required for age verification.
                 </p>
               </div>
@@ -877,65 +895,69 @@ export default function CompleteProfilePage() {
                 <h3 className="text-lg font-semibold text-muted-foreground-900 mb-4">Social Media & Contact</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="instagramHandle">
                       Instagram
-                    </label>
+                    </Label>
                     <div className="relative">
                       <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
-                      <input
+                      <Input
+                        id="instagramHandle"
                         type="text"
                         value={profileData.instagramHandle || ''}
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, instagramHandle: e.target.value }))}
-                        className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="pl-10"
                         placeholder="@username"
                       />
                     </div>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="tiktokHandle">
                       TikTok
-                    </label>
+                    </Label>
                     <div className="relative">
                       <Music2 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
-                      <input
+                      <Input
+                        id="tiktokHandle"
                         type="text"
                         value={profileData.tiktokHandle || ''}
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, tiktokHandle: e.target.value }))}
-                        className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="pl-10"
                         placeholder="@username"
                       />
                     </div>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="websiteUrl">
                       Website
-                    </label>
+                    </Label>
                     <div className="relative">
                       <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
-                      <input
+                      <Input
+                        id="websiteUrl"
                         type="url"
                         value={profileData.websiteUrl || ''}
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, websiteUrl: e.target.value }))}
-                        className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="pl-10"
                         placeholder="https://..."
                       />
                     </div>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber">
                       Phone
-                    </label>
+                    </Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground-400" />
-                      <input
+                      <Input
+                        id="phoneNumber"
                         type="tel"
                         value={profileData.phoneNumber || ''}
                         onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, phoneNumber: e.target.value }))}
-                        className="w-full pl-10 pr-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="pl-10"
                         placeholder="+353..."
                       />
                     </div>
@@ -944,19 +966,20 @@ export default function CompleteProfilePage() {
               </div>
 
               <div className="flex gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setCurrentStep('role')}
-                  className="flex-1 py-2 px-4 border border-border-300 rounded-lg text-muted-foreground-700 hover:bg-muted-50"
+                  className="flex-1"
                 >
                   Back
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="flex-1 py-2 px-4 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90"
+                  className="flex-1"
                 >
                   Continue
-                </button>
+                </Button>
               </div>
             </form>
           )}
@@ -976,38 +999,44 @@ export default function CompleteProfilePage() {
               {/* Basic Demographics */}
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="genderIdentity">
                       Gender Identity
-                    </label>
-                    <select
+                    </Label>
+                    <Select
                       value={profileData.genderIdentity || ''}
-                      onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, genderIdentity: e.target.value }))}
-                      className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
+                      onValueChange={(value) => setProfileData((prev: typeof profileData) => ({ ...prev, genderIdentity: value }))}
                       disabled={optionsLoading}
                     >
-                      <option value="">Select...</option>
-                      {getOptionNames(predefinedOptions.genderIdentities).map(gender => (
-                        <option key={gender} value={gender}>{gender}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getOptionNames(predefinedOptions.genderIdentities).map(gender => (
+                          <SelectItem key={gender} value={gender}>{gender}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="ethnicity">
                       Ethnicity
-                    </label>
-                    <select
+                    </Label>
+                    <Select
                       value={profileData.ethnicity || ''}
-                      onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, ethnicity: e.target.value }))}
-                      className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
+                      onValueChange={(value) => setProfileData((prev: typeof profileData) => ({ ...prev, ethnicity: value }))}
                       disabled={optionsLoading}
                     >
-                      <option value="">Select...</option>
-                      {getOptionNames(predefinedOptions.ethnicities).map(ethnicity => (
-                        <option key={ethnicity} value={ethnicity}>{ethnicity}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getOptionNames(predefinedOptions.ethnicities).map(ethnicity => (
+                          <SelectItem key={ethnicity} value={ethnicity}>{ethnicity}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -1749,22 +1778,23 @@ export default function CompleteProfilePage() {
               </div>
 
               <div className="flex gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setCurrentStep('details')}
                   disabled={loading}
-                  className="flex-1 py-2 px-4 border border-border-300 rounded-lg text-muted-foreground-700 hover:bg-muted-50 disabled:opacity-50"
+                  className="flex-1"
                 >
                   Back
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={loading}
-                  className="flex-1 py-2 px-4 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                  className="flex-1"
                 >
                   {loading ? 'Saving profile...' : 'Complete setup'}
-                </button>
+                </Button>
               </div>
 
               <p className="text-xs text-center text-muted-foreground-500">
