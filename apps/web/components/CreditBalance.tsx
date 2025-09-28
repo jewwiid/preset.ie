@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/lib/supabase';
 import { Button } from './ui/button';
 import { Coins, Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -15,8 +15,6 @@ export default function CreditBalance({ className = '', showPurchaseButton = tru
   const [balance, setBalance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
     loadBalance();

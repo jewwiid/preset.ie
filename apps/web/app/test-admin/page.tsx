@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/lib/supabase';
 
 export default function TestAdmin() {
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
-  const supabase = createClientComponentClient();
 
   const createTestAdmin = async () => {
     setLoading(true);
