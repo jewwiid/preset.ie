@@ -410,11 +410,12 @@ export function NavBar() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="flex items-center">
+                      <DropdownMenuSubTrigger className="flex items-center cursor-pointer">
                         <MessageSquare className="mr-2 h-4 w-4" />
                         Requests
+                        <ChevronDown className="ml-auto h-4 w-4" />
                       </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent>
+                      <DropdownMenuSubContent className="w-48">
                         <DropdownMenuItem asChild>
                           <Link href="/gear/requests?create=true" className="flex items-center">
                             <Plus className="mr-2 h-4 w-4" />

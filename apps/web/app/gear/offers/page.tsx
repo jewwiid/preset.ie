@@ -329,10 +329,43 @@ export default function OffersPage() {
                           
                           {/* User Details */}
                           <div className="flex items-center text-sm text-muted-foreground">
-                            <User className="h-4 w-4 mr-2" />
-                            <span>
-                              {activeTab === 'sent' ? 'To' : 'From'}: {activeTab === 'sent' ? offer.owner?.display_name : offer.offerer?.display_name || 'Unknown User'}
-                            </span>
+                            <div className="flex items-center space-x-2">
+                              {/* Avatar */}
+                              <div className="w-6 h-6 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                                {activeTab === 'sent' ? (
+                                  offer.owner?.avatar_url ? (
+                                    <img 
+                                      src={offer.owner.avatar_url} 
+                                      alt={offer.owner.handle || 'User'} 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="h-3 w-3 text-muted-foreground" />
+                                  )
+                                ) : (
+                                  offer.offerer?.avatar_url ? (
+                                    <img 
+                                      src={offer.offerer.avatar_url} 
+                                      alt={offer.offerer.handle || 'User'} 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <User className="h-3 w-3 text-muted-foreground" />
+                                  )
+                                )}
+                              </div>
+                              {/* Username with verification badge */}
+                              <div className="flex items-center space-x-1">
+                                <span>
+                                  {activeTab === 'sent' ? 'To' : 'From'}: @{activeTab === 'sent' ? offer.owner?.handle : offer.offerer?.handle || 'unknown'}
+                                </span>
+                                {(activeTab === 'sent' ? offer.owner?.verified_id : offer.offerer?.verified_id) && (
+                                  <Badge variant="secondary" className="text-xs px-1 py-0 h-4">
+                                    ✓
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
                           </div>
                           
                           {/* Dates */}
