@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     
     const validatedQuery = GetConversationsQuerySchema.parse(queryObject);
 
-    // Get conversations by querying messages directly
+    // Get conversations by querying messages directly with user profile data
     const { data: messages, error } = await supabaseAdmin
       .from('messages')
       .select(`
@@ -71,7 +71,21 @@ export async function GET(request: NextRequest) {
         to_user_id,
         body,
         created_at,
-        read_at
+        read_at,
+        from_user:users_profile!messages_from_user_id_fkey(
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        ),
+        to_user:users_profile!messages_to_user_id_fkey(
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        )
       `)
       .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
       .order('created_at', { ascending: false })
@@ -108,13 +122,15 @@ export async function GET(request: NextRequest) {
         conv.unread_count++;
       }
       
-      // Update last message if this is more recent
-      if (new Date(message.created_at) > new Date(conv.last_message_at)) {
-        conv.last_message_at = message.created_at;
-        conv.last_message_id = message.id;
-        conv.last_message_content = message.body;
-        conv.other_user_id = message.from_user_id === userProfile.id ? message.to_user_id : message.from_user_id;
-      }
+            // Update last message if this is more recent
+            if (new Date(message.created_at) > new Date(conv.last_message_at)) {
+              conv.last_message_at = message.created_at;
+              conv.last_message_id = message.id;
+              conv.last_message_content = message.body;
+              conv.other_user_id = message.from_user_id === userProfile.id ? message.to_user_id : message.from_user_id;
+              // Store user profile data
+              conv.other_user_profile = message.from_user_id === userProfile.id ? message.to_user : message.from_user;
+            }
     });
 
     const conversations = Array.from(conversationMap.values())
@@ -136,7 +152,21 @@ export async function GET(request: NextRequest) {
       unreadCount: conv.unread_count || 0,
       status: 'ACTIVE' as const,
       startedAt: conv.last_message_at, // Use last message time as started time
-      lastMessageAt: conv.last_message_at
+      lastMessageAt: conv.last_message_at,
+      context: { type: 'gig' as const },
+      otherUser: conv.other_user_profile ? {
+        id: conv.other_user_profile.id,
+        display_name: conv.other_user_profile.display_name,
+        handle: conv.other_user_profile.handle,
+        avatar_url: conv.other_user_profile.avatar_url,
+        verified_id: conv.other_user_profile.verified_id
+      } : {
+        id: conv.other_user_id,
+        display_name: `User ${conv.other_user_id?.slice(-4)}`,
+        handle: `user_${conv.other_user_id?.slice(-4)}`,
+        avatar_url: null,
+        verified_id: false
+      }
     })) || [];
 
     // Calculate total unread count

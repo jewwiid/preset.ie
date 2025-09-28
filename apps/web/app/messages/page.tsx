@@ -232,22 +232,15 @@ export default function MessagesPage() {
       // Process gig conversations
       const processedGigConversations = await Promise.all(
         gigConversations.conversations.map(async (conv) => {
-          const otherUserId = conv.participants.find(id => id !== user?.id)
           return {
             ...conv,
-            context: { type: 'gig' as const },
-            otherUser: {
-              id: otherUserId || '',
-              display_name: `User ${otherUserId?.slice(-4)}`,
-              handle: `user_${otherUserId?.slice(-4)}`
-            }
+            context: { type: 'gig' as const }
           }
         })
       )
       
       // Process marketplace conversations
       const processedMarketplaceConversations = marketplaceConversations.conversations.map((conv: any) => {
-        const otherUserId = conv.participants.find((id: string) => id !== user?.id)
         return {
           ...conv,
           context: {
@@ -256,11 +249,6 @@ export default function MessagesPage() {
             offer: conv.context?.offer,
             rental_order: conv.context?.rental_order,
             sale_order: conv.context?.sale_order
-          },
-          otherUser: {
-            id: otherUserId || '',
-            display_name: conv.context?.listing?.users_profile?.display_name || `User ${otherUserId?.slice(-4)}`,
-            handle: conv.context?.listing?.users_profile?.handle || `user_${otherUserId?.slice(-4)}`
           }
         }
       })
@@ -617,7 +605,19 @@ export default function MessagesPage() {
                       >
                         <div className={`flex items-start ${sidebarCollapsed ? 'justify-center' : 'space-x-3'}`}>
                           <div className="flex-shrink-0 relative">
-                            <div className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-10 h-10'} bg-primary rounded-full flex items-center justify-center`}>
+                            {conversation.otherUser?.avatar_url ? (
+                              <img 
+                                src={conversation.otherUser.avatar_url} 
+                                alt={conversation.otherUser.display_name}
+                                className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-10 h-10'} rounded-full object-cover`}
+                                onError={(e) => {
+                                  // Fallback to default avatar if image fails to load
+                                  e.currentTarget.style.display = 'none'
+                                  e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                }}
+                              />
+                            ) : null}
+                            <div className={`${sidebarCollapsed ? 'w-8 h-8' : 'w-10 h-10'} bg-primary rounded-full flex items-center justify-center ${conversation.otherUser?.avatar_url ? 'hidden' : ''}`}>
                               <User className={`text-primary-foreground ${sidebarCollapsed ? 'h-4 w-4' : 'h-5 w-5'}`} />
                             </div>
                             {conversation.unreadCount > 0 && (
@@ -667,12 +667,18 @@ export default function MessagesPage() {
                                 </div>
                               </div>
                               <p className="text-xs text-muted-foreground mb-1">@{conversation.otherUser?.handle || 'unknown'}</p>
-                              {/* Show listing title for marketplace conversations */}
+                              {/* Show listing preview for marketplace conversations */}
                               {conversation.context?.type === 'marketplace' && conversation.context?.listing && (
-                                <p className="text-xs text-primary mb-1 truncate">
-                                  <Tag className="h-3 w-3 inline mr-1" />
-                                  {conversation.context.listing.title}
-                                </p>
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <div className="flex-shrink-0">
+                                    <div className="w-6 h-6 bg-muted rounded flex items-center justify-center">
+                                      <Tag className="h-3 w-3 text-muted-foreground" />
+                                    </div>
+                                  </div>
+                                  <p className="text-xs text-primary truncate">
+                                    {conversation.context.listing.title}
+                                  </p>
+                                </div>
                               )}
                               <p className="text-sm text-muted-foreground truncate">
                                 {hasTypingUsers ? (

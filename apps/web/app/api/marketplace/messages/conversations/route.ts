@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Get marketplace conversations with listing details
+    // Get marketplace conversations with listing details and user profiles
     const { data: conversations, error: conversationsError } = await supabaseAdmin
       .from('messages')
       .select(`
@@ -64,6 +64,20 @@ export async function GET(request: NextRequest) {
         body,
         created_at,
         read_at,
+        from_user:users_profile!messages_from_user_id_fkey(
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        ),
+        to_user:users_profile!messages_to_user_id_fkey(
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        ),
         listings!messages_listing_id_fkey(
           id,
           title,
@@ -144,17 +158,19 @@ export async function GET(request: NextRequest) {
       conversation.participants.add(message.from_user_id);
       conversation.participants.add(message.to_user_id);
       
-      // Update last message
-      if (!conversation.lastMessage || new Date(message.created_at) > new Date(conversation.lastMessage.sentAt)) {
-        conversation.lastMessage = {
-          id: message.id,
-          body: message.body,
-          fromUserId: message.from_user_id,
-          sentAt: message.created_at,
-          read: !!message.read_at
-        };
-        conversation.lastMessageAt = message.created_at;
-      }
+          // Update last message
+          if (!conversation.lastMessage || new Date(message.created_at) > new Date(conversation.lastMessage.sentAt)) {
+            conversation.lastMessage = {
+              id: message.id,
+              body: message.body,
+              fromUserId: message.from_user_id,
+              sentAt: message.created_at,
+              read: !!message.read_at
+            };
+            conversation.lastMessageAt = message.created_at;
+            // Store the other user's profile data
+            conversation.otherUserProfile = message.from_user_id === userProfile.id ? message.to_user : message.from_user;
+          }
       
       // Count unread messages
       if (message.to_user_id === userProfile.id && !message.read_at) {
@@ -166,7 +182,20 @@ export async function GET(request: NextRequest) {
     const formattedConversations = Array.from(conversationMap.values()).map(conv => ({
       ...conv,
       participants: Array.from(conv.participants),
-      gigId: conv.id // For compatibility with existing messaging system
+      gigId: conv.id, // For compatibility with existing messaging system
+      otherUser: conv.otherUserProfile ? {
+        id: conv.otherUserProfile.id,
+        display_name: conv.otherUserProfile.display_name,
+        handle: conv.otherUserProfile.handle,
+        avatar_url: conv.otherUserProfile.avatar_url,
+        verified_id: conv.otherUserProfile.verified_id
+      } : {
+        id: conv.participants.find((id: string) => id !== userProfile.id) || '',
+        display_name: 'Unknown User',
+        handle: 'unknown',
+        avatar_url: null,
+        verified_id: false
+      }
     }));
 
     return NextResponse.json({
