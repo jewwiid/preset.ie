@@ -71,6 +71,7 @@ export class ProjectMarketplaceService {
     suggestions: any[];
   }> {
     try {
+      const supabase = getSupabaseClient()
       // Build query for exact matches
       let exactQuery = supabase
         .from('listings')

@@ -94,6 +94,7 @@ export async function addWatermarkToImage(
             const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
             resolve(dataUrl);
           } catch (fallbackError) {
+            console.error('Fallback watermark creation failed:', fallbackError);
             reject(new Error('Watermark loading timeout and fallback failed'));
           }
         }, 5000); // 5 second timeout
@@ -145,6 +146,7 @@ export async function addWatermarkToImage(
             const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
             resolve(dataUrl);
           } catch (fallbackError) {
+            console.error('Fallback watermark creation failed:', fallbackError);
             reject(new Error('Failed to load watermark image and fallback failed'));
           }
         };
