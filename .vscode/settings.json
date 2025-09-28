@@ -1,0 +1,10 @@
+{
+  "deno.enable": true,
+  "deno.lint": true,
+  "deno.unstable": false,
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  "files.associations": {
+    "apps/edge/functions/**/*.ts": "typescript"
+  },
+  "deno.config": "./deno.json"
+}
