@@ -25,40 +25,30 @@ import { supabase } from '../../../lib/supabase';
 interface Offer {
   id: string;
   listing_id: string;
-  from_user: string;
-  to_user: string;
-  context: 'rent' | 'sale';
-  payload: {
-    price_cents: number;
-    start_date?: string;
-    end_date?: string;
-    quantity?: number;
-    message?: string;
-  };
+  offerer_id: string;
+  owner_id: string;
+  offer_amount_cents: number;
+  message?: string;
+  contact_preference?: string;
   status: 'open' | 'accepted' | 'declined' | 'expired' | 'cancelled';
-  expires_at: string;
   created_at: string;
   updated_at: string;
   listings?: {
     id: string;
     title: string;
     category: string;
-    condition: string;
     mode: string;
-    rent_day_cents?: number;
-    sale_price_cents?: number;
-    location_city: string;
-    location_country: string;
+    status: string;
     owner_id: string;
-    users_profile?: {
-      id: string;
-      display_name: string;
-      handle: string;
-      avatar_url?: string;
-      verified_id?: boolean;
-    };
   };
-  users_profile?: {
+  offerer?: {
+    id: string;
+    display_name: string;
+    handle: string;
+    avatar_url?: string;
+    verified_id?: boolean;
+  };
+  owner?: {
     id: string;
     display_name: string;
     handle: string;
@@ -311,7 +301,7 @@ export default function OffersPage() {
                                 <span className="ml-1">{OFFER_STATUSES[offer.status as keyof typeof OFFER_STATUSES]?.label}</span>
                               </Badge>
                               <Badge variant="secondary">
-                                {offer.context === 'rent' ? 'Rental' : 'Purchase'}
+                                {offer.listings?.mode === 'rent' ? 'Rental' : 'Purchase'}
                               </Badge>
                             </div>
                             <CardTitle className="text-lg mb-2">
@@ -320,10 +310,10 @@ export default function OffersPage() {
                           </div>
                           <div className="text-right">
                             <div className="text-2xl font-bold text-primary">
-                              {formatPrice(offer.payload.price_cents)}
+                              {formatPrice(offer.offer_amount_cents)}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {offer.context === 'rent' ? 'per day' : 'total'}
+                              {offer.listings?.mode === 'rent' ? 'per day' : 'total'}
                             </div>
                           </div>
                         </div>
@@ -334,14 +324,14 @@ export default function OffersPage() {
                           {/* Listing Details */}
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Package className="h-4 w-4 mr-2" />
-                            <span>{offer.listings?.category} • {offer.listings?.condition}</span>
+                            <span>{offer.listings?.category} • {offer.listings?.mode}</span>
                           </div>
                           
                           {/* User Details */}
                           <div className="flex items-center text-sm text-muted-foreground">
                             <User className="h-4 w-4 mr-2" />
                             <span>
-                              {activeTab === 'sent' ? 'To' : 'From'}: {offer.users_profile?.display_name || 'Unknown User'}
+                              {activeTab === 'sent' ? 'To' : 'From'}: {activeTab === 'sent' ? offer.owner?.display_name : offer.offerer?.display_name || 'Unknown User'}
                             </span>
                           </div>
                           
@@ -351,18 +341,18 @@ export default function OffersPage() {
                             <span>Created {formatDateTime(offer.created_at)}</span>
                           </div>
                           
-                          {/* Expiration */}
+                          {/* Status-specific info */}
                           {offer.status === 'open' && (
-                            <div className="flex items-center text-sm text-destructive">
+                            <div className="flex items-center text-sm text-muted-foreground">
                               <Clock className="h-4 w-4 mr-2" />
-                              <span>Expires {formatDateTime(offer.expires_at)}</span>
+                              <span>Offer is pending response</span>
                             </div>
                           )}
                           
                           {/* Message */}
-                          {offer.payload.message && (
+                          {offer.message && (
                             <div className="mt-3 p-3 bg-muted rounded-lg">
-                              <p className="text-sm text-foreground">{offer.payload.message}</p>
+                              <p className="text-sm text-foreground">{offer.message}</p>
                             </div>
                           )}
                         </div>
