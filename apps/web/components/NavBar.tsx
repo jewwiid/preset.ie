@@ -13,6 +13,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import { 
@@ -394,12 +397,6 @@ export function NavBar() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/gear/requests?create=true" className="flex items-center">
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Create Request
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
                       <Link href="/gear/my-listings" className="flex items-center">
                         <ShoppingBag className="mr-2 h-4 w-4" />
                         My Listings
@@ -411,18 +408,33 @@ export function NavBar() {
                         My Orders
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/gear/requests" className="flex items-center">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="flex items-center">
                         <MessageSquare className="mr-2 h-4 w-4" />
-                        Browse Requests
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/gear/my-requests" className="flex items-center">
-                        <Clock className="mr-2 h-4 w-4" />
-                        My Requests
-                      </Link>
-                    </DropdownMenuItem>
+                        Requests
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem asChild>
+                          <Link href="/gear/requests?create=true" className="flex items-center">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create Request
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/gear/requests" className="flex items-center">
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            Browse Requests
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/gear/my-requests" className="flex items-center">
+                            <Clock className="mr-2 h-4 w-4" />
+                            My Requests
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
