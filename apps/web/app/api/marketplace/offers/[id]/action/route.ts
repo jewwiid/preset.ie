@@ -90,6 +90,28 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // If accepting, check if there are already accepted offers for this listing
+    if (action === 'accept') {
+      const { data: existingAcceptedOffers, error: acceptedError } = await supabase
+        .from('offers')
+        .select('id, offerer_id')
+        .eq('listing_id', offer.listing_id)
+        .eq('status', 'accepted');
+
+      if (acceptedError) {
+        console.error('Error checking existing accepted offers:', acceptedError);
+        return NextResponse.json({ 
+          error: 'Failed to check existing offers' 
+        }, { status: 500 });
+      }
+
+      if (existingAcceptedOffers && existingAcceptedOffers.length > 0) {
+        return NextResponse.json({ 
+          error: 'This listing already has an accepted offer. You cannot accept multiple offers for the same item.' 
+        }, { status: 400 });
+      }
+    }
+
     // Update the offer status
     const newStatus = action === 'accept' ? 'accepted' : 'rejected';
     const { data: updatedOffer, error: updateError } = await supabase

@@ -25,10 +25,20 @@ export const supabase = supabaseUrl && supabaseAnonKey
         timeout: 10000,
         transport: typeof window !== 'undefined' ? WebSocket : undefined,
         encode: (payload: any, callback: (encoded: any) => void) => {
-          callback(JSON.stringify(payload))
+          try {
+            callback(JSON.stringify(payload))
+          } catch (error) {
+            console.error('Realtime encode error:', error)
+            callback(payload)
+          }
         },
         decode: (payload: string, callback: (decoded: any) => void) => {
-          callback(JSON.parse(payload))
+          try {
+            callback(JSON.parse(payload))
+          } catch (error) {
+            console.error('Realtime decode error:', error)
+            callback(payload)
+          }
         }
       }
     })
@@ -77,22 +87,28 @@ export const handleRealtimeError = (error: any) => {
 export const createRealtimeChannel = (channelName: string, callback: (payload: any) => void) => {
   const client = getSupabaseClient()
   
-  const channel = client
-    .channel(channelName)
-    .on('broadcast', { event: '*' }, callback)
-    .on('postgres_changes', { event: '*', schema: 'public', table: '*' }, callback)
-    .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log(`✅ Connected to Realtime channel: ${channelName}`)
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error(`❌ Error connecting to Realtime channel: ${channelName}`)
-        handleRealtimeError(new Error('Channel subscription failed'))
-      } else if (status === 'TIMED_OUT') {
-        console.warn(`⏰ Timeout connecting to Realtime channel: ${channelName}`)
-      } else if (status === 'CLOSED') {
-        console.log(`🔌 Disconnected from Realtime channel: ${channelName}`)
-      }
-    })
-  
-  return channel
+  try {
+    const channel = client
+      .channel(channelName)
+      .on('broadcast', { event: '*' }, callback)
+      .on('postgres_changes', { event: '*', schema: 'public', table: '*' }, callback)
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`✅ Connected to Realtime channel: ${channelName}`)
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error(`❌ Error connecting to Realtime channel: ${channelName}`)
+          handleRealtimeError(new Error('Channel subscription failed'))
+        } else if (status === 'TIMED_OUT') {
+          console.warn(`⏰ Timeout connecting to Realtime channel: ${channelName}`)
+        } else if (status === 'CLOSED') {
+          console.log(`🔌 Disconnected from Realtime channel: ${channelName}`)
+        }
+      })
+    
+    return channel
+  } catch (error) {
+    console.error(`Error creating realtime channel ${channelName}:`, error)
+    handleRealtimeError(error)
+    return null
+  }
 }

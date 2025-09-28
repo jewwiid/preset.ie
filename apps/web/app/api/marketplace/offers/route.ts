@@ -181,21 +181,22 @@ export async function POST(request: NextRequest) {
     // Anti-spam checks
     console.log('Running anti-spam checks for user:', userProfile.id);
 
-    // Check for duplicate pending offers
-    const { data: duplicateCheck, error: duplicateError } = await supabase.rpc('check_duplicate_request', {
-      p_user_id: userProfile.id,
-      p_listing_id: listing_id,
-      p_table_name: 'offers'
-    });
+    // Check for ANY existing offers (not just pending)
+    const { data: existingOffers, error: existingOffersError } = await supabase
+      .from('offers')
+      .select('id, status')
+      .eq('offerer_id', userProfile.id)
+      .eq('listing_id', listing_id);
 
-    if (duplicateError) {
-      console.error('Duplicate check error:', duplicateError);
-      return NextResponse.json({ error: 'Failed to check for duplicate offers' }, { status: 500 });
+    if (existingOffersError) {
+      console.error('Existing offers check error:', existingOffersError);
+      return NextResponse.json({ error: 'Failed to check for existing offers' }, { status: 500 });
     }
 
-    if (!duplicateCheck) {
+    if (existingOffers && existingOffers.length > 0) {
+      const statuses = existingOffers.map(offer => offer.status).join(', ');
       return NextResponse.json({ 
-        error: 'You already have a pending offer for this listing' 
+        error: `You already have an offer for this listing (status: ${statuses}). You cannot make multiple offers for the same item.` 
       }, { status: 400 });
     }
 

@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
     const { data: message, error: insertError } = await supabaseAdmin
       .from('messages')
       .insert({
-        gig_id: conversationId || null,
+        gig_id: null, // Marketplace messages don't use gig_id
         listing_id: listing_id || null,
         rental_order_id: rental_order_id || null,
         sale_order_id: sale_order_id || null,
@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        conversationId: conversationId,
+        conversationId: listing_id || rental_order_id || sale_order_id || offer_id,
         messageId: message.id,
         sentAt: message.created_at
       }

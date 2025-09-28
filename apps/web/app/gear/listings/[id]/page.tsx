@@ -612,34 +612,58 @@ export default function ListingDetailPage() {
             {/* Action Buttons */}
             <Card>
               <CardContent className="p-6 space-y-3 overflow-hidden">
-                {(listing.mode === 'rent' || listing.mode === 'both') && (
-                  <Button 
-                    className="w-full" 
-                    onClick={() => setShowRentalForm(true)}
-                  >
-                    Request Rental
-                  </Button>
-                )}
-                
-                {(listing.mode === 'sale' || listing.mode === 'both') && !isOwner() && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setShowOfferForm(true)}
-                  >
-                    Make Offer
-                  </Button>
+                {isOwner() ? (
+                  // Owner-specific actions
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full" 
+                      onClick={() => router.push(`/gear/listings/${listing.id}/edit`)}
+                    >
+                      Edit Listing
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => router.push(`/gear/my-listings`)}
+                    >
+                      Manage Listings
+                    </Button>
+                  </div>
+                ) : (
+                  // Non-owner actions
+                  <div className="space-y-3">
+                    {(listing.mode === 'rent' || listing.mode === 'both') && (
+                      <Button 
+                        className="w-full" 
+                        onClick={() => setShowRentalForm(true)}
+                      >
+                        Request Rental
+                      </Button>
+                    )}
+                    
+                    {(listing.mode === 'sale' || listing.mode === 'both') && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        onClick={() => setShowOfferForm(true)}
+                      >
+                        Make Offer
+                      </Button>
+                    )}
+                  </div>
                 )}
                 
                 <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 min-w-0"
-                    onClick={() => setShowMessaging(true)}
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Message
-                  </Button>
+                  {!isOwner() && (
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 min-w-0"
+                      onClick={() => setShowMessaging(true)}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Message
+                    </Button>
+                  )}
                   <Button 
                     variant="outline" 
                     className="flex-1 min-w-0"

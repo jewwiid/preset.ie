@@ -77,6 +77,34 @@ export default function MessagesPage() {
     return session?.access_token || 'dummy-token'
   }
   
+  // Get current user profile ID for message alignment
+  const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null)
+  
+  useEffect(() => {
+    const fetchCurrentUserProfile = async () => {
+      if (!user) return
+      
+      try {
+        const { supabase } = await import('../../lib/supabase')
+        if (!supabase) return
+        
+        const { data: userProfile } = await supabase
+          .from('users_profile')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+        
+        if (userProfile) {
+          setCurrentUserProfileId(userProfile.id)
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error)
+      }
+    }
+    
+    fetchCurrentUserProfile()
+  }, [user])
+  
   const [conversations, setConversations] = useState<ExtendedConversationDTO[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
   const [conversationDetails, setConversationDetails] = useState<ConversationDetailsDTO | null>(null)
@@ -174,17 +202,17 @@ export default function MessagesPage() {
     // Connection status will be shown in the UI
   }
 
-  // Real-time messaging integration
-  const realtimeMessages = useRealtimeMessages({
-    conversationId: selectedConversation || undefined,
-    enableTypingIndicators: true,
-    enableMessageStatus: true,
-    enableToastNotifications: true,
-    onNewMessage: handleNewMessage,
-    onMessageStatusUpdate: handleMessageStatusUpdate,
-    onTypingUpdate: handleTypingUpdate,
-    onConnectionChange: handleConnectionChange
-  })
+  // Real-time messaging integration - temporarily disabled due to WebSocket issues
+  // const realtimeMessages = useRealtimeMessages({
+  //   conversationId: selectedConversation || undefined,
+  //   enableTypingIndicators: true,
+  //   enableMessageStatus: true,
+  //   enableToastNotifications: true,
+  //   onNewMessage: handleNewMessage,
+  //   onMessageStatusUpdate: handleMessageStatusUpdate,
+  //   onTypingUpdate: handleTypingUpdate,
+  //   onConnectionChange: handleConnectionChange
+  // })
 
   useEffect(() => {
     if (user) {
@@ -208,9 +236,9 @@ export default function MessagesPage() {
     if (selectedConversation) {
       fetchConversationDetails(selectedConversation)
       // Mark conversation as delivered when viewing
-      realtimeMessages.markAsDelivered(selectedConversation)
+      // realtimeMessages.markAsDelivered(selectedConversation)
     }
-  }, [selectedConversation, realtimeMessages.markAsDelivered])
+  }, [selectedConversation])
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -333,7 +361,7 @@ export default function MessagesPage() {
     // Set typing indicator
     if (selectedConversation && !isTyping) {
       setIsTyping(true)
-      realtimeMessages.setTyping(selectedConversation, true)
+      // realtimeMessages.setTyping(selectedConversation, true)
     }
     
     // Clear existing timeout
@@ -345,7 +373,7 @@ export default function MessagesPage() {
     typingTimeoutRef.current = setTimeout(() => {
       if (selectedConversation) {
         setIsTyping(false)
-        realtimeMessages.setTyping(selectedConversation, false)
+        // realtimeMessages.setTyping(selectedConversation, false)
       }
     }, 1000) as unknown as NodeJS.Timeout
   }
@@ -361,7 +389,7 @@ export default function MessagesPage() {
   const stopTyping = () => {
     if (selectedConversation && isTyping) {
       setIsTyping(false)
-      realtimeMessages.setTyping(selectedConversation, false)
+      // realtimeMessages.setTyping(selectedConversation, false)
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
         typingTimeoutRef.current = null
@@ -594,10 +622,11 @@ export default function MessagesPage() {
                 ) : (
                   conversations.map((conversation) => {
                     // Check if this conversation has active typing users
-                    const hasTypingUsers = selectedConversation !== conversation.id && 
-                      Object.values(realtimeMessages.typingUsers).some(user => 
-                        user.isTyping && user.conversationId === conversation.id
-                      )
+                    // const hasTypingUsers = selectedConversation !== conversation.id && 
+                    //   Object.values(realtimeMessages.typingUsers).some(user => 
+                    //     user.isTyping && user.conversationId === conversation.id
+                    //   )
+                    const hasTypingUsers = false // Temporarily disabled
                     
                     return (
                       <div
@@ -765,12 +794,12 @@ export default function MessagesPage() {
                     <p className="text-sm text-muted-foreground">
                       @{conversations.find(c => c.id === selectedConversation)?.otherUser?.handle || 'unknown'}
                     </p>
-                    {/* Typing Indicator */}
-                    {Object.values(realtimeMessages.typingUsers).some(user => user.isTyping) && (
+                    {/* Typing Indicator - Temporarily disabled */}
+                    {/* {Object.values(realtimeMessages.typingUsers).some(user => user.isTyping) && (
                       <p className="text-xs text-primary italic">
                         typing...
                       </p>
-                    )}
+                    )} */}
                   </div>
                 </div>
                 
@@ -829,10 +858,10 @@ export default function MessagesPage() {
                       conversationDetails.messages.map((message: MessageDTO) => (
                         <div
                           key={message.id}
-                          className={`flex ${message.fromUserId === user?.id ? 'justify-end' : 'justify-start'} items-end space-x-2`}
+                          className={`flex ${message.fromUserId === currentUserProfileId ? 'justify-end' : 'justify-start'} items-end space-x-2`}
                         >
                           {/* Avatar for other user's messages */}
-                          {message.fromUserId !== user?.id && (
+                          {message.fromUserId !== currentUserProfileId && (
                             <div className="flex-shrink-0">
                               {message.fromUser?.avatar_url ? (
                                 <img 
@@ -853,20 +882,20 @@ export default function MessagesPage() {
                           
                           <div
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                              message.fromUserId === user?.id
+                              message.fromUserId === currentUserProfileId
                                 ? 'bg-primary text-primary-foreground'
                                 : 'bg-muted text-foreground'
                             }`}
                           >
                             <p className="text-sm">{message.body}</p>
                             <div className={`flex items-center justify-between mt-1 text-xs ${
-                              message.fromUserId === user?.id ? 'text-primary-200' : 'text-muted-foreground'
+                              message.fromUserId === currentUserProfileId ? 'text-primary-200' : 'text-muted-foreground'
                             }`}>
                               <div className="flex items-center space-x-1">
                                 <Clock className="h-3 w-3" />
                                 <span>{formatTime(message.sentAt)}</span>
                               </div>
-                              {message.fromUserId === user?.id && (
+                              {message.fromUserId === currentUserProfileId && (
                                 <div className="flex items-center space-x-1">
                                   {message.readAt ? (
                                     <span className="text-primary-200" title="Read">✓✓</span>
@@ -879,7 +908,7 @@ export default function MessagesPage() {
                           </div>
                           
                           {/* Avatar for current user's messages */}
-                          {message.fromUserId === user?.id && (
+                          {message.fromUserId === currentUserProfileId && (
                             <div className="flex-shrink-0">
                               {user?.user_metadata?.avatar_url ? (
                                 <img 
@@ -901,8 +930,8 @@ export default function MessagesPage() {
                       ))
                     )}
                     
-                    {/* Typing Indicators */}
-                    {Object.values(realtimeMessages.typingUsers).filter(user => user.isTyping).map(user => (
+                    {/* Typing Indicators - Temporarily disabled */}
+                    {/* {Object.values(realtimeMessages.typingUsers).filter(user => user.isTyping).map(user => (
                       <div key={user.userId} className="flex justify-start">
                         <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-accent">
                           <div className="flex items-center space-x-2">
@@ -917,7 +946,7 @@ export default function MessagesPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                    ))} */}
                     
                     {/* Auto-scroll anchor */}
                     <div ref={messagesEndRef} />
@@ -934,11 +963,11 @@ export default function MessagesPage() {
                         placeholder="Type your message..."
                         className="flex-1 px-4 py-2 border border-border rounded-lg resize-none focus:ring-2 focus:ring-primary focus:border-primary"
                         rows={2}
-                        disabled={!realtimeMessages.isConnected}
+                        disabled={false}
                       />
                       <button
                         onClick={sendMessage}
-                        disabled={!newMessage.trim() || sending || !realtimeMessages.isConnected}
+                        disabled={!newMessage.trim() || sending}
                         className="px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[44px]"
                       >
                         {sending ? (
@@ -949,8 +978,8 @@ export default function MessagesPage() {
                       </button>
                     </div>
                     
-                    {/* Connection Error */}
-                    {realtimeMessages.connectionError && (
+                    {/* Connection Error - Temporarily disabled */}
+                    {/* {realtimeMessages.connectionError && (
                       <div className="px-4 py-2 bg-destructive/10 border-t border-destructive/20 mt-2">
                         <div className="flex items-center space-x-2 text-sm text-destructive">
                           <AlertCircle className="h-4 w-4" />
@@ -963,7 +992,7 @@ export default function MessagesPage() {
                           </button>
                         </div>
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </>
               ) : (
@@ -973,8 +1002,8 @@ export default function MessagesPage() {
                     <h3 className="text-lg font-medium text-foreground mb-2">Select a conversation</h3>
                     <p className="text-muted-foreground">Choose a conversation from the sidebar to start messaging.</p>
                     
-                    {/* Global connection status when no conversation selected */}
-                    <div className="mt-4">
+                    {/* Global connection status when no conversation selected - Temporarily disabled */}
+                    {/* <div className="mt-4">
                       {realtimeMessages.isConnecting ? (
                         <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-muted-foreground"></div>
@@ -997,7 +1026,7 @@ export default function MessagesPage() {
                           </button>
                         </div>
                       )}
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               )}

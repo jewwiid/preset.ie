@@ -373,49 +373,65 @@ export function useNotifications(): UseNotificationsResult {
 
     console.log('Setting up notification real-time subscription for user:', user.id)
 
-    const channel = supabase
-      .channel(`notifications:${user.id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `recipient_id=eq.${user.id}`
-      }, (payload) => {
-        const newNotification = payload.new as Notification
-        
-        console.log('Real-time notification received:', newNotification)
+    try {
+      const channel = supabase
+        .channel(`notifications:${user.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `recipient_id=eq.${user.id}`
+        }, (payload) => {
+          const newNotification = payload.new as Notification
+          
+          console.log('Real-time notification received:', newNotification)
 
-        // Add to local state
-        setNotifications(prev => [newNotification, ...prev])
-        setUnreadCount(prev => prev + 1)
+          // Add to local state
+          setNotifications(prev => [newNotification, ...prev])
+          setUnreadCount(prev => prev + 1)
 
-        // Show toast notification with enhanced features
-        showFeedback({
-          type: 'notification',
-          title: newNotification.title,
-          message: newNotification.message,
-          avatar: newNotification.avatar_url,
-          actions: newNotification.action_url ? [
-            {
-              label: 'View',
-              action: () => {
-                if (typeof window !== 'undefined' && newNotification.action_url) {
-                  window.location.href = newNotification.action_url
-                }
-              },
-              style: 'primary'
-            }
-          ] : undefined,
-          duration: 8000 // Longer duration for notifications
+          // Show toast notification with enhanced features
+          showFeedback({
+            type: 'notification',
+            title: newNotification.title,
+            message: newNotification.message,
+            avatar: newNotification.avatar_url,
+            actions: newNotification.action_url ? [
+              {
+                label: 'View',
+                action: () => {
+                  if (typeof window !== 'undefined' && newNotification.action_url) {
+                    window.location.href = newNotification.action_url
+                  }
+                },
+                style: 'primary'
+              }
+            ] : undefined,
+            duration: 8000 // Longer duration for notifications
+          })
         })
-      })
-      .subscribe()
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Notification subscription established')
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ Notification subscription error')
+          } else if (status === 'TIMED_OUT') {
+            console.warn('⏰ Notification subscription timeout')
+          }
+        })
 
-    return () => {
-      console.log('Cleaning up notification subscription')
-      if (supabase) {
-        supabase.removeChannel(channel)
+      return () => {
+        console.log('Cleaning up notification subscription')
+        try {
+          if (supabase) {
+            supabase.removeChannel(channel)
+          }
+        } catch (error) {
+          console.error('Error removing notification channel:', error)
+        }
       }
+    } catch (error) {
+      console.error('Error setting up notification subscription:', error)
     }
   }, [user, showFeedback])
 

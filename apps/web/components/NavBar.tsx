@@ -524,7 +524,8 @@ export function NavBar() {
                 <ThemeToggle />
 
                 {/* Notifications - Only show if user exists */}
-                {user && <NotificationBell />}
+                {/* Temporarily disabled due to WebSocket connection issues */}
+                {/* {user && <NotificationBell />} */}
 
                 {/* Profile Dropdown - Only show if user exists */}
                 {user && (
