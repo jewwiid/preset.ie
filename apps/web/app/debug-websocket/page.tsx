@@ -1,11 +1,8 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import { useState, useEffect } from 'react'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export default function WebSocketDebugPage() {
   const { user, session, loading } = useAuth()
@@ -29,8 +26,6 @@ export default function WebSocketDebugPage() {
     setConnectionStatus('Testing...')
 
     try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey)
-      
       // Check session first
       const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
       
@@ -171,8 +166,7 @@ export default function WebSocketDebugPage() {
           <h2 className="text-lg font-semibold mb-2">Environment Info</h2>
           <pre className="text-sm">
             {JSON.stringify({
-              supabaseUrl: supabaseUrl ? 'Set' : 'Not set',
-              supabaseAnonKey: supabaseAnonKey ? 'Set' : 'Not set',
+              supabaseClient: supabase ? 'Initialized' : 'Not initialized',
               nodeEnv: process.env.NODE_ENV
             }, null, 2)}
           </pre>

@@ -1,11 +1,8 @@
 'use client'
 
 import { useAuth } from '@/lib/auth-context'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import { useState, useEffect } from 'react'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export default function SessionDebugPage() {
   const { user, session, loading } = useAuth()
@@ -14,7 +11,6 @@ export default function SessionDebugPage() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey)
       const { data: { session }, error } = await supabase.auth.getSession()
       
       setSessionInfo({
@@ -31,7 +27,6 @@ export default function SessionDebugPage() {
 
   const testStripeAPI = async () => {
     try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey)
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session) {

@@ -22,19 +22,7 @@ export const supabase = supabaseUrl && supabaseAnonKey
         },
         heartbeatIntervalMs: 30000,
         reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
-        timeout: 10000,
-        // Add authentication handling for realtime
-        encode: (payload: any, callback: any) => {
-          // Ensure we have a valid session before establishing realtime connection
-          supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-              payload.access_token = session.access_token
-            }
-            callback(payload)
-          }).catch(() => {
-            callback(payload)
-          })
-        }
+        timeout: 10000
       }
     })
   : null

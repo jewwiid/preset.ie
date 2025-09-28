@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import { Check, X, Star, Zap, Crown } from 'lucide-react'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 interface SubscriptionPlan {
   id: string
@@ -100,8 +97,6 @@ export default function SubscriptionPage() {
     if (!user) return
 
     try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey)
-      
       // Get the user's profile to get the subscription tier
       const { data: profile, error: profileError } = await supabase
         .from('users_profile')
@@ -144,8 +139,6 @@ export default function SubscriptionPage() {
     setSuccess(null)
 
     try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey)
-      
       // Get session for auth
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       console.log('🔍 Session check result:', { 
@@ -200,8 +193,6 @@ export default function SubscriptionPage() {
     setError(null)
 
     try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey)
-      
       // Update user profile to FREE tier
       const { error: profileUpdateError } = await supabase
         .from('users_profile')
