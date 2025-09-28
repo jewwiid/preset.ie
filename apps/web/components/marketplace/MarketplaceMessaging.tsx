@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, User, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { getAuthToken } from '@/lib/auth-utils';
 
 interface MarketplaceMessagingProps {
   listingId: string;
@@ -59,9 +60,15 @@ export default function MarketplaceMessaging({
       setLoading(true);
       setError(null);
 
+      const token = await getAuthToken();
+      if (!token) {
+        toast.error('Please sign in to view messages');
+        return;
+      }
+
       const response = await fetch(`/api/marketplace/messages/conversations?listing_id=${listingId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -89,9 +96,15 @@ export default function MarketplaceMessaging({
 
   const fetchConversationMessages = async (conversationId: string) => {
     try {
+      const token = await getAuthToken();
+      if (!token) {
+        toast.error('Please sign in to view messages');
+        return;
+      }
+
       const response = await fetch(`/api/messages/${conversationId}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -134,11 +147,17 @@ export default function MarketplaceMessaging({
         }
       }
 
+      const token = await getAuthToken();
+      if (!token) {
+        toast.error('Please sign in to send messages');
+        return;
+      }
+
       const response = await fetch('/api/marketplace/messages/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(messageData)
       });
