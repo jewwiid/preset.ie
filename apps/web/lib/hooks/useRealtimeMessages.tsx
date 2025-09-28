@@ -211,6 +211,21 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
         setConnectionError('Authentication required for realtime connection')
         return
       }
+      
+      // Check if session is expired
+      const now = Math.floor(Date.now() / 1000)
+      if (session.expires_at && session.expires_at < now) {
+        console.error('Session expired, refreshing...')
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+        if (refreshError || !refreshedSession) {
+          console.error('Failed to refresh session:', refreshError)
+          setIsConnecting(false)
+          setConnectionError('Session expired and could not be refreshed')
+          return
+        }
+        console.log('Session refreshed successfully')
+      }
+      
       console.log('Valid session found, proceeding with realtime setup')
     } catch (error) {
       console.error('Error checking session for realtime:', error)
