@@ -85,21 +85,19 @@ async function handleCheckoutSuccess(session: Stripe.Checkout.Session) {
     await EnhancementService.createListingEnhancement(enhancementData);
 
     // Send success notification to user
-    if (supabase) {
-      await supabase.functions.invoke('create-notification', {
-        body: {
-          user_id,
-          type: 'enhancement_applied',
-          title: 'Boost Applied Successfully!',
-          message: `Your ${enhancement_type.replace('_', ' ')} boost has been applied to your listing.`,
-          metadata: {
-            listing_id,
-            enhancement_type,
-            session_id: session.id
-          }
+    await supabase.functions.invoke('create-notification', {
+      body: {
+        user_id,
+        type: 'enhancement_applied',
+        title: 'Boost Applied Successfully!',
+        message: `Your ${enhancement_type.replace('_', ' ')} boost has been applied to your listing.`,
+        metadata: {
+          listing_id,
+          enhancement_type,
+          session_id: session.id
         }
-      });
-    }
+      }
+    });
 
     console.log(`Enhancement created successfully for listing: ${listing_id}`);
   } catch (error) {
@@ -131,8 +129,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
     await EnhancementService.createListingEnhancement(enhancementData);
 
     // Send success notification to user
-    if (supabase) {
-      await supabase.functions.invoke('create-notification', {
+    await supabase.functions.invoke('create-notification', {
       body: {
         user_id,
         type: 'enhancement_applied',
@@ -145,7 +142,6 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
         }
       }
     });
-    }
 
     console.log(`Enhancement created successfully for listing: ${listing_id}`);
   } catch (error) {
@@ -165,8 +161,7 @@ async function handlePaymentFailure(paymentIntent: Stripe.PaymentIntent) {
     console.log(`Payment failed for enhancement: ${enhancement_type} on listing: ${listing_id}`);
 
     // Send failure notification to user
-    if (supabase) {
-      await supabase.functions.invoke('create-notification', {
+    await supabase.functions.invoke('create-notification', {
       body: {
         user_id,
         type: 'enhancement_failed',
@@ -180,7 +175,6 @@ async function handlePaymentFailure(paymentIntent: Stripe.PaymentIntent) {
         }
       }
     });
-    }
 
     console.log(`Payment failure notification sent for listing: ${listing_id}`);
   } catch (error) {
