@@ -735,6 +735,12 @@ export default function ListingDetailPage() {
                                 <p className="text-sm text-muted-foreground">
                                   {comment.body}
                                 </p>
+                                {/* Debug info */}
+                                {process.env.NODE_ENV === 'development' && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Debug: currentUser={currentUser?.id}, owner={listing?.owner_id}, isOwner={isOwner()}
+                                  </div>
+                                )}
                                 {currentUser && !isOwner() && (
                                   <Button
                                     variant="ghost"
@@ -785,6 +791,12 @@ export default function ListingDetailPage() {
                             {/* Reply Form */}
                             {replyingTo === comment.id && (
                               <div className="ml-8 p-2 border rounded-lg bg-muted/50">
+                                {/* Debug info */}
+                                {process.env.NODE_ENV === 'development' && (
+                                  <div className="text-xs text-gray-500 mb-2">
+                                    Debug: replyingTo={replyingTo}, comment.id={comment.id}
+                                  </div>
+                                )}
                                 <div className="flex items-start space-x-2">
                                   <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
                                     <MessageCircle className="h-3 w-3 text-green-600" />
