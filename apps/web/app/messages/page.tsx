@@ -14,6 +14,8 @@ interface ExtendedConversationDTO extends ConversationDTO {
     id: string
     display_name: string
     handle: string
+    avatar_url?: string
+    verified_id?: boolean
   }
   // Marketplace-specific fields
   context?: {
