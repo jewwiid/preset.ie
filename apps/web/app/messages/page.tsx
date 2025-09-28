@@ -310,6 +310,7 @@ export default function MessagesPage() {
         throw new Error('Conversation not found')
       }
       
+      
       if (conversation.context?.type === 'marketplace') {
         // For marketplace conversations, fetch messages using the new API endpoint
         const response = await fetch(`/api/marketplace/messages/${conversationId}`, {
@@ -335,17 +336,45 @@ export default function MessagesPage() {
         }
       } else {
         // Handle gig conversations normally
-        const response = await messagesApi.getConversation(conversationId)
-        setConversationDetails(response.data)
-        
-        // Mark conversation as read when viewing
         try {
-          await messagesApi.markConversationAsRead(conversationId)
-          // Refresh conversations to update unread counts
-          fetchConversations()
-        } catch (readError) {
-          console.error('Error marking conversation as read:', readError)
-          // Don't show error to user for this non-critical operation
+          const response = await messagesApi.getConversation(conversationId)
+          setConversationDetails(response.data)
+          
+          // Mark conversation as read when viewing
+          try {
+            await messagesApi.markConversationAsRead(conversationId)
+            // Refresh conversations to update unread counts
+            fetchConversations()
+          } catch (readError) {
+            console.error('Error marking conversation as read:', readError)
+            // Don't show error to user for this non-critical operation
+          }
+        } catch (error: any) {
+          // If the gig API says this is a marketplace conversation, try marketplace API
+          if (error.message.includes('marketplace conversation')) {
+            console.log('Retrying with marketplace API for conversation:', conversationId)
+            const response = await fetch(`/api/marketplace/messages/${conversationId}`, {
+              headers: {
+                'Authorization': `Bearer ${await getAuthToken()}`
+              }
+            })
+            
+            if (!response.ok) {
+              throw new Error('Failed to fetch marketplace conversation details')
+            }
+            
+            const conversationDetails = await response.json()
+            setConversationDetails(conversationDetails)
+            
+            // Refresh conversations to update unread counts
+            try {
+              fetchConversations()
+            } catch (readError) {
+              console.error('Error refreshing conversations:', readError)
+            }
+          } else {
+            throw error
+          }
         }
       }
     } catch (error: any) {

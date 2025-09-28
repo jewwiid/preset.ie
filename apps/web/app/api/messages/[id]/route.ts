@@ -63,6 +63,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .order('created_at', { ascending: true });
 
     if (messagesError) {
+      console.error('Error fetching messages:', messagesError);
       return NextResponse.json(
         { error: 'Failed to fetch conversation messages' },
         { status: 500 }
@@ -70,6 +71,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     if (!messages || messages.length === 0) {
+      // Check if this might be a marketplace conversation (listing_id)
+      const { data: listingCheck } = await supabaseAdmin
+        .from('listings')
+        .select('id')
+        .eq('id', validatedParams.id)
+        .single();
+      
+      if (listingCheck) {
+        // This is a marketplace conversation, redirect to marketplace API
+        return NextResponse.json(
+          { error: 'This is a marketplace conversation. Please use the marketplace messages API.' },
+          { status: 400 }
+        );
+      }
+      
       return NextResponse.json(
         { error: 'Conversation not found or access denied' },
         { status: 404 }
