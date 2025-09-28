@@ -450,6 +450,8 @@ export default function MessagesPage() {
       // Handle different message types
       if (conversation.context?.type === 'marketplace') {
         // Send marketplace message
+        console.log('Sending marketplace message to:', conversation.otherUser.id);
+        console.log('Listing ID:', conversation.context.listing?.id);
         const response = await fetch('/api/marketplace/messages/send', {
           method: 'POST',
           headers: {
@@ -472,6 +474,8 @@ export default function MessagesPage() {
         }
       } else {
         // Send gig message
+        console.log('Sending gig message to:', conversation.otherUser.id);
+        console.log('Gig ID:', conversation.gigId);
         await messagesApi.sendMessage({
           gigId: conversation.gigId,
           toUserId: conversation.otherUser.id,
