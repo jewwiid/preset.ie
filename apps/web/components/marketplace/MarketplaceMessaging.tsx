@@ -111,7 +111,8 @@ export default function MarketplaceMessaging({
       const data = await response.json();
 
       if (response.ok) {
-        setMessages(data.data.messages || []);
+        // Marketplace API returns data directly, not wrapped in { success: true, data: ... }
+        setMessages(data.messages || []);
       } else {
         setError(data.error || 'Failed to fetch conversation messages');
       }
