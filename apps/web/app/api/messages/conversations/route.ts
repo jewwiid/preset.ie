@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
+      .not('gig_id', 'is', null) // Only include gig conversations, not marketplace conversations
       .order('created_at', { ascending: false })
       .limit(validatedQuery.limit * 10); // Get more messages to group by conversation
 
