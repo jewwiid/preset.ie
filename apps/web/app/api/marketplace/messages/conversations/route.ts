@@ -92,10 +92,10 @@ export async function GET(request: NextRequest) {
             avatar_url,
             verified_id
           ),
-          listing_images!listings_id_fkey(
+          listing_images!listing_images_listing_id_fkey(
             id,
-            image_url,
-            is_primary
+            url,
+            sort_order
           )
         ),
         rental_orders!messages_rental_order_id_fkey(

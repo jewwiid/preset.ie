@@ -36,8 +36,8 @@ interface ExtendedConversationDTO extends ConversationDTO {
       }
       listing_images?: Array<{
         id: string
-        image_url: string
-        is_primary: boolean
+        url: string
+        sort_order: number
       }>
     }
     offer?: {
@@ -781,9 +781,9 @@ export default function MessagesPage() {
                               <div className="flex items-center space-x-3">
                                 {/* Listing Image */}
                                 <div className="flex-shrink-0">
-                                  {conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.find((img: any) => img.is_primary)?.image_url ? (
+                                  {conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ? (
                                     <img 
-                                      src={conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.find((img: any) => img.is_primary)?.image_url}
+                                      src={conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url}
                                       alt={conversations.find(c => c.id === selectedConversation)?.context?.listing?.title}
                                       className="w-12 h-12 rounded-lg object-cover"
                                       onError={(e) => {
@@ -792,7 +792,7 @@ export default function MessagesPage() {
                                       }}
                                     />
                                   ) : null}
-                                  <div className={`w-12 h-12 bg-muted rounded-lg flex items-center justify-center ${conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.find((img: any) => img.is_primary)?.image_url ? 'hidden' : ''}`}>
+                                  <div className={`w-12 h-12 bg-muted rounded-lg flex items-center justify-center ${conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ? 'hidden' : ''}`}>
                                     <Tag className="h-6 w-6 text-muted-foreground" />
                                   </div>
                                 </div>
