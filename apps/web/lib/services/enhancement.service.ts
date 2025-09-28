@@ -1,10 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 import { SubscriptionBenefitsService } from './subscription-benefits.service';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client inside functions to avoid build-time issues
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing required Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 export class EnhancementService {
   static async createListingEnhancement(data: {
@@ -15,6 +22,7 @@ export class EnhancementService {
     amountCents: number;
     durationDays: number;
   }) {
+    const supabase = getSupabaseClient()
     const startsAt = new Date();
     const expiresAt = new Date(startsAt.getTime() + data.durationDays * 24 * 60 * 60 * 1000);
 
@@ -60,6 +68,7 @@ export class EnhancementService {
   }
 
   static async getActiveEnhancements(listingId: string) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('listing_enhancements')
       .select('*')
@@ -73,6 +82,7 @@ export class EnhancementService {
   }
 
   static async getUserSubscriptionBenefits(userId: string) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .rpc('get_user_subscription_benefits', { p_user_id: userId });
 
@@ -81,6 +91,7 @@ export class EnhancementService {
   }
 
   static async checkMonthlyBumpEligibility(userId: string): Promise<boolean> {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .rpc('can_use_monthly_bump', { p_user_id: userId });
 
@@ -89,6 +100,7 @@ export class EnhancementService {
   }
 
   static async expireEnhancements() {
+    const supabase = getSupabaseClient()
     // Run this as a cron job to expire enhancements
     const { data, error } = await supabase
       .from('listing_enhancements')
@@ -140,6 +152,7 @@ export class EnhancementService {
     enhancementType: string
   ): Promise<{ success: boolean; message: string; requiresPayment?: boolean }> {
     try {
+      const supabase = getSupabaseClient()
       // Get user's subscription tier
       const { data: profile, error: profileError } = await supabase
         .from('users_profile')

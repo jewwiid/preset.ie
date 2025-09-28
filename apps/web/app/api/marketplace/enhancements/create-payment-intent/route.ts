@@ -2,10 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { stripe } from '@/lib/stripe';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+// Initialize Supabase client inside functions to avoid build-time issues
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing required Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 const ENHANCEMENT_PRICING = {
   basic_bump: { amount: 100, duration_days: 1 }, // €1
@@ -15,6 +26,7 @@ const ENHANCEMENT_PRICING = {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient()
     const { listingId, enhancementType, userId } = await request.json();
     
     if (!listingId || !enhancementType || !userId) {

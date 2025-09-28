@@ -4,13 +4,25 @@ import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import { EnhancementService } from '@/lib/services/enhancement.service';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
+// Initialize Supabase client inside functions to avoid build-time issues
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing required Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = getSupabaseClient()
     const body = await request.text();
     const signature = request.headers.get('stripe-signature')!;
 
