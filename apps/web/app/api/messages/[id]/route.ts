@@ -212,3 +212,81 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
   }
 }
+
+/**
+ * DELETE endpoint to delete a conversation and all its messages
+ */
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  try {
+    // Get user from auth
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create anon client for user authentication
+    const supabaseAnon = createSupabaseClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Validate conversation ID
+    const resolvedParams = await context.params;
+    const validatedParams = ConversationParamsSchema.parse(resolvedParams);
+
+    // Check if user is a participant by checking if they have messages in this conversation
+    const { data: messages, error: messagesError } = await supabaseAdmin
+      .from('messages')
+      .select('id')
+      .eq('gig_id', validatedParams.id)
+      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .limit(1);
+
+    if (messagesError || !messages || messages.length === 0) {
+      return NextResponse.json(
+        { error: 'Conversation not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // Delete all messages for this conversation
+    const { error: deleteError } = await supabaseAdmin
+      .from('messages')
+      .delete()
+      .eq('gig_id', validatedParams.id);
+
+    if (deleteError) {
+      console.error('Error deleting messages:', deleteError);
+      return NextResponse.json(
+        { error: 'Failed to delete conversation' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Conversation deleted successfully'
+    });
+
+  } catch (error: any) {
+    console.error('Delete conversation error:', error);
+    
+    // Handle validation errors
+    if (error?.name === 'ZodError') {
+      return NextResponse.json(
+        { error: 'Invalid conversation ID', details: error.issues },
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: 'Failed to delete conversation' },
+      { status: 500 }
+    );
+  }
+}

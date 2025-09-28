@@ -288,9 +288,8 @@ export default function MessagesPage() {
       }
       
       if (conversation.context?.type === 'marketplace') {
-        // For marketplace conversations, we need to fetch messages differently
-        // Since marketplace messages don't use the same conversation structure
-        const response = await fetch(`/api/marketplace/messages/conversations?listing_id=${conversation.context.listing?.id}`, {
+        // For marketplace conversations, fetch messages using the new API endpoint
+        const response = await fetch(`/api/marketplace/messages/${conversationId}`, {
           headers: {
             'Authorization': `Bearer ${await getAuthToken()}`
           }
@@ -300,20 +299,16 @@ export default function MessagesPage() {
           throw new Error('Failed to fetch marketplace conversation details')
         }
         
-        const data = await response.json()
-        const marketplaceConv = data.conversations.find((conv: any) => conv.id === conversationId)
+        const conversationDetails = await response.json()
+        setConversationDetails(conversationDetails)
         
-        if (marketplaceConv) {
-          // Transform marketplace conversation to match expected format
-          setConversationDetails({
-            id: marketplaceConv.id,
-            gigId: marketplaceConv.id, // Use conversation ID as gigId for compatibility
-            participants: marketplaceConv.participants,
-            messages: [], // Marketplace messages are handled differently
-            status: 'ACTIVE',
-            startedAt: marketplaceConv.startedAt,
-            lastMessageAt: marketplaceConv.lastMessageAt
-          })
+        // Mark conversation as read when viewing
+        try {
+          // Refresh conversations to update unread counts
+          fetchConversations()
+        } catch (readError) {
+          console.error('Error refreshing conversations:', readError)
+          // Don't show error to user for this non-critical operation
         }
       } else {
         // Handle gig conversations normally
@@ -444,6 +439,51 @@ export default function MessagesPage() {
       setError(error.message || 'Failed to send message')
     } finally {
       setSending(false)
+    }
+  }
+
+  const deleteConversation = async (conversationId: string) => {
+    if (!confirm('Are you sure you want to delete this conversation? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      setError(null)
+      
+      const conversation = conversations.find(c => c.id === conversationId)
+      if (!conversation) {
+        throw new Error('Conversation not found')
+      }
+      
+      // Determine the API endpoint based on conversation type
+      const apiEndpoint = conversation.context?.type === 'marketplace' 
+        ? `/api/marketplace/messages/${conversationId}`
+        : `/api/messages/${conversationId}`
+      
+      const response = await fetch(apiEndpoint, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${await getAuthToken()}`
+        }
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete conversation')
+      }
+      
+      // Remove conversation from local state
+      setConversations(prev => prev.filter(c => c.id !== conversationId))
+      
+      // If this was the selected conversation, clear it
+      if (selectedConversation === conversationId) {
+        setSelectedConversation(null)
+        setConversationDetails(null)
+      }
+      
+    } catch (error: any) {
+      console.error('Error deleting conversation:', error)
+      setError(error.message || 'Failed to delete conversation')
     }
   }
 
@@ -608,9 +648,23 @@ export default function MessagesPage() {
                                     </Badge>
                                   ) : null}
                                 </div>
-                                <p className="text-xs text-muted-foreground">
-                                  {conversation.lastMessageAt && formatDate(conversation.lastMessageAt)}
-                                </p>
+                                <div className="flex items-center space-x-2">
+                                  <p className="text-xs text-muted-foreground">
+                                    {conversation.lastMessageAt && formatDate(conversation.lastMessageAt)}
+                                  </p>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      deleteConversation(conversation.id)
+                                    }}
+                                    className="p-1 hover:bg-destructive/10 rounded text-destructive hover:text-destructive-foreground transition-colors"
+                                    title="Delete conversation"
+                                  >
+                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
                               </div>
                               <p className="text-xs text-muted-foreground mb-1">@{conversation.otherUser?.handle || 'unknown'}</p>
                               {/* Show listing title for marketplace conversations */}
