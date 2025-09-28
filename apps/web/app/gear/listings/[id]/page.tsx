@@ -93,6 +93,9 @@ export default function ListingDetailPage() {
   const [userLoading, setUserLoading] = useState(true);
   const [acceptedOffers, setAcceptedOffers] = useState<any[]>([]);
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
+  const [publicComments, setPublicComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   const fetchCurrentUser = async () => {
     try {
@@ -164,8 +167,32 @@ export default function ListingDetailPage() {
     }
   };
 
-  const fetchRecentMessages = async () => {
+  const fetchPublicComments = async () => {
     if (!params.id) return;
+    
+    try {
+      const response = await fetch(`/api/marketplace/listings/${params.id}/comments`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setPublicComments(data.data.comments || []);
+      }
+    } catch (err) {
+      console.error('Error fetching public comments:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (params.id) {
+      fetchListing();
+      fetchAcceptedOffers();
+      fetchPublicComments();
+    }
+    fetchCurrentUser();
+  }, [params.id]);
+
+  const submitComment = async () => {
+    if (!newComment.trim() || !currentUser || !params.id) return;
     
     try {
       const { supabase } = await import('@/lib/supabase');
@@ -176,31 +203,32 @@ export default function ListingDetailPage() {
       
       if (!token) return;
       
-      const response = await fetch(`/api/marketplace/messages/${params.id}`, {
+      const response = await fetch(`/api/marketplace/listings/${params.id}/comments`, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({
+          comment_body: newComment.trim(),
+          parent_comment_id: replyingTo || null
+        })
       });
-      const data = await response.json();
       
       if (response.ok) {
-        // Get the 5 most recent messages
-        const messages = data.messages || [];
-        setRecentMessages(messages.slice(-5).reverse());
+        setNewComment('');
+        setReplyingTo(null);
+        fetchPublicComments(); // Refresh comments
+        toast.success('Comment posted successfully!');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to post comment');
       }
     } catch (err) {
-      console.error('Error fetching recent messages:', err);
+      console.error('Error submitting comment:', err);
+      toast.error('Failed to post comment');
     }
   };
-
-  useEffect(() => {
-    if (params.id) {
-      fetchListing();
-      fetchAcceptedOffers();
-      fetchRecentMessages();
-    }
-    fetchCurrentUser();
-  }, [params.id]);
 
   const isOwner = () => {
     return currentUser && listing && currentUser.id === listing.owner_id;
@@ -606,34 +634,172 @@ export default function ListingDetailPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Recent Messages</CardTitle>
+                    <CardTitle>Public Comments</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {recentMessages.length > 0 ? (
-                      <div className="space-y-3">
-                        {recentMessages.map((message) => (
-                          <div key={message.id} className="flex items-start space-x-3 p-3 border rounded-lg">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <MessageCircle className="h-4 w-4 text-blue-600" />
+                    {/* Comment Form */}
+                    {currentUser && !isOwner() && (
+                      <div className="mb-4 p-3 border rounded-lg">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <MessageCircle className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <textarea
+                              value={newComment}
+                              onChange={(e) => setNewComment(e.target.value)}
+                              placeholder="Add a public comment..."
+                              className="w-full p-2 border rounded-md resize-none"
+                              rows={3}
+                              maxLength={2000}
+                            />
+                            <div className="flex justify-between items-center mt-2">
+                              <span className="text-xs text-muted-foreground">
+                                {newComment.length}/2000 characters
+                              </span>
+                              <Button 
+                                onClick={submitComment}
+                                disabled={!newComment.trim()}
+                                size="sm"
+                              >
+                                Post Comment
+                              </Button>
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <p className="font-medium text-sm">
-                                  {message.from_user?.display_name || 'Unknown User'}
-                                </p>
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(message.created_at).toLocaleDateString()}
-                                </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Comments List */}
+                    {publicComments.length > 0 ? (
+                      <div className="space-y-4">
+                        {publicComments.map((comment) => (
+                          <div key={comment.id} className="space-y-2">
+                            {/* Main Comment */}
+                            <div className="flex items-start space-x-3 p-3 border rounded-lg">
+                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
+                                {comment.user?.avatar_url ? (
+                                  <img 
+                                    src={comment.user.avatar_url} 
+                                    alt={comment.user.display_name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <MessageCircle className="h-4 w-4 text-blue-600" />
+                                )}
                               </div>
-                              <p className="text-sm text-muted-foreground line-clamp-2">
-                                {message.body}
-                              </p>
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <p className="font-medium text-sm">
+                                    {comment.user?.display_name || 'Unknown User'}
+                                  </p>
+                                  {comment.user?.verified_id && (
+                                    <Badge variant="secondary" className="text-xs">Verified</Badge>
+                                  )}
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(comment.created_at).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {comment.body}
+                                </p>
+                                {currentUser && !isOwner() && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="mt-2 h-6 px-2 text-xs"
+                                    onClick={() => setReplyingTo(comment.id)}
+                                  >
+                                    Reply
+                                  </Button>
+                                )}
+                              </div>
                             </div>
+
+                            {/* Replies */}
+                            {comment.replies && comment.replies.length > 0 && (
+                              <div className="ml-8 space-y-2">
+                                {comment.replies.map((reply: any) => (
+                                  <div key={reply.id} className="flex items-start space-x-3 p-2 border rounded-lg bg-muted/50">
+                                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center overflow-hidden">
+                                      {reply.user?.avatar_url ? (
+                                        <img 
+                                          src={reply.user.avatar_url} 
+                                          alt={reply.user.display_name}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <MessageCircle className="h-3 w-3 text-green-600" />
+                                      )}
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-2 mb-1">
+                                        <p className="font-medium text-xs">
+                                          {reply.user?.display_name || 'Unknown User'}
+                                        </p>
+                                        <span className="text-xs text-muted-foreground">
+                                          {new Date(reply.created_at).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground">
+                                        {reply.body}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Reply Form */}
+                            {replyingTo === comment.id && (
+                              <div className="ml-8 p-2 border rounded-lg bg-muted/50">
+                                <div className="flex items-start space-x-2">
+                                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                    <MessageCircle className="h-3 w-3 text-green-600" />
+                                  </div>
+                                  <div className="flex-1">
+                                    <textarea
+                                      value={newComment}
+                                      onChange={(e) => setNewComment(e.target.value)}
+                                      placeholder="Reply to this comment..."
+                                      className="w-full p-2 border rounded-md resize-none text-sm"
+                                      rows={2}
+                                      maxLength={2000}
+                                    />
+                                    <div className="flex justify-between items-center mt-1">
+                                      <span className="text-xs text-muted-foreground">
+                                        {newComment.length}/2000 characters
+                                      </span>
+                                      <div className="space-x-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => setReplyingTo(null)}
+                                          className="h-6 px-2 text-xs"
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button 
+                                          onClick={submitComment}
+                                          disabled={!newComment.trim()}
+                                          size="sm"
+                                          className="h-6 px-2 text-xs"
+                                        >
+                                          Reply
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-muted-foreground text-center py-4">No recent messages</p>
+                      <p className="text-muted-foreground text-center py-4">
+                        No public comments yet. Be the first to comment!
+                      </p>
                     )}
                   </CardContent>
                 </Card>
