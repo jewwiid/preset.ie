@@ -102,10 +102,10 @@ export default function SubscriptionPage() {
     try {
       const supabase = createClient(supabaseUrl, supabaseAnonKey)
       
-      // First get the user's profile to get the profile ID
+      // Get the user's profile to get the subscription tier
       const { data: profile, error: profileError } = await supabase
         .from('users_profile')
-        .select('id, subscription_tier')
+        .select('id, subscription_tier, subscription_status')
         .eq('user_id', user.id)
         .single()
 
@@ -115,24 +115,8 @@ export default function SubscriptionPage() {
       }
 
       if (profile) {
-        // Check if there's an active subscription
-        const { data: subscription, error: subscriptionError } = await supabase
-          .from('subscriptions')
-          .select('tier, status, expires_at')
-          .eq('user_id', profile.id)
-          .eq('status', 'ACTIVE')
-          .single()
-
-        if (subscriptionError && subscriptionError.code !== 'PGRST116') {
-          console.error('Error fetching subscription:', subscriptionError)
-        }
-
-        if (subscription) {
-          setCurrentPlan(subscription.tier)
-        } else {
-          // Use the subscription tier from the profile
-          setCurrentPlan(profile.subscription_tier || 'FREE')
-        }
+        // Use the subscription tier from the profile directly
+        setCurrentPlan(profile.subscription_tier || 'FREE')
       }
     } catch (error) {
       console.error('Error fetching subscription:', error)
@@ -218,36 +202,12 @@ export default function SubscriptionPage() {
     try {
       const supabase = createClient(supabaseUrl, supabaseAnonKey)
       
-      // First get the user's profile to get the profile ID
-      const { data: profile, error: profileError } = await supabase
-        .from('users_profile')
-        .select('id')
-        .eq('user_id', user.id)
-        .single()
-
-      if (profileError) {
-        throw new Error('User profile not found')
-      }
-
-      // Update subscription status to canceled
-      const { error: subscriptionError } = await supabase
-        .from('subscriptions')
-        .update({ 
-          status: 'CANCELLED',
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', profile.id)
-        .eq('status', 'ACTIVE')
-
-      if (subscriptionError) {
-        console.warn('No active subscription found:', subscriptionError)
-      }
-
-      // Update user profile
+      // Update user profile to FREE tier
       const { error: profileUpdateError } = await supabase
         .from('users_profile')
         .update({ 
           subscription_tier: 'FREE',
+          subscription_status: 'ACTIVE',
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id)
