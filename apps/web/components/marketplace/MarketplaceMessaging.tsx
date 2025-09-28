@@ -102,7 +102,7 @@ export default function MarketplaceMessaging({
         return;
       }
 
-      const response = await fetch(`/api/messages/${conversationId}`, {
+      const response = await fetch(`/api/marketplace/messages/${conversationId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
