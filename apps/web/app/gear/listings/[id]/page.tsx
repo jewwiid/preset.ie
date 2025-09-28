@@ -532,10 +532,9 @@ export default function ListingDetailPage() {
 
             {/* Details */}
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="availability">Availability</TabsTrigger>
-                <TabsTrigger value="activity">Activity</TabsTrigger>
                 <TabsTrigger value="owner">Owner</TabsTrigger>
               </TabsList>
               
@@ -594,256 +593,6 @@ export default function ListingDetailPage() {
                       </div>
                     ) : (
                       <p className="text-muted-foreground">No availability blocks set</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="activity" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Accepted Offers</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {acceptedOffers.length > 0 ? (
-                      <div className="space-y-3">
-                        {acceptedOffers.map((offer) => (
-                          <div key={offer.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                <Euro className="h-4 w-4 text-green-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium">€{(offer.offer_amount_cents / 100).toFixed(2)}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  by {offer.offerer?.display_name || 'Unknown User'}
-                                </p>
-                              </div>
-                            </div>
-                            <Badge variant="default" className="bg-green-100 text-green-800">
-                              Accepted
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">No accepted offers yet</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Ask Question</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Question Form */}
-                    {currentUser && !isOwner() && (
-                      <div className="mb-4 p-3 border rounded-lg">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <MessageCircle className="h-4 w-4 text-blue-600" />
-                          </div>
-                          <div className="flex-1">
-                            <textarea
-                              value={newComment}
-                              onChange={(e) => setNewComment(e.target.value)}
-                              placeholder="Ask a question about this listing..."
-                              className="w-full p-2 border rounded-md resize-none"
-                              rows={3}
-                              maxLength={2000}
-                            />
-                            <div className="flex justify-between items-center mt-2">
-                              <span className="text-xs text-muted-foreground">
-                                {newComment.length}/2000 characters
-                              </span>
-                              <div className="space-x-2">
-                                <Button 
-                                  onClick={submitComment}
-                                  disabled={!newComment.trim()}
-                                  size="sm"
-                                  variant="outline"
-                                >
-                                  Ask Question
-                                </Button>
-                                {(listing.mode === 'rent' || listing.mode === 'both') && (
-                                  <Button 
-                                    onClick={() => {
-                                      setShowRentalForm(true);
-                                      // Pre-fill the message with the question if there's one
-                                      if (newComment.trim()) {
-                                        // We'll handle this in the rental form
-                                      }
-                                    }}
-                                    size="sm"
-                                  >
-                                    Request Rental
-                                  </Button>
-                                )}
-                                {(listing.mode === 'sale' || listing.mode === 'both') && (
-                                  <Button 
-                                    onClick={() => {
-                                      setShowOfferForm(true);
-                                      // Pre-fill the message with the question if there's one
-                                      if (newComment.trim()) {
-                                        // We'll handle this in the offer form
-                                      }
-                                    }}
-                                    size="sm"
-                                    variant="outline"
-                                  >
-                                    Make Offer
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Comments List */}
-                    {publicComments.length > 0 ? (
-                      <div className="space-y-4">
-                        {publicComments.map((comment) => (
-                          <div key={comment.id} className="space-y-2">
-                            {/* Main Comment */}
-                            <div className="flex items-start space-x-3 p-3 border rounded-lg">
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
-                                {comment.user?.avatar_url ? (
-                                  <img 
-                                    src={comment.user.avatar_url} 
-                                    alt={comment.user.display_name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <MessageCircle className="h-4 w-4 text-blue-600" />
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <p className="font-medium text-sm">
-                                    {comment.user?.display_name || 'Unknown User'}
-                                  </p>
-                                  {comment.user?.verified_id && (
-                                    <Badge variant="secondary" className="text-xs">Verified</Badge>
-                                  )}
-                                  <span className="text-xs text-muted-foreground">
-                                    {new Date(comment.created_at).toLocaleDateString()}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                  {comment.body}
-                                </p>
-                                {/* Debug info */}
-                                {process.env.NODE_ENV === 'development' && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Debug: currentUser={currentUser?.id}, owner={listing?.owner_id}, isOwner={isOwner()}
-                                  </div>
-                                )}
-                                {currentUser && !isOwner() && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="mt-2 h-6 px-2 text-xs"
-                                    onClick={() => setReplyingTo(comment.id)}
-                                  >
-                                    Reply
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Replies */}
-                            {comment.replies && comment.replies.length > 0 && (
-                              <div className="ml-8 space-y-2">
-                                {comment.replies.map((reply: any) => (
-                                  <div key={reply.id} className="flex items-start space-x-3 p-2 border rounded-lg bg-muted/50">
-                                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center overflow-hidden">
-                                      {reply.user?.avatar_url ? (
-                                        <img 
-                                          src={reply.user.avatar_url} 
-                                          alt={reply.user.display_name}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      ) : (
-                                        <MessageCircle className="h-3 w-3 text-green-600" />
-                                      )}
-                                    </div>
-                                    <div className="flex-1">
-                                      <div className="flex items-center space-x-2 mb-1">
-                                        <p className="font-medium text-xs">
-                                          {reply.user?.display_name || 'Unknown User'}
-                                        </p>
-                                        <span className="text-xs text-muted-foreground">
-                                          {new Date(reply.created_at).toLocaleDateString()}
-                                        </span>
-                                      </div>
-                                      <p className="text-xs text-muted-foreground">
-                                        {reply.body}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Reply Form */}
-                            {replyingTo === comment.id && (
-                              <div className="ml-8 p-2 border rounded-lg bg-muted/50">
-                                {/* Debug info */}
-                                {process.env.NODE_ENV === 'development' && (
-                                  <div className="text-xs text-gray-500 mb-2">
-                                    Debug: replyingTo={replyingTo}, comment.id={comment.id}
-                                  </div>
-                                )}
-                                <div className="flex items-start space-x-2">
-                                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                                    <MessageCircle className="h-3 w-3 text-green-600" />
-                                  </div>
-                                  <div className="flex-1">
-                                    <textarea
-                                      value={newComment}
-                                      onChange={(e) => setNewComment(e.target.value)}
-                                      placeholder="Reply to this comment..."
-                                      className="w-full p-2 border rounded-md resize-none text-sm"
-                                      rows={2}
-                                      maxLength={2000}
-                                    />
-                                    <div className="flex justify-between items-center mt-1">
-                                      <span className="text-xs text-muted-foreground">
-                                        {newComment.length}/2000 characters
-                                      </span>
-                                      <div className="space-x-2">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => setReplyingTo(null)}
-                                          className="h-6 px-2 text-xs"
-                                        >
-                                          Cancel
-                                        </Button>
-                                        <Button 
-                                          onClick={submitComment}
-                                          disabled={!newComment.trim()}
-                                          size="sm"
-                                          className="h-6 px-2 text-xs"
-                                        >
-                                          Reply
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">
-                        No questions yet. Be the first to ask a question!
-                      </p>
                     )}
                   </CardContent>
                 </Card>
@@ -934,6 +683,259 @@ export default function ListingDetailPage() {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            {/* Activity Section - Now visible on main page */}
+            <div className="space-y-4">
+              {/* Accepted Offers */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Accepted Offers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {acceptedOffers.length > 0 ? (
+                    <div className="space-y-3">
+                      {acceptedOffers.map((offer) => (
+                        <div key={offer.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                              <Euro className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">€{(offer.offer_amount_cents / 100).toFixed(2)}</p>
+                              <p className="text-sm text-muted-foreground">
+                                by {offer.offerer?.display_name || 'Unknown User'}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            Accepted
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">No accepted offers yet</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Ask Question */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ask Question</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {/* Question Form */}
+                  {currentUser && !isOwner() && (
+                    <div className="mb-4 p-3 border rounded-lg">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <MessageCircle className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <textarea
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            placeholder="Ask a question about this listing..."
+                            className="w-full p-2 border rounded-md resize-none"
+                            rows={3}
+                            maxLength={2000}
+                          />
+                          <div className="flex justify-between items-center mt-2">
+                            <span className="text-xs text-muted-foreground">
+                              {newComment.length}/2000 characters
+                            </span>
+                            <div className="space-x-2">
+                              <Button 
+                                onClick={submitComment}
+                                disabled={!newComment.trim()}
+                                size="sm"
+                                variant="outline"
+                              >
+                                Ask Question
+                              </Button>
+                              {(listing.mode === 'rent' || listing.mode === 'both') && (
+                                <Button 
+                                  onClick={() => {
+                                    setShowRentalForm(true);
+                                    // Pre-fill the message with the question if there's one
+                                    if (newComment.trim()) {
+                                      // We'll handle this in the rental form
+                                    }
+                                  }}
+                                  size="sm"
+                                >
+                                  Request Rental
+                                </Button>
+                              )}
+                              {(listing.mode === 'sale' || listing.mode === 'both') && (
+                                <Button 
+                                  onClick={() => {
+                                    setShowOfferForm(true);
+                                    // Pre-fill the message with the question if there's one
+                                    if (newComment.trim()) {
+                                      // We'll handle this in the offer form
+                                    }
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  Make Offer
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comments List */}
+                  {publicComments.length > 0 ? (
+                    <div className="space-y-4">
+                      {publicComments.map((comment) => (
+                        <div key={comment.id} className="space-y-2">
+                          {/* Main Comment */}
+                          <div className="flex items-start space-x-3 p-3 border rounded-lg">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
+                              {comment.user?.avatar_url ? (
+                                <img 
+                                  src={comment.user.avatar_url} 
+                                  alt={comment.user.display_name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <MessageCircle className="h-4 w-4 text-blue-600" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <p className="font-medium text-sm">
+                                  {comment.user?.display_name || 'Unknown User'}
+                                </p>
+                                {comment.user?.verified_id && (
+                                  <Badge variant="secondary" className="text-xs">Verified</Badge>
+                                )}
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(comment.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {comment.body}
+                              </p>
+                              {/* Debug info */}
+                              {process.env.NODE_ENV === 'development' && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Debug: currentUser={currentUser?.id}, owner={listing?.owner_id}, isOwner={isOwner()}
+                                </div>
+                              )}
+                              {currentUser && !isOwner() && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="mt-2 h-6 px-2 text-xs"
+                                  onClick={() => setReplyingTo(comment.id)}
+                                >
+                                  Reply
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Replies */}
+                          {comment.replies && comment.replies.length > 0 && (
+                            <div className="ml-8 space-y-2">
+                              {comment.replies.map((reply: any) => (
+                                <div key={reply.id} className="flex items-start space-x-3 p-2 border rounded-lg bg-muted/50">
+                                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center overflow-hidden">
+                                    {reply.user?.avatar_url ? (
+                                      <img 
+                                        src={reply.user.avatar_url} 
+                                        alt={reply.user.display_name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <MessageCircle className="h-3 w-3 text-green-600" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <p className="font-medium text-xs">
+                                        {reply.user?.display_name || 'Unknown User'}
+                                      </p>
+                                      <span className="text-xs text-muted-foreground">
+                                        {new Date(reply.created_at).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      {reply.body}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Reply Form */}
+                          {replyingTo === comment.id && (
+                            <div className="ml-8 p-2 border rounded-lg bg-muted/50">
+                              {/* Debug info */}
+                              {process.env.NODE_ENV === 'development' && (
+                                <div className="text-xs text-gray-500 mb-2">
+                                  Debug: replyingTo={replyingTo}, comment.id={comment.id}
+                                </div>
+                              )}
+                              <div className="flex items-start space-x-2">
+                                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                  <MessageCircle className="h-3 w-3 text-green-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <textarea
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    placeholder="Reply to this comment..."
+                                    className="w-full p-2 border rounded-md resize-none text-sm"
+                                    rows={2}
+                                    maxLength={2000}
+                                  />
+                                  <div className="flex justify-between items-center mt-1">
+                                    <span className="text-xs text-muted-foreground">
+                                      {newComment.length}/2000 characters
+                                    </span>
+                                    <div className="space-x-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setReplyingTo(null)}
+                                        className="h-6 px-2 text-xs"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button 
+                                        onClick={submitComment}
+                                        disabled={!newComment.trim()}
+                                        size="sm"
+                                        className="h-6 px-2 text-xs"
+                                      >
+                                        Reply
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">
+                      No questions yet. Be the first to ask a question!
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Sidebar */}
