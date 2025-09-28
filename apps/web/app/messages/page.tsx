@@ -739,10 +739,10 @@ export default function MessagesPage() {
                           </div>
                         </div>
                         
-              <div className="flex-1 min-w-0">
-                {/* User Info Row */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
+              <div className="flex-1 min-w-0 flex items-center justify-between">
+                {/* Left side: User info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 mb-1">
                     <h2 className="text-lg font-medium text-foreground truncate">
                       {conversations.find(c => c.id === selectedConversation)?.otherUser?.display_name || 'Unknown User'}
                     </h2>
@@ -760,59 +760,59 @@ export default function MessagesPage() {
                     ) : null}
                   </div>
                   
-                  {/* Listing Preview for Marketplace Conversations - Right side */}
-                  {conversations.find(c => c.id === selectedConversation)?.context?.type === 'marketplace' && 
-                   conversations.find(c => c.id === selectedConversation)?.context?.listing && (
-                    <a
-                      href={`/gear/listings/${conversations.find(c => c.id === selectedConversation)?.context?.listing?.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-3 p-2 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors cursor-pointer max-w-xs"
-                    >
-                      {/* Listing Image */}
-                      <div className="flex-shrink-0">
-                        {conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ? (
-                          <img 
-                            src={conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url}
-                            alt={conversations.find(c => c.id === selectedConversation)?.context?.listing?.title}
-                            className="w-12 h-12 rounded-lg object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none'
-                              e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                            }}
-                          />
-                        ) : null}
-                        <div className={`w-12 h-12 bg-muted rounded-lg flex items-center justify-center ${conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ? 'hidden' : ''}`}>
-                          <Tag className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                      </div>
-                      
-                      {/* Listing Details */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {conversations.find(c => c.id === selectedConversation)?.context?.listing?.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {conversations.find(c => c.id === selectedConversation)?.context?.listing?.category} • 
-                          {conversations.find(c => c.id === selectedConversation)?.context?.listing?.mode}
-                        </p>
-                      </div>
-                    </a>
-                  )}
+                  {/* User Handle and Typing Indicator */}
+                  <div className="flex items-center space-x-2">
+                    <p className="text-sm text-muted-foreground">
+                      @{conversations.find(c => c.id === selectedConversation)?.otherUser?.handle || 'unknown'}
+                    </p>
+                    {/* Typing Indicator */}
+                    {Object.values(realtimeMessages.typingUsers).some(user => user.isTyping) && (
+                      <p className="text-xs text-primary italic">
+                        typing...
+                      </p>
+                    )}
+                  </div>
                 </div>
                 
-                {/* User Handle and Typing Indicator Row */}
-                <div className="flex items-center space-x-2">
-                  <p className="text-sm text-muted-foreground">
-                    @{conversations.find(c => c.id === selectedConversation)?.otherUser?.handle || 'unknown'}
-                  </p>
-                  {/* Typing Indicator */}
-                  {Object.values(realtimeMessages.typingUsers).some(user => user.isTyping) && (
-                    <p className="text-xs text-primary italic">
-                      typing...
-                    </p>
-                  )}
-                </div>
+                {/* Right side: Listing Preview for Marketplace Conversations */}
+                {conversations.find(c => c.id === selectedConversation)?.context?.type === 'marketplace' && 
+                 conversations.find(c => c.id === selectedConversation)?.context?.listing && (
+                  <a
+                    href={`/gear/listings/${conversations.find(c => c.id === selectedConversation)?.context?.listing?.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-3 p-2 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors cursor-pointer ml-4 flex-shrink-0"
+                  >
+                    {/* Listing Image */}
+                    <div className="flex-shrink-0">
+                      {conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ? (
+                        <img 
+                          src={conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url}
+                          alt={conversations.find(c => c.id === selectedConversation)?.context?.listing?.title}
+                          className="w-12 h-12 rounded-lg object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-12 h-12 bg-muted rounded-lg flex items-center justify-center ${conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.sort((a: any, b: any) => a.sort_order - b.sort_order)[0]?.url ? 'hidden' : ''}`}>
+                        <Tag className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    </div>
+                    
+                    {/* Listing Details */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {conversations.find(c => c.id === selectedConversation)?.context?.listing?.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {conversations.find(c => c.id === selectedConversation)?.context?.listing?.category} • 
+                        {conversations.find(c => c.id === selectedConversation)?.context?.listing?.mode}
+                      </p>
+                    </div>
+                  </a>
+                )}
               </div>
                       </div>
                       
