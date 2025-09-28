@@ -140,7 +140,11 @@ export default function SubscriptionPage() {
   }
 
   const handleUpgrade = async (planId: string) => {
+    console.log('🔍 handleUpgrade called with planId:', planId)
+    console.log('🔍 Current user:', user?.id, user?.email)
+    
     if (!user) {
+      console.log('❌ No user found, redirecting to sign in')
       // Redirect to sign in page
       window.location.href = '/auth/signin'
       return
@@ -159,8 +163,16 @@ export default function SubscriptionPage() {
       const supabase = createClient(supabaseUrl, supabaseAnonKey)
       
       // Get session for auth
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      console.log('🔍 Session check result:', { 
+        hasSession: !!session, 
+        sessionError: sessionError?.message,
+        userId: session?.user?.id,
+        expiresAt: session?.expires_at 
+      })
+      
       if (!session) {
+        console.log('❌ No session found, redirecting to sign in')
         // If no session, redirect to sign in
         window.location.href = '/auth/signin'
         return

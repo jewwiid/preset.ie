@@ -28,9 +28,18 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 Stripe checkout session creation started')
+    
     const { user, error: authError } = await getUserFromRequest(request);
+    console.log('🔍 Auth check result:', { 
+      hasUser: !!user, 
+      userId: user?.id, 
+      userEmail: user?.email,
+      authError: authError 
+    })
 
     if (authError || !user) {
+      console.log('❌ Authentication failed:', authError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
