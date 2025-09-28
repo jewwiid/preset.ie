@@ -22,7 +22,6 @@ const getSupabaseClient = () => {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = getSupabaseClient()
     const body = await request.text();
     const signature = request.headers.get('stripe-signature')!;
 
@@ -63,6 +62,7 @@ export async function POST(request: NextRequest) {
 
 async function handleCheckoutSuccess(session: Stripe.Checkout.Session) {
   try {
+    const supabase = getSupabaseClient()
     const { listing_id, enhancement_type, user_id } = session.metadata || {};
     
     if (!listing_id || !enhancement_type || !user_id) {
@@ -107,6 +107,7 @@ async function handleCheckoutSuccess(session: Stripe.Checkout.Session) {
 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
   try {
+    const supabase = getSupabaseClient()
     const { listing_id, enhancement_type, user_id } = paymentIntent.metadata;
     
     if (!listing_id || !enhancement_type || !user_id) {
@@ -151,6 +152,7 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
 
 async function handlePaymentFailure(paymentIntent: Stripe.PaymentIntent) {
   try {
+    const supabase = getSupabaseClient()
     const { listing_id, enhancement_type, user_id } = paymentIntent.metadata;
     
     if (!listing_id || !enhancement_type || !user_id) {
