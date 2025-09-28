@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProjectMarketplaceService } from '@/lib/services/project-marketplace.service';
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // GET /api/collab/projects/[id]/marketplace - Get project marketplace integration data
 export async function GET(
   request: NextRequest,

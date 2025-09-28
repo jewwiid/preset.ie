@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client inside functions to avoid build-time issues
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing required Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 export interface GearRequestWithMatches {
   id: string;
@@ -24,6 +31,7 @@ export class ProjectMarketplaceService {
    */
   static async getGearRequestsWithMatches(projectId: string): Promise<GearRequestWithMatches[]> {
     try {
+      const supabase = getSupabaseClient()
       // Get gear requests for the project
       const { data: gearRequests, error: gearRequestsError } = await supabase
         .from('collab_gear_requests')
@@ -158,6 +166,7 @@ export class ProjectMarketplaceService {
     }
   ): Promise<{ success: boolean; listingId?: string; error?: string }> {
     try {
+      const supabase = getSupabaseClient()
       // Get gear request details
       const { data: gearRequest, error: gearRequestError } = await supabase
         .from('collab_gear_requests')
@@ -223,6 +232,7 @@ export class ProjectMarketplaceService {
     listingId: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      const supabase = getSupabaseClient()
       // Verify both exist and are compatible
       const { data: gearRequest, error: gearRequestError } = await supabase
         .from('collab_gear_requests')
@@ -335,6 +345,7 @@ export class ProjectMarketplaceService {
     matchingListings: number;
   }> {
     try {
+      const supabase = getSupabaseClient()
       // Get gear requests count
       const { count: totalRequests } = await supabase
         .from('collab_gear_requests')
