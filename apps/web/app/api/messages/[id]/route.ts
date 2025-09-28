@@ -36,6 +36,17 @@ export async function GET(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
+    // Get user profile ID
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from('users_profile')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
     // Validate conversation ID
     const resolvedParams = await context.params;
     const validatedParams = ConversationParamsSchema.parse(resolvedParams);
@@ -62,7 +73,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
         )
       `)
       .eq('gig_id', validatedParams.id)
-      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
       .order('created_at', { ascending: true });
 
     if (messagesError) {
@@ -89,14 +100,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
     }
 
     // Get other participant
-    const otherUserId = messages.find(m => m.from_user_id !== user.id)?.from_user_id || 
-                       messages.find(m => m.to_user_id !== user.id)?.to_user_id;
+    const otherUserId = messages.find(m => m.from_user_id !== userProfile.id)?.from_user_id || 
+                       messages.find(m => m.to_user_id !== userProfile.id)?.to_user_id;
 
     // Transform to expected format
     const conversationData = {
       id: validatedParams.id,
       gigId: validatedParams.id,
-      participants: [user.id, otherUserId].filter(Boolean),
+      participants: [userProfile.id, otherUserId].filter(Boolean),
       messages: messages.map(msg => ({
         id: msg.id,
         fromUserId: msg.from_user_id,
@@ -175,6 +186,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
+    // Get user profile ID
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from('users_profile')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
     // Validate conversation ID
     const resolvedParams = await context.params;
     const validatedParams = ConversationParamsSchema.parse(resolvedParams);
@@ -194,7 +216,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       .from('messages')
       .select('id')
       .eq('gig_id', validatedParams.id)
-      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
       .limit(1);
 
     if (messagesError || !messages || messages.length === 0) {
@@ -251,6 +273,17 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
+    // Get user profile ID
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from('users_profile')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
     // Validate conversation ID
     const resolvedParams = await context.params;
     const validatedParams = ConversationParamsSchema.parse(resolvedParams);
@@ -260,7 +293,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       .from('messages')
       .select('id')
       .eq('gig_id', validatedParams.id)
-      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
       .limit(1);
 
     if (messagesError || !messages || messages.length === 0) {
