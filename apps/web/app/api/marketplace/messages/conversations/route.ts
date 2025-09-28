@@ -175,6 +175,16 @@ export async function GET(request: NextRequest) {
             conversation.lastMessageAt = message.created_at;
             // Store the other user's profile data
             conversation.otherUserProfile = message.from_user_id === userProfile.id ? message.to_user : message.from_user;
+            
+            // Debug logging
+            console.log('Message user data:', {
+              from_user_id: message.from_user_id,
+              to_user_id: message.to_user_id,
+              userProfile_id: userProfile.id,
+              from_user: message.from_user,
+              to_user: message.to_user,
+              otherUserProfile: conversation.otherUserProfile
+            });
           }
       
       // Count unread messages
@@ -184,23 +194,38 @@ export async function GET(request: NextRequest) {
     }
 
     // Convert to array and format participants
-    const formattedConversations = Array.from(conversationMap.values()).map(conv => ({
-      ...conv,
-      participants: Array.from(conv.participants),
-      gigId: conv.id, // For compatibility with existing messaging system
-      otherUser: conv.otherUserProfile ? {
-        id: conv.otherUserProfile.id,
-        display_name: conv.otherUserProfile.display_name,
-        handle: conv.otherUserProfile.handle,
-        avatar_url: conv.otherUserProfile.avatar_url,
-        verified_id: conv.otherUserProfile.verified_id
-      } : {
-        id: conv.participants.find((id: string) => id !== userProfile.id) || '',
-        display_name: 'Unknown User',
-        handle: 'unknown',
-        avatar_url: null,
-        verified_id: false
+    const formattedConversations = await Promise.all(Array.from(conversationMap.values()).map(async conv => {
+      // If otherUserProfile is missing, fetch it manually
+      if (!conv.otherUserProfile) {
+        const otherUserId = conv.participants.find((id: string) => id !== userProfile.id);
+        if (otherUserId) {
+          const { data: otherUserProfile } = await supabaseAdmin
+            .from('users_profile')
+            .select('id, display_name, handle, avatar_url, verified_id')
+            .eq('id', otherUserId)
+            .single();
+          conv.otherUserProfile = otherUserProfile;
+        }
       }
+      
+      return {
+        ...conv,
+        participants: Array.from(conv.participants),
+        gigId: conv.id, // For compatibility with existing messaging system
+        otherUser: conv.otherUserProfile ? {
+          id: conv.otherUserProfile.id,
+          display_name: conv.otherUserProfile.display_name,
+          handle: conv.otherUserProfile.handle,
+          avatar_url: conv.otherUserProfile.avatar_url,
+          verified_id: conv.otherUserProfile.verified_id
+        } : {
+          id: conv.participants.find((id: string) => id !== userProfile.id) || '',
+          display_name: 'Unknown User',
+          handle: 'unknown',
+          avatar_url: null,
+          verified_id: false
+        }
+      };
     }));
 
     return NextResponse.json({
