@@ -1,10 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client inside functions to avoid build-time issues
+const getSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing required Supabase environment variables')
+  }
+
+  return createClient(supabaseUrl, supabaseServiceKey)
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -44,6 +51,7 @@ export class OrderProcessingService {
    */
   static async createRentalOrder(orderData: RentalOrderData): Promise<OrderResult> {
     try {
+      const supabase = getSupabaseClient()
       // Verify listing exists and is available
       const { data: listing, error: listingError } = await supabase
         .from('listings')
@@ -129,6 +137,7 @@ export class OrderProcessingService {
    */
   static async createSaleOrder(orderData: SaleOrderData): Promise<OrderResult> {
     try {
+      const supabase = getSupabaseClient()
       // Verify listing exists and is available
       const { data: listing, error: listingError } = await supabase
         .from('listings')
@@ -205,6 +214,7 @@ export class OrderProcessingService {
     endDate: string
   ): Promise<boolean> {
     try {
+      const supabase = getSupabaseClient()
       // Check for existing rental orders that overlap with the requested dates
       const { data: conflictingOrders, error } = await supabase
         .from('rental_orders')
@@ -243,6 +253,7 @@ export class OrderProcessingService {
    */
   static async confirmPayment(paymentIntentId: string): Promise<{ success: boolean; error?: string }> {
     try {
+      const supabase = getSupabaseClient()
       // Get payment intent from Stripe
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
@@ -327,6 +338,7 @@ export class OrderProcessingService {
    */
   static async getOrderDetails(orderId: string, orderType: 'rental' | 'sale'): Promise<any> {
     try {
+      const supabase = getSupabaseClient()
       const tableName = orderType === 'rental' ? 'rental_orders' : 'sale_orders';
       
       const { data: order, error } = await supabase
@@ -385,6 +397,7 @@ export class OrderProcessingService {
     notes?: string
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      const supabase = getSupabaseClient()
       const tableName = orderType === 'rental' ? 'rental_orders' : 'sale_orders';
       
       const updateData: any = { 
@@ -431,6 +444,7 @@ export class OrderProcessingService {
     metadata: any
   ): Promise<void> {
     try {
+      const supabase = getSupabaseClient()
       await supabase
         .from('notifications')
         .insert({
@@ -469,6 +483,7 @@ export class OrderProcessingService {
     status?: string
   ): Promise<any[]> {
     try {
+      const supabase = getSupabaseClient()
       let orders: any[] = [];
 
       // Get rental orders
