@@ -88,6 +88,7 @@ export default function ListingDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showRentalForm, setShowRentalForm] = useState(false);
   const [showOfferForm, setShowOfferForm] = useState(false);
+  const [showMessaging, setShowMessaging] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userLoading, setUserLoading] = useState(true);
 
