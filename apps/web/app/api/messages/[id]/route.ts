@@ -56,21 +56,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .from('messages')
       .select(`
         *,
-        gig:gigs(*),
-        from_user:users_profile!messages_from_user_id_fkey(
-          id,
-          display_name,
-          handle,
-          avatar_url,
-          verified_id
-        ),
-        to_user:users_profile!messages_to_user_id_fkey(
-          id,
-          display_name,
-          handle,
-          avatar_url,
-          verified_id
-        )
+        gig:gigs(*)
       `)
       .eq('gig_id', validatedParams.id)
       .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
@@ -99,6 +85,29 @@ export async function GET(request: NextRequest, context: RouteContext) {
       );
     }
 
+    // Get unique user IDs from messages
+    const userIds = [...new Set([
+      ...messages.map(m => m.from_user_id),
+      ...messages.map(m => m.to_user_id)
+    ])];
+
+    // Fetch user profiles
+    const { data: userProfiles, error: profilesError } = await supabaseAdmin
+      .from('users_profile')
+      .select('id, display_name, handle, avatar_url, verified_id')
+      .in('id', userIds);
+
+    if (profilesError) {
+      console.error('Error fetching user profiles:', profilesError);
+      return NextResponse.json(
+        { error: 'Failed to fetch user profiles' },
+        { status: 500 }
+      );
+    }
+
+    // Create user profile lookup
+    const userProfileMap = new Map(userProfiles?.map(profile => [profile.id, profile]) || []);
+
     // Get other participant
     const otherUserId = messages.find(m => m.from_user_id !== userProfile.id)?.from_user_id || 
                        messages.find(m => m.to_user_id !== userProfile.id)?.to_user_id;
@@ -118,8 +127,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
         readAt: msg.read_at,
         editedAt: msg.updated_at,
         deletedAt: null,
-        fromUser: msg.from_user,
-        toUser: msg.to_user
+        fromUser: userProfileMap.get(msg.from_user_id),
+        toUser: userProfileMap.get(msg.to_user_id)
       })),
       status: 'ACTIVE' as const,
       startedAt: messages[0]?.created_at,
