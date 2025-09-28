@@ -45,7 +45,21 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .from('messages')
       .select(`
         *,
-        gig:gigs(*)
+        gig:gigs(*),
+        from_user:users_profile!messages_from_user_id_fkey(
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        ),
+        to_user:users_profile!messages_to_user_id_fkey(
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        )
       `)
       .eq('gig_id', validatedParams.id)
       .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
@@ -92,7 +106,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
         sentAt: msg.created_at,
         readAt: msg.read_at,
         editedAt: msg.updated_at,
-        deletedAt: null
+        deletedAt: null,
+        fromUser: msg.from_user,
+        toUser: msg.to_user
       })),
       status: 'ACTIVE' as const,
       startedAt: messages[0]?.created_at,

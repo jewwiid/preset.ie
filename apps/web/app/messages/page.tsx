@@ -715,12 +715,28 @@ export default function MessagesPage() {
                         >
                           <Menu className="h-5 w-5 text-muted-foreground" />
                         </button>
-                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-primary-foreground" />
+                        
+                        {/* User Avatar */}
+                        <div className="flex-shrink-0 relative">
+                          {conversations.find(c => c.id === selectedConversation)?.otherUser?.avatar_url ? (
+                            <img 
+                              src={conversations.find(c => c.id === selectedConversation)?.otherUser?.avatar_url} 
+                              alt={conversations.find(c => c.id === selectedConversation)?.otherUser?.display_name}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-10 h-10 bg-primary rounded-full flex items-center justify-center ${conversations.find(c => c.id === selectedConversation)?.otherUser?.avatar_url ? 'hidden' : ''}`}>
+                            <User className="h-5 w-5 text-primary-foreground" />
+                          </div>
                         </div>
-                        <div>
+                        
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2">
-                            <h2 className="text-lg font-medium text-foreground">
+                            <h2 className="text-lg font-medium text-foreground truncate">
                               {conversations.find(c => c.id === selectedConversation)?.otherUser?.display_name || 'Unknown User'}
                             </h2>
                             {/* Context badge in header */}
@@ -740,13 +756,6 @@ export default function MessagesPage() {
                             <p className="text-sm text-muted-foreground">
                               @{conversations.find(c => c.id === selectedConversation)?.otherUser?.handle || 'unknown'}
                             </p>
-                            {/* Show listing title for marketplace conversations */}
-                            {conversations.find(c => c.id === selectedConversation)?.context?.type === 'marketplace' && 
-                             conversations.find(c => c.id === selectedConversation)?.context?.listing && (
-                              <p className="text-xs text-primary">
-                                • {conversations.find(c => c.id === selectedConversation)?.context?.listing?.title}
-                              </p>
-                            )}
                             {/* Typing Indicator */}
                             {Object.values(realtimeMessages.typingUsers).some(user => user.isTyping) && (
                               <p className="text-xs text-primary italic">
@@ -754,6 +763,44 @@ export default function MessagesPage() {
                               </p>
                             )}
                           </div>
+                          
+                          {/* Listing Preview for Marketplace Conversations */}
+                          {conversations.find(c => c.id === selectedConversation)?.context?.type === 'marketplace' && 
+                           conversations.find(c => c.id === selectedConversation)?.context?.listing && (
+                            <div className="mt-2 p-2 bg-muted/50 rounded-lg border">
+                              <div className="flex items-center space-x-3">
+                                {/* Listing Thumbnail */}
+                                <div className="flex-shrink-0">
+                                  <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                                    <Tag className="h-6 w-6 text-muted-foreground" />
+                                  </div>
+                                </div>
+                                
+                                {/* Listing Details */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">
+                                    {conversations.find(c => c.id === selectedConversation)?.context?.listing?.title}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {conversations.find(c => c.id === selectedConversation)?.context?.listing?.category} • 
+                                    {conversations.find(c => c.id === selectedConversation)?.context?.listing?.mode}
+                                  </p>
+                                </div>
+                                
+                                {/* View Listing Button */}
+                                <div className="flex-shrink-0">
+                                  <a
+                                    href={`/gear/listings/${conversations.find(c => c.id === selectedConversation)?.context?.listing?.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-primary hover:text-primary/80 underline"
+                                  >
+                                    View Listing
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -795,8 +842,28 @@ export default function MessagesPage() {
                       conversationDetails.messages.map((message: MessageDTO) => (
                         <div
                           key={message.id}
-                          className={`flex ${message.fromUserId === user?.id ? 'justify-end' : 'justify-start'}`}
+                          className={`flex ${message.fromUserId === user?.id ? 'justify-end' : 'justify-start'} items-end space-x-2`}
                         >
+                          {/* Avatar for other user's messages */}
+                          {message.fromUserId !== user?.id && (
+                            <div className="flex-shrink-0">
+                              {message.fromUser?.avatar_url ? (
+                                <img 
+                                  src={message.fromUser.avatar_url} 
+                                  alt={message.fromUser.display_name}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none'
+                                    e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-8 h-8 bg-muted rounded-full flex items-center justify-center ${message.fromUser?.avatar_url ? 'hidden' : ''}`}>
+                                <User className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            </div>
+                          )}
+                          
                           <div
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                               message.fromUserId === user?.id
@@ -823,6 +890,26 @@ export default function MessagesPage() {
                               )}
                             </div>
                           </div>
+                          
+                          {/* Avatar for current user's messages */}
+                          {message.fromUserId === user?.id && (
+                            <div className="flex-shrink-0">
+                              {user?.user_metadata?.avatar_url ? (
+                                <img 
+                                  src={user.user_metadata.avatar_url} 
+                                  alt={user.user_metadata.full_name || 'You'}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none'
+                                    e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                  }}
+                                />
+                              ) : null}
+                              <div className={`w-8 h-8 bg-primary rounded-full flex items-center justify-center ${user?.user_metadata?.avatar_url ? 'hidden' : ''}`}>
+                                <User className="h-4 w-4 text-primary-foreground" />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))
                     )}

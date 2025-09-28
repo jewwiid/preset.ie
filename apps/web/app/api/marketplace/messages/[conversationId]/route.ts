@@ -89,7 +89,21 @@ export async function GET(
         body,
         created_at,
         read_at,
-        context_type
+        context_type,
+        from_user:users_profile!messages_from_user_id_fkey(
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        ),
+        to_user:users_profile!messages_to_user_id_fkey(
+          id,
+          display_name,
+          handle,
+          avatar_url,
+          verified_id
+        )
       `)
       .eq('listing_id', conversationId)
       .eq('context_type', 'marketplace')
@@ -113,7 +127,9 @@ export async function GET(
       body: msg.body,
       sentAt: msg.created_at,
       read: !!msg.read_at,
-      status: 'delivered' as const
+      status: 'delivered' as const,
+      fromUser: msg.from_user,
+      toUser: msg.to_user
     })) || [];
 
     // Mark messages as read

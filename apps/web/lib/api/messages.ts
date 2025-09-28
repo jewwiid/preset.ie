@@ -36,6 +36,20 @@ export interface MessageDTO {
   readAt?: string;
   editedAt?: string;
   deletedAt?: string;
+  fromUser?: {
+    id: string;
+    display_name: string;
+    handle: string;
+    avatar_url?: string;
+    verified_id?: boolean;
+  };
+  toUser?: {
+    id: string;
+    display_name: string;
+    handle: string;
+    avatar_url?: string;
+    verified_id?: boolean;
+  };
 }
 
 export interface AttachmentDTO {
