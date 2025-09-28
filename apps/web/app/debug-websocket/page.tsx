@@ -26,6 +26,12 @@ export default function WebSocketDebugPage() {
     setConnectionStatus('Testing...')
 
     try {
+      if (!supabase) {
+        addLog('❌ Supabase client not initialized')
+        setConnectionStatus('Client error')
+        return
+      }
+
       // Check session first
       const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
       
@@ -45,7 +51,7 @@ export default function WebSocketDebugPage() {
       addLog(`🔑 Token expires: ${new Date(currentSession.expires_at! * 1000).toLocaleString()}`)
 
       // Test basic channel connection
-      const testChannel = supabase.channel('websocket-test')
+      const testChannel = supabase!.channel('websocket-test')
       
       testChannel
         .on('presence', { event: 'sync' }, () => {

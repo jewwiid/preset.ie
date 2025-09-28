@@ -19,6 +19,11 @@ export default function CreditBalance({ className = '', showPurchaseButton = tru
   useEffect(() => {
     loadBalance();
     
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -36,6 +41,11 @@ export default function CreditBalance({ className = '', showPurchaseButton = tru
 
   const loadBalance = async () => {
     try {
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setLoading(false);

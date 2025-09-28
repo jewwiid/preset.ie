@@ -81,6 +81,11 @@ export default function MessageTestPage() {
     setTestResult('Checking session info...')
     
     try {
+      if (!supabase) {
+        setTestResult('❌ Supabase client not initialized')
+        return
+      }
+
       const { data: { session }, error } = await supabase.auth.getSession()
       
       if (error) {

@@ -94,7 +94,7 @@ export default function SubscriptionPage() {
   }, [user])
 
   const fetchCurrentSubscription = async () => {
-    if (!user) return
+    if (!user || !supabase) return
 
     try {
       // Get the user's profile to get the subscription tier
@@ -139,6 +139,11 @@ export default function SubscriptionPage() {
     setSuccess(null)
 
     try {
+      if (!supabase) {
+        setError('Supabase client not initialized')
+        return
+      }
+
       // Get session for auth
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       console.log('🔍 Session check result:', { 
@@ -187,7 +192,7 @@ export default function SubscriptionPage() {
   }
 
   const handleCancelSubscription = async () => {
-    if (!user) return
+    if (!user || !supabase) return
 
     setLoading(true)
     setError(null)

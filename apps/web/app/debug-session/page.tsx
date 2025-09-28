@@ -11,6 +11,14 @@ export default function SessionDebugPage() {
 
   useEffect(() => {
     const checkSession = async () => {
+      if (!supabase) {
+        setSessionInfo({
+          hasSession: false,
+          error: 'Supabase client not initialized'
+        })
+        return
+      }
+
       const { data: { session }, error } = await supabase.auth.getSession()
       
       setSessionInfo({
@@ -27,6 +35,11 @@ export default function SessionDebugPage() {
 
   const testStripeAPI = async () => {
     try {
+      if (!supabase) {
+        setTestResult('❌ Supabase client not initialized')
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session) {

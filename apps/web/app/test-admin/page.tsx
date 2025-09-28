@@ -12,6 +12,11 @@ export default function TestAdmin() {
     setStatus('Creating admin account...');
     
     try {
+      if (!supabase) {
+        setStatus('❌ Supabase client not initialized');
+        return;
+      }
+
       // Try to sign up first
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: 'admin@preset.ie',
@@ -55,6 +60,11 @@ export default function TestAdmin() {
   };
 
   const createOrUpdateProfile = async (userId: string) => {
+    if (!supabase) {
+      setStatus(prev => prev + '\n❌ Supabase client not initialized');
+      return;
+    }
+
     setStatus(prev => prev + '\nCreating/updating profile...');
     
     const { data: existingProfile } = await supabase
@@ -108,6 +118,11 @@ export default function TestAdmin() {
     setStatus('Testing sign in...');
     
     try {
+      if (!supabase) {
+        setStatus('❌ Supabase client not initialized');
+        return;
+      }
+
       console.log('Attempting sign in with:', { email: 'admin@preset.ie', password: 'Admin123!@#' });
       
       // First check current session
@@ -163,6 +178,11 @@ export default function TestAdmin() {
     setStatus('Creating new admin account with correct password...');
     
     try {
+      if (!supabase) {
+        setStatus('❌ Supabase client not initialized');
+        return;
+      }
+
       // First, sign out any existing session
       await supabase.auth.signOut();
       
