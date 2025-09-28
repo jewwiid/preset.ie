@@ -40,14 +40,18 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json();
+    console.log('Message send request body:', body);
     const validatedData = SendMessageSchema.parse(body);
+    console.log('Validated data:', validatedData);
 
     // Check if recipient allows messages from strangers
+    console.log('Looking for recipient with ID:', validatedData.toUserId);
     const { data: recipientProfile } = await supabaseAdmin
       .from('users_profile')
       .select('id')
       .eq('id', validatedData.toUserId)
       .single();
+    console.log('Recipient profile found:', recipientProfile);
 
     if (!recipientProfile) {
       return NextResponse.json({ error: 'Recipient not found' }, { status: 404 });
