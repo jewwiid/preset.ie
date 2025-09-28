@@ -91,6 +91,11 @@ export async function GET(request: NextRequest) {
             handle,
             avatar_url,
             verified_id
+          ),
+          listing_images!listings_id_fkey(
+            id,
+            image_url,
+            is_primary
           )
         ),
         rental_orders!messages_rental_order_id_fkey(

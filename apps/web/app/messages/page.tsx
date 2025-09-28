@@ -34,6 +34,11 @@ interface ExtendedConversationDTO extends ConversationDTO {
         avatar_url?: string
         verified_id?: boolean
       }
+      listing_images?: Array<{
+        id: string
+        image_url: string
+        is_primary: boolean
+      }>
     }
     offer?: {
       id: string
@@ -767,11 +772,27 @@ export default function MessagesPage() {
                           {/* Listing Preview for Marketplace Conversations */}
                           {conversations.find(c => c.id === selectedConversation)?.context?.type === 'marketplace' && 
                            conversations.find(c => c.id === selectedConversation)?.context?.listing && (
-                            <div className="mt-2 p-2 bg-muted/50 rounded-lg border">
+                            <a
+                              href={`/gear/listings/${conversations.find(c => c.id === selectedConversation)?.context?.listing?.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 block p-2 bg-muted/50 rounded-lg border hover:bg-muted/70 transition-colors cursor-pointer"
+                            >
                               <div className="flex items-center space-x-3">
-                                {/* Listing Thumbnail */}
+                                {/* Listing Image */}
                                 <div className="flex-shrink-0">
-                                  <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                                  {conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.find((img: any) => img.is_primary)?.image_url ? (
+                                    <img 
+                                      src={conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.find((img: any) => img.is_primary)?.image_url}
+                                      alt={conversations.find(c => c.id === selectedConversation)?.context?.listing?.title}
+                                      className="w-12 h-12 rounded-lg object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none'
+                                        e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                      }}
+                                    />
+                                  ) : null}
+                                  <div className={`w-12 h-12 bg-muted rounded-lg flex items-center justify-center ${conversations.find(c => c.id === selectedConversation)?.context?.listing?.listing_images?.find((img: any) => img.is_primary)?.image_url ? 'hidden' : ''}`}>
                                     <Tag className="h-6 w-6 text-muted-foreground" />
                                   </div>
                                 </div>
@@ -786,49 +807,12 @@ export default function MessagesPage() {
                                     {conversations.find(c => c.id === selectedConversation)?.context?.listing?.mode}
                                   </p>
                                 </div>
-                                
-                                {/* View Listing Button */}
-                                <div className="flex-shrink-0">
-                                  <a
-                                    href={`/gear/listings/${conversations.find(c => c.id === selectedConversation)?.context?.listing?.id}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-primary hover:text-primary/80 underline"
-                                  >
-                                    View Listing
-                                  </a>
-                                </div>
                               </div>
-                            </div>
+                            </a>
                           )}
                         </div>
                       </div>
                       
-                      {/* Connection Status */}
-                      <div className="flex items-center space-x-2">
-                        {realtimeMessages.isConnecting ? (
-                          <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-muted-foreground"></div>
-                            <span>Connecting...</span>
-                          </div>
-                        ) : realtimeMessages.isConnected ? (
-                          <div className="flex items-center space-x-1 text-xs text-primary">
-                            <Wifi className="h-3 w-3" />
-                            <span>Connected</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-1 text-xs text-destructive">
-                            <WifiOff className="h-3 w-3" />
-                            <span>Disconnected</span>
-                            <button
-                              onClick={realtimeMessages.reconnect}
-                              className="text-xs underline hover:text-destructive"
-                            >
-                              Retry
-                            </button>
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
 
