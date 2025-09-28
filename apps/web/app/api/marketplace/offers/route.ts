@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'all'
+    const listing_id = searchParams.get('listing_id')
+    const status = searchParams.get('status')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = (page - 1) * limit
@@ -99,6 +101,16 @@ export async function GET(request: NextRequest) {
       query = query.eq('owner_id', userProfile.id)
     }
     // 'all' type shows both sent and received offers
+
+    // Filter by listing_id if provided
+    if (listing_id) {
+      query = query.eq('listing_id', listing_id)
+    }
+
+    // Filter by status if provided
+    if (status) {
+      query = query.eq('status', status)
+    }
 
     const { data: offers, error: offersError } = await query
 

@@ -91,6 +91,8 @@ export default function ListingDetailPage() {
   const [showMessaging, setShowMessaging] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userLoading, setUserLoading] = useState(true);
+  const [acceptedOffers, setAcceptedOffers] = useState<any[]>([]);
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -135,9 +137,67 @@ export default function ListingDetailPage() {
     }
   };
 
+  const fetchAcceptedOffers = async () => {
+    if (!params.id) return;
+    
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      if (!supabase) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) return;
+      
+      const response = await fetch(`/api/marketplace/offers?listing_id=${params.id}&status=accepted`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setAcceptedOffers(data.offers || []);
+      }
+    } catch (err) {
+      console.error('Error fetching accepted offers:', err);
+    }
+  };
+
+  const fetchRecentMessages = async () => {
+    if (!params.id) return;
+    
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      if (!supabase) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) return;
+      
+      const response = await fetch(`/api/marketplace/messages/${params.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Get the 5 most recent messages
+        const messages = data.messages || [];
+        setRecentMessages(messages.slice(-5).reverse());
+      }
+    } catch (err) {
+      console.error('Error fetching recent messages:', err);
+    }
+  };
+
   useEffect(() => {
     if (params.id) {
       fetchListing();
+      fetchAcceptedOffers();
+      fetchRecentMessages();
     }
     fetchCurrentUser();
   }, [params.id]);
@@ -444,9 +504,10 @@ export default function ListingDetailPage() {
 
             {/* Details */}
             <Tabs defaultValue="details" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="availability">Availability</TabsTrigger>
+                <TabsTrigger value="activity">Activity</TabsTrigger>
                 <TabsTrigger value="owner">Owner</TabsTrigger>
               </TabsList>
               
@@ -505,6 +566,74 @@ export default function ListingDetailPage() {
                       </div>
                     ) : (
                       <p className="text-muted-foreground">No availability blocks set</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="activity" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Accepted Offers</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {acceptedOffers.length > 0 ? (
+                      <div className="space-y-3">
+                        {acceptedOffers.map((offer) => (
+                          <div key={offer.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                <Euro className="h-4 w-4 text-green-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium">€{(offer.offer_amount_cents / 100).toFixed(2)}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  by {offer.offerer?.display_name || 'Unknown User'}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant="default" className="bg-green-100 text-green-800">
+                              Accepted
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">No accepted offers yet</p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Messages</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {recentMessages.length > 0 ? (
+                      <div className="space-y-3">
+                        {recentMessages.map((message) => (
+                          <div key={message.id} className="flex items-start space-x-3 p-3 border rounded-lg">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <MessageCircle className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <p className="font-medium text-sm">
+                                  {message.from_user?.display_name || 'Unknown User'}
+                                </p>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(message.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {message.body}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">No recent messages</p>
                     )}
                   </CardContent>
                 </Card>
