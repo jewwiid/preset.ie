@@ -6,7 +6,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../../lib/auth-context'
 import { useMessagesApi, ConversationDTO, ConversationDetailsDTO, MessageDTO } from '../../lib/api/messages'
 import { useRealtimeMessages, RealtimeMessage, MessageStatusUpdate, TypingEvent } from '../../lib/hooks/useRealtimeMessages'
-import { MessageSquare, Send, Search, User, Clock, AlertCircle, Wifi, WifiOff, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
+import { MessageSquare, Send, Search, User, Clock, AlertCircle, Wifi, WifiOff, ChevronLeft, ChevronRight, Menu, Briefcase, ShoppingCart, Tag } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface ExtendedConversationDTO extends ConversationDTO {
   otherUser?: {
@@ -14,11 +15,60 @@ interface ExtendedConversationDTO extends ConversationDTO {
     display_name: string
     handle: string
   }
+  // Marketplace-specific fields
+  context?: {
+    type: 'gig' | 'marketplace'
+    listing?: {
+      id: string
+      title: string
+      category: string
+      mode: string
+      status: string
+      owner_id: string
+      users_profile?: {
+        id: string
+        display_name: string
+        handle: string
+        avatar_url?: string
+        verified_id?: boolean
+      }
+    }
+    offer?: {
+      id: string
+      status: string
+      offer_amount_cents: number
+      message?: string
+      offerer_id: string
+      owner_id: string
+    }
+    rental_order?: {
+      id: string
+      status: string
+      start_date: string
+      end_date: string
+      calculated_total_cents: number
+    }
+    sale_order?: {
+      id: string
+      status: string
+      total_cents: number
+    }
+  }
 }
 
 export default function MessagesPage() {
   const { user } = useAuth()
   const messagesApi = useMessagesApi()
+  
+  // Helper function to get auth token
+  const getAuthToken = async (): Promise<string> => {
+    const { supabase } = await import('../../lib/supabase')
+    if (!supabase) {
+      return 'dummy-token'
+    }
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token || 'dummy-token'
+  }
   
   const [conversations, setConversations] = useState<ExtendedConversationDTO[]>([])
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
@@ -168,31 +218,58 @@ export default function MessagesPage() {
   const fetchConversations = async () => {
     try {
       setError(null)
-      const response = await messagesApi.getConversations({ limit: 50 })
       
-      // TODO: We need to enhance the API to include user profile information
-      // For now, we'll map the existing structure to work with the new API
-      const conversationsWithUserInfo = await Promise.all(
-        response.conversations.map(async (conv) => {
-          // Extract other participant ID (excluding current user)
+      // Fetch both gig and marketplace conversations
+      const [gigConversations, marketplaceConversations] = await Promise.all([
+        messagesApi.getConversations({ limit: 50 }),
+        fetch('/api/marketplace/messages/conversations?limit=50', {
+          headers: {
+            'Authorization': `Bearer ${await getAuthToken()}`
+          }
+        }).then(res => res.ok ? res.json() : { conversations: [], total: 0, totalUnread: 0 })
+      ])
+      
+      // Process gig conversations
+      const processedGigConversations = await Promise.all(
+        gigConversations.conversations.map(async (conv) => {
           const otherUserId = conv.participants.find(id => id !== user?.id)
-          
-          // TODO: Make API call to get user profile info
-          // For now, we'll use placeholder data
-          const extendedConv: ExtendedConversationDTO = {
+          return {
             ...conv,
+            context: { type: 'gig' as const },
             otherUser: {
               id: otherUserId || '',
-              display_name: `User ${otherUserId?.slice(-4)}`, // Temporary placeholder
-              handle: `user_${otherUserId?.slice(-4)}` // Temporary placeholder
+              display_name: `User ${otherUserId?.slice(-4)}`,
+              handle: `user_${otherUserId?.slice(-4)}`
             }
           }
-          
-          return extendedConv
         })
       )
       
-      setConversations(conversationsWithUserInfo)
+      // Process marketplace conversations
+      const processedMarketplaceConversations = marketplaceConversations.conversations.map((conv: any) => {
+        const otherUserId = conv.participants.find((id: string) => id !== user?.id)
+        return {
+          ...conv,
+          context: {
+            type: 'marketplace' as const,
+            listing: conv.context?.listing,
+            offer: conv.context?.offer,
+            rental_order: conv.context?.rental_order,
+            sale_order: conv.context?.sale_order
+          },
+          otherUser: {
+            id: otherUserId || '',
+            display_name: conv.context?.listing?.users_profile?.display_name || `User ${otherUserId?.slice(-4)}`,
+            handle: conv.context?.listing?.users_profile?.handle || `user_${otherUserId?.slice(-4)}`
+          }
+        }
+      })
+      
+      // Combine and sort by last message time
+      const allConversations = [...processedGigConversations, ...processedMarketplaceConversations]
+        .sort((a, b) => new Date(b.lastMessageAt || b.startedAt).getTime() - new Date(a.lastMessageAt || a.startedAt).getTime())
+      
+      setConversations(allConversations)
     } catch (error: any) {
       console.error('Error fetching conversations:', error)
       setError(error.message || 'Failed to load conversations')
@@ -204,17 +281,54 @@ export default function MessagesPage() {
   const fetchConversationDetails = async (conversationId: string) => {
     try {
       setError(null)
-      const response = await messagesApi.getConversation(conversationId)
-      setConversationDetails(response.data)
       
-      // Mark conversation as read when viewing
-      try {
-        await messagesApi.markConversationAsRead(conversationId)
-        // Refresh conversations to update unread counts
-        fetchConversations()
-      } catch (readError) {
-        console.error('Error marking conversation as read:', readError)
-        // Don't show error to user for this non-critical operation
+      const conversation = conversations.find(c => c.id === conversationId)
+      if (!conversation) {
+        throw new Error('Conversation not found')
+      }
+      
+      if (conversation.context?.type === 'marketplace') {
+        // For marketplace conversations, we need to fetch messages differently
+        // Since marketplace messages don't use the same conversation structure
+        const response = await fetch(`/api/marketplace/messages/conversations?listing_id=${conversation.context.listing?.id}`, {
+          headers: {
+            'Authorization': `Bearer ${await getAuthToken()}`
+          }
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch marketplace conversation details')
+        }
+        
+        const data = await response.json()
+        const marketplaceConv = data.conversations.find((conv: any) => conv.id === conversationId)
+        
+        if (marketplaceConv) {
+          // Transform marketplace conversation to match expected format
+          setConversationDetails({
+            id: marketplaceConv.id,
+            gigId: marketplaceConv.id, // Use conversation ID as gigId for compatibility
+            participants: marketplaceConv.participants,
+            messages: [], // Marketplace messages are handled differently
+            status: 'ACTIVE',
+            startedAt: marketplaceConv.startedAt,
+            lastMessageAt: marketplaceConv.lastMessageAt
+          })
+        }
+      } else {
+        // Handle gig conversations normally
+        const response = await messagesApi.getConversation(conversationId)
+        setConversationDetails(response.data)
+        
+        // Mark conversation as read when viewing
+        try {
+          await messagesApi.markConversationAsRead(conversationId)
+          // Refresh conversations to update unread counts
+          fetchConversations()
+        } catch (readError) {
+          console.error('Error marking conversation as read:', readError)
+          // Don't show error to user for this non-critical operation
+        }
       }
     } catch (error: any) {
       console.error('Error fetching conversation details:', error)
@@ -281,11 +395,37 @@ export default function MessagesPage() {
     try {
       setError(null)
       
-      await messagesApi.sendMessage({
-        gigId: conversation.gigId,
-        toUserId: conversation.otherUser.id,
-        body: newMessage.trim()
-      })
+      // Handle different message types
+      if (conversation.context?.type === 'marketplace') {
+        // Send marketplace message
+        const response = await fetch('/api/marketplace/messages/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await getAuthToken()}`
+          },
+          body: JSON.stringify({
+            listing_id: conversation.context.listing?.id,
+            to_user_id: conversation.otherUser.id,
+            message_body: newMessage.trim(),
+            offer_id: conversation.context.offer?.id,
+            rental_order_id: conversation.context.rental_order?.id,
+            sale_order_id: conversation.context.sale_order?.id
+          })
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to send marketplace message')
+        }
+      } else {
+        // Send gig message
+        await messagesApi.sendMessage({
+          gigId: conversation.gigId,
+          toUserId: conversation.otherUser.id,
+          body: newMessage.trim()
+        })
+      }
 
       setNewMessage('')
       stopTyping()
@@ -451,14 +591,35 @@ export default function MessagesPage() {
                           {!sidebarCollapsed && (
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-medium text-foreground truncate">
-                                  {conversation.otherUser?.display_name || 'Unknown User'}
-                                </h3>
+                                <div className="flex items-center space-x-2">
+                                  <h3 className="text-sm font-medium text-foreground truncate">
+                                    {conversation.otherUser?.display_name || 'Unknown User'}
+                                  </h3>
+                                  {/* Context badge */}
+                                  {conversation.context?.type === 'gig' ? (
+                                    <Badge variant="secondary" className="text-xs">
+                                      <Briefcase className="h-3 w-3 mr-1" />
+                                      Gig
+                                    </Badge>
+                                  ) : conversation.context?.type === 'marketplace' ? (
+                                    <Badge variant="outline" className="text-xs">
+                                      <ShoppingCart className="h-3 w-3 mr-1" />
+                                      Marketplace
+                                    </Badge>
+                                  ) : null}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                   {conversation.lastMessageAt && formatDate(conversation.lastMessageAt)}
                                 </p>
                               </div>
                               <p className="text-xs text-muted-foreground mb-1">@{conversation.otherUser?.handle || 'unknown'}</p>
+                              {/* Show listing title for marketplace conversations */}
+                              {conversation.context?.type === 'marketplace' && conversation.context?.listing && (
+                                <p className="text-xs text-primary mb-1 truncate">
+                                  <Tag className="h-3 w-3 inline mr-1" />
+                                  {conversation.context.listing.title}
+                                </p>
+                              )}
                               <p className="text-sm text-muted-foreground truncate">
                                 {hasTypingUsers ? (
                                   <span className="italic text-primary">typing...</span>
@@ -496,13 +657,34 @@ export default function MessagesPage() {
                           <User className="h-5 w-5 text-primary-foreground" />
                         </div>
                         <div>
-                          <h2 className="text-lg font-medium text-foreground">
-                            {conversations.find(c => c.id === selectedConversation)?.otherUser?.display_name || 'Unknown User'}
-                          </h2>
+                          <div className="flex items-center space-x-2">
+                            <h2 className="text-lg font-medium text-foreground">
+                              {conversations.find(c => c.id === selectedConversation)?.otherUser?.display_name || 'Unknown User'}
+                            </h2>
+                            {/* Context badge in header */}
+                            {conversations.find(c => c.id === selectedConversation)?.context?.type === 'gig' ? (
+                              <Badge variant="secondary" className="text-xs">
+                                <Briefcase className="h-3 w-3 mr-1" />
+                                Gig
+                              </Badge>
+                            ) : conversations.find(c => c.id === selectedConversation)?.context?.type === 'marketplace' ? (
+                              <Badge variant="outline" className="text-xs">
+                                <ShoppingCart className="h-3 w-3 mr-1" />
+                                Marketplace
+                              </Badge>
+                            ) : null}
+                          </div>
                           <div className="flex items-center space-x-2">
                             <p className="text-sm text-muted-foreground">
                               @{conversations.find(c => c.id === selectedConversation)?.otherUser?.handle || 'unknown'}
                             </p>
+                            {/* Show listing title for marketplace conversations */}
+                            {conversations.find(c => c.id === selectedConversation)?.context?.type === 'marketplace' && 
+                             conversations.find(c => c.id === selectedConversation)?.context?.listing && (
+                              <p className="text-xs text-primary">
+                                • {conversations.find(c => c.id === selectedConversation)?.context?.listing?.title}
+                              </p>
+                            )}
                             {/* Typing Indicator */}
                             {Object.values(realtimeMessages.typingUsers).some(user => user.isTyping) && (
                               <p className="text-xs text-primary italic">

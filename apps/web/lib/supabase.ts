@@ -22,7 +22,14 @@ export const supabase = supabaseUrl && supabaseAnonKey
         },
         heartbeatIntervalMs: 30000,
         reconnectAfterMs: (tries: number) => Math.min(tries * 1000, 30000),
-        timeout: 10000
+        timeout: 10000,
+        transport: typeof window !== 'undefined' ? WebSocket : undefined,
+        encode: (payload: any, callback: (encoded: any) => void) => {
+          callback(JSON.stringify(payload))
+        },
+        decode: (payload: string, callback: (decoded: any) => void) => {
+          callback(JSON.parse(payload))
+        }
       }
     })
   : null
@@ -50,4 +57,42 @@ export const getAuthToken = async () => {
   const client = getSupabaseClient()
   const { data: { session } } = await client.auth.getSession()
   return session?.access_token
+}
+
+// Helper function to handle WebSocket connection errors
+export const handleRealtimeError = (error: any) => {
+  console.error('Supabase Realtime Error:', error)
+  
+  if (error.message?.includes('401')) {
+    console.warn('WebSocket authentication failed. This may be due to:')
+    console.warn('1. Realtime not enabled in Supabase dashboard')
+    console.warn('2. Invalid API key for WebSocket connections')
+    console.warn('3. Browser security policies blocking WebSocket')
+  }
+  
+  return error
+}
+
+// Helper function to create a Realtime channel with error handling
+export const createRealtimeChannel = (channelName: string, callback: (payload: any) => void) => {
+  const client = getSupabaseClient()
+  
+  const channel = client
+    .channel(channelName)
+    .on('broadcast', { event: '*' }, callback)
+    .on('postgres_changes', { event: '*', schema: 'public', table: '*' }, callback)
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log(`✅ Connected to Realtime channel: ${channelName}`)
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error(`❌ Error connecting to Realtime channel: ${channelName}`)
+        handleRealtimeError(new Error('Channel subscription failed'))
+      } else if (status === 'TIMED_OUT') {
+        console.warn(`⏰ Timeout connecting to Realtime channel: ${channelName}`)
+      } else if (status === 'CLOSED') {
+        console.log(`🔌 Disconnected from Realtime channel: ${channelName}`)
+      }
+    })
+  
+  return channel
 }

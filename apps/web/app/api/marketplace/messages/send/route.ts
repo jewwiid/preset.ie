@@ -99,24 +99,32 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if user has access to this listing (owner or has orders/offers)
-      const { data: hasAccess } = await supabaseAdmin
-        .from('rental_orders')
-        .select('id')
-        .eq('listing_id', listing_id)
-        .or(`owner_id.eq.${userProfile.id},renter_id.eq.${userProfile.id}`)
-        .limit(1);
-
-      const { data: hasOffers } = await supabaseAdmin
+      // Check if user has access to this listing through accepted offers or orders
+      const { data: hasAcceptedOffers } = await supabaseAdmin
         .from('offers')
         .select('id')
         .eq('listing_id', listing_id)
-        .or(`from_user.eq.${userProfile.id},to_user.eq.${userProfile.id}`)
+        .eq('status', 'accepted')
+        .or(`offerer_id.eq.${userProfile.id},owner_id.eq.${userProfile.id}`)
         .limit(1);
 
-      if (listing.owner_id !== userProfile.id && (!hasAccess || hasAccess.length === 0) && (!hasOffers || hasOffers.length === 0)) {
+      const { data: hasActiveOrders } = await supabaseAdmin
+        .from('rental_orders')
+        .select('id')
+        .eq('listing_id', listing_id)
+        .in('status', ['pending', 'confirmed', 'active'])
+        .or(`owner_id.eq.${userProfile.id},renter_id.eq.${userProfile.id}`)
+        .limit(1);
+
+      // Only allow messaging if:
+      // 1. User is the listing owner, OR
+      // 2. User has an accepted offer, OR  
+      // 3. User has an active rental order
+      if (listing.owner_id !== userProfile.id && 
+          (!hasAcceptedOffers || hasAcceptedOffers.length === 0) && 
+          (!hasActiveOrders || hasActiveOrders.length === 0)) {
         return NextResponse.json(
-          { error: 'You do not have access to this listing' },
+          { error: 'You can only message after your offer is accepted or you have an active order' },
           { status: 403 }
         );
       }
@@ -175,7 +183,7 @@ export async function POST(request: NextRequest) {
       // Validate offer access
       const { data: offer, error: offerError } = await supabaseAdmin
         .from('offers')
-        .select('id, from_user, to_user, listing_id')
+        .select('id, offerer_id, owner_id, listing_id')
         .eq('id', offer_id)
         .single();
 
@@ -186,7 +194,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (offer.from_user !== userProfile.id && offer.to_user !== userProfile.id) {
+      if (offer.offerer_id !== userProfile.id && offer.owner_id !== userProfile.id) {
         return NextResponse.json(
           { error: 'You do not have access to this offer' },
           { status: 403 }

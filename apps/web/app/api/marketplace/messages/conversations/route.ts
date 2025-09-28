@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Get marketplace conversations
+    // Get marketplace conversations with listing details
     const { data: conversations, error: conversationsError } = await supabaseAdmin
       .from('messages')
       .select(`
@@ -64,14 +64,14 @@ export async function GET(request: NextRequest) {
         body,
         created_at,
         read_at,
-        listings!messages_listing_id_fkey (
+        listings!messages_listing_id_fkey(
           id,
           title,
           category,
           mode,
           status,
           owner_id,
-          users_profile!listings_owner_id_fkey (
+          users_profile!listings_owner_id_fkey(
             id,
             display_name,
             handle,
@@ -79,23 +79,25 @@ export async function GET(request: NextRequest) {
             verified_id
           )
         ),
-        rental_orders!messages_rental_order_id_fkey (
+        rental_orders!messages_rental_order_id_fkey(
           id,
           status,
           start_date,
           end_date,
           calculated_total_cents
         ),
-        sale_orders!messages_sale_order_id_fkey (
+        sale_orders!messages_sale_order_id_fkey(
           id,
           status,
           total_cents
         ),
-        offers!messages_offer_id_fkey (
+        offers!messages_offer_id_fkey(
           id,
           status,
-          context,
-          payload
+          offer_amount_cents,
+          message,
+          offerer_id,
+          owner_id
         )
       `)
       .eq('context_type', 'marketplace')
@@ -115,7 +117,7 @@ export async function GET(request: NextRequest) {
     const conversationMap = new Map();
     
     for (const message of conversations || []) {
-      const conversationId = message.gig_id; // For marketplace, gig_id is the listing_id
+      const conversationId = message.gig_id || message.listing_id; // Use listing_id if gig_id is NULL
       
       if (!conversationMap.has(conversationId)) {
         conversationMap.set(conversationId, {
@@ -128,10 +130,10 @@ export async function GET(request: NextRequest) {
           lastMessage: null,
           unreadCount: 0,
           context: {
-            listing: message.listings,
-            rental_order: message.rental_orders,
-            sale_order: message.sale_orders,
-            offer: message.offers
+            listing: message.listings || null,
+            rental_order: message.rental_orders || null,
+            sale_order: message.sale_orders || null,
+            offer: message.offers || null
           },
           startedAt: message.created_at,
           lastMessageAt: message.created_at

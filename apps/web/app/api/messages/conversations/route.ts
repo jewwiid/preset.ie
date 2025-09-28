@@ -39,6 +39,22 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Get user profile ID
+    const { data: userProfile, error: profileError } = await supabaseAdmin
+      .from('users_profile')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !userProfile) {
+      console.log('❌ User profile not found');
+      return NextResponse.json({
+        conversations: [],
+        total: 0,
+        totalUnread: 0
+      });
+    }
+
     // Parse and validate query parameters
     const { searchParams } = new URL(request.url);
     const queryObject = Object.fromEntries(searchParams.entries());
@@ -49,15 +65,15 @@ export async function GET(request: NextRequest) {
     const { data: messages, error } = await supabaseAdmin
       .from('messages')
       .select(`
+        id,
         gig_id,
         from_user_id,
         to_user_id,
         body,
         created_at,
-        read_at,
-        gig:gigs(*)
+        read_at
       `)
-      .or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`)
+      .or(`from_user_id.eq.${userProfile.id},to_user_id.eq.${userProfile.id}`)
       .order('created_at', { ascending: false })
       .limit(validatedQuery.limit * 10); // Get more messages to group by conversation
 
@@ -74,13 +90,13 @@ export async function GET(request: NextRequest) {
       if (!conversationMap.has(gigId)) {
         conversationMap.set(gigId, {
           gig_id: gigId,
-          gig: message.gig,
+          gig: null, // We'll fetch gig data separately if needed
           messages: [],
           unread_count: 0,
           last_message_at: message.created_at,
           last_message_id: message.id,
           last_message_content: message.body,
-          other_user_id: message.from_user_id === user.id ? message.to_user_id : message.from_user_id
+          other_user_id: message.from_user_id === userProfile.id ? message.to_user_id : message.from_user_id
         });
       }
       
@@ -88,7 +104,7 @@ export async function GET(request: NextRequest) {
       conv.messages.push(message);
       
       // Count unread messages (messages sent to user that haven't been read)
-      if (message.to_user_id === user.id && !message.read_at) {
+      if (message.to_user_id === userProfile.id && !message.read_at) {
         conv.unread_count++;
       }
       
@@ -97,7 +113,7 @@ export async function GET(request: NextRequest) {
         conv.last_message_at = message.created_at;
         conv.last_message_id = message.id;
         conv.last_message_content = message.body;
-        conv.other_user_id = message.from_user_id === user.id ? message.to_user_id : message.from_user_id;
+        conv.other_user_id = message.from_user_id === userProfile.id ? message.to_user_id : message.from_user_id;
       }
     });
 
@@ -109,11 +125,11 @@ export async function GET(request: NextRequest) {
     const transformedConversations = conversations?.map((conv: any) => ({
       id: conv.gig_id, // Use gig_id as conversation ID
       gigId: conv.gig_id,
-      participants: [user.id, conv.other_user_id],
+      participants: [userProfile.id, conv.other_user_id],
       lastMessage: {
         id: conv.last_message_id,
         body: conv.last_message_content,
-        fromUserId: conv.last_message_content ? user.id : conv.other_user_id, // Simplified
+        fromUserId: conv.last_message_content ? userProfile.id : conv.other_user_id, // Simplified
         sentAt: conv.last_message_at,
         read: conv.unread_count === 0
       },
