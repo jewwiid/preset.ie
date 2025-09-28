@@ -276,6 +276,7 @@ export default function MessagesPage() {
       
       // Process marketplace conversations
       const processedMarketplaceConversations = marketplaceConversations.conversations.map((conv: any) => {
+        console.log('Processing marketplace conversation:', conv.id, conv.context)
         return {
           ...conv,
           context: {
@@ -310,6 +311,10 @@ export default function MessagesPage() {
         throw new Error('Conversation not found')
       }
       
+      console.log('Fetching conversation details for:', conversationId)
+      console.log('Conversation found:', conversation)
+      console.log('Conversation context:', conversation.context)
+      console.log('Conversation type:', conversation.context?.type)
       
       if (conversation.context?.type === 'marketplace') {
         // For marketplace conversations, fetch messages using the new API endpoint
@@ -351,7 +356,7 @@ export default function MessagesPage() {
           }
         } catch (error: any) {
           // If the gig API says this is a marketplace conversation, try marketplace API
-          if (error.message.includes('marketplace conversation')) {
+          if (error.message.includes('marketplace conversation') || error.message.includes('400')) {
             console.log('Retrying with marketplace API for conversation:', conversationId)
             const response = await fetch(`/api/marketplace/messages/${conversationId}`, {
               headers: {

@@ -64,6 +64,22 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     if (messagesError) {
       console.error('Error fetching messages:', messagesError);
+      
+      // Check if this might be a marketplace conversation (listing_id) even when there's an error
+      const { data: listingCheck } = await supabaseAdmin
+        .from('listings')
+        .select('id')
+        .eq('id', validatedParams.id)
+        .single();
+      
+      if (listingCheck) {
+        // This is a marketplace conversation, redirect to marketplace API
+        return NextResponse.json(
+          { error: 'This is a marketplace conversation. Please use the marketplace messages API.' },
+          { status: 400 }
+        );
+      }
+      
       return NextResponse.json(
         { error: 'Failed to fetch conversation messages' },
         { status: 500 }
