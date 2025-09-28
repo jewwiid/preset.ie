@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Euro } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,16 +20,18 @@ interface MakeOfferFormProps {
   };
   onClose: () => void;
   onSuccess?: () => void;
+  initialMessage?: string;
 }
 
-export default function MakeOfferForm({ listing, onClose, onSuccess }: MakeOfferFormProps) {
+export default function MakeOfferForm({ listing, onClose, onSuccess, initialMessage }: MakeOfferFormProps) {
   const [loading, setLoading] = useState(false);
   const [hasExistingOffer, setHasExistingOffer] = useState(false);
   const [checkingExisting, setCheckingExisting] = useState(true);
   const [formData, setFormData] = useState({
     offer_amount_cents: listing.sale_price_cents || 0,
-    message: '',
-    contact_preference: 'message' as 'message' | 'phone' | 'email'
+    message: initialMessage || '',
+    contact_preference: 'message' as 'message' | 'phone' | 'email',
+    includeAsPublicComment: false
   });
 
   // Check for existing offers on component mount
@@ -117,6 +120,31 @@ export default function MakeOfferForm({ listing, onClose, onSuccess }: MakeOffer
 
       if (response.ok) {
         toast.success('Offer sent successfully!');
+        
+        // If user wants to also post as public comment, do that now
+        if (formData.includeAsPublicComment && formData.message.trim()) {
+          try {
+            const commentResponse = await fetch(`/api/marketplace/listings/${listing.id}/comments`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+              },
+              body: JSON.stringify({
+                comment_body: formData.message.trim()
+              })
+            });
+            
+            if (commentResponse.ok) {
+              toast.success('Question also posted publicly!');
+            } else {
+              console.warn('Failed to post public comment:', await commentResponse.text());
+            }
+          } catch (commentError) {
+            console.warn('Error posting public comment:', commentError);
+          }
+        }
+        
         onSuccess?.();
         onClose();
       } else {
@@ -222,6 +250,18 @@ export default function MakeOfferForm({ listing, onClose, onSuccess }: MakeOffer
             className="mt-1"
             rows={4}
           />
+          {formData.message && (
+            <div className="mt-2 flex items-center space-x-2">
+              <Checkbox
+                id="includeAsPublicComment"
+                checked={formData.includeAsPublicComment}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeAsPublicComment: !!checked }))}
+              />
+              <Label htmlFor="includeAsPublicComment" className="text-sm text-muted-foreground">
+                Also post this as a public question on the listing
+              </Label>
+            </div>
+          )}
         </div>
 
         <div>

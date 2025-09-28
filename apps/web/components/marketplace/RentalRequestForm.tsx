@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { CalendarIcon, Euro } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -27,9 +28,10 @@ interface RentalRequestFormProps {
   };
   onClose: () => void;
   onSuccess?: () => void;
+  initialMessage?: string;
 }
 
-export default function RentalRequestForm({ listing, onClose, onSuccess }: RentalRequestFormProps) {
+export default function RentalRequestForm({ listing, onClose, onSuccess, initialMessage }: RentalRequestFormProps) {
   const [loading, setLoading] = useState(false);
   const [hasExistingRequest, setHasExistingRequest] = useState(false);
   const [checkingExisting, setCheckingExisting] = useState(true);
@@ -37,8 +39,9 @@ export default function RentalRequestForm({ listing, onClose, onSuccess }: Renta
     start_date: '',
     end_date: '',
     quantity: 1,
-    message: '',
-    total_amount_cents: 0
+    message: initialMessage || '',
+    total_amount_cents: 0,
+    includeAsPublicComment: false
   });
 
   const [startDate, setStartDate] = useState<Date>();
@@ -169,6 +172,31 @@ export default function RentalRequestForm({ listing, onClose, onSuccess }: Renta
 
         if (response.ok) {
           toast.success('Rental request sent successfully!');
+          
+          // If user wants to also post as public comment, do that now
+          if (formData.includeAsPublicComment && formData.message.trim()) {
+            try {
+              const commentResponse = await fetch(`/api/marketplace/listings/${listing.id}/comments`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                  comment_body: formData.message.trim()
+                })
+              });
+              
+              if (commentResponse.ok) {
+                toast.success('Question also posted publicly!');
+              } else {
+                console.warn('Failed to post public comment:', await commentResponse.text());
+              }
+            } catch (commentError) {
+              console.warn('Error posting public comment:', commentError);
+            }
+          }
+          
           onSuccess?.();
           onClose();
         } else {
@@ -327,6 +355,18 @@ export default function RentalRequestForm({ listing, onClose, onSuccess }: Renta
             className="mt-1"
             rows={3}
           />
+          {formData.message && (
+            <div className="mt-2 flex items-center space-x-2">
+              <Checkbox
+                id="includeAsPublicComment"
+                checked={formData.includeAsPublicComment}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, includeAsPublicComment: !!checked }))}
+              />
+              <Label htmlFor="includeAsPublicComment" className="text-sm text-muted-foreground">
+                Also post this as a public question on the listing
+              </Label>
+            </div>
+          )}
         </div>
       </div>
 

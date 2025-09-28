@@ -634,10 +634,10 @@ export default function ListingDetailPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Public Comments</CardTitle>
+                    <CardTitle>Ask Question</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {/* Comment Form */}
+                    {/* Question Form */}
                     {currentUser && !isOwner() && (
                       <div className="mb-4 p-3 border rounded-lg">
                         <div className="flex items-start space-x-3">
@@ -648,7 +648,7 @@ export default function ListingDetailPage() {
                             <textarea
                               value={newComment}
                               onChange={(e) => setNewComment(e.target.value)}
-                              placeholder="Add a public comment..."
+                              placeholder="Ask a question about this listing..."
                               className="w-full p-2 border rounded-md resize-none"
                               rows={3}
                               maxLength={2000}
@@ -657,13 +657,45 @@ export default function ListingDetailPage() {
                               <span className="text-xs text-muted-foreground">
                                 {newComment.length}/2000 characters
                               </span>
-                              <Button 
-                                onClick={submitComment}
-                                disabled={!newComment.trim()}
-                                size="sm"
-                              >
-                                Post Comment
-                              </Button>
+                              <div className="space-x-2">
+                                <Button 
+                                  onClick={submitComment}
+                                  disabled={!newComment.trim()}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  Ask Question
+                                </Button>
+                                {(listing.mode === 'rent' || listing.mode === 'both') && (
+                                  <Button 
+                                    onClick={() => {
+                                      setShowRentalForm(true);
+                                      // Pre-fill the message with the question if there's one
+                                      if (newComment.trim()) {
+                                        // We'll handle this in the rental form
+                                      }
+                                    }}
+                                    size="sm"
+                                  >
+                                    Request Rental
+                                  </Button>
+                                )}
+                                {(listing.mode === 'sale' || listing.mode === 'both') && (
+                                  <Button 
+                                    onClick={() => {
+                                      setShowOfferForm(true);
+                                      // Pre-fill the message with the question if there's one
+                                      if (newComment.trim()) {
+                                        // We'll handle this in the offer form
+                                      }
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                  >
+                                    Make Offer
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -798,7 +830,7 @@ export default function ListingDetailPage() {
                       </div>
                     ) : (
                       <p className="text-muted-foreground text-center py-4">
-                        No public comments yet. Be the first to comment!
+                        No questions yet. Be the first to ask a question!
                       </p>
                     )}
                   </CardContent>
@@ -1091,6 +1123,7 @@ export default function ListingDetailPage() {
                   setShowRentalForm(false);
                   // Optionally refresh data or show success message
                 }}
+                initialMessage={newComment.trim() || undefined}
               />
             </div>
           </div>
@@ -1117,6 +1150,7 @@ export default function ListingDetailPage() {
                   setShowOfferForm(false);
                   // Optionally refresh data or show success message
                 }}
+                initialMessage={newComment.trim() || undefined}
               />
             </div>
           </div>
