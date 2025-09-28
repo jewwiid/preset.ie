@@ -220,6 +220,13 @@ export async function POST(request: NextRequest) {
 
     console.log('Anti-spam checks passed');
 
+    // Validate that user is not making an offer on their own listing
+    if (userProfile.id === owner_id) {
+      return NextResponse.json({ 
+        error: 'You cannot make an offer on your own listing' 
+      }, { status: 400 });
+    }
+
     // Validate offer amount
     if (offer_amount_cents <= 0) {
       return NextResponse.json({ error: 'Offer amount must be greater than 0' }, { status: 400 });

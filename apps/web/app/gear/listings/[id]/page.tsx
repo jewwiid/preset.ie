@@ -88,7 +88,30 @@ export default function ListingDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showRentalForm, setShowRentalForm] = useState(false);
   const [showOfferForm, setShowOfferForm] = useState(false);
-  const [showMessaging, setShowMessaging] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      if (!supabase) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data: userProfile } = await supabase
+          .from('users_profile')
+          .select('id, display_name, handle')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        setCurrentUser(userProfile);
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    } finally {
+      setUserLoading(false);
+    }
+  };
 
   const fetchListing = async () => {
     setLoading(true);
@@ -115,7 +138,12 @@ export default function ListingDetailPage() {
     if (params.id) {
       fetchListing();
     }
+    fetchCurrentUser();
   }, [params.id]);
+
+  const isOwner = () => {
+    return currentUser && listing && currentUser.id === listing.owner_id;
+  };
 
   const formatPrice = (cents: number) => {
     return `€${(cents / 100).toFixed(2)}`;
@@ -592,7 +620,7 @@ export default function ListingDetailPage() {
                   </Button>
                 )}
                 
-                {(listing.mode === 'sale' || listing.mode === 'both') && (
+                {(listing.mode === 'sale' || listing.mode === 'both') && !isOwner() && (
                   <Button 
                     variant="outline" 
                     className="w-full"
