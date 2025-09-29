@@ -157,8 +157,9 @@ export async function POST(
       );
     }
 
-    // Prevent users from commenting on their own listings
-    if (userProfile.id === listing.owner_id) {
+    // Prevent users from making top-level comments on their own listings
+    // But allow them to reply to existing comments
+    if (userProfile.id === listing.owner_id && !parent_comment_id) {
       return NextResponse.json(
         { error: 'You cannot comment on your own listing' },
         { status: 400 }

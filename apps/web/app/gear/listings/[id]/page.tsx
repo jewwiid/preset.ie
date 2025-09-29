@@ -878,7 +878,7 @@ export default function ListingDetailPage() {
                                   Debug: currentUser={currentUser?.id}, owner={listing?.owner_id}, isOwner={isOwner()}
                                 </div>
                               )}
-                              {currentUser && !isOwner() && (
+                              {currentUser && (
                                 <Button
                                   variant="ghost"
                                   size="sm"
