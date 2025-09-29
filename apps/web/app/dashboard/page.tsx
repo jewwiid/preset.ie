@@ -1230,25 +1230,40 @@ export default function Dashboard() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-sm font-medium text-primary truncate">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-sm font-medium text-foreground truncate">
                                   {conversation.other_user?.display_name || 'Unknown User'}
                                 </p>
-                                <span className="text-xs text-primary">
+                                <span className="text-xs text-muted-foreground">
                                   {timeAgo}
                                 </span>
                               </div>
-                              <p className="text-xs text-primary truncate mb-1">
-                                {conversation.context_title}
-                                {conversation.context_type === 'marketplace' && (
-                                  <span className="ml-1 px-1 py-0.5 bg-primary/20 text-primary text-xs rounded">Marketplace</span>
-                                )}
-                              </p>
-                              <p className="text-xs text-primary truncate">
-                                {conversation.is_from_me ? 'You: ' : ''}{conversation.last_message}
-                              </p>
+                              
+                              {/* Topic/Title Section */}
+                              <div className="mb-2">
+                                <p className="text-xs font-medium text-muted-foreground truncate">
+                                  {conversation.context_title}
+                                  {conversation.context_type === 'marketplace' && (
+                                    <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full border border-primary/20">
+                                      Marketplace
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+                              
+                              {/* Message Preview Section */}
+                              <div className="mb-1">
+                                <p className="text-sm text-foreground truncate leading-relaxed">
+                                  {conversation.is_from_me ? (
+                                    <span className="text-muted-foreground">You: </span>
+                                  ) : null}
+                                  {conversation.last_message}
+                                </p>
+                              </div>
+                              
+                              {/* Status Indicator */}
                               {!conversation.is_read && !conversation.is_from_me && (
-                                <div className="flex items-center gap-1 mt-1">
+                                <div className="flex items-center gap-1 mt-2">
                                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                                   <span className="text-xs text-primary font-medium">New</span>
                                 </div>
