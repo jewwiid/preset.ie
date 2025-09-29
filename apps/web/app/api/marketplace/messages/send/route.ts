@@ -120,9 +120,11 @@ export async function POST(request: NextRequest) {
       // 1. User is the listing owner, OR
       // 2. User has an accepted offer, OR  
       // 3. User has an active rental order
-      if (listing.owner_id !== userProfile.id && 
-          (!hasAcceptedOffers || hasAcceptedOffers.length === 0) && 
-          (!hasActiveOrders || hasActiveOrders.length === 0)) {
+      const isOwner = listing.owner_id === userProfile.id;
+      const hasAcceptedOffer = hasAcceptedOffers && hasAcceptedOffers.length > 0;
+      const hasActiveOrder = hasActiveOrders && hasActiveOrders.length > 0;
+      
+      if (!isOwner && !hasAcceptedOffer && !hasActiveOrder) {
         return NextResponse.json(
           { error: 'You can only message after your offer is accepted or you have an active order' },
           { status: 403 }
