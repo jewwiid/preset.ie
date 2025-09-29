@@ -217,6 +217,14 @@ export default function ListingDetailPage() {
       
       if (!token) return;
       
+      console.log('Submitting comment:', {
+        comment_body: newComment.trim(),
+        parent_comment_id: replyingTo || null,
+        isOwner: isOwner(),
+        currentUser: currentUser?.id,
+        listingOwner: listing?.owner_id
+      });
+      
       const response = await fetch(`/api/marketplace/listings/${params.id}/comments`, {
         method: 'POST',
         headers: {
@@ -236,6 +244,7 @@ export default function ListingDetailPage() {
         toast.success('Comment posted successfully!');
       } else {
         const errorData = await response.json();
+        console.error('Comment submission error:', errorData);
         toast.error(errorData.error || 'Failed to post comment');
       }
     } catch (err) {
