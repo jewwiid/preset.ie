@@ -301,8 +301,6 @@ export default function Dashboard() {
           sale_order_id,
           offer_id,
           context_type,
-          gigs(title),
-          listings(title),
           from_user:users_profile!messages_from_user_id_fkey(
             id,
             display_name,
@@ -328,6 +326,36 @@ export default function Dashboard() {
       // Group messages by conversation (gig_id/listing_id + other user)
       const conversations = {} as any
       
+      // Get unique gig_ids and listing_ids to fetch titles
+      const gigIds = [...new Set((messages as any)?.filter((m: any) => m.gig_id).map((m: any) => m.gig_id) || [])]
+      const listingIds = [...new Set((messages as any)?.filter((m: any) => m.listing_id).map((m: any) => m.listing_id) || [])]
+      
+      // Fetch gig titles
+      let gigTitles: any = {}
+      if (gigIds.length > 0) {
+        const { data: gigs } = await (supabase as any)
+          .from('gigs')
+          .select('id, title')
+          .in('id', gigIds)
+        gigTitles = gigs?.reduce((acc: any, gig: any) => {
+          acc[gig.id] = gig.title
+          return acc
+        }, {}) || {}
+      }
+      
+      // Fetch listing titles
+      let listingTitles: any = {}
+      if (listingIds.length > 0) {
+        const { data: listings } = await (supabase as any)
+          .from('listings')
+          .select('id, title')
+          .in('id', listingIds)
+        listingTitles = listings?.reduce((acc: any, listing: any) => {
+          acc[listing.id] = listing.title
+          return acc
+        }, {}) || {}
+      }
+      
       (messages as any)?.forEach((message: any) => {
         const otherUserId = message.from_user_id === (userProfile as any).id 
           ? message.to_user_id 
@@ -345,12 +373,12 @@ export default function Dashboard() {
         if (message.gig_id) {
           // Gig conversation
           conversationKey = `gig-${message.gig_id}-${otherUserId}`
-          contextTitle = Array.isArray(message.gigs) ? message.gigs[0]?.title : (message.gigs as any)?.title || 'Untitled Gig'
+          contextTitle = gigTitles[message.gig_id] || 'Untitled Gig'
           contextType = 'gig'
         } else if (message.listing_id) {
           // Marketplace conversation
           conversationKey = `marketplace-${message.listing_id}-${otherUserId}`
-          contextTitle = Array.isArray(message.listings) ? message.listings[0]?.title : (message.listings as any)?.title || 'Marketplace Listing'
+          contextTitle = listingTitles[message.listing_id] || 'Marketplace Listing'
           contextType = 'marketplace'
         } else {
           // Other conversation types
