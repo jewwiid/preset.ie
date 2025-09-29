@@ -18,7 +18,8 @@ import {
   User,
   Package,
   Filter,
-  X
+  X,
+  MessageCircle
 } from 'lucide-react';
 import { useAuth } from '../../../lib/auth-context';
 import { supabase } from '../../../lib/supabase';
@@ -442,6 +443,24 @@ export default function OffersPage() {
                               >
                                 <X className="h-4 w-4 mr-2" />
                                 Withdraw Offer
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {/* Message Owner Button for Accepted Offers */}
+                          {activeTab === 'sent' && offer.status === 'accepted' && (
+                            <div className="mt-4 flex justify-end">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => {
+                                  // Navigate to the listing page with messaging enabled
+                                  window.open(`/gear/listings/${offer.listing_id}`, '_blank');
+                                }}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                <MessageCircle className="h-4 w-4 mr-2" />
+                                Message Owner
                               </Button>
                             </div>
                           )}

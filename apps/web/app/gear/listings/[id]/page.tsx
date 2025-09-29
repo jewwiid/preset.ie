@@ -92,6 +92,7 @@ export default function ListingDetailPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userLoading, setUserLoading] = useState(true);
   const [acceptedOffers, setAcceptedOffers] = useState<any[]>([]);
+  const [userHasAcceptedOffer, setUserHasAcceptedOffer] = useState(false);
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
   const [publicComments, setPublicComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -161,6 +162,12 @@ export default function ListingDetailPage() {
       
       if (response.ok) {
         setAcceptedOffers(data.offers || []);
+        
+        // Check if current user has an accepted offer
+        if (currentUser && data.offers) {
+          const userAcceptedOffer = data.offers.find((offer: any) => offer.offerer_id === currentUser.id);
+          setUserHasAcceptedOffer(!!userAcceptedOffer);
+        }
       }
     } catch (err) {
       console.error('Error fetching accepted offers:', err);
@@ -190,6 +197,13 @@ export default function ListingDetailPage() {
     }
     fetchCurrentUser();
   }, [params.id]);
+
+  // Refetch accepted offers when currentUser changes to check if user has accepted offer
+  useEffect(() => {
+    if (currentUser && params.id) {
+      fetchAcceptedOffers();
+    }
+  }, [currentUser, params.id]);
 
   const submitComment = async () => {
     if (!newComment.trim() || !currentUser || !params.id) return;
@@ -1046,12 +1060,12 @@ export default function ListingDetailPage() {
                 <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2 sm:space-y-0">
                   {!isOwner() && (
                     <Button 
-                      variant="outline" 
-                      className="flex-1 min-w-0"
+                      variant={userHasAcceptedOffer ? "default" : "outline"}
+                      className={`flex-1 min-w-0 ${userHasAcceptedOffer ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
                       onClick={() => setShowMessaging(true)}
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
-                      Message
+                      {userHasAcceptedOffer ? '🎉 Message Owner' : 'Message'}
                     </Button>
                   )}
                   <Button 

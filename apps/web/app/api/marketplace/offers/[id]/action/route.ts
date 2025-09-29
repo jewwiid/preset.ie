@@ -179,7 +179,48 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // TODO: Send notification to offerer
+    // Send notification to offerer if offer was accepted
+    if (action === 'accept') {
+      try {
+        // Get offerer's user_id for notification
+        const { data: offererAuth, error: offererError } = await supabase
+          .from('users_profile')
+          .select('user_id')
+          .eq('id', offer.offerer_id)
+          .single();
+
+        if (!offererError && offererAuth) {
+          // Get listing title for notification
+          const { data: listing, error: listingError } = await supabase
+            .from('listings')
+            .select('title')
+            .eq('id', offer.listing_id)
+            .single();
+
+          const listingTitle = listing?.title || 'this listing';
+
+          // Create notification for the offerer
+          await supabase
+            .from('preset_notifications')
+            .insert({
+              creator_id: offererAuth.user_id,
+              type: 'offer_accepted',
+              title: '🎉 Your offer was accepted!',
+              message: `Your offer for "${listingTitle}" has been accepted. You can now message the owner directly to arrange pickup/delivery.`,
+              action_url: `/gear/listings/${offer.listing_id}`,
+              data: {
+                offer_id: offerId,
+                listing_id: offer.listing_id,
+                listing_title: listingTitle
+              }
+            });
+        }
+      } catch (notificationError) {
+        console.error('Error sending offer acceptance notification:', notificationError);
+        // Don't fail the offer acceptance if notification fails
+      }
+    }
+
     // TODO: Create sale transaction if accepted
 
     // If offer was accepted, share contact details based on preference
