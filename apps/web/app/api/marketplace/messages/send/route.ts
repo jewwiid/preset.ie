@@ -252,6 +252,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create notification for the recipient
+    try {
+      // Get recipient's user_id
+      const { data: recipientProfile, error: recipientError } = await supabaseAdmin
+        .from('users_profile')
+        .select('user_id')
+        .eq('id', to_user_id)
+        .single();
+
+      if (!recipientError && recipientProfile) {
+        // Get sender's profile for notification
+        const { data: senderProfile, error: senderError } = await supabaseAdmin
+          .from('users_profile')
+          .select('display_name, handle, avatar_url')
+          .eq('id', userProfile.id)
+          .single();
+
+        if (!senderError && senderProfile) {
+          // Create notification
+          await supabaseAdmin
+            .from('notifications')
+            .insert({
+              user_id: user.id, // Sender's auth user_id
+              recipient_id: recipientProfile.user_id, // Recipient's auth user_id
+              type: 'message',
+              category: 'marketplace',
+              title: `New message from ${senderProfile.display_name || senderProfile.handle}`,
+              message: message_body.length > 100 ? `${message_body.substring(0, 100)}...` : message_body,
+              avatar_url: senderProfile.avatar_url,
+              action_url: `/messages`,
+              data: {
+                conversation_id: conversationId,
+                message_id: message.id,
+                sender_id: userProfile.id,
+                sender_name: senderProfile.display_name || senderProfile.handle
+              }
+            });
+        }
+      }
+    } catch (notificationError) {
+      console.error('Error creating message notification:', notificationError);
+      // Don't fail the message send if notification creation fails
+    }
+
     return NextResponse.json({
       success: true,
       data: {
