@@ -88,7 +88,22 @@ export async function POST(request: NextRequest) {
         }
         
         const imageBuffer = await response.arrayBuffer()
-        const contentType = response.headers.get('content-type') || 'image/jpeg'
+        let contentType = response.headers.get('content-type') || 'image/jpeg'
+        
+        // Fix common content-type issues
+        if (contentType === 'binary/octet-stream' || contentType === 'application/octet-stream') {
+          // Try to detect from URL
+          if (imageUrl.includes('.png')) {
+            contentType = 'image/png'
+          } else if (imageUrl.includes('.webp')) {
+            contentType = 'image/webp'
+          } else if (imageUrl.includes('.gif')) {
+            contentType = 'image/gif'
+          } else {
+            contentType = 'image/jpeg' // Default to JPEG
+          }
+        }
+        
         const fileExtension = contentType.split('/')[1] || 'jpg'
         
         // Generate unique filename
@@ -252,34 +267,55 @@ export async function POST(request: NextRequest) {
     console.log('Attempting to insert into playground_gallery table')
     
     // Save to gallery
+    const insertData = {
+      user_id: user.id,
+      image_url: finalImageUrl,
+      thumbnail_url: finalImageUrl, // Use final URL as thumbnail for now
+      title: title || 'Untitled',
+      description: description || null,
+      tags: tags || [],
+      width: imageWidth,
+      height: imageHeight,
+      file_size: 0, // Unknown size for external URLs
+      format: 'jpg', // Will be updated below if we have file extension info
+      generation_metadata: {
+        ...generationMetadata,
+        original_url: imageUrl, // Store original URL for reference
+        permanently_stored: finalImageUrl !== imageUrl, // Track if image was downloaded and stored
+        storage_method: imageUrl.startsWith('data:') ? 'base64' : 
+                      imageUrl.startsWith('http') ? 'downloaded' : 'external_reference',
+        // Ensure custom dimensions are preserved
+        saved_width: imageWidth,
+        saved_height: imageHeight,
+        saved_aspect_ratio: generationMetadata?.aspect_ratio || `${imageWidth}:${imageHeight}`,
+        saved_at: new Date().toISOString()
+      }
+    }
+
+    // Only add optional fields if they exist and are valid
+    if (projectId && projectId !== 'null' && projectId !== 'undefined') {
+      (insertData as any).project_id = projectId
+    }
+    if (editId && editId !== 'null' && editId !== 'undefined') {
+      (insertData as any).edit_id = editId
+    }
+
+    // Update format based on image URL or content type
+    if (finalImageUrl.includes('.png')) {
+      insertData.format = 'png'
+    } else if (finalImageUrl.includes('.webp')) {
+      insertData.format = 'webp'
+    } else if (finalImageUrl.includes('.gif')) {
+      insertData.format = 'gif'
+    } else if (finalImageUrl.includes('.jpeg') || finalImageUrl.includes('.jpg')) {
+      insertData.format = 'jpg'
+    }
+
+    console.log('Inserting data:', insertData)
+
     const { data: galleryItem, error: insertError } = await supabaseAdmin
       .from('playground_gallery')
-      .insert({
-        user_id: user.id,
-        project_id: projectId,
-        edit_id: editId,
-        image_url: finalImageUrl,
-        thumbnail_url: finalImageUrl, // Use final URL as thumbnail for now
-        title: title || 'Untitled',
-        description,
-        tags: tags || [],
-        width: imageWidth,
-        height: imageHeight,
-        file_size: 0, // Unknown size for external URLs
-        format: 'jpg',
-        generation_metadata: {
-          ...generationMetadata,
-          original_url: imageUrl, // Store original URL for reference
-          permanently_stored: finalImageUrl !== imageUrl, // Track if image was downloaded and stored
-          storage_method: imageUrl.startsWith('data:') ? 'base64' : 
-                        imageUrl.startsWith('http') ? 'downloaded' : 'external_reference',
-          // Ensure custom dimensions are preserved
-          saved_width: imageWidth,
-          saved_height: imageHeight,
-          saved_aspect_ratio: generationMetadata?.aspect_ratio || `${imageWidth}:${imageHeight}`,
-          saved_at: new Date().toISOString()
-        }
-      })
+      .insert(insertData)
       .select()
       .single()
 
