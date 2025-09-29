@@ -32,9 +32,31 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('end_date');
     const roleType = searchParams.get('role_type'); // specific role needed
     const gearCategory = searchParams.get('gear_category'); // specific gear needed
+    const view = searchParams.get('view'); // 'all', 'my_projects', 'invited'
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
+
+    // Get current user if authenticated
+    const authHeader = request.headers.get('authorization');
+    let currentUserId: string | null = null;
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (!authError && user) {
+        const { data: profile } = await supabase
+          .from('users_profile')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile) {
+          currentUserId = profile.id;
+        }
+      }
+    }
 
     // Build query
     let query = supabase
@@ -80,9 +102,34 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
-      .eq('visibility', 'public')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
+
+    // Apply view filter
+    if (view === 'my_projects' && currentUserId) {
+      query = query.eq('creator_id', currentUserId);
+    } else if (view === 'invited' && currentUserId) {
+      // Fetch projects user has been invited to
+      const { data: invitations } = await supabase
+        .from('collab_invitations')
+        .select('project_id')
+        .eq('invitee_id', currentUserId)
+        .eq('status', 'pending');
+      
+      if (invitations && invitations.length > 0) {
+        const projectIds = invitations.map(inv => inv.project_id);
+        query = query.in('id', projectIds);
+      } else {
+        // No invitations, return empty result
+        return NextResponse.json({
+          projects: [],
+          pagination: { page, limit, total: 0, pages: 0 }
+        });
+      }
+    } else {
+      // Default: show public projects only
+      query = query.eq('visibility', 'public');
+    }
 
     // Apply filters
     if (status) {

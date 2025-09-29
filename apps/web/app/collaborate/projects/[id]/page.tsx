@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Users, Camera, MessageCircle, Star, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, Camera, MessageCircle, Star, CheckCircle, XCircle, Clock, UserPlus, Mail } from 'lucide-react';
 import { format } from 'date-fns';
+import { InviteUserDialog } from '@/components/collaborate/InviteUserDialog';
+import { supabase } from '../../../../lib/supabase';
 
 interface Project {
   id: string;
@@ -87,6 +89,9 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [isCreator, setIsCreator] = useState(false);
+  const [invitationStats, setInvitationStats] = useState<any>(null);
 
   const projectId = params.id as string;
 
@@ -96,11 +101,29 @@ export default function ProjectDetailPage() {
 
   const fetchProject = async () => {
     try {
-      const response = await fetch(`/api/collab/projects/${projectId}`);
+      if (!supabase) return;
+      
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`/api/collab/projects/${projectId}`, {
+        headers
+      });
       const data = await response.json();
 
       if (response.ok) {
         setProject(data.project);
+        setIsCreator(data.isCreator);
+        setInvitationStats(data.invitationStats);
       } else {
         setError(data.error || 'Failed to fetch project');
       }
@@ -487,25 +510,75 @@ export default function ProjectDetailPage() {
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button
-                  onClick={() => handleApply()}
-                  disabled={applying || project.status !== 'published'}
-                  className="w-full"
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Apply to Project
-                </Button>
-                
-                <Button variant="outline" className="w-full">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Message Creator
-                </Button>
+                {isCreator ? (
+                  <>
+                    <Button
+                      onClick={() => setInviteDialogOpen(true)}
+                      className="w-full"
+                    >
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Invite People
+                    </Button>
+                    
+                    <Button variant="outline" className="w-full">
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Manage Applications
+                    </Button>
+                    
+                    <Button variant="outline" className="w-full">
+                      Edit Project
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      onClick={() => handleApply()}
+                      disabled={applying || project.status !== 'published'}
+                      className="w-full"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Apply to Project
+                    </Button>
+                    
+                    <Button variant="outline" className="w-full">
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Message Creator
+                    </Button>
+                  </>
+                )}
                 
                 <Button variant="outline" className="w-full">
                   Share Project
                 </Button>
               </CardContent>
             </Card>
+
+            {/* Invitation Stats (for creators) */}
+            {isCreator && invitationStats && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Invitations</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground-500">Pending</span>
+                    <span className="text-sm font-medium">{invitationStats.pending}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground-500">Accepted</span>
+                    <span className="text-sm font-medium">{invitationStats.accepted}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground-500">Declined</span>
+                    <span className="text-sm font-medium">{invitationStats.declined}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground-500">Total Sent</span>
+                    <span className="text-sm font-medium">{invitationStats.total}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Project Stats */}
             <Card>
@@ -536,6 +609,21 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       </main>
+
+      {/* Invite User Dialog */}
+      {project && (
+        <InviteUserDialog
+          open={inviteDialogOpen}
+          onOpenChange={setInviteDialogOpen}
+          projectId={project.id}
+          projectTitle={project.title}
+          roles={project.collab_roles}
+          onInviteSent={() => {
+            // Refresh project data to update invitation stats
+            fetchProject();
+          }}
+        />
+      )}
     </div>
   );
 }

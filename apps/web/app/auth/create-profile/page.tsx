@@ -125,23 +125,18 @@ export default function CreateProfilePage() {
     }
 
     const timeoutId = setTimeout(async () => {
-      if (!supabase) return
-      
       setCheckingHandle(true)
       try {
-        const { data: existingProfile, error: checkError } = await (supabase as any)
-          .from('users_profile')
-          .select('handle')
-          .eq('handle', formData.handle)
-          .single()
-
-        if (checkError && checkError.code !== 'PGRST116') {
+        const response = await fetch(`/api/check-handle?handle=${encodeURIComponent(formData.handle)}`)
+        const data = await response.json()
+        
+        if (response.ok) {
+          setHandleAvailable(data.available)
+        } else {
           setHandleAvailable(null)
-          return
         }
-
-        setHandleAvailable(!existingProfile)
       } catch (error) {
+        console.error('Error checking handle:', error)
         setHandleAvailable(null)
       } finally {
         setCheckingHandle(false)
@@ -250,20 +245,16 @@ export default function CreateProfilePage() {
       }
 
       // Check if handle is already taken
-      const { data: existingProfile, error: checkError } = await (supabase as any)
-        .from('users_profile')
-        .select('handle')
-        .eq('handle', formData.handle)
-        .single()
+      const checkResponse = await fetch(`/api/check-handle?handle=${encodeURIComponent(formData.handle)}`)
+      const checkData = await checkResponse.json()
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        // PGRST116 is "not found" which is what we want
+      if (!checkResponse.ok) {
         setError('Failed to check handle availability')
         setLoading(false)
         return
       }
 
-      if (existingProfile) {
+      if (!checkData.available) {
         setError('This handle is already taken. Please choose a different one.')
         setLoading(false)
         return

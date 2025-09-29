@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
         .from(category)
         .select('*')
         .eq('is_active', true)
-        .order('usage_count', { ascending: false });
+        .order('label', { ascending: true });
 
       if (search) {
         query = query.or(`label.ilike.%${search}%,description.ilike.%${search}%`);
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
           .from(table)
           .select('*')
           .eq('is_active', true)
-          .order('usage_count', { ascending: false });
+          .order('label', { ascending: true });
 
         if (search) {
           query = query.or(`label.ilike.%${search}%,description.ilike.%${search}%`);

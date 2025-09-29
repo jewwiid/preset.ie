@@ -205,8 +205,20 @@ CREATE TABLE IF NOT EXISTS public.eye_contacts (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Create director_styles table
+CREATE TABLE IF NOT EXISTS public.director_styles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  value VARCHAR(50) NOT NULL UNIQUE,
+  label VARCHAR(100) NOT NULL,
+  description TEXT,
+  category VARCHAR(50) DEFAULT 'director',
+  usage_count INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Insert Camera Angles
-INSERT INTO public.camera_angles (value, label, description) VALUES
+INSERT INTO public.camera_angles (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('high-angle', 'High Angle', 'Camera looks down on subject, making them appear smaller/vulnerable'),
 ('low-angle', 'Low Angle', 'Camera looks up at subject, giving them power/dominance'),
 ('eye-level', 'Eye Level', 'Camera at same height as subject''s eyes; neutral and natural'),
@@ -218,7 +230,7 @@ INSERT INTO public.camera_angles (value, label, description) VALUES
 ('canted-angle', 'Canted Angle', 'Slight tilt for dynamic composition');
 
 -- Insert Lens Types
-INSERT INTO public.lens_types (value, label, description) VALUES
+INSERT INTO public.lens_types (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('wide-angle-24mm', 'Wide Angle 24mm', 'Exaggerates perspective, suitable for landscapes'),
 ('wide-angle-35mm', 'Wide Angle 35mm', 'Slightly wide, good for environmental portraits'),
 ('normal-50mm', 'Normal 50mm', 'Approximates human vision; versatile'),
@@ -231,7 +243,7 @@ INSERT INTO public.lens_types (value, label, description) VALUES
 ('tilt-shift', 'Tilt Shift', 'Selective focus that can miniaturize scenes');
 
 -- Insert Shot Sizes
-INSERT INTO public.shot_sizes (value, label, description) VALUES
+INSERT INTO public.shot_sizes (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('extreme-close-up', 'Extreme Close Up', 'Captures small details like eyes or hands'),
 ('close-up', 'Close Up', 'Shows head and shoulders, emphasizes emotion'),
 ('medium-close-up', 'Medium Close Up', 'Shows head and upper chest'),
@@ -242,7 +254,7 @@ INSERT INTO public.shot_sizes (value, label, description) VALUES
 ('establishing-shot', 'Establishing Shot', 'Sets the scene and location');
 
 -- Insert Depth of Field
-INSERT INTO public.depth_of_field (value, label, description) VALUES
+INSERT INTO public.depth_of_field (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('shallow-focus', 'Shallow Focus', 'Only subject is sharp, background heavily blurred'),
 ('deep-focus', 'Deep Focus', 'Both foreground and background are sharp'),
 ('rack-focus', 'Rack Focus', 'Focus shifts during shot from one subject to another'),
@@ -251,7 +263,7 @@ INSERT INTO public.depth_of_field (value, label, description) VALUES
 ('hyperfocal', 'Hyperfocal', 'Maximum depth of field for landscape photography');
 
 -- Insert Composition Techniques
-INSERT INTO public.composition_techniques (value, label, description) VALUES
+INSERT INTO public.composition_techniques (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('rule-of-thirds', 'Rule of Thirds', 'Subject positioned along thirds lines'),
 ('central-framing', 'Central Framing', 'Subject placed at center; symmetrical and formal'),
 ('symmetry', 'Symmetry', 'Balanced composition with mirrored elements'),
@@ -264,7 +276,7 @@ INSERT INTO public.composition_techniques (value, label, description) VALUES
 ('radial-composition', 'Radial Composition', 'Elements radiate from central point');
 
 -- Insert Lighting Styles
-INSERT INTO public.lighting_styles (value, label, description) VALUES
+INSERT INTO public.lighting_styles (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('natural-light', 'Natural Light', 'Sunlight or available light without artificial sources'),
 ('high-key', 'High Key', 'Bright, evenly lit with minimal shadows'),
 ('low-key', 'Low Key', 'Dominated by dark tones with strong shadows'),
@@ -282,7 +294,7 @@ INSERT INTO public.lighting_styles (value, label, description) VALUES
 ('volumetric-lighting', 'Volumetric Lighting', 'Visible light rays/beams');
 
 -- Insert Color Palettes
-INSERT INTO public.color_palettes (value, label, description) VALUES
+INSERT INTO public.color_palettes (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('warm-golden', 'Warm Golden', 'Oranges, yellows, reds; evokes warmth/nostalgia'),
 ('cool-blue', 'Cool Blue', 'Blues and greens; creates somber/futuristic feel'),
 ('monochrome', 'Monochrome', 'Black and white; emphasizes texture/contrast'),
@@ -300,7 +312,7 @@ INSERT INTO public.color_palettes (value, label, description) VALUES
 ('vintage-wash', 'Vintage Wash', 'Aged, faded color treatment');
 
 -- Insert Era Emulations
-INSERT INTO public.era_emulations (value, label, description) VALUES
+INSERT INTO public.era_emulations (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('vintage-16mm-grain', 'Vintage 16mm Grain', 'Coarse grain and muted colors'),
 ('super-8', 'Super 8', 'Home-movie aesthetic with streaks and faded tones'),
 ('1970s-bleach-bypass', '1970s Bleach Bypass', 'High contrast, desaturated colors'),
@@ -318,7 +330,7 @@ INSERT INTO public.era_emulations (value, label, description) VALUES
 ('sepia-toned', 'Sepia Toned', 'Warm brown monochrome');
 
 -- Insert Scene Moods (predefined)
-INSERT INTO public.scene_moods (value, label, description) VALUES
+INSERT INTO public.scene_moods (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('gritty', 'Gritty', 'Dark, textured visuals; often desaturated'),
 ('dreamlike', 'Dreamlike', 'Soft focus, haze, pastel colors'),
 ('futuristic', 'Futuristic', 'Sleek lines, cool color palettes, neon lights'),
@@ -341,7 +353,7 @@ INSERT INTO public.scene_moods (value, label, description) VALUES
 ('ethereal', 'Ethereal', 'Soft, otherworldly, luminous');
 
 -- Insert Camera Movements
-INSERT INTO public.camera_movements (value, label, description) VALUES
+INSERT INTO public.camera_movements (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('static', 'Static', 'Camera does not move'),
 ('pan-left', 'Pan Left', 'Horizontal rotation left'),
 ('pan-right', 'Pan Right', 'Horizontal rotation right'),
@@ -374,7 +386,7 @@ INSERT INTO public.camera_movements (value, label, description) VALUES
 ('ascending', 'Ascending', 'Upward movement');
 
 -- Insert Aspect Ratios
-INSERT INTO public.aspect_ratios (value, label, description) VALUES
+INSERT INTO public.aspect_ratios (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('1:1', '1:1 Square', 'Square frame, social media'),
 ('4:3', '4:3 Standard', 'Classic television and early cinema'),
 ('16:9', '16:9 Widescreen', 'Standard widescreen for modern video'),
@@ -397,7 +409,7 @@ INSERT INTO public.aspect_ratios (value, label, description) VALUES
 ('large-format', 'Large Format', '5:4 large format');
 
 -- Insert Time Settings
-INSERT INTO public.time_settings (value, label, description) VALUES
+INSERT INTO public.time_settings (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('dawn', 'Dawn', 'Early morning, soft golden light'),
 ('morning', 'Morning', 'Bright morning light'),
 ('midday', 'Midday', 'Harsh overhead light'),
@@ -420,7 +432,7 @@ INSERT INTO public.time_settings (value, label, description) VALUES
 ('stormy-weather', 'Stormy Weather', 'Dramatic, changing light');
 
 -- Insert Weather Conditions
-INSERT INTO public.weather_conditions (value, label, description) VALUES
+INSERT INTO public.weather_conditions (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('sunny', 'Sunny', 'Clear skies, bright light'),
 ('partly-cloudy', 'Partly Cloudy', 'Mix of sun and clouds'),
 ('overcast', 'Overcast', 'Cloudy, diffused light'),
@@ -443,7 +455,7 @@ INSERT INTO public.weather_conditions (value, label, description) VALUES
 ('tropical', 'Tropical', 'Warm, humid conditions');
 
 -- Insert Location Types
-INSERT INTO public.location_types (value, label, description) VALUES
+INSERT INTO public.location_types (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('urban-street', 'Urban Street', 'City street with buildings'),
 ('rural-field', 'Rural Field', 'Open countryside'),
 ('forest', 'Forest', 'Wooded area'),
@@ -476,7 +488,7 @@ INSERT INTO public.location_types (value, label, description) VALUES
 ('wilderness', 'Wilderness', 'Untamed natural area');
 
 -- Insert Foreground Elements
-INSERT INTO public.foreground_elements (value, label, description) VALUES
+INSERT INTO public.foreground_elements (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('raindrops-on-window', 'Raindrops on Window', 'Water droplets on glass'),
 ('tree-branches', 'Tree Branches', 'Overhanging foliage'),
 ('lens-flare', 'Lens Flare', 'Light artifacts'),
@@ -509,7 +521,7 @@ INSERT INTO public.foreground_elements (value, label, description) VALUES
 ('motion-blur', 'Motion Blur', 'Movement blur');
 
 -- Insert Subject Counts
-INSERT INTO public.subject_counts (value, label, description) VALUES
+INSERT INTO public.subject_counts (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('solo', 'Solo', 'Single subject'),
 ('pair', 'Pair', 'Two subjects'),
 ('small-group', 'Small Group', '3-5 subjects'),
@@ -522,7 +534,7 @@ INSERT INTO public.subject_counts (value, label, description) VALUES
 ('ensemble', 'Ensemble', 'Group of people');
 
 -- Insert Eye Contacts
-INSERT INTO public.eye_contacts (value, label, description) VALUES
+INSERT INTO public.eye_contacts (value, label, description) VALUES ON CONFLICT (value) DO NOTHING
 ('direct-gaze', 'Direct Gaze', 'Looking directly at camera'),
 ('profile-view', 'Profile View', 'Side view of subject'),
 ('looking-away', 'Looking Away', 'Subject looking elsewhere'),
@@ -533,6 +545,53 @@ INSERT INTO public.eye_contacts (value, label, description) VALUES
 ('eyes-closed', 'Eyes Closed', 'Subject''s eyes are closed'),
 ('partial-face', 'Partial Face', 'Only part of face visible'),
 ('back-of-head', 'Back of Head', 'Subject facing away');
+
+-- Insert Director Styles
+INSERT INTO public.director_styles (value, label, description) VALUES
+('wes-anderson', 'Wes Anderson', 'Symmetrical framing, pastel colors, meticulous design, centered compositions'),
+('roger-deakins', 'Roger Deakins', 'Naturalistic lighting, epic landscapes, careful shadows, masterful use of light'),
+('christopher-doyle', 'Christopher Doyle', 'Expressive handheld movement, saturated neon colors, dynamic cinematography'),
+('sofia-coppola', 'Sofia Coppola', 'Soft, dreamy aesthetics with intimate character focus, muted tones'),
+('david-fincher', 'David Fincher', 'Dark, precise cinematography with high contrast, meticulous framing'),
+('denis-villeneuve', 'Denis Villeneuve', 'Epic scale with minimalist, atmospheric compositions, vast landscapes'),
+('paul-thomas-anderson', 'Paul Thomas Anderson', 'Long takes, fluid camera movement, character-driven narratives'),
+('terrence-malick', 'Terrence Malick', 'Natural light, poetic imagery, philosophical themes, nature-focused'),
+('stanley-kubrick', 'Stanley Kubrick', 'Geometric compositions, symmetrical framing, bold colors, one-point perspective'),
+('alfred-hitchcock', 'Alfred Hitchcock', 'Suspenseful framing, dramatic shadows, psychological tension, voyeuristic angles'),
+('martin-scorsese', 'Martin Scorsese', 'Dynamic camera movement, urban settings, character-driven storytelling'),
+('quentin-tarantino', 'Quentin Tarantino', 'Stylized violence, pop culture references, non-linear narratives'),
+('coen-brothers', 'Coen Brothers', 'Dark humor, quirky characters, precise cinematography, regional settings'),
+('spike-lee', 'Spike Lee', 'Urban realism, social commentary, bold visual style, New York settings'),
+('ridley-scott', 'Ridley Scott', 'Epic scale, atmospheric lighting, detailed world-building'),
+('christopher-nolan', 'Christopher Nolan', 'Complex narratives, practical effects, IMAX cinematography, time manipulation'),
+('guillermo-del-toro', 'Guillermo Del Toro', 'Dark fantasy, gothic aesthetics, creature design, fairy tale elements'),
+('darren-aronofsky', 'Darren Aronofsky', 'Psychological intensity, handheld camera, surreal imagery'),
+('gaspar-noe', 'Gaspar Noé', 'Disturbing themes, long takes, disorienting camera work'),
+('lars-von-trier', 'Lars Von Trier', 'Dogme 95 style, handheld camera, psychological drama'),
+('jean-luc-godard', 'Jean-Luc Godard', 'French New Wave, jump cuts, political themes, experimental techniques'),
+('ingmar-bergman', 'Ingmar Bergman', 'Psychological depth, stark cinematography, existential themes'),
+('akira-kurosawa', 'Akira Kurosawa', 'Epic compositions, natural lighting, samurai themes, rain sequences'),
+('federico-fellini', 'Federico Fellini', 'Surreal imagery, carnivalesque atmosphere, Italian neorealism'),
+('michelangelo-antonioni', 'Michelangelo Antonioni', 'Alienation themes, long takes, minimalist compositions'),
+('francois-truffaut', 'François Truffaut', 'French New Wave, personal storytelling, natural lighting'),
+('louis-malle', 'Louis Malle', 'Intimate character studies, naturalistic cinematography'),
+('robert-bresson', 'Robert Bresson', 'Minimalist style, ascetic compositions, spiritual themes'),
+('jean-pierre-jeunet', 'Jean-Pierre Jeunet', 'Whimsical imagery, steampunk aesthetics, quirky characters'),
+('pier-paolo-pasolini', 'Pier Paolo Pasolini', 'Social realism, controversial themes, neorealist style'),
+('michael-haneke', 'Michael Haneke', 'Clinical precision, social critique, uncomfortable realism'),
+('bela-tarr', 'Béla Tarr', 'Long takes, black and white cinematography, existential themes'),
+('andrei-tarkovsky', 'Andrei Tarkovsky', 'Poetic cinema, spiritual themes, nature imagery, slow pacing'),
+('david-lynch', 'David Lynch', 'Surreal imagery, dreamlike sequences, psychological horror'),
+('tim-burton', 'Tim Burton', 'Gothic aesthetics, dark humor, fantastical elements, stop-motion'),
+('jonathan-glager', 'Jonathan Glazer', 'Minimalist style, atmospheric tension, precise compositions'),
+('yorgos-lanthimos', 'Yorgos Lanthimos', 'Absurdist humor, deadpan delivery, unusual framing'),
+('bong-joon-ho', 'Bong Joon-ho', 'Social satire, genre mixing, South Korean cinema'),
+('park-chan-wook', 'Park Chan-wook', 'Stylized violence, revenge themes, Korean cinema'),
+('hirokazu-koreeda', 'Hirokazu Kore-eda', 'Family dramas, naturalistic style, Japanese cinema'),
+('wong-kar-wai', 'Wong Kar-wai', 'Romantic melancholy, saturated colors, Hong Kong settings'),
+('zhang-yimou', 'Zhang Yimou', 'Colorful cinematography, Chinese historical epics'),
+('ang-lee', 'Ang Lee', 'Emotional depth, cross-cultural themes, technical innovation')
+ON CONFLICT (value) DO NOTHING;
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_camera_angles_value ON public.camera_angles(value);
@@ -552,6 +611,7 @@ CREATE INDEX IF NOT EXISTS idx_location_types_value ON public.location_types(val
 CREATE INDEX IF NOT EXISTS idx_foreground_elements_value ON public.foreground_elements(value);
 CREATE INDEX IF NOT EXISTS idx_subject_counts_value ON public.subject_counts(value);
 CREATE INDEX IF NOT EXISTS idx_eye_contacts_value ON public.eye_contacts(value);
+CREATE INDEX IF NOT EXISTS idx_director_styles_value ON public.director_styles(value);
 
 -- Enable RLS on all tables
 ALTER TABLE public.camera_angles ENABLE ROW LEVEL SECURITY;
@@ -571,6 +631,7 @@ ALTER TABLE public.location_types ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.foreground_elements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subject_counts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.eye_contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.director_styles ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for all tables (public read access)
 CREATE POLICY "Anyone can view camera angles" ON public.camera_angles FOR SELECT USING (true);
@@ -590,6 +651,7 @@ CREATE POLICY "Anyone can view location types" ON public.location_types FOR SELE
 CREATE POLICY "Anyone can view foreground elements" ON public.foreground_elements FOR SELECT USING (true);
 CREATE POLICY "Anyone can view subject counts" ON public.subject_counts FOR SELECT USING (true);
 CREATE POLICY "Anyone can view eye contacts" ON public.eye_contacts FOR SELECT USING (true);
+CREATE POLICY "Anyone can view director styles" ON public.director_styles FOR SELECT USING (true);
 
 -- Add comments
 COMMENT ON TABLE public.camera_angles IS 'Predefined camera angle options';
@@ -609,3 +671,4 @@ COMMENT ON TABLE public.location_types IS 'Predefined location type options';
 COMMENT ON TABLE public.foreground_elements IS 'Predefined foreground element options';
 COMMENT ON TABLE public.subject_counts IS 'Predefined subject count options';
 COMMENT ON TABLE public.eye_contacts IS 'Predefined eye contact options';
+COMMENT ON TABLE public.director_styles IS 'Predefined director style options';

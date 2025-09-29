@@ -2,41 +2,62 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-// Initialize Supabase client inside functions to avoid build-time issues
+// Initialize Supabase client
 const getSupabaseClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error('Missing required Supabase environment variables')
+    throw new Error('Missing required Supabase environment variables');
   }
 
-  return createClient(supabaseUrl, supabaseServiceRoleKey)
-}
+  return createClient(supabaseUrl, supabaseServiceRoleKey);
+};
 
-// GET /api/collab/projects/[id] - Get project details
+// GET /api/collab/projects/[id] - Get single project details
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
     const supabase = getSupabaseClient();
+    const { id: projectId } = await params;
 
-    const { data: project, error } = await supabase
+    // Get current user if authenticated
+    const authHeader = request.headers.get('authorization');
+    let currentUserId: string | null = null;
+
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (!authError && user) {
+        const { data: profile } = await supabase
+          .from('users_profile')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile) {
+          currentUserId = profile.id;
+        }
+      }
+    }
+
+    // Fetch project with all related data
+    const { data: project, error: projectError } = await supabase
       .from('collab_projects')
       .select(`
         *,
         creator:users_profile!collab_projects_creator_id_fkey(
           id,
-          username,
+          handle,
           display_name,
           avatar_url,
-          verified,
-          rating,
+          verified_id,
           city,
           country,
           bio,
@@ -70,10 +91,10 @@ export async function GET(
           joined_at,
           user:users_profile!collab_participants_user_id_fkey(
             id,
-            username,
+            handle,
             display_name,
             avatar_url,
-            verified,
+            verified_id,
             rating
           )
         ),
@@ -89,56 +110,78 @@ export async function GET(
           )
         )
       `)
-      .eq('id', id)
+      .eq('id', projectId)
       .single();
 
-    if (error) {
-      console.error('Error fetching project:', error);
+    if (projectError) {
+      console.error('Error fetching project:', projectError);
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Check visibility permissions
-    if (project.visibility !== 'public') {
-      const authHeader = request.headers.get('authorization');
-      if (authHeader) {
-        const token = authHeader.replace('Bearer ', '');
-        const { data: { user } } = await supabase.auth.getUser(token);
-        
-        if (user) {
-          const { data: profile } = await supabase
-            .from('users_profile')
-            .select('id')
-            .eq('user_id', user.id)
-            .single();
-          
-          if (profile && (
-            profile.id === project.creator_id ||
-            project.collab_participants.some((p: any) => p.user_id === profile.id)
-          )) {
-            return NextResponse.json({ project });
-          }
-        }
-      }
-      
-      return NextResponse.json({ error: 'Project not available' }, { status: 404 });
+    if (!project) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ project });
+    // Check if user has access to this project
+    const hasAccess = 
+      project.visibility === 'public' ||
+      currentUserId === project.creator_id ||
+      project.collab_participants.some((p: any) => p.user_id === currentUserId) ||
+      (currentUserId && await checkInvitationAccess(supabase, projectId, currentUserId));
+
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
+    // Get invitation statistics for project creator
+    let invitationStats = null;
+    if (currentUserId === project.creator_id) {
+      const { data: stats } = await supabase
+        .from('collab_invitations')
+        .select('status')
+        .eq('project_id', projectId);
+      
+      invitationStats = {
+        pending: stats?.filter(s => s.status === 'pending').length || 0,
+        accepted: stats?.filter(s => s.status === 'accepted').length || 0,
+        declined: stats?.filter(s => s.status === 'declined').length || 0,
+        total: stats?.length || 0
+      };
+    }
+
+    return NextResponse.json({ 
+      project,
+      invitationStats,
+      isCreator: currentUserId === project.creator_id
+    });
 
   } catch (error) {
-    console.error('Get project API error:', error);
+    console.error('Project details API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// PUT /api/collab/projects/[id] - Update project
-export async function PUT(
+// Helper function to check invitation access
+async function checkInvitationAccess(supabase: any, projectId: string, userId: string): Promise<boolean> {
+  const { data: invitation } = await supabase
+    .from('collab_invitations')
+    .select('status')
+    .eq('project_id', projectId)
+    .eq('invitee_id', userId)
+    .in('status', ['pending', 'accepted'])
+    .single();
+
+  return !!invitation;
+}
+
+// PATCH /api/collab/projects/[id] - Update project
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
     const supabase = getSupabaseClient();
+    const { id: projectId } = await params;
     const body = await request.json();
 
     // Get current user
@@ -165,36 +208,26 @@ export async function PUT(
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    // Check if user owns the project
-    const { data: existingProject, error: fetchError } = await supabase
+    // Verify user is the project creator
+    const { data: project, error: projectError } = await supabase
       .from('collab_projects')
-      .select('creator_id, status')
-      .eq('id', id)
+      .select('creator_id')
+      .eq('id', projectId)
       .single();
 
-    if (fetchError || !existingProject) {
+    if (projectError || !project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (existingProject.creator_id !== profile.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    // Don't allow updates to completed or cancelled projects
-    if (existingProject.status === 'completed' || existingProject.status === 'cancelled') {
-      return NextResponse.json({ 
-        error: 'Cannot update completed or cancelled projects' 
-      }, { status: 400 });
+    if (project.creator_id !== profile.id) {
+      return NextResponse.json({ error: 'Only project creators can update projects' }, { status: 403 });
     }
 
     // Update project
-    const { data: project, error: updateError } = await supabase
+    const { data: updatedProject, error: updateError } = await supabase
       .from('collab_projects')
-      .update({
-        ...body,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
+      .update(body)
+      .eq('id', projectId)
       .select()
       .single();
 
@@ -203,7 +236,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update project' }, { status: 500 });
     }
 
-    return NextResponse.json({ project });
+    return NextResponse.json({ project: updatedProject });
 
   } catch (error) {
     console.error('Update project API error:', error);
@@ -217,8 +250,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
     const supabase = getSupabaseClient();
+    const { id: projectId } = await params;
 
     // Get current user
     const authHeader = request.headers.get('authorization');
@@ -244,45 +277,26 @@ export async function DELETE(
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    // Check if user owns the project
-    const { data: existingProject, error: fetchError } = await supabase
+    // Verify user is the project creator
+    const { data: project, error: projectError } = await supabase
       .from('collab_projects')
-      .select('creator_id, status')
-      .eq('id', id)
+      .select('creator_id')
+      .eq('id', projectId)
       .single();
 
-    if (fetchError || !existingProject) {
+    if (projectError || !project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (existingProject.creator_id !== profile.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    // Check if project has active participants (other than creator)
-    const { data: activeParticipants, error: participantsError } = await supabase
-      .from('collab_participants')
-      .select('id')
-      .eq('project_id', id)
-      .neq('user_id', profile.id)
-      .eq('status', 'active');
-
-    if (participantsError) {
-      console.error('Error checking participants:', participantsError);
-      return NextResponse.json({ error: 'Failed to check participants' }, { status: 500 });
-    }
-
-    if (activeParticipants && activeParticipants.length > 0) {
-      return NextResponse.json({ 
-        error: 'Cannot delete project with active participants' 
-      }, { status: 400 });
+    if (project.creator_id !== profile.id) {
+      return NextResponse.json({ error: 'Only project creators can delete projects' }, { status: 403 });
     }
 
     // Delete project (cascade will handle related records)
     const { error: deleteError } = await supabase
       .from('collab_projects')
       .delete()
-      .eq('id', id);
+      .eq('id', projectId);
 
     if (deleteError) {
       console.error('Error deleting project:', deleteError);

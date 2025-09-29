@@ -264,8 +264,8 @@ export class CreditManager {
       .single();
 
     const tier = profile?.subscription_tier || 'free';
-    const allowances = { free: 0, plus: 10, pro: 25 };
-    const allowance = allowances[tier as keyof typeof allowances] || 0;
+    const allowances = { free: 5, plus: 50, pro: 200 };
+    const allowance = allowances[tier as keyof typeof allowances] || 5;
 
     const { data, error } = await this.supabase
       .from('user_credits')

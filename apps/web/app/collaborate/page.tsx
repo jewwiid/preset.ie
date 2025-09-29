@@ -8,9 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Calendar, MapPin, Users, Camera, Plus, Search, Filter } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, MapPin, Users, Camera, Plus, Search, Filter, Mail } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '../../lib/supabase';
+import { ROLE_TYPES, GEAR_CATEGORIES, PROJECT_STATUSES, SORT_OPTIONS, COMMON_COUNTRIES } from './filter-constants';
+import { InvitationsList } from '@/components/collaborate/InvitationsList';
 
 interface Project {
   id: string;
@@ -74,6 +77,7 @@ function CollaboratePageContent() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('all');
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -90,7 +94,7 @@ function CollaboratePageContent() {
   });
   const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'created_at');
 
-  const fetchProjects = async (page = 1) => {
+  const fetchProjects = async (page = 1, view = 'all') => {
     setLoading(true);
     setError(null);
 
@@ -99,6 +103,7 @@ function CollaboratePageContent() {
         page: page.toString(),
         limit: pagination.limit.toString(),
         sort_by: sortBy,
+        view: view,
         ...Object.fromEntries(
           Object.entries(filters).filter(([_, value]) => 
             value !== undefined && value !== '' && value !== 'all'
@@ -144,8 +149,8 @@ function CollaboratePageContent() {
   };
 
   useEffect(() => {
-    fetchProjects();
-  }, [filters, sortBy]);
+    fetchProjects(1, activeTab);
+  }, [filters, sortBy, activeTab]);
 
   const handleFiltersChange = (newFilters: any) => {
     setFilters(newFilters);
@@ -211,16 +216,26 @@ function CollaboratePageContent() {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Filter className="h-5 w-5 mr-2" />
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="all">All Projects</TabsTrigger>
+            <TabsTrigger value="my_projects">My Projects</TabsTrigger>
+            <TabsTrigger value="invited">
+              <Mail className="h-4 w-4 mr-2" />
+              Invitations
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="space-y-6">
+            {/* Filters */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Filter className="h-5 w-5 mr-2" />
+                  Filters
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1">
@@ -242,11 +257,11 @@ function CollaboratePageContent() {
                       <SelectValue placeholder="All statuses" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      {PROJECT_STATUSES.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -266,33 +281,57 @@ function CollaboratePageContent() {
                   <label className="block text-sm font-medium text-foreground mb-1">
                     Country
                   </label>
-                  <Input
-                    placeholder="Country"
-                    value={filters.country}
-                    onChange={(e) => handleFiltersChange({ ...filters, country: e.target.value })}
-                  />
+                  <Select value={filters.country} onValueChange={(value) => handleFiltersChange({ ...filters, country: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All countries" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All countries</SelectItem>
+                      {COMMON_COUNTRIES.map((country) => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1">
                     Role Type
                   </label>
-                  <Input
-                    placeholder="Photographer, Model..."
-                    value={filters.role_type}
-                    onChange={(e) => handleFiltersChange({ ...filters, role_type: e.target.value })}
-                  />
+                  <Select value={filters.role_type} onValueChange={(value) => handleFiltersChange({ ...filters, role_type: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All roles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All roles</SelectItem>
+                      {ROLE_TYPES.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1">
                     Gear Category
                   </label>
-                  <Input
-                    placeholder="Camera, Lens..."
-                    value={filters.gear_category}
-                    onChange={(e) => handleFiltersChange({ ...filters, gear_category: e.target.value })}
-                  />
+                  <Select value={filters.gear_category} onValueChange={(value) => handleFiltersChange({ ...filters, gear_category: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All gear" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All gear</SelectItem>
+                      {GEAR_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -307,18 +346,20 @@ function CollaboratePageContent() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="created_at">Newest First</SelectItem>
-                      <SelectItem value="start_date">Start Date</SelectItem>
-                      <SelectItem value="title">Title A-Z</SelectItem>
+                      {SORT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Results Header */}
-          <div className="flex justify-between items-center">
+            {/* Results Header */}
+            <div className="flex justify-between items-center">
             <h2 className="text-lg font-medium text-foreground">
               {loading ? 'Loading...' : `${pagination.total} projects found`}
             </h2>
@@ -457,45 +498,156 @@ function CollaboratePageContent() {
             </div>
           )}
 
-          {/* Pagination */}
-          {!loading && pagination.pages > 1 && (
-            <div className="flex justify-center items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(pagination.page - 1)}
-                disabled={pagination.page === 1}
-              >
-                Previous
-              </Button>
-              
-              <div className="flex items-center space-x-1">
-                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={pagination.page === pageNum ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handlePageChange(pageNum)}
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
-              </div>
+            {/* Pagination */}
+            {!loading && pagination.pages > 1 && (
+              <div className="flex justify-center items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page === 1}
+                >
+                  Previous
+                </Button>
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pagination.page === pageNum ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePageChange(pagination.page + 1)}
-                disabled={pagination.page === pagination.pages}
-              >
-                Next
-              </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page === pagination.pages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="my_projects" className="space-y-6">
+            {/* Results Header */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-medium text-foreground">
+                {loading ? 'Loading...' : `${pagination.total} project${pagination.total !== 1 ? 's' : ''}`}
+              </h2>
             </div>
-          )}
-        </div>
+
+            {/* Projects Grid (same as all projects) */}
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardHeader>
+                      <div className="h-4 bg-muted rounded w-3/4"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="h-3 bg-muted rounded"></div>
+                        <div className="h-3 bg-muted rounded w-5/6"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="text-destructive">{error}</p>
+                <Button onClick={() => fetchProjects(1, 'my_projects')} className="mt-4">
+                  Try Again
+                </Button>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="text-center py-12">
+                <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No projects yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  You haven't created any projects yet. Start collaborating by creating your first project!
+                </p>
+                <Link href="/collaborate/create">
+                  <Button>Create Project</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {projects.map((project) => (
+                  <Card key={project.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg mb-2">
+                            <Link 
+                              href={`/collaborate/projects/${project.id}`}
+                              className="hover:text-primary transition-colors"
+                            >
+                              {project.title}
+                            </Link>
+                          </CardTitle>
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Badge className={getStatusColor(project.status)}>
+                              {project.status.replace('_', ' ')}
+                            </Badge>
+                            <Badge variant="outline">
+                              {project.visibility}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent>
+                      {project.description && (
+                        <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+                          {project.description}
+                        </p>
+                      )}
+                      
+                      <div className="space-y-3">
+                        {(project.city || project.country) && (
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4 mr-2" />
+                            {[project.city, project.country].filter(Boolean).join(', ')}
+                          </div>
+                        )}
+                        
+                        {project.collab_roles.length > 0 && (
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Users className="h-4 w-4 mr-2" />
+                            {project.collab_roles.length} role{project.collab_roles.length !== 1 ? 's' : ''} needed
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <span className="text-xs text-muted-foreground">
+                          Created {formatDate(project.created_at)}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="invited" className="space-y-6">
+            <InvitationsList />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
