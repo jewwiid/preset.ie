@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Send, User, Clock, AlertCircle } from 'lucide-react';
+import { MessageCircle, Send, User, Clock, AlertCircle, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthToken } from '@/lib/auth-utils';
 
@@ -35,6 +35,14 @@ interface Message {
   read_at?: string;
 }
 
+interface SharedContact {
+  contact_type: 'phone' | 'email';
+  contact_value: string;
+  sharer_name: string;
+  sharer_handle: string;
+  shared_at: string;
+}
+
 export default function MarketplaceMessaging({
   listingId,
   recipientId,
@@ -46,6 +54,7 @@ export default function MarketplaceMessaging({
   compact = false
 }: MarketplaceMessagingProps) {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [sharedContacts, setSharedContacts] = useState<SharedContact[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -53,6 +62,7 @@ export default function MarketplaceMessaging({
 
   useEffect(() => {
     fetchMessages();
+    fetchSharedContacts();
   }, [listingId]);
 
   const fetchMessages = async () => {
@@ -119,6 +129,29 @@ export default function MarketplaceMessaging({
     } catch (err) {
       console.error('Error fetching conversation messages:', err);
       setError('An unexpected error occurred');
+    }
+  };
+
+  const fetchSharedContacts = async () => {
+    try {
+      const token = await getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`/api/marketplace/conversations/${listingId}/contacts`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSharedContacts(data.data || []);
+      } else {
+        console.error('Failed to fetch shared contacts:', data.error);
+      }
+    } catch (err) {
+      console.error('Error fetching shared contacts:', err);
     }
   };
 
@@ -328,6 +361,40 @@ export default function MarketplaceMessaging({
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Shared Contact Details */}
+        {sharedContacts.length > 0 && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="flex items-center space-x-2 mb-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                Contact Details Shared
+              </span>
+            </div>
+            <div className="space-y-2">
+              {sharedContacts.map((contact, index) => (
+                <div key={index} className="flex items-center space-x-3 text-sm">
+                  {contact.contact_type === 'phone' ? (
+                    <Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  ) : (
+                    <Mail className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  )}
+                  <div className="flex-1">
+                    <span className="font-medium text-blue-800 dark:text-blue-200">
+                      {contact.contact_value}
+                    </span>
+                    <span className="text-blue-600 dark:text-blue-400 ml-2">
+                      ({contact.contact_type})
+                    </span>
+                  </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400">
+                    by {contact.sharer_name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Messages */}
         <div className="h-64 overflow-y-auto border border-border-200 rounded-lg p-4 space-y-3">
           {loading ? (

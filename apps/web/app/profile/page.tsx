@@ -22,7 +22,10 @@ import {
   Star,
   CheckCircle,
   Settings,
-  Edit
+  Edit,
+  Phone,
+  Mail,
+  Shield
 } from 'lucide-react'
 
 interface PublicProfile {
@@ -48,6 +51,12 @@ interface PublicProfile {
   languages?: string[];
   portfolio_url?: string;
   website_url?: string;
+  
+  // Contact information
+  phone_number?: string;
+  email?: string;
+  phone_public?: boolean;
+  email_public?: boolean;
   instagram_handle?: string;
   tiktok_handle?: string;
   hourly_rate_min?: number;
@@ -447,6 +456,85 @@ export default function ProfilePage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Contact Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <Shield className="h-5 w-5 mr-2" />
+                  Contact Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Phone Number */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Phone Number</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-muted-foreground">
+                        {profile.phone_public ? 'Public' : 'Private'}
+                      </span>
+                      <Badge variant={profile.phone_public ? 'default' : 'secondary'} className="text-xs">
+                        {profile.phone_public ? 'Shareable' : 'Private'}
+                      </Badge>
+                    </div>
+                  </div>
+                  {profile.phone_number ? (
+                    <div className="text-sm text-muted-foreground">
+                      {profile.phone_public ? profile.phone_number : '••••••••••'}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      No phone number provided
+                    </div>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Email Address</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-muted-foreground">
+                        {profile.email_public ? 'Public' : 'Private'}
+                      </span>
+                      <Badge variant={profile.email_public ? 'default' : 'secondary'} className="text-xs">
+                        {profile.email_public ? 'Shareable' : 'Private'}
+                      </Badge>
+                    </div>
+                  </div>
+                  {profile.email ? (
+                    <div className="text-sm text-muted-foreground">
+                      {profile.email_public ? profile.email : '••••••••••'}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      No email address provided
+                    </div>
+                  )}
+                </div>
+
+                {/* Privacy Note */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <div className="flex items-start space-x-2">
+                    <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="text-xs text-blue-800 dark:text-blue-200">
+                      <p className="font-medium mb-1">Privacy Settings</p>
+                      <p>
+                        When you select "phone" or "email" as your preferred contact method in offers, 
+                        your contact details will only be shared if they are marked as "Shareable" above.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Member since */}
             <Card>

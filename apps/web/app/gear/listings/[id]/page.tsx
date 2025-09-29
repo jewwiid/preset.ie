@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MapPin, Calendar, Euro, Star, Shield, User, MessageCircle, Heart, Share2 } from 'lucide-react';
+import { MapPin, Calendar, Euro, Star, Shield, User, MessageCircle, Heart, Share2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import MarketplaceMessaging from '@/components/marketplace/MarketplaceMessaging';
 import SafetyFeatures from '@/components/marketplace/SafetyFeatures';
@@ -227,6 +227,43 @@ export default function ListingDetailPage() {
     } catch (err) {
       console.error('Error submitting comment:', err);
       toast.error('Failed to post comment');
+    }
+  };
+
+  const cancelOffer = async (offerId: string) => {
+    if (!currentUser || !isOwner()) return;
+    
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      if (!supabase) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) return;
+      
+      const response = await fetch(`/api/marketplace/offers/${offerId}/action`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          offerId: offerId,
+          action: 'cancel'
+        })
+      });
+      
+      if (response.ok) {
+        fetchAcceptedOffers(); // Refresh offers
+        toast.success('Offer canceled successfully!');
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to cancel offer');
+      }
+    } catch (err) {
+      console.error('Error canceling offer:', err);
+      toast.error('Failed to cancel offer');
     }
   };
 
@@ -707,9 +744,21 @@ export default function ListingDetailPage() {
                               </p>
                             </div>
                           </div>
-                          <Badge variant="default" className="bg-green-100 text-green-800">
-                            Accepted
-                          </Badge>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="default" className="bg-green-100 text-green-800">
+                              Accepted
+                            </Badge>
+                            {isOwner() && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => cancelOffer(offer.id)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -29,9 +29,9 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    if (!['accept', 'reject'].includes(action)) {
+    if (!['accept', 'reject', 'cancel'].includes(action)) {
       return NextResponse.json({ 
-        error: 'Invalid action. Must be "accept" or "reject"' 
+        error: 'Invalid action. Must be "accept", "reject", or "cancel"' 
       }, { status: 400 });
     }
 
@@ -83,11 +83,21 @@ export async function PUT(request: NextRequest) {
       }, { status: 403 });
     }
 
-    // Check if offer is still pending
-    if (offer.status !== 'pending') {
-      return NextResponse.json({ 
-        error: 'Offer is no longer pending and cannot be modified' 
-      }, { status: 400 });
+    // Check offer status based on action
+    if (action === 'cancel') {
+      // Only allow canceling accepted offers
+      if (offer.status !== 'accepted') {
+        return NextResponse.json({ 
+          error: 'Only accepted offers can be canceled' 
+        }, { status: 400 });
+      }
+    } else {
+      // For accept/reject, only allow pending offers
+      if (offer.status !== 'pending') {
+        return NextResponse.json({ 
+          error: 'Offer is no longer pending and cannot be modified' 
+        }, { status: 400 });
+      }
     }
 
     // If accepting, check if there are already accepted offers for this listing
@@ -113,7 +123,16 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update the offer status
-    const newStatus = action === 'accept' ? 'accepted' : 'rejected';
+    let newStatus: string;
+    if (action === 'accept') {
+      newStatus = 'accepted';
+    } else if (action === 'reject') {
+      newStatus = 'rejected';
+    } else if (action === 'cancel') {
+      newStatus = 'withdrawn'; // Use 'withdrawn' status for canceled accepted offers
+    } else {
+      newStatus = 'pending'; // fallback
+    }
     const { data: updatedOffer, error: updateError } = await supabase
       .from('offers')
       .update({ 
@@ -131,8 +150,87 @@ export async function PUT(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // If canceling an accepted offer, check for and cancel any associated sale orders
+    if (action === 'cancel' && offer.status === 'accepted') {
+      try {
+        // Check if there are any sale orders for this offer
+        const { data: saleOrders, error: saleOrderError } = await supabase
+          .from('sale_orders')
+          .select('id, status')
+          .eq('listing_id', offer.listing_id)
+          .eq('buyer_id', offer.offerer_id)
+          .in('status', ['placed', 'confirmed']);
+
+        if (!saleOrderError && saleOrders && saleOrders.length > 0) {
+          // Cancel any active sale orders
+          for (const saleOrder of saleOrders) {
+            await supabase
+              .from('sale_orders')
+              .update({ 
+                status: 'cancelled',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', saleOrder.id);
+          }
+        }
+      } catch (cancelError) {
+        console.error('Error canceling associated sale orders:', cancelError);
+        // Don't fail the offer cancellation if sale order cancellation fails
+      }
+    }
+
     // TODO: Send notification to offerer
     // TODO: Create sale transaction if accepted
+
+    // If offer was accepted, share contact details based on preference
+    if (action === 'accept' && offer.contact_preference !== 'message') {
+      try {
+        // Get offerer's profile with contact details
+        const { data: offererProfile, error: offererError } = await supabase
+          .from('users_profile')
+          .select('id, phone_number, email, phone_public, email_public, display_name, handle')
+          .eq('id', offer.offerer_id)
+          .single();
+
+        if (offererError || !offererProfile) {
+          console.error('Error fetching offerer profile:', offererError);
+        } else {
+          // Share contact details based on preference and privacy settings
+          if (offer.contact_preference === 'phone' && 
+              offererProfile.phone_number && 
+              offererProfile.phone_public) {
+            
+            await supabase.rpc('share_contact_details', {
+              p_conversation_id: offer.listing_id,
+              p_conversation_type: 'listing',
+              p_offer_id: offerId,
+              p_sharer_id: offer.offerer_id,
+              p_recipient_id: userProfile.id,
+              p_contact_type: 'phone',
+              p_contact_value: offererProfile.phone_number
+            });
+          }
+          
+          if (offer.contact_preference === 'email' && 
+              offererProfile.email && 
+              offererProfile.email_public) {
+            
+            await supabase.rpc('share_contact_details', {
+              p_conversation_id: offer.listing_id,
+              p_conversation_type: 'listing',
+              p_offer_id: offerId,
+              p_sharer_id: offer.offerer_id,
+              p_recipient_id: userProfile.id,
+              p_contact_type: 'email',
+              p_contact_value: offererProfile.email
+            });
+          }
+        }
+      } catch (contactError) {
+        console.error('Error sharing contact details:', contactError);
+        // Don't fail the offer acceptance if contact sharing fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -17,10 +17,12 @@ import {
   DollarSign,
   User,
   Package,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../../lib/auth-context';
 import { supabase } from '../../../lib/supabase';
+import { toast } from 'sonner';
 
 interface Offer {
   id: string;
@@ -30,7 +32,7 @@ interface Offer {
   offer_amount_cents: number;
   message?: string;
   contact_preference?: string;
-  status: 'open' | 'accepted' | 'declined' | 'expired' | 'cancelled';
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn' | 'expired';
   created_at: string;
   updated_at: string;
   listings?: {
@@ -137,6 +139,46 @@ export default function OffersPage() {
       setError('Failed to load offers');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const withdrawOffer = async (offerId: string) => {
+    try {
+      // Check if supabase is available
+      if (!supabase) {
+        toast.error('Database connection not available');
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        toast.error('Please sign in to withdraw offers');
+        return;
+      }
+
+      const response = await fetch(`/api/marketplace/offers/${offerId}/withdraw`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          offerId: offerId
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Offer withdrawn successfully!');
+        fetchOffers(); // Refresh offers
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to withdraw offer');
+      }
+    } catch (err) {
+      console.error('Error withdrawing offer:', err);
+      toast.error('Failed to withdraw offer');
     }
   };
 
@@ -375,7 +417,7 @@ export default function OffersPage() {
                           </div>
                           
                           {/* Status-specific info */}
-                          {offer.status === 'open' && (
+                          {offer.status === 'pending' && (
                             <div className="flex items-center text-sm text-muted-foreground">
                               <Clock className="h-4 w-4 mr-2" />
                               <span>Offer is pending response</span>
@@ -386,6 +428,21 @@ export default function OffersPage() {
                           {offer.message && (
                             <div className="mt-3 p-3 bg-muted rounded-lg">
                               <p className="text-sm text-foreground">{offer.message}</p>
+                            </div>
+                          )}
+
+                          {/* Action Buttons */}
+                          {activeTab === 'sent' && offer.status === 'pending' && (
+                            <div className="mt-4 flex justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => withdrawOffer(offer.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Withdraw Offer
+                              </Button>
                             </div>
                           )}
                         </div>
