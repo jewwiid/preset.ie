@@ -296,7 +296,13 @@ export default function Dashboard() {
           from_user_id,
           to_user_id,
           gig_id,
-          gigs!inner(title),
+          listing_id,
+          rental_order_id,
+          sale_order_id,
+          offer_id,
+          context_type,
+          gigs(title),
+          listings(title),
           from_user:users_profile!messages_from_user_id_fkey(
             id,
             display_name,
@@ -312,14 +318,14 @@ export default function Dashboard() {
         `)
         .or(`from_user_id.eq.${(userProfile as any).id},to_user_id.eq.${(userProfile as any).id}`)
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(10)
 
       if (error) {
         console.error('Error fetching messages:', error)
         return
       }
 
-      // Group messages by conversation (gig_id + other user)
+      // Group messages by conversation (gig_id/listing_id + other user)
       const conversations = {} as any
       
       (messages as any)?.forEach((message: any) => {
@@ -331,13 +337,35 @@ export default function Dashboard() {
           ? message.to_user 
           : message.from_user
 
-        const conversationKey = `${message.gig_id}-${otherUserId}`
+        // Create conversation key based on context type
+        let conversationKey: string
+        let contextTitle: string
+        let contextType: string
+
+        if (message.gig_id) {
+          // Gig conversation
+          conversationKey = `gig-${message.gig_id}-${otherUserId}`
+          contextTitle = Array.isArray(message.gigs) ? message.gigs[0]?.title : (message.gigs as any)?.title || 'Untitled Gig'
+          contextType = 'gig'
+        } else if (message.listing_id) {
+          // Marketplace conversation
+          conversationKey = `marketplace-${message.listing_id}-${otherUserId}`
+          contextTitle = Array.isArray(message.listings) ? message.listings[0]?.title : (message.listings as any)?.title || 'Marketplace Listing'
+          contextType = 'marketplace'
+        } else {
+          // Other conversation types
+          conversationKey = `other-${message.id}-${otherUserId}`
+          contextTitle = 'Conversation'
+          contextType = 'other'
+        }
         
         if (!conversations[conversationKey]) {
           conversations[conversationKey] = {
             id: message.id,
             gig_id: message.gig_id,
-            gig_title: Array.isArray(message.gigs) ? message.gigs[0]?.title : (message.gigs as any)?.title || 'Untitled Gig',
+            listing_id: message.listing_id,
+            context_type: contextType,
+            context_title: contextTitle,
             other_user: otherUser,
             last_message: message.body,
             last_message_time: message.created_at,
@@ -1151,7 +1179,15 @@ export default function Dashboard() {
                         <div 
                           key={conversation.id}
                           className={`p-3 bg-gradient-to-r ${colorClass} rounded-xl border transition-colors cursor-pointer`}
-                          onClick={() => router.push(`/messages?gig=${conversation.gig_id}&user=${conversation.other_user?.id}`)}
+                          onClick={() => {
+                            if (conversation.context_type === 'gig') {
+                              router.push(`/messages?gig=${conversation.gig_id}&user=${conversation.other_user?.id}`)
+                            } else if (conversation.context_type === 'marketplace') {
+                              router.push(`/messages?listing=${conversation.listing_id}&user=${conversation.other_user?.id}`)
+                            } else {
+                              router.push('/messages')
+                            }
+                          }}
                         >
                           <div className="flex items-start gap-3">
                             <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
@@ -1175,7 +1211,10 @@ export default function Dashboard() {
                                 </span>
                               </div>
                               <p className="text-xs text-primary truncate mb-1">
-                                {conversation.gig_title}
+                                {conversation.context_title}
+                                {conversation.context_type === 'marketplace' && (
+                                  <span className="ml-1 px-1 py-0.5 bg-primary/20 text-primary text-xs rounded">Marketplace</span>
+                                )}
                               </p>
                               <p className="text-xs text-primary truncate">
                                 {conversation.is_from_me ? 'You: ' : ''}{conversation.last_message}
