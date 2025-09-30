@@ -229,12 +229,12 @@ export default function ReviewPublishStep({
     <div className="space-y-6">
       {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="bg-primary-500/10 border border-primary-500/20 rounded-lg p-4">
+        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
               <h3 className="text-sm font-medium text-primary mb-2">Important Notes:</h3>
-              <ul className="text-sm text-primary-600/80 dark:text-primary-400/80 space-y-1">
+              <ul className="text-sm text-primary/80 space-y-1">
                 {warnings.map((warning, index) => (
                   <li key={index}>• {warning}</li>
                 ))}
@@ -356,8 +356,8 @@ export default function ReviewPublishStep({
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      purpose === 'COMMERCIAL' ? 'bg-primary-500/10 text-primary' :
-                      purpose === 'PORTFOLIO' ? 'bg-primary-500/10 text-primary' :
+                      purpose === 'COMMERCIAL' ? 'bg-primary/10 text-primary' :
+                      purpose === 'PORTFOLIO' ? 'bg-primary/10 text-primary' :
                       purpose === 'FASHION' ? 'bg-primary/10 text-primary' :
                       purpose === 'BEAUTY' ? 'bg-primary/10 text-primary' :
                       'bg-muted text-muted-foreground'
@@ -366,7 +366,7 @@ export default function ReviewPublishStep({
                     </span>
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                       compType === 'PAID' ? 'bg-primary/10 text-primary' :
-                      compType === 'TFP' ? 'bg-primary-500/10 text-primary' :
+                      compType === 'TFP' ? 'bg-primary/10 text-primary' :
                       'bg-muted text-muted-foreground'
                     }`}>
                       {formatCompType(compType)}
@@ -409,7 +409,7 @@ export default function ReviewPublishStep({
                     <div><span className="font-medium text-foreground">Safety Notes:</span> {safetyNotes}</div>
                   )}
                   {applicationCount > 0 && (
-                      <div className="text-primary text-xs bg-primary-500/10 px-2 py-1 rounded">
+                      <div className="text-primary text-xs bg-primary/10 px-2 py-1 rounded">
                       <span className="font-medium">Current: {applicationCount} applications</span>
                     </div>
                   )}

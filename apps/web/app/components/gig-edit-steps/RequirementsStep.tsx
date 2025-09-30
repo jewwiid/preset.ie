@@ -231,12 +231,12 @@ export default function RequirementsStep({
           
           {/* Application Count Warning */}
           {applicationCount > 0 && (
-            <div className="mt-2 p-3 bg-primary-500/10 border border-primary-500/20 rounded-lg">
+            <div className="mt-2 p-3 bg-primary/10 border border-primary/20 rounded-lg">
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                 <div className="text-sm">
                   <p className="text-primary font-medium">Current applications: {applicationCount}</p>
-                  <p className="text-primary-600/80 dark:text-primary-400/80">
+                  <p className="text-primary/80">
                     {maxApplicants < applicationCount 
                       ? `Warning: You have more applications (${applicationCount}) than your new limit (${maxApplicants}). Existing applications won't be removed.`
                       : `You can accept ${maxApplicants - applicationCount} more applications.`

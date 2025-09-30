@@ -141,8 +141,8 @@ export default function EnhancedListingCard({
         {/* Listing Image */}
         <div className="aspect-square relative bg-muted-100">
           <img
-            src={listing.images[0]?.url || '/placeholder-image.jpg'}
-            alt={listing.images[0]?.alt_text || listing.title}
+            src={listing.images?.[0]?.url || '/placeholder-image.jpg'}
+            alt={listing.images?.[0]?.alt_text || listing.title}
             className="w-full h-full object-cover"
           />
           

@@ -52,7 +52,7 @@ export default function AuthGuard({
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
         <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl shadow-xl border border-border">
           <div className="mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
               <Lock className="h-8 w-8 text-primary-foreground" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-2">Access Required</h1>
@@ -63,7 +63,7 @@ export default function AuthGuard({
           <div className="space-y-3">
             <Button 
               onClick={() => window.location.href = redirectTo} 
-              className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+              className="w-full bg-primary hover:from-primary/90 hover:to-primary"
             >
               <User className="h-4 w-4 mr-2" />
               Sign In
@@ -94,7 +94,7 @@ export function PlaygroundAuthGuard({ children }: { children: React.ReactNode })
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
           <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl shadow-xl border border-border">
             <div className="mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="h-8 w-8 text-primary-foreground" />
               </div>
               <h1 className="text-2xl font-bold text-foreground mb-2">Playground Access</h1>
@@ -105,7 +105,7 @@ export function PlaygroundAuthGuard({ children }: { children: React.ReactNode })
             <div className="space-y-3">
               <Button 
                 onClick={() => window.location.href = '/auth/signin'} 
-                className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+                className="w-full bg-primary hover:from-primary/90 hover:to-primary"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 Sign In to Playground
@@ -135,7 +135,7 @@ export function DashboardAuthGuard({ children }: { children: React.ReactNode }) 
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
           <div className="text-center max-w-md mx-auto p-8 bg-card rounded-2xl shadow-xl border border-border">
             <div className="mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
                 <User className="h-8 w-8 text-primary-foreground" />
               </div>
               <h1 className="text-2xl font-bold text-foreground mb-2">Dashboard Access</h1>
@@ -146,7 +146,7 @@ export function DashboardAuthGuard({ children }: { children: React.ReactNode }) 
             <div className="space-y-3">
               <Button 
                 onClick={() => window.location.href = '/auth/signin'} 
-                className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+                className="w-full bg-primary hover:from-primary/90 hover:to-primary"
               >
                 <User className="h-4 w-4 mr-2" />
                 Sign In to Dashboard

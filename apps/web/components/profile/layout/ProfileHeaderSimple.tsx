@@ -94,7 +94,7 @@ export function ProfileHeaderSimple() {
   return (
     <div className="relative bg-background dark:bg-muted-800 rounded-xl shadow-lg overflow-hidden mb-6">
       {/* Header Banner */}
-      <div className="relative h-48 bg-gradient-to-r from-primary to-primary/90">
+      <div className="relative h-48 bg-primary">
         {profile?.header_banner_url ? (
           <img
             src={profile.header_banner_url}
@@ -105,7 +105,7 @@ export function ProfileHeaderSimple() {
             }}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-primary to-primary/90" />
+          <div className="w-full h-full bg-primary" />
         )}
         <div className="absolute inset-0 bg-black bg-opacity-20" />
         

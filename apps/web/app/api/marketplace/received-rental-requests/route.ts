@@ -44,12 +44,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    // Fetch rental requests received by this user (for their listings)
+    // Fetch rental requests received by this user
     const { data: rentalRequests, error } = await supabase
       .from('rental_requests')
-      .select(`
-        *,
-        listing:listings (
+      .select('*')
+      .eq('owner_id', userProfile.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching received rental requests:', error);
+      return NextResponse.json({ error: 'Failed to fetch received rental requests', details: error.message }, { status: 500 });
+    }
+
+    // Fetch related data separately if we have rental requests
+    if (rentalRequests && rentalRequests.length > 0) {
+      // Get listing IDs and user IDs
+      const listingIds = [...new Set(rentalRequests.map(r => r.listing_id))];
+      const requesterIds = [...new Set(rentalRequests.map(r => r.requester_id))];
+
+      // Fetch listings with images
+      const { data: listings } = await supabase
+        .from('listings')
+        .select(`
           id,
           title,
           category,
@@ -58,20 +74,24 @@ export async function GET(request: NextRequest) {
             url,
             alt_text
           )
-        ),
-        requester:users_profile (
-          id,
-          display_name,
-          handle,
-          avatar_url
-        )
-      `)
-      .eq('owner_id', userProfile.id)
-      .order('created_at', { ascending: false });
+        `)
+        .in('id', listingIds);
 
-    if (error) {
-      console.error('Error fetching received rental requests:', error);
-      return NextResponse.json({ error: 'Failed to fetch received rental requests' }, { status: 500 });
+      // Fetch requester profiles
+      const { data: requesters } = await supabase
+        .from('users_profile')
+        .select('id, display_name, handle, avatar_url')
+        .in('id', requesterIds);
+
+      // Create maps for easy lookup
+      const listingsMap = new Map(listings?.map(l => [l.id, l]) || []);
+      const requestersMap = new Map(requesters?.map(r => [r.id, r]) || []);
+
+      // Map data to rental requests
+      rentalRequests.forEach(request => {
+        request.listing = listingsMap.get(request.listing_id);
+        request.requester = requestersMap.get(request.requester_id);
+      });
     }
 
     return NextResponse.json({

@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react'
 import { useProfileSettings, useProfileEditing, useProfile } from '../context/ProfileContext'
-import { ToggleSwitch, RangeField } from '../common/FormField'
 import { ValidationMessage } from '../common/ValidationMessage'
-import { Settings, Bell, Eye, Lock, Globe, Shield } from 'lucide-react'
+import { Settings, Bell, Eye, Shield } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../lib/auth-context'
+import { Switch } from '../../ui/switch'
+import { Slider } from '../../ui/slider'
+import { Label } from '../../ui/label'
 
 export function SettingsPanel() {
   const { user } = useAuth()
@@ -152,23 +154,53 @@ export function SettingsPanel() {
         </h3>
         
         <div className="space-y-4">
-          <ToggleSwitch
-            label="Email Notifications"
-            checked={formSettings.email_notifications}
-            onChange={(checked) => handleSettingsChange('email_notifications', checked)}
-          />
+          <div className="flex items-center justify-between py-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="email-notifications" className="text-sm font-medium">
+                Email Notifications
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Receive notifications via email
+              </p>
+            </div>
+            <Switch
+              id="email-notifications"
+              checked={formSettings.email_notifications}
+              onCheckedChange={(checked) => handleSettingsChange('email_notifications', checked)}
+            />
+          </div>
           
-          <ToggleSwitch
-            label="Push Notifications"
-            checked={formSettings.push_notifications}
-            onChange={(checked) => handleSettingsChange('push_notifications', checked)}
-          />
+          <div className="flex items-center justify-between py-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="push-notifications" className="text-sm font-medium">
+                Push Notifications
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Receive push notifications
+              </p>
+            </div>
+            <Switch
+              id="push-notifications"
+              checked={formSettings.push_notifications}
+              onCheckedChange={(checked) => handleSettingsChange('push_notifications', checked)}
+            />
+          </div>
           
-          <ToggleSwitch
-            label="Marketing Emails"
-            checked={formSettings.marketing_emails}
-            onChange={(checked) => handleSettingsChange('marketing_emails', checked)}
-          />
+          <div className="flex items-center justify-between py-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="marketing-emails" className="text-sm font-medium">
+                Marketing Emails
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Receive promotional content and updates
+              </p>
+            </div>
+            <Switch
+              id="marketing-emails"
+              checked={formSettings.marketing_emails}
+              onCheckedChange={(checked) => handleSettingsChange('marketing_emails', checked)}
+            />
+          </div>
         </div>
       </div>
 
@@ -180,17 +212,37 @@ export function SettingsPanel() {
         </h3>
         
         <div className="space-y-4">
-          <ToggleSwitch
-            label="Location Visibility"
-            checked={formSettings.location_visibility}
-            onChange={(checked) => handleSettingsChange('location_visibility', checked)}
-          />
+          <div className="flex items-center justify-between py-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="location-visibility" className="text-sm font-medium">
+                Location Visibility
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Allow others to see your location
+              </p>
+            </div>
+            <Switch
+              id="location-visibility"
+              checked={formSettings.location_visibility}
+              onCheckedChange={(checked) => handleSettingsChange('location_visibility', checked)}
+            />
+          </div>
           
-          <ToggleSwitch
-            label="Profile Visibility"
-            checked={formSettings.profile_visibility}
-            onChange={(checked) => handleSettingsChange('profile_visibility', checked)}
-          />
+          <div className="flex items-center justify-between py-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="profile-visibility" className="text-sm font-medium">
+                Profile Visibility
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Make your profile visible to others
+              </p>
+            </div>
+            <Switch
+              id="profile-visibility"
+              checked={formSettings.profile_visibility}
+              onCheckedChange={(checked) => handleSettingsChange('profile_visibility', checked)}
+            />
+          </div>
         </div>
       </div>
 
@@ -201,22 +253,36 @@ export function SettingsPanel() {
           Notification Preferences
         </h3>
         
-        <div className="space-y-4">
-          <RangeField
-            label="Location Radius (km)"
-            value={formNotificationPrefs.location_radius}
-            onChange={(value) => handleNotificationPrefsChange('location_radius', parseInt(value))}
-            min={5}
-            max={100}
-            step={5}
-          />
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="location-radius" className="text-sm font-medium">
+                Location Radius
+              </Label>
+              <span className="text-sm font-medium text-primary">
+                {formNotificationPrefs.location_radius} km
+              </span>
+            </div>
+            <Slider
+              id="location-radius"
+              value={formNotificationPrefs.location_radius}
+              onValueChange={(value) => handleNotificationPrefsChange('location_radius', Array.isArray(value) ? value[0] : value)}
+              min={5}
+              max={100}
+              step={5}
+            />
+            <p className="text-xs text-muted-foreground">
+              Receive notifications for gigs within this radius
+            </p>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <Label htmlFor="min-budget" className="block text-sm font-medium mb-2">
                 Minimum Budget ($)
-              </label>
+              </Label>
               <input
+                id="min-budget"
                 type="number"
                 value={formNotificationPrefs.min_budget || ''}
                 onChange={(e) => handleNotificationPrefsChange('min_budget', e.target.value ? parseInt(e.target.value) : null)}
@@ -226,10 +292,11 @@ export function SettingsPanel() {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <Label htmlFor="max-budget" className="block text-sm font-medium mb-2">
                 Maximum Budget ($)
-              </label>
+              </Label>
               <input
+                id="max-budget"
                 type="number"
                 value={formNotificationPrefs.max_budget || ''}
                 onChange={(e) => handleNotificationPrefsChange('max_budget', e.target.value ? parseInt(e.target.value) : null)}

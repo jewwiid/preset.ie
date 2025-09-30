@@ -517,18 +517,19 @@ export default function CreateGigPage() {
                   We found unsaved changes from a previous session. Would you like to restore them?
                 </p>
                 <div className="mt-3 flex gap-2">
-                  <button
+                  <Button
                     onClick={restoreUnsavedData}
-                    className="text-sm bg-primary text-primary-foreground px-3 py-1 rounded hover:bg-primary/90"
+                    size="sm"
                   >
                     Restore Changes
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={clearUnsavedData}
-                    className="text-sm text-primary hover:text-primary/80"
+                    variant="ghost"
+                    size="sm"
                   >
                     Start Fresh
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

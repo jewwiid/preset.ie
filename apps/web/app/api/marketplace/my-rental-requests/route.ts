@@ -47,9 +47,25 @@ export async function GET(request: NextRequest) {
     // Fetch rental requests for this user
     const { data: rentalRequests, error } = await supabase
       .from('rental_requests')
-      .select(`
-        *,
-        listing:listings (
+      .select('*')
+      .eq('requester_id', userProfile.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching rental requests:', error);
+      return NextResponse.json({ error: 'Failed to fetch rental requests', details: error.message }, { status: 500 });
+    }
+
+    // Fetch related data separately if we have rental requests
+    if (rentalRequests && rentalRequests.length > 0) {
+      // Get listing IDs and user IDs
+      const listingIds = [...new Set(rentalRequests.map(r => r.listing_id))];
+      const ownerIds = [...new Set(rentalRequests.map(r => r.owner_id))];
+
+      // Fetch listings with images
+      const { data: listings } = await supabase
+        .from('listings')
+        .select(`
           id,
           title,
           category,
@@ -58,20 +74,24 @@ export async function GET(request: NextRequest) {
             url,
             alt_text
           )
-        ),
-        owner:users_profile (
-          id,
-          display_name,
-          handle,
-          avatar_url
-        )
-      `)
-      .eq('requester_id', userProfile.id)
-      .order('created_at', { ascending: false });
+        `)
+        .in('id', listingIds);
 
-    if (error) {
-      console.error('Error fetching rental requests:', error);
-      return NextResponse.json({ error: 'Failed to fetch rental requests' }, { status: 500 });
+      // Fetch owner profiles
+      const { data: owners } = await supabase
+        .from('users_profile')
+        .select('id, display_name, handle, avatar_url')
+        .in('id', ownerIds);
+
+      // Create maps for easy lookup
+      const listingsMap = new Map(listings?.map(l => [l.id, l]) || []);
+      const ownersMap = new Map(owners?.map(o => [o.id, o]) || []);
+
+      // Map data to rental requests
+      rentalRequests.forEach(request => {
+        request.listing = listingsMap.get(request.listing_id);
+        request.owner = ownersMap.get(request.owner_id);
+      });
     }
 
     return NextResponse.json({

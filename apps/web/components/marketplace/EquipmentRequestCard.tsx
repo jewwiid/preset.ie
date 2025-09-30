@@ -62,7 +62,7 @@ export default function EquipmentRequestCard({ request, showActions = true }: Eq
       case 'buy':
         return <Badge variant="outline">Purchase Request</Badge>;
       case 'both':
-        return <Badge className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">Rent or Buy</Badge>;
+        return <Badge className="bg-primary text-primary-foreground">Rent or Buy</Badge>;
       default:
         return null;
     }

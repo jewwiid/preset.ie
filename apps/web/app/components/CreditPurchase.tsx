@@ -324,7 +324,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     className="w-16 h-16 rounded-full object-cover border-2 border-primary/20 shadow-lg"
                   />
                 ) : (
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center border-2 border-primary/20 shadow-lg">
+                  <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center border-2 border-primary/20 shadow-lg">
                     <span className="text-primary-foreground font-bold text-xl">
                       {userProfile.display_name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
@@ -415,7 +415,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
             {/* Available Credits Card */}
             <div className="bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl p-4 border border-primary/20 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] min-w-[120px]">
               <div className="flex flex-col items-center text-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mb-2 shadow-lg">
+                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center mb-2 shadow-lg">
                   <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                   </svg>
@@ -428,7 +428,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
             {/* Usage Tracking Card */}
             <div className="bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl p-4 border border-primary/20 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] min-w-[120px]">
               <div className="flex flex-col items-center text-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-full flex items-center justify-center mb-2 shadow-lg">
+                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center mb-2 shadow-lg">
                   <svg className="w-5 h-5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
@@ -546,9 +546,9 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
               onClick={() => window.location.href = '/subscription'}
               className={`group relative inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md ${
                 creditInfo.subscriptionTier === 'PRO' 
-                  ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary' 
+                  ? 'bg-primary text-primary-foreground hover:from-primary/90 hover:to-primary' 
                   : creditInfo.subscriptionTier === 'PLUS'
-                    ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary'
+                    ? 'bg-primary text-primary-foreground hover:from-primary/90 hover:to-primary'
                     : 'bg-gradient-to-r from-muted to-muted/80 text-muted-foreground hover:from-muted/80 hover:to-muted'
               }`}
             >
@@ -676,7 +676,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
             {(!creditInfo.lootboxPackages || creditInfo.lootboxPackages.length === 0) && (
               <div className="relative rounded-lg border-2 p-6 flex flex-col h-full border-border-200 hover:border-border-300">
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold shadow-md bg-gradient-to-r from-primary to-primary/90 text-primary-foreground">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold shadow-md bg-primary text-primary-foreground">
                     🎁 LOOTBOX
                   </span>
                 </div>
@@ -731,7 +731,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-md ${
                     pkg.available 
-                      ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground' 
+                      ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted text-muted-foreground'
                   }`}>
                     🎁 LOOTBOX
@@ -764,7 +764,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     <div className="mt-2">
                       <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold shadow-md ${
                         pkg.available
-                          ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground'
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-muted-300 text-muted-foreground-600'
                       }`}>
                         💰 Save {pkg.savings_percentage}%
@@ -779,7 +779,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   disabled={purchasing !== null || !pkg.available}
                   className={`w-full py-2 px-4 rounded-md font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-md ${
                     pkg.available
-                      ? 'text-primary-foreground bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
+                      ? 'text-primary-foreground bg-primary hover:from-primary/90 hover:to-primary'
                       : 'text-muted-foreground-400 bg-muted-200 cursor-not-allowed'
                   } disabled:opacity-50`}
                 >
@@ -830,7 +830,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
       {/* How Credits Work Section */}
       <div className="mt-8 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl border border-primary/20 p-6 shadow-sm">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <svg className="w-4 h-4 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

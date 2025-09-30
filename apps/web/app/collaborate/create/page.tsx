@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, ArrowLeft, ArrowRight, Check, Users } from 'lucide-react';
@@ -396,7 +397,7 @@ function CreateProjectPageContent() {
             </div>
 
             {roles.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <p>No roles added yet. Click "Add Role" to get started.</p>
               </div>
             ) : (
@@ -457,11 +458,10 @@ function CreateProjectPageContent() {
                           />
                         </div>
                         <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
+                          <Switch
                             id={`paid-${index}`}
                             checked={role.is_paid}
-                            onChange={(e) => updateRole(index, 'is_paid', e.target.checked)}
+                            onCheckedChange={(checked) => updateRole(index, 'is_paid', checked)}
                           />
                           <Label htmlFor={`paid-${index}`}>This role is paid</Label>
                         </div>
@@ -497,7 +497,7 @@ function CreateProjectPageContent() {
             </div>
 
             {gearRequests.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <p>No equipment requests added yet. Click "Add Equipment Request" to get started.</p>
               </div>
             ) : (
@@ -555,20 +555,18 @@ function CreateProjectPageContent() {
 
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
+                          <Switch
                             id={`borrow-${index}`}
                             checked={request.borrow_preferred}
-                            onChange={(e) => updateGearRequest(index, 'borrow_preferred', e.target.checked)}
+                            onCheckedChange={(checked) => updateGearRequest(index, 'borrow_preferred', checked)}
                           />
                           <Label htmlFor={`borrow-${index}`}>Borrowing preferred</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
+                          <Switch
                             id={`retainer-${index}`}
                             checked={request.retainer_acceptable}
-                            onChange={(e) => updateGearRequest(index, 'retainer_acceptable', e.target.checked)}
+                            onCheckedChange={(checked) => updateGearRequest(index, 'retainer_acceptable', checked)}
                           />
                           <Label htmlFor={`retainer-${index}`}>Retainer acceptable</Label>
                         </div>
@@ -604,14 +602,14 @@ function CreateProjectPageContent() {
                 {projectData.description && (
                   <div>
                     <Label className="font-medium">Description</Label>
-                    <p className="text-muted-foreground-600">{projectData.description}</p>
+                    <p className="text-muted-foreground">{projectData.description}</p>
                   </div>
                 )}
                 
                 {(projectData.city || projectData.country) && (
                   <div>
                     <Label className="font-medium">Location</Label>
-                    <p className="text-muted-foreground-600">
+                    <p className="text-muted-foreground">
                       {[projectData.city, projectData.country].filter(Boolean).join(', ')}
                     </p>
                   </div>
@@ -620,7 +618,7 @@ function CreateProjectPageContent() {
                 {(projectData.start_date || projectData.end_date) && (
                   <div>
                     <Label className="font-medium">Dates</Label>
-                    <p className="text-muted-foreground-600">
+                    <p className="text-muted-foreground">
                       {projectData.start_date && format(new Date(projectData.start_date), "PPP")}
                       {projectData.start_date && projectData.end_date && ' - '}
                       {projectData.end_date && format(new Date(projectData.end_date), "PPP")}
@@ -630,7 +628,7 @@ function CreateProjectPageContent() {
                 
                 <div>
                   <Label className="font-medium">Visibility</Label>
-                  <p className="text-muted-foreground-600 capitalize">{projectData.visibility.replace('_', ' ')}</p>
+                  <p className="text-muted-foreground capitalize">{projectData.visibility.replace('_', ' ')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -643,16 +641,16 @@ function CreateProjectPageContent() {
                 <CardContent>
                   <div className="space-y-2">
                     {roles.map((role, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-muted-50 rounded">
+                      <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
                         <div>
                           <span className="font-medium">{role.role_name}</span>
                           {role.skills_required.length > 0 && (
-                            <span className="text-sm text-muted-foreground-500 ml-2">
+                            <span className="text-sm text-muted-foreground ml-2">
                               ({role.skills_required.join(', ')})
                             </span>
                           )}
                         </div>
-                        <span className="text-sm text-muted-foreground-500">
+                        <span className="text-sm text-muted-foreground">
                           {role.headcount} position{role.headcount !== 1 ? 's' : ''}
                           {role.is_paid && ' • Paid'}
                         </span>
@@ -671,16 +669,16 @@ function CreateProjectPageContent() {
                 <CardContent>
                   <div className="space-y-2">
                     {gearRequests.map((request, index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-muted-50 rounded">
+                      <div key={index} className="flex justify-between items-center p-2 bg-muted rounded">
                         <div>
                           <span className="font-medium">{request.category}</span>
                           {request.equipment_spec && (
-                            <span className="text-sm text-muted-foreground-500 ml-2">
+                            <span className="text-sm text-muted-foreground ml-2">
                               ({request.equipment_spec})
                             </span>
                           )}
                         </div>
-                        <span className="text-sm text-muted-foreground-500">
+                        <span className="text-sm text-muted-foreground">
                           {request.quantity} item{request.quantity !== 1 ? 's' : ''}
                           {request.max_daily_rate_cents && ` • Max €${(request.max_daily_rate_cents / 100).toFixed(2)}/day`}
                         </span>
@@ -732,23 +730,23 @@ function CreateProjectPageContent() {
                 <div key={step.id} className="flex items-center">
                   <div className={cn(
                     "flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium",
-                    isActive ? "bg-primary-600 text-primary-foreground" : 
-                    isCompleted ? "bg-primary-600 text-primary-foreground" : 
-                    "bg-muted-200 text-muted-foreground-600"
+                    isActive ? "bg-primary text-primary-foreground" : 
+                    isCompleted ? "bg-primary text-primary-foreground" : 
+                    "bg-muted text-muted-foreground"
                   )}>
                     {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
                   </div>
                   <div className="ml-3">
                     <p className={cn(
                       "text-sm font-medium",
-                      isActive ? "text-primary-600" : "text-muted-foreground-500"
+                      isActive ? "text-primary" : "text-muted-foreground"
                     )}>
                       {step.title}
                     </p>
-                    <p className="text-xs text-muted-foreground-400">{step.description}</p>
+                    <p className="text-xs text-muted-foreground">{step.description}</p>
                   </div>
                   {index < steps.length - 1 && (
-                    <div className="flex-1 h-px bg-muted-200 mx-4" />
+                    <div className="flex-1 h-px bg-muted mx-4" />
                   )}
                 </div>
               );
@@ -772,8 +770,8 @@ function CreateProjectPageContent() {
             )}
 
             {error && (
-              <div className="mb-6 p-4 bg-destructive-50 border border-destructive-200 rounded-md">
-                <p className="text-destructive-600">{error}</p>
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-md">
+                <p className="text-destructive">{error}</p>
               </div>
             )}
             

@@ -582,11 +582,11 @@ function CreateTreatmentPageContent() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
+      <div className="min-h-screen bg-muted flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-4">Sign In Required</h2>
-            <p className="text-muted-foreground-600 mb-4">Please sign in to create treatments.</p>
+            <p className="text-muted-foreground mb-4">Please sign in to create treatments.</p>
             <Button onClick={() => router.push('/auth/signin')}>
               Sign In
             </Button>
@@ -685,7 +685,7 @@ function CreateTreatmentPageContent() {
                             <SelectItem key={key} value={key}>
                               <div>
                                 <div className="font-medium">{theme.label}</div>
-                                <div className="text-sm text-muted-foreground-500">{theme.description}</div>
+                                <div className="text-sm text-muted-foreground">{theme.description}</div>
                               </div>
                             </SelectItem>
                           ))}
@@ -698,7 +698,7 @@ function CreateTreatmentPageContent() {
                       <Label>Visual References</Label>
                       <div className="mt-2 space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground-600">
+                          <span className="text-sm text-muted-foreground">
                             {selectedImages.length} image{selectedImages.length !== 1 ? 's' : ''} selected
                           </span>
                           <Button 
@@ -724,7 +724,7 @@ function CreateTreatmentPageContent() {
                                 />
                                 <button
                                   onClick={() => removeSelectedImage(imageUrl)}
-                                  className="absolute -top-2 -right-2 bg-destructive-500 text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="absolute -top-2 -right-2 bg-destructive text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
@@ -735,13 +735,13 @@ function CreateTreatmentPageContent() {
 
                         {/* Image Selector Modal */}
                         {showImageSelector && (
-                          <div className="border rounded-lg p-4 bg-muted-50 max-h-96 overflow-y-auto">
+                          <div className="border rounded-lg p-4 bg-muted max-h-96 overflow-y-auto">
                             <h4 className="font-medium mb-3">Select Images from Your Library</h4>
                             
                             {/* Moodboards */}
                             {imageSources.moodboards.length > 0 && (
                               <div className="mb-4">
-                                <h5 className="text-sm font-medium text-muted-foreground-700 mb-2">Moodboards</h5>
+                                <h5 className="text-sm font-medium text-muted-foreground mb-2">Moodboards</h5>
                                 <div className="space-y-2">
                                   {imageSources.moodboards.map((moodboard) => (
                                     <div key={moodboard.id} className="border rounded p-2">
@@ -753,8 +753,8 @@ function CreateTreatmentPageContent() {
                                             onClick={() => toggleImageSelection(imageUrl)}
                                             className={`relative w-12 h-12 rounded border-2 ${
                                               selectedImages.includes(imageUrl) 
-                                                ? 'border-primary-500 ring-2 ring-primary-primary/30' 
-                                                : 'border-border-200'
+                                                ? 'border-primary ring-2 ring-primary/30' 
+                                                : 'border-border'
                                             }`}
                                           >
                                             <img 
@@ -763,8 +763,8 @@ function CreateTreatmentPageContent() {
                                               className="w-full h-full object-cover rounded"
                                             />
                                             {selectedImages.includes(imageUrl) && (
-                                              <div className="absolute inset-0 bg-primary-500 bg-opacity-20 flex items-center justify-center">
-                                                <div className="w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center">
+                                              <div className="absolute inset-0 bg-primary bg-opacity-20 flex items-center justify-center">
+                                                <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                                                   <div className="w-2 h-2 bg-background rounded-full"></div>
                                                 </div>
                                               </div>
@@ -781,7 +781,7 @@ function CreateTreatmentPageContent() {
                             {/* Media Library */}
                             {imageSources.media.length > 0 && (
                               <div className="mb-4">
-                                <h5 className="text-sm font-medium text-muted-foreground-700 mb-2">Media Library</h5>
+                                <h5 className="text-sm font-medium text-muted-foreground mb-2">Media Library</h5>
                                 <div className="flex flex-wrap gap-2">
                                   {imageSources.media.map((media) => (
                                     <button
@@ -789,8 +789,8 @@ function CreateTreatmentPageContent() {
                                       onClick={() => toggleImageSelection(media.url)}
                                       className={`relative w-12 h-12 rounded border-2 ${
                                         selectedImages.includes(media.url) 
-                                          ? 'border-primary-500 ring-2 ring-primary-primary/30' 
-                                          : 'border-border-200'
+                                          ? 'border-primary ring-2 ring-primary/30' 
+                                          : 'border-border'
                                       }`}
                                     >
                                       <img 
@@ -799,8 +799,8 @@ function CreateTreatmentPageContent() {
                                         className="w-full h-full object-cover rounded"
                                       />
                                       {selectedImages.includes(media.url) && (
-                                        <div className="absolute inset-0 bg-primary-500 bg-opacity-20 flex items-center justify-center">
-                                          <div className="w-4 h-4 bg-primary-500 rounded-full flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-primary bg-opacity-20 flex items-center justify-center">
+                                          <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
                                             <div className="w-2 h-2 bg-background rounded-full"></div>
                                           </div>
                                         </div>
@@ -812,7 +812,7 @@ function CreateTreatmentPageContent() {
                             )}
 
                             {imageSources.moodboards.length === 0 && imageSources.media.length === 0 && (
-                              <p className="text-sm text-muted-foreground-500 text-center py-4">
+                              <p className="text-sm text-muted-foreground text-center py-4">
                                 No images found in your library. Create moodboards or upload media to get started.
                               </p>
                             )}
@@ -827,7 +827,7 @@ function CreateTreatmentPageContent() {
                       <h3 className="font-medium mb-3">Treatment Sections</h3>
                       <div className="space-y-2">
                         {treatmentData.sections.map((section) => (
-                          <div key={section.id} className="flex items-center justify-between p-2 bg-muted-50 rounded">
+                          <div key={section.id} className="flex items-center justify-between p-2 bg-muted rounded">
                             <div className="flex items-center">
                               <span className="text-sm font-medium">{section.heading}</span>
                               {section.required && (
@@ -868,7 +868,7 @@ function CreateTreatmentPageContent() {
                     <Label className="text-base font-medium">Loglines</Label>
                     <div className="space-y-2 mt-2">
                       {treatmentData.loglines.map((logline, index) => (
-                        <div key={index} className="p-3 bg-primary-50 rounded border-l-4 border-primary-400">
+                        <div key={index} className="p-3 bg-primary/10 rounded border-l-4 border-primary">
                           <p className="text-sm">{logline}</p>
                         </div>
                       ))}
@@ -882,7 +882,7 @@ function CreateTreatmentPageContent() {
                     <div className="flex items-center justify-between">
                       <Label className="text-base font-medium">
                         {section.heading}
-                        {section.required && <span className="text-destructive-500 ml-1">*</span>}
+                        {section.required && <span className="text-destructive ml-1">*</span>}
                       </Label>
                       <div className="flex space-x-2">
                         <Button size="sm" variant="outline" onClick={() => addSmartBlock(section.id, 'deliverables')}>
@@ -925,7 +925,7 @@ function CreateTreatmentPageContent() {
                 <div className="bg-background border rounded-lg p-8 min-h-[800px]">
                   <div className="text-center mb-8">
                     <h1 className="text-4xl font-bold mb-4">{treatmentData.title}</h1>
-                    <div className="flex justify-center space-x-4 text-sm text-muted-foreground-600">
+                    <div className="flex justify-center space-x-4 text-sm text-muted-foreground">
                       <span>{TREATMENT_FORMATS[treatmentData.format].label}</span>
                       <span>•</span>
                       <span>{TREATMENT_THEMES[treatmentData.theme].label}</span>
@@ -939,7 +939,7 @@ function CreateTreatmentPageContent() {
                         {section.content ? (
                           <p className="whitespace-pre-wrap">{section.content}</p>
                         ) : (
-                          <p className="text-muted-foreground-400 italic">No content yet...</p>
+                          <p className="text-muted-foreground italic">No content yet...</p>
                         )}
                       </div>
                     </div>

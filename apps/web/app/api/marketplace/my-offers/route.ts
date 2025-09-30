@@ -47,9 +47,25 @@ export async function GET(request: NextRequest) {
     // Fetch offers for this user
     const { data: offers, error } = await supabase
       .from('offers')
-      .select(`
-        *,
-        listing:listings (
+      .select('*')
+      .eq('from_user', userProfile.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching offers:', error);
+      return NextResponse.json({ error: 'Failed to fetch offers', details: error.message }, { status: 500 });
+    }
+
+    // Fetch related data separately if we have offers
+    if (offers && offers.length > 0) {
+      // Get listing IDs and user IDs
+      const listingIds = [...new Set(offers.map(o => o.listing_id))];
+      const ownerIds = [...new Set(offers.map(o => o.to_user))];
+
+      // Fetch listings with images
+      const { data: listings } = await supabase
+        .from('listings')
+        .select(`
           id,
           title,
           category,
@@ -58,20 +74,24 @@ export async function GET(request: NextRequest) {
             url,
             alt_text
           )
-        ),
-        owner:users_profile (
-          id,
-          display_name,
-          handle,
-          avatar_url
-        )
-      `)
-      .eq('offerer_id', userProfile.id)
-      .order('created_at', { ascending: false });
+        `)
+        .in('id', listingIds);
 
-    if (error) {
-      console.error('Error fetching offers:', error);
-      return NextResponse.json({ error: 'Failed to fetch offers' }, { status: 500 });
+      // Fetch owner profiles
+      const { data: owners } = await supabase
+        .from('users_profile')
+        .select('id, display_name, handle, avatar_url')
+        .in('id', ownerIds);
+
+      // Create maps for easy lookup
+      const listingsMap = new Map(listings?.map(l => [l.id, l]) || []);
+      const ownersMap = new Map(owners?.map(o => [o.id, o]) || []);
+
+      // Map data to offers
+      offers.forEach(offer => {
+        offer.listing = listingsMap.get(offer.listing_id);
+        offer.owner = ownersMap.get(offer.to_user);
+      });
     }
 
     return NextResponse.json({

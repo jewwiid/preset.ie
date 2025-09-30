@@ -151,8 +151,8 @@ export default function LocationScheduleStep({
     <div className="bg-card rounded-lg border border-border shadow-sm">
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="bg-primary-100 p-2 rounded-lg">
-            <Calendar className="w-5 h-5 text-primary-600" />
+          <div className="bg-primary/10 p-2 rounded-lg">
+            <Calendar className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-foreground">Schedule & Location</h2>

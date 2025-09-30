@@ -775,7 +775,7 @@ export default function ApplicantPreferencesStep({
                       <div className="space-y-4">
                         <div>
                           <Label className="text-base font-medium flex items-center gap-2">
-                            <Target className="w-4 h-4 text-destructive-500" />
+                            <Target className="w-4 h-4 text-destructive" />
                             Required Specializations
                           </Label>
                           <p className="text-sm text-muted-foreground mt-1">Must have these skills</p>
@@ -809,7 +809,7 @@ export default function ApplicantPreferencesStep({
                       <div className="space-y-4">
                         <div>
                           <Label className="text-base font-medium flex items-center gap-2">
-                            <Heart className="w-4 h-4 text-primary-500" />
+                            <Heart className="w-4 h-4 text-primary" />
                             Preferred Talent Categories
                           </Label>
                           <p className="text-sm text-muted-foreground mt-1">Nice to have these roles</p>

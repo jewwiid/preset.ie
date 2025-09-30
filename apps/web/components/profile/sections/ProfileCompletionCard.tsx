@@ -142,12 +142,12 @@ export function ProfileCompletionCard() {
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'basic': return 'from-primary to-primary/90'
-      case 'professional': return 'from-primary to-primary/90'
-      case 'contact': return 'from-primary to-primary/90'
-      case 'social': return 'from-primary to-primary/90'
-      case 'equipment': return 'from-primary to-primary/90'
-      default: return 'from-primary to-primary/90'
+      case 'basic': return 'bg-primary'
+      case 'professional': return 'bg-primary'
+      case 'contact': return 'bg-primary'
+      case 'social': return 'bg-primary'
+      case 'equipment': return 'bg-primary'
+      default: return 'bg-primary'
     }
   }
 
@@ -185,9 +185,9 @@ export function ProfileCompletionCard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-              isComplete 
-                ? 'bg-gradient-to-br from-primary to-primary/90' 
-                : 'bg-gradient-to-br from-primary to-primary/90'
+              isComplete
+                ? 'bg-primary'
+                : 'bg-primary'
             }`}>
               {isComplete ? (
                 <CheckCircle className="w-6 h-6 text-primary-foreground" />
@@ -240,12 +240,8 @@ export function ProfileCompletionCard() {
             <span className="text-sm font-bold text-foreground">{completion.percentage}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-3">
-            <div 
-              className={`h-3 rounded-full transition-all duration-500 ${
-                isComplete 
-                  ? 'bg-gradient-to-r from-primary to-primary/90' 
-                  : 'bg-gradient-to-r from-primary to-primary/90'
-              }`}
+            <div
+              className="h-3 rounded-full transition-all duration-500 bg-primary"
               style={{ width: `${completion.percentage}%` }}
             />
           </div>
@@ -274,7 +270,7 @@ export function ProfileCompletionCard() {
                       : 'border-border hover:border-border'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 mx-auto bg-gradient-to-br ${colorClass}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 mx-auto ${colorClass}`}>
                     <Icon className="w-4 h-4 text-primary-foreground" />
                   </div>
                   <div className="text-center">
@@ -357,8 +353,8 @@ export function ProfileCompletionCard() {
                     </span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full bg-gradient-to-r ${getCategoryColor(category)}`}
+                    <div
+                      className={`h-2 rounded-full ${getCategoryColor(category)}`}
                       style={{ width: `${progress.percentage}%` }}
                     />
                   </div>

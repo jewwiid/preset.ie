@@ -397,28 +397,28 @@ export function ProfileHeaderEnhanced() {
       name: 'Instagram',
       handle: profile?.instagram_handle,
       icon: Instagram,
-      color: 'from-primary to-primary/90',
+      color: 'bg-primary',
       url: profile?.instagram_handle ? `https://instagram.com/${profile.instagram_handle}` : null
     },
     {
       name: 'TikTok',
       handle: profile?.tiktok_handle,
       icon: ExternalLink,
-      color: 'from-primary to-primary/90',
+      color: 'bg-primary',
       url: profile?.tiktok_handle ? `https://tiktok.com/@${profile.tiktok_handle}` : null
     },
     {
       name: 'Website',
       handle: profile?.website_url,
       icon: ExternalLink,
-      color: 'from-primary to-primary/90',
+      color: 'bg-primary',
       url: profile?.website_url || null
     },
     {
       name: 'Portfolio',
       handle: profile?.portfolio_url,
       icon: Briefcase,
-      color: 'from-primary to-primary/90',
+      color: 'bg-primary',
       url: profile?.portfolio_url || null
     }
   ].filter(link => link.handle && link.url)
@@ -584,9 +584,9 @@ export function ProfileHeaderEnhanced() {
                         href={link.url || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-muted to-muted/80 rounded-lg hover:shadow-md transition-all duration-200 group"
+                        className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg hover:shadow-md transition-all duration-200 group"
                       >
-                        <div className={`w-6 h-6 bg-gradient-to-r ${link.color} rounded-full flex items-center justify-center`}>
+                        <div className={`w-6 h-6 ${link.color} rounded-full flex items-center justify-center`}>
                           <link.icon className="w-3 h-3 text-primary-foreground" />
                         </div>
                         <span className="text-sm font-medium text-foreground">
@@ -628,7 +628,7 @@ export function ProfileHeaderEnhanced() {
             className="w-full flex items-center justify-between p-4 bg-muted rounded-xl hover:bg-accent transition-colors duration-200"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <User className="w-4 h-4 text-primary-foreground" />
               </div>
               <div className="text-left">

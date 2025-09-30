@@ -192,7 +192,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/90 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary">
             <Star className="w-6 h-6 text-primary-foreground" />
           </div>
           <div>
@@ -234,7 +234,7 @@ export function UserRatingDisplay({ userId, compact = false }: UserRatingDisplay
                 <Star className="w-4 h-4 text-primary fill-current" />
                 <div className="flex-1 bg-muted rounded-full h-2">
                   <div 
-                    className="bg-gradient-to-r from-primary to-primary/90 h-2 rounded-full transition-all duration-300"
+                    className="bg-primary"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>

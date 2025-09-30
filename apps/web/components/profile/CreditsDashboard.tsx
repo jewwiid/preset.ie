@@ -269,7 +269,7 @@ export default function CreditsDashboard() {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/10 border-primary/20 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('purchase')}>
+        <Card className="bg-primary/10 border-primary/20 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab('purchase')}>
           <CardContent className="p-6">
             <div className="space-y-4">
               <div className="flex items-center">
@@ -495,7 +495,7 @@ export default function CreditsDashboard() {
       {activeTab === 'purchase' && (
         <div className="space-y-8">
           <Card className="border-0 shadow-xl bg-gradient-to-br from-background to-card">
-            <CardHeader className="bg-gradient-to-r from-primary/10 via-primary/10 to-primary/10 border-b border-border">
+            <CardHeader className="bg-primary/10 border-b border-border">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground bg-clip-text text-transparent mb-2">
@@ -541,7 +541,7 @@ export default function CreditsDashboard() {
                   {packages.map((pkg) => (
                     <Card key={pkg.id} className={`relative group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${(pkg as any).is_popular ? 'ring-2 ring-primary shadow-lg' : 'hover:ring-2 hover:ring-border shadow-md'}`}>
                       {(pkg as any).is_popular && (
-                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-xs px-3 py-1 shadow-lg">
+                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1 shadow-lg">
                           MOST POPULAR
                         </Badge>
                       )}
@@ -550,7 +550,7 @@ export default function CreditsDashboard() {
                         <div className="text-center mb-4">
                           <h3 className="text-lg font-bold text-foreground mb-2">{pkg.name}</h3>
                           <div className="relative">
-                            <div className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/90 bg-clip-text text-transparent mb-1">
+                            <div className="text-3xl font-bold bg-primary bg-clip-text text-transparent mb-1">
                               {pkg.credits}
                             </div>
                             <p className="text-sm text-muted-foreground font-medium">credits</p>
@@ -574,8 +574,8 @@ export default function CreditsDashboard() {
                           disabled={purchasing === pkg.id}
                           className={`w-full h-11 font-semibold transition-all duration-200 shadow-md hover:shadow-lg ${
                             (pkg as any).is_popular 
-                              ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary' 
-                              : 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary'
+                              ? 'bg-primary hover:bg-primary/90' 
+                              : 'bg-primary hover:bg-primary/90'
                           }`}
                         >
                           {purchasing === pkg.id ? (

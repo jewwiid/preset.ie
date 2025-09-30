@@ -86,9 +86,9 @@ export default function MarketplaceLayout({ children }: MarketplaceLayoutProps) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8" aria-label="Marketplace navigation">
             {marketplaceNavItems.map((item) => {
-              const isActive = pathname === item.href || 
-                (item.href !== '/equipment' && pathname?.startsWith(item.href));
-              
+              const isActive = pathname === item.href ||
+                (item.href !== '/gear' && pathname?.startsWith(item.href));
+
               return (
                 <Link
                   key={item.name}

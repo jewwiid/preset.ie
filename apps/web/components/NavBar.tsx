@@ -433,11 +433,11 @@ export function NavBar() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="flex items-center">
+                      <DropdownMenuSubTrigger>
                         <MessageSquare className="mr-2 h-4 w-4" />
                         Requests
                       </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-48 z-50">
+                      <DropdownMenuSubContent className="w-48">
                         <DropdownMenuItem asChild>
                           <Link href="/gear/requests?create=true" className="flex items-center">
                             <Plus className="mr-2 h-4 w-4" />

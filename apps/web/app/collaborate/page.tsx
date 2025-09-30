@@ -286,7 +286,7 @@ function CollaboratePageContent() {
                       <SelectValue placeholder="All countries" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All countries</SelectItem>
+                      <SelectItem value="all">All countries</SelectItem>
                       {COMMON_COUNTRIES.map((country) => (
                         <SelectItem key={country} value={country}>
                           {country}
@@ -305,7 +305,7 @@ function CollaboratePageContent() {
                       <SelectValue placeholder="All roles" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All roles</SelectItem>
+                      <SelectItem value="all">All roles</SelectItem>
                       {ROLE_TYPES.map((role) => (
                         <SelectItem key={role} value={role}>
                           {role}
@@ -324,7 +324,7 @@ function CollaboratePageContent() {
                       <SelectValue placeholder="All gear" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All gear</SelectItem>
+                      <SelectItem value="all">All gear</SelectItem>
                       {GEAR_CATEGORIES.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}

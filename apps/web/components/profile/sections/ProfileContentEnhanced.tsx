@@ -36,6 +36,9 @@ import {
   TrendingUp
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
+import { Input } from '../../ui/input'
+import { Textarea } from '../../ui/textarea'
+import { Button } from '../../ui/button'
 
 export function ProfileContentEnhanced() {
   const { profile } = useProfile()
@@ -189,24 +192,24 @@ export function ProfileContentEnhanced() {
       title: 'Total Gigs',
       value: stats.totalGigs.toString(),
       icon: Briefcase,
-      color: 'from-primary to-primary/90',
-      bgColor: 'from-primary/10 to-primary/20',
+      color: 'bg-primary',
+      bgColor: 'bg-primary/10',
       description: 'Gigs you\'ve posted or applied to'
     },
     {
       title: 'Showcases',
       value: stats.totalShowcases.toString(),
       icon: Camera,
-      color: 'from-primary to-primary/90',
-      bgColor: 'from-primary/10 to-primary/20',
+      color: 'bg-primary',
+      bgColor: 'bg-primary/10',
       description: 'Portfolio showcases created'
     },
     {
       title: 'Rating',
       value: userRating ? userRating.average.toFixed(1) : 'N/A',
       icon: Star,
-      color: 'from-primary to-primary/90',
-      bgColor: 'from-primary/10 to-primary/20',
+      color: 'bg-primary',
+      bgColor: 'bg-primary/10',
       description: userRating ? `Based on ${userRating.total} review${userRating.total !== 1 ? 's' : ''}` : 'No ratings yet'
     }
   ]
@@ -327,17 +330,17 @@ export function ProfileContentEnhanced() {
     if (isEditing && item.editable) {
       return (
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="text"
             defaultValue={item.value}
-            className="flex-1 px-3 py-1 text-sm border border-border rounded-md bg-background text-foreground"
+            className="flex-1"
           />
-          <button className="p-1 text-primary-600 hover:text-primary-700">
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <Save className="w-4 h-4" />
-          </button>
-          <button className="p-1 text-destructive-600 hover:text-destructive-700">
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       )
     }
@@ -352,9 +355,9 @@ export function ProfileContentEnhanced() {
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {overviewCards.map((card, index) => (
-          <div key={index} className={`bg-gradient-to-br ${card.bgColor} rounded-xl p-6 border border-border hover:shadow-lg transition-all duration-200`}>
+          <div key={index} className={`${card.bgColor} rounded-xl p-6 border border-border hover:shadow-lg transition-all duration-200`}>
             <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 bg-gradient-to-br ${card.color} rounded-lg flex items-center justify-center`}>
+              <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center`}>
                 <card.icon className="w-6 h-6 text-primary-foreground" />
               </div>
               <span className="text-2xl font-bold text-foreground">{card.value}</span>
@@ -371,7 +374,7 @@ export function ProfileContentEnhanced() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <Briefcase className="w-5 h-5 text-primary-foreground" />
               </div>
               <CardTitle>Professional Information</CardTitle>
@@ -398,7 +401,7 @@ export function ProfileContentEnhanced() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <Mail className="w-5 h-5 text-primary-foreground" />
               </div>
               <CardTitle>Contact Information</CardTitle>
@@ -425,7 +428,7 @@ export function ProfileContentEnhanced() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <Camera className="w-5 h-5 text-primary-foreground" />
               </div>
               <CardTitle>Equipment & Software</CardTitle>
@@ -453,7 +456,7 @@ export function ProfileContentEnhanced() {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                   <Users className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <CardTitle>Physical Attributes</CardTitle>
@@ -482,7 +485,7 @@ export function ProfileContentEnhanced() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <User className="w-5 h-5 text-primary-foreground" />
             </div>
             <CardTitle>About Me</CardTitle>
@@ -490,10 +493,10 @@ export function ProfileContentEnhanced() {
         </CardHeader>
         <CardContent>
           {isEditing ? (
-            <textarea
+            <Textarea
               defaultValue={profile?.bio || ''}
               placeholder="Tell us about yourself..."
-              className="w-full h-32 px-4 py-3 border border-border rounded-lg bg-background text-foreground resize-none"
+              className="h-32 resize-none"
             />
           ) : (
             <p className="text-foreground leading-relaxed">
@@ -508,7 +511,7 @@ export function ProfileContentEnhanced() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/90 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                 <Target className="w-5 h-5 text-primary-foreground" />
               </div>
               <div className="flex-1">
@@ -533,7 +536,7 @@ export function ProfileContentEnhanced() {
 
           {matchmakingLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               <span className="ml-3 text-muted-foreground">Finding compatible gigs...</span>
             </div>
           ) : compatibleGigs.length > 0 ? (
@@ -559,18 +562,17 @@ export function ProfileContentEnhanced() {
                 Complete your profile to get better matches, or check back later for new opportunities.
               </p>
               <div className="flex items-center justify-center gap-4">
-                <button
+                <Button
                   onClick={() => window.location.href = '/profile?edit=true'}
-                  className="px-4 py-2 bg-primary-600 text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   Complete Profile
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => window.location.href = '/gigs'}
-                  className="px-4 py-2 border border-border text-foreground rounded-lg hover:bg-accent transition-colors"
                 >
                   Browse All Gigs
-                </button>
+                </Button>
               </div>
             </div>
           )}

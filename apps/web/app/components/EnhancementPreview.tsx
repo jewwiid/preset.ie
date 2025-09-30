@@ -115,7 +115,7 @@ export default function EnhancementPreview({
             <div className="w-3/4 max-w-md mb-4">
               <div className="bg-muted-700 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-primary to-primary/90 h-full transition-all duration-1000 ease-out"
+                  className="bg-primary h-full transition-all duration-1000 ease-out"
                   style={{ width: `${progress}%` }}
                 />
               </div>

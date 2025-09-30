@@ -166,7 +166,7 @@ export default function OptimizedMasonryGrid({
                       <Loader2 className="w-10 h-10 text-primary-400 animate-spin mb-2" />
                       <div className="w-24 h-1.5 bg-muted-700 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-gradient-to-r from-primary to-primary/90 transition-all duration-500"
+                          className="h-full bg-primary transition-all duration-500"
                           style={{ width: `${task?.progress || 0}%` }}
                         />
                       </div>
@@ -178,7 +178,7 @@ export default function OptimizedMasonryGrid({
 
               {/* Enhancement badge */}
               {item.enhancement_status === 'completed' && !isEnhancing && (
-                <div className="absolute top-2 left-2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
+                <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1 z-10">
                   <Sparkles className="w-3 h-3" />
                   {item.showing_original ? 'Original' : 'Enhanced'}
                 </div>

@@ -10,6 +10,8 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
+import { Switch } from '../../components/ui/switch'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import { useFeedback } from '../../components/feedback/FeedbackContext'
 import { supabase } from '../../lib/supabase'
 
@@ -267,12 +269,10 @@ export default function SettingsPage() {
                   <Label htmlFor="email-notifications" className="text-base">Email notifications</Label>
                   <p className="text-sm text-muted-foreground">Receive emails about gig applications, bookings, and messages.</p>
                 </div>
-                <input
+                <Switch
                   id="email-notifications"
-                  type="checkbox"
                   checked={settings.email_notifications}
-                  onChange={(e) => setSettings(prev => ({ ...prev, email_notifications: e.target.checked }))}
-                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, email_notifications: checked }))}
                 />
               </div>
 
@@ -281,12 +281,10 @@ export default function SettingsPage() {
                   <Label htmlFor="push-notifications" className="text-base">Push notifications</Label>
                   <p className="text-sm text-muted-foreground">Get notified on your device about important activity.</p>
                 </div>
-                <input
+                <Switch
                   id="push-notifications"
-                  type="checkbox"
                   checked={settings.push_notifications}
-                  onChange={(e) => setSettings(prev => ({ ...prev, push_notifications: e.target.checked }))}
-                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, push_notifications: checked }))}
                 />
               </div>
 
@@ -295,12 +293,10 @@ export default function SettingsPage() {
                   <Label htmlFor="marketing-emails" className="text-base">Marketing emails</Label>
                   <p className="text-sm text-muted-foreground">Receive updates about new features and tips.</p>
                 </div>
-                <input
+                <Switch
                   id="marketing-emails"
-                  type="checkbox"
                   checked={settings.marketing_emails}
-                  onChange={(e) => setSettings(prev => ({ ...prev, marketing_emails: e.target.checked }))}
-                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, marketing_emails: checked }))}
                 />
               </div>
 
@@ -322,16 +318,19 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="profile-visibility" className="text-base">Profile visibility</Label>
-                <select
-                  id="profile-visibility"
+                <Select
                   value={settings.profile_visibility}
-                  onChange={(e) => setSettings(prev => ({ ...prev, profile_visibility: e.target.value }))}
-                  className="w-full p-2 border border-border rounded-md focus:ring-primary focus:border-primary bg-background text-foreground"
+                  onValueChange={(value) => setSettings(prev => ({ ...prev, profile_visibility: value }))}
                 >
-                  <option value="public">Public - Anyone can see your profile</option>
-                  <option value="private">Private - Only you can see your profile</option>
-                  <option value="connections">Connections only - Only people you've worked with</option>
-                </select>
+                  <SelectTrigger id="profile-visibility">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="public">Public - Anyone can see your profile</SelectItem>
+                    <SelectItem value="private">Private - Only you can see your profile</SelectItem>
+                    <SelectItem value="connections">Connections only - Only people you've worked with</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex items-center justify-between">
@@ -339,12 +338,10 @@ export default function SettingsPage() {
                   <Label htmlFor="show-contact" className="text-base">Show contact information</Label>
                   <p className="text-sm text-muted-foreground">Allow others to see your contact details in your profile.</p>
                 </div>
-                <input
+                <Switch
                   id="show-contact"
-                  type="checkbox"
                   checked={settings.show_contact_info}
-                  onChange={(e) => setSettings(prev => ({ ...prev, show_contact_info: e.target.checked }))}
-                  className="h-4 w-4 text-primary focus:ring-primary border-border rounded"
+                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, show_contact_info: checked }))}
                 />
               </div>
 
