@@ -183,7 +183,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update platform image' }, { status: 500 })
     }
 
-    return NextResponse.json({ image })
+    return NextResponse.json({ image }, { status: 200 })
   } catch (error) {
     console.error('Error in platform images PUT API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -228,7 +228,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete platform image' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true }, { status: 200 })
   } catch (error) {
     console.error('Error in platform images DELETE API:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
