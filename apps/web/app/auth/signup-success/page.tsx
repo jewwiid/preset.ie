@@ -22,7 +22,7 @@ function SignupSuccessContent() {
 
   useEffect(() => {
     // Get email from URL params
-    const emailParam = searchParams.get('email')
+    const emailParam = searchParams?.get('email')
     if (emailParam) {
       setEmail(emailParam)
     } else {

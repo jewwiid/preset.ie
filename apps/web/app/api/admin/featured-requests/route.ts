@@ -30,11 +30,6 @@ export async function GET(request: NextRequest) {
           is_featured,
           created_at,
           user_id
-        ),
-        requester:requester_id (
-          id,
-          email,
-          raw_user_meta_data
         )
       `)
       .eq('status', 'pending')
@@ -48,7 +43,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ requests })
+    // Get user details for each request
+    const requestsWithUsers = await Promise.all(
+      requests.map(async (request) => {
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(request.requester_id)
+        
+        return {
+          ...request,
+          requester: userError ? 
+            { id: request.requester_id, email: 'Unknown', raw_user_meta_data: {} } :
+            { 
+              id: userData.user.id, 
+              email: userData.user.email,
+              raw_user_meta_data: userData.user.user_metadata || {}
+            }
+        }
+      })
+    )
+
+    return NextResponse.json({ requests: requestsWithUsers })
 
   } catch (error) {
     console.error('Admin featured requests GET API error:', error)

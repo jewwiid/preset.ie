@@ -10,11 +10,11 @@ import Link from 'next/link';
 function BoostSuccessContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'canceled'>('loading');
-  const sessionId = searchParams.get('session_id');
+  const sessionId = searchParams?.get('session_id');
 
   useEffect(() => {
-    const success = searchParams.get('success');
-    const canceled = searchParams.get('canceled');
+    const success = searchParams?.get('success');
+    const canceled = searchParams?.get('canceled');
 
     if (canceled === 'true') {
       setStatus('canceled');

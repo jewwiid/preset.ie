@@ -77,18 +77,18 @@ function MarketplacePageContent() {
     pages: 0
   });
   const [filters, setFilters] = useState({
-    search: searchParams.get('search') || '',
-    category: searchParams.get('category') || '',
-    mode: searchParams.get('mode') || '',
-    condition: searchParams.get('condition') || '',
-    city: searchParams.get('city') || '',
-    country: searchParams.get('country') || '',
-    verified_only: searchParams.get('verified_only') === 'true',
-    min_price: searchParams.get('min_price') ? parseInt(searchParams.get('min_price')!) * 100 : undefined,
-    max_price: searchParams.get('max_price') ? parseInt(searchParams.get('max_price')!) * 100 : undefined
+    search: searchParams?.get('search') || '',
+    category: searchParams?.get('category') || '',
+    mode: searchParams?.get('mode') || '',
+    condition: searchParams?.get('condition') || '',
+    city: searchParams?.get('city') || '',
+    country: searchParams?.get('country') || '',
+    verified_only: searchParams?.get('verified_only') === 'true',
+    min_price: searchParams?.get('min_price') ? parseInt(searchParams?.get('min_price')!) * 100 : undefined,
+    max_price: searchParams?.get('max_price') ? parseInt(searchParams?.get('max_price')!) * 100 : undefined
   });
-  const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'created_at');
-  const [sortOrder, setSortOrder] = useState(searchParams.get('sort_order') || 'desc');
+  const [sortBy, setSortBy] = useState(searchParams?.get('sort_by') || 'created_at');
+  const [sortOrder, setSortOrder] = useState(searchParams?.get('sort_order') || 'desc');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const fetchListings = async (page = 1) => {

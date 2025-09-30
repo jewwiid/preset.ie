@@ -50,7 +50,7 @@ interface Showcase {
 
 export default function ShowcaseDetailPage() {
   const params = useParams();
-  const showcaseId = params.id as string;
+  const showcaseId = params?.id as string;
   
   const [showcase, setShowcase] = useState<Showcase | null>(null);
   const [loading, setLoading] = useState(true);

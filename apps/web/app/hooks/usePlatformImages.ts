@@ -94,18 +94,9 @@ export function usePreloadCriticalImages(options: UsePreloadCriticalImagesOption
         // Preload homepage hero image
         const heroImg = new Image();
         heroImg.src = '/hero-bg.jpeg';
-        
-        // Preload other critical images
-        const criticalImages = [
-          '/images/homepage/feature-gigs.jpg',
-          '/images/homepage/feature-showcases.jpg',
-          '/images/homepage/feature-safety.jpg'
-        ];
 
-        criticalImages.forEach(src => {
-          const img = new Image();
-          img.src = src;
-        });
+        // Other critical images are loaded dynamically from platform_images table
+        // via useHomepageImages hook
       } catch (error) {
         console.warn('Failed to preload critical images:', error);
       }

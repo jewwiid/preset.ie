@@ -252,15 +252,19 @@ export function NavBar() {
   }, [profileDropdownOpen])
 
 
+  const router = useRouter()
+
   const handleSignOut = async () => {
     await signOut()
     setProfileDropdownOpen(false)
     setMobileMenuOpen(false)
+    // Redirect to homepage after sign out
+    router.push('/')
   }
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
-    return pathname.startsWith(href)
+    return pathname?.startsWith(href)
   }
 
   // Filter nav items based on auth status

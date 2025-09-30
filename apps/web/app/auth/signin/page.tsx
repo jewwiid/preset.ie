@@ -29,9 +29,9 @@ function SignInContent() {
 
   useEffect(() => {
     // Check for success messages from URL params
-    if (searchParams.get('reset-sent') === 'true') {
+    if (searchParams?.get('reset-sent') === 'true') {
       setSuccessMessage('Password reset email sent! Check your inbox for instructions.')
-    } else if (searchParams.get('reset') === 'true') {
+    } else if (searchParams?.get('reset') === 'true') {
       setSuccessMessage('Password reset successfully! You can now sign in with your new password.')
     }
   }, [searchParams])

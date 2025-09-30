@@ -147,8 +147,8 @@ function CreateTreatmentPageContent() {
   const [showImageSelector, setShowImageSelector] = useState(false);
 
   // Initialize from URL params (gig_id, moodboard_id)
-  const gigId = searchParams.get('gig_id');
-  const moodboardId = searchParams.get('moodboard_id');
+  const gigId = searchParams?.get('gig_id');
+  const moodboardId = searchParams?.get('moodboard_id');
 
   useEffect(() => {
     if (gigId) {

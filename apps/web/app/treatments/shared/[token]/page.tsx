@@ -60,7 +60,7 @@ const TREATMENT_THEMES = {
 
 export default function SharedTreatmentPage() {
   const params = useParams();
-  const token = params.token as string;
+  const token = params?.token as string;
   
   const [treatment, setTreatment] = useState<TreatmentData | null>(null);
   const [loading, setLoading] = useState(true);

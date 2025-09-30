@@ -74,8 +74,8 @@ function PlaygroundContent() {
   
   // Read URL parameters for preset
   useEffect(() => {
-    const presetId = searchParams.get('preset')
-    const presetName = searchParams.get('name')
+    const presetId = searchParams?.get('preset')
+    const presetName = searchParams?.get('name')
     
     if (presetId && presetName) {
       setActivePreset({

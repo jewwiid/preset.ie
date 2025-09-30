@@ -119,7 +119,7 @@ const EXISTING_ROUTES = [
 export default function CatchAllPage() {
   const params = useParams();
   const router = useRouter();
-  const slug = params.slug as string;
+  const slug = params?.slug as string;
   const { user } = useAuth();
   
   const [isLoading, setIsLoading] = useState(true);

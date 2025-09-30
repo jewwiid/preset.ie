@@ -68,7 +68,7 @@ function EquipmentRequestsPageContent() {
 
   // Check for create query parameter
   useEffect(() => {
-    if (searchParams.get('create') === 'true') {
+    if (searchParams?.get('create') === 'true') {
       setShowCreateModal(true);
       // Clean up the URL by removing the query parameter
       const url = new URL(window.location.href);

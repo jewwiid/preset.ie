@@ -133,17 +133,17 @@ export default function PresetDetailPage() {
   const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
-    if (params.id) {
+    if (params?.id) {
       fetchPreset()
       fetchSamples()
       fetchShowcases()
       fetchExamples()
     }
-  }, [params.id])
+  }, [params?.id])
 
   const fetchPreset = async () => {
     try {
-      const response = await fetch(`/api/presets/${params.id}`)
+      const response = await fetch(`/api/presets/${params?.id}`)
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -167,6 +167,7 @@ export default function PresetDetailPage() {
   }
 
   const fetchSamples = async () => {
+    if (!params?.id) return
     try {
       const response = await fetch(`/api/presets/${params.id}/samples`)
       
@@ -181,6 +182,7 @@ export default function PresetDetailPage() {
   }
 
   const fetchShowcases = async () => {
+    if (!params?.id) return
     try {
       const response = await fetch(`/api/presets/${params.id}/showcases`)
       
@@ -195,7 +197,7 @@ export default function PresetDetailPage() {
   }
 
   const fetchExamples = async () => {
-    if (!params.id) return
+    if (!params?.id) return
 
     setExamplesLoading(true)
     try {

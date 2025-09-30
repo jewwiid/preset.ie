@@ -278,64 +278,114 @@ export function ProfileHeaderEnhanced() {
   }
 
   const handleAvatarUpload = async (file: File) => {
-    if (!user || !supabase) return
+    if (!user || !supabase) {
+      console.error('Upload failed: Missing user or supabase client', { user: !!user, supabase: !!supabase })
+      alert('Unable to upload: Please ensure you are logged in.')
+      return
+    }
 
     try {
       setIsUploadingAvatar(true)
-      
+      console.log('Starting avatar upload for user:', user.id)
+
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}.${fileExt}`
       const filePath = `${user.id}/${fileName}`
-      
-      const { error: uploadError } = await supabase.storage
+
+      console.log('Uploading to path:', filePath)
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-images')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         })
-      
-      if (uploadError) throw uploadError
-      
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw uploadError
+      }
+
+      console.log('Upload successful:', uploadData)
+
       const { data } = supabase.storage
         .from('profile-images')
         .getPublicUrl(filePath)
-      
+
+      console.log('Public URL:', data.publicUrl)
+
+      // Update the profile in the database
+      const { error: updateError } = await supabase
+        .from('users_profile')
+        .update({ avatar_url: data.publicUrl })
+        .eq('user_id', user.id)
+
+      if (updateError) {
+        console.error('Database update error:', updateError)
+        throw updateError
+      }
+
+      console.log('Database updated successfully')
       updateField('avatar_url', data.publicUrl)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Avatar upload error:', error)
-      alert('Failed to upload avatar. Please try again.')
+      alert(`Failed to upload avatar: ${error.message || 'Please try again.'}`)
     } finally {
       setIsUploadingAvatar(false)
     }
   }
 
   const handleBannerUpload = async (file: File) => {
-    if (!user || !supabase) return
+    if (!user || !supabase) {
+      console.error('Upload failed: Missing user or supabase client', { user: !!user, supabase: !!supabase })
+      alert('Unable to upload: Please ensure you are logged in.')
+      return
+    }
 
     try {
       setIsUploadingBanner(true)
-      
+      console.log('Starting banner upload for user:', user.id)
+
       const fileExt = file.name.split('.').pop()
       const fileName = `banner_${Date.now()}.${fileExt}`
       const filePath = `${user.id}/${fileName}`
-      
-      const { error: uploadError } = await supabase.storage
+
+      console.log('Uploading to path:', filePath)
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-images')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         })
-      
-      if (uploadError) throw uploadError
-      
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw uploadError
+      }
+
+      console.log('Upload successful:', uploadData)
+
       const { data } = supabase.storage
         .from('profile-images')
         .getPublicUrl(filePath)
-      
+
+      console.log('Public URL:', data.publicUrl)
+
+      // Update the profile in the database
+      const { error: updateError } = await supabase
+        .from('users_profile')
+        .update({ header_banner_url: data.publicUrl })
+        .eq('user_id', user.id)
+
+      if (updateError) {
+        console.error('Database update error:', updateError)
+        throw updateError
+      }
+
+      console.log('Database updated successfully')
       updateField('header_banner_url', data.publicUrl)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Banner upload error:', error)
-      alert('Failed to upload banner. Please try again.')
+      alert(`Failed to upload banner: ${error.message || 'Please try again.'}`)
     } finally {
       setIsUploadingBanner(false)
     }

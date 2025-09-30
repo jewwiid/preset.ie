@@ -85,14 +85,14 @@ function CollaboratePageContent() {
     pages: 0
   });
   const [filters, setFilters] = useState({
-    search: searchParams.get('search') || '',
-    status: searchParams.get('status') || 'all',
-    city: searchParams.get('city') || '',
-    country: searchParams.get('country') || '',
-    role_type: searchParams.get('role_type') || '',
-    gear_category: searchParams.get('gear_category') || ''
+    search: searchParams?.get('search') || '',
+    status: searchParams?.get('status') || 'all',
+    city: searchParams?.get('city') || '',
+    country: searchParams?.get('country') || '',
+    role_type: searchParams?.get('role_type') || '',
+    gear_category: searchParams?.get('gear_category') || ''
   });
-  const [sortBy, setSortBy] = useState(searchParams.get('sort_by') || 'created_at');
+  const [sortBy, setSortBy] = useState(searchParams?.get('sort_by') || 'created_at');
 
   const fetchProjects = async (page = 1, view = 'all') => {
     setLoading(true);

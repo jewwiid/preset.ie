@@ -93,7 +93,7 @@ export default function ProjectDetailPage() {
   const [isCreator, setIsCreator] = useState(false);
   const [invitationStats, setInvitationStats] = useState<any>(null);
 
-  const projectId = params.id as string;
+  const projectId = params?.id as string;
 
   useEffect(() => {
     fetchProject();

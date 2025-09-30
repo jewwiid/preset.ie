@@ -74,11 +74,11 @@ function PresetMarketplaceContent() {
     hasPreviousPage: false
   });
   const [filters, setFilters] = useState({
-    q: searchParams.get('q') || '',
-    category: searchParams.get('category') || 'all',
-    minPrice: searchParams.get('minPrice') || '',
-    maxPrice: searchParams.get('maxPrice') || '',
-    sortBy: searchParams.get('sortBy') || 'recent'
+    q: searchParams?.get('q') || '',
+    category: searchParams?.get('category') || 'all',
+    minPrice: searchParams?.get('minPrice') || '',
+    maxPrice: searchParams?.get('maxPrice') || '',
+    sortBy: searchParams?.get('sortBy') || 'recent'
   });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null);

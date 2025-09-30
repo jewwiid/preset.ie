@@ -16,7 +16,7 @@ function AuthCallbackContent() {
     const handleAuthCallback = async () => {
       console.log('🚀 CALLBACK PAGE: Starting handleAuthCallback')
       console.log('🚀 CALLBACK PAGE: Current URL:', window.location.href)
-      console.log('🚀 CALLBACK PAGE: Search params:', Object.fromEntries(searchParams.entries()))
+      console.log('🚀 CALLBACK PAGE: Search params:', searchParams ? Object.fromEntries(searchParams.entries()) : {})
 
       if (!supabase) {
         console.error('🚀 CALLBACK PAGE: Supabase client not available')
@@ -26,8 +26,8 @@ function AuthCallbackContent() {
       }
 
       // Check for error parameters first
-      const error = searchParams.get('error')
-      const errorDescription = searchParams.get('error_description')
+      const error = searchParams?.get('error')
+      const errorDescription = searchParams?.get('error_description')
       
       if (error) {
         console.error('🚀 CALLBACK PAGE: Error in callback:', { error, errorDescription })
@@ -41,8 +41,8 @@ function AuthCallbackContent() {
       }
 
       // Check for OAuth code
-      const code = searchParams.get('code')
-      const hasState = searchParams.has('state')
+      const code = searchParams?.get('code')
+      const hasState = searchParams?.has('state')
       
       console.log('OAuth callback parameters:', { 
         code: !!code, 

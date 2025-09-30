@@ -80,7 +80,7 @@ function CreateProjectPageContent() {
 
   // Handle prefilled data from equipment request
   useEffect(() => {
-    const fromEquipmentRequest = searchParams.get('from') === 'equipment-request';
+    const fromEquipmentRequest = searchParams?.get('from') === 'equipment-request';
     if (fromEquipmentRequest) {
       const equipmentRequestData = sessionStorage.getItem('equipmentRequestData');
       if (equipmentRequestData) {
@@ -759,7 +759,7 @@ function CreateProjectPageContent() {
         {/* Form Content */}
         <Card>
           <CardContent className="p-6">
-            {searchParams.get('from') === 'equipment-request' && (
+            {searchParams?.get('from') === 'equipment-request' && (
               <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-md">
                 <div className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary" />

@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/auth-context'
 import { Button } from '../ui/button'
 import { Sparkles, Lock, User } from 'lucide-react'
@@ -12,13 +13,22 @@ interface AuthGuardProps {
   requireAuth?: boolean
 }
 
-export default function AuthGuard({ 
-  children, 
-  fallback, 
+export default function AuthGuard({
+  children,
+  fallback,
   redirectTo = '/auth/signin',
-  requireAuth = true 
+  requireAuth = true
 }: AuthGuardProps) {
   const { user, session, loading: authLoading } = useAuth()
+  const router = useRouter()
+
+  // Redirect to home page when user signs out while on a protected page
+  useEffect(() => {
+    if (requireAuth && !authLoading && !user && !session) {
+      console.log('🔒 AuthGuard: User signed out, redirecting to home page...')
+      router.push('/')
+    }
+  }, [user, session, authLoading, requireAuth, router])
 
   // Show loading state while checking authentication
   if (authLoading) {

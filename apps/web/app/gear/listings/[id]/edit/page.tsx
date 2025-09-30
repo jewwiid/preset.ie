@@ -61,7 +61,7 @@ export default function EditListingPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentUserProfileId, setCurrentUserProfileId] = useState<string | null>(null);
 
-  const listingId = params.id as string;
+  const listingId = params?.id as string;
 
   useEffect(() => {
     if (user && listingId) {

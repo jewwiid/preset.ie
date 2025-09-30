@@ -125,7 +125,7 @@ export default function ListingDetailPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/marketplace/listings/${params.id}`);
+      const response = await fetch(`/api/marketplace/listings/${params?.id}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -142,7 +142,7 @@ export default function ListingDetailPage() {
   };
 
   const fetchAcceptedOffers = async () => {
-    if (!params.id) return;
+    if (!params?.id) return;
     
     try {
       const { supabase } = await import('@/lib/supabase');
@@ -175,10 +175,10 @@ export default function ListingDetailPage() {
   };
 
   const fetchPublicComments = async () => {
-    if (!params.id) return;
+    if (!params?.id) return;
     
     try {
-      const response = await fetch(`/api/marketplace/listings/${params.id}/comments`);
+      const response = await fetch(`/api/marketplace/listings/${params?.id}/comments`);
       const data = await response.json();
       
       if (response.ok) {
@@ -190,23 +190,23 @@ export default function ListingDetailPage() {
   };
 
   useEffect(() => {
-    if (params.id) {
+    if (params?.id) {
       fetchListing();
       fetchAcceptedOffers();
       fetchPublicComments();
     }
     fetchCurrentUser();
-  }, [params.id]);
+  }, [params?.id]);
 
   // Refetch accepted offers when currentUser changes to check if user has accepted offer
   useEffect(() => {
-    if (currentUser && params.id) {
+    if (currentUser && params?.id) {
       fetchAcceptedOffers();
     }
-  }, [currentUser, params.id]);
+  }, [currentUser, params?.id]);
 
   const submitComment = async () => {
-    if (!newComment.trim() || !currentUser || !params.id) return;
+    if (!newComment.trim() || !currentUser || !params?.id) return;
     
     try {
       const { supabase } = await import('@/lib/supabase');
