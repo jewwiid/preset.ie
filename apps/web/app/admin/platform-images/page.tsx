@@ -9,7 +9,7 @@ import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
 import { Badge } from '../../../components/ui/badge';
-import { Upload, Image as ImageIcon, Trash2, Edit, Eye, Plus } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, Edit, Eye, Plus, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
 
@@ -54,6 +54,9 @@ export default function PlatformImagesAdmin() {
   const [uploading, setUploading] = useState(false);
   const [editingImage, setEditingImage] = useState<PlatformImage | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showImageBrowser, setShowImageBrowser] = useState(false);
+  const [bucketImages, setBucketImages] = useState<any[]>([]);
+  const [loadingBucketImages, setLoadingBucketImages] = useState(false);
 
   // Form state for new/editing image
   const [formData, setFormData] = useState({
@@ -66,7 +69,8 @@ export default function PlatformImagesAdmin() {
     usage_context: '{}',
     is_active: true,
     display_order: 0,
-    image_file: null as File | null
+    image_file: null as File | null,
+    selected_image_url: '' as string
   });
 
   useEffect(() => {
@@ -104,6 +108,24 @@ export default function PlatformImagesAdmin() {
     }
   };
 
+  const fetchBucketImages = async () => {
+    setLoadingBucketImages(true);
+    try {
+      // Fetch images from the platform-images bucket
+      const response = await fetch('/api/bucket-images');
+      if (response.ok) {
+        const data = await response.json();
+        setBucketImages(data.images || []);
+      } else {
+        console.error('Failed to fetch bucket images');
+      }
+    } catch (error) {
+      console.error('Error fetching bucket images:', error);
+    } finally {
+      setLoadingBucketImages(false);
+    }
+  };
+
   const handleFileUpload = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
@@ -128,8 +150,12 @@ export default function PlatformImagesAdmin() {
     try {
       let imageUrl = '';
       
-      // If we have a file to upload, upload it first
-      if (formData.image_file) {
+      // If we have a selected image URL from bucket, use it
+      if (formData.selected_image_url) {
+        imageUrl = formData.selected_image_url;
+      }
+      // Otherwise, if we have a file to upload, upload it first
+      else if (formData.image_file) {
         imageUrl = await handleFileUpload(formData.image_file);
       }
 
@@ -205,7 +231,8 @@ export default function PlatformImagesAdmin() {
       usage_context: JSON.stringify(image.usage_context || {}, null, 2),
       is_active: image.is_active,
       display_order: image.display_order,
-      image_file: null
+      image_file: null,
+      selected_image_url: ''
     });
     setShowAddForm(true);
   };
@@ -221,7 +248,8 @@ export default function PlatformImagesAdmin() {
       usage_context: '{}',
       is_active: true,
       display_order: 0,
-      image_file: null
+      image_file: null,
+      selected_image_url: ''
     });
   };
 
@@ -390,14 +418,62 @@ export default function PlatformImagesAdmin() {
               </div>
 
               <div>
-                <Label htmlFor="image_file">Image File {!editingImage && '(Required)'}</Label>
+                <Label htmlFor="image_file">Image File {!editingImage && !formData.selected_image_url && '(Required)'}</Label>
                 <Input
                   id="image_file"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setFormData({...formData, image_file: e.target.files?.[0] || null})}
-                  required={!editingImage}
+                  onChange={(e) => setFormData({...formData, image_file: e.target.files?.[0] || null, selected_image_url: ''})}
+                  required={!editingImage && !formData.selected_image_url}
+                  disabled={!!formData.selected_image_url}
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Or Select from Existing Images</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowImageBrowser(true);
+                      fetchBucketImages();
+                    }}
+                  >
+                    Browse Bucket
+                  </Button>
+                </div>
+                
+                {formData.selected_image_url && (
+                  <div className="border rounded-lg p-3 bg-green-50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ImageIcon className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-800">Selected Image</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormData({...formData, selected_image_url: '', image_file: null})}
+                        className="ml-auto text-red-600 hover:text-red-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={formData.selected_image_url}
+                        alt="Selected"
+                        className="w-16 h-16 object-cover rounded border"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-600 truncate">
+                          {formData.selected_image_url.split('/').pop()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -429,6 +505,58 @@ export default function PlatformImagesAdmin() {
             </form>
           </CardContent>
         </Card>
+      )}
+
+      {/* Image Browser Modal */}
+      {showImageBrowser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Select Image from Bucket</h2>
+              <Button
+                variant="ghost"
+                onClick={() => setShowImageBrowser(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {loadingBucketImages ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-gray-500">Loading images...</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
+                {bucketImages.map((image: any, index: number) => (
+                  <div
+                    key={index}
+                    className="border rounded-lg p-2 cursor-pointer hover:border-blue-500 transition-colors"
+                    onClick={() => {
+                      setFormData({...formData, selected_image_url: image.publicUrl, image_file: null});
+                      setShowImageBrowser(false);
+                    }}
+                  >
+                    <img
+                      src={image.publicUrl}
+                      alt={image.name}
+                      className="w-full h-24 object-cover rounded mb-2"
+                    />
+                    <p className="text-xs text-gray-600 truncate">{image.name}</p>
+                    <p className="text-xs text-gray-400">
+                      {Math.round(image.metadata?.size / 1024)}KB
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {bucketImages.length === 0 && !loadingBucketImages && (
+              <div className="text-center py-8 text-gray-500">
+                No images found in the bucket.
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Images Grid */}
