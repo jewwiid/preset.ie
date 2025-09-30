@@ -193,6 +193,13 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
     setConnectionError(null)
     
     console.log('Setting up realtime message subscriptions for user:', user.id)
+    
+    // Check if WebSocket is available
+    if (typeof window === 'undefined' || typeof WebSocket === 'undefined') {
+      console.warn('WebSocket not available, skipping realtime setup')
+      setConnectionError('WebSocket not supported in this environment')
+      return
+    }
 
     // Check if user is authenticated before setting up subscriptions
     if (!user.id) {
@@ -415,11 +422,14 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
            .catch((error) => {
              console.error('Error establishing realtime subscriptions:', error)
              
-             // Handle specific error types
-             let errorMessage = 'Failed to establish connection'
-             if (error.message?.includes('401')) {
-               errorMessage = 'Authentication required for realtime connection'
-             } else if (error.message?.includes('WebSocket')) {
+            // Handle specific error types
+            let errorMessage = 'Failed to establish connection'
+            if (error.message?.includes('401')) {
+              errorMessage = 'Authentication required for realtime connection'
+            } else if (error.message?.includes('NS_ERROR_WEBSOCKET_CONNECTION_REFUSED') || 
+                       error.message?.includes('WebSocket connection failed')) {
+              errorMessage = 'Realtime service unavailable. Please enable Realtime in Supabase dashboard.'
+            } else if (error.message?.includes('WebSocket')) {
                errorMessage = 'WebSocket connection failed - check network connectivity'
              } else if (error.message?.includes('timeout')) {
                errorMessage = 'Connection timeout - server may be unavailable'

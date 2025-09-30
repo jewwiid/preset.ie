@@ -141,12 +141,15 @@ export async function POST(request: NextRequest) {
     }
     
     // Check if image already exists in user's gallery
+    console.log('Checking for existing image in playground_gallery table')
     const { data: existingImage, error: checkError } = await supabaseAdmin
       .from('playground_gallery')
       .select('id, title, created_at')
       .eq('user_id', user.id)
       .eq('image_url', finalImageUrl)
-      .single()
+      .maybeSingle() // Use maybeSingle instead of single to avoid errors when no rows found
+    
+    console.log('Check result:', { existingImage, checkError })
     
     if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
       console.error('Error checking for existing image:', checkError)
@@ -267,7 +270,7 @@ export async function POST(request: NextRequest) {
     console.log('Attempting to insert into playground_gallery table')
     
     // Save to gallery
-    const insertData = {
+    const insertData: any = {
       user_id: user.id,
       image_url: finalImageUrl,
       thumbnail_url: finalImageUrl, // Use final URL as thumbnail for now
@@ -276,7 +279,6 @@ export async function POST(request: NextRequest) {
       tags: tags || [],
       width: imageWidth,
       height: imageHeight,
-      file_size: 0, // Unknown size for external URLs
       format: 'jpg', // Will be updated below if we have file extension info
       generation_metadata: {
         ...generationMetadata,
@@ -289,7 +291,11 @@ export async function POST(request: NextRequest) {
         saved_height: imageHeight,
         saved_aspect_ratio: generationMetadata?.aspect_ratio || `${imageWidth}:${imageHeight}`,
         saved_at: new Date().toISOString()
-      }
+      },
+      // Set default values for required fields that might be missing
+      used_in_moodboard: false,
+      used_in_showcase: false,
+      media_type: 'IMAGE'
     }
 
     // Only add optional fields if they exist and are valid
@@ -307,17 +313,20 @@ export async function POST(request: NextRequest) {
       insertData.format = 'webp'
     } else if (finalImageUrl.includes('.gif')) {
       insertData.format = 'gif'
+      insertData.media_type = 'VIDEO' // GIFs might be treated as video
     } else if (finalImageUrl.includes('.jpeg') || finalImageUrl.includes('.jpg')) {
       insertData.format = 'jpg'
     }
 
-    console.log('Inserting data:', insertData)
+    console.log('Inserting data into playground_gallery table:', insertData)
 
     const { data: galleryItem, error: insertError } = await supabaseAdmin
       .from('playground_gallery')
       .insert(insertData)
       .select()
       .single()
+    
+    console.log('Insert result:', { galleryItem, insertError })
 
     // Also create a media entry with cinematic metadata
     if (galleryItem && !insertError) {
