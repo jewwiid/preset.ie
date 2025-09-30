@@ -13,7 +13,8 @@ import {
   BarChart3, 
   FileText, 
   CheckCircle,
-  Star
+  Star,
+  ImageIcon
 } from 'lucide-react'
 
 // Import admin components
@@ -310,6 +311,7 @@ export default function AdminDashboard() {
     { id: 'age-verification', label: 'Age Verification', icon: Shield },
     { id: 'verification', label: 'ID Verification', icon: CheckCircle },
     { id: 'featured-presets', label: 'Featured Presets', icon: Star },
+    { id: 'platform-images', label: 'Platform Images', icon: ImageIcon },
     { id: 'credits', label: 'Credits', icon: CreditCard },
   ]
 
@@ -470,6 +472,68 @@ export default function AdminDashboard() {
         {activeTab === 'featured-presets' && (
           <div className="space-y-6">
             <FeaturedPresetsQueue />
+          </div>
+        )}
+
+        {/* Platform Images Tab */}
+        {activeTab === 'platform-images' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-muted-foreground-900">Platform Images</h2>
+                <p className="text-muted-foreground-600">Manage platform-wide images and preset visual aids</p>
+              </div>
+              <Link
+                href="/admin/platform-images"
+                className="px-4 py-2 bg-primary-600 text-primary-foreground rounded-md hover:bg-primary-700 transition-colors"
+              >
+                Open Image Manager
+              </Link>
+            </div>
+            
+            <div className="bg-background rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Link
+                  href="/admin/platform-images"
+                  className="p-4 border rounded-lg hover:border-primary-500 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <ImageIcon className="h-8 w-8 text-primary-600" />
+                    <div>
+                      <h4 className="font-semibold">Manage Images</h4>
+                      <p className="text-sm text-muted-foreground-600">Upload and configure platform images</p>
+                    </div>
+                  </div>
+                </Link>
+                
+                <Link
+                  href="/admin/platform-images#visual-aids"
+                  className="p-4 border rounded-lg hover:border-primary-500 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Star className="h-8 w-8 text-purple-600" />
+                    <div>
+                      <h4 className="font-semibold">Visual Aids</h4>
+                      <p className="text-sm text-muted-foreground-600">Manage preset visual examples</p>
+                    </div>
+                  </div>
+                </Link>
+                
+                <Link
+                  href="/admin/platform-images#cache-config"
+                  className="p-4 border rounded-lg hover:border-primary-500 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <BarChart3 className="h-8 w-8 text-green-600" />
+                    <div>
+                      <h4 className="font-semibold">Cache Settings</h4>
+                      <p className="text-sm text-muted-foreground-600">Configure browser caching</p>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </div>
           </div>
         )}
 
