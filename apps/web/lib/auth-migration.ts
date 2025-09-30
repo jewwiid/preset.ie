@@ -7,26 +7,37 @@ export function migrateAuthStorage() {
   if (typeof window === 'undefined') return
 
   try {
-    // Check if old storage key exists
-    const oldKey = 'sb-preset-auth-token'
-    const newKey = 'supabase.auth.token'
-    
-    const oldToken = localStorage.getItem(oldKey)
-    const newToken = localStorage.getItem(newKey)
-    
-    // If we have old token but no new token, migrate it
-    if (oldToken && !newToken) {
-      console.log('Migrating auth token from old storage key...')
-      localStorage.setItem(newKey, oldToken)
-      
-      // Keep old key for a while to ensure compatibility
-      // It will be cleaned up on next sign out
+    // Get all localStorage keys that might contain old auth tokens
+    const allKeys = Object.keys(localStorage)
+    const oldCustomKeys = ['sb-preset-auth-token', 'supabase.auth.token']
+
+    // Find the current Supabase auth key (format: sb-<project-ref>-auth-token)
+    const currentSupabaseKey = allKeys.find(key =>
+      key.match(/^sb-[a-z]{20}-auth-token$/)
+    )
+
+    if (!currentSupabaseKey) {
+      // No current session, nothing to migrate
+      return
     }
-    
-    // Clean up old key if we have a valid new token
-    if (newToken && oldToken) {
-      localStorage.removeItem(oldKey)
-      console.log('Cleaned up old auth storage key')
+
+    const currentToken = localStorage.getItem(currentSupabaseKey)
+
+    // Check for old custom keys and migrate if needed
+    for (const oldKey of oldCustomKeys) {
+      const oldToken = localStorage.getItem(oldKey)
+
+      // If we have old token but no current token, migrate it
+      if (oldToken && !currentToken) {
+        console.log(`Migrating auth token from ${oldKey} to ${currentSupabaseKey}...`)
+        localStorage.setItem(currentSupabaseKey, oldToken)
+      }
+
+      // Clean up old key if we have a valid current token
+      if (currentToken && oldToken) {
+        localStorage.removeItem(oldKey)
+        console.log(`Cleaned up old auth storage key: ${oldKey}`)
+      }
     }
   } catch (error) {
     console.error('Error migrating auth storage:', error)
@@ -41,17 +52,23 @@ export function clearAuthStorage() {
   if (typeof window === 'undefined') return
 
   try {
-    const keysToRemove = [
-      'sb-preset-auth-token',
-      'supabase.auth.token',
-      'supabase.auth.token.code_verifier',
-      'supabase.auth.token.code_challenge'
+    const allKeys = Object.keys(localStorage)
+
+    // Remove any key that matches Supabase auth patterns
+    const authKeyPatterns = [
+      /^sb-.*-auth-token$/,           // sb-<project-ref>-auth-token
+      /^sb-.*-auth-token-code-verifier$/,  // PKCE verifier
+      /^supabase\.auth/,               // Legacy supabase.auth.* keys
+      /^sb-preset-auth-token$/         // Old custom key
     ]
-    
-    keysToRemove.forEach(key => {
-      localStorage.removeItem(key)
+
+    allKeys.forEach(key => {
+      if (authKeyPatterns.some(pattern => pattern.test(key))) {
+        localStorage.removeItem(key)
+        console.log(`Removed auth key: ${key}`)
+      }
     })
-    
+
     console.log('Cleared all auth storage')
   } catch (error) {
     console.error('Error clearing auth storage:', error)

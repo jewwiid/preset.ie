@@ -159,7 +159,7 @@ export async function getAuthToken(): Promise<string | null> {
       return null
     }
 
-    // Try to get from Supabase client first (preferred method)
+    // Always use Supabase client as the primary source of truth
     if (supabase) {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.access_token) {
@@ -167,16 +167,20 @@ export async function getAuthToken(): Promise<string | null> {
       }
     }
 
-    // Fallback to localStorage (for compatibility)
-    const token = localStorage.getItem('supabase.auth.token') || 
-                  localStorage.getItem('sb-preset-auth-token')
-    
-    if (token) {
-      try {
-        const parsed = JSON.parse(token)
-        return parsed.access_token || token
-      } catch {
-        return token
+    // Fallback to localStorage only if Supabase client fails
+    // Find the current Supabase auth key dynamically
+    const allKeys = Object.keys(localStorage)
+    const authKey = allKeys.find(key => key.match(/^sb-[a-z]{20}-auth-token$/))
+
+    if (authKey) {
+      const token = localStorage.getItem(authKey)
+      if (token) {
+        try {
+          const parsed = JSON.parse(token)
+          return parsed.access_token || null
+        } catch {
+          return null
+        }
       }
     }
 

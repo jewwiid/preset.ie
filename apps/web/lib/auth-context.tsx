@@ -125,11 +125,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for storage events to sync auth state across tabs
     const handleStorageChange = (e: StorageEvent) => {
-      // Listen for the consistent storage key
-      if (e.key === 'supabase.auth.token' && e.newValue !== e.oldValue) {
+      // Listen for any Supabase auth-related storage changes
+      // Supabase uses keys like: sb-<project-ref>-auth-token
+      if (e.key && e.key.includes('-auth-token') && e.newValue !== e.oldValue) {
         console.log('Auth token changed in another tab, refreshing session...')
         // Refresh the session when storage changes
         supabase?.auth.getSession().then(({ data: { session } }) => {
+          console.log('Session refreshed from storage event:', session ? 'Found' : 'Not found')
           setSession(session)
           setUser(session?.user ?? null)
           if (session?.user) {

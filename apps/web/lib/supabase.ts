@@ -5,14 +5,15 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Client-side Supabase client (uses anon key, subject to RLS)
-export const supabase = supabaseUrl && supabaseAnonKey 
+export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-        storageKey: 'supabase.auth.token', // Use consistent key
+        // Don't override storageKey - let Supabase use its default pattern
+        // This ensures proper cross-tab synchronization
         flowType: 'pkce',
         debug: process.env.NODE_ENV === 'development'
       },
