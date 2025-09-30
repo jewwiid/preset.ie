@@ -99,16 +99,35 @@ export function NavBar() {
     // Fetch profile when user is authenticated and loading is complete
     console.log('🔄 NavBar: useEffect triggered with:', {
       user: !!user,
-      userRole: !!userRole, 
+      userRole: !!userRole,
       loading,
       condition: user && !loading,
       userEmail: user?.email,
       userId: user?.id
     })
-    
+
     if (user && !loading) {
-      console.log('🎯 NavBar: User authenticated, fetching profile...')
-      fetchProfileSimple()
+      // Verify session is actually available before fetching profile
+      const verifyAndFetch = async () => {
+        try {
+          if (!supabase) return
+
+          const { data: { session } } = await supabase.auth.getSession()
+
+          if (session?.user) {
+            console.log('🎯 NavBar: Session verified, fetching profile...')
+            fetchProfileSimple()
+          } else {
+            console.log('⚠️ NavBar: User exists but no session found, waiting...')
+            // Retry after a short delay
+            setTimeout(verifyAndFetch, 500)
+          }
+        } catch (error) {
+          console.error('❌ NavBar: Session verification failed:', error)
+        }
+      }
+
+      verifyAndFetch()
     } else {
       console.log('⏸️ NavBar: No user or still loading, clearing profile')
       setProfile(null)

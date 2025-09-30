@@ -4,11 +4,20 @@ import { useAuth } from "../lib/auth-context";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { useHomepageImages, usePreloadCriticalImages } from './hooks/usePlatformImages';
 
 export default function Home() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  
+  // Preload critical images on app startup
+  usePreloadCriticalImages();
+  
+  // Fetch homepage images with caching
+  const { images: homepageImages, loading: imagesLoading } = useHomepageImages({
+    preload: true
+  });
 
   // Removed automatic redirect - let users choose to view homepage or go to dashboard
 
@@ -41,13 +50,28 @@ export default function Home() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
-          <Image
-            src="/hero-bg.jpeg"
-            alt="Creative photography"
-            fill
-            className="object-cover"
-            priority
-          />
+          {(() => {
+            // Find hero background image from cached images
+            const heroImage = homepageImages.find(img => img.usage_context?.section === 'hero');
+            const heroSrc = heroImage?.image_url || '/hero-bg.jpeg';
+            const heroAlt = heroImage?.alt_text || 'Creative photography';
+            
+            return (
+              <Image
+                src={heroSrc}
+                alt={heroAlt}
+                fill
+                className="object-cover"
+                priority
+                onError={(e) => {
+                  // Fallback to default image if cached image fails to load
+                  if (heroSrc !== '/hero-bg.jpeg') {
+                    (e.target as HTMLImageElement).src = '/hero-bg.jpeg';
+                  }
+                }}
+              />
+            );
+          })()}
           <div className="absolute inset-0 bg-background/90"></div>
         </div>
 

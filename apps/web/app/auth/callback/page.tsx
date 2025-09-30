@@ -50,87 +50,50 @@ function AuthCallbackContent() {
       })
 
       if (code) {
-        console.log('🚀 CALLBACK PAGE: Found code, waiting for automatic session establishment')
-        
-        // Set up auth state listener for session establishment
-        console.log('🚀 CALLBACK PAGE: Setting up auth state listener')
-        
+        console.log('🚀 CALLBACK PAGE: Found OAuth code, Supabase will automatically exchange it for session')
+
+        // Supabase PKCE flow automatically exchanges the code for a session
+        // We just need to wait for the SIGNED_IN event via onAuthStateChange
         let sessionHandled = false
-        let authSubscription: any = null
-        
-        const cleanupSubscription = () => {
-          if (authSubscription) {
-            try {
-              authSubscription.unsubscribe()
-              authSubscription = null
-            } catch (e) {
-              console.log('🚀 CALLBACK PAGE: Subscription already cleaned up')
-            }
+        const timeoutDuration = 10000 // 10 seconds max wait
+
+        const timeout = setTimeout(() => {
+          if (!sessionHandled) {
+            console.error('🚀 CALLBACK PAGE: Session establishment timed out')
+            setStatus('error')
+            setMessage('Authentication is taking longer than expected. Please try signing in again.')
           }
-        }
-        
-        authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('🚀 CALLBACK PAGE: Auth state change:', event, { session: !!session, user: !!session?.user })
-          
-          if (event === 'SIGNED_IN' && session && session.user && !sessionHandled) {
+        }, timeoutDuration)
+
+        // Listen for auth state change - this is the primary method
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log('🚀 CALLBACK PAGE: Auth state change:', event, {
+            hasSession: !!session,
+            hasUser: !!session?.user,
+            userEmail: session?.user?.email
+          })
+
+          // Only handle SIGNED_IN event with valid session
+          if (event === 'SIGNED_IN' && session?.user && !sessionHandled) {
             sessionHandled = true
-            console.log('🚀 CALLBACK PAGE: Session established via listener!', { session: !!session, user: !!session?.user })
-            
-            // Clean up the listener
-            cleanupSubscription()
-            
-            // Wait a moment for session to fully establish
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            
-            console.log('🚀 CALLBACK PAGE: About to call handleProfileCheck from listener')
-            // Check for profile
+            clearTimeout(timeout)
+
+            console.log('🚀 CALLBACK PAGE: Session established successfully!')
+
+            // Unsubscribe from further events
+            subscription.unsubscribe()
+
+            // Check for profile and redirect
             await handleProfileCheck(session.user)
           }
         })
 
-        // Also check immediately in case session is already established
-        let attempts = 0
-        const maxAttempts = 15
-        
-        const checkSession = async () => {
-          // Don't continue if session was already handled by listener
-          if (sessionHandled) {
-            console.log('🚀 CALLBACK PAGE: Session already handled by listener, stopping direct check')
-            return
-          }
-          
-          attempts++
-          console.log(`🚀 CALLBACK PAGE: Waiting for session... attempt ${attempts}/${maxAttempts}`)
-          
-          const { data: { session }, error: sessionError } = await supabase!.auth.getSession()
-          
-          console.log('🚀 CALLBACK PAGE: Session check result:', { 
-            hasSession: !!session, 
-            hasUser: !!session?.user, 
-            error: sessionError 
-          })
-          
-          if (session && session.user && !sessionHandled) {
-            sessionHandled = true
-            console.log('🚀 CALLBACK PAGE: Session found in direct check!')
-            cleanupSubscription()
-            await handleProfileCheck(session.user)
-            return
-          }
-          
-          if (attempts < maxAttempts && !sessionHandled) {
-            setTimeout(checkSession, 1000)
-          } else if (!sessionHandled) {
-            cleanupSubscription()
-            console.log('🚀 CALLBACK PAGE: Max session wait attempts reached')
-            setStatus('error')
-            setMessage('Session establishment timed out. Please try again.')
-          }
+        // Cleanup function
+        return () => {
+          clearTimeout(timeout)
+          subscription.unsubscribe()
         }
-        
-        // Start checking for session
-        setTimeout(checkSession, 500)
-        
+
       } else {
         // No code parameter, try to get existing session
         const { data: { session }, error: sessionError } = await supabase!.auth.getSession()
@@ -154,76 +117,51 @@ function AuthCallbackContent() {
 
     const handleProfileCheck = async (user: any) => {
       console.log('🚀 CALLBACK PAGE: Checking for user profile:', user.id)
-      
+
       setStatus('success')
       setMessage('Authentication successful! Checking your profile...')
-      
+
       try {
         console.log('🚀 CALLBACK PAGE: Starting profile query...')
-        
-        // Quick profile check with timeout
-        const profileResult = await Promise.race([
-          supabase!
-            .from('users_profile')
-            .select('*')
-            .eq('user_id', user.id)
-            .single(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile check timeout')), 2000)
-          )
-        ]) as any
 
-        console.log('🚀 CALLBACK PAGE: Profile query result:', { 
-          hasData: !!profileResult.data, 
-          hasError: !!profileResult.error,
-          errorCode: profileResult.error?.code 
+        // Check for existing profile - no artificial timeout
+        const { data: profile, error: profileError } = await supabase!
+          .from('users_profile')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle() // Use maybeSingle instead of single to avoid error on no rows
+
+        console.log('🚀 CALLBACK PAGE: Profile query result:', {
+          hasData: !!profile,
+          hasError: !!profileError,
+          errorCode: profileError?.code
         })
 
-        if (profileResult.data) {
-          // Profile exists - redirect to dashboard immediately  
-          console.log('🚀 CALLBACK PAGE: Profile found, redirecting to dashboard immediately')
-          setMessage('Welcome back! Redirecting to your dashboard...')
-          
-          console.log('🚀 CALLBACK PAGE: Executing immediate redirect to dashboard')
-          router.replace('/dashboard')
-          return
-          
-        } else {
-          // No profile found - redirect to profile creation immediately
-          console.log('🚀 CALLBACK PAGE: No profile found, redirecting to profile creation immediately')
-          setMessage('Authentication successful! Redirecting to complete your profile...')
-          
-          console.log('🚀 CALLBACK PAGE: Executing immediate redirect to profile creation')
+        if (profileError) {
+          console.error('🚀 CALLBACK PAGE: Profile query error:', profileError)
+          // On error, assume no profile and redirect to creation
+          setMessage('Setting up your account...')
           router.replace('/auth/create-profile')
-          
-          // Force redirect if router fails
-          setTimeout(() => {
-            if (window.location.pathname !== '/auth/create-profile') {
-              console.log('🚀 CALLBACK PAGE: Force redirecting to profile creation')
-              window.location.href = '/auth/create-profile'
-            }
-          }, 100)
-          
           return
         }
-        
+
+        if (profile) {
+          // Profile exists - redirect to dashboard
+          console.log('🚀 CALLBACK PAGE: Profile found, redirecting to dashboard')
+          setMessage('Welcome back! Redirecting to your dashboard...')
+          router.replace('/dashboard')
+        } else {
+          // No profile found - redirect to profile creation
+          console.log('🚀 CALLBACK PAGE: No profile found, redirecting to profile creation')
+          setMessage('Setting up your account...')
+          router.replace('/auth/create-profile')
+        }
+
       } catch (error: any) {
-        console.log('🚀 CALLBACK PAGE: Profile check failed or timed out:', error.message)
-        // On any error, redirect to profile creation page immediately
-        setMessage('Authentication successful! Redirecting to complete your profile...')
-        
-        console.log('🚀 CALLBACK PAGE: Executing immediate redirect to profile creation (error case)')
+        console.error('🚀 CALLBACK PAGE: Unexpected error in profile check:', error)
+        // On any unexpected error, redirect to profile creation
+        setMessage('Setting up your account...')
         router.replace('/auth/create-profile')
-        
-        // Force redirect if router fails
-        setTimeout(() => {
-          if (window.location.pathname !== '/auth/create-profile') {
-            console.log('🚀 CALLBACK PAGE: Force redirecting to profile creation (error case)')
-            window.location.href = '/auth/create-profile'
-          }
-        }, 100)
-        
-        return
       }
     }
 
