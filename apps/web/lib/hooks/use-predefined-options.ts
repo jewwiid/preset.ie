@@ -21,6 +21,7 @@ export interface PredefinedOptions {
   styleTags: PredefinedOption[]
   vibeTags: PredefinedOption[]
   equipmentOptions: PredefinedOption[]
+  skills: PredefinedOption[]
 }
 
 export function usePredefinedOptions() {
@@ -36,7 +37,8 @@ export function usePredefinedOptions() {
     eyeColors: [],
     styleTags: [],
     vibeTags: [],
-    equipmentOptions: []
+    equipmentOptions: [],
+    skills: []
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -66,7 +68,8 @@ export function usePredefinedOptions() {
           eyeColorsResult,
           styleTagsResult,
           vibeTagsResult,
-          equipmentOptionsResult
+          equipmentOptionsResult,
+          skillsResult
         ] = await Promise.all([
           supabase
             .from('predefined_gender_identities')
@@ -138,6 +141,12 @@ export function usePredefinedOptions() {
             .from('predefined_equipment_options')
             .select('id, equipment_name as name, is_active, sort_order')
             .eq('is_active', true)
+            .order('sort_order'),
+          
+          supabase
+            .from('predefined_skills')
+            .select('id, name, is_active, sort_order')
+            .eq('is_active', true)
             .order('sort_order')
         ])
 
@@ -154,7 +163,8 @@ export function usePredefinedOptions() {
           eyeColorsResult,
           styleTagsResult,
           vibeTagsResult,
-          equipmentOptionsResult
+          equipmentOptionsResult,
+          skillsResult
         ]
 
         for (const result of results) {
@@ -187,7 +197,8 @@ export function usePredefinedOptions() {
           eyeColors: safeExtract(eyeColorsResult),
           styleTags: safeExtract(styleTagsResult),
           vibeTags: safeExtract(vibeTagsResult),
-          equipmentOptions: safeExtract(equipmentOptionsResult)
+          equipmentOptions: safeExtract(equipmentOptionsResult),
+          skills: safeExtract(skillsResult)
         })
 
       } catch (err) {

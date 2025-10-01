@@ -30,11 +30,10 @@ interface Project {
   end_date?: string;
   creator: {
     id: string;
-    username: string;
+    handle?: string;
     display_name: string;
     avatar_url?: string;
-    verified: boolean;
-    rating?: number;
+    verified_id?: boolean;
   };
 }
 
@@ -152,17 +151,11 @@ export default function RoleApplicationModal({
               <div className="flex-1">
                 <div className="flex items-center space-x-2">
                   <span className="font-medium">{project.creator.display_name}</span>
-                  {project.creator.verified && (
+                  {project.creator.verified_id && (
                     <Badge variant="secondary" className="text-xs">Verified</Badge>
                   )}
-                  {project.creator.rating && (
-                    <div className="flex items-center text-sm text-muted-foreground-500">
-                      <Star className="h-3 w-3 mr-1 fill-current" />
-                      {project.creator.rating.toFixed(1)}
-                    </div>
-                  )}
                 </div>
-                <p className="text-sm text-muted-foreground-500">@{project.creator.username}</p>
+                <p className="text-sm text-muted-foreground-500">@{project.creator.handle}</p>
               </div>
             </div>
 

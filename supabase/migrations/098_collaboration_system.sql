@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS collab_gear_offers (
   project_id UUID NOT NULL REFERENCES collab_projects(id) ON DELETE CASCADE,
   gear_request_id UUID REFERENCES collab_gear_requests(id) ON DELETE CASCADE,
   offerer_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
-  listing_id UUID REFERENCES listings(id) ON DELETE CASCADE,
+  listing_id UUID, -- Will add FK constraint later when listings table exists
   offer_type TEXT CHECK (offer_type IN ('rent', 'sell', 'borrow')) NOT NULL,
   daily_rate_cents INTEGER,
   total_price_cents INTEGER,
@@ -165,7 +165,7 @@ CREATE INDEX IF NOT EXISTS idx_collab_applications_status ON collab_applications
 CREATE INDEX IF NOT EXISTS idx_collab_gear_offers_project_id ON collab_gear_offers(project_id);
 CREATE INDEX IF NOT EXISTS idx_collab_gear_offers_gear_request_id ON collab_gear_offers(gear_request_id);
 CREATE INDEX IF NOT EXISTS idx_collab_gear_offers_offerer_id ON collab_gear_offers(offerer_id);
-CREATE INDEX IF NOT EXISTS idx_collab_gear_offers_listing_id ON collab_gear_offers(listing_id);
+-- listing_id index will be created in migration 103 when listings table exists
 CREATE INDEX IF NOT EXISTS idx_collab_gear_offers_status ON collab_gear_offers(status);
 
 -- Participants indexes
@@ -187,38 +187,65 @@ ALTER TABLE collab_gear_offers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE collab_participants ENABLE ROW LEVEL SECURITY;
 
 -- PROJECTS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "collab_projects_read" ON collab_projects;
+DROP POLICY IF EXISTS "collab_projects_insert_own" ON collab_projects;
+DROP POLICY IF EXISTS "collab_projects_update_own" ON collab_projects;
+DROP POLICY IF EXISTS "collab_projects_delete_own" ON collab_projects;
+
 -- Anyone can read public projects, creators can read their own
 CREATE POLICY "collab_projects_read" ON collab_projects 
   FOR SELECT USING (
     visibility = 'public' OR 
-    auth.uid() = creator_id OR
     EXISTS (
-      SELECT 1 FROM collab_participants cp 
-      WHERE cp.project_id = id AND cp.user_id = auth.uid()
+      SELECT 1 FROM users_profile up 
+      WHERE up.id = creator_id AND up.user_id = auth.uid()
     )
   );
 
 -- Only creators can insert their own projects
 CREATE POLICY "collab_projects_insert_own" ON collab_projects 
-  FOR INSERT WITH CHECK (auth.uid() = creator_id);
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM users_profile up 
+      WHERE up.id = creator_id AND up.user_id = auth.uid()
+    )
+  );
 
 -- Only creators can update their own projects
 CREATE POLICY "collab_projects_update_own" ON collab_projects 
-  FOR UPDATE USING (auth.uid() = creator_id);
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM users_profile up 
+      WHERE up.id = creator_id AND up.user_id = auth.uid()
+    )
+  );
 
 -- Only creators can delete their own projects
 CREATE POLICY "collab_projects_delete_own" ON collab_projects 
-  FOR DELETE USING (auth.uid() = creator_id);
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM users_profile up 
+      WHERE up.id = creator_id AND up.user_id = auth.uid()
+    )
+  );
 
 -- ROLES POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "collab_roles_read" ON collab_roles;
+DROP POLICY IF EXISTS "collab_roles_manage_own" ON collab_roles;
+
 -- Read if parent project is visible
 CREATE POLICY "collab_roles_read" ON collab_roles 
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM collab_projects cp 
       WHERE cp.id = project_id 
-      AND (cp.visibility = 'public' OR cp.creator_id = auth.uid() OR
-           EXISTS (SELECT 1 FROM collab_participants cpp WHERE cpp.project_id = cp.id AND cpp.user_id = auth.uid()))
+      AND (cp.visibility = 'public' OR 
+           EXISTS (SELECT 1 FROM users_profile up WHERE up.id = cp.creator_id AND up.user_id = auth.uid()) OR
+           EXISTS (SELECT 1 FROM collab_participants cpp 
+                   JOIN users_profile up ON cpp.user_id = up.id
+                   WHERE cpp.project_id = cp.id AND up.user_id = auth.uid()))
     )
   );
 
@@ -227,20 +254,28 @@ CREATE POLICY "collab_roles_manage_own" ON collab_roles
   FOR ALL USING (
     EXISTS (
       SELECT 1 FROM collab_projects cp 
+      JOIN users_profile up ON cp.creator_id = up.id
       WHERE cp.id = project_id 
-      AND cp.creator_id = auth.uid()
+      AND up.user_id = auth.uid()
     )
   );
 
 -- GEAR REQUESTS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "collab_gear_requests_read" ON collab_gear_requests;
+DROP POLICY IF EXISTS "collab_gear_requests_manage_own" ON collab_gear_requests;
+
 -- Read if parent project is visible
 CREATE POLICY "collab_gear_requests_read" ON collab_gear_requests 
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM collab_projects cp 
       WHERE cp.id = project_id 
-      AND (cp.visibility = 'public' OR cp.creator_id = auth.uid() OR
-           EXISTS (SELECT 1 FROM collab_participants cpp WHERE cpp.project_id = cp.id AND cpp.user_id = auth.uid()))
+      AND (cp.visibility = 'public' OR 
+           EXISTS (SELECT 1 FROM users_profile up WHERE up.id = cp.creator_id AND up.user_id = auth.uid()) OR
+           EXISTS (SELECT 1 FROM collab_participants cpp 
+                   JOIN users_profile up ON cpp.user_id = up.id
+                   WHERE cpp.project_id = cp.id AND up.user_id = auth.uid()))
     )
   );
 
@@ -249,75 +284,97 @@ CREATE POLICY "collab_gear_requests_manage_own" ON collab_gear_requests
   FOR ALL USING (
     EXISTS (
       SELECT 1 FROM collab_projects cp 
+      JOIN users_profile up ON cp.creator_id = up.id
       WHERE cp.id = project_id 
-      AND cp.creator_id = auth.uid()
+      AND up.user_id = auth.uid()
     )
   );
 
 -- APPLICATIONS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "collab_applications_read_own" ON collab_applications;
+DROP POLICY IF EXISTS "collab_applications_insert_as_applicant" ON collab_applications;
+DROP POLICY IF EXISTS "collab_applications_update_own" ON collab_applications;
+
 -- Users can read their own applications and project creators can read applications to their projects
 CREATE POLICY "collab_applications_read_own" ON collab_applications 
   FOR SELECT USING (
-    auth.uid() = applicant_id OR
+    EXISTS (SELECT 1 FROM users_profile up WHERE up.id = applicant_id AND up.user_id = auth.uid()) OR
     EXISTS (
       SELECT 1 FROM collab_projects cp 
+      JOIN users_profile up ON cp.creator_id = up.id
       WHERE cp.id = project_id 
-      AND cp.creator_id = auth.uid()
+      AND up.user_id = auth.uid()
     )
   );
 
 -- Users can create applications as applicants
 CREATE POLICY "collab_applications_insert_as_applicant" ON collab_applications 
-  FOR INSERT WITH CHECK (auth.uid() = applicant_id);
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM users_profile up WHERE up.id = applicant_id AND up.user_id = auth.uid())
+  );
 
 -- Applicants and project creators can update applications
 CREATE POLICY "collab_applications_update_own" ON collab_applications 
   FOR UPDATE USING (
-    auth.uid() = applicant_id OR
+    EXISTS (SELECT 1 FROM users_profile up WHERE up.id = applicant_id AND up.user_id = auth.uid()) OR
     EXISTS (
       SELECT 1 FROM collab_projects cp 
+      JOIN users_profile up ON cp.creator_id = up.id
       WHERE cp.id = project_id 
-      AND cp.creator_id = auth.uid()
+      AND up.user_id = auth.uid()
     )
   );
 
 -- GEAR OFFERS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "collab_gear_offers_read_own" ON collab_gear_offers;
+DROP POLICY IF EXISTS "collab_gear_offers_insert_as_offerer" ON collab_gear_offers;
+DROP POLICY IF EXISTS "collab_gear_offers_update_own" ON collab_gear_offers;
+
 -- Users can read offers they made and project creators can read offers to their projects
 CREATE POLICY "collab_gear_offers_read_own" ON collab_gear_offers 
   FOR SELECT USING (
-    auth.uid() = offerer_id OR
+    EXISTS (SELECT 1 FROM users_profile up WHERE up.id = offerer_id AND up.user_id = auth.uid()) OR
     EXISTS (
       SELECT 1 FROM collab_projects cp 
+      JOIN users_profile up ON cp.creator_id = up.id
       WHERE cp.id = project_id 
-      AND cp.creator_id = auth.uid()
+      AND up.user_id = auth.uid()
     )
   );
 
 -- Users can create offers as offerers
 CREATE POLICY "collab_gear_offers_insert_as_offerer" ON collab_gear_offers 
-  FOR INSERT WITH CHECK (auth.uid() = offerer_id);
+  FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM users_profile up WHERE up.id = offerer_id AND up.user_id = auth.uid())
+  );
 
 -- Offerers and project creators can update offers
 CREATE POLICY "collab_gear_offers_update_own" ON collab_gear_offers 
   FOR UPDATE USING (
-    auth.uid() = offerer_id OR
+    EXISTS (SELECT 1 FROM users_profile up WHERE up.id = offerer_id AND up.user_id = auth.uid()) OR
     EXISTS (
       SELECT 1 FROM collab_projects cp 
+      JOIN users_profile up ON cp.creator_id = up.id
       WHERE cp.id = project_id 
-      AND cp.creator_id = auth.uid()
+      AND up.user_id = auth.uid()
     )
   );
 
 -- PARTICIPANTS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "collab_participants_read_own" ON collab_participants;
+DROP POLICY IF EXISTS "collab_participants_manage_own" ON collab_participants;
+
 -- Users can read participants of projects they're involved in
 CREATE POLICY "collab_participants_read_own" ON collab_participants 
   FOR SELECT USING (
-    auth.uid() = user_id OR
+    EXISTS (SELECT 1 FROM users_profile up WHERE up.id = user_id AND up.user_id = auth.uid()) OR
     EXISTS (
       SELECT 1 FROM collab_projects cp 
-      WHERE cp.id = project_id 
-      AND (cp.creator_id = auth.uid() OR
-           EXISTS (SELECT 1 FROM collab_participants cpp WHERE cpp.project_id = cp.id AND cpp.user_id = auth.uid()))
+      JOIN users_profile up ON cp.creator_id = up.id
+      WHERE cp.id = project_id AND up.user_id = auth.uid()
     )
   );
 
@@ -326,8 +383,9 @@ CREATE POLICY "collab_participants_manage_own" ON collab_participants
   FOR ALL USING (
     EXISTS (
       SELECT 1 FROM collab_projects cp 
+      JOIN users_profile up ON cp.creator_id = up.id
       WHERE cp.id = project_id 
-      AND cp.creator_id = auth.uid()
+      AND up.user_id = auth.uid()
     )
   );
 

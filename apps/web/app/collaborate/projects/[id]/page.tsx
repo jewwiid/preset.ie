@@ -9,8 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, MapPin, Users, Camera, MessageCircle, Star, CheckCircle, XCircle, Clock, UserPlus, Mail } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import { InviteUserDialog } from '@/components/collaborate/InviteUserDialog';
-import { supabase } from '../../../../lib/supabase';
+import GearOfferModal from '@/components/collaborate/GearOfferModal';
+import { GearOffersList } from '@/components/collaborate/GearOffersList';
+import { ShareProjectModal } from '@/components/collaborate/ShareProjectModal';
+import ApplicationsList from '@/components/collaborate/ApplicationsList';
+import { getAuthToken } from '../../../../lib/supabase';
 
 interface Project {
   id: string;
@@ -26,11 +31,12 @@ interface Project {
   created_at: string;
   creator: {
     id: string;
-    username: string;
+    handle?: string;
     display_name: string;
     avatar_url?: string;
-    verified?: boolean;
-    rating?: number;
+    verified_id?: boolean;
+    city?: string;
+    country?: string;
     bio?: string;
     specializations?: string[];
   };
@@ -62,11 +68,10 @@ interface Project {
     joined_at: string;
     user: {
       id: string;
-      username: string;
+      handle?: string;
       display_name: string;
       avatar_url?: string;
-      verified?: boolean;
-      rating?: number;
+      verified_id?: boolean;
     };
   }>;
   moodboard?: {
@@ -90,8 +95,14 @@ export default function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [offerModalOpen, setOfferModalOpen] = useState(false);
+  const [selectedGearRequest, setSelectedGearRequest] = useState<any>(null);
+  const [gearOffers, setGearOffers] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [isCreator, setIsCreator] = useState(false);
   const [invitationStats, setInvitationStats] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('roles');
 
   const projectId = params?.id as string;
 
@@ -101,11 +112,8 @@ export default function ProjectDetailPage() {
 
   const fetchProject = async () => {
     try {
-      if (!supabase) return;
-      
-      // Get auth token
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      // Get auth token using the helper function
+      const token = await getAuthToken();
 
       const headers: HeadersInit = {
         'Content-Type': 'application/json'
@@ -124,6 +132,12 @@ export default function ProjectDetailPage() {
         setProject(data.project);
         setIsCreator(data.isCreator);
         setInvitationStats(data.invitationStats);
+
+        // Fetch gear offers and applications if user is creator
+        if (data.isCreator) {
+          fetchGearOffers(token ?? undefined);
+          fetchApplications(token ?? undefined);
+        }
       } else {
         setError(data.error || 'Failed to fetch project');
       }
@@ -135,14 +149,64 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const fetchGearOffers = async (token?: string) => {
+    try {
+      const authToken = token || await getAuthToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`/api/collab/projects/${projectId}/gear-offers`, {
+        headers
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGearOffers(data.gearOffers || []);
+      }
+    } catch (err) {
+      console.error('Error fetching gear offers:', err);
+    }
+  };
+
+  const fetchApplications = async (token?: string) => {
+    try {
+      const authToken = token || await getAuthToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`/api/collab/projects/${projectId}/applications`, {
+        headers
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setApplications(data.applications || []);
+      }
+    } catch (err) {
+      console.error('Error fetching applications:', err);
+    }
+  };
+
   const handleApply = async (roleId?: string) => {
     setApplying(true);
     try {
+      const token = await getAuthToken();
+      
       const response = await fetch(`/api/collab/projects/${projectId}/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify({
           role_id: roleId,
@@ -152,15 +216,14 @@ export default function ProjectDetailPage() {
       });
 
       if (response.ok) {
-        // Show success message or redirect
-        alert('Application submitted successfully!');
+        toast.success('Application submitted successfully!');
       } else {
         const data = await response.json();
-        alert(data.error || 'Failed to submit application');
+        toast.error(data.error || 'Failed to submit application');
       }
     } catch (err) {
       console.error('Error submitting application:', err);
-      alert('Failed to submit application');
+      toast.error('Failed to submit application');
     } finally {
       setApplying(false);
     }
@@ -228,7 +291,7 @@ export default function ProjectDetailPage() {
                 <Badge className={getStatusColor(project.status)}>
                   {project.status.replace('_', ' ')}
                 </Badge>
-                {project.creator.verified && (
+                {project.creator.verified_id && (
                   <Badge variant="secondary">Verified Creator</Badge>
                 )}
               </div>
@@ -282,11 +345,21 @@ export default function ProjectDetailPage() {
             </Card>
 
             {/* Tabs */}
-            <Tabs defaultValue="roles" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className={`grid w-full ${isCreator ? 'grid-cols-5' : 'grid-cols-3'}`}>
                 <TabsTrigger value="roles">Roles ({project.collab_roles.length})</TabsTrigger>
                 <TabsTrigger value="gear">Equipment ({project.collab_gear_requests.length})</TabsTrigger>
                 <TabsTrigger value="team">Team ({project.collab_participants.length})</TabsTrigger>
+                {isCreator && (
+                  <>
+                    <TabsTrigger value="applications">
+                      Applications ({applications.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="offers">
+                      Offers ({gearOffers.length})
+                    </TabsTrigger>
+                  </>
+                )}
               </TabsList>
 
               <TabsContent value="roles" className="space-y-4">
@@ -313,7 +386,7 @@ export default function ProjectDetailPage() {
                               )}
                             </div>
                           </div>
-                          {role.status === 'open' && (
+                          {!isCreator && role.status === 'open' && (
                             <Button
                               onClick={() => handleApply(role.id)}
                               disabled={applying}
@@ -398,6 +471,21 @@ export default function ProjectDetailPage() {
                             <span className="font-medium">Max Daily Rate:</span> €{(request.max_daily_rate_cents / 100).toFixed(2)}
                           </div>
                         )}
+
+                        {!isCreator && request.status === 'open' && (
+                          <div className="pt-3 border-t border-border-200">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedGearRequest(request);
+                                setOfferModalOpen(true);
+                              }}
+                            >
+                              <Camera className="h-4 w-4 mr-2" />
+                              Make Offer
+                            </Button>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))
@@ -426,14 +514,8 @@ export default function ProjectDetailPage() {
                           <div className="flex-1">
                             <div className="flex items-center space-x-2">
                               <h4 className="font-medium">{participant.user.display_name}</h4>
-                              {participant.user.verified && (
+                              {participant.user.verified_id && (
                                 <Badge variant="secondary" className="text-xs">Verified</Badge>
-                              )}
-                              {participant.user.rating && (
-                                <div className="flex items-center text-sm text-muted-foreground-500">
-                                  <Star className="h-3 w-3 mr-1 fill-current" />
-                                  {participant.user.rating.toFixed(1)}
-                                </div>
                               )}
                             </div>
                             <p className="text-sm text-muted-foreground-500 capitalize">
@@ -454,6 +536,35 @@ export default function ProjectDetailPage() {
                   ))
                 )}
               </TabsContent>
+
+              {/* Offers Tab - Only visible to creators */}
+              {isCreator && (
+                <>
+                  <TabsContent value="applications" className="space-y-4">
+                    <ApplicationsList
+                      projectId={projectId}
+                      applications={applications}
+                      isCreator={isCreator}
+                      onUpdate={() => {
+                        fetchApplications();
+                        fetchProject();
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="offers" className="space-y-4">
+                    <GearOffersList
+                      projectId={projectId}
+                      offers={gearOffers}
+                      isCreator={isCreator}
+                      onOfferUpdate={() => {
+                        fetchGearOffers();
+                        fetchProject();
+                      }}
+                    />
+                  </TabsContent>
+                </>
+              )}
             </Tabs>
           </div>
 
@@ -474,15 +585,11 @@ export default function ProjectDetailPage() {
                   </Avatar>
                   <div className="flex-1">
                     <h3 className="font-medium">{project.creator.display_name}</h3>
-                    <p className="text-sm text-muted-foreground-500">@{project.creator.username}</p>
-                    {project.creator.verified && (
-                      <Badge variant="secondary" className="mt-1">Verified</Badge>
+                    {project.creator.handle && (
+                      <p className="text-sm text-muted-foreground-500">@{project.creator.handle}</p>
                     )}
-                    {project.creator.rating && (
-                      <div className="flex items-center text-sm text-muted-foreground-500 mt-1">
-                        <Star className="h-3 w-3 mr-1 fill-current" />
-                        {project.creator.rating.toFixed(1)} rating
-                      </div>
+                    {project.creator.verified_id && (
+                      <Badge variant="secondary" className="mt-1">Verified</Badge>
                     )}
                   </div>
                 </div>
@@ -520,16 +627,24 @@ export default function ProjectDetailPage() {
                       Invite People
                     </Button>
                     
-                    <Button variant="outline" className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setActiveTab('applications')}
+                    >
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Manage Applications
                     </Button>
                     
-                    <Button variant="outline" className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => router.push(`/collaborate/projects/${projectId}/edit`)}
+                    >
                       Edit Project
                     </Button>
                   </>
-                ) : (
+                ) : !isCreator ? (
                   <>
                     <Button
                       onClick={() => handleApply()}
@@ -539,15 +654,19 @@ export default function ProjectDetailPage() {
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Apply to Project
                     </Button>
-                    
+
                     <Button variant="outline" className="w-full">
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Message Creator
                     </Button>
                   </>
-                )}
-                
-                <Button variant="outline" className="w-full">
+                ) : null}
+
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShareDialogOpen(true)}
+                >
                   Share Project
                 </Button>
               </CardContent>
@@ -622,6 +741,34 @@ export default function ProjectDetailPage() {
             // Refresh project data to update invitation stats
             fetchProject();
           }}
+        />
+      )}
+
+      {/* Gear Offer Modal */}
+      {project && selectedGearRequest && (
+        <GearOfferModal
+          gearRequest={selectedGearRequest}
+          project={project}
+          isOpen={offerModalOpen}
+          onClose={() => {
+            setOfferModalOpen(false);
+            setSelectedGearRequest(null);
+          }}
+          onSuccess={() => {
+            // Refresh project data to show updated offers
+            fetchProject();
+          }}
+        />
+      )}
+
+      {/* Share Project Modal */}
+      {project && (
+        <ShareProjectModal
+          open={shareDialogOpen}
+          onClose={() => setShareDialogOpen(false)}
+          projectId={project.id}
+          projectTitle={project.title}
+          projectDescription={project.description}
         />
       )}
     </div>

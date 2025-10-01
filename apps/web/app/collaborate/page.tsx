@@ -9,10 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Users, Camera, Plus, Search, Filter, Mail } from 'lucide-react';
+import { Calendar, MapPin, Users, Camera, Plus, Search, Filter, Mail, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '../../lib/supabase';
-import { ROLE_TYPES, GEAR_CATEGORIES, PROJECT_STATUSES, SORT_OPTIONS, COMMON_COUNTRIES } from './filter-constants';
+import { PROJECT_STATUSES, SORT_OPTIONS, COMMON_COUNTRIES } from './filter-constants';
 import { InvitationsList } from '@/components/collaborate/InvitationsList';
 
 interface Project {
@@ -77,6 +77,8 @@ function CollaboratePageContent() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [roleTypes, setRoleTypes] = useState<string[]>([]);
+  const [gearCategories, setGearCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('all');
   const [pagination, setPagination] = useState({
     page: 1,
@@ -147,6 +149,34 @@ function CollaboratePageContent() {
       setLoading(false);
     }
   };
+
+  // Fetch roles and gear categories from database
+  useEffect(() => {
+    const fetchFilterData = async () => {
+      try {
+        const [rolesResponse, gearCategoriesResponse] = await Promise.all([
+          fetch('/api/collab/predefined/roles'),
+          fetch('/api/collab/predefined/gear-categories')
+        ]);
+
+        if (rolesResponse.ok) {
+          const rolesData = await rolesResponse.json();
+          setRoleTypes(rolesData.roles.map((r: any) => r.name));
+        }
+
+        if (gearCategoriesResponse.ok) {
+          const gearCategoriesData = await gearCategoriesResponse.json();
+          setGearCategories(gearCategoriesData.gearCategories.map((g: any) => g.name));
+        }
+      } catch (error) {
+        console.error('Error fetching filter data:', error);
+        // Fallback to basic options if API fails
+        setRoleTypes(['Photographer', 'Videographer', 'Director', 'Cinematographer', 'Model', 'Actor/Actress', 'Makeup Artist', 'Hair Stylist', 'Wardrobe Stylist', 'Fashion Stylist', 'Location Scout', 'Producer', 'Production Assistant', 'Assistant', 'Editor', 'Sound Engineer', 'Audio Technician', 'Lighting Technician', 'Gaffer', 'Grip', 'Art Director', 'Set Designer', 'Props Master', 'Costume Designer', 'Script Supervisor', 'Storyboard Artist']);
+        setGearCategories(['Camera', 'Lens', 'Lighting', 'Audio Equipment', 'Microphone', 'Tripod', 'Monopod', 'Gimbal', 'Stabilizer', 'Drone', 'Monitor', 'Field Monitor', 'Backdrop', 'Background', 'Reflector', 'Diffuser', 'Softbox', 'Recording Equipment', 'Editing Setup', 'Computer/Laptop', 'Props', 'Wardrobe', 'Makeup Kit', 'Hair Styling Tools', 'Grip Equipment', 'Cables & Accessories', 'Storage & Media', 'Other Equipment']);
+      }
+    };
+    fetchFilterData();
+  }, []);
 
   useEffect(() => {
     fetchProjects(1, activeTab);
@@ -306,7 +336,7 @@ function CollaboratePageContent() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All roles</SelectItem>
-                      {ROLE_TYPES.map((role) => (
+                      {roleTypes.map((role) => (
                         <SelectItem key={role} value={role}>
                           {role}
                         </SelectItem>
@@ -325,7 +355,7 @@ function CollaboratePageContent() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All gear</SelectItem>
-                      {GEAR_CATEGORIES.map((category) => (
+                      {gearCategories.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
                         </SelectItem>
@@ -631,6 +661,42 @@ function CollaboratePageContent() {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Action buttons for My Projects */}
+                      {activeTab === 'my_projects' && (
+                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.location.href = `/collaborate/projects/${project.id}/edit`}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.location.href = `/collaborate/projects/${project.id}`}
+                            >
+                              View
+                            </Button>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm('Are you sure you want to delete this project?')) {
+                                // TODO: Implement delete functionality
+                                console.log('Delete project:', project.id);
+                              }
+                            }}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                       
                       <div className="mt-4 pt-4 border-t border-border">
                         <span className="text-xs text-muted-foreground">

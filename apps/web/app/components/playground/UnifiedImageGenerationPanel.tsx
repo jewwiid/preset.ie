@@ -2430,16 +2430,16 @@ export default function UnifiedImageGenerationPanel({
 
                   // Define patterns
                   const patterns = [
-                    // Subject at beginning - broader pattern
-                    { regex: /^(Create (?:a|an) [\w\s]+?(?:portrait|image|illustration|photograph|picture|film) of )([\w\s]+?)(?=,|\.|\s+(?:standing|sitting|in|with|during|capturing))/i, groups: [1, 2], colors: ['text-foreground/70', 'text-primary font-semibold'] },
+                    // Subject after "of" - captures subject anywhere in prompt
+                    { regex: /\bof (a |an |the )?([\w\s]+?)(?=\.|,|\s+in\s+the\s+style)/gi, groups: [1, 2], colors: ['text-foreground/70', 'text-primary font-semibold'] },
                     // Style references
                     { regex: /(in the style of )([^.,]+)/gi, groups: [1, 2], colors: ['text-foreground/70', 'text-violet-500 dark:text-violet-400 font-medium'] },
                     // Aspect ratios
                     { regex: /\b(\d+:\d+)\b/g, groups: [1], colors: ['text-amber-500 dark:text-amber-400 font-medium'] },
-                    // Technical terms - single words
-                    { regex: /\b(shot|lens|camera|lighting|framing|widescreen|atmosphere|saturation|resolution|portrait|film|instant|4k|8k|hd|uhd)\b/gi, groups: [1], colors: ['text-blue-500 dark:text-blue-400'] },
-                    // Multi-word technical terms
-                    { regex: /\b(depth of field|aspect ratio|eye contact|rule of thirds)\b/gi, groups: [1], colors: ['text-blue-500 dark:text-blue-400'] }
+                    // Multi-word cinematic parameters (must come before single words)
+                    { regex: /\b(portrait lighting|natural lighting|dramatic lighting|soft lighting|hard lighting|ambient lighting|portrait framing|tight framing|loose framing|depth of field|shallow depth|deep depth|aspect ratio|eye contact|rule of thirds|golden hour|blue hour|eye-level shot|low-angle shot|high-angle shot|dutch angle)\b/gi, groups: [1], colors: ['text-blue-500 dark:text-blue-400 font-medium'] },
+                    // Single word technical terms
+                    { regex: /\b(shot|lens|camera|lighting|framing|widescreen|atmosphere|saturation|resolution|portrait|film|instant|4k|8k|hd|uhd|bokeh|exposure|contrast)\b/gi, groups: [1], colors: ['text-blue-500 dark:text-blue-400'] }
                   ]
 
                   // Find all matches

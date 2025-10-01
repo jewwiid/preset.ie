@@ -16,18 +16,25 @@ export function ProfessionalSection() {
   const [predefinedLanguages, setPredefinedLanguages] = useState<string[]>([])
   const [loadingPredefined, setLoadingPredefined] = useState(false)
 
-  // Fetch predefined options
+  // Fetch predefined options from database
   useEffect(() => {
     const fetchPredefinedOptions = async () => {
       setLoadingPredefined(true)
       try {
-        // This would fetch from Supabase in a real implementation
-        setPredefinedSpecializations([
-          'Portrait Photography', 'Fashion Photography', 'Wedding Photography',
-          'Event Photography', 'Commercial Photography', 'Editorial Photography',
-          'Product Photography', 'Architecture Photography', 'Street Photography',
-          'Documentary Photography', 'Fine Art Photography', 'Sports Photography'
-        ])
+        // Fetch predefined skills from our database
+        const skillsResponse = await fetch('/api/collab/predefined/skills')
+        if (skillsResponse.ok) {
+          const skillsData = await skillsResponse.json()
+          setPredefinedSpecializations(skillsData.skills.map((s: any) => s.name))
+        } else {
+          // Fallback to basic specializations if API fails
+          setPredefinedSpecializations([
+            'Portrait Photography', 'Fashion Photography', 'Wedding Photography',
+            'Event Photography', 'Commercial Photography', 'Editorial Photography',
+            'Product Photography', 'Architecture Photography', 'Street Photography',
+            'Documentary Photography', 'Fine Art Photography', 'Sports Photography'
+          ])
+        }
         setPredefinedLanguages([
           'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese',
           'Chinese', 'Japanese', 'Korean', 'Arabic', 'Russian', 'Dutch'

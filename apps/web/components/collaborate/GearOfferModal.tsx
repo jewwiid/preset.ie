@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { X, Send, MapPin, Calendar, Package } from 'lucide-react';
+import { Send, MapPin, Calendar, Package } from 'lucide-react';
+import { toast } from 'sonner';
+import { getAuthToken } from '../../lib/supabase';
 
 interface GearRequest {
   id: string;
@@ -31,11 +33,10 @@ interface Project {
   end_date?: string;
   creator: {
     id: string;
-    username: string;
+    handle?: string;
     display_name: string;
     avatar_url?: string;
-    verified: boolean;
-    rating?: number;
+    verified_id?: boolean;
   };
 }
 
@@ -86,9 +87,10 @@ export default function GearOfferModal({
 
   const loadUserListings = async () => {
     try {
+      const token = await getAuthToken();
       const response = await fetch('/api/marketplace/listings?my_listings=true', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          ...(token && { 'Authorization': `Bearer ${token}` })
         }
       });
 
@@ -107,6 +109,7 @@ export default function GearOfferModal({
     setError(null);
 
     try {
+      const token = await getAuthToken();
       const offerData: any = {
         gear_request_id: gearRequest.id,
         listing_id: formData.listing_id || null,
@@ -117,39 +120,40 @@ export default function GearOfferModal({
       // Add pricing based on offer type
       if (formData.offer_type === 'rent' || formData.offer_type === 'borrow') {
         if (!formData.daily_rate_cents) {
-          setError('Daily rate is required for rent/borrow offers');
+          toast.error('Daily rate is required for rent/borrow offers');
           setLoading(false);
           return;
         }
-        offerData.daily_rate_cents = parseInt(formData.daily_rate_cents);
+        offerData.daily_rate_cents = Math.round(parseFloat(formData.daily_rate_cents) * 100);
       } else if (formData.offer_type === 'sell') {
         if (!formData.total_price_cents) {
-          setError('Total price is required for sell offers');
+          toast.error('Total price is required for sell offers');
           setLoading(false);
           return;
         }
-        offerData.total_price_cents = parseInt(formData.total_price_cents);
+        offerData.total_price_cents = Math.round(parseFloat(formData.total_price_cents) * 100);
       }
 
       const response = await fetch(`/api/collab/projects/${project.id}/gear-offers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify(offerData)
       });
 
       if (response.ok) {
+        toast.success('Offer submitted successfully!');
         onSuccess?.();
         onClose();
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to submit offer');
+        toast.error(data.error || 'Failed to submit offer');
       }
     } catch (err) {
       console.error('Error submitting offer:', err);
-      setError('Failed to submit offer');
+      toast.error('Failed to submit offer');
     } finally {
       setLoading(false);
     }
@@ -167,19 +171,18 @@ export default function GearOfferModal({
     return `€${(cents / 100).toFixed(2)}`;
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-xl">Make Equipment Offer</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </CardHeader>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Make Equipment Offer</DialogTitle>
+          <DialogDescription>
+            Offer your equipment for {gearRequest.category}
+            {gearRequest.equipment_spec && ` - ${gearRequest.equipment_spec}`}
+          </DialogDescription>
+        </DialogHeader>
 
-        <CardContent className="space-y-6">
+        <div className="space-y-6">
           {/* Project & Gear Request Info */}
           <div className="space-y-4">
             <div>
@@ -216,11 +219,11 @@ export default function GearOfferModal({
               <div className="flex-1">
                 <div className="flex items-center space-x-2">
                   <span className="font-medium">{project.creator.display_name}</span>
-                  {project.creator.verified && (
+                  {project.creator.verified_id && (
                     <Badge variant="secondary" className="text-xs">Verified</Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground-500">@{project.creator.username}</p>
+                <p className="text-sm text-muted-foreground-500">@{project.creator.handle}</p>
               </div>
             </div>
 
@@ -369,8 +372,8 @@ export default function GearOfferModal({
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

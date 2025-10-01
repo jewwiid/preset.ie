@@ -6,15 +6,31 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 // Initialize Supabase client
-const getSupabaseClient = () => {
+const getSupabaseClient = (authToken?: string, useServiceRole = false) => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
+  if (useServiceRole) {
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing required Supabase service role environment variables');
+    }
+    return createClient(supabaseUrl, supabaseServiceKey);
+  }
+
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing required Supabase environment variables');
   }
 
-  return createClient(supabaseUrl, supabaseServiceRoleKey);
+  const client = createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: authToken ? {
+        Authorization: `Bearer ${authToken}`
+      } : {}
+    }
+  });
+
+  return client;
 };
 
 // GET /api/collab/projects/[id] - Get single project details
@@ -23,29 +39,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = getSupabaseClient();
     const { id: projectId } = await params;
-
-    // Get current user if authenticated
+    
+    // Get auth token from request
     const authHeader = request.headers.get('authorization');
-    let currentUserId: string | null = null;
-
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-      
-      if (!authError && user) {
-        const { data: profile } = await supabase
-          .from('users_profile')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (profile) {
-          currentUserId = profile.id;
-        }
-      }
-    }
+    const token = authHeader?.replace('Bearer ', '');
+    
+    // Use service role client for reliable access
+    const supabase = getSupabaseClient(token, true);
 
     // Fetch project with all related data
     const { data: project, error: projectError } = await supabase
@@ -86,7 +87,9 @@ export async function GET(
         ),
         collab_participants(
           id,
+          user_id,
           role_type,
+          role_id,
           status,
           joined_at,
           user:users_profile!collab_participants_user_id_fkey(
@@ -94,19 +97,7 @@ export async function GET(
             handle,
             display_name,
             avatar_url,
-            verified_id,
-            rating
-          )
-        ),
-        moodboard:moodboards(
-          id,
-          title,
-          description,
-          moodboard_items(
-            id,
-            image_url,
-            description,
-            sort_order
+            verified_id
           )
         )
       `)
@@ -115,19 +106,44 @@ export async function GET(
 
     if (projectError) {
       console.error('Error fetching project:', projectError);
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Project not found', details: projectError.message }, { status: 404 });
     }
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    // Check if user has access to this project
+    // Ensure arrays exist even if relations are empty
+    project.collab_roles = project.collab_roles || [];
+    project.collab_gear_requests = project.collab_gear_requests || [];
+    project.collab_participants = project.collab_participants || [];
+
+    // Get current user info for additional data
+    let currentUserId: string | null = null;
+    let isCreator = false;
+    
+    if (token) {
+      // Create a separate authenticated client to get user info
+      const authClient = getSupabaseClient(token, false);
+      const { data: { user } } = await authClient.auth.getUser();
+      if (user) {
+        const { data: profile } = await authClient
+          .from('users_profile')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile) {
+          currentUserId = profile.id;
+          isCreator = currentUserId === project.creator_id;
+        }
+      }
+    }
+
+    // Manual access control since we're using service role
     const hasAccess = 
       project.visibility === 'public' ||
-      currentUserId === project.creator_id ||
-      project.collab_participants.some((p: any) => p.user_id === currentUserId) ||
-      (currentUserId && await checkInvitationAccess(supabase, projectId, currentUserId));
+      isCreator;
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -135,7 +151,7 @@ export async function GET(
 
     // Get invitation statistics for project creator
     let invitationStats = null;
-    if (currentUserId === project.creator_id) {
+    if (isCreator) {
       const { data: stats } = await supabase
         .from('collab_invitations')
         .select('status')
@@ -152,7 +168,7 @@ export async function GET(
     return NextResponse.json({ 
       project,
       invitationStats,
-      isCreator: currentUserId === project.creator_id
+      isCreator
     });
 
   } catch (error) {
@@ -161,18 +177,6 @@ export async function GET(
   }
 }
 
-// Helper function to check invitation access
-async function checkInvitationAccess(supabase: any, projectId: string, userId: string): Promise<boolean> {
-  const { data: invitation } = await supabase
-    .from('collab_invitations')
-    .select('status')
-    .eq('project_id', projectId)
-    .eq('invitee_id', userId)
-    .in('status', ['pending', 'accepted'])
-    .single();
-
-  return !!invitation;
-}
 
 // PATCH /api/collab/projects/[id] - Update project
 export async function PATCH(
@@ -180,50 +184,73 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = getSupabaseClient();
     const { id: projectId } = await params;
     const body = await request.json();
 
-    // Get current user
+    // Get auth token from request
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 });
+    // Use service role client for reliable access
+    const supabase = getSupabaseClient(token, true);
+
+    // Get current user info for access control
+    let currentUserId: string | null = null;
+    let isCreator = false;
+    
+    if (token) {
+      // Create a separate authenticated client to get user info
+      const authClient = getSupabaseClient(token, false);
+      const { data: { user }, error: userError } = await authClient.auth.getUser();
+      console.log('Auth user:', user?.id, 'Error:', userError);
+      if (user) {
+        const { data: profile, error: profileError } = await authClient
+          .from('users_profile')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+
+        console.log('User profile:', profile, 'Error:', profileError);
+        if (profile) {
+          currentUserId = profile.id;
+        } else {
+          console.error('No profile found for user:', user.id);
+          return NextResponse.json({ error: 'User profile not found' }, { status: 403 });
+        }
+      } else {
+        console.error('No user found with token');
+        return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 });
+      }
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('users_profile')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
-    }
-
-    // Verify user is the project creator
-    const { data: project, error: projectError } = await supabase
+    // First, check if project exists and get creator info
+    const { data: existingProject, error: fetchError } = await supabase
       .from('collab_projects')
       .select('creator_id')
       .eq('id', projectId)
       .single();
 
-    if (projectError || !project) {
+    console.log('Existing project:', existingProject);
+    console.log('Current user ID:', currentUserId);
+    console.log('Project creator ID:', existingProject?.creator_id);
+
+    if (fetchError || !existingProject) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (project.creator_id !== profile.id) {
-      return NextResponse.json({ error: 'Only project creators can update projects' }, { status: 403 });
+    // Check if user is the creator
+    isCreator = currentUserId === existingProject.creator_id;
+    console.log('Is creator:', isCreator);
+    
+    if (!isCreator) {
+      return NextResponse.json({ error: 'Access denied - only project creator can update' }, { status: 403 });
     }
 
-    // Update project
+    // Update project - now we know user has permission
     const { data: updatedProject, error: updateError } = await supabase
       .from('collab_projects')
       .update(body)
@@ -233,6 +260,9 @@ export async function PATCH(
 
     if (updateError) {
       console.error('Error updating project:', updateError);
+      if (updateError.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Project not found or access denied' }, { status: 404 });
+      }
       return NextResponse.json({ error: 'Failed to update project' }, { status: 500 });
     }
 
@@ -250,49 +280,58 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = getSupabaseClient();
     const { id: projectId } = await params;
 
-    // Get current user
+    // Get auth token from request
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 });
+    // Use service role client for reliable access
+    const supabase = getSupabaseClient(token, true);
+
+    // Get current user info for access control
+    let currentUserId: string | null = null;
+    
+    if (token) {
+      // Create a separate authenticated client to get user info
+      const authClient = getSupabaseClient(token, false);
+      const { data: { user } } = await authClient.auth.getUser();
+      if (user) {
+        const { data: profile } = await authClient
+          .from('users_profile')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profile) {
+          currentUserId = profile.id;
+        }
+      }
     }
 
-    // Get user profile
-    const { data: profile, error: profileError } = await supabase
-      .from('users_profile')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (profileError || !profile) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
-    }
-
-    // Verify user is the project creator
-    const { data: project, error: projectError } = await supabase
+    // First, check if project exists and get creator info
+    const { data: existingProject, error: fetchError } = await supabase
       .from('collab_projects')
       .select('creator_id')
       .eq('id', projectId)
       .single();
 
-    if (projectError || !project) {
+    if (fetchError || !existingProject) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    if (project.creator_id !== profile.id) {
-      return NextResponse.json({ error: 'Only project creators can delete projects' }, { status: 403 });
+    // Check if user is the creator
+    const isCreator = currentUserId === existingProject.creator_id;
+    
+    if (!isCreator) {
+      return NextResponse.json({ error: 'Access denied - only project creator can delete' }, { status: 403 });
     }
 
-    // Delete project (cascade will handle related records)
+    // Delete project - now we know user has permission
     const { error: deleteError } = await supabase
       .from('collab_projects')
       .delete()
@@ -300,6 +339,9 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('Error deleting project:', deleteError);
+      if (deleteError.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Project not found or access denied' }, { status: 404 });
+      }
       return NextResponse.json({ error: 'Failed to delete project' }, { status: 500 });
     }
 

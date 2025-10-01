@@ -14,6 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, ArrowLeft, ArrowRight, Check, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { RoleForm } from '@/components/collaborate/RoleForm';
+import { getAuthToken } from '@/lib/supabase';
 
 interface ProjectFormData {
   title: string;
@@ -46,16 +48,8 @@ interface GearRequestFormData {
 
 type ProjectStep = 'basics' | 'roles' | 'gear' | 'review';
 
-const SKILL_OPTIONS = [
-  'Photography', 'Videography', 'Modeling', 'Styling', 'Makeup', 'Hair',
-  'Lighting', 'Sound', 'Editing', 'Directing', 'Producing', 'Writing',
-  'Graphic Design', 'Web Design', 'Social Media', 'Marketing'
-];
 
-const GEAR_CATEGORIES = [
-  'Camera', 'Lens', 'Lighting', 'Audio', 'Tripod', 'Gimbal', 'Drone',
-  'Accessories', 'Studio Equipment', 'Props', 'Costumes', 'Other'
-];
+// Gear categories will be fetched from the database
 
 function CreateProjectPageContent() {
   const router = useRouter();
@@ -78,6 +72,34 @@ function CreateProjectPageContent() {
 
   const [roles, setRoles] = useState<RoleFormData[]>([]);
   const [gearRequests, setGearRequests] = useState<GearRequestFormData[]>([]);
+  const [gearCategories, setGearCategories] = useState<string[]>([]);
+  const [gearCategoriesLoading, setGearCategoriesLoading] = useState(true);
+
+  // Fetch gear categories from database
+  useEffect(() => {
+    const fetchGearCategories = async () => {
+      try {
+        const response = await fetch('/api/collab/predefined/gear-categories');
+        if (response.ok) {
+          const data = await response.json();
+          const categories = data.gearCategories.map((g: any) => g.name);
+          console.log('Fetched gear categories:', categories);
+          setGearCategories(categories);
+        } else {
+          console.log('Failed to fetch gear categories, using fallback');
+        }
+      } catch (error) {
+        console.error('Error fetching gear categories:', error);
+        // Fallback to basic categories if API fails
+        const fallbackCategories = ['Camera', 'Lens', 'Lighting', 'Audio', 'Tripod', 'Gimbal', 'Drone', 'Accessories', 'Studio Equipment', 'Props', 'Costumes', 'Other'];
+        console.log('Using fallback gear categories:', fallbackCategories);
+        setGearCategories(fallbackCategories);
+      } finally {
+        setGearCategoriesLoading(false);
+      }
+    };
+    fetchGearCategories();
+  }, []);
 
   // Handle prefilled data from equipment request
   useEffect(() => {
@@ -210,50 +232,77 @@ function CreateProjectPageContent() {
     setError(null);
 
     try {
+      console.log('Creating project with data:', projectData);
+      
+      // Get auth token
+      const authToken = await getAuthToken();
+      if (!authToken) {
+        throw new Error('Authentication required. Please log in.');
+      }
+      
       // Create project
       const projectResponse = await fetch('/api/collab/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify(projectData)
       });
 
+      console.log('Project response status:', projectResponse.status);
+      
       if (!projectResponse.ok) {
-        throw new Error('Failed to create project');
+        const errorData = await projectResponse.json();
+        console.error('Project creation failed:', errorData);
+        throw new Error(`Failed to create project: ${errorData.error || 'Unknown error'}`);
       }
 
       const { project } = await projectResponse.json();
+      console.log('Project created successfully:', project);
 
       // Create roles
+      console.log('Creating roles:', roles);
       for (const role of roles) {
-        await fetch(`/api/collab/projects/${project.id}/roles`, {
+        const roleResponse = await fetch(`/api/collab/projects/${project.id}/roles`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+            'Authorization': `Bearer ${authToken}`
           },
           body: JSON.stringify(role)
         });
+        
+        if (!roleResponse.ok) {
+          const errorData = await roleResponse.json();
+          console.error('Role creation failed:', errorData);
+          throw new Error(`Failed to create role: ${errorData.error || 'Unknown error'}`);
+        }
       }
 
       // Create gear requests
+      console.log('Creating gear requests:', gearRequests);
       for (const gearRequest of gearRequests) {
-        await fetch(`/api/collab/projects/${project.id}/gear-requests`, {
+        const gearResponse = await fetch(`/api/collab/projects/${project.id}/gear-requests`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+            'Authorization': `Bearer ${authToken}`
           },
           body: JSON.stringify(gearRequest)
         });
+        
+        if (!gearResponse.ok) {
+          const errorData = await gearResponse.json();
+          console.error('Gear request creation failed:', errorData);
+          throw new Error(`Failed to create gear request: ${errorData.error || 'Unknown error'}`);
+        }
       }
 
       router.push(`/collaborate/projects/${project.id}`);
     } catch (err) {
       console.error('Error creating project:', err);
-      setError('Failed to create project. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to create project. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -403,83 +452,13 @@ function CreateProjectPageContent() {
             ) : (
               <div className="space-y-4">
                 {roles.map((role, index) => (
-                  <Card key={index}>
-                    <CardHeader>
-                      <div className="flex justify-between items-center">
-                        <CardTitle className="text-base">Role {index + 1}</CardTitle>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeRole(index)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label>Role Name *</Label>
-                        <Input
-                          placeholder="e.g., Photographer, Model, Stylist"
-                          value={role.role_name}
-                          onChange={(e) => updateRole(index, 'role_name', e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <Label>Required Skills</Label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {SKILL_OPTIONS.map((skill) => (
-                            <Button
-                              key={skill}
-                              variant={role.skills_required.includes(skill) ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => {
-                                const newSkills = role.skills_required.includes(skill)
-                                  ? role.skills_required.filter(s => s !== skill)
-                                  : [...role.skills_required, skill];
-                                updateRole(index, 'skills_required', newSkills);
-                              }}
-                            >
-                              {skill}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Headcount</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={role.headcount}
-                            onChange={(e) => updateRole(index, 'headcount', parseInt(e.target.value))}
-                          />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id={`paid-${index}`}
-                            checked={role.is_paid}
-                            onCheckedChange={(checked) => updateRole(index, 'is_paid', checked)}
-                          />
-                          <Label htmlFor={`paid-${index}`}>This role is paid</Label>
-                        </div>
-                      </div>
-
-                      {role.is_paid && (
-                        <div>
-                          <Label>Compensation Details</Label>
-                          <Textarea
-                            placeholder="Describe compensation, rates, etc."
-                            value={role.compensation_details}
-                            onChange={(e) => updateRole(index, 'compensation_details', e.target.value)}
-                            rows={2}
-                          />
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <RoleForm
+                    key={index}
+                    role={role}
+                    index={index}
+                    onUpdate={updateRole}
+                    onRemove={removeRole}
+                  />
                 ))}
               </div>
             )}
@@ -521,14 +500,18 @@ function CreateProjectPageContent() {
                         <Label>Category *</Label>
                         <Select value={request.category} onValueChange={(value) => updateGearRequest(index, 'category', value)}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
+                            <SelectValue placeholder={gearCategoriesLoading ? "Loading categories..." : "Select category"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {GEAR_CATEGORIES.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
+                            {gearCategoriesLoading ? (
+                              <SelectItem value="" disabled>Loading categories...</SelectItem>
+                            ) : (
+                              gearCategories.map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -573,13 +556,26 @@ function CreateProjectPageContent() {
                       </div>
 
                       <div>
-                        <Label>Max Daily Rate (cents)</Label>
-                        <Input
-                          type="number"
-                          placeholder="Maximum daily rate in cents"
-                          value={request.max_daily_rate_cents || ''}
-                          onChange={(e) => updateGearRequest(index, 'max_daily_rate_cents', e.target.value ? parseInt(e.target.value) : undefined)}
-                        />
+                        <Label>Max Daily Rate</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">€</span>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={request.max_daily_rate_cents ? (request.max_daily_rate_cents / 100).toFixed(2) : ''}
+                            onChange={(e) => {
+                              const euroValue = parseFloat(e.target.value) || 0;
+                              const centsValue = Math.round(euroValue * 100);
+                              updateGearRequest(index, 'max_daily_rate_cents', centsValue > 0 ? centsValue : undefined);
+                            }}
+                            className="pl-8"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Enter the maximum daily rate in euros
+                        </p>
                       </div>
                     </CardContent>
                   </Card>

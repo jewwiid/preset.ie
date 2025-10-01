@@ -66,7 +66,24 @@ export const getSupabaseClient = () => {
 // Helper function to get auth token consistently
 export const getAuthToken = async () => {
   const client = getSupabaseClient()
-  const { data: { session } } = await client.auth.getSession()
+  const { data: { session }, error } = await client.auth.getSession()
+  
+  if (error) {
+    console.error('Error getting session:', error)
+    return null
+  }
+  
+  if (!session) {
+    console.log('No session found in getAuthToken')
+    return null
+  }
+  
+  console.log('Session found in getAuthToken:', {
+    hasAccessToken: !!session.access_token,
+    expiresAt: session.expires_at,
+    user: session.user?.email
+  })
+  
   return session?.access_token
 }
 

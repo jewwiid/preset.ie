@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Camera, User, MapPin, Briefcase, Instagram, Globe, Phone, Calendar, Sparkles } from 'lucide-react'
 import { DatePicker } from './ui/date-picker'
+import { MultiSelectCombobox } from './ui/combobox'
 
 interface EnhancedProfileFormProps {
   formData: any
@@ -28,6 +29,31 @@ export default function EnhancedProfileForm({
   handleVibeTagToggle
 }: EnhancedProfileFormProps) {
   const [currentSection, setCurrentSection] = useState(0)
+  const [predefinedSkills, setPredefinedSkills] = useState<string[]>([])
+  const [skillsLoading, setSkillsLoading] = useState(true)
+
+  // Fetch predefined skills from database
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const response = await fetch('/api/collab/predefined/skills')
+        if (response.ok) {
+          const data = await response.json()
+          setPredefinedSkills(data.skills.map((s: any) => s.name))
+        }
+      } catch (error) {
+        console.error('Error fetching predefined skills:', error)
+        // Fallback to basic skills
+        setPredefinedSkills([
+          'Photography', 'Videography', 'Editing', 'Lighting', 'Portrait Photography',
+          'Fashion Photography', 'Wedding Photography', 'Commercial Photography'
+        ])
+      } finally {
+        setSkillsLoading(false)
+      }
+    }
+    fetchSkills()
+  }, [])
 
   const sections = [
     { title: 'Basic Info', icon: User },
@@ -585,15 +611,25 @@ export default function EnhancedProfileForm({
 
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
-                      Specializations (comma-separated)
+                      Specializations
                     </label>
-                    <input
-                      type="text"
-                      value={formData.specializations.join(', ')}
-                      onChange={(e) => setFormData((prev: any) => ({ ...prev, specializations: e.target.value.split(',').map(s => s.trim()) }))}
-                      className="w-full px-3 py-2 border border-border-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Fashion, Portrait, Commercial"
-                    />
+                    {skillsLoading ? (
+                      <div className="w-full px-3 py-2 border border-border-300 rounded-md bg-gray-50">
+                        Loading skills...
+                      </div>
+                    ) : (
+                      <MultiSelectCombobox
+                        values={formData.specializations || []}
+                        onValuesChange={(skills) => setFormData((prev: any) => ({ ...prev, specializations: skills }))}
+                        options={predefinedSkills}
+                        placeholder="Select your specializations..."
+                        emptyText="No skills found."
+                        maxSelections={15}
+                      />
+                    )}
+                    <p className="text-xs text-muted-foreground-500 mt-1">
+                      Select up to 15 specializations that best describe your skills
+                    </p>
                   </div>
 
                   <div>

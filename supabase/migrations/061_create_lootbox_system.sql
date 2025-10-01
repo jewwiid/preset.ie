@@ -1,25 +1,4 @@
--- Create lootbox events table to track purchases
--- V2: Time-based triggers instead of credit-based
--- IMPORTANT: Users can only purchase ONE lootbox per event period
-CREATE TABLE IF NOT EXISTS public.lootbox_events (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_type VARCHAR(50) NOT NULL DEFAULT 'purchased', -- 'purchased'
-    event_name VARCHAR(100), -- e.g., 'Weekend Flash Sale', 'Mid-Month Deal'
-    event_period VARCHAR(50), -- e.g., '2025-W40', '2025-10-15' for tracking unique periods
-    package_id UUID REFERENCES public.lootbox_packages(id),
-    user_credits_offered INTEGER NOT NULL DEFAULT 2000,
-    price_usd DECIMAL(10,2) NOT NULL,
-    margin_percentage DECIMAL(5,2) NOT NULL DEFAULT 35.0,
-    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    purchased_by UUID REFERENCES auth.users(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    -- Ensure one purchase per user per event period
-    UNIQUE(purchased_by, event_period)
-);
-
--- Create lootbox packages table for dynamic packages
+-- Create lootbox packages table for dynamic packages first (referenced by lootbox_events)
 -- V2: Removed nano_banana_threshold (legacy field, not used in time-based model)
 CREATE TABLE IF NOT EXISTS public.lootbox_packages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -63,6 +42,27 @@ INSERT INTO public.lootbox_packages (
     true
 )
 ON CONFLICT DO NOTHING;
+
+-- Create lootbox events table to track purchases
+-- V2: Time-based triggers instead of credit-based
+-- IMPORTANT: Users can only purchase ONE lootbox per event period
+CREATE TABLE IF NOT EXISTS public.lootbox_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_type VARCHAR(50) NOT NULL DEFAULT 'purchased', -- 'purchased'
+    event_name VARCHAR(100), -- e.g., 'Weekend Flash Sale', 'Mid-Month Deal'
+    event_period VARCHAR(50), -- e.g., '2025-W40', '2025-10-15' for tracking unique periods
+    package_id UUID REFERENCES public.lootbox_packages(id),
+    user_credits_offered INTEGER NOT NULL DEFAULT 2000,
+    price_usd DECIMAL(10,2) NOT NULL,
+    margin_percentage DECIMAL(5,2) NOT NULL DEFAULT 35.0,
+    purchased_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    purchased_by UUID REFERENCES auth.users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Ensure one purchase per user per event period
+    UNIQUE(purchased_by, event_period)
+);
 
 -- Create index for efficient queries
 CREATE INDEX IF NOT EXISTS idx_lootbox_events_purchased 

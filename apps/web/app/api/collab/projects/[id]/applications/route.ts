@@ -66,11 +66,10 @@ export async function GET(
         *,
         applicant:users_profile!collab_applications_applicant_id_fkey(
           id,
-          username,
+          handle,
           display_name,
           avatar_url,
-          verified,
-          rating,
+          verified_id,
           city,
           country,
           bio,
