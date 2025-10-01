@@ -301,9 +301,11 @@ export default function PresetDetailPage() {
       })
 
       if (response.ok) {
-        alert('Example verified as sample successfully!')
-        // Refresh samples
+        // Refresh both samples and examples to update UI
         fetchSamples()
+        fetchExamples()
+        // Show success message
+        console.log('Example verified as sample successfully!')
       } else {
         const error = await response.json()
         alert(`Failed to verify sample: ${error.error}`)
@@ -472,14 +474,19 @@ export default function PresetDetailPage() {
                        'Not specified'}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Mood:</span>
-                    <span className="text-sm font-medium text-foreground">
-                      {preset.ai_metadata?.mood || 
-                       preset.style_settings?.mood || 
-                       'Not specified'}
-                    </span>
-                  </div>
+                  
+                  {/* Only show Mood for cinematic presets since they have sceneMood */}
+                  {preset.style_settings?.mood && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Mood:</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {preset.style_settings?.mood || 
+                         preset.ai_metadata?.mood || 
+                         'Not specified'}
+                      </span>
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Resolution:</span>
                     <span className="text-sm font-medium text-foreground">
@@ -489,22 +496,46 @@ export default function PresetDetailPage() {
                         'Not specified')}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Steps:</span>
-                    <span className="text-sm font-medium text-foreground">
-                      {preset.technical_settings?.steps || 
-                       preset.style_settings?.steps || 
-                       'Not specified'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Guidance Scale:</span>
-                    <span className="text-sm font-medium text-foreground">
-                      {preset.style_settings?.guidance_scale || 
-                       preset.technical_settings?.guidance_scale || 
-                       'Not specified'}
-                    </span>
-                  </div>
+                  
+                  {/* Only show Intensity if it's set */}
+                  {preset.style_settings?.intensity && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Intensity:</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {preset.style_settings.intensity}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Only show Consistency Level if it's set */}
+                  {preset.style_settings?.consistency_level && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Consistency:</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {preset.style_settings.consistency_level}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Only show Aspect Ratio if it's set */}
+                  {preset.technical_settings?.aspect_ratio && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Aspect Ratio:</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {preset.technical_settings.aspect_ratio}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Only show Number of Images if it's set and not 1 */}
+                  {preset.technical_settings?.num_images && preset.technical_settings.num_images > 1 && (
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Images:</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {preset.technical_settings.num_images}
+                      </span>
+                    </div>
+                  )}
                   
                   
                   {preset.style_settings?.artistic_level && (
@@ -572,17 +603,34 @@ export default function PresetDetailPage() {
                       <Card key={sample.id} className="overflow-hidden">
                         <div className="grid grid-cols-2">
                           {/* Source Image */}
-                          <div className="relative">
-                            <img
-                              src={sample.source_image_url}
-                              alt="Source image"
-                              className="w-full h-48 object-cover"
-                            />
-                            <div className="absolute top-2 left-2">
-                              <Badge variant="secondary" className="text-xs">
-                                Source
-                              </Badge>
-                            </div>
+                          <div className="relative bg-muted/20">
+                            {sample.source_image_url ? (
+                              <>
+                                <img
+                                  src={sample.source_image_url}
+                                  alt="Source image"
+                                  className="w-full h-48 object-cover"
+                                />
+                                <div className="absolute top-2 left-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    Source
+                                  </Badge>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="w-full h-48 flex items-center justify-center">
+                                <div className="text-center text-muted-foreground">
+                                  <Wand2 className="h-8 w-8 mx-auto mb-2" />
+                                  <p className="text-sm">Text-to-Image</p>
+                                  <p className="text-xs">No source image</p>
+                                </div>
+                                <div className="absolute top-2 left-2">
+                                  <Badge variant="secondary" className="text-xs">
+                                    Prompt
+                                  </Badge>
+                                </div>
+                              </div>
+                            )}
                           </div>
                           
                           {/* Result Image */}
@@ -608,8 +656,31 @@ export default function PresetDetailPage() {
                         <CardContent className="p-4">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>{sample.generation_provider}</span>
-                              <span>{new Date(sample.generation_timestamp).toLocaleDateString()}</span>
+                              <span>
+                                {(() => {
+                                  // Format provider/model names nicely
+                                  const formatName = (name: string) => {
+                                    return name
+                                      .replace(/-v\d+/g, ' V$&'.replace('-v', '')) // Convert -v4 to V4
+                                      .replace(/seedream/gi, 'Seedream')
+                                      .replace(/nanobanana/gi, 'Nanobanana')
+                                      .replace(/wavespeed/gi, 'Wavespeed')
+                                      .replace(/dalle/gi, 'DALL-E')
+                                      .replace(/midjourney/gi, 'Midjourney')
+                                      .replace(/stable-diffusion/gi, 'Stable Diffusion');
+                                  };
+
+                                  // Determine what to show
+                                  if (sample.generation_model) {
+                                    return formatName(sample.generation_model);
+                                  }
+                                  if (sample.generation_provider) {
+                                    return formatName(sample.generation_provider);
+                                  }
+                                  return 'Unknown';
+                                })()}
+                              </span>
+                              <span>{new Date(sample.created_at).toLocaleDateString()}</span>
                             </div>
                             <p className="text-sm text-foreground line-clamp-2">
                               {sample.prompt_used}
@@ -796,12 +867,84 @@ export default function PresetDetailPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="bg-muted p-4 rounded-lg">
                   <pre className="whitespace-pre-wrap text-sm text-foreground">
                     {preset.prompt_template}
                   </pre>
                 </div>
+                
+                {/* Placeholder Information */}
+                {preset.prompt_template.includes('{subject}') && (
+                  <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                      <div>
+                        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                          Subject Placeholder
+                        </h4>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          This preset uses <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">{'{subject}'}</code> as a placeholder. 
+                          When you use this preset in the playground, type your subject (e.g., "a cat", "portrait of a woman") 
+                          and it will automatically replace the placeholder.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {preset.prompt_template.includes('{style}') && (
+                  <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-purple-500 mt-2 flex-shrink-0"></div>
+                      <div>
+                        <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-1">
+                          Style Placeholder
+                        </h4>
+                        <p className="text-sm text-purple-700 dark:text-purple-300">
+                          This preset uses <code className="bg-purple-100 dark:bg-purple-900 px-1 rounded">{'{style}'}</code> as a placeholder. 
+                          The style will be automatically filled based on the preset's style settings.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {preset.prompt_template.includes('{mood}') && (
+                  <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
+                      <div>
+                        <h4 className="font-medium text-green-900 dark:text-green-100 mb-1">
+                          Mood Placeholder
+                        </h4>
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          This preset uses <code className="bg-green-100 dark:bg-green-900 px-1 rounded">{'{mood}'}</code> as a placeholder. 
+                          The mood will be automatically filled based on the preset's mood settings.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Show if no placeholders */}
+                {!preset.prompt_template.includes('{subject}') && 
+                 !preset.prompt_template.includes('{style}') && 
+                 !preset.prompt_template.includes('{mood}') && (
+                  <div className="bg-gray-50 dark:bg-gray-950/20 border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-gray-500 mt-2 flex-shrink-0"></div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                          Static Prompt
+                        </h4>
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                          This preset uses a static prompt without placeholders. The prompt will be used exactly as written.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -889,35 +1032,44 @@ export default function PresetDetailPage() {
                           </div>
                         )}
                         <div className="p-4 space-y-3">
-                          <div className="flex items-center justify-between">
+                          <div className="space-y-2">
                             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                               {example.creator.avatar_url ? (
                                 <img 
                                   src={example.creator.avatar_url} 
                                   alt={example.creator.display_name}
-                                  className="h-4 w-4 rounded-full object-cover"
+                                  className="h-4 w-4 rounded-full object-cover flex-shrink-0"
                                 />
                               ) : (
-                                <User className="h-4 w-4" />
+                                <User className="h-4 w-4 flex-shrink-0" />
                               )}
-                              <span>@{example.creator.handle}</span>
+                              <span className="truncate">@{example.creator.handle}</span>
                               <span>•</span>
-                              <Calendar className="h-4 w-4" />
-                              <span>{new Date(example.created_at).toLocaleDateString()}</span>
+                              <Calendar className="h-4 w-4 flex-shrink-0" />
+                              <span className="whitespace-nowrap">{new Date(example.created_at).toLocaleDateString()}</span>
+                              {example.is_verified && (
+                                <>
+                                  <span>•</span>
+                                  <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                  <span className="text-green-600 font-medium">Verified</span>
+                                </>
+                              )}
                             </div>
-                            {(preset?.creator.id === user?.id || userRole?.isAdmin) && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => verifyAsSample(example)}
-                                className="text-xs"
-                              >
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Verify
-                              </Button>
+                            {(preset?.creator.id === user?.id || userRole?.isAdmin) && !example.is_verified && (
+                              <div className="flex justify-end">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => verifyAsSample(example)}
+                                  className="text-xs"
+                                >
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Verify
+                                </Button>
+                              </div>
                             )}
                           </div>
-                          <h4 className="font-medium text-sm">{example.title}</h4>
+                          <h4 className="font-medium text-sm line-clamp-2">{example.title}</h4>
                         </div>
                       </div>
                     ))}

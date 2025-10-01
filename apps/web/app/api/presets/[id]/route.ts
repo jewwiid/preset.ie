@@ -23,142 +23,174 @@ export async function GET(
     // Create Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    let preset;
-    let error;
+    // Query the appropriate table based on preset type
+    console.log(`Fetching preset ${id} (cinematic: ${isCinematicPreset})...`);
+    
+    const tableName = isCinematicPreset ? 'cinematic_presets' : 'presets';
+    
+    const { data: preset, error } = await supabase
+      .from(tableName)
+      .select(`
+        id,
+        user_id,
+        name,
+        display_name,
+        description,
+        category,
+        prompt_template,
+        negative_prompt,
+        style_settings,
+        technical_settings,
+        ai_metadata,
+        seedream_config,
+        generation_mode,
+        is_public,
+        is_featured,
+        is_active,
+        sort_order,
+        usage_count,
+        last_used_at,
+        is_for_sale,
+        sale_price,
+        seller_user_id,
+        marketplace_status,
+        total_sales,
+        revenue_earned,
+        likes_count,
+        created_at,
+        updated_at
+      `)
+      .eq('id', id)
+      .single();
 
+    if (error || !preset) {
+      console.error('Error fetching preset:', error);
+      return NextResponse.json(
+        { error: 'Preset not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get cinematic parameters from the original table if it's a cinematic preset
+    let cinematicParameters = null;
+    let updatedPreset: any = undefined;
+    
     if (isCinematicPreset) {
-      // Directly fetch from cinematic_presets table
-      console.log(`Fetching cinematic preset ${id}...`);
-      
-      const { data: cinematicPreset, error: cinematicError } = await supabase
+      const { data: cinematicData } = await supabase
         .from('cinematic_presets')
-        .select(`
-          id,
-          name,
-          display_name,
-          description,
-          category,
-          parameters,
-          sort_order,
-          is_active,
-          created_at,
-          updated_at
-        `)
+        .select('parameters')
         .eq('id', id)
         .single();
-
-      if (cinematicError || !cinematicPreset) {
-        console.error('Error fetching cinematic preset:', cinematicError);
-        return NextResponse.json(
-          { error: 'Preset not found' },
-          { status: 404 }
-        );
-      }
-
-      // Convert cinematic preset to regular preset format
-      preset = {
-        id: cinematicPreset.id,
-        name: cinematicPreset.display_name || cinematicPreset.name,
-        description: cinematicPreset.description,
-        category: cinematicPreset.category,
-        prompt_template: '', // Cinematic presets don't have prompt templates
-        negative_prompt: '',
-        style_settings: null,
-        technical_settings: null,
-        ai_metadata: null,
-        seedream_config: null,
-        usage_count: 0, // Cinematic presets don't track usage yet
-        likes_count: 0,
-        is_public: true,
-        is_featured: false,
-        created_at: cinematicPreset.created_at,
-        updated_at: cinematicPreset.updated_at,
-        user_id: null, // Cinematic presets are system presets
-        cinematic_parameters: cinematicPreset.parameters // Add cinematic parameters
-      };
-    } else {
-      // Get preset by ID from regular presets table
-      const result = await supabase
-        .from('presets')
-        .select(`
-          id,
-          name,
-          description,
-          category,
-          prompt_template,
-          negative_prompt,
-          style_settings,
-          technical_settings,
-          ai_metadata,
-          seedream_config,
-          usage_count,
-          likes_count,
-          is_public,
-          is_featured,
-          created_at,
-          updated_at,
-          user_id
-        `)
-        .eq('id', id)
-        .single();
-
-      preset = result.data;
-      error = result.error;
-
-      // If not found in regular presets, check cinematic_presets table
-      if (error || !preset) {
-        console.log(`Preset ${id} not found in regular presets table, checking cinematic_presets...`);
+      
+      cinematicParameters = cinematicData?.parameters || null;
+      
+      // Map cinematic parameters to the fields the frontend expects
+      if (cinematicParameters) {
+        // Helper function to format values for display
+        const formatForDisplay = (value: string) => {
+          if (!value) return value;
+          return value
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        };
         
-        const { data: cinematicPreset, error: cinematicError } = await supabase
-          .from('cinematic_presets')
-          .select(`
-            id,
-            name,
-            display_name,
-            description,
-            category,
-            parameters,
-            sort_order,
-            is_active,
-            created_at,
-            updated_at
-          `)
-          .eq('id', id)
-          .single();
-
-        if (cinematicError || !cinematicPreset) {
-          console.error('Error fetching preset from both tables:', error, cinematicError);
-          return NextResponse.json(
-            { error: 'Preset not found' },
-            { status: 404 }
-          );
+        // Extract style from directorStyle or lightingStyle
+        const rawStyle = cinematicParameters.directorStyle || cinematicParameters.lightingStyle || cinematicParameters.colorPalette;
+        const style = formatForDisplay(rawStyle);
+        
+        // Extract mood from sceneMood
+        const rawMood = cinematicParameters.sceneMood;
+        const mood = formatForDisplay(rawMood);
+        
+        // Extract resolution from aspectRatio
+        const aspectRatio = cinematicParameters.aspectRatio;
+        let resolution = null;
+        if (aspectRatio) {
+          // Convert aspect ratios to common resolutions
+          switch (aspectRatio) {
+            case '9:16':
+              resolution = '1024x1820';
+              break;
+            case '16:9':
+              resolution = '1920x1080';
+              break;
+            case '21:9':
+              resolution = '2560x1080';
+              break;
+            case '4:3':
+              resolution = '1024x768';
+              break;
+            case '3:2':
+              resolution = '1024x683';
+              break;
+            case '1:1':
+              resolution = '1024x1024';
+              break;
+            default:
+              resolution = '1024x1024';
+          }
         }
-
-        // Convert cinematic preset to regular preset format
-        preset = {
-          id: cinematicPreset.id,
-          name: cinematicPreset.display_name || cinematicPreset.name,
-          description: cinematicPreset.description,
-          category: cinematicPreset.category,
-          prompt_template: '', // Cinematic presets don't have prompt templates
-          negative_prompt: '',
-          style_settings: null,
-          technical_settings: null,
-          ai_metadata: null,
-          seedream_config: null,
-          usage_count: 0, // Cinematic presets don't track usage yet
-          likes_count: 0,
-          is_public: true,
-          is_featured: false,
-          created_at: cinematicPreset.created_at,
-          updated_at: cinematicPreset.updated_at,
-          user_id: null, // Cinematic presets are system presets
-          cinematic_parameters: cinematicPreset.parameters // Add cinematic parameters
+        
+        // Set default values for steps and guidance scale
+        const steps = 20;
+        const guidanceScale = 7.5;
+        
+        // Update the preset object with mapped values
+        updatedPreset = {
+          ...preset,
+          style_settings: {
+            ...preset.style_settings,
+            style: style,
+            mood: mood,
+            steps: steps,
+            directorStyle: cinematicParameters.directorStyle,
+            lightingStyle: cinematicParameters.lightingStyle,
+            colorPalette: cinematicParameters.colorPalette,
+            sceneMood: cinematicParameters.sceneMood,
+            aspectRatio: cinematicParameters.aspectRatio
+          },
+          technical_settings: {
+            ...preset.technical_settings,
+            resolution: resolution,
+            steps: steps,
+            guidance_scale: guidanceScale,
+            width: resolution?.split('x')[0],
+            height: resolution?.split('x')[1]
+          },
+          ai_metadata: {
+            ...preset.ai_metadata,
+            style: style,
+            mood: mood,
+            steps: steps,
+            guidance_scale: guidanceScale,
+            resolution: resolution
+          }
+        };
+      }
+    } else {
+      // For regular presets, format existing values if they exist
+      if (preset.style_settings?.style) {
+        const formatForDisplay = (value: string) => {
+          if (!value) return value;
+          return value
+            .split(/[-_]/)
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        };
+        
+        updatedPreset = {
+          ...preset,
+          style_settings: {
+            ...preset.style_settings,
+            style: formatForDisplay(preset.style_settings.style)
+          }
         };
       }
     }
 
     // Get creator information if preset has a user_id
+    // NOTE: presets.user_id references auth.users.id, so lookup users_profile by user_id field
     let creatorInfo = {
       id: null,
       display_name: 'System',
@@ -169,12 +201,30 @@ export async function GET(
     if (preset.user_id) {
       const { data: creator } = await supabase
         .from('users_profile')
-        .select('id, display_name, handle, avatar_url')
-        .eq('id', preset.user_id)
+        .select('id, display_name, handle, avatar_url, first_name, last_name')
+        .eq('user_id', preset.user_id) // Fixed: lookup by user_id, not id
         .single();
-      
+
       if (creator) {
-        creatorInfo = creator;
+        creatorInfo = {
+          id: creator.id,
+          display_name: creator.display_name || creator.first_name || 'User',
+          handle: creator.handle || 'user',
+          avatar_url: creator.avatar_url
+        };
+      } else {
+        // Profile doesn't exist - check if user exists in auth.users
+        const { data: authUser } = await supabase.auth.admin.getUserById(preset.user_id);
+
+        if (authUser?.user) {
+          // User exists but has no profile - show email or "User"
+          creatorInfo = {
+            id: preset.user_id,
+            display_name: authUser.user.email?.split('@')[0] || 'User',
+            handle: authUser.user.email?.split('@')[0] || 'user',
+            avatar_url: null
+          };
+        }
       }
     }
 
@@ -223,27 +273,40 @@ export async function GET(
       }
     }
 
-    // Format response
+    // Use updated preset if it was modified, otherwise use original
+    const finalPreset = typeof updatedPreset !== 'undefined' ? updatedPreset : preset;
+
+    // Format response using unified structure
     const response = {
-      id: preset.id,
-      name: preset.name,
-      description: preset.description,
-      category: preset.category,
-      prompt_template: preset.prompt_template,
-      negative_prompt: preset.negative_prompt,
-      style_settings: preset.style_settings,
-      technical_settings: preset.technical_settings,
-      ai_metadata: preset.ai_metadata,
-      seedream_config: preset.seedream_config,
-      usage_count: preset.usage_count || 0,
-      is_public: preset.is_public,
-      is_featured: preset.is_featured,
-      created_at: preset.created_at,
-      updated_at: preset.updated_at,
+      id: finalPreset.id,
+      preset_type: isCinematicPreset ? 'cinematic' : 'regular',
+      name: finalPreset.display_name || finalPreset.name,
+      description: finalPreset.description,
+      category: finalPreset.category,
+      prompt_template: finalPreset.prompt_template,
+      negative_prompt: finalPreset.negative_prompt,
+      style_settings: finalPreset.style_settings,
+      technical_settings: finalPreset.technical_settings,
+      ai_metadata: finalPreset.ai_metadata,
+      seedream_config: finalPreset.seedream_config,
+      generation_mode: finalPreset.generation_mode,
+      usage_count: finalPreset.usage_count || 0,
+      is_public: finalPreset.is_public,
+      is_featured: finalPreset.is_featured,
+      is_active: finalPreset.is_active,
+      sort_order: finalPreset.sort_order,
+      last_used_at: finalPreset.last_used_at,
+      is_for_sale: finalPreset.is_for_sale,
+      sale_price: finalPreset.sale_price,
+      marketplace_status: finalPreset.marketplace_status,
+      total_sales: finalPreset.total_sales,
+      revenue_earned: finalPreset.revenue_earned,
+      created_at: finalPreset.created_at,
+      updated_at: finalPreset.updated_at,
       like_count: likeCount,
       is_liked: isLiked,
       creator: creatorInfo,
-      cinematic_parameters: (preset as any).cinematic_parameters || null
+      cinematic_parameters: cinematicParameters
     };
 
     return NextResponse.json(response);

@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     // Get recent likes for these presets to calculate trending score
     const presetIds = trendingPresets?.map(p => p.id) || [];
-    
+
     if (presetIds.length > 0) {
       const { data: recentLikes } = await supabase
         .from('preset_likes')
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
       // Calculate trending score (recent likes weighted more heavily)
       const trendingScores = new Map();
-      
+
       recentLikes?.forEach(like => {
         const daysAgo = (Date.now() - new Date(like.created_at).getTime()) / (24 * 60 * 60 * 1000);
         const weight = Math.max(0, 1 - (daysAgo / days)); // Weight decreases over time
@@ -76,33 +76,61 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Format response
-    const formattedPresets = trendingPresets?.map(preset => ({
-      id: preset.id,
-      name: preset.name,
-      description: preset.description,
-      category: preset.category,
-      prompt_template: preset.prompt_template,
-      negative_prompt: preset.negative_prompt,
-      style_settings: preset.style_settings,
-      technical_settings: preset.technical_settings,
-      cinematic_settings: preset.ai_metadata?.cinematic_settings,
-      sample_images: preset.ai_metadata?.sample_images,
-      ai_metadata: preset.ai_metadata,
-      seedream_config: preset.seedream_config,
-      usage_count: preset.usage_count || 0,
-      likes_count: preset.likes_count || 0,
-      is_public: preset.is_public,
-      is_featured: preset.is_featured,
-      created_at: preset.created_at,
-      updated_at: preset.updated_at,
-      creator: {
-        id: preset.user_id,
-        display_name: 'Unknown',
-        handle: 'unknown',
-        avatar_url: null
+    // Fetch user profiles for creators
+    // NOTE: presets.user_id references auth.users.id, so lookup users_profile by user_id field
+    const userIds = [...new Set(trendingPresets?.map(p => p.user_id).filter(Boolean) || [])];
+    let userProfiles: Record<string, any> = {};
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('users_profile')
+        .select('id, user_id, display_name, handle, avatar_url')
+        .in('user_id', userIds); // Fixed: lookup by user_id, not id
+
+      if (profiles) {
+        userProfiles = profiles.reduce((acc: Record<string, any>, profile: any) => {
+          acc[profile.user_id] = profile; // Fixed: index by user_id to match presets.user_id
+          return acc;
+        }, {});
       }
-    })) || [];
+    }
+
+    // Format response
+    const formattedPresets = trendingPresets?.map(preset => {
+      const userProfile = preset.user_id ? userProfiles[preset.user_id] : null;
+
+      return {
+        id: preset.id,
+        name: preset.name,
+        description: preset.description,
+        category: preset.category,
+        prompt_template: preset.prompt_template,
+        negative_prompt: preset.negative_prompt,
+        style_settings: preset.style_settings,
+        technical_settings: preset.technical_settings,
+        cinematic_settings: preset.ai_metadata?.cinematic_settings,
+        sample_images: preset.ai_metadata?.sample_images,
+        ai_metadata: preset.ai_metadata,
+        seedream_config: preset.seedream_config,
+        usage_count: preset.usage_count || 0,
+        likes_count: preset.likes_count || 0,
+        is_public: preset.is_public,
+        is_featured: preset.is_featured,
+        created_at: preset.created_at,
+        updated_at: preset.updated_at,
+        creator: userProfile ? {
+          id: userProfile.id,
+          display_name: userProfile.display_name || 'Unknown',
+          handle: userProfile.handle || 'unknown',
+          avatar_url: userProfile.avatar_url
+        } : {
+          id: preset.user_id || 'preset',
+          display_name: preset.user_id ? 'Unknown' : 'System',
+          handle: preset.user_id ? 'unknown' : 'preset',
+          avatar_url: null
+        }
+      };
+    }) || [];
 
     return NextResponse.json({
       presets: formattedPresets,

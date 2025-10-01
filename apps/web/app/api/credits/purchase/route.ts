@@ -26,48 +26,10 @@ export async function POST(request: NextRequest) {
 
     const { packageId, userCredits, priceUsd } = await request.json();
     
-    // CRITICAL: Check if platform has enough credits
-    const { data: platformCredit } = await supabase
-      .from('credit_pools')
-      .select('available_balance, auto_refill_threshold, total_consumed')
-      .eq('provider', 'nanobanan')
-      .single();
+    // NOTE: With Wavespeed pay-per-use, no platform capacity checks needed
+    // Credits are billed when actually used, not pre-allocated
     
-    if (!platformCredit) {
-      return NextResponse.json(
-        { error: 'Platform configuration error' },
-        { status: 500 }
-      );
-    }
-    
-    const creditRatio = 4; // Default 1:4 ratio (1 user credit = 4 nanobanan credits)
-    const requiredNanoBananaCredits = userCredits * creditRatio;
-    
-    // Check platform capacity
-    const availableUserCredits = Math.floor(platformCredit.available_balance / creditRatio);
-    
-    if (availableUserCredits < userCredits) {
-      // PLATFORM DOESN'T HAVE ENOUGH CREDITS!
-      console.error(`
-        ⚠️ CRITICAL: Platform capacity exceeded!
-        User wants: ${userCredits} credits
-        Platform can serve: ${availableUserCredits} credits
-        NanoBanana balance: ${platformCredit.available_balance}
-        Needed: ${requiredNanoBananaCredits} NanoBanana credits
-      `);
-      
-      return NextResponse.json(
-        { 
-          error: 'Service temporarily unavailable',
-          message: 'The platform cannot fulfill this credit purchase at the moment. Please try a smaller package or contact support.',
-          availableCredits: availableUserCredits,
-          requestedCredits: userCredits
-        },
-        { status: 503 }
-      );
-    }
-    
-    // Platform has enough credits, proceed with purchase
+    // Proceed with purchase
     
     // 1. Add credits to user
     const { data: userCreditsData } = await supabase
@@ -100,28 +62,14 @@ export async function POST(request: NextRequest) {
         status: 'completed'
       });
     
-    // 3. Update platform tracking (reserve these credits)
-    await supabase
-      .from('credit_pools')
-      .update({
-        available_balance: platformCredit.available_balance - requiredNanoBananaCredits,
-        total_consumed: platformCredit.total_consumed + requiredNanoBananaCredits,
-        updated_at: new Date().toISOString()
-      })
-      .eq('provider', 'nanobanan');
-    
-    // 4. Check if platform is running low after this purchase
-    const remainingPlatformCredits = platformCredit.available_balance - requiredNanoBananaCredits;
-    const remainingUserCapacity = Math.floor(remainingPlatformCredits / creditRatio);
+    // NOTE: No need to update credit_pools with pay-per-use model
+    // Credits are charged from Wavespeed when actually consumed
     
     return NextResponse.json({
       success: true,
       newBalance,
       message: `Successfully purchased ${userCredits} credits`,
-      platformStatus: {
-        remainingCapacity: remainingUserCapacity,
-        isLow: remainingPlatformCredits < platformCredit.auto_refill_threshold
-      }
+      billingModel: 'pay_per_use'
     });
     
   } catch (error: any) {
@@ -178,17 +126,13 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
     
-    // Calculate which packages can be fulfilled
-    const creditRatio = 4; // Default 1:4 ratio (1 user credit = 4 nanobanan credits)
-    const availableUserCredits = Math.floor(platformCredit.available_balance / creditRatio);
-    
+    // With Wavespeed pay-per-use, all packages are always available
+    // No need to check platform capacity since we're billed per actual use
     const packagesWithAvailability = packagesData.map(pkg => ({
       ...pkg,
-      available: pkg.credits <= availableUserCredits,
-      warning: pkg.credits > availableUserCredits * 0.5, // Warn if package uses >50% of capacity
-      message: pkg.credits > availableUserCredits 
-        ? `Temporarily unavailable (platform capacity: ${availableUserCredits} credits)`
-        : null
+      available: true, // Always available with pay-per-use
+      warning: false,
+      message: null
     }));
 
     // Check for lootbox availability only if requested
@@ -215,13 +159,10 @@ export async function GET(request: NextRequest) {
       packages: packagesWithAvailability,
       lootboxPackages: lootboxPackages,
       platformCapacity: {
-        totalUserCredits: availableUserCredits,
-        nanoBananaCredits: platformCredit.available_balance,
-        canSellStarter: availableUserCredits >= 10,
-        canSellCreative: availableUserCredits >= 50,
-        canSellPro: availableUserCredits >= 100,
-        canSellStudio: availableUserCredits >= 500,
-        lootboxAvailable: lootboxPackages.length > 0
+        model: 'wavespeed_pay_per_use',
+        allPackagesAvailable: true,
+        lootboxAvailable: lootboxPackages.length > 0,
+        note: 'All credit packages always available (pay-per-use billing)'
       }
     });
   } catch (error: any) {

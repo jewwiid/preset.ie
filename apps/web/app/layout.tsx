@@ -17,6 +17,15 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Preset - Creative Collaboration Platform",
   description: "Connect creatives for shoots. Contributors post gigs, Talent applies. Free to start, subscription-based platform.",
+  icons: {
+    icon: [
+      { url: '/logo.svg', type: 'image/svg+xml' },
+      { url: '/logo.svg', sizes: 'any' }
+    ],
+    apple: '/logo.svg',
+    shortcut: '/logo.svg',
+  },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

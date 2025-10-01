@@ -104,16 +104,29 @@ export async function POST(request: NextRequest) {
       messages: [
                {
                  role: 'system',
-                 content: `You are a professional art critic. Provide concise, engaging image descriptions in 2-3 sentences. Focus on mood, composition, and visual story. Write in a professional but accessible tone suitable for gallery descriptions.`
+                 content: `You are an image analysis assistant. Analyze images and provide:
+1. A simple, clear description in 1-2 sentences
+2. Relevant tags that describe the image content, style, and visual elements
+
+Return your response in this JSON format:
+{
+  "description": "Your description here",
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
+}
+
+Tags should be:
+- Descriptive (e.g., "cat", "abstract", "geometric")
+- Stylistic (e.g., "digital-art", "minimalist", "vibrant")
+- Technical (e.g., "high-contrast", "sharp-lines", "colorful")
+- Lowercase with hyphens instead of spaces
+- Maximum 8 tags, minimum 3 tags`
                },
         {
           role: 'user',
           content: [
                    {
                      type: 'text',
-                     text: `${contextPrompt}
-
-Write a concise, engaging description in 2-3 sentences that captures the essence of the image. Focus on the mood, composition, and visual story without being overly technical or verbose. Make it suitable for a gallery or portfolio description.`
+                     text: `Analyze this image and provide a description plus relevant tags. Focus on what you actually see in the image.`
                    },
               {
                 type: 'image_url',
@@ -125,7 +138,7 @@ Write a concise, engaging description in 2-3 sentences that captures the essence
           ]
         }
       ],
-      max_tokens: 150,
+      max_tokens: 300,
       temperature: 0.7
     }
 
@@ -160,15 +173,37 @@ Write a concise, engaging description in 2-3 sentences that captures the essence
     }
     
     const data = await response.json()
-    const description = data.choices?.[0]?.message?.content || 'A beautiful AI-generated image with artistic composition and natural lighting.'
+    const rawContent = data.choices?.[0]?.message?.content || '{"description": "A beautiful AI-generated image with artistic composition and natural lighting.", "tags": ["ai-generated", "artistic", "creative"]}'
+    
+    console.log('AI analysis raw response:', { 
+      contentLength: rawContent.length,
+      content: rawContent.substring(0, 200) + '...'
+    })
+    
+    // Parse the JSON response
+    let description = 'A beautiful AI-generated image with artistic composition and natural lighting.'
+    let tags = ['ai-generated']
+    
+    try {
+      const parsed = JSON.parse(rawContent)
+      description = parsed.description || description
+      tags = parsed.tags || tags
+    } catch (error) {
+      console.log('Failed to parse JSON response, using fallback:', error)
+      // If JSON parsing fails, try to extract description from raw text
+      description = rawContent.trim()
+    }
     
     console.log('AI analysis completed:', { 
-      descriptionLength: description.length
+      descriptionLength: description.length,
+      tagsCount: tags.length,
+      tags: tags
     })
     
     return NextResponse.json({
       success: true,
-      description: description.trim()
+      description: description.trim(),
+      tags: tags
     })
     
   } catch (error) {

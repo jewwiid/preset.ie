@@ -10,7 +10,32 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    
+    // Handle cinematic preset IDs with prefix
+    let actualId = id;
+    let isCinematicPreset = false;
+    
+    if (id.startsWith('cinematic_')) {
+      actualId = id.replace('cinematic_', '');
+      isCinematicPreset = true;
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify the preset exists
+    const tableName = isCinematicPreset ? 'cinematic_presets' : 'presets';
+    const { data: preset, error: presetError } = await supabase
+      .from(tableName)
+      .select('id, name, is_public')
+      .eq('id', actualId)
+      .single();
+
+    if (presetError || !preset) {
+      return NextResponse.json(
+        { error: 'Preset not found' },
+        { status: 404 }
+      );
+    }
 
     // Get verified sample images for the preset
     const { data: samples, error } = await supabase
@@ -26,9 +51,12 @@ export async function GET(
         generation_model,
         is_verified,
         verification_timestamp,
+        title,
+        description,
+        tags,
         created_at
       `)
-      .eq('preset_id', id)
+      .eq('preset_id', actualId)
       .eq('is_verified', true)
       .order('created_at', { ascending: false });
 
@@ -40,7 +68,13 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ samples: samples || [] });
+    return NextResponse.json({ 
+      samples: samples || [],
+      preset: {
+        id: preset.id,
+        name: preset.name
+      }
+    });
 
   } catch (error) {
     console.error('Error in preset samples API:', error);
@@ -57,6 +91,16 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    
+    // Handle cinematic preset IDs with prefix
+    let actualId = id;
+    let isCinematicPreset = false;
+    
+    if (id.startsWith('cinematic_')) {
+      actualId = id.replace('cinematic_', '');
+      isCinematicPreset = true;
+    }
+
     const body = await request.json();
     
     const {
@@ -70,23 +114,23 @@ export async function POST(
       generationCredits,
       prompt,
       negativePrompt,
-      generationSettings
+      generationSettings,
+      title,
+      description,
+      tags
     } = body;
 
     // Validate required fields
-    if (!sourceImageUrl || !resultImageUrl || !generationId || !prompt) {
+    if (!resultImageUrl || !prompt) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: resultImageUrl and prompt are required' },
         { status: 400 }
       );
     }
 
     // Get user from authorization header
     const authHeader = request.headers.get('authorization');
-    console.log('POST - Auth header:', authHeader);
-    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('POST - No auth header or invalid format');
       return NextResponse.json(
         { error: 'Authorization required' },
         { status: 401 }
@@ -94,7 +138,6 @@ export async function POST(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    console.log('POST - Extracted token:', token ? 'present' : 'missing');
     
     // Create Supabase client with the user's access token for auth
     const supabase = createClient(
@@ -110,7 +153,6 @@ export async function POST(
     );
     
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    console.log('POST - User auth result:', { user: user?.id, error: userError?.message });
     
     if (userError || !user) {
       return NextResponse.json(
@@ -121,17 +163,17 @@ export async function POST(
 
     // Use the secure function to add the sample
     const { data, error } = await supabase.rpc('add_verified_preset_sample', {
-      preset_uuid: id,
-      source_image_url_param: sourceImageUrl,
-      source_image_hash_param: sourceImageHash || 'placeholder_hash', // In production, calculate actual hash
+      preset_uuid: actualId,
       result_image_url_param: resultImageUrl,
-      result_image_hash_param: resultImageHash || 'placeholder_hash', // In production, calculate actual hash
-      generation_id_param: generationId,
-      generation_provider_param: generationProvider || 'nanobanana',
-      generation_model_param: generationModel,
-      generation_credits_param: generationCredits || 0,
       prompt_param: prompt,
-      negative_prompt_param: negativePrompt,
+      generation_id_param: generationId,
+      source_image_url_param: sourceImageUrl || null,
+      source_image_hash_param: sourceImageHash || null,
+      result_image_hash_param: resultImageHash || null,
+      generation_provider_param: generationProvider || 'nanobanana',
+      generation_model_param: generationModel || null,
+      generation_credits_param: generationCredits || 0,
+      negative_prompt_param: negativePrompt || null,
       generation_settings_param: generationSettings || {}
     });
 
@@ -143,27 +185,20 @@ export async function POST(
       );
     }
 
-    // Track preset usage for sample verification
-    try {
-      const usageResponse = await supabase.rpc('track_preset_usage', {
-        preset_uuid: id,
-        usage_type_param: 'sample_verification',
-        usage_data_param: {
-          sampleId: data,
-          generationId: generationId,
-          prompt: prompt,
-          provider: generationProvider
-        }
-      });
+    // Update the sample with additional metadata if provided
+    if (title || description || tags) {
+      const { error: updateError } = await supabase
+        .from('preset_images')
+        .update({
+          title: title || null,
+          description: description || null,
+          tags: tags || []
+        })
+        .eq('id', data);
 
-      if (usageResponse.error) {
-        console.warn('⚠️ Failed to track preset usage:', usageResponse.error);
-      } else {
-        console.log('✅ Preset usage tracked for sample verification');
+      if (updateError) {
+        console.warn('Failed to update sample metadata:', updateError);
       }
-    } catch (usageError) {
-      console.warn('⚠️ Error tracking preset usage:', usageError);
-      // Don't fail the sample creation if usage tracking fails
     }
 
     return NextResponse.json({ 
@@ -187,6 +222,16 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    
+    // Handle cinematic preset IDs with prefix
+    let actualId = id;
+    let isCinematicPreset = false;
+    
+    if (id.startsWith('cinematic_')) {
+      actualId = id.replace('cinematic_', '');
+      isCinematicPreset = true;
+    }
+
     const { searchParams } = new URL(request.url);
     const sampleId = searchParams.get('sampleId');
 
@@ -207,9 +252,21 @@ export async function DELETE(
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    // Create Supabase client with the user's access token for auth
+    const supabase = createClient(
+      supabaseUrl,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
+    );
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       return NextResponse.json(
         { error: 'Invalid authentication' },
@@ -219,10 +276,11 @@ export async function DELETE(
 
     // Delete the sample image (RLS will ensure user owns the preset)
     const { error } = await supabase
-      .from('preset_sample_images')
+      .from('preset_images')
       .delete()
       .eq('id', sampleId)
-      .eq('preset_id', id);
+      .eq('preset_id', actualId)
+      .eq('user_id', user.id);
 
     if (error) {
       console.error('Error deleting preset sample:', error);

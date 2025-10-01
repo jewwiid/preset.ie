@@ -293,8 +293,9 @@ export class CinematicPromptBuilder {
   ): string {
     const parts: string[] = [];
 
-    // Start with base prompt
-    parts.push(basePrompt);
+    // Start with base prompt (remove trailing period if present)
+    const cleanBasePrompt = basePrompt.trim().replace(/\.+$/, '');
+    parts.push(cleanBasePrompt);
 
     // Add enhancement type context
     if (enhancementType) {
@@ -311,9 +312,11 @@ export class CinematicPromptBuilder {
       parts.push(`in the style of ${styleReferences.join(', ')}`);
     }
 
-    // Join and truncate if necessary
-    let fullPrompt = parts.join('. ');
-    
+    // Join parts with proper punctuation (avoid double periods)
+    let fullPrompt = parts
+      .filter(part => part.length > 0)
+      .join('. ');
+
     if (fullPrompt.length > maxLength) {
       fullPrompt = this.truncatePrompt(fullPrompt, maxLength);
     }
@@ -907,7 +910,7 @@ export class CinematicPromptBuilder {
     cinematicTags: string[]
   ): void {
     const subjectLower = subject.toLowerCase();
-    
+
     // Portrait/Person adjustments
     if (this.isPersonSubject(subjectLower)) {
       if (!cinematicParameters.cameraAngle) {
@@ -919,7 +922,19 @@ export class CinematicPromptBuilder {
         cinematicTags.push('lighting:portrait');
       }
     }
-    
+
+    // Animal/Pet adjustments
+    else if (this.isAnimalSubject(subjectLower)) {
+      if (!cinematicParameters.cameraAngle) {
+        technicalDetails.push('dynamic subject framing');
+        cinematicTags.push('subject-type:animal');
+      }
+      if (!cinematicParameters.lightingStyle) {
+        technicalDetails.push('natural lighting');
+        cinematicTags.push('lighting:natural');
+      }
+    }
+
     // Landscape/Nature adjustments
     else if (this.isLandscapeSubject(subjectLower)) {
       if (!cinematicParameters.cameraAngle) {
@@ -931,7 +946,7 @@ export class CinematicPromptBuilder {
         cinematicTags.push('lighting:natural');
       }
     }
-    
+
     // Architecture/Building adjustments
     else if (this.isArchitectureSubject(subjectLower)) {
       if (!cinematicParameters.cameraAngle) {
@@ -943,8 +958,8 @@ export class CinematicPromptBuilder {
         cinematicTags.push('lighting:architectural');
       }
     }
-    
-    // Product/Object adjustments
+
+    // Product/Object adjustments (only for explicit product keywords)
     else if (this.isProductSubject(subjectLower)) {
       if (!cinematicParameters.cameraAngle) {
         technicalDetails.push('product photography framing');
@@ -955,12 +970,21 @@ export class CinematicPromptBuilder {
         cinematicTags.push('lighting:product');
       }
     }
-    
+
     // Abstract/Artistic adjustments
     else if (this.isAbstractSubject(subjectLower)) {
       if (!cinematicParameters.lightingStyle) {
         technicalDetails.push('artistic lighting');
         cinematicTags.push('lighting:artistic');
+      }
+    }
+
+    // Generic subject - minimal adjustments
+    else {
+      // Only add basic cinematic quality if no specific lighting is set
+      if (!cinematicParameters.lightingStyle && !cinematicParameters.cameraAngle) {
+        technicalDetails.push('cinematic lighting');
+        cinematicTags.push('subject-type:generic');
       }
     }
   }
@@ -969,15 +993,40 @@ export class CinematicPromptBuilder {
    * Check if subject is a person/portrait
    */
   private isPersonSubject(subject: string): boolean {
-    const personKeywords = ['person', 'man', 'woman', 'child', 'baby', 'portrait', 'face', 'head', 'character', 'people', 'human'];
+    const personKeywords = [
+      'person', 'man', 'woman', 'child', 'baby', 'portrait', 'face', 'head', 'character', 'people', 'human',
+      'boy', 'girl', 'kid', 'teen', 'adult', 'elder', 'senior', 'toddler', 'infant',
+      'model', 'actor', 'actress', 'dancer', 'athlete', 'musician', 'artist', 'performer',
+      'businessman', 'businesswoman', 'worker', 'professional', 'doctor', 'nurse', 'chef', 'teacher',
+      'bride', 'groom', 'couple', 'family', 'friends', 'crowd', 'audience'
+    ];
     return personKeywords.some(keyword => subject.includes(keyword));
+  }
+
+  /**
+   * Check if subject is an animal/pet
+   */
+  private isAnimalSubject(subject: string): boolean {
+    const animalKeywords = [
+      'cat', 'dog', 'bird', 'horse', 'lion', 'tiger', 'elephant', 'bear', 'wolf', 'fox',
+      'rabbit', 'deer', 'fish', 'shark', 'dolphin', 'whale', 'pet', 'animal', 'creature',
+      'wildlife', 'puppy', 'kitten', 'dragon', 'unicorn', 'butterfly', 'eagle', 'owl',
+      'snake', 'lizard', 'turtle', 'frog', 'monkey', 'panda', 'penguin', 'peacock'
+    ];
+    return animalKeywords.some(keyword => subject.includes(keyword));
   }
 
   /**
    * Check if subject is a landscape/nature scene
    */
   private isLandscapeSubject(subject: string): boolean {
-    const landscapeKeywords = ['landscape', 'mountain', 'forest', 'ocean', 'sea', 'lake', 'river', 'valley', 'hill', 'field', 'meadow', 'desert', 'beach', 'sunset', 'sunrise', 'sky', 'cloud', 'nature'];
+    const landscapeKeywords = [
+      'landscape', 'mountain', 'forest', 'ocean', 'sea', 'lake', 'river', 'valley', 'hill',
+      'field', 'meadow', 'desert', 'beach', 'sunset', 'sunrise', 'sky', 'cloud', 'nature', 'scenery',
+      'waterfall', 'canyon', 'cliff', 'coast', 'island', 'volcano', 'glacier', 'cave', 'reef',
+      'garden', 'park', 'jungle', 'rainforest', 'prairie', 'tundra', 'savanna', 'wetland',
+      'horizon', 'vista', 'panorama', 'seascape', 'cityscape', 'skyline'
+    ];
     return landscapeKeywords.some(keyword => subject.includes(keyword));
   }
 
@@ -985,15 +1034,30 @@ export class CinematicPromptBuilder {
    * Check if subject is architecture/buildings
    */
   private isArchitectureSubject(subject: string): boolean {
-    const architectureKeywords = ['building', 'house', 'castle', 'church', 'tower', 'bridge', 'monument', 'architecture', 'structure', 'facade', 'interior', 'room'];
+    const architectureKeywords = [
+      'building', 'house', 'castle', 'church', 'tower', 'bridge', 'monument', 'architecture',
+      'structure', 'facade', 'interior', 'room', 'cathedral', 'temple', 'mosque', 'palace',
+      'skyscraper', 'apartment', 'office', 'mall', 'store', 'restaurant', 'cafe', 'bar',
+      'museum', 'gallery', 'library', 'theater', 'stadium', 'arena', 'station', 'airport',
+      'factory', 'warehouse', 'barn', 'cottage', 'mansion', 'villa', 'cabin', 'bungalow',
+      'fortress', 'ruins', 'archway', 'colonnade', 'dome', 'spire', 'balcony', 'terrace',
+      'lobby', 'hallway', 'corridor', 'staircase', 'entrance', 'exit', 'window', 'door'
+    ];
     return architectureKeywords.some(keyword => subject.includes(keyword));
   }
 
   /**
-   * Check if subject is a product/object
+   * Check if subject is a product/object (explicit commercial products only)
    */
   private isProductSubject(subject: string): boolean {
-    const productKeywords = ['product', 'object', 'item', 'thing', 'tool', 'device', 'car', 'vehicle', 'furniture', 'chair', 'table', 'book', 'phone', 'laptop'];
+    const productKeywords = [
+      'product', 'bottle', 'package', 'box', 'container', 'gadget', 'phone', 'laptop',
+      'watch', 'shoes', 'clothing', 'jewelry', 'cosmetics', 'perfume', 'food product', 'drink',
+      'camera', 'headphones', 'speaker', 'tablet', 'computer', 'console', 'controller',
+      'bag', 'backpack', 'wallet', 'sunglasses', 'hat', 'accessory', 'fashion',
+      'car', 'vehicle', 'bike', 'motorcycle', 'scooter', 'skateboard',
+      'furniture', 'chair', 'table', 'sofa', 'lamp', 'vase', 'decor'
+    ];
     return productKeywords.some(keyword => subject.includes(keyword));
   }
 

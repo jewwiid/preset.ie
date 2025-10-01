@@ -264,7 +264,6 @@ export function SettingsPanel() {
               </span>
             </div>
             <Slider
-              id="location-radius"
               value={formNotificationPrefs.location_radius}
               onValueChange={(value) => handleNotificationPrefsChange('location_radius', Array.isArray(value) ? value[0] : value)}
               min={5}

@@ -338,6 +338,7 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
                 promotingImage={promotingMedia}
                 selectedImageUrl={selectedMediaUrl}
                 currentTab={currentTab}
+                onRefresh={fetchSavedMedia}
               />
         )}
       </CardContent>

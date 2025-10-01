@@ -1,0 +1,18 @@
+{
+  "name": "Preset - Creative Collaboration Platform",
+  "short_name": "Preset",
+  "description": "Connect creatives for shoots. Contributors post gigs, Talent applies.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#00876f",
+  "theme_color": "#00876f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

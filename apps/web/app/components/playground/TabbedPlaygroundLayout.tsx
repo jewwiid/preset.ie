@@ -1050,47 +1050,36 @@ export default function TabbedPlaygroundLayout({
             }}
             onSaveAsPreset={(metadata, imageUrl) => {
               if (metadata) {
-                // Create preset data from image metadata
-                const presetData = {
-                  name: `Preset from ${new Date().toLocaleDateString()}`,
-                  description: `Generated from image with prompt: ${metadata.prompt?.substring(0, 100)}...`,
-                  category: 'style', // Default category
-                  prompt_template: metadata.prompt,
-                  style_settings: {
-                    style: metadata.style || metadata.style_applied || 'photorealistic',
-                    intensity: (metadata as any).intensity || 1.0,
-                    consistency_level: metadata.consistency_level || 'high'
-                  },
-                  technical_settings: {
-                    aspect_ratio: metadata.aspect_ratio || '1:1',
-                    resolution: metadata.resolution || '1024',
-                    num_images: (metadata as any).num_images || 1
-                  },
-                  cinematic_settings: metadata.cinematic_parameters ? {
-                    enableCinematicMode: true,
-                    cinematicParameters: metadata.cinematic_parameters,
-                    enhancedPrompt: metadata.enhanced_prompt,
-                    includeTechnicalDetails: (metadata as any).technical_details || false,
-                    includeStyleReferences: (metadata as any).style_references || false,
-                    generationMode: (metadata as any).generation_mode || 'text-to-image',
-                    selectedProvider: (metadata as any).api_endpoint?.includes('nanobanana') ? 'nanobanana' : 'seedream'
-                  } : undefined,
-                  sample_images: {
-                    before_images: (metadata as any).base_image ? [(metadata as any).base_image] : [],
-                    after_images: [imageUrl],
-                    descriptions: [
-                      (metadata as any).base_image ? 'Original input image' : '',
-                      'Generated result'
-                    ].filter(Boolean)
-                  },
-                  is_public: false
+                // Format style name to match preset creation format
+                const formatStyleName = (style: string) => {
+                  return style
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ')
                 }
-                
-                // TODO: Implement preset save functionality
-                // This would open the preset save dialog with the presetData pre-filled
-                console.log('Preset data ready for saving:', presetData)
-                
-                console.log('Saving preset from image metadata:', presetData)
+
+                const style = metadata.style || metadata.style_applied || 'photorealistic'
+                const formattedStyle = formatStyleName(style)
+
+                // Build query params to prefill preset creation form
+                const params = new URLSearchParams({
+                  name: `Preset from ${new Date().toLocaleDateString()}`,
+                  description: `Generated from saved image with prompt: ${metadata.prompt?.substring(0, 100)}...`,
+                  prompt_template: metadata.enhanced_prompt || metadata.prompt || '',
+                  style: style,
+                  resolution: (metadata.resolution?.split('x')[0]) || '1024',
+                  aspect_ratio: metadata.aspect_ratio || '1:1',
+                  consistency_level: metadata.consistency_level || 'high',
+                  intensity: ((metadata as any).intensity || 1.0).toString(),
+                  num_images: ((metadata as any).num_images || 1).toString(),
+                  ...(metadata.cinematic_parameters && {
+                    cinematic_parameters: JSON.stringify(metadata.cinematic_parameters),
+                    enable_cinematic_mode: 'true'
+                  })
+                }).toString()
+
+                // Navigate to preset creation page with all metadata
+                window.location.href = `/presets/create?${params}`
               }
             }}
             onMediaUpdated={(media) => {

@@ -13,6 +13,9 @@ node_modules
 .env.production.local
 .env.production
 .env.backup
+.env.backup.*
+.env.local.backup
+.env.local.backup.*
 .env.example
 
 # Scripts with potential secrets

@@ -128,7 +128,8 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
         return
       }
 
-      const response = await fetch('/api/credits/purchase', {
+      // Create Stripe checkout session
+      const response = await fetch('/api/stripe/create-credit-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -136,35 +137,23 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
         },
         body: JSON.stringify({ 
           packageId: selectedPackage.id,
-          userCredits: selectedPackage.credits,
-          priceUsd: selectedPackage.price_usd
+          successUrl: `${window.location.origin}/credits/purchase?success=true`,
+          cancelUrl: `${window.location.origin}/credits/purchase?canceled=true`
         })
       })
 
       const data = await response.json()
       
-      if (data.success) {
-        setSuccess(`Successfully purchased ${selectedPackage.credits} credits!`)
-        setCreditInfo((prev: any) => ({
-          ...prev,
-          currentBalance: data.newBalance
-        }))
-        
-        if (onPurchaseComplete) {
-          onPurchaseComplete()
-        }
-        
-        // Clear success message after 3 seconds (no auto-refresh)
-        setTimeout(() => {
-          setSuccess(null)
-        }, 3000)
+      if (data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url
       } else {
-        setError(data.error || data.message)
+        setError(data.error || 'Failed to create checkout session')
+        setPurchasing(null)
       }
     } catch (err: any) {
       console.error('Purchase error:', err)
       setError('Failed to complete purchase')
-    } finally {
       setPurchasing(null)
     }
   }
@@ -239,7 +228,8 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
         return
       }
 
-      const response = await fetch('/api/lootbox/purchase', {
+      // Create Stripe checkout session for lootbox
+      const response = await fetch('/api/stripe/create-credit-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -247,35 +237,23 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
         },
         body: JSON.stringify({ 
           packageId: selectedPackage.id,
-          userCredits: selectedPackage.user_credits,
-          priceUsd: selectedPackage.price_usd
+          successUrl: `${window.location.origin}/credits/purchase?success=true&lootbox=true`,
+          cancelUrl: `${window.location.origin}/credits/purchase?canceled=true`
         })
       })
 
       const data = await response.json()
       
-      if (data.success) {
-        setSuccess(`🎉 Lootbox purchased! You got ${selectedPackage.user_credits} credits!`)
-        setCreditInfo((prev: any) => ({
-          ...prev,
-          currentBalance: data.new_balance
-        }))
-        
-        if (onPurchaseComplete) {
-          onPurchaseComplete()
-        }
-        
-        // Clear success message after 3 seconds (no auto-refresh)
-        setTimeout(() => {
-          setSuccess(null)
-        }, 3000)
+      if (data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url
       } else {
-        setError(data.error || data.message)
+        setError(data.error || 'Failed to create checkout session')
+        setPurchasing(null)
       }
     } catch (err: any) {
       console.error('Lootbox purchase error:', err)
       setError('Failed to complete lootbox purchase')
-    } finally {
       setPurchasing(null)
     }
   }
@@ -722,23 +700,36 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
               creditInfo.lootboxPackages.map((pkg: any) => (
               <div
                 key={pkg.id}
-                className={`relative rounded-lg border-2 p-6 shadow-lg flex flex-col h-full ${
+                className={`relative rounded-lg border-2 p-6 shadow-lg flex flex-col h-full transition-all duration-300 ${
                   pkg.available 
-                    ? 'border-primary bg-gradient-to-br from-primary/10 to-primary/20' 
+                    ? 'border-primary bg-gradient-to-br from-primary/10 to-primary/20 hover:scale-105 hover:shadow-2xl' 
                     : 'border-border bg-gradient-to-br from-muted to-muted/80 opacity-75'
                 }`}
               >
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-md ${
+                {/* Animated glow effect for available lootbox */}
+                {pkg.available && (
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 blur-xl opacity-50 animate-pulse"></div>
+                )}
+                
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1 ${
                     pkg.available 
-                      ? 'bg-primary text-primary-foreground' 
+                      ? 'bg-gradient-to-r from-primary to-primary-600 text-primary-foreground' 
                       : 'bg-muted text-muted-foreground'
                   }`}>
                     🎁 LOOTBOX
                   </span>
                 </div>
                 
-                <div className="text-center flex-grow flex flex-col justify-center">
+                <div className="text-center flex-grow flex flex-col justify-center relative">
+                  {pkg.available && (
+                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
+                      <span className="inline-block px-3 py-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 text-white text-xs font-black rounded shadow-lg animate-pulse">
+                        ⚡ FLASH SALE ⚡
+                      </span>
+                    </div>
+                  )}
+                  
                   <h3 className={`text-xl font-bold ${pkg.available ? 'text-muted-foreground-900' : 'text-muted-foreground-500'}`}>
                     {pkg.name}
                   </h3>
@@ -761,10 +752,10 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   </div>
 
                   {pkg.savings_percentage > 0 && (
-                    <div className="mt-2">
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold shadow-md ${
+                    <div className="mt-3">
+                      <span className={`inline-block px-3 py-1.5 rounded-full text-sm font-bold shadow-md ${
                         pkg.available
-                          ? 'bg-primary text-primary-foreground'
+                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white animate-pulse'
                           : 'bg-muted-300 text-muted-foreground-600'
                       }`}>
                         💰 Save {pkg.savings_percentage}%
@@ -776,17 +767,24 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                 
                 <button
                   onClick={() => purchaseLootbox(pkg.id)}
-                  disabled={purchasing !== null || !pkg.available}
+                  disabled={purchasing !== null || !pkg.available || pkg.already_purchased}
                   className={`w-full py-2 px-4 rounded-md font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-md ${
-                    pkg.available
-                      ? 'text-primary-foreground bg-primary hover:from-primary/90 hover:to-primary'
-                      : 'text-muted-foreground-400 bg-muted-200 cursor-not-allowed'
+                    pkg.already_purchased
+                      ? 'text-muted-foreground-400 bg-muted-200 cursor-not-allowed'
+                      : pkg.available
+                        ? 'text-primary-foreground bg-primary hover:from-primary/90 hover:to-primary'
+                        : 'text-muted-foreground-400 bg-muted-200 cursor-not-allowed'
                   } disabled:opacity-50`}
                 >
                   {purchasing === pkg.id ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Claiming...
+                    </>
+                  ) : pkg.already_purchased ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Already Claimed
                     </>
                   ) : !pkg.available ? (
                     <>

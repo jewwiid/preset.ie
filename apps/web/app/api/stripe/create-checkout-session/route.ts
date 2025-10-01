@@ -3,11 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import { getUserFromRequest } from '../../../../lib/auth-utils';
 import Stripe from 'stripe';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
-
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -29,6 +24,25 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
 export async function POST(request: NextRequest) {
   try {
     console.log('🔍 Stripe checkout session creation started')
+    
+    // Initialize Stripe with proper error handling
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    
+    console.log('🔍 Stripe secret key check:', { 
+      hasKey: !!stripeSecretKey, 
+      keyLength: stripeSecretKey?.length,
+      keyPrefix: stripeSecretKey?.substring(0, 20) + '...',
+      envKeys: Object.keys(process.env).filter(k => k.includes('STRIPE'))
+    });
+    
+    if (!stripeSecretKey) {
+      console.log('❌ STRIPE_SECRET_KEY environment variable not set');
+      return NextResponse.json({ error: 'Stripe configuration error' }, { status: 500 });
+    }
+    
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2025-08-27.basil',
+    });
     
     const { user, error: authError } = await getUserFromRequest(request);
     console.log('🔍 Auth check result:', { 

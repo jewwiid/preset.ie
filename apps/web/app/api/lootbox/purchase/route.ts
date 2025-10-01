@@ -44,59 +44,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check current NanoBanana credits
-    const apiKey = process.env.NANOBANANA_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'NanoBanana API key not configured' },
-        { status: 500 }
-      );
-    }
+    // Check if lootbox is currently active (time-based check)
+    // This is deprecated - now using Stripe checkout which does the check
+    // Keeping for backward compatibility with direct API calls
 
-    const response = await fetch('https://api.nanobananaapi.ai/api/v1/common/credit', {
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: 'Failed to verify NanoBanana credits' },
-        { status: 500 }
-      );
-    }
-
-    const nanoBananaData = await response.json();
-    const currentNanoBananaCredits = nanoBananaData.data || 0;
-
-    // Verify availability
-    const creditRatio = 4;
-    const requiredNanoBananaCredits = userCredits * creditRatio;
+    // Calculate current event period
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const dayOfMonth = now.getDate();
+    let eventPeriod = '';
     
-    if (currentNanoBananaCredits < lootboxPackage.nano_banana_threshold || 
-        currentNanoBananaCredits < requiredNanoBananaCredits) {
-      return NextResponse.json(
-        { 
-          error: 'Lootbox no longer available',
-          details: `Required ${requiredNanoBananaCredits} NanoBanana credits, but only ${currentNanoBananaCredits} available`
-        },
-        { status: 400 }
-      );
+    if ((dayOfWeek === 5 && now.getHours() >= 18) || dayOfWeek === 6 || (dayOfWeek === 0)) {
+      const year = now.getFullYear();
+      const weekNum = Math.ceil((now.getDate() + new Date(year, now.getMonth(), 1).getDay()) / 7);
+      eventPeriod = `${year}-W${weekNum}`;
+    } else if (dayOfMonth >= 15 && dayOfMonth <= 17) {
+      eventPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-15`;
     }
 
-    // Check if user already purchased this lootbox event
+    // Check if user already purchased this event period
     const { data: existingPurchase } = await supabaseAdmin
       .from('lootbox_events')
       .select('*')
       .eq('purchased_by', user.id)
-      .eq('event_type', 'purchased')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours
+      .eq('event_period', eventPeriod)
       .single();
 
     if (existingPurchase) {
       return NextResponse.json(
-        { error: 'You have already purchased a lootbox in the last 24 hours' },
+        { error: 'You have already purchased a lootbox during this event period. Only one per event allowed!' },
         { status: 400 }
       );
     }
@@ -127,35 +103,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update platform credits (credit_pools)
-    const { data: platformCredit } = await supabaseAdmin
-      .from('credit_pools')
-      .select('available_balance, total_consumed')
-      .eq('provider', 'nanobanan')
-      .single();
+    // Note: No need to update platform credit pools since we're using Wavespeed pay-per-use
+    // Credits are charged when actually used, not pre-allocated
 
-    if (!platformCredit) {
-      return NextResponse.json(
-        { error: 'Platform credit pool not found' },
-        { status: 500 }
-      );
-    }
-
-    const { error: platformUpdateError } = await supabaseAdmin
-      .from('credit_pools')
-      .update({
-        available_balance: platformCredit.available_balance - requiredNanoBananaCredits,
-        total_consumed: platformCredit.total_consumed + requiredNanoBananaCredits,
-        updated_at: new Date().toISOString()
-      })
-      .eq('provider', 'nanobanan');
-
-    if (platformUpdateError) {
-      console.error('Error updating platform credits:', platformUpdateError);
-      return NextResponse.json(
-        { error: 'Failed to update platform credits' },
-        { status: 500 }
-      );
+    // Determine event name
+    let eventName = 'Direct Purchase';
+    if ((dayOfWeek === 5 && now.getHours() >= 18) || dayOfWeek === 6 || (dayOfWeek === 0)) {
+      eventName = '🎉 Weekend Flash Sale';
+    } else if (dayOfMonth >= 15 && dayOfMonth <= 17) {
+      eventName = '💎 Mid-Month Mega Deal';
     }
 
     // Record the lootbox purchase event
@@ -163,8 +119,9 @@ export async function POST(request: NextRequest) {
       .from('lootbox_events')
       .insert({
         event_type: 'purchased',
-        nano_banana_threshold: lootboxPackage.nano_banana_threshold,
-        nano_banana_credits_at_trigger: currentNanoBananaCredits,
+        event_name: eventName,
+        event_period: eventPeriod,
+        package_id: packageId,
         user_credits_offered: userCredits,
         price_usd: priceUsd,
         margin_percentage: lootboxPackage.margin_percentage,

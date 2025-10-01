@@ -311,6 +311,27 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
     })
   }
 
+  // Helper function to extract subject from prompt
+  const extractSubjectFromPrompt = (prompt: string): string | null => {
+    if (!prompt) return null
+    
+    // Try to extract subject from common patterns
+    const patterns = [
+      /(?:of|for|with)\s+(?:a\s+)?([a-zA-Z]+)(?:\s|,|$)/i,
+      /(?:subject|feature|show|display|portrait|image)\s+(?:of\s+)?([a-zA-Z]+)(?:\s|,|$)/i,
+      /^([a-zA-Z]+)\s+(?:in|with|doing|wearing)/i
+    ]
+    
+    for (const pattern of patterns) {
+      const match = prompt.match(pattern)
+      if (match && match[1] && match[1].length > 2) {
+        return match[1].toLowerCase()
+      }
+    }
+    
+    return null
+  }
+
   const saveImageToGallery = async (imageUrl: string, projectTitle: string, generation: any) => {
     setSavingImage(imageUrl)
     try {
@@ -325,7 +346,15 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
           title: projectTitle,
           description: `Generated from: ${projectTitle}`,
           tags: ['ai-generated'],
-          generationMetadata: generation.metadata || {}
+          generationMetadata: {
+            ...generation.metadata,
+            // Extract subject from prompt if available
+            subject: generation.metadata?.prompt ? extractSubjectFromPrompt(generation.metadata.prompt) : null,
+            subject_placeholder_used: generation.metadata?.prompt?.includes('{subject}') || false,
+            // Include preset information if available
+            preset_id: generation.metadata?.custom_style_preset?.id || generation.metadata?.preset_id || null,
+            preset_name: generation.metadata?.custom_style_preset?.name || generation.metadata?.preset_name || null
+          }
         })
       })
 
@@ -380,7 +409,15 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
           title: projectTitle,
           description: `Generated from: ${projectTitle}`,
           tags: ['ai-generated'],
-          generationMetadata: generation.metadata || {}
+          generationMetadata: {
+            ...generation.metadata,
+            // Extract subject from prompt if available
+            subject: generation.metadata?.prompt ? extractSubjectFromPrompt(generation.metadata.prompt) : null,
+            subject_placeholder_used: generation.metadata?.prompt?.includes('{subject}') || false,
+            // Include preset information if available
+            preset_id: generation.metadata?.custom_style_preset?.id || generation.metadata?.preset_id || null,
+            preset_name: generation.metadata?.custom_style_preset?.name || generation.metadata?.preset_name || null
+          }
         })
       })
 
@@ -872,6 +909,46 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                       <label className="text-sm font-medium text-muted-foreground">Credits Used</label>
                       <p className="text-sm">{selectedImageForInfo.credits_used}</p>
                     </div>
+
+                    {/* Generation Provider/Model */}
+                    {(selectedImageForInfo.metadata as any)?.generation_provider || (selectedImageForInfo.metadata as any)?.generation_model ? (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Generation Method</label>
+                        <p className="text-sm">
+                          {(() => {
+                            const provider = (selectedImageForInfo.metadata as any)?.generation_provider;
+                            const model = (selectedImageForInfo.metadata as any)?.generation_model;
+                            
+                            if (model) {
+                              const formatName = (name: string) => {
+                                return name
+                                  .replace(/-v\d+/g, ' V$&'.replace('-v', ''))
+                                  .replace(/seedream/gi, 'Seedream')
+                                  .replace(/nanobanana/gi, 'Nanobanana')
+                                  .replace(/wavespeed/gi, 'Wavespeed')
+                                  .replace(/dalle/gi, 'DALL-E')
+                                  .replace(/midjourney/gi, 'Midjourney');
+                              };
+                              return formatName(model);
+                            }
+                            if (provider) {
+                              return provider.replace(/wavespeed-nanobanan/gi, 'Nanobanana').replace(/seedream/gi, 'Seedream');
+                            }
+                            return 'Unknown';
+                          })()}
+                        </p>
+                      </div>
+                    ) : null}
+
+                    {/* Generation Mode */}
+                    {(selectedImageForInfo.metadata as any)?.generation_mode ? (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Generation Mode</label>
+                        <Badge variant="outline" className="text-xs">
+                          {(selectedImageForInfo.metadata as any).generation_mode.replace('-', ' ')}
+                        </Badge>
+                      </div>
+                    ) : null}
                     
                     {selectedImageForInfo.style && (
                       <div>
@@ -913,6 +990,66 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                         )}
                       </div>
                     </div>
+
+                    {/* Source Image Information */}
+                    {(selectedImageForInfo.metadata as any)?.source_image_url ? (
+                      <div className="border-t pt-3">
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">Source Image</label>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <img 
+                              src={(selectedImageForInfo.metadata as any).source_image_url} 
+                              alt="Source"
+                              className="w-16 h-16 object-cover rounded border"
+                            />
+                            <div className="text-sm">
+                              <p className="font-medium">Source Image Used</p>
+                              <p className="text-muted-foreground text-xs">
+                                {(selectedImageForInfo.metadata as any).source_image_url.includes('pexels') ? 'Pexels Stock Photo' :
+                                 (selectedImageForInfo.metadata as any).source_image_url.includes('unsplash') ? 'Unsplash Stock Photo' :
+                                 (selectedImageForInfo.metadata as any).source_image_url.includes('pixabay') ? 'Pixabay Stock Photo' :
+                                 'Custom Upload'}
+                              </p>
+                            </div>
+                          </div>
+                          {(selectedImageForInfo.metadata as any)?.pexels_data && (
+                            <div className="text-xs space-y-1 bg-muted/50 p-2 rounded">
+                              <p><strong>Photographer:</strong> {(selectedImageForInfo.metadata as any).pexels_data.photographer}</p>
+                              <p><strong>Photo ID:</strong> {(selectedImageForInfo.metadata as any).pexels_data.id}</p>
+                              <p><strong>URL:</strong> 
+                                <a 
+                                  href={(selectedImageForInfo.metadata as any).pexels_data.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:underline ml-1"
+                                >
+                                  View on Pexels
+                                </a>
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Technical Parameters */}
+                    {(selectedImageForInfo.metadata as any)?.generation_settings ? (
+                      <div className="border-t pt-3">
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">Technical Parameters</label>
+                        <div className="space-y-2 text-sm">
+                          {Object.entries((selectedImageForInfo.metadata as any).generation_settings).map(([key, value]) => (
+                            value && key !== 'style' ? (
+                              <div key={key} className="flex justify-between">
+                                <span className="text-muted-foreground capitalize">
+                                  {key.replace(/([A-Z])/g, ' $1').replace(/guidance_scale/gi, 'Guidance Scale').replace(/cfg_scale/gi, 'CFG Scale')}:
+                                </span>
+                                <span className="font-medium">{String(value)}</span>
+                              </div>
+                            ) : null
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
 
                     {/* Generation Metadata */}
                     {selectedImageForInfo.metadata && (
@@ -962,6 +1099,74 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                             <div>
                               <span className="font-medium">Style References:</span>
                               <span className="text-foreground ml-2">{(selectedImageForInfo.metadata as any).include_style_references ? 'Enabled' : 'Disabled'}</span>
+                            </div>
+                          )}
+                          
+                          {/* Preset Information */}
+                          {(selectedImageForInfo.metadata as any)?.preset_id && (
+                            <div>
+                              <span className="font-medium">Preset Used:</span>
+                              <p className="text-foreground mt-1">
+                                {(selectedImageForInfo.metadata as any).preset_name || 'Custom Preset'}
+                                {(selectedImageForInfo.metadata as any).preset_id && (
+                                  <span className="text-muted-foreground text-xs ml-2">
+                                    (ID: {(selectedImageForInfo.metadata as any).preset_id.slice(0, 8)}...)
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Subject Information */}
+                          {(selectedImageForInfo.metadata as any)?.subject && (
+                            <div>
+                              <span className="font-medium">Subject:</span>
+                              <span className="text-foreground ml-2">{(selectedImageForInfo.metadata as any).subject}</span>
+                            </div>
+                          )}
+
+                          {/* URL Sources */}
+                          {(selectedImageForInfo.metadata as any)?.source_url && (
+                            <div>
+                              <span className="font-medium">Source URL:</span>
+                              <a 
+                                href={(selectedImageForInfo.metadata as any).source_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline ml-2 text-xs break-all"
+                              >
+                                {(selectedImageForInfo.metadata as any).source_url}
+                              </a>
+                            </div>
+                          )}
+
+                          {/* Generation ID */}
+                          {(selectedImageForInfo.metadata as any)?.generation_id && (
+                            <div>
+                              <span className="font-medium">Generation ID:</span>
+                              <span className="text-muted-foreground ml-2 text-xs font-mono">
+                                {(selectedImageForInfo.metadata as any).generation_id}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Consistency Level */}
+                          {(selectedImageForInfo.metadata as any)?.consistency_level && (
+                            <div>
+                              <span className="font-medium">Consistency Level:</span>
+                              <span className="text-foreground ml-2 capitalize">
+                                {(selectedImageForInfo.metadata as any).consistency_level}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Negative Prompt */}
+                          {(selectedImageForInfo.metadata as any)?.negative_prompt && (
+                            <div>
+                              <span className="font-medium">Negative Prompt:</span>
+                              <p className="text-foreground mt-1 text-xs bg-muted/50 p-2 rounded">
+                                {(selectedImageForInfo.metadata as any).negative_prompt}
+                              </p>
                             </div>
                           )}
                         </div>

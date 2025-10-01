@@ -4,37 +4,96 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
+// Check if lootbox should be available based on time-based triggers
+function isLootboxActiveNow(): { active: boolean; eventType: string; expiresAt: Date | null } {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
+  const hour = now.getHours();
+  const dayOfMonth = now.getDate();
+  
+  // Weekend Flash Sale (Friday 6pm - Sunday 11:59pm)
+  if ((dayOfWeek === 5 && hour >= 18) || dayOfWeek === 6 || (dayOfWeek === 0 && hour <= 23)) {
+    const expires = new Date(now);
+    // Set expiry to end of Sunday
+    expires.setDate(expires.getDate() + (7 - dayOfWeek));
+    expires.setHours(23, 59, 59, 999);
+    
+    return {
+      active: true,
+      eventType: '🎉 Weekend Flash Sale',
+      expiresAt: expires
+    };
+  }
+  
+  // Mid-Month Special (15th-17th)
+  if (dayOfMonth >= 15 && dayOfMonth <= 17) {
+    const expires = new Date(now);
+    expires.setDate(17);
+    expires.setHours(23, 59, 59, 999);
+    
+    return {
+      active: true,
+      eventType: '💎 Mid-Month Mega Deal',
+      expiresAt: expires
+    };
+  }
+  
+  // Check for manual override from database (for special events)
+  // This will be checked in the main function
+  
+  return {
+    active: false,
+    eventType: 'No active event',
+    expiresAt: null
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Initialize Supabase with service role for admin operations
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get current NanoBanana credits from their API
-    let nanoBananaCredits = 0;
-    let nanoBananaError = null;
-    
-    try {
-      const apiKey = process.env.NANOBANANA_API_KEY;
-      if (apiKey) {
-        const response = await fetch('https://api.nanobananaapi.ai/api/v1/common/credit', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          }
-        });
+    // Check if lootbox is active based on time triggers
+    const { active: isTimeBasedActive, eventType, expiresAt } = isLootboxActiveNow();
 
-        if (response.ok) {
-          const data = await response.json();
-          nanoBananaCredits = data.data || 0;
-        } else {
-          nanoBananaError = `HTTP ${response.status}`;
-        }
-      } else {
-        nanoBananaError = 'NanoBanana API key not configured';
+    // Get user ID from auth header (optional - if not logged in, don't check purchases)
+    let userId: string | null = null;
+    try {
+      const authHeader = request.headers.get('authorization');
+      if (authHeader) {
+        const supabaseClient = createClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+        const { data: { user } } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''));
+        userId = user?.id || null;
       }
-    } catch (error) {
-      nanoBananaError = error instanceof Error ? error.message : 'Unknown error';
+    } catch (e) {
+      // Not logged in, that's ok
+    }
+
+    // Calculate current event period
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const dayOfMonth = now.getDate();
+    let eventPeriod = '';
+    
+    if ((dayOfWeek === 5 && now.getHours() >= 18) || dayOfWeek === 6 || (dayOfWeek === 0)) {
+      const year = now.getFullYear();
+      const weekNum = Math.ceil((now.getDate() + new Date(year, now.getMonth(), 1).getDay()) / 7);
+      eventPeriod = `${year}-W${weekNum}`;
+    } else if (dayOfMonth >= 15 && dayOfMonth <= 17) {
+      eventPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-15`;
+    }
+
+    // Check if user already purchased in this period
+    let alreadyPurchased = false;
+    if (userId && eventPeriod) {
+      const { data: existingPurchase } = await supabase
+        .from('lootbox_events')
+        .select('id')
+        .eq('purchased_by', userId)
+        .eq('event_period', eventPeriod)
+        .single();
+      
+      alreadyPurchased = !!existingPurchase;
     }
 
     // Get active lootbox packages
@@ -42,26 +101,16 @@ export async function GET(request: NextRequest) {
       .from('lootbox_packages')
       .select('*')
       .eq('is_active', true)
-      .order('nano_banana_threshold', { ascending: true });
+      .order('user_credits', { ascending: true });
 
     const availablePackages = [];
-    const creditRatio = 4; // 1 user credit = 4 NanoBanana credits
 
     for (const pkg of lootboxPackages || []) {
-      const requiredNanoBananaCredits = pkg.user_credits * creditRatio;
-      const isAvailable = nanoBananaCredits >= pkg.nano_banana_threshold && 
-                         nanoBananaCredits >= requiredNanoBananaCredits;
-
-      // Calculate competitive lootbox pricing
-      // Regular credit packages: Starter ($0.50), Creative ($0.40), Pro ($0.35), Studio ($0.30)
-      // Lootbox should be significantly better value
-      const baseCostPerCredit = 0.20; // Lower base cost for lootbox (better than Studio tier)
-      const marginMultiplier = 1 + (pkg.margin_percentage / 100);
-      const dynamicPrice = pkg.user_credits * baseCostPerCredit * marginMultiplier;
-      
-      // Apply lootbox discount (make it a great deal)
-      const lootboxDiscount = 0.40; // 40% discount for lootbox (better than 25%)
-      const discountedPrice = dynamicPrice * (1 - lootboxDiscount);
+      // Calculate lootbox pricing (35% discount from Pro tier pricing)
+      const regularPricePerCredit = 0.35; // Pro tier pricing
+      const regularPrice = pkg.user_credits * regularPricePerCredit;
+      const lootboxDiscount = 0.35; // 35% off
+      const discountedPrice = regularPrice * (1 - lootboxDiscount);
 
       availablePackages.push({
         id: pkg.id,
@@ -70,27 +119,28 @@ export async function GET(request: NextRequest) {
         user_credits: pkg.user_credits,
         price_usd: Math.round(discountedPrice * 100) / 100,
         price_per_credit: Math.round((discountedPrice / pkg.user_credits) * 100) / 100,
-        nano_banana_threshold: pkg.nano_banana_threshold,
-        margin_percentage: pkg.margin_percentage,
+        regular_price: Math.round(regularPrice * 100) / 100,
         is_lootbox: true,
-        available: isAvailable, // Show availability status
-        savings_percentage: Math.round(lootboxDiscount * 100), // 40% savings
-        current_nano_banana_credits: nanoBananaCredits,
-        threshold_met: nanoBananaCredits >= 10000
+        available: isTimeBasedActive && !alreadyPurchased, // Only available if active AND not purchased
+        already_purchased: alreadyPurchased,
+        savings_percentage: Math.round(lootboxDiscount * 100),
+        savings_amount: Math.round((regularPrice - discountedPrice) * 100) / 100
       });
     }
 
     return NextResponse.json({
       success: true,
       lootbox: {
-        is_available: availablePackages.length > 0,
-        is_active: false,
-        current_event: null,
+        is_available: isTimeBasedActive && availablePackages.length > 0,
+        is_active: isTimeBasedActive,
+        current_event: eventType,
+        expires_at: expiresAt?.toISOString() || null,
         available_packages: availablePackages,
-        nano_banana_status: {
-          current_credits: nanoBananaCredits,
-          error: nanoBananaError,
-          threshold_met: nanoBananaCredits >= 10000
+        trigger_info: {
+          type: 'time_based',
+          weekend_sale: 'Friday 6pm - Sunday 11pm',
+          mid_month_sale: '15th-17th of each month',
+          next_event: isTimeBasedActive ? 'Current event active' : 'Check back during sale periods'
         }
       },
       timestamp: new Date().toISOString()

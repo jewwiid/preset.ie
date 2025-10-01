@@ -97,8 +97,28 @@ export default function SavedMediaMasonry({
   
   // AI analysis state
   const [analyzingDescription, setAnalyzingDescription] = useState(false)
+  const [analyzingTags, setAnalyzingTags] = useState(false)
   const [editableDescription, setEditableDescription] = useState('')
+  const [editableTags, setEditableTags] = useState<string[]>([])
   const [savingDescription, setSavingDescription] = useState(false)
+
+  // Sync editableDescription and tags with selectedImageForInfo when modal opens
+  useEffect(() => {
+    if (selectedImageForInfo) {
+      console.log('🔄 Modal opened - syncing description and tags:', {
+        id: selectedImageForInfo.id,
+        currentDescription: selectedImageForInfo.description,
+        currentTags: selectedImageForInfo.tags,
+        editableDescription: editableDescription,
+        editableTags: editableTags
+      })
+      setEditableDescription(selectedImageForInfo.description || '')
+      setEditableTags(selectedImageForInfo.tags || [])
+    } else {
+      setEditableDescription('')
+      setEditableTags([])
+    }
+  }, [selectedImageForInfo])
   
   // Pagination for performance optimization
   const {
@@ -267,9 +287,9 @@ export default function SavedMediaMasonry({
     return 'A beautiful AI-generated image with artistic composition and natural lighting.'
   }
 
-  // AI analyze image description
+  // AI analyze image description only
   const analyzeImageDescription = async (imageUrl: string) => {
-    console.log('🔍 AI Analyze button clicked!', { 
+    console.log('🔍 AI Analyze Description button clicked!', { 
       imageUrl, 
       hasSession: !!session,
       hasAccessToken: !!session?.access_token,
@@ -313,7 +333,7 @@ export default function SavedMediaMasonry({
         
         if (data.success && data.description && !data.fallback) {
           // Use OpenAI description if available and not a fallback
-          console.log('✅ AI analysis completed successfully')
+          console.log('✅ AI description analysis completed successfully')
           setEditableDescription(data.description)
           setAnalyzingDescription(false) // ✅ Ensure we stop the loading state
           return
@@ -339,11 +359,93 @@ export default function SavedMediaMasonry({
     // Always use the contextual description as it's more reliable
     console.log('📝 Setting description to:', contextualDescription)
     setEditableDescription(contextualDescription)
-    console.log('🏁 AI analysis finished, setting analyzingDescription to false')
+    console.log('🏁 AI description analysis finished, setting analyzingDescription to false')
     setAnalyzingDescription(false)
   }
 
-  // Save updated description
+  // AI analyze image tags only
+  const analyzeImageTags = async (imageUrl: string) => {
+    console.log('🏷️ AI Analyze Tags button clicked!', { 
+      imageUrl, 
+      hasSession: !!session,
+      hasAccessToken: !!session?.access_token,
+      selectedImageId: selectedImageForInfo?.id 
+    })
+    
+    setAnalyzingTags(true)
+    
+    try {
+      console.log('🚀 Making API call to /api/ai-image-analysis for tags...')
+      console.log('📤 Request payload:', {
+        imageUrl,
+        generationMetadata: selectedImageForInfo?.generation_metadata
+      })
+      
+      const response = await fetch('/api/ai-image-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          imageUrl,
+          generationMetadata: selectedImageForInfo?.generation_metadata
+        })
+      })
+      
+      console.log('📥 API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📊 API Response Data:', data)
+        
+        if (data.success && data.tags && Array.isArray(data.tags)) {
+          console.log('✅ AI tags analysis completed successfully')
+          console.log('🏷️ AI generated tags:', data.tags)
+          
+          // Merge new AI tags with existing tags, removing duplicates
+          const existingTags = editableTags || []
+          const newTags = data.tags || []
+          const mergedTags = [...existingTags]
+          
+          newTags.forEach((tag: string) => {
+            if (!mergedTags.includes(tag)) {
+              mergedTags.push(tag)
+            }
+          })
+          
+          console.log('🏷️ Merged tags:', { existing: existingTags, new: newTags, merged: mergedTags })
+          setEditableTags(mergedTags)
+          setAnalyzingTags(false)
+          return
+        } else {
+          console.log('⚠️ API returned fallback or failed:', {
+            success: data.success,
+            hasTags: !!data.tags,
+            isFallback: data.fallback,
+            error: data.error
+          })
+        }
+      } else {
+        console.error('❌ API call failed:', {
+          status: response.status,
+          statusText: response.statusText
+        })
+      }
+    } catch (error) {
+      console.log('🔄 OpenAI API unavailable for tags')
+      console.error('❌ Full error details:', error)
+    }
+    
+    console.log('🏁 AI tags analysis finished, setting analyzingTags to false')
+    setAnalyzingTags(false)
+  }
+
+  // Save updated description and tags
   const saveUpdatedDescription = async () => {
     if (!selectedImageForInfo || !editableDescription.trim()) {
       console.log('❌ Cannot save: missing image info or description')
@@ -353,7 +455,12 @@ export default function SavedMediaMasonry({
     console.log('💾 Starting save process...', {
       itemId: selectedImageForInfo.id,
       descriptionLength: editableDescription.trim().length,
-      hasSession: !!session?.access_token
+      description: editableDescription.trim(),
+      tagsCount: editableTags.length,
+      tags: editableTags,
+      hasSession: !!session?.access_token,
+      currentDescription: selectedImageForInfo.description,
+      currentTags: selectedImageForInfo.tags
     })
 
     setSavingDescription(true)
@@ -366,7 +473,8 @@ export default function SavedMediaMasonry({
         },
         body: JSON.stringify({
           itemId: selectedImageForInfo.id,
-          description: editableDescription.trim()
+          description: editableDescription.trim(),
+          tags: editableTags
         })
       })
 
@@ -383,7 +491,8 @@ export default function SavedMediaMasonry({
         // Update the local state
         setSelectedImageForInfo(prev => prev ? {
           ...prev,
-          description: editableDescription.trim()
+          description: editableDescription.trim(),
+          tags: editableTags
         } : null)
         
         // Refresh the saved media list to show updated description
@@ -764,7 +873,87 @@ export default function SavedMediaMasonry({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setEditableDescription(selectedImageForInfo.description || '')}
+                            onClick={() => {
+                              setEditableDescription(selectedImageForInfo.description || '')
+                              setEditableTags(selectedImageForInfo.tags || [])
+                            }}
+                            className="text-xs"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-medium text-muted-foreground">Tags</label>
+                        <div className="flex gap-1">
+                          {editableTags.length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditableTags([])}
+                              className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+                            >
+                              Clear All
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => analyzeImageTags(selectedImageForInfo.image_url || '')}
+                            disabled={analyzingTags}
+                            className="h-6 px-2 text-xs"
+                          >
+                            {analyzingTags ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1"></div>
+                                Analyzing...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="h-3 w-3 mr-1" />
+                                AI Add Tags
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1 p-2 border rounded-md min-h-[2rem]">
+                        {editableTags.length > 0 ? (
+                          editableTags.map((tag, index) => (
+                            <Badge 
+                              key={index} 
+                              variant="secondary" 
+                              className="text-xs cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
+                              onClick={() => {
+                                const newTags = editableTags.filter((_, i) => i !== index)
+                                setEditableTags(newTags)
+                              }}
+                            >
+                              {tag} ×
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No tags yet. Click "AI Generate Tags" to add some!</span>
+                        )}
+                      </div>
+                      {editableTags.length > 0 && (
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => saveUpdatedDescription()}
+                            disabled={savingDescription}
+                            className="text-xs"
+                          >
+                            {savingDescription ? 'Saving...' : 'Save Tags'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditableTags(selectedImageForInfo.tags || [])}
                             className="text-xs"
                           >
                             Cancel
@@ -823,10 +1012,50 @@ export default function SavedMediaMasonry({
                             {(selectedImageForInfo.generation_metadata as any).prompt || 'Not available'}
                           </p>
                         </div>
+
+                        {/* Generation Method */}
+                        {((selectedImageForInfo.generation_metadata as any).generation_provider || (selectedImageForInfo.generation_metadata as any).generation_model) && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">Generation Method</label>
+                            <p className="text-sm">
+                              {(() => {
+                                const provider = (selectedImageForInfo.generation_metadata as any).generation_provider;
+                                const model = (selectedImageForInfo.generation_metadata as any).generation_model;
+                                
+                                if (model) {
+                                  const formatName = (name: string) => {
+                                    return name
+                                      .replace(/-v\d+/g, ' V$&'.replace('-v', ''))
+                                      .replace(/seedream/gi, 'Seedream')
+                                      .replace(/nanobanana/gi, 'Nanobanana')
+                                      .replace(/wavespeed/gi, 'Wavespeed')
+                                      .replace(/dalle/gi, 'DALL-E')
+                                      .replace(/midjourney/gi, 'Midjourney');
+                                  };
+                                  return formatName(model);
+                                }
+                                if (provider) {
+                                  return provider.replace(/wavespeed-nanobanan/gi, 'Nanobanana').replace(/seedream/gi, 'Seedream');
+                                }
+                                return 'Unknown';
+                              })()}
+                            </p>
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="text-sm font-medium text-muted-foreground">Style</label>
-                            <p className="text-sm">{(selectedImageForInfo.generation_metadata as any).style || 'Not available'}</p>
+                            <p className="text-sm">
+                              {(() => {
+                                const style = (selectedImageForInfo.generation_metadata as any).style;
+                                if (!style) return 'Not available';
+                                return style
+                                  .split('_')
+                                  .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                                  .join(' ');
+                              })()}
+                            </p>
                           </div>
                           <div>
                             <label className="text-sm font-medium text-muted-foreground">Resolution</label>
@@ -841,6 +1070,7 @@ export default function SavedMediaMasonry({
                             <p className="text-sm">{(selectedImageForInfo.generation_metadata as any).consistency_level || 'Not available'}</p>
                           </div>
                         </div>
+
                         {(selectedImageForInfo.generation_metadata as any).custom_style_preset && (
                           <div>
                             <label className="text-sm font-medium text-muted-foreground">Style Preset</label>
@@ -856,18 +1086,79 @@ export default function SavedMediaMasonry({
                             </p>
                           </div>
                         )}
-                      {(selectedImageForInfo.generation_metadata as any).base_image && (
-                        <div>
-                          <span className="font-medium">Base Image:</span>
-                          <div className="mt-1">
-                            <img 
-                              src={(selectedImageForInfo.generation_metadata as any).base_image} 
-                              alt="Base image" 
-                              className="w-16 h-16 object-cover rounded border"
-                            />
+
+                        {/* Subject Information */}
+                        {(() => {
+                          const metadata = selectedImageForInfo.generation_metadata as any;
+                          let subject = metadata.subject;
+                          
+                          // If no subject field, try to extract from prompt
+                          if (!subject && metadata.prompt) {
+                            // Look for common subject patterns in the prompt
+                            const prompt = metadata.prompt.toLowerCase();
+                            if (prompt.includes('of a ')) {
+                              const match = metadata.prompt.match(/of a ([^,]+)/i);
+                              if (match) subject = match[1].trim();
+                            } else if (prompt.includes('of an ')) {
+                              const match = metadata.prompt.match(/of an ([^,]+)/i);
+                              if (match) subject = match[1].trim();
+                            } else if (prompt.includes('of ')) {
+                              const match = metadata.prompt.match(/of ([^,]+)/i);
+                              if (match) subject = match[1].trim();
+                            }
+                          }
+                          
+                          return subject ? (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Subject</label>
+                              <p className="text-sm">{subject}</p>
+                            </div>
+                          ) : null;
+                        })()}
+
+                        {/* Preset Information */}
+                        {(() => {
+                          const metadata = selectedImageForInfo.generation_metadata as any;
+                          const presetId = metadata.custom_style_preset?.id || metadata.preset_id;
+                          const presetName = metadata.custom_style_preset?.name || metadata.preset_name || 'Custom Preset';
+                          
+                          return presetId ? (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Preset Used</label>
+                              <p className="text-sm">
+                                <a 
+                                  href={`/presets/${presetId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-primary hover:text-primary/80 underline font-medium transition-colors"
+                                >
+                                  {presetName}
+                                </a>
+                              </p>
+                            </div>
+                          ) : null;
+                        })()}
+                      {(() => {
+                        const metadata = selectedImageForInfo.generation_metadata as any;
+                        return (
+                          <div>
+                            <span className="font-medium">Source Image:</span>
+                            <div className="mt-1">
+                              {metadata.base_image ? (
+                                <img 
+                                  src={metadata.base_image} 
+                                  alt="Base image" 
+                                  className="w-16 h-16 object-cover rounded border"
+                                />
+                              ) : (
+                                <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center text-xs text-muted-foreground">
+                                  📝 Text-to-Image
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                       {(selectedImageForInfo.generation_metadata as any).cinematic_parameters && (
                         <div>
                           <span className="font-medium">Cinematic Parameters:</span>

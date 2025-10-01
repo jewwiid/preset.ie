@@ -50,7 +50,9 @@ export function Feedback({ type, title, message, actions, avatar, dismissible = 
   const [isVisible, setIsVisible] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
 
-  const style = feedbackStyles[type]
+  // Ensure we have a valid type, default to 'info' if undefined or invalid
+  const feedbackType = type && feedbackStyles[type] ? type : 'info'
+  const style = feedbackStyles[feedbackType]
   const IconComponent = style.icon
 
   useEffect(() => {

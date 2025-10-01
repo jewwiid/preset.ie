@@ -12,6 +12,7 @@ import { Badge } from '../../../components/ui/badge';
 import { Upload, Image as ImageIcon, Trash2, Edit, Eye, Plus, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface PlatformImage {
   id: string;
@@ -262,24 +263,34 @@ export default function PlatformImagesAdmin() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Platform Images Admin</h1>
-          <p className="text-muted-foreground">Manage platform-wide images and preset visual aids</p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="bg-card shadow-sm border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-4">
+              <Link href="/admin" className="text-muted-foreground hover:text-foreground transition-colors">
+                ← Back to Dashboard
+              </Link>
+              <div className="h-6 w-px bg-border"></div>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Platform Images</h1>
+            </div>
+            <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Add Image
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Add Image
-        </Button>
-      </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-blue-500" />
+              <ImageIcon className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Total Images</p>
                 <p className="text-2xl font-bold">{platformImages.length}</p>
@@ -291,7 +302,7 @@ export default function PlatformImagesAdmin() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-green-500" />
+              <ImageIcon className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Active Images</p>
                 <p className="text-2xl font-bold">
@@ -305,7 +316,7 @@ export default function PlatformImagesAdmin() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-purple-500" />
+              <ImageIcon className="w-5 h-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Visual Aids</p>
                 <p className="text-2xl font-bold">{presetVisualAids.length}</p>
@@ -446,16 +457,16 @@ export default function PlatformImagesAdmin() {
                 </div>
                 
                 {formData.selected_image_url && (
-                  <div className="border rounded-lg p-3 bg-green-50">
+                  <div className="border rounded-lg p-3 bg-primary/10">
                     <div className="flex items-center gap-2 mb-2">
-                      <ImageIcon className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-800">Selected Image</span>
+                      <ImageIcon className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-primary">Selected Image</span>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => setFormData({...formData, selected_image_url: '', image_file: null})}
-                        className="ml-auto text-red-600 hover:text-red-700"
+                        className="ml-auto text-destructive hover:text-destructive/90"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -467,7 +478,7 @@ export default function PlatformImagesAdmin() {
                         className="w-16 h-16 object-cover rounded border"
                       />
                       <div className="flex-1">
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className="text-sm text-muted-foreground truncate">
                           {formData.selected_image_url.split('/').pop()}
                         </p>
                       </div>
@@ -509,8 +520,8 @@ export default function PlatformImagesAdmin() {
 
       {/* Image Browser Modal */}
       {showImageBrowser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-hidden">
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-popover rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Select Image from Bucket</h2>
               <Button
@@ -523,14 +534,14 @@ export default function PlatformImagesAdmin() {
             
             {loadingBucketImages ? (
               <div className="flex items-center justify-center py-8">
-                <div className="text-gray-500">Loading images...</div>
+                <div className="text-muted-foreground">Loading images...</div>
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
                 {bucketImages.map((image: any, index: number) => (
                   <div
                     key={index}
-                    className="border rounded-lg p-2 cursor-pointer hover:border-blue-500 transition-colors"
+                    className="border rounded-lg p-2 cursor-pointer hover:border-primary transition-colors"
                     onClick={() => {
                       setFormData({...formData, selected_image_url: image.publicUrl, image_file: null});
                       setShowImageBrowser(false);
@@ -541,8 +552,8 @@ export default function PlatformImagesAdmin() {
                       alt={image.name}
                       className="w-full h-24 object-cover rounded mb-2"
                     />
-                    <p className="text-xs text-gray-600 truncate">{image.name}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground truncate">{image.name}</p>
+                    <p className="text-xs text-muted-foreground">
                       {Math.round(image.metadata?.size / 1024)}KB
                     </p>
                   </div>
@@ -551,7 +562,7 @@ export default function PlatformImagesAdmin() {
             )}
             
             {bucketImages.length === 0 && !loadingBucketImages && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 No images found in the bucket.
               </div>
             )}
@@ -572,7 +583,7 @@ export default function PlatformImagesAdmin() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {platformImages.map((image) => (
                 <Card key={image.id} className="overflow-hidden">
-                  <div className="aspect-video relative bg-gray-100">
+                  <div className="aspect-video relative bg-muted">
                     {image.image_url ? (
                       <Image
                         src={image.image_url}
@@ -582,7 +593,7 @@ export default function PlatformImagesAdmin() {
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <ImageIcon className="w-12 h-12 text-gray-400" />
+                        <ImageIcon className="w-12 h-12 text-muted-foreground" />
                       </div>
                     )}
                     <div className="absolute top-2 right-2">
@@ -651,7 +662,7 @@ export default function PlatformImagesAdmin() {
           <div className="space-y-4">
             {presetVisualAids.map((aid) => (
               <div key={aid.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                <div className="w-16 h-16 relative bg-gray-100 rounded">
+                <div className="w-16 h-16 relative bg-muted rounded">
                   {aid.platform_image.image_url ? (
                     <Image
                       src={aid.platform_image.image_url}
@@ -661,7 +672,7 @@ export default function PlatformImagesAdmin() {
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <ImageIcon className="w-6 h-6 text-gray-400" />
+                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
                     </div>
                   )}
                 </div>
@@ -690,6 +701,7 @@ export default function PlatformImagesAdmin() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
