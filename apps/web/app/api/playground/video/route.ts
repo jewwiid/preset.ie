@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
     }
 
     let videoResult: { videoUrl: string; taskId: string }
-    let processedImageUrl: string | null = null
+    let processedImageUrl: string | null = null // Fixed scope issue
 
     // Choose provider and generation method
     if (selectedProvider === 'wan') {
