@@ -140,6 +140,7 @@ export async function POST(request: NextRequest) {
     }
 
     let videoResult: { videoUrl: string; taskId: string }
+    let processedImageUrl: string | null = null
 
     // Choose provider and generation method
     if (selectedProvider === 'wan') {
@@ -148,7 +149,7 @@ export async function POST(request: NextRequest) {
       if (imageUrl) {
         // Wan image-to-video
         console.log('🖼️ Wan image-to-video generation')
-        const processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
+        processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
         videoResult = await generateVideoWithWan(processedImageUrl, duration, resolution, aspectRatio, enhancedPrompt, true)
       } else {
         // Wan text-to-video
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Seedream (existing implementation)
       console.log('🚀 Using Seedream for image-to-video generation...')
-      const processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
+      processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
 
       console.log('🖼️ Image processing completed:', {
         originalImageUrl: imageUrl,
