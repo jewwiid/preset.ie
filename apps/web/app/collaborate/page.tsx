@@ -9,11 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Users, Camera, Plus, Search, Filter, Mail, Edit, Trash2, MoreVertical, Eye } from 'lucide-react';
+import { Calendar, MapPin, Users, Camera, Plus, Search, Filter, Mail, Edit, Trash2, MoreVertical, Eye, Sparkles } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '../../lib/supabase';
 import { PROJECT_STATUSES, SORT_OPTIONS, COMMON_COUNTRIES } from './filter-constants';
 import { InvitationsList } from '@/components/collaborate/InvitationsList';
+import { RoleRecommendations } from '@/components/collaborate/RoleRecommendations';
 
 interface Project {
   id: string;
@@ -256,6 +257,10 @@ function CollaboratePageContent() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
+            <TabsTrigger value="for_you">
+              <Sparkles className="h-4 w-4 mr-2" />
+              For You
+            </TabsTrigger>
             <TabsTrigger value="all">All Projects</TabsTrigger>
             <TabsTrigger value="my_projects">My Projects</TabsTrigger>
             <TabsTrigger value="invited">
@@ -728,6 +733,17 @@ function CollaboratePageContent() {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="for_you" className="space-y-6">
+            <RoleRecommendations
+              onApply={(projectId, roleId) => {
+                // Navigate to project page with apply modal open
+                window.location.href = `/collaborate/projects/${projectId}`;
+              }}
+              limit={20}
+              minCompatibility={30}
+            />
           </TabsContent>
 
           <TabsContent value="invited" className="space-y-6">

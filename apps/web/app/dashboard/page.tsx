@@ -9,6 +9,7 @@ import CompatibilityScore from '../components/matchmaking/CompatibilityScore'
 import MatchmakingCard from '../components/matchmaking/MatchmakingCard'
 import { CompatibilityData, Recommendation } from '../../lib/types/matchmaking'
 import SavedMediaGallery from '../components/playground/SavedImagesGallery'
+import { getAuthToken } from '../../lib/auth-utils'
 // Simplified credit calculation
 const calculateCreditValue = (credits: number) => credits * 0.01; // Mock calculation
 
@@ -191,6 +192,7 @@ export default function Dashboard() {
   const [matchmakingData, setMatchmakingData] = useState({
     topCompatibleGigs: [] as Recommendation[],
     topCompatibleUsers: [] as Recommendation[],
+    topCompatibleProjects: [] as any[], // Collaboration project recommendations
     averageCompatibility: 0,
     totalMatches: 0
   })
@@ -199,7 +201,11 @@ export default function Dashboard() {
   // Messages state
   const [recentMessages, setRecentMessages] = useState<any[]>([])
   const [messagesLoading, setMessagesLoading] = useState(false)
-  
+
+  // Invitations state
+  const [pendingInvitations, setPendingInvitations] = useState<any[]>([])
+  const [invitationsLoading, setInvitationsLoading] = useState(false)
+
   const router = useRouter()
 
   useEffect(() => {
@@ -596,9 +602,12 @@ export default function Dashboard() {
       }
 
         console.log('✅ Dashboard data loaded successfully with real database results')
-        
+
         // Load matchmaking data
         await loadMatchmakingData(currentProfile)
+
+        // Load pending invitations
+        await loadPendingInvitations()
     } catch (err) {
       console.error('Error loading dashboard data:', err)
     }
@@ -612,8 +621,29 @@ export default function Dashboard() {
       const isTalent = userRole?.isTalent || profileData.role_flags?.includes('TALENT') || profileData.role_flags?.includes('BOTH')
       const isContributor = userRole?.isContributor || profileData.role_flags?.includes('CONTRIBUTOR') || profileData.role_flags?.includes('BOTH')
 
-      // For talent users, get compatible gigs
+      // For talent users, get compatible gigs AND collaboration projects
       if (isTalent) {
+        // Fetch collaboration project recommendations
+        try {
+          const token = await getAuthToken()
+          if (token) {
+            const collabResponse = await fetch('/api/collab/recommendations?limit=3&min_compatibility=30', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+
+            if (collabResponse.ok) {
+              const { recommendations } = await collabResponse.json()
+
+              setMatchmakingData(prev => ({
+                ...prev,
+                topCompatibleProjects: recommendations || []
+              }))
+            }
+          }
+        } catch (collabError) {
+          console.error('Error fetching collaboration recommendations:', collabError)
+        }
+
         const { data: compatibleGigs, error: gigsError } = await (supabase as any)
           .rpc('find_compatible_gigs_for_user', {
             p_profile_id: profileData.id,
@@ -769,6 +799,77 @@ export default function Dashboard() {
       })
     } finally {
       setMatchmakingLoading(false)
+    }
+  }
+
+  const loadPendingInvitations = async () => {
+    if (!user) return
+
+    try {
+      setInvitationsLoading(true)
+      const token = await getAuthToken()
+      if (!token) return
+
+      const response = await fetch('/api/collab/invitations?status=pending', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        const { invitations } = await response.json()
+        setPendingInvitations(invitations || [])
+      }
+    } catch (error) {
+      console.error('Error loading invitations:', error)
+    } finally {
+      setInvitationsLoading(false)
+    }
+  }
+
+  const handleAcceptInvitation = async (invitationId: string) => {
+    try {
+      const token = await getAuthToken()
+      if (!token) return
+
+      const response = await fetch(`/api/collab/invitations/${invitationId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'accepted' })
+      })
+
+      if (response.ok) {
+        // Remove from list and reload
+        setPendingInvitations(prev => prev.filter(inv => inv.id !== invitationId))
+        // Could add success toast here
+      }
+    } catch (error) {
+      console.error('Error accepting invitation:', error)
+    }
+  }
+
+  const handleDeclineInvitation = async (invitationId: string) => {
+    try {
+      const token = await getAuthToken()
+      if (!token) return
+
+      const response = await fetch(`/api/collab/invitations/${invitationId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'declined' })
+      })
+
+      if (response.ok) {
+        // Remove from list
+        setPendingInvitations(prev => prev.filter(inv => inv.id !== invitationId))
+        // Could add success toast here
+      }
+    } catch (error) {
+      console.error('Error declining invitation:', error)
     }
   }
 
@@ -1422,6 +1523,246 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* Pending Invitations Section */}
+          {pendingInvitations.length > 0 && (
+            <div className="mb-6 max-w-7xl mx-auto">
+              <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Pending Invitations</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {pendingInvitations.length} invitation{pendingInvitations.length !== 1 ? 's' : ''} waiting for your response
+                    </p>
+                  </div>
+                  <div className="ml-auto">
+                    <button
+                      onClick={() => router.push('/collaborate?tab=invited')}
+                      className="text-sm text-primary hover:text-primary/80 font-medium"
+                    >
+                      View All →
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {invitationsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  ) : (
+                    pendingInvitations.slice(0, 3).map((invitation) => {
+                      const daysUntilExpiry = Math.ceil(
+                        (new Date(invitation.expires_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+                      )
+
+                      return (
+                        <div
+                          key={invitation.id}
+                          className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-xl hover:border-primary/40 transition-all"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h5 className="font-semibold text-foreground">{invitation.project?.title || 'Project'}</h5>
+                                {daysUntilExpiry <= 3 && (
+                                  <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-full">
+                                    {daysUntilExpiry}d left
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mb-2">
+                                {invitation.inviter?.avatar_url ? (
+                                  <img
+                                    src={invitation.inviter.avatar_url}
+                                    alt={invitation.inviter.display_name}
+                                    className="w-5 h-5 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                                    <span className="text-[8px] text-primary-foreground font-medium">
+                                      {invitation.inviter?.display_name?.[0]?.toUpperCase() || 'U'}
+                                    </span>
+                                  </div>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  Invited by <span className="font-medium text-foreground">{invitation.inviter?.display_name || 'Unknown'}</span>
+                                  {invitation.role && ` • ${invitation.role.role_name}`}
+                                </p>
+                              </div>
+                              {invitation.message && (
+                                <p className="text-xs text-muted-foreground italic line-clamp-2 mb-2">
+                                  "{invitation.message}"
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-2 flex-shrink-0">
+                              <button
+                                onClick={() => handleAcceptInvitation(invitation.id)}
+                                className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => handleDeclineInvitation(invitation.id)}
+                                className="px-3 py-1.5 bg-muted text-foreground text-xs font-medium rounded-lg hover:bg-muted/80 transition-colors"
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+
+                {pendingInvitations.length > 3 && (
+                  <button
+                    onClick={() => router.push('/collaborate?tab=invited')}
+                    className="w-full text-center py-3 text-sm text-primary hover:text-primary/80 font-medium mt-3"
+                  >
+                    View All {pendingInvitations.length} Invitations →
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Smart Matchmaking Section - For Talent Users */}
+          {isTalent && (matchmakingData.topCompatibleGigs.length > 0 || matchmakingData.topCompatibleProjects.length > 0) && (
+            <div className="mb-6 max-w-7xl mx-auto">
+              <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <Target className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Perfect Matches For You</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {matchmakingData.averageCompatibility > 0
+                        ? `${Math.round(matchmakingData.averageCompatibility)}% average compatibility`
+                        : 'Based on your profile and skills'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Collaboration Projects */}
+                {matchmakingData.topCompatibleProjects.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Collaboration Projects
+                    </h4>
+                    <div className="space-y-3">
+                      {matchmakingData.topCompatibleProjects.map((rec: any) => (
+                        <div
+                          key={rec.role.id}
+                          className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-xl hover:border-primary/40 transition-all cursor-pointer"
+                          onClick={() => router.push(`/collaborate/projects/${rec.project.id}`)}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h5 className="font-semibold text-foreground">{rec.project.title}</h5>
+                                <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 rounded-full">
+                                  <span className="text-xs font-medium text-primary">
+                                    {Math.round(rec.compatibility.overall_score)}% match
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">{rec.role.role_name}</p>
+                              {rec.compatibility.matched_skills.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {rec.compatibility.matched_skills.slice(0, 3).map((skill: string) => (
+                                    <span key={skill} className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-md">
+                                      {skill}
+                                    </span>
+                                  ))}
+                                  {rec.compatibility.matched_skills.length > 3 && (
+                                    <span className="text-xs px-2 py-0.5 text-muted-foreground">
+                                      +{rec.compatibility.matched_skills.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <button className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                              Apply
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => router.push('/collaborate?tab=for_you')}
+                      className="w-full text-center py-3 text-sm text-primary hover:text-primary/80 font-medium mt-3"
+                    >
+                      View All Project Recommendations →
+                    </button>
+                  </div>
+                )}
+
+                {/* Gig Recommendations */}
+                {matchmakingData.topCompatibleGigs.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      Compatible Gigs
+                    </h4>
+                    <div className="space-y-3">
+                      {matchmakingData.topCompatibleGigs.map((rec: Recommendation) => (
+                        <div
+                          key={rec.id}
+                          className="p-4 bg-gradient-to-r from-muted/50 to-muted/80 border border-border rounded-xl hover:border-primary/40 transition-all cursor-pointer"
+                          onClick={() => router.push(`/gigs/${rec.data.id}`)}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h5 className="font-semibold text-foreground">{rec.data.title}</h5>
+                                <CompatibilityScore
+                                  score={rec.compatibility_score}
+                                  size="sm"
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground mb-1">{rec.data.location_text}</p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span>{rec.data.comp_type}</span>
+                                <span>•</span>
+                                <span>{new Date(rec.data.start_time).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                            <button className="px-3 py-1.5 bg-foreground text-background text-xs font-medium rounded-lg hover:bg-foreground/90 transition-colors">
+                              View
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => router.push('/gigs')}
+                      className="w-full text-center py-3 text-sm text-primary hover:text-primary/80 font-medium mt-3"
+                    >
+                      Browse All Gigs →
+                    </button>
+                  </div>
+                )}
+
+                {matchmakingLoading && (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    <span className="ml-2 text-sm text-muted-foreground">Finding perfect matches...</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Saved Images Gallery */}
           <div className="bg-card rounded-2xl p-6 border border-border shadow-xl mb-6">

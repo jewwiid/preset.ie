@@ -84,6 +84,7 @@ export default function ApplicationsList({
 
       for (const app of applications) {
         try {
+          if (!supabase) continue; // Additional null check for TypeScript
           const { data, error } = await supabase.rpc(
             'calculate_collaboration_compatibility',
             {
