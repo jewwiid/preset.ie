@@ -287,6 +287,8 @@ export default function TabbedPlaygroundLayout({
   const [deletingVideo, setDeletingVideo] = useState<string | null>(null)
   const [videoPrompt, setVideoPrompt] = useState('')
   const [videoProvider, setVideoProvider] = useState<'seedream' | 'wan'>('seedream')
+  const [videoAspectRatio, setVideoAspectRatio] = useState('16:9')
+  const [videoResolution, setVideoResolution] = useState('480p')
   const savedGalleryRef = useRef<SavedMediaGalleryRef>(null)
 
   const [removeBaseImageCallback, setRemoveBaseImageCallback] = useState<(() => void) | undefined>(undefined)
@@ -411,11 +413,14 @@ export default function TabbedPlaygroundLayout({
         const data = await response.json()
         console.log('✅ Videos fetched:', data.videos.length)
         setSavedVideos(data.videos)
+        return data.videos
       } else {
         console.error('❌ Failed to fetch videos:', response.statusText)
+        return []
       }
     } catch (error) {
       console.error('❌ Error fetching videos:', error)
+      return []
     }
   }, [sessionToken])
 
@@ -426,7 +431,7 @@ export default function TabbedPlaygroundLayout({
 
   // Expose refresh function to parent component
   const refreshVideos = useCallback(() => {
-    fetchVideos()
+    return fetchVideos()
   }, [fetchVideos])
 
   // Set default aspect ratio to 16:9 when switching to Video tab
@@ -467,15 +472,16 @@ export default function TabbedPlaygroundLayout({
   // Refresh videos when video generation completes and auto-select the new video
   useEffect(() => {
     if (videoGenerationStatus === 'completed' && generatedVideoUrl) {
-      console.log('🎬 Video generation completed, refreshing video list')
-      refreshVideos()
-      
-      // Auto-select the newly generated video
-      setTimeout(() => {
-        console.log('🎯 Auto-selecting newly generated video:', generatedVideoUrl)
-        setSelectedVideo(generatedVideoUrl)
-      }, 1000) // Small delay to ensure videos are fetched
-      
+      console.log('🎬 Video generation completed, refreshing video list and auto-selecting')
+
+      // Immediately select the video (will show in preview even before refresh completes)
+      setSelectedVideo(generatedVideoUrl)
+
+      // Refresh videos in the background to get the full video data
+      refreshVideos().then(() => {
+        console.log('🎯 Videos refreshed, newly generated video should be in list:', generatedVideoUrl)
+      })
+
       onVideoGenerated?.()
     }
   }, [videoGenerationStatus, generatedVideoUrl, refreshVideos, onVideoGenerated])
@@ -844,8 +850,8 @@ export default function TabbedPlaygroundLayout({
             <div className="w-full" data-preview-area>
               <VideoPreviewArea
                 sourceImage={selectedImage}
-                aspectRatio={currentSettings.aspectRatio || '16:9'}
-                resolution={currentSettings.resolution}
+                aspectRatio={videoAspectRatio}
+                resolution={videoResolution}
                 prompt={videoPrompt}
                 videos={savedVideos}
                 selectedVideo={selectedVideo}
@@ -865,10 +871,12 @@ export default function TabbedPlaygroundLayout({
                 onGenerateVideo={onGenerateVideo}
                 loading={loading}
                 selectedImage={selectedImage}
-                aspectRatio={currentSettings.aspectRatio || '16:9'}
+                aspectRatio={videoAspectRatio}
                 savedImages={savedImages}
                 onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
                 onPromptChange={setVideoPrompt}
+                onAspectRatioChange={setVideoAspectRatio}
+                onResolutionChange={setVideoResolution}
                 userCredits={userCredits}
                 userSubscriptionTier={userSubscriptionTier}
                 selectedProvider={videoProvider}
@@ -1083,15 +1091,33 @@ export default function TabbedPlaygroundLayout({
             }}
             onMediaUpdated={(media) => {
               // Update saved media state for BatchProcessingPanel - filter out videos
-              setSavedImages(media
-                .filter(item => item.media_type === 'image' && item.image_url)
+              console.log('📊 Raw media from gallery:', media.length, 'total items')
+              console.log('📊 First item example:', media[0])
+
+              const mediaTypes = media.map(m => ({
+                type: m.media_type,
+                hasImageUrl: !!m.image_url,
+                title: m.title
+              }))
+              console.log('📊 Media types:', mediaTypes)
+
+              const images = media
+                .filter(item => {
+                  const isImage = item.media_type?.toLowerCase() === 'image'
+                  const hasUrl = !!item.image_url
+                  console.log(`  Filter check: "${item.title}" - media_type="${item.media_type}" isImage=${isImage}, hasUrl=${hasUrl}`)
+                  return isImage && hasUrl
+                })
                 .map(img => ({
                   id: img.id,
                   image_url: img.image_url || '',
                   title: img.title,
                   width: img.width,
                   height: img.height
-                })))
+                }))
+              console.log('📸 Saved images updated:', images.length, 'images out of', media.length, 'total')
+              console.log('📸 Filtered images:', images)
+              setSavedImages(images)
             }}
             onAddMediaToPreview={handleAddImageToPreview}
             onExpandMedia={onExpandMedia}

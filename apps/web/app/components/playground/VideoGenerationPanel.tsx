@@ -44,6 +44,8 @@ interface VideoGenerationPanelProps {
   selectedProvider?: 'seedream' | 'wan'
   onProviderChange?: (provider: 'seedream' | 'wan') => void
   onPromptChange?: (prompt: string) => void
+  onAspectRatioChange?: (aspectRatio: string) => void
+  onResolutionChange?: (resolution: string) => void
 }
 
 export default function VideoGenerationPanel({
@@ -57,7 +59,9 @@ export default function VideoGenerationPanel({
   userSubscriptionTier = 'FREE',
   selectedProvider = 'seedream',
   onProviderChange,
-  onPromptChange
+  onPromptChange,
+  onAspectRatioChange,
+  onResolutionChange
 }: VideoGenerationPanelProps) {
   // Form state
   const [videoDuration, setVideoDuration] = useState(5)
@@ -83,6 +87,110 @@ export default function VideoGenerationPanel({
   const [includeTechnicalDetails, setIncludeTechnicalDetails] = useState(true)
   const [includeStyleReferences, setIncludeStyleReferences] = useState(true)
   const [enhancedPrompt, setEnhancedPrompt] = useState('')
+
+  // Auto-generate prompt from subject, style, and image selection
+  useEffect(() => {
+    // Get current image based on active source
+    let currentImage: string | null = null
+    switch (activeImageSource) {
+      case 'uploaded':
+        currentImage = uploadedImage
+        break
+      case 'saved':
+      case 'selected':
+      case 'pexels':
+      default:
+        currentImage = selectedImage
+        break
+    }
+
+    const generateVideoPrompt = async () => {
+      let generatedPrompt = ''
+
+      // Build prompt based on context
+      if (currentImage && videoSubject) {
+        // Image-to-video with subject
+        generatedPrompt = videoSubject
+      } else if (currentImage && !videoSubject) {
+        // Image-to-video without subject - leave empty, will be filled by style or default
+        generatedPrompt = ''
+      } else if (!currentImage && videoSubject) {
+        // Text-to-video with subject
+        generatedPrompt = videoSubject
+      } else {
+        // No image, no subject
+        generatedPrompt = ''
+      }
+
+      // Add style if selected (fetch style prompt from database)
+      if (videoStyle && videoStyle !== 'none') {
+        try {
+          const response = await fetch('/api/style-prompts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              styleName: videoStyle,
+              generationMode: currentImage ? 'image-to-image' : 'text-to-image'
+            })
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            const baseStylePrompt = data.prompt
+
+            if (baseStylePrompt) {
+              // Combine style prompt with subject (same as image generation)
+              if (currentImage && generatedPrompt) {
+                // Image-to-video with subject: "Apply [style] to this image. [subject]"
+                generatedPrompt = `${baseStylePrompt} this image. ${generatedPrompt}`
+              } else if (currentImage && !generatedPrompt) {
+                // Image-to-video without subject: "Apply [style] to this image"
+                generatedPrompt = `${baseStylePrompt} this image`
+              } else if (!currentImage && generatedPrompt) {
+                // Text-to-video with subject: "[style] of [subject]"
+                generatedPrompt = `${baseStylePrompt} of ${generatedPrompt}`
+              } else {
+                // Text-to-video without subject: just use the style prompt
+                generatedPrompt = baseStylePrompt
+              }
+            } else {
+              // Fallback if no style prompt returned
+              if (generatedPrompt) {
+                generatedPrompt = `${generatedPrompt}. in the style of ${videoStyle}`
+              } else {
+                generatedPrompt = `Create video in the style of ${videoStyle}`
+              }
+            }
+          } else {
+            // Fallback if style not in database
+            console.log('⚠️ Style not found in database, using fallback for:', videoStyle)
+            if (generatedPrompt) {
+              generatedPrompt = `${generatedPrompt}. in the style of ${videoStyle}`
+            } else if (currentImage) {
+              generatedPrompt = `Add motion with ${videoStyle} style`
+            } else {
+              generatedPrompt = `Create video in the style of ${videoStyle}`
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching style prompt:', error)
+          if (generatedPrompt) {
+            generatedPrompt = `${generatedPrompt}. in the style of ${videoStyle}`
+          } else {
+            generatedPrompt = `Create video with ${videoStyle} style`
+          }
+        }
+      } else if (!generatedPrompt && currentImage) {
+        // No style and no subject, but have image - use default
+        generatedPrompt = 'Add natural motion to the scene'
+      }
+
+      // Update the base prompt
+      setVideoPrompt(generatedPrompt.trim())
+    }
+
+    generateVideoPrompt()
+  }, [videoSubject, videoStyle, selectedImage, uploadedImage, activeImageSource])
 
   // Generate enhanced prompt based on cinematic parameters
   useEffect(() => {
@@ -117,6 +225,25 @@ export default function VideoGenerationPanel({
       onPromptChange(currentPrompt)
     }
   }, [videoSubject, videoPrompt, onPromptChange])
+
+  // Notify parent of aspect ratio changes
+  useEffect(() => {
+    if (onAspectRatioChange) {
+      onAspectRatioChange(selectedAspectRatio)
+    }
+  }, [selectedAspectRatio, onAspectRatioChange])
+
+  // Notify parent of resolution changes
+  useEffect(() => {
+    if (onResolutionChange) {
+      onResolutionChange(videoResolution)
+    }
+  }, [videoResolution, onResolutionChange])
+
+  // Debug: Log savedImages prop
+  useEffect(() => {
+    console.log('🎬 VideoGenerationPanel received savedImages:', savedImages?.length || 0, savedImages)
+  }, [savedImages])
 
   const getCurrentImage = () => {
     switch (activeImageSource) {
@@ -169,12 +296,14 @@ export default function VideoGenerationPanel({
   const handleAIEnhance = useCallback(async () => {
     setIsEnhancing(true)
     try {
+      const currentImage = getCurrentImage()
       const response = await fetch('/api/enhance-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: videoPrompt,
-          enhancementType: 'video',
+          subject: videoSubject,
+          generationMode: currentImage ? 'image-to-video' : 'text-to-video',
           style: videoStyle,
           cinematicParameters: enableCinematicMode ? cinematicParameters : undefined
         })
@@ -202,7 +331,7 @@ export default function VideoGenerationPanel({
     } finally {
       setIsEnhancing(false)
     }
-  }, [videoPrompt, videoStyle, cinematicParameters, enableCinematicMode, showFeedback])
+  }, [videoPrompt, videoSubject, videoStyle, cinematicParameters, enableCinematicMode, showFeedback])
 
   const handleClearAll = useCallback(() => {
     setVideoPrompt('')
@@ -269,6 +398,25 @@ export default function VideoGenerationPanel({
   }
 
   const totalCredits = getCreditsForVideo()
+
+  // Debug: Check button state
+  const currentImage = getCurrentImage()
+  const canGenerate = selectedProvider === 'wan'
+    ? (!!currentImage || !!videoSubject.trim() || !!videoPrompt.trim())
+    : !!currentImage
+
+  console.log('🎬 Video generation button state:', {
+    selectedProvider,
+    hasCurrentImage: !!currentImage,
+    videoSubject: videoSubject,
+    videoSubjectTrimmed: videoSubject.trim(),
+    videoPrompt: videoPrompt,
+    videoPromptTrimmed: videoPrompt.trim(),
+    canGenerate,
+    userCredits,
+    totalCredits,
+    hasEnoughCredits: userCredits >= totalCredits
+  })
 
   return (
     <Card className="w-full">
@@ -441,7 +589,7 @@ export default function VideoGenerationPanel({
           onAspectRatioChange={setSelectedAspectRatio}
           onMotionTypeChange={setMotionType}
           onGenerate={handleGenerateVideo}
-          hasImage={selectedProvider === 'wan' ? (!!getCurrentImage() || !!(videoSubject || videoPrompt)) : !!getCurrentImage()}
+          hasImage={canGenerate}
         />
       </CardContent>
     </Card>

@@ -35,15 +35,20 @@ export async function GET(
     }
 
     const result = await response.json()
-    console.log('WaveSpeed API response:', JSON.stringify(result, null, 2))
-    console.log('WaveSpeed API response keys:', Object.keys(result))
-    
+    console.log('🎬 WaveSpeed API raw response for taskId', taskId, ':', JSON.stringify(result, null, 2))
+    console.log('🎬 Response keys:', Object.keys(result))
+    console.log('🎬 Has data wrapper?', !!result.data)
+    console.log('🎬 Response status field:', result.status)
+    console.log('🎬 Response data.status field:', result.data?.status)
+    console.log('🎬 Response outputs field:', result.outputs)
+    console.log('🎬 Response data.outputs field:', result.data?.outputs)
+
     // Handle the actual WaveSpeed API response format
+    // Try both wrapped and flat formats
     const status = result.data?.status || result.status
     const outputs = result.data?.outputs || result.outputs
-    
-    console.log('WaveSpeed API status:', status)
-    console.log('WaveSpeed API outputs:', outputs)
+
+    console.log('🎬 Final parsed - status:', status, 'outputs:', outputs, 'outputsLength:', outputs?.length)
     
     // Check if task is completed - handle both response formats
     if (status === 'completed' && outputs && outputs.length > 0) {

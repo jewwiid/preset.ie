@@ -65,29 +65,6 @@ export function VideoImageUploader({
 
   return (
     <div className="space-y-4">
-      {/* Current Image Preview */}
-      {currentImage && (
-        <div className="space-y-2">
-          <Label className="text-sm">Current Image Preview</Label>
-          <DraggableImagePreview
-            imageUrl={currentImage}
-            aspectRatio={aspectRatio}
-            resolution={resolution}
-            onPositionChange={onPositionChange || (() => {})}
-            onSaveFraming={() => {}}
-            className="mb-2"
-          />
-          <div className="text-xs text-muted-foreground">
-            <span className="text-primary font-medium">
-              {activeSource === 'selected' && 'Selected Image'}
-              {activeSource === 'uploaded' && 'Uploaded Image'}
-              {activeSource === 'saved' && 'Saved Image'}
-              {activeSource === 'pexels' && 'Pexels Image'}
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* Image Source Selection with Tabs */}
       <div className="space-y-2">
         <Label className="text-sm">Image Source</Label>

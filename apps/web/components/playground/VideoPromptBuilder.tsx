@@ -3,7 +3,7 @@
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Wand2, Sparkles, Trash2 } from 'lucide-react'
+import { Wand2, Sparkles, Trash2, X, Loader2 } from 'lucide-react'
 
 interface VideoPromptBuilderProps {
   prompt: string
@@ -30,8 +30,10 @@ export function VideoPromptBuilder({
   maxLength = 2000,
   style
 }: VideoPromptBuilderProps) {
+  const currentPrompt = enableCinematicMode ? enhancedPrompt : prompt
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Style Display */}
       {style && (
         <div className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 rounded-md">
@@ -40,14 +42,39 @@ export function VideoPromptBuilder({
         </div>
       )}
 
-      {/* Video Prompt */}
-      <div>
-        <Label htmlFor="videoPrompt" className="text-sm">
-          Video Prompt (Optional)
+      {/* Prompt Preview (Read-only) */}
+      <div className="space-y-2">
+        <Label htmlFor="promptPreview" className="text-sm">
+          Prompt {enableCinematicMode && (
+            <span className="text-xs text-muted-foreground ml-1">
+              (Generated - edit below to customize)
+            </span>
+          )}
+        </Label>
+        <div className="text-sm bg-muted/30 border border-border rounded-md p-3 min-h-[60px]">
+          <div className="whitespace-pre-wrap break-words">
+            {currentPrompt ? (
+              <span className="text-foreground/70">{currentPrompt}</span>
+            ) : (
+              <span className="text-muted-foreground italic">
+                Prompt will be generated based on your selections...
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Editable Enhanced Prompt */}
+      <div className="space-y-2">
+        <Label htmlFor="videoPrompt" className="text-sm font-medium">
+          Enhanced Prompt (Editable)
+          <span className="text-xs text-muted-foreground ml-2">
+            Edit this prompt to customize motion and camera work
+          </span>
         </Label>
         <Textarea
           id="videoPrompt"
-          value={enableCinematicMode && enhancedPrompt ? enhancedPrompt : prompt}
+          value={currentPrompt || ''}
           onChange={(e) => {
             if (enableCinematicMode && onEnhancedPromptChange) {
               onEnhancedPromptChange(e.target.value)
@@ -56,62 +83,54 @@ export function VideoPromptBuilder({
             }
           }}
           placeholder="Describe the motion, camera movement, or action you want in the video. For example: 'Gentle zoom in on the subject, camera slowly rotates around the scene'"
-          className="resize-none"
-          rows={4}
+          className="resize-none text-sm"
+          rows={3}
           maxLength={maxLength}
         />
         <div className="flex justify-between items-center text-xs text-muted-foreground mt-1">
           <span>
-            {enableCinematicMode && enhancedPrompt ? enhancedPrompt.length : prompt.length}/{maxLength} characters
+            {currentPrompt?.length || 0}/{maxLength} characters
           </span>
           <span className="text-right">Leave empty for default motion</span>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {onAIEnhance && (
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={onAIEnhance}
-            disabled={isEnhancing || (!prompt.trim() && !enableCinematicMode)}
+            disabled={isEnhancing || !prompt.trim()}
+            className="flex items-center gap-1"
           >
             {isEnhancing ? (
               <>
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary mr-2"></div>
+                <Loader2 className="w-3 h-3 animate-spin" />
                 Enhancing...
               </>
             ) : (
               <>
-                <Sparkles className="h-3 w-3 mr-2" />
+                <Sparkles className="w-3 h-3" />
                 AI Enhance
               </>
             )}
           </Button>
         )}
         {onClearAll && (
-          <Button variant="outline" size="sm" onClick={onClearAll}>
-            <Trash2 className="h-3 w-3 mr-2" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearAll}
+            disabled={!prompt}
+            className="flex items-center gap-1"
+          >
+            <X className="w-3 h-3" />
             Clear All
           </Button>
         )}
       </div>
-
-      {/* Tips */}
-      <div className="p-2 bg-muted/30 border border-border rounded-md">
-        <p className="text-xs text-muted-foreground">
-          <strong>💡 Tips:</strong> Describe motion, camera movement, or actions. Examples: "Gentle zoom in", "Camera rotates around subject", "Slow pan left", "Dramatic zoom out"
-        </p>
-      </div>
-
-      {/* Enhanced Prompt Label */}
-      {enableCinematicMode && enhancedPrompt && (
-        <div className="text-xs text-primary">
-          <Wand2 className="h-3 w-3 inline mr-1" />
-          Editing enhanced prompt (generated with cinematic parameters)
-        </div>
-      )}
     </div>
   )
 }

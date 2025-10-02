@@ -123,10 +123,22 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
       }
 
       const data = await response.json()
+      console.log('📦 Gallery API response:', {
+        success: data.success,
+        mediaCount: data.media?.length || 0
+      })
+
       if (data.success) {
         const media = data.media || []
+        console.log('✅ Setting saved media:', media.length, 'items')
         setSavedMedia(media)
-        onMediaUpdated?.(media)
+
+        if (onMediaUpdated) {
+          console.log('📢 Calling onMediaUpdated callback with', media.length, 'items')
+          onMediaUpdated(media)
+        } else {
+          console.log('⚠️ No onMediaUpdated callback provided')
+        }
       } else {
         console.error('Gallery API error:', data.error)
         throw new Error(data.error || 'Failed to fetch saved media')
@@ -271,9 +283,18 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
   }
 
   useEffect(() => {
+    console.log('🔍 SavedMediaGallery mounted/updated:', {
+      hasSession: !!session?.access_token,
+      hasUser: !!user,
+      userId: user?.id
+    })
+
     if (session?.access_token && user) {
+      console.log('🔄 Fetching saved media for user:', user.id)
       fetchSavedMedia()
       fetchSubscriptionTier()
+    } else {
+      console.log('⚠️ Not fetching - missing session or user')
     }
   }, [session?.access_token, user])
 

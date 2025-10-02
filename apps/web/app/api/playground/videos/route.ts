@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch videos from playground_video_generations (recent generations)
+    // Only fetch videos that have completed (video_url is not 'pending' and not null)
     const { data: generatedVideos, error: generatedVideosError } = await supabaseAdmin
       .from('playground_video_generations')
       .select(`
@@ -58,12 +59,24 @@ export async function GET(request: NextRequest) {
         created_at
       `)
       .eq('user_id', user.id)
+      .neq('video_url', 'pending')
+      .not('video_url', 'is', null)
       .order('created_at', { ascending: false })
       .limit(50)
 
     if (generatedVideosError) {
       console.error('❌ Error fetching generated videos:', generatedVideosError)
     }
+
+    console.log('📊 Fetched videos:', {
+      savedCount: savedVideos?.length || 0,
+      generatedCount: generatedVideos?.length || 0,
+      generatedVideos: generatedVideos?.map(v => ({
+        id: v.id,
+        video_url: v.video_url,
+        created_at: v.created_at
+      }))
+    })
 
     // Combine and format videos
     const allVideos = [

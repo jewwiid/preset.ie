@@ -672,42 +672,11 @@ function PlaygroundContent() {
       const finalVideoUrl = await pollForVideoCompletion(taskId)
       console.log('Video generation completed:', { finalVideoUrl, currentProject: !!currentProject })
       
-      // Set the generated video URL for display
+      // Set the generated video URL for display (not saved to DB yet - user must click Save)
       if (finalVideoUrl) {
         setGeneratedVideoUrl(finalVideoUrl)
         setVideoGenerationStatus('completed')
-      }
-      
-      // Add video to project when completed
-      if (currentProject && finalVideoUrl) {
-        const videoItem = {
-          url: finalVideoUrl,
-          width: params.resolution === '720p' ? 1280 : 854,
-          height: params.resolution === '720p' ? 720 : 480,
-          generated_at: new Date().toISOString(),
-          type: 'video'
-        }
-        
-        const updatedProject = {
-          ...currentProject,
-          generated_images: [
-            ...currentProject.generated_images,
-            videoItem
-          ]
-        }
-        
-        console.log('Adding video to project:', { 
-          videoItem, 
-          totalImages: updatedProject.generated_images.length,
-          projectId: currentProject.id 
-        })
-        
-        setCurrentProject(updatedProject)
-      } else {
-        console.log('Cannot add video to project:', { 
-          hasProject: !!currentProject, 
-          hasVideoUrl: !!finalVideoUrl 
-        })
+        console.log('✅ Video URL ready for preview (not saved):', finalVideoUrl)
       }
       
       // Track preset usage if cinematic parameters were used (indicating a preset)
@@ -756,7 +725,15 @@ function PlaygroundContent() {
         })
 
         if (!response.ok) {
-          throw new Error('Failed to check video status')
+          const errorText = await response.text()
+          console.error('Video status check failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorText,
+            taskId,
+            url: `/api/playground/video/${taskId}`
+          })
+          throw new Error(`Failed to check video status: ${response.status} ${response.statusText}`)
         }
 
         const result = await response.json()

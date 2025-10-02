@@ -36,13 +36,28 @@ export async function POST(request: NextRequest) {
       generationMode
     })
 
+    // Determine if this is video generation
+    const isVideoMode = generationMode === 'image-to-video' || generationMode === 'text-to-video'
+
     // Call OpenAI to enhance the prompt
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: `You are an expert AI image prompt engineer. Your job is to enhance image generation prompts to be more detailed, vivid, and likely to produce high-quality results.
+          content: isVideoMode
+            ? `You are an expert AI video prompt engineer. Your job is to enhance video generation prompts to create dynamic, cinematic motion.
+
+Key guidelines:
+- For image-to-video: Focus on natural motion, camera movements, and how elements should animate
+- For text-to-video: Describe both the scene AND the motion/camera work in detail
+- Include specific motion terms: pan, tilt, zoom, dolly, tracking, slow motion, time-lapse
+- Describe how subjects should move: gentle, dramatic, smooth, fast-paced, subtle
+- Add details about temporal elements: lighting changes, atmospheric effects over time
+- Keep the core subject and intent intact
+- Don't exceed 200 words
+- Return ONLY the enhanced prompt, no explanations or commentary`
+            : `You are an expert AI image prompt engineer. Your job is to enhance image generation prompts to be more detailed, vivid, and likely to produce high-quality results.
 
 Key guidelines:
 - Add specific visual details about composition, lighting, mood, and atmosphere

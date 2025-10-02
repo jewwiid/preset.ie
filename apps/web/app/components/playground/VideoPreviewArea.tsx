@@ -1,6 +1,6 @@
 'use client'
 
-import { Video as VideoIcon, Download, Heart, X, Image as ImageIcon } from 'lucide-react'
+import { Video as VideoIcon, Download, Heart, X, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -115,13 +115,13 @@ export default function VideoPreviewArea({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium">Current Video</p>
-                  {selectedVideoData && (
+                  {(selectedVideoData || selectedVideo) && (
                     <Badge variant="secondary" className="text-xs">
-                      {selectedVideoData.aspectRatio || aspectRatio}
+                      {selectedVideoData?.aspectRatio || aspectRatio}
                     </Badge>
                   )}
                 </div>
-                {selectedVideo && selectedVideoData ? (
+                {selectedVideo ? (
                   <div className="space-y-2">
                     <video
                       src={selectedVideo}
@@ -137,10 +137,10 @@ export default function VideoPreviewArea({
                           variant="outline"
                           size="sm"
                           onClick={() => onSaveToGallery(selectedVideo)}
-                          disabled={savingVideo === selectedVideo || selectedVideoData.is_saved}
+                          disabled={savingVideo === selectedVideo || selectedVideoData?.is_saved}
                         >
                           <Heart className="h-3 w-3 mr-1" />
-                          {selectedVideoData.is_saved ? 'Saved' : savingVideo === selectedVideo ? 'Saving...' : 'Save'}
+                          {selectedVideoData?.is_saved ? 'Saved' : savingVideo === selectedVideo ? 'Saving...' : 'Save'}
                         </Button>
                         <Button
                           variant="outline"
@@ -169,15 +169,43 @@ export default function VideoPreviewArea({
                   </div>
                 ) : (
                   <div
-                    className="w-full rounded-lg border-2 border-dashed border-border bg-muted flex items-center justify-center text-muted-foreground"
+                    className={`w-full rounded-lg border-2 ${
+                      loading ? 'border-primary/50 bg-primary/5' : 'border-dashed border-border bg-muted'
+                    } flex items-center justify-center text-muted-foreground relative overflow-hidden`}
                     style={{ aspectRatio: previewAspectRatio }}
                   >
-                    <div className="text-center p-8">
-                      <VideoIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No video generated yet</p>
-                      <p className="text-xs mt-1">
-                        {loading ? 'Generating video...' : 'Create your first video!'}
-                      </p>
+                    {loading && (
+                      <>
+                        {/* Animated gradient background */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent animate-pulse" />
+                        {/* Shimmer effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent animate-shimmer" />
+                      </>
+                    )}
+                    <div className="text-center p-8 relative z-10">
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-12 w-12 mx-auto mb-4 text-primary animate-spin" />
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-foreground">Generating your video...</p>
+                            <p className="text-xs text-muted-foreground">
+                              This may take a few moments. Your video will appear here when ready.
+                            </p>
+                          </div>
+                          {/* Progress dots animation */}
+                          <div className="flex items-center justify-center gap-1 mt-4">
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <VideoIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No video generated yet</p>
+                          <p className="text-xs mt-1">Create your first video!</p>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
