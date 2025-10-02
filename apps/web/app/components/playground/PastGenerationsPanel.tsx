@@ -485,7 +485,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
 
   if (loading) {
     return (
-      <Card className="border-t-2 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
+      <Card className="w-full">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
@@ -511,7 +511,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
 
   return (
     <>
-      <Card className="border-t-2 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
+      <Card className="w-full">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>

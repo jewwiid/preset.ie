@@ -457,7 +457,7 @@ export default function OffersPage() {
                                   // Navigate to the listing page with messaging enabled
                                   window.open(`/gear/listings/${offer.listing_id}`, '_blank');
                                 }}
-                                className="bg-green-600 hover:bg-green-700 text-white"
+                                className="bg-primary-600 hover:bg-primary/90 text-white"
                               >
                                 <MessageCircle className="h-4 w-4 mr-2" />
                                 Message Owner

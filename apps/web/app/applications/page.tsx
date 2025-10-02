@@ -7,21 +7,46 @@ import {
   Briefcase, Clock, CheckCircle, XCircle, MessageSquare, 
   Filter, Search, ChevronDown, Star, MapPin, Calendar,
   Users, Eye, Heart, MoreVertical, Shield, Ban, Flag, 
-  Trash2, AlertTriangle, BarChart3, TrendingUp, UserCheck
+  Trash2, AlertTriangle, BarChart3, TrendingUp, UserCheck,
+  ChevronDown as ChevronDownIcon, ChevronUp, DollarSign, 
+  User, Settings, Target, Award, Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Badge } from '../../components/ui/badge';
+import CompatibilityScore from '../../components/matchmaking/CompatibilityScore';
+import { useCollaborationCompatibility } from '../../lib/hooks/useCollaborationCompatibility';
 
-type ApplicationStatus = 'PENDING' | 'SHORTLISTED' | 'ACCEPTED' | 'DECLINED';
+type ApplicationStatus = 'PENDING' | 'SHORTLISTED' | 'ACCEPTED' | 'DECLINED' | 'pending' | 'accepted' | 'rejected' | 'withdrawn';
 
 interface Application {
   id: string;
-  gig_id: string;
-  applicant_user_id: string;
+  gig_id?: string;
+  project_id?: string;
+  applicant_user_id?: string;
+  applicant_id?: string;
   note?: string;
   status: ApplicationStatus;
   applied_at: string;
-  gig: {
+  created_at?: string;
+  application_type: 'gig' | 'collaboration';
+  
+  // Normalized fields for unified display
+  project_title?: string;
+  project_description?: string;
+  project_location?: string;
+  project_start_date?: string;
+  project_creator?: {
+    id: string;
+    display_name: string;
+    handle: string;
+    avatar_url?: string;
+  };
+  role_name?: string;
+  skills_required?: string[];
+  
+  // Original gig data (for gig applications)
+  gig?: {
     id: string;
     title: string;
     comp_type: string;
@@ -34,19 +59,49 @@ interface Application {
       avatar_url?: string;
     };
   };
-  applicant: {
+  
+  // Original project data (for collaboration applications)
+  project?: {
     id: string;
-    display_name: string;
-    avatar_url?: string;
-    handle: string;
-    bio?: string;
+    title: string;
+    description?: string;
     city?: string;
-    style_tags?: string[];
-    role_flags?: string[];
-    subscription_tier?: string;
-    created_at?: string;
+    country?: string;
+    start_date?: string;
+    end_date?: string;
+    creator?: {
+      id: string;
+      handle: string;
+      display_name: string;
+      avatar_url?: string;
+    };
   };
-}
+  
+  // Original role data (for collaboration applications)
+  role?: {
+    id: string;
+    role_name: string;
+    skills_required?: string[];
+  };
+  
+        applicant: {
+          id: string;
+          display_name: string;
+          avatar_url?: string;
+          handle: string;
+          bio?: string;
+          city?: string;
+          style_tags?: string[];
+          role_flags?: string[];
+          subscription_tier?: string;
+          created_at?: string;
+        };
+
+        // Compatibility data for collaboration applications
+        compatibility_score?: number;
+        matched_skills?: string[];
+        missing_skills?: string[];
+      }
 
 export default function ApplicationsPage() {
   const { user, userRole, loading: authLoading } = useAuth();
@@ -60,6 +115,21 @@ export default function ApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+
+  const toggleCardExpansion = (applicationId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(applicationId)) {
+        newSet.delete(applicationId);
+      } else {
+        newSet.add(applicationId);
+      }
+      return newSet;
+    });
+  };
+
+  const isCardExpanded = (applicationId: string) => expandedCards.has(applicationId);
   const [viewMode, setViewMode] = useState<'contributor' | 'talent' | 'admin'>('contributor');
   const [adminStats, setAdminStats] = useState({
     totalApplications: 0,
@@ -79,9 +149,12 @@ export default function ApplicationsPage() {
       // Set default view mode based on role
       if (userRole?.isAdmin) {
         setViewMode('admin');
-      } else if (userRole?.isTalent && !userRole?.isContributor) {
+      } else if (userRole?.isContributor) {
+        setViewMode('contributor');
+      } else if (userRole?.isTalent) {
         setViewMode('talent');
       } else {
+        // Default fallback - should not happen with proper role assignment
         setViewMode('contributor');
       }
       
@@ -250,12 +323,14 @@ export default function ApplicationsPage() {
         setApplications(data || []);
       } else {
         console.log('Applications: Talent mode - fetching user applications...')
-        // Fetch applications submitted by the talent
+        // Fetch applications submitted by the talent (both gigs and collaboration projects)
         if (!supabase) {
           console.error('Supabase client not configured')
           return
         }
-        const { data, error } = await supabase
+
+        // Fetch gig applications
+        const { data: gigApplications, error: gigError } = await supabase
           .from('applications')
           .select(`
             *,
@@ -275,14 +350,127 @@ export default function ApplicationsPage() {
           `)
           .eq('applicant_user_id', profile.id)
           .order('applied_at', { ascending: false });
-        
-        if (error) {
-          console.error('Applications: Error fetching applications for talent:', error)
-          throw error;
+
+        // Fetch collaboration project applications
+        const { data: collabApplications, error: collabError } = await supabase
+          .from('collab_applications')
+          .select(`
+            *,
+            project:collab_projects(
+              id,
+              title,
+              description,
+              city,
+              country,
+              start_date,
+              end_date,
+              creator:users_profile!collab_projects_creator_id_fkey(
+                id,
+                handle,
+                display_name,
+                avatar_url
+              )
+            ),
+            role:collab_roles(
+              id,
+              role_name,
+              skills_required
+            ),
+            applicant:users_profile!collab_applications_applicant_id_fkey(
+              id,
+              display_name,
+              avatar_url,
+              handle,
+              bio,
+              city,
+              style_tags,
+              role_flags,
+              subscription_tier,
+              created_at
+            )
+          `)
+          .eq('applicant_id', profile.id)
+          .order('created_at', { ascending: false });
+
+        if (gigError) {
+          console.error('Applications: Error fetching gig applications:', gigError)
         }
-        
-        console.log('Applications: Successfully fetched', data?.length || 0, 'talent applications')
-        setApplications(data || []);
+        if (collabError) {
+          console.error('Applications: Error fetching collaboration applications:', collabError)
+        }
+
+        // Combine and normalize the data
+        const normalizedGigApps = (gigApplications || []).map(app => ({
+          ...app,
+          application_type: 'gig',
+          project_title: app.gig?.title,
+          project_description: app.gig?.comp_type,
+          project_location: app.gig?.location_text,
+          project_start_date: app.gig?.start_time,
+          project_creator: app.gig?.users_profile,
+          applied_at: app.applied_at
+        }));
+
+        const normalizedCollabApps = await Promise.all((collabApplications || []).map(async app => {
+          // Calculate compatibility score for collaboration applications
+          let compatibilityData = null;
+          if (app.role?.id && app.applicant?.id && supabase) {
+            try {
+              const { data: compatResult, error: compatError } = await supabase.rpc(
+                'calculate_collaboration_compatibility',
+                {
+                  p_profile_id: app.applicant.id,
+                  p_role_id: app.role.id
+                }
+              );
+              
+              if (!compatError && compatResult && compatResult.length > 0) {
+                compatibilityData = compatResult[0];
+              }
+            } catch (error) {
+              console.error('Error calculating compatibility:', error);
+            }
+          }
+
+          return {
+            ...app,
+            application_type: 'collaboration',
+            project_title: app.project?.title,
+            project_description: app.project?.description,
+            project_location: app.project?.city && app.project?.country 
+              ? `${app.project.city}, ${app.project.country}` 
+              : app.project?.city || app.project?.country,
+            project_start_date: app.project?.start_date,
+            project_creator: app.project?.creator,
+            applied_at: app.created_at,
+            role_name: app.role?.role_name,
+            skills_required: app.role?.skills_required,
+            compatibility_score: compatibilityData?.overall_score,
+            matched_skills: compatibilityData?.matched_skills || [],
+            missing_skills: compatibilityData?.missing_skills || [],
+            // Ensure applicant data is properly mapped
+            applicant: app.applicant || {
+              id: profile.id,
+              display_name: profile.display_name || 'Unknown',
+              avatar_url: profile.avatar_url,
+              handle: profile.handle || 'unknown',
+              bio: profile.bio,
+              city: profile.city,
+              style_tags: profile.style_tags,
+              role_flags: profile.role_flags,
+              subscription_tier: profile.subscription_tier,
+              created_at: profile.created_at
+            }
+          };
+        }));
+
+        // Combine both types of applications
+        const allApplications = [...normalizedGigApps, ...normalizedCollabApps]
+          .sort((a, b) => new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime());
+
+        console.log('Applications: Successfully fetched', allApplications.length, 'total applications (', 
+          normalizedGigApps.length, 'gig +', normalizedCollabApps.length, 'collaboration)')
+        setApplications(allApplications);
       }
     } catch (error: any) {
       console.error('Applications: Critical error in fetchApplications:', error);
@@ -434,9 +622,10 @@ export default function ApplicationsPage() {
     
     if (searchTerm) {
       filtered = filtered.filter(app =>
-        app.gig.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.applicant.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.applicant.handle.toLowerCase().includes(searchTerm.toLowerCase())
+        (app.gig?.title?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (app.project_title?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (app.applicant?.display_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (app.applicant?.handle?.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
     
@@ -478,18 +667,63 @@ export default function ApplicationsPage() {
     }
   };
 
+  const withdrawApplication = async (applicationId: string) => {
+    setUpdating(true);
+    try {
+      if (!supabase) {
+        console.error('Supabase client not configured')
+        return
+      }
+      
+      // Update both gig applications and collaboration applications
+      const { error: gigError } = await supabase
+        .from('applications')
+        .update({ status: 'withdrawn' })
+        .eq('id', applicationId);
+      
+      const { error: collabError } = await supabase
+        .from('collab_applications')
+        .update({ status: 'withdrawn' })
+        .eq('id', applicationId);
+      
+      if (gigError && collabError) {
+        throw new Error('Failed to withdraw application');
+      }
+      
+      // Update local state
+      setApplications(prev => 
+        prev.map(app => 
+          app.id === applicationId ? { ...app, status: 'withdrawn' } : app
+        )
+      );
+      
+      if (selectedApplication?.id === applicationId) {
+        setSelectedApplication(prev => prev ? { ...prev, status: 'withdrawn' } : null);
+      }
+      
+      alert('Application withdrawn successfully');
+    } catch (error) {
+      console.error('Error withdrawing application:', error);
+      alert('Failed to withdraw application');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const getStatusColor = (status: ApplicationStatus) => {
     switch (status) {
       case 'PENDING':
-        return 'bg-primary-100 text-primary-800';
+        return 'bg-primary/10 text-primary';
       case 'SHORTLISTED':
-        return 'bg-primary-100 text-primary-800';
+        return 'bg-primary/10 text-primary';
       case 'ACCEPTED':
-        return 'bg-primary-100 text-primary-800';
+        return 'bg-primary/10 text-primary';
       case 'DECLINED':
-        return 'bg-destructive-100 text-destructive-800';
+        return 'bg-destructive/10 text-destructive';
+      case 'withdrawn':
+        return 'bg-muted text-muted-foreground';
       default:
-        return 'bg-muted-100 text-muted-foreground-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -502,6 +736,8 @@ export default function ApplicationsPage() {
       case 'ACCEPTED':
         return <CheckCircle className="w-4 h-4" />;
       case 'DECLINED':
+        return <XCircle className="w-4 h-4" />;
+      case 'withdrawn':
         return <XCircle className="w-4 h-4" />;
       default:
         return null;
@@ -519,14 +755,14 @@ export default function ApplicationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-muted-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen bg-muted flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted-50">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
       <div className="bg-background border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -536,7 +772,7 @@ export default function ApplicationsPage() {
                 {viewMode === 'admin' ? 'Platform Applications - Admin View' :
                  viewMode === 'contributor' ? 'Manage Applications' : 'My Applications'}
               </h1>
-              <p className="text-sm text-muted-foreground-600 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {viewMode === 'admin' 
                   ? 'Monitor and moderate applications across the platform'
                   : viewMode === 'contributor' 
@@ -546,42 +782,42 @@ export default function ApplicationsPage() {
             </div>
             
             {/* View Mode Toggle */}
-            {(userRole?.isAdmin || (userRole?.isContributor && userRole?.isTalent)) && (
+            {(userRole?.isAdmin || userRole?.isContributor || userRole?.isTalent) && (
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-0">
-                <span className="text-sm font-medium text-muted-foreground-700 sm:hidden">View As:</span>
-                <div className="flex bg-muted-100 rounded-lg p-1 w-full sm:w-auto">
+                <span className="text-sm font-medium text-muted-foreground sm:hidden">View As:</span>
+                <div className="flex bg-muted rounded-lg p-1 w-full sm:w-auto">
                   {userRole?.isAdmin && (
                     <button
                       onClick={() => setViewMode('admin')}
                       className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                         viewMode === 'admin'
-                          ? 'bg-destructive-600 text-primary-foreground shadow'
-                          : 'text-muted-foreground-600 hover:text-muted-foreground-900'
+                          ? 'bg-primary text-primary-foreground shadow'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <Shield className="w-4 h-4 mr-1 inline" />
                       Admin
                     </button>
                   )}
-                  {userRole?.isContributor && (
+                  {(userRole?.isContributor || userRole?.isAdmin) && (
                     <button
                       onClick={() => setViewMode('contributor')}
                       className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                         viewMode === 'contributor'
-                          ? 'bg-background text-muted-foreground-900 shadow'
-                          : 'text-muted-foreground-600 hover:text-muted-foreground-900'
+                          ? 'bg-background text-foreground shadow'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <span className="hidden sm:inline">As </span>Contributor
                     </button>
                   )}
-                  {userRole?.isTalent && (
+                  {(userRole?.isTalent || userRole?.isAdmin) && (
                     <button
                       onClick={() => setViewMode('talent')}
                       className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                         viewMode === 'talent'
-                          ? 'bg-background text-muted-foreground-900 shadow'
-                          : 'text-muted-foreground-600 hover:text-muted-foreground-900'
+                          ? 'bg-background text-foreground shadow'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <span className="hidden sm:inline">As </span>Talent
@@ -628,36 +864,36 @@ export default function ApplicationsPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-primary-50 p-3 rounded-lg">
                   <div className="flex items-center">
-                    <BarChart3 className="w-5 h-5 text-primary-600 mr-2" />
+                    <BarChart3 className="w-5 h-5 text-primary mr-2" />
                     <div>
-                      <p className="text-primary-600 text-sm font-medium">Total Applications</p>
+                      <p className="text-primary text-sm font-medium">Total Applications</p>
                       <p className="text-2xl font-bold text-primary-800">{adminStats.totalApplications}</p>
                     </div>
                   </div>
                 </div>
                 <div className="bg-primary-50 p-3 rounded-lg">
                   <div className="flex items-center">
-                    <Clock className="w-5 h-5 text-primary-600 mr-2" />
+                    <Clock className="w-5 h-5 text-primary mr-2" />
                     <div>
-                      <p className="text-primary-600 text-sm font-medium">Pending Review</p>
+                      <p className="text-primary text-sm font-medium">Pending Review</p>
                       <p className="text-2xl font-bold text-primary-800">{adminStats.pendingReview}</p>
                     </div>
                   </div>
                 </div>
                 <div className="bg-destructive-50 p-3 rounded-lg">
                   <div className="flex items-center">
-                    <Ban className="w-5 h-5 text-destructive-600 mr-2" />
+                    <Ban className="w-5 h-5 text-destructive mr-2" />
                     <div>
-                      <p className="text-destructive-600 text-sm font-medium">Banned Users</p>
+                      <p className="text-destructive text-sm font-medium">Banned Users</p>
                       <p className="text-2xl font-bold text-destructive-800">{adminStats.recentBans}</p>
                     </div>
                   </div>
                 </div>
                 <div className="bg-primary-50 p-3 rounded-lg">
                   <div className="flex items-center">
-                    <TrendingUp className="w-5 h-5 text-primary-600 mr-2" />
+                    <TrendingUp className="w-5 h-5 text-primary mr-2" />
                     <div>
-                      <p className="text-primary-600 text-sm font-medium">Success Rate</p>
+                      <p className="text-primary text-sm font-medium">Success Rate</p>
                       <p className="text-2xl font-bold text-primary-800">
                         {adminStats.totalApplications > 0 
                           ? Math.round((applications.filter(a => a.status === 'ACCEPTED').length / adminStats.totalApplications) * 100)
@@ -671,24 +907,24 @@ export default function ApplicationsPage() {
           ) : (
             <div className="flex gap-6 mt-4 text-sm">
               <div>
-                <span className="text-muted-foreground-600">Total:</span>
+                <span className="text-muted-foreground">Total:</span>
                 <span className="ml-2 font-semibold">{applications.length}</span>
               </div>
               <div>
-                <span className="text-muted-foreground-600">Pending:</span>
-                <span className="ml-2 font-semibold text-primary-600">
+                <span className="text-muted-foreground">Pending:</span>
+                <span className="ml-2 font-semibold text-primary">
                   {applications.filter(a => a.status === 'PENDING').length}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground-600">Shortlisted:</span>
-                <span className="ml-2 font-semibold text-primary-600">
+                <span className="text-muted-foreground">Shortlisted:</span>
+                <span className="ml-2 font-semibold text-primary">
                   {applications.filter(a => a.status === 'SHORTLISTED').length}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground-600">Accepted:</span>
-                <span className="ml-2 font-semibold text-primary-600">
+                <span className="text-muted-foreground">Accepted:</span>
+                <span className="ml-2 font-semibold text-primary">
                   {applications.filter(a => a.status === 'ACCEPTED').length}
                 </span>
               </div>
@@ -701,214 +937,447 @@ export default function ApplicationsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {filteredApplications.length === 0 ? (
           <div className="text-center py-12 bg-background rounded-lg">
-            <Briefcase className="w-16 h-16 text-muted-foreground-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground-900 mb-2">No applications found</h3>
-            <p className="text-muted-foreground-600">
+            <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground mb-2">No applications found</h3>
+            <p className="text-muted-foreground">
               {viewMode === 'admin'
-                ? 'Platform applications will appear here when users apply to gigs'
+                ? 'Platform applications will appear here when users apply to gigs and projects'
                 : viewMode === 'contributor' 
-                  ? 'Applications for your gigs will appear here'
-                  : 'Your gig applications will appear here'}
+                  ? 'Applications for your gigs and projects will appear here'
+                  : 'Your gig and project applications will appear here'}
             </p>
           </div>
         ) : (
           <div className="grid gap-4">
-            {filteredApplications.map((application) => (
-              <div key={application.id} className="bg-background rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <div className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex gap-4">
-                      {/* Applicant Avatar */}
-                      <img
-                        src={application.applicant.avatar_url || '/default-avatar.png'}
-                        alt={application.applicant.display_name}
-                        className="w-12 h-12 rounded-full"
-                      />
-                      
-                      <div className="flex-1">
-                        {/* Gig Title */}
-                        <Link
-                          href={`/gigs/${application.gig.id}`}
-                          className="text-lg font-semibold text-muted-foreground-900 hover:text-primary-600"
-                        >
-                          {application.gig.title}
-                        </Link>
-                        
-                        {/* Admin-only: Show gig owner */}
-                        {viewMode === 'admin' && application.gig.users_profile && (
-                          <div className="text-sm text-muted-foreground-500 mt-1">
-                            Gig by: <span className="font-medium text-muted-foreground-700">
-                              {application.gig.users_profile.display_name}
-                            </span> (@{application.gig.users_profile.handle})
+            {filteredApplications.map((application) => {
+              const isExpanded = isCardExpanded(application.id);
+              
+              return (
+                <div key={application.id} className="bg-background rounded-xl border border-border hover:border-primary/20 transition-all duration-200 hover:shadow-lg">
+                  <div className="p-6">
+                    {/* Header Row */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        {/* Applicant Avatar with Type Indicator */}
+                        <div className="relative">
+                          <img
+                            src={application.applicant?.avatar_url || '/default-avatar.png'}
+                            alt={application.applicant?.display_name || 'Unknown User'}
+                            className="w-16 h-16 rounded-full border-2 border-border object-cover"
+                          />
+                          {/* Application Type Indicator */}
+                          <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-background flex items-center justify-center text-xs font-bold ${
+                            application.application_type === 'gig' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
+                          }`}>
+                            {application.application_type === 'gig' ? 'G' : 'C'}
                           </div>
-                        )}
-                        
-                        {/* Applicant Info */}
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="font-medium text-muted-foreground-900">
-                            {application.applicant.display_name}
-                          </span>
-                          <span className="text-muted-foreground-600">@{application.applicant.handle}</span>
-                          {application.applicant.city && (
-                            <span className="text-muted-foreground-500 flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {application.applicant.city}
-                            </span>
-                          )}
-                          
-                          {/* Admin-only info */}
-                          {viewMode === 'admin' && (
-                            <>
-                              {application.applicant.subscription_tier && (
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  application.applicant.subscription_tier === 'PRO' ? 'bg-primary-100 text-primary-800' :
-                                  application.applicant.subscription_tier === 'PLUS' ? 'bg-primary-100 text-primary-800' :
-                                  'bg-muted-100 text-muted-foreground-800'
-                                }`}>
-                                  {application.applicant.subscription_tier}
-                                </span>
-                              )}
-                              {application.applicant.role_flags?.includes('BANNED') && (
-                                <span className="px-2 py-1 text-xs rounded-full bg-destructive-100 text-destructive-800">
-                                  BANNED
-                                </span>
-                              )}
-                              {application.applicant.role_flags?.includes('VERIFIED_ID') && (
-                                <span className="px-2 py-1 text-xs rounded-full bg-primary-100 text-primary-800">
-                                  <UserCheck className="w-3 h-3 inline mr-1" />
-                                  VERIFIED
-                                </span>
-                              )}
-                            </>
-                          )}
                         </div>
                         
-                        {/* Application Note */}
-                        {application.note && (
-                          <p className="text-muted-foreground-700 mt-2 line-clamp-2">{application.note}</p>
-                        )}
-                        
-                        {/* Applicant Tags */}
-                        {application.applicant.style_tags && application.applicant.style_tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {application.applicant.style_tags.slice(0, 5).map((tag, index) => (
-                              <span
-                                key={index}
-                                className="text-xs bg-muted-100 text-muted-foreground-700 px-2 py-1 rounded-full"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Meta Info */}
-                        <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground-600">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            Applied {formatDate(application.applied_at)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            {application.gig.location_text}
-                          </span>
+                        <div className="flex-1">
+                          {/* Project Title */}
+                          <Link
+                            href={application.application_type === 'gig' 
+                              ? `/gigs/${application.gig?.id}` 
+                              : `/collaborate/projects/${application.project?.id}`}
+                            className="text-xl font-bold text-foreground hover:text-primary transition-colors block mb-2"
+                          >
+                            {application.project_title}
+                          </Link>
+                          
+                          {/* Role Badge */}
+                          {application.role_name && (
+                            <Badge variant="secondary" className="text-sm font-medium mb-3">
+                              {application.role_name}
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Status and Actions */}
-                    <div className="flex flex-col items-end gap-3">
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
-                        {getStatusIcon(application.status)}
-                        {application.status}
-                      </span>
                       
-                      {(viewMode === 'contributor' || viewMode === 'admin') && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              setSelectedApplication(application);
-                              setShowDetailModal(true);
-                            }}
-                            className="p-2 text-muted-foreground-600 hover:bg-muted-100 rounded-lg"
-                            title="View Details"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                          
-                          {application.status === 'PENDING' && (
+                      {/* Status Badge and Expand Button */}
+                      <div className="flex flex-col items-end gap-3">
+                        <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(application.status)}`}>
+                          {getStatusIcon(application.status)}
+                          {application.status}
+                        </span>
+                        <button
+                          onClick={() => toggleCardExpansion(application.id)}
+                          className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                        >
+                          {isExpanded ? (
                             <>
-                              <button
-                                onClick={() => updateApplicationStatus(application.id, 'SHORTLISTED')}
-                                className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg"
-                                disabled={updating}
-                              >
-                                <Star className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => updateApplicationStatus(application.id, 'ACCEPTED')}
-                                className="p-2 text-primary-600 hover:bg-primary/10 rounded-lg"
-                                disabled={updating}
-                              >
-                                <CheckCircle className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => updateApplicationStatus(application.id, 'DECLINED')}
-                                className="p-2 text-destructive-600 hover:bg-destructive-50 rounded-lg"
-                                disabled={updating}
-                              >
-                                <XCircle className="w-5 h-5" />
-                              </button>
+                              <ChevronUp className="w-4 h-4" />
+                              <span className="text-sm">Collapse</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDownIcon className="w-4 h-4" />
+                              <span className="text-sm">Expand</span>
                             </>
                           )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Collapsible Content */}
+                    {isExpanded && (
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left Column - Applicant Info */}
+                        <div className="lg:col-span-2 space-y-4">
+                          {/* Project Details Preview */}
+                          <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+                            <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                              <Briefcase className="w-4 h-4" />
+                              Project Details
+                            </h4>
+                            <div className="space-y-3">
+                              {/* Project Description */}
+                              {application.project_description && (
+                                <div>
+                                  <p className="text-sm font-medium text-foreground mb-1">Description:</p>
+                                  <p className="text-sm text-muted-foreground leading-relaxed">
+                                    {application.project_description.length > 200 
+                                      ? `${application.project_description.substring(0, 200)}...` 
+                                      : application.project_description
+                                    }
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {/* Skills Required */}
+                              {application.skills_required && application.skills_required.length > 0 && (
+                                <div>
+                                  <p className="text-sm font-medium text-foreground mb-2">Required Skills:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {application.skills_required.map((skill, index) => (
+                                      <Badge key={index} variant="outline" className="text-xs">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Compensation Info (for gigs) */}
+                              {application.application_type === 'gig' && application.gig?.comp_type && (
+                                <div className="flex items-center gap-2">
+                                  <DollarSign className="w-4 h-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">Compensation:</span>
+                                  <span className="text-sm font-medium text-foreground">{application.gig.comp_type}</span>
+                                </div>
+                              )}
+                              
+                              {/* Project Duration */}
+                              {application.project_start_date && (
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">Duration:</span>
+                                  <span className="text-sm font-medium text-foreground">
+                                    {formatDate(application.project_start_date)}
+                                    {application.project?.end_date && ` - ${formatDate(application.project.end_date)}`}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                           
-                          {application.status === 'SHORTLISTED' && (
-                            <>
-                              <button
-                                onClick={() => updateApplicationStatus(application.id, 'ACCEPTED')}
-                                className="p-2 text-primary-600 hover:bg-primary/10 rounded-lg"
-                                disabled={updating}
-                              >
-                                <CheckCircle className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => updateApplicationStatus(application.id, 'DECLINED')}
-                                className="p-2 text-destructive-600 hover:bg-destructive-50 rounded-lg"
-                                disabled={updating}
-                              >
-                                <XCircle className="w-5 h-5" />
-                              </button>
-                            </>
+                          {/* Applicant Details Card */}
+                          <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+                            <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                              <User className="w-4 h-4" />
+                              Applicant Details
+                            </h4>
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-foreground text-lg">
+                                  {application.applicant?.display_name || 'Unknown User'}
+                                </span>
+                                <span className="text-muted-foreground">@{application.applicant?.handle || 'unknown'}</span>
+                              </div>
+                              {application.applicant?.city && (
+                                <span className="text-muted-foreground flex items-center gap-1 text-sm">
+                                  <MapPin className="w-4 h-4" />
+                                  {application.applicant.city}
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* Admin-only badges */}
+                            {viewMode === 'admin' && application.applicant && (
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {application.applicant.subscription_tier && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {application.applicant.subscription_tier}
+                                  </Badge>
+                                )}
+                                {application.applicant.role_flags?.includes('BANNED') && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    BANNED
+                                  </Badge>
+                                )}
+                                {application.applicant.role_flags?.includes('VERIFIED_ID') && (
+                                  <Badge variant="default" className="text-xs">
+                                    <UserCheck className="w-3 h-3 inline mr-1" />
+                                    VERIFIED
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Style Tags */}
+                            {application.applicant.style_tags && application.applicant.style_tags.length > 0 && (
+                              <div className="flex flex-wrap gap-2">
+                                {(() => {
+                                  const styleTags = application.applicant.style_tags;
+                                  let tagsArray: string[] = [];
+
+                                  if (Array.isArray(styleTags)) {
+                                    tagsArray = styleTags as string[];
+                                  } else if (typeof styleTags === 'string') {
+                                    tagsArray = (styleTags as string).split(',');
+                                  }
+
+                                  return tagsArray.slice(0, 6).map((tag, index) => (
+                                    <Badge key={index} variant="outline" className="text-xs">
+                                      {String(tag).trim()}
+                                    </Badge>
+                                  ));
+                                })()}
+                                {Array.isArray(application.applicant.style_tags) && application.applicant.style_tags.length > 6 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    +{application.applicant.style_tags.length - 6} more
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Application Note */}
+                          {application.note && (
+                            <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+                              <h4 className="font-medium text-foreground mb-2 flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4" />
+                                Application Note
+                              </h4>
+                              <p className="text-muted-foreground text-sm leading-relaxed">{application.note}</p>
+                            </div>
                           )}
                           
-                          {/* Admin-specific actions */}
-                          {viewMode === 'admin' && (
-                            <>
-                              <button
-                                onClick={() => banUser(application.applicant.id, application.applicant.display_name)}
-                                className="p-2 text-destructive-600 hover:bg-destructive-50 rounded-lg"
-                                disabled={updating}
-                                title="Ban User"
-                              >
-                                <Ban className="w-5 h-5" />
-                              </button>
-                              <button
-                                onClick={() => deleteApplication(application.id)}
-                                className="p-2 text-destructive-600 hover:bg-destructive-50 rounded-lg"
-                                disabled={updating}
-                                title="Delete Application"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            </>
+                          {/* Project Creator Info */}
+                          {application.project_creator && (
+                            <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+                              <h4 className="font-medium text-foreground mb-2 flex items-center gap-2">
+                                <Users className="w-4 h-4" />
+                                Project Creator
+                              </h4>
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={application.project_creator.avatar_url || '/default-avatar.png'}
+                                  alt={application.project_creator.display_name}
+                                  className="w-8 h-8 rounded-full"
+                                />
+                                <div>
+                                  <span className="font-medium text-foreground">
+                                    {application.project_creator.display_name}
+                                  </span>
+                                  <span className="text-muted-foreground ml-2">@{application.project_creator.handle}</span>
+                                </div>
+                              </div>
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
+                        
+                        {/* Right Column - Compatibility & Actions */}
+                        <div className="space-y-4">
+                          {/* Compatibility Score */}
+                          {application.application_type === 'collaboration' && application.compatibility_score && (
+                            <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+                              <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                                <Target className="w-4 h-4" />
+                                Compatibility
+                              </h4>
+                              <CompatibilityScore
+                                score={Math.round(application.compatibility_score)}
+                                size="md"
+                                className="mb-3"
+                              />
+                              {application.matched_skills && application.matched_skills.length > 0 && (
+                                <div className="space-y-2">
+                                  <p className="text-sm font-medium text-foreground">Matched Skills:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {application.matched_skills.slice(0, 4).map((skill, index) => (
+                                      <Badge key={index} variant="default" className="text-xs">
+                                        ✓ {skill}
+                                      </Badge>
+                                    ))}
+                                    {application.matched_skills.length > 4 && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        +{application.matched_skills.length - 4}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Project Details */}
+                          <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+                            <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                              <Settings className="w-4 h-4" />
+                              Project Info
+                            </h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-muted-foreground">Applied:</span>
+                                <span className="font-medium">{formatDate(application.applied_at)}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-muted-foreground">Location:</span>
+                                <span className="font-medium">
+                                  {application.project_location || application.gig?.location_text || 'Not specified'}
+                                </span>
+                              </div>
+                              {application.project_start_date && (
+                                <div className="flex items-center gap-2">
+                                  <Clock className="w-4 h-4 text-muted-foreground" />
+                                  <span className="text-muted-foreground">Start:</span>
+                                  <span className="font-medium">{formatDate(application.project_start_date)}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Actions */}
+                          <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+                            <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                              <Zap className="w-4 h-4" />
+                              Actions
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => {
+                                  setSelectedApplication(application);
+                                  setShowDetailModal(true);
+                                }}
+                                className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                              >
+                                <Eye className="w-4 h-4" />
+                                View Details
+                              </button>
+                              
+                              {/* Talent-specific actions */}
+                              {viewMode === 'talent' && (
+                                <>
+                                  {application.status === 'PENDING' && (
+                                    <button
+                                      onClick={() => withdrawApplication(application.id)}
+                                      className="flex items-center gap-2 px-3 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm"
+                                      disabled={updating}
+                                    >
+                                      <XCircle className="w-4 h-4" />
+                                      Withdraw
+                                    </button>
+                                  )}
+                                  {application.status === 'SHORTLISTED' && (
+                                    <button
+                                      onClick={() => withdrawApplication(application.id)}
+                                      className="flex items-center gap-2 px-3 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm"
+                                      disabled={updating}
+                                    >
+                                      <XCircle className="w-4 h-4" />
+                                      Withdraw
+                                    </button>
+                                  )}
+                                </>
+                              )}
+                              
+                              {/* Contributor/Admin actions */}
+                              {(viewMode === 'contributor' || viewMode === 'admin') && (
+                                <>
+                                  {application.status === 'PENDING' && (
+                                    <>
+                                      <button
+                                        onClick={() => updateApplicationStatus(application.id, 'SHORTLISTED')}
+                                        className="flex items-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                                        disabled={updating}
+                                      >
+                                        <Star className="w-4 h-4" />
+                                        Shortlist
+                                      </button>
+                                      <button
+                                        onClick={() => updateApplicationStatus(application.id, 'ACCEPTED')}
+                                        className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                                        disabled={updating}
+                                      >
+                                        <CheckCircle className="w-4 h-4" />
+                                        Accept
+                                      </button>
+                                      <button
+                                        onClick={() => updateApplicationStatus(application.id, 'DECLINED')}
+                                        className="flex items-center gap-2 px-3 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm"
+                                        disabled={updating}
+                                      >
+                                        <XCircle className="w-4 h-4" />
+                                        Decline
+                                      </button>
+                                    </>
+                                  )}
+                                  
+                                  {application.status === 'SHORTLISTED' && (
+                                    <>
+                                      <button
+                                        onClick={() => updateApplicationStatus(application.id, 'ACCEPTED')}
+                                        className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                                        disabled={updating}
+                                      >
+                                        <CheckCircle className="w-4 h-4" />
+                                        Accept
+                                      </button>
+                                      <button
+                                        onClick={() => updateApplicationStatus(application.id, 'DECLINED')}
+                                        className="flex items-center gap-2 px-3 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm"
+                                        disabled={updating}
+                                      >
+                                        <XCircle className="w-4 h-4" />
+                                        Decline
+                                      </button>
+                                    </>
+                                  )}
+                                  
+                                  {/* Admin-specific actions */}
+                                  {viewMode === 'admin' && (
+                                    <>
+                                      <button
+                                        onClick={() => banUser(application.applicant.id, application.applicant.display_name)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm"
+                                        disabled={updating}
+                                      >
+                                        <Ban className="w-4 h-4" />
+                                        Ban User
+                                      </button>
+                                      <button
+                                        onClick={() => deleteApplication(application.id)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors text-sm"
+                                        disabled={updating}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete
+                                      </button>
+                                    </>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -922,7 +1391,7 @@ export default function ApplicationsPage() {
                 <h2 className="text-xl font-semibold">Application Details</h2>
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="p-2 hover:bg-muted-100 rounded-lg"
+                  className="p-2 hover:bg-muted rounded-lg"
                 >
                   <XCircle className="w-5 h-5" />
                 </button>
@@ -939,9 +1408,9 @@ export default function ApplicationsPage() {
                 />
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold">{selectedApplication.applicant.display_name}</h3>
-                  <p className="text-muted-foreground-600">@{selectedApplication.applicant.handle}</p>
+                  <p className="text-muted-foreground">@{selectedApplication.applicant.handle}</p>
                   {selectedApplication.applicant.bio && (
-                    <p className="text-muted-foreground-700 mt-2">{selectedApplication.applicant.bio}</p>
+                    <p className="text-muted-foreground mt-2">{selectedApplication.applicant.bio}</p>
                   )}
                   
                 </div>
@@ -950,24 +1419,35 @@ export default function ApplicationsPage() {
               {/* Application Note */}
               {selectedApplication.note && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-muted-foreground-900 mb-2">Application Note</h4>
-                  <p className="text-muted-foreground-700 whitespace-pre-wrap">{selectedApplication.note}</p>
+                  <h4 className="font-medium text-foreground mb-2">Application Note</h4>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{selectedApplication.note}</p>
                 </div>
               )}
               
               {/* Style Tags */}
               {selectedApplication.applicant.style_tags && selectedApplication.applicant.style_tags.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-muted-foreground-900 mb-2">Style Tags</h4>
+                  <h4 className="font-medium text-foreground mb-2">Style Tags</h4>
                   <div className="flex flex-wrap gap-2">
-                    {selectedApplication.applicant.style_tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    {(() => {
+                      const styleTags = selectedApplication.applicant.style_tags;
+                      let tagsArray: string[] = [];
+
+                      if (Array.isArray(styleTags)) {
+                        tagsArray = styleTags as string[];
+                      } else if (typeof styleTags === 'string') {
+                        tagsArray = (styleTags as string).split(',');
+                      }
+
+                      return tagsArray.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                        >
+                          {String(tag).trim()}
+                        </span>
+                      ));
+                    })()}
                   </div>
                 </div>
               )}
@@ -1002,7 +1482,7 @@ export default function ApplicationsPage() {
                           updateApplicationStatus(selectedApplication.id, 'DECLINED');
                           setShowDetailModal(false);
                         }}
-                        className="flex-1 px-4 py-2 border border-destructive-600 text-destructive-600 rounded-lg hover:bg-destructive-50"
+                        className="flex-1 px-4 py-2 border border-destructive text-destructive rounded-lg hover:bg-destructive/10"
                         disabled={updating}
                       >
                         Decline
@@ -1027,7 +1507,7 @@ export default function ApplicationsPage() {
                           updateApplicationStatus(selectedApplication.id, 'DECLINED');
                           setShowDetailModal(false);
                         }}
-                        className="flex-1 px-4 py-2 border border-destructive-600 text-destructive-600 rounded-lg hover:bg-destructive-50"
+                        className="flex-1 px-4 py-2 border border-destructive text-destructive rounded-lg hover:bg-destructive/10"
                         disabled={updating}
                       >
                         Decline

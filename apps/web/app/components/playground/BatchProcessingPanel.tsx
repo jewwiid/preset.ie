@@ -116,13 +116,13 @@ export default function BatchProcessingPanel({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Wand2 className="h-5 w-5 mr-2 text-primary-500" />
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center">
+          <Wand2 className="h-5 w-5 mr-2" />
           Batch Processing
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-sm">
           Process multiple images with the same edit settings
         </CardDescription>
       </CardHeader>

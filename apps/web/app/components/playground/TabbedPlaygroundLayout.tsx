@@ -16,6 +16,7 @@ import SavedMediaGallery, { SavedMediaGalleryRef } from './SavedImagesGallery'
 import EditImageSelector from './EditImageSelector'
 import ImagePreviewArea from './ImagePreviewArea'
 import VideoViewer from './VideoViewer'
+import VideoPreviewArea from './VideoPreviewArea'
 import PromptManagementPanel from './PromptManagementPanel'
 
 // Import PlaygroundProject type from the main playground page
@@ -284,6 +285,7 @@ export default function TabbedPlaygroundLayout({
   }>>([])
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
   const [deletingVideo, setDeletingVideo] = useState<string | null>(null)
+  const [videoPrompt, setVideoPrompt] = useState('')
   const savedGalleryRef = useRef<SavedMediaGalleryRef>(null)
 
   const [removeBaseImageCallback, setRemoveBaseImageCallback] = useState<(() => void) | undefined>(undefined)
@@ -836,46 +838,38 @@ export default function TabbedPlaygroundLayout({
 
         {/* Video Tab */}
         <TabsContent value="video" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <VideoGenerationPanel
-              onGenerateVideo={onGenerateVideo}
-              loading={loading}
-              selectedImage={selectedImage}
-              aspectRatio={currentSettings.baseImageAspectRatio || '16:9'}
-              savedImages={savedImages}
-              onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
-            />
+          <div className="space-y-6">
+            {/* Full Width Video Preview Area */}
+            <div className="w-full" data-preview-area>
+              <VideoPreviewArea
+                sourceImage={selectedImage}
+                aspectRatio={currentSettings.aspectRatio || '16:9'}
+                resolution={currentSettings.resolution}
+                prompt={videoPrompt}
+                videos={savedVideos}
+                selectedVideo={selectedVideo}
+                onSelectVideo={setSelectedVideo}
+                onSaveToGallery={handleSaveToGallery}
+                onDeleteVideo={handleDeleteVideo}
+                savingVideo={savingImage}
+                deletingVideo={deletingVideo}
+                loading={loading}
+                fullWidth={true}
+              />
+            </div>
 
-            {/* Generated Videos Viewer */}
-            <VideoViewer
-              title="Generated Videos"
-              description="View and manage your generated videos"
-              videos={savedVideos}
-              selectedVideo={selectedVideo}
-              onSelectVideo={setSelectedVideo}
-              onSaveToGallery={handleSaveToGallery}
-              onDownloadVideo={async (videoUrl: string, filename: string) => {
-                try {
-                  const response = await fetch(videoUrl)
-                  const blob = await response.blob()
-                  const url = window.URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = filename
-                  document.body.appendChild(a)
-                  a.click()
-                  window.URL.revokeObjectURL(url)
-                  document.body.removeChild(a)
-                } catch (error) {
-                  console.error('Error downloading video:', error)
-                }
-              }}
-              onDeleteVideo={handleDeleteVideo}
-              savingVideo={savingImage}
-              deletingVideo={deletingVideo}
-              loading={loading}
-              emptyStateMessage="No videos available. Generate some videos first!"
-            />
+            {/* Video Generation Controls - Full Width Below Preview */}
+            <div className="w-full">
+              <VideoGenerationPanel
+                onGenerateVideo={onGenerateVideo}
+                loading={loading}
+                selectedImage={selectedImage}
+                aspectRatio={currentSettings.aspectRatio || '16:9'}
+                savedImages={savedImages}
+                onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
+                onPromptChange={setVideoPrompt}
+              />
+            </div>
           </div>
         </TabsContent>
 

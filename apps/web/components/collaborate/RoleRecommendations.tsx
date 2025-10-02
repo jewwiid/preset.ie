@@ -111,21 +111,21 @@ export function RoleRecommendations({
   const getCompatibilityBadge = (score: number) => {
     if (score >= 70) {
       return (
-        <Badge className="bg-green-100 text-green-800">
+        <Badge className="bg-primary-100 text-primary-800">
           <TrendingUp className="h-3 w-3 mr-1" />
           {Math.round(score)}% Match
         </Badge>
       )
     } else if (score >= 50) {
       return (
-        <Badge className="bg-blue-100 text-blue-800">
+        <Badge className="bg-primary/10 text-primary">
           <TrendingUp className="h-3 w-3 mr-1" />
           {Math.round(score)}% Match
         </Badge>
       )
     } else {
       return (
-        <Badge className="bg-yellow-100 text-yellow-800">
+        <Badge className="bg-primary/10 text-primary">
           {Math.round(score)}% Match
         </Badge>
       )
@@ -186,7 +186,7 @@ export function RoleRecommendations({
                   <CardTitle className="text-lg">{rec.role.role_name}</CardTitle>
                   {getCompatibilityBadge(rec.compatibility.overall_score)}
                   {rec.role.is_paid && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    <Badge variant="secondary" className="bg-primary-100 text-primary-800">
                       Paid
                     </Badge>
                   )}
@@ -244,20 +244,20 @@ export function RoleRecommendations({
             </div>
 
             {/* Skill Match Breakdown */}
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-blue-900">Why you're a great fit:</span>
-                <span className="text-blue-700">
+                <span className="font-medium text-primary">Why you're a great fit:</span>
+                <span className="text-primary/80">
                   {rec.compatibility.matched_skills.length} of {rec.role.skills_required?.length || 0} skills
                 </span>
               </div>
 
               {rec.compatibility.matched_skills.length > 0 && (
                 <div>
-                  <p className="text-xs text-blue-800 mb-1">✓ Your matching skills:</p>
+                  <p className="text-xs text-primary mb-1">✓ Your matching skills:</p>
                   <div className="flex flex-wrap gap-1">
                     {rec.compatibility.matched_skills.map((skill, idx) => (
-                      <Badge key={idx} className="bg-green-100 text-green-800 text-xs">
+                      <Badge key={idx} className="bg-primary/20 text-primary text-xs">
                         {skill}
                       </Badge>
                     ))}
@@ -267,7 +267,7 @@ export function RoleRecommendations({
 
               {rec.compatibility.missing_skills.length > 0 && (
                 <div>
-                  <p className="text-xs text-blue-800 mb-1">📚 Skills to highlight:</p>
+                  <p className="text-xs text-primary mb-1">📚 Skills to highlight:</p>
                   <div className="flex flex-wrap gap-1">
                     {rec.compatibility.missing_skills.slice(0, 3).map((skill, idx) => (
                       <Badge key={idx} variant="outline" className="text-xs">

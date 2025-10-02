@@ -898,7 +898,7 @@ export default function ProjectEditPage() {
                               </SelectItem>
                               <SelectItem value="published">
                                 <div className="flex items-center space-x-2">
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
                                   <span>Publish Project</span>
                                 </div>
                               </SelectItem>
@@ -915,7 +915,7 @@ export default function ProjectEditPage() {
                             </div>
                           ) : (
                             <div>
-                              <p className="font-medium text-green-600">🚀 Published Mode</p>
+                              <p className="font-medium text-primary-600">🚀 Published Mode</p>
                               <p>• Project will be published and visible to other users for collaboration</p>
                               <p>• Users can apply to roles and respond to equipment requests</p>
                             </div>

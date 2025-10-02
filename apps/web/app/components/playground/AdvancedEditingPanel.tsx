@@ -6,6 +6,8 @@ import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 
 interface AdvancedEditingPanelProps {
   onEdit: (params: {
@@ -317,17 +319,18 @@ export default function AdvancedEditingPanel({
   }
 
   return (
-    <div className="bg-background rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-semibold mb-4 flex items-center">
-        <Wand2 className="h-5 w-5 mr-2 text-primary" />
-        Advanced Editing
-      </h2>
-      
-      {/* Image Source Selection */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Image Source
-        </label>
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center">
+          <Wand2 className="h-5 w-5 mr-2" />
+          Advanced Editing
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        {/* Image Source Selection */}
+        <div className="space-y-2">
+          <Label className="text-sm">Image Source</Label>
         <div className="grid grid-cols-3 gap-2 mb-3">
           <Button
             variant={imageSource === 'saved' ? 'default' : 'outline'}
@@ -377,9 +380,9 @@ export default function AdvancedEditingPanel({
         {/* Saved Images Selection */}
         {imageSource === 'saved' && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <Label className="text-sm">
               Select from Saved Images
-            </label>
+            </Label>
             {savedImages.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground border border-border rounded-lg">
                 <ImageIcon className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
@@ -466,9 +469,9 @@ export default function AdvancedEditingPanel({
       {/* Image Upload Section */}
       {imageSource === 'upload' && (
         <div className="mb-4">
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <Label className="text-sm">
             Upload Image to Edit
-          </label>
+          </Label>
           
           {!uploadedImage ? (
             <div className="border-2 border-dashed border-border-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
@@ -535,9 +538,9 @@ export default function AdvancedEditingPanel({
       {/* Pexels Section */}
       {imageSource === 'pexels' && (
         <div className="mb-4">
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <Label className="text-sm">
             Search Pexels Images
-          </label>
+          </Label>
           
           <div className="space-y-3">
             {/* Search Input */}
@@ -678,9 +681,9 @@ export default function AdvancedEditingPanel({
       
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
+          <Label className="text-sm">
             Edit Type
-          </label>
+          </Label>
           <select
             value={editType}
             onChange={(e) => handleEditTypeChange(e.target.value)}
@@ -710,9 +713,9 @@ export default function AdvancedEditingPanel({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
+          <Label className="text-sm">
             Edit Prompt
-          </label>
+          </Label>
           <textarea
             value={editPrompt}
             onChange={(e) => setEditPrompt(e.target.value)}
@@ -725,9 +728,9 @@ export default function AdvancedEditingPanel({
         {/* Reference Image Upload Section */}
         {requiresReferenceImage(editType) && (
           <div>
-            <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
+            <Label className="text-sm">
               Reference Image <span className="text-destructive-500">*</span>
-            </label>
+            </Label>
             <p className="text-xs text-muted-foreground-600 mb-3">
               {editType === 'face_swap' && 'Upload a face image to swap with the main image (different from the image you selected above)'}
               {editType === 'style_transfer' && 'Upload an image with the desired artistic style to apply (different from the image you selected above)'}
@@ -791,9 +794,9 @@ export default function AdvancedEditingPanel({
                   {/* Saved Images Section */}
                   {referenceImageSource === 'saved' && (
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <Label className="text-sm">
                         Select from Saved Images
-                      </label>
+                      </Label>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {savedImages.length === 0 ? (
                           <p className="text-sm text-muted-foreground-500 text-center py-4">
@@ -856,9 +859,9 @@ export default function AdvancedEditingPanel({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-muted-foreground-700 mb-1">
+          <Label className="text-sm">
             Strength: {editStrength}
-          </label>
+          </Label>
           <input
             type="range"
             min="0.1"
@@ -889,6 +892,7 @@ export default function AdvancedEditingPanel({
           )}
         </button>
       </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -55,9 +55,9 @@ export class ColorAuditor {
     'bg-blue-500': 'bg-primary',
     'bg-blue-600': 'bg-primary',
     'bg-blue-400': 'bg-primary',
-    'bg-green-500': 'bg-primary',
-    'bg-green-600': 'bg-primary',
-    'bg-green-400': 'bg-primary',
+    'bg-primary-500': 'bg-primary',
+    'bg-primary-600': 'bg-primary',
+    'bg-primary-400': 'bg-primary',
     'bg-red-500': 'bg-destructive',
     'bg-red-600': 'bg-destructive',
     'bg-red-400': 'bg-destructive',
@@ -78,9 +78,9 @@ export class ColorAuditor {
     'text-blue-500': 'text-primary',
     'text-blue-600': 'text-primary',
     'text-blue-400': 'text-primary',
-    'text-green-500': 'text-primary',
-    'text-green-600': 'text-primary',
-    'text-green-400': 'text-primary',
+    'text-primary-500': 'text-primary',
+    'text-primary-600': 'text-primary',
+    'text-primary-400': 'text-primary',
     'text-red-500': 'text-destructive',
     'text-red-600': 'text-destructive',
     'text-red-400': 'text-destructive',
@@ -95,8 +95,8 @@ export class ColorAuditor {
     // Border colors
     'border-blue-500': 'border-primary',
     'border-blue-600': 'border-primary',
-    'border-green-500': 'border-primary',
-    'border-green-600': 'border-primary',
+    'border-primary-500': 'border-primary',
+    'border-primary-600': 'border-primary',
     'border-red-500': 'border-destructive',
     'border-red-600': 'border-destructive',
     'border-gray-200': 'border-border',
@@ -119,12 +119,12 @@ export class ColorAuditor {
     // Common mappings for auto-fix suggestions
     'bg-blue-500': 'bg-primary',
     'bg-blue-600': 'bg-primary',
-    'bg-green-500': 'bg-primary',
-    'bg-green-600': 'bg-primary',
+    'bg-primary-500': 'bg-primary',
+    'bg-primary-600': 'bg-primary',
     'bg-red-500': 'bg-destructive',
     'bg-red-600': 'bg-destructive',
     'text-blue-600': 'text-primary',
-    'text-green-600': 'text-primary',
+    'text-primary-600': 'text-primary',
     'text-red-600': 'text-destructive',
     'text-gray-600': 'text-muted-foreground',
     'text-gray-500': 'text-muted-foreground',
@@ -369,7 +369,7 @@ export function Component() {
     <div className="bg-blue-500 text-white p-4">
       <h1 className="text-gray-900">Title</h1>
       <p className="text-gray-600">Description</p>
-      <button className="bg-green-500 hover:bg-green-600 text-white">
+      <button className="bg-primary-500 hover:bg-primary-600 text-white">
         Click me
       </button>
     </div>

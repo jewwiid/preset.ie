@@ -755,7 +755,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     <div className="mt-3">
                       <span className={`inline-block px-3 py-1.5 rounded-full text-sm font-bold shadow-md ${
                         pkg.available
-                          ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white animate-pulse'
+                          ? 'bg-gradient-to-r from-primary-primary to-primary-primary text-white animate-pulse'
                           : 'bg-muted-300 text-muted-foreground-600'
                       }`}>
                         💰 Save {pkg.savings_percentage}%

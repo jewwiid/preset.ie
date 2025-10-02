@@ -182,7 +182,7 @@ export default function MessageTestPage() {
             <button 
               onClick={testTokenExtraction}
               disabled={loading}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+              className="px-4 py-2 bg-primary-500 text-white rounded hover:bg-primary-600 disabled:opacity-50"
             >
               {loading ? 'Testing...' : '2. Test Token Extraction'}
             </button>
@@ -208,7 +208,7 @@ export default function MessageTestPage() {
         {/* Test Results */}
         <div className="bg-gray-100 p-4 rounded">
           <h2 className="text-lg font-semibold mb-2">Test Results</h2>
-          <div className="bg-black text-green-400 p-4 rounded font-mono text-sm min-h-20">
+          <div className="bg-black text-primary-400 p-4 rounded font-mono text-sm min-h-20">
             {testResult || 'Click a test button to start...'}
           </div>
         </div>

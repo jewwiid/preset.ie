@@ -211,7 +211,7 @@ export default function ApplicationsList({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'accepted':
-        return <Badge className="bg-green-100 text-green-800">Accepted</Badge>;
+        return <Badge className="bg-primary/10 text-primary">Accepted</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
       case 'withdrawn':
@@ -224,14 +224,14 @@ export default function ApplicationsList({
   const getCompatibilityBadge = (score: number) => {
     if (score >= 70) {
       return (
-        <Badge className="bg-green-100 text-green-800">
+        <Badge className="bg-primary/10 text-primary">
           <TrendingUp className="h-3 w-3 mr-1" />
           {Math.round(score)}% Match
         </Badge>
       );
     } else if (score >= 30) {
       return (
-        <Badge className="bg-yellow-100 text-yellow-800">
+        <Badge className="bg-primary/10 text-primary">
           <AlertCircle className="h-3 w-3 mr-1" />
           {Math.round(score)}% Match
         </Badge>
@@ -260,11 +260,11 @@ export default function ApplicationsList({
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <User className="h-12 w-12 text-muted-foreground-400 mb-4" />
-          <p className="text-muted-foreground-600 text-center">
+          <User className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground text-center">
             No applications yet
           </p>
-          <p className="text-sm text-muted-foreground-500 text-center mt-2">
+          <p className="text-sm text-muted-foreground text-center mt-2">
             Applications will appear here when people apply to your roles
           </p>
         </CardContent>
@@ -290,7 +290,7 @@ export default function ApplicationsList({
             {roleApplications.map((application) => (
               <div
                 key={application.id}
-                className="border border-border-200 rounded-lg p-4 space-y-4"
+                className="border border-border rounded-lg p-4 space-y-4"
               >
                 {/* Applicant Info */}
                 <div className="flex items-start justify-between">
@@ -313,10 +313,10 @@ export default function ApplicationsList({
                         )}
                       </div>
                       {application.applicant.handle && (
-                        <p className="text-sm text-muted-foreground-500">@{application.applicant.handle}</p>
+                        <p className="text-sm text-muted-foreground">@{application.applicant.handle}</p>
                       )}
                       {(application.applicant.city || application.applicant.country) && (
-                        <div className="flex items-center text-sm text-muted-foreground-500 mt-1">
+                        <div className="flex items-center text-sm text-muted-foreground mt-1">
                           <MapPin className="h-3 w-3 mr-1" />
                           {[application.applicant.city, application.applicant.country].filter(Boolean).join(', ')}
                         </div>
@@ -324,7 +324,7 @@ export default function ApplicationsList({
                     </div>
                   </div>
 
-                  <div className="text-xs text-muted-foreground-500">
+                  <div className="text-xs text-muted-foreground">
                     Applied {new Date(application.created_at).toLocaleDateString()}
                   </div>
                 </div>
@@ -332,16 +332,16 @@ export default function ApplicationsList({
                 {/* Bio */}
                 {application.applicant.bio && (
                   <div>
-                    <p className="text-sm text-muted-foreground-700">{application.applicant.bio}</p>
+                    <p className="text-sm text-muted-foreground">{application.applicant.bio}</p>
                   </div>
                 )}
 
                 {/* Skill Match Breakdown for Creators */}
                 {isCreator && compatibilityScores[application.id] && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg space-y-2">
                     <div className="flex items-center justify-between">
-                      <h5 className="text-sm font-medium text-blue-900">Compatibility Analysis</h5>
-                      <span className="text-xs text-blue-700">
+                      <h5 className="text-sm font-medium text-primary">Compatibility Analysis</h5>
+                      <span className="text-xs text-primary/80">
                         Overall: {Math.round(compatibilityScores[application.id].overall_score)}%
                       </span>
                     </div>
@@ -349,10 +349,10 @@ export default function ApplicationsList({
                     {/* Matched Skills */}
                     {compatibilityScores[application.id].matched_skills?.length > 0 && (
                       <div>
-                        <p className="text-xs text-blue-800 mb-1">✓ Matched Skills:</p>
+                        <p className="text-xs text-primary mb-1">✓ Matched Skills:</p>
                         <div className="flex flex-wrap gap-1">
                           {compatibilityScores[application.id].matched_skills.map((skill: string, idx: number) => (
-                            <Badge key={idx} className="bg-green-100 text-green-800 text-xs">{skill}</Badge>
+                            <Badge key={idx} className="bg-primary/20 text-primary text-xs">{skill}</Badge>
                           ))}
                         </div>
                       </div>
@@ -361,7 +361,7 @@ export default function ApplicationsList({
                     {/* Missing Skills */}
                     {compatibilityScores[application.id].missing_skills?.length > 0 && (
                       <div>
-                        <p className="text-xs text-blue-800 mb-1">⚠ Missing Skills:</p>
+                        <p className="text-xs text-primary mb-1">⚠ Missing Skills:</p>
                         <div className="flex flex-wrap gap-1">
                           {compatibilityScores[application.id].missing_skills.map((skill: string, idx: number) => (
                             <Badge key={idx} variant="outline" className="text-xs">{skill}</Badge>

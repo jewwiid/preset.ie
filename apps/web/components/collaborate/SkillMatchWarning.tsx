@@ -99,7 +99,7 @@ export function SkillMatchWarning({
                     <p className="text-sm font-medium mb-1">Matched skills:</p>
                     <div className="flex flex-wrap gap-2">
                       {matchedSkills.map((skill) => (
-                        <Badge key={skill} variant="secondary" className="bg-green-100 text-green-800">
+                        <Badge key={skill} variant="secondary" className="bg-primary-100 text-primary-800">
                           {skill}
                         </Badge>
                       ))}

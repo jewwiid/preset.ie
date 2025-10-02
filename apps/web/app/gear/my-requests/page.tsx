@@ -231,7 +231,7 @@ export default function MyRequestsPage() {
       case 'pending':
         return <Clock className="h-4 w-4 text-yellow-500" />;
       case 'accepted':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-primary-500" />;
       case 'rejected':
         return <XCircle className="h-4 w-4 text-red-500" />;
       case 'cancelled':
@@ -252,7 +252,7 @@ export default function MyRequestsPage() {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'accepted':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        return 'bg-primary/10 text-primary';
       case 'rejected':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
       case 'cancelled':
@@ -727,7 +727,7 @@ export default function MyRequestsPage() {
                                     // Navigate to the listing page with messaging enabled
                                     window.open(`/gear/listings/${offer.listing_id}`, '_blank');
                                   }}
-                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  className="bg-primary-600 hover:bg-primary/90 text-white"
                                 >
                                   <MessageCircle className="h-4 w-4 mr-1" />
                                   Message Owner

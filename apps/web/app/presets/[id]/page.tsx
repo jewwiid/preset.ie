@@ -911,15 +911,15 @@ export default function PresetDetailPage() {
                 )}
                 
                 {preset.prompt_template.includes('{mood}') && (
-                  <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <div className="bg-primary-50 dark:bg-primary-950/20 border border-primary/20 dark:border-primary-800 rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
+                      <div className="w-2 h-2 rounded-full bg-primary-500 mt-2 flex-shrink-0"></div>
                       <div>
-                        <h4 className="font-medium text-green-900 dark:text-green-100 mb-1">
+                        <h4 className="font-medium text-primary-900 dark:text-primary-100 mb-1">
                           Mood Placeholder
                         </h4>
-                        <p className="text-sm text-green-700 dark:text-green-300">
-                          This preset uses <code className="bg-green-100 dark:bg-green-900 px-1 rounded">{'{mood}'}</code> as a placeholder. 
+                        <p className="text-sm text-primary-700 dark:text-primary-300">
+                          This preset uses <code className="bg-primary-100 dark:bg-primary-900 px-1 rounded">{'{mood}'}</code> as a placeholder. 
                           The mood will be automatically filled based on the preset's mood settings.
                         </p>
                       </div>
@@ -1050,8 +1050,8 @@ export default function PresetDetailPage() {
                               {example.is_verified && (
                                 <>
                                   <span>•</span>
-                                  <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                                  <span className="text-green-600 font-medium">Verified</span>
+                                  <CheckCircle className="h-4 w-4 text-primary-500 flex-shrink-0" />
+                                  <span className="text-primary-600 font-medium">Verified</span>
                                 </>
                               )}
                             </div>

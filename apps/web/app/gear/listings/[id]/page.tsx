@@ -757,8 +757,8 @@ export default function ListingDetailPage() {
                       {acceptedOffers.map((offer) => (
                         <div key={offer.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                              <Euro className="h-4 w-4 text-green-600" />
+                            <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                              <Euro className="h-4 w-4 text-primary-600" />
                             </div>
                             <div>
                               <p className="font-medium">€{(offer.offer_amount_cents / 100).toFixed(2)}</p>
@@ -768,7 +768,7 @@ export default function ListingDetailPage() {
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <Badge variant="default" className="bg-green-100 text-green-800">
+                            <Badge variant="default" className="bg-primary-100 text-primary-800">
                               Accepted
                             </Badge>
                             {isOwner() && (
@@ -919,7 +919,7 @@ export default function ListingDetailPage() {
                             <div className="ml-8 space-y-2">
                               {comment.replies.map((reply: any) => (
                                 <div key={reply.id} className="flex items-start space-x-3 p-2 border rounded-lg bg-muted/50">
-                                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center overflow-hidden">
+                                  <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center overflow-hidden">
                                     {reply.user?.avatar_url ? (
                                       <img 
                                         src={reply.user.avatar_url} 
@@ -927,7 +927,7 @@ export default function ListingDetailPage() {
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
-                                      <MessageCircle className="h-3 w-3 text-green-600" />
+                                      <MessageCircle className="h-3 w-3 text-primary-600" />
                                     )}
                                   </div>
                                   <div className="flex-1">
@@ -958,8 +958,8 @@ export default function ListingDetailPage() {
                                 </div>
                               )}
                               <div className="flex items-start space-x-2">
-                                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                                  <MessageCircle className="h-3 w-3 text-green-600" />
+                                <div className="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center">
+                                  <MessageCircle className="h-3 w-3 text-primary-600" />
                                 </div>
                                 <div className="flex-1">
                                   <textarea
@@ -1070,7 +1070,7 @@ export default function ListingDetailPage() {
                   {!isOwner() && (
                     <Button 
                       variant={userHasAcceptedOffer ? "default" : "outline"}
-                      className={`flex-1 min-w-0 ${userHasAcceptedOffer ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                      className={`flex-1 min-w-0 ${userHasAcceptedOffer ? 'bg-primary-600 hover:bg-primary/90 text-white' : ''}`}
                       onClick={() => setShowMessaging(true)}
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />

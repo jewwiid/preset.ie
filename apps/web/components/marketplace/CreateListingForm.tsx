@@ -926,8 +926,8 @@ export default function CreateListingForm({ onSuccess, onCancel, initialData, is
               </div>
             )}
             {coordinatesFound && !isGeocoding && (
-              <div className="flex items-center gap-1 text-sm text-green-600">
-                <div className="h-3 w-3 rounded-full bg-green-500"></div>
+              <div className="flex items-center gap-1 text-sm text-primary-600">
+                <div className="h-3 w-3 rounded-full bg-primary-500"></div>
                 <span>Coordinates found</span>
               </div>
             )}

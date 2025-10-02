@@ -69,15 +69,15 @@ export function ImageProviderSelector({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
-        <h3 className="text-lg font-semibold">Choose Image Provider</h3>
-        <p className="text-sm text-muted-foreground">
+        <h3 className="text-sm font-semibold">Choose Image Provider</h3>
+        <p className="text-xs text-muted-foreground">
           Select your preferred AI image generation provider
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {providers.map((provider) => {
           const isSelected = selectedProvider === provider.id;
           const canAfford = userCredits >= provider.costPerCredit;
@@ -93,53 +93,53 @@ export function ImageProviderSelector({
               } ${!canAfford ? 'opacity-50' : ''}`}
               onClick={() => canAfford && onProviderChange(provider.id)}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center space-x-2">
                     {provider.icon}
-                    <CardTitle className="text-base">{provider.name}</CardTitle>
+                    <CardTitle className="text-sm">{provider.name}</CardTitle>
                   </div>
                   {isSelected && (
-                    <CheckCircle className="h-5 w-5 text-primary" />
+                    <CheckCircle className="h-4 w-4 text-primary" />
                   )}
                 </div>
-                <CardDescription className="text-sm">
+                <CardDescription className="text-xs leading-tight">
                   {provider.description}
                 </CardDescription>
               </CardHeader>
 
-              <CardContent className="pt-0">
-                <div className="space-y-3">
+              <CardContent className="pt-0 pb-3 px-3">
+                <div className="space-y-2">
                   {/* Features */}
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Features</h4>
+                    <h4 className="text-xs font-medium mb-1.5">Features</h4>
                     <div className="flex flex-wrap gap-1">
                       {provider.features.map((feature, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
+                        <Badge key={index} variant="secondary" className="text-[10px] px-1.5 py-0">
                           {feature}
                         </Badge>
                       ))}
                     </div>
                   </div>
 
-                  {/* Speed & Quality */}
-                  <div className="flex space-x-2">
-                    <Badge className={getSpeedColor(provider.speed)}>
+                  {/* Speed & Quality - Inline */}
+                  <div className="flex space-x-1.5">
+                    <Badge className={`${getSpeedColor(provider.speed)} text-[10px] px-1.5 py-0`}>
                       {provider.speed} speed
                     </Badge>
-                    <Badge className={getQualityColor(provider.quality)}>
+                    <Badge className={`${getQualityColor(provider.quality)} text-[10px] px-1.5 py-0`}>
                       {provider.quality} quality
                     </Badge>
                   </div>
 
-                  {/* Cost & Affordability */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span>Cost per image:</span>
+                  {/* Cost & Affordability - Compact */}
+                  <div className="space-y-0.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cost per image:</span>
                       <span className="font-medium">{provider.costPerCredit} credit{provider.costPerCredit !== 1 ? 's' : ''}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span>You can generate:</span>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">You can generate:</span>
                       <span className="font-medium">
                         {estimatedImages} image{estimatedImages !== 1 ? 's' : ''}
                       </span>
@@ -147,7 +147,7 @@ export function ImageProviderSelector({
                   </div>
 
                   {!canAfford && (
-                    <div className="text-xs text-destructive bg-destructive/5 p-2 rounded">
+                    <div className="text-[10px] text-destructive bg-destructive/5 p-1.5 rounded">
                       Insufficient credits. Need at least {provider.costPerCredit} credit{provider.costPerCredit !== 1 ? 's' : ''}.
                     </div>
                   )}
@@ -158,12 +158,9 @@ export function ImageProviderSelector({
         })}
       </div>
 
-      <div className="text-xs text-muted-foreground">
-        <p>
-          <strong>Note:</strong> You can switch providers at any time. Each provider has different 
-          capabilities and pricing. Seedream V4 offers higher quality but costs more credits.
-        </p>
-      </div>
+      <p className="text-[10px] text-muted-foreground">
+        <strong>Note:</strong> You can switch providers at any time. Each provider has different capabilities and pricing. Seedream V4 offers higher quality but costs more credits.
+      </p>
     </div>
   );
 }

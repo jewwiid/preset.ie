@@ -421,13 +421,13 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Prompt Management</h2>
-          <p className="text-muted-foreground">Create, organize, and reuse your custom style prompts</p>
-        </div>
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">Prompt Management</CardTitle>
+            <p className="text-sm text-muted-foreground">Create, organize, and reuse your custom style prompts</p>
+          </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
             <Button>
@@ -557,9 +557,11 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+        </div>
+      </CardHeader>
 
-      {/* Search and Filter Controls */}
+      <CardContent className="space-y-6">
+        {/* Search and Filter Controls */}
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Search */}
         <div className="relative flex-1">
@@ -716,6 +718,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
           ))}
         </div>
       )}
+      </CardContent>
 
       {/* Edit Dialog */}
       <Dialog open={!!editingPreset} onOpenChange={() => setEditingPreset(null)}>
@@ -841,7 +844,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   )
 }
 

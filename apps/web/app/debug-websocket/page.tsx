@@ -156,7 +156,7 @@ export default function WebSocketDebugPage() {
         {/* Logs */}
         <div className="bg-gray-100 p-4 rounded">
           <h2 className="text-lg font-semibold mb-2">Connection Logs</h2>
-          <div className="bg-black text-green-400 p-4 rounded font-mono text-sm max-h-96 overflow-y-auto">
+          <div className="bg-black text-primary-400 p-4 rounded font-mono text-sm max-h-96 overflow-y-auto">
             {logs.length === 0 ? (
               <div className="text-gray-500">No logs yet. Click "Test WebSocket Connection" to start.</div>
             ) : (

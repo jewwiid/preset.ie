@@ -188,7 +188,7 @@ export function GearOffersList({ projectId, offers, isCreator, onOfferUpdate }: 
       case 'pending':
         return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
       case 'accepted':
-        return <Badge variant="default" className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Accepted</Badge>;
+        return <Badge variant="default" className="bg-primary-500"><CheckCircle className="h-3 w-3 mr-1" />Accepted</Badge>;
       case 'rejected':
         return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
       case 'withdrawn':

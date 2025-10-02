@@ -233,7 +233,7 @@ export default function MakeOfferForm({ listing, onClose, onSuccess, initialMess
           <p className="text-sm text-muted-foreground mt-1">
             Asking price: €{listing.sale_price_cents ? (listing.sale_price_cents / 100).toFixed(2) : 'N/A'}
             {offerPercentage !== 0 && (
-              <span className={`ml-2 ${offerPercentage > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              <span className={`ml-2 ${offerPercentage > 0 ? 'text-primary' : 'text-red-600 dark:text-red-400'}`}>
                 ({offerPercentage > 0 ? '+' : ''}{offerPercentage.toFixed(1)}%)
               </span>
             )}
@@ -301,7 +301,7 @@ export default function MakeOfferForm({ listing, onClose, onSuccess, initialMess
           {offerPercentage !== 0 && (
             <div className="flex justify-between text-sm">
               <span>Difference</span>
-              <span className={offerPercentage > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+              <span className={offerPercentage > 0 ? 'text-primary' : 'text-red-600 dark:text-red-400'}>
                 {offerPercentage > 0 ? '+' : ''}€{listing.sale_price_cents ? Math.abs(formData.offer_amount_cents - listing.sale_price_cents) / 100 : 'N/A'}
                 ({offerPercentage > 0 ? '+' : ''}{offerPercentage.toFixed(1)}%)
               </span>

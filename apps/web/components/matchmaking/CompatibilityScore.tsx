@@ -19,11 +19,11 @@ const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
 
   // Determine score color and label
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-primary-600 bg-primary-50 border-primary/20'
-    if (score >= 80) return 'text-primary-500 bg-primary-50 border-primary/20'
-    if (score >= 70) return 'text-primary-600 bg-primary-50 border-primary-200'
-    if (score >= 60) return 'text-primary-600 bg-primary-50 border-primary-200'
-    return 'text-destructive-600 bg-destructive-50 border-destructive-200'
+    if (score >= 90) return 'text-primary bg-primary/10 border-primary/20'
+    if (score >= 80) return 'text-primary bg-primary/10 border-primary/20'
+    if (score >= 70) return 'text-primary bg-primary/10 border-primary/20'
+    if (score >= 60) return 'text-primary bg-primary/10 border-primary/20'
+    return 'text-destructive bg-destructive/10 border-destructive/20'
   }
 
   const getScoreLabel = (score: number) => {
@@ -98,14 +98,14 @@ const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
           <div className="mt-3">
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="text-xs text-muted-foreground-500 hover:text-muted-foreground-700 flex items-center gap-1"
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
             >
               <Info className={iconSize[size]} />
               {showDetails ? 'Hide' : 'Show'} breakdown
             </button>
 
             {showDetails && (
-              <Card className="mt-2 p-3 bg-muted-50">
+              <Card className="mt-2 p-3 bg-muted">
                 <CardContent className="p-0 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1">
@@ -155,15 +155,20 @@ const CompatibilityScore: React.FC<CompatibilityScoreProps> = ({
         {/* Tooltip for additional info */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="absolute top-0 right-0 w-full h-full cursor-help" />
+            <button 
+              className="ml-2 p-1 rounded-full hover:bg-muted transition-colors"
+              title="View compatibility breakdown"
+            >
+              <Info className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+            </button>
           </TooltipTrigger>
           <TooltipContent>
             <div className="text-sm">
               <p className="font-medium">Compatibility Score: {score}%</p>
-              <p className="text-muted-foreground-600">{scoreLabel}</p>
+              <p className="text-muted-foreground">{scoreLabel}</p>
               {breakdown && (
                 <div className="mt-2 space-y-1">
-                  <p className="text-xs text-muted-foreground-500">Breakdown:</p>
+                  <p className="text-xs text-muted-foreground">Breakdown:</p>
                   <p className="text-xs">• Gender: {breakdown.gender}%</p>
                   <p className="text-xs">• Age: {breakdown.age}%</p>
                   <p className="text-xs">• Height: {breakdown.height}%</p>
