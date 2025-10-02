@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import {
   CheckCircle,
   XCircle,
@@ -16,10 +17,13 @@ import {
   ExternalLink,
   MapPin,
   Briefcase,
-  User
+  User,
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthToken } from '../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 interface Application {
   id: string;
@@ -69,6 +73,38 @@ export default function ApplicationsList({
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [compatibilityScores, setCompatibilityScores] = useState<Record<string, any>>({});
+
+  // Fetch compatibility scores for all applications (only for creators)
+  useEffect(() => {
+    if (!isCreator || applications.length === 0 || !supabase) return;
+
+    const fetchCompatibilityScores = async () => {
+      const scores: Record<string, any> = {};
+
+      for (const app of applications) {
+        try {
+          const { data, error } = await supabase.rpc(
+            'calculate_collaboration_compatibility',
+            {
+              p_profile_id: app.applicant_id,
+              p_role_id: app.role_id
+            }
+          );
+
+          if (!error && data && data.length > 0) {
+            scores[app.id] = data[0];
+          }
+        } catch (err) {
+          console.error(`Error fetching compatibility for application ${app.id}:`, err);
+        }
+      }
+
+      setCompatibilityScores(scores);
+    };
+
+    fetchCompatibilityScores();
+  }, [applications, isCreator]);
 
   const handleAccept = async (application: Application) => {
     setLoading(application.id);
@@ -184,6 +220,31 @@ export default function ApplicationsList({
     }
   };
 
+  const getCompatibilityBadge = (score: number) => {
+    if (score >= 70) {
+      return (
+        <Badge className="bg-green-100 text-green-800">
+          <TrendingUp className="h-3 w-3 mr-1" />
+          {Math.round(score)}% Match
+        </Badge>
+      );
+    } else if (score >= 30) {
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800">
+          <AlertCircle className="h-3 w-3 mr-1" />
+          {Math.round(score)}% Match
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="destructive">
+          <XCircle className="h-3 w-3 mr-1" />
+          {Math.round(score)}% Match
+        </Badge>
+      );
+    }
+  };
+
   // Group applications by role
   const applicationsByRole = applications.reduce((acc, app) => {
     const roleName = app.role.role_name;
@@ -240,12 +301,15 @@ export default function ApplicationsList({
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-wrap">
                         <h4 className="font-medium">{application.applicant.display_name}</h4>
                         {application.applicant.verified_id && (
                           <Badge variant="secondary" className="text-xs">Verified</Badge>
                         )}
                         {getStatusBadge(application.status)}
+                        {isCreator && compatibilityScores[application.id] && (
+                          getCompatibilityBadge(compatibilityScores[application.id].skill_match_score)
+                        )}
                       </div>
                       {application.applicant.handle && (
                         <p className="text-sm text-muted-foreground-500">@{application.applicant.handle}</p>
@@ -271,12 +335,48 @@ export default function ApplicationsList({
                   </div>
                 )}
 
+                {/* Skill Match Breakdown for Creators */}
+                {isCreator && compatibilityScores[application.id] && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-sm font-medium text-blue-900">Compatibility Analysis</h5>
+                      <span className="text-xs text-blue-700">
+                        Overall: {Math.round(compatibilityScores[application.id].overall_score)}%
+                      </span>
+                    </div>
+
+                    {/* Matched Skills */}
+                    {compatibilityScores[application.id].matched_skills?.length > 0 && (
+                      <div>
+                        <p className="text-xs text-blue-800 mb-1">✓ Matched Skills:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {compatibilityScores[application.id].matched_skills.map((skill: string, idx: number) => (
+                            <Badge key={idx} className="bg-green-100 text-green-800 text-xs">{skill}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Missing Skills */}
+                    {compatibilityScores[application.id].missing_skills?.length > 0 && (
+                      <div>
+                        <p className="text-xs text-blue-800 mb-1">⚠ Missing Skills:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {compatibilityScores[application.id].missing_skills.map((skill: string, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-xs">{skill}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Specializations */}
                 {application.applicant.specializations && application.applicant.specializations.length > 0 && (
                   <div>
                     <h5 className="text-sm font-medium mb-2 flex items-center">
                       <Briefcase className="h-4 w-4 mr-1" />
-                      Specializations
+                      All Specializations
                     </h5>
                     <div className="flex flex-wrap gap-2">
                       {application.applicant.specializations.map((spec, idx) => (

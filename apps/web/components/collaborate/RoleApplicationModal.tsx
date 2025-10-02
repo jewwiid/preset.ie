@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,8 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { X, Send, User, Star, MapPin, Calendar } from 'lucide-react';
+import { X, Send, User, Star, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { getAuthToken } from '@/lib/auth-utils';
+import { useCollaborationCompatibility } from '@/lib/hooks/useCollaborationCompatibility';
+import { SkillMatchWarning } from './SkillMatchWarning';
+import { supabase } from '@/lib/supabase';
 
 interface Role {
   id: string;
@@ -55,10 +58,53 @@ export default function RoleApplicationModal({
 }: RoleApplicationModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [messageLength, setMessageLength] = useState(0);
   const [formData, setFormData] = useState({
     message: '',
     portfolio_url: ''
   });
+
+  // Get current user's profile ID
+  useEffect(() => {
+    const fetchProfileId = async () => {
+      const token = await getAuthToken();
+      if (!token || !supabase) return;
+
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('users_profile')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile) {
+        setProfileId(profile.id);
+      }
+    };
+
+    if (isOpen) {
+      fetchProfileId();
+    }
+  }, [isOpen]);
+
+  // Use compatibility hook for real-time validation
+  const {
+    data: compatibility,
+    loading: compatibilityLoading,
+    meetsMinimumThreshold
+  } = useCollaborationCompatibility({
+    profileId,
+    roleId: role.id,
+    enabled: isOpen && !!profileId
+  });
+
+  // Track message length
+  useEffect(() => {
+    setMessageLength(formData.message.trim().length);
+  }, [formData.message]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,6 +252,24 @@ export default function RoleApplicationModal({
             </div>
           </div>
 
+          {/* Compatibility Warning */}
+          {compatibilityLoading && (
+            <div className="flex items-center justify-center p-4 bg-muted-50 rounded-lg">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              <span className="text-sm text-muted-foreground">Checking your compatibility...</span>
+            </div>
+          )}
+
+          {!compatibilityLoading && compatibility && (
+            <SkillMatchWarning
+              matchPercentage={compatibility.skill_match_score}
+              matchedSkills={compatibility.matched_skills}
+              missingSkills={compatibility.missing_skills}
+              profileCompletenessScore={compatibility.profile_completeness_score}
+              missingProfileFields={compatibility.missing_profile_fields}
+            />
+          )}
+
           {/* Application Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -215,15 +279,38 @@ export default function RoleApplicationModal({
             )}
 
             <div>
-              <Label htmlFor="message">Application Message *</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="message">Application Message *</Label>
+                <span className={`text-xs ${
+                  messageLength < 50 ? 'text-destructive-600' :
+                  messageLength > 2000 ? 'text-destructive-600' :
+                  'text-muted-foreground'
+                }`}>
+                  {messageLength} / 2000 {messageLength < 50 && `(min: 50)`}
+                </span>
+              </div>
               <Textarea
                 id="message"
-                placeholder="Tell the creator why you're interested in this role and what you can bring to the project..."
+                placeholder="Tell the creator why you're interested in this role and what you can bring to the project... (minimum 50 characters)"
                 value={formData.message}
                 onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                rows={4}
+                rows={6}
                 required
+                className={
+                  messageLength > 0 && messageLength < 50 ? 'border-destructive-300' :
+                  messageLength > 2000 ? 'border-destructive-300' : ''
+                }
               />
+              {messageLength > 0 && messageLength < 50 && (
+                <p className="text-xs text-destructive-600 mt-1">
+                  Please write at least {50 - messageLength} more characters
+                </p>
+              )}
+              {messageLength > 2000 && (
+                <p className="text-xs text-destructive-600 mt-1">
+                  Message is too long. Please reduce by {messageLength - 2000} characters
+                </p>
+              )}
             </div>
 
             <div>
@@ -241,20 +328,38 @@ export default function RoleApplicationModal({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading || !formData.message.trim()}>
+              <Button
+                type="submit"
+                disabled={
+                  loading ||
+                  !formData.message.trim() ||
+                  messageLength < 50 ||
+                  messageLength > 2000 ||
+                  compatibilityLoading ||
+                  !meetsMinimumThreshold
+                }
+              >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Submitting...
                   </>
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    Submit Application
+                    {!meetsMinimumThreshold && compatibility ? 'Does Not Meet Requirements' : 'Submit Application'}
                   </>
                 )}
               </Button>
             </div>
+
+            {/* Validation Messages */}
+            {!meetsMinimumThreshold && compatibility && !compatibilityLoading && (
+              <p className="text-sm text-destructive-600 text-center">
+                You cannot apply for this role because you don't meet the minimum requirements.
+                {compatibility.profile_completeness_score < 100 && ' Please complete your profile first.'}
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>

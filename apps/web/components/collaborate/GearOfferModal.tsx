@@ -112,7 +112,7 @@ export default function GearOfferModal({
       const token = await getAuthToken();
       const offerData: any = {
         gear_request_id: gearRequest.id,
-        listing_id: formData.listing_id || null,
+        listing_id: (formData.listing_id && formData.listing_id !== 'none') ? formData.listing_id : null,
         offer_type: formData.offer_type,
         message: formData.message
       };

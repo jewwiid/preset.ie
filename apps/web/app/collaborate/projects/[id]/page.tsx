@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Users, Camera, MessageCircle, Star, CheckCircle, XCircle, Clock, UserPlus, Mail } from 'lucide-react';
+import { Calendar, MapPin, Users, Camera, MessageCircle, Star, CheckCircle, XCircle, Clock, UserPlus, Mail, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { InviteUserDialog } from '@/components/collaborate/InviteUserDialog';
@@ -15,6 +15,7 @@ import GearOfferModal from '@/components/collaborate/GearOfferModal';
 import { GearOffersList } from '@/components/collaborate/GearOffersList';
 import { ShareProjectModal } from '@/components/collaborate/ShareProjectModal';
 import ApplicationsList from '@/components/collaborate/ApplicationsList';
+import { WithdrawApplicationDialog } from '@/components/collaborate/WithdrawApplicationDialog';
 import { getAuthToken } from '../../../../lib/supabase';
 
 interface Project {
@@ -100,14 +101,22 @@ export default function ProjectDetailPage() {
   const [selectedGearRequest, setSelectedGearRequest] = useState<any>(null);
   const [gearOffers, setGearOffers] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
+  const [userApplications, setUserApplications] = useState<any[]>([]);
   const [isCreator, setIsCreator] = useState(false);
   const [invitationStats, setInvitationStats] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('roles');
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [applicationToWithdraw, setApplicationToWithdraw] = useState<{
+    id: string;
+    roleId: string;
+    roleName: string;
+  } | null>(null);
 
   const projectId = params?.id as string;
 
   useEffect(() => {
     fetchProject();
+    fetchUserApplications(); // Fetch user's own applications
   }, [projectId]);
 
   const fetchProject = async () => {
@@ -197,11 +206,66 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const fetchUserApplications = async () => {
+    try {
+      const token = await getAuthToken();
+      if (!token) return; // User not logged in
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+
+      const response = await fetch(`/api/collab/projects/${projectId}/applications?user_only=true`, {
+        headers
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserApplications(data.applications || []);
+      }
+    } catch (err) {
+      console.error('Error fetching user applications:', err);
+    }
+  };
+
+  // Helper function to check if user has already applied to a role
+  const hasAppliedToRole = (roleId: string) => {
+    return userApplications.some(app =>
+      app.role_id === roleId && app.status === 'pending'
+    );
+  };
+
+  // Helper function to get user's application for a role
+  const getUserApplicationForRole = (roleId: string) => {
+    return userApplications.find(app =>
+      app.role_id === roleId && app.status === 'pending'
+    );
+  };
+
+  // Handle withdraw application
+  const handleWithdrawApplication = (roleId: string, roleName: string) => {
+    const application = getUserApplicationForRole(roleId);
+    if (application) {
+      setApplicationToWithdraw({
+        id: application.id,
+        roleId: roleId,
+        roleName: roleName
+      });
+      setWithdrawDialogOpen(true);
+    }
+  };
+
+  const handleWithdrawSuccess = () => {
+    toast.success('Application withdrawn successfully');
+    fetchUserApplications(); // Refresh applications
+  };
+
   const handleApply = async (roleId?: string) => {
     setApplying(true);
     try {
       const token = await getAuthToken();
-      
+
       const response = await fetch(`/api/collab/projects/${projectId}/applications`, {
         method: 'POST',
         headers: {
@@ -217,6 +281,8 @@ export default function ProjectDetailPage() {
 
       if (response.ok) {
         toast.success('Application submitted successfully!');
+        // Refresh user applications to update button states
+        await fetchUserApplications();
       } else {
         const data = await response.json();
         toast.error(data.error || 'Failed to submit application');
@@ -387,13 +453,36 @@ export default function ProjectDetailPage() {
                             </div>
                           </div>
                           {!isCreator && role.status === 'open' && (
-                            <Button
-                              onClick={() => handleApply(role.id)}
-                              disabled={applying}
-                              size="sm"
-                            >
-                              Apply
-                            </Button>
+                            hasAppliedToRole(role.id) ? (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  disabled
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Applied
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleWithdrawApplication(role.id, role.role_name)}
+                                  className="text-destructive-600 hover:text-destructive-700 hover:bg-destructive-50"
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Withdraw
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button
+                                onClick={() => handleApply(role.id)}
+                                disabled={applying}
+                                size="sm"
+                              >
+                                Apply
+                              </Button>
+                            )
                           )}
                         </div>
                       </CardHeader>
@@ -527,7 +616,7 @@ export default function ProjectDetailPage() {
                               {participant.status}
                             </Badge>
                             <p className="text-xs text-muted-foreground-400 mt-1">
-                              Joined {format(new Date(participant.joined_at), "MMM d")}
+                              Joined project {format(new Date(participant.joined_at), "MMM d")}
                             </p>
                           </div>
                         </div>
@@ -769,6 +858,21 @@ export default function ProjectDetailPage() {
           projectId={project.id}
           projectTitle={project.title}
           projectDescription={project.description}
+        />
+      )}
+
+      {/* Withdraw Application Dialog */}
+      {applicationToWithdraw && (
+        <WithdrawApplicationDialog
+          isOpen={withdrawDialogOpen}
+          onClose={() => {
+            setWithdrawDialogOpen(false);
+            setApplicationToWithdraw(null);
+          }}
+          onSuccess={handleWithdrawSuccess}
+          projectId={projectId}
+          applicationId={applicationToWithdraw.id}
+          roleName={applicationToWithdraw.roleName}
         />
       )}
     </div>

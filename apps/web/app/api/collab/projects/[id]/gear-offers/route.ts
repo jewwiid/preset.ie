@@ -179,15 +179,34 @@ export async function POST(
 
     // Don't allow offers to own projects
     if (project.creator_id === profile.id) {
-      return NextResponse.json({ 
-        error: 'Cannot make offers to your own project' 
+      console.log('❌ Gear offer rejected: User trying to offer to own project', {
+        userId: profile.id,
+        projectId: id
+      });
+      return NextResponse.json({
+        error: 'Cannot make offers to your own project'
       }, { status: 400 });
     }
 
     // Don't allow offers to completed or cancelled projects
     if (project.status === 'completed' || project.status === 'cancelled') {
-      return NextResponse.json({ 
-        error: 'Cannot make offers to completed or cancelled projects' 
+      console.log('❌ Gear offer rejected: Project is completed or cancelled', {
+        projectId: id,
+        status: project.status
+      });
+      return NextResponse.json({
+        error: 'Cannot make offers to completed or cancelled projects'
+      }, { status: 400 });
+    }
+
+    // Don't allow offers to draft projects (they should be published first)
+    if (project.status === 'draft') {
+      console.log('❌ Gear offer rejected: Project is still in draft', {
+        projectId: id,
+        status: project.status
+      });
+      return NextResponse.json({
+        error: 'Cannot make offers to draft projects. The project must be published first.'
       }, { status: 400 });
     }
 
@@ -285,24 +304,37 @@ export async function POST(
     }
 
     // Create gear offer
+    const insertData: any = {
+      project_id: id,
+      gear_request_id: gear_request_id || null,
+      offerer_id: profile.id,
+      listing_id: listing_id || null,
+      offer_type,
+      message
+    };
+
+    // Add pricing based on offer type - only include the relevant field
+    if (offer_type === 'rent' || offer_type === 'borrow') {
+      insertData.daily_rate_cents = daily_rate_cents;
+    } else if (offer_type === 'sell') {
+      insertData.total_price_cents = total_price_cents;
+    }
+
+    console.log('Creating gear offer with data:', JSON.stringify(insertData, null, 2));
+
     const { data: gearOffer, error: insertError } = await supabase
       .from('collab_gear_offers')
-      .insert({
-        project_id: id,
-        gear_request_id: gear_request_id || null,
-        offerer_id: profile.id,
-        listing_id: listing_id || null,
-        offer_type,
-        daily_rate_cents,
-        total_price_cents,
-        message
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (insertError) {
       console.error('Error creating gear offer:', insertError);
-      return NextResponse.json({ error: 'Failed to create gear offer' }, { status: 500 });
+      console.error('Insert error details:', JSON.stringify(insertError, null, 2));
+      return NextResponse.json({
+        error: 'Failed to create gear offer',
+        details: process.env.NODE_ENV === 'development' ? insertError.message : undefined
+      }, { status: 500 });
     }
 
     return NextResponse.json({ gearOffer }, { status: 201 });
