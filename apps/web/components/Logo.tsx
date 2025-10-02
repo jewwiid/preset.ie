@@ -16,7 +16,7 @@ export function Logo({
   return (
     <div className="flex items-center">
       <Image
-        src="/logo.png"
+        src="/logo.svg"
         alt="Preset"
         width={size}
         height={size}

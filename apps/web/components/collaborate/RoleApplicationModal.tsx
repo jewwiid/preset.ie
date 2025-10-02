@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { X, Send, User, Star, MapPin, Calendar } from 'lucide-react';
+import { getAuthToken } from '@/lib/auth-utils';
 
 interface Role {
   id: string;
@@ -65,11 +66,19 @@ export default function RoleApplicationModal({
     setError(null);
 
     try {
+      const token = await getAuthToken();
+
+      if (!token) {
+        setError('You must be logged in to apply');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`/api/collab/projects/${project.id}/applications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           role_id: role.id,

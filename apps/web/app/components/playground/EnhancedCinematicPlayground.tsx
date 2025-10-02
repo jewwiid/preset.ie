@@ -11,17 +11,18 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Separator } from '../../../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
-import { 
-  Wand2, 
-  Camera, 
-  Search, 
-  Image as ImageIcon, 
+import {
+  Wand2,
+  Camera,
+  Search,
+  Image as ImageIcon,
   Settings,
   Zap,
   Eye,
   Download,
   Share2
 } from 'lucide-react';
+import { getAuthToken } from '@/lib/auth-utils';
 
 interface EnhancedCinematicPlaygroundProps {
   onEnhanceImage: (request: CinematicEnhancementRequest) => Promise<void>;
@@ -130,11 +131,19 @@ export default function EnhancedCinematicPlayground({
   const handleSearch = async () => {
     setIsSearching(true);
     try {
+      const token = await getAuthToken();
+
+      if (!token) {
+        console.error('No auth token available for search');
+        setIsSearching(false);
+        return;
+      }
+
       const response = await fetch('/api/search-cinematic', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           searchQuery,

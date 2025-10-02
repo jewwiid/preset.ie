@@ -6,11 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Bell, 
-  ShoppingBag, 
-  Euro, 
-  MessageSquare, 
+import {
+  Bell,
+  ShoppingBag,
+  Euro,
+  MessageSquare,
   Star,
   AlertCircle,
   CheckCircle,
@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { getAuthToken } from '@/lib/auth-utils';
 
 interface MarketplaceNotification {
   id: string;
@@ -73,14 +74,22 @@ export default function MarketplaceNotifications({
 
   const fetchNotifications = async () => {
     if (!user) return;
-    
+
     try {
       setLoading(true);
       setError(null);
 
+      const token = await getAuthToken();
+
+      if (!token) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`/api/marketplace/notifications?limit=${limit}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -101,10 +110,17 @@ export default function MarketplaceNotifications({
 
   const markAsRead = async (notificationId: string) => {
     try {
+      const token = await getAuthToken();
+
+      if (!token) {
+        console.error('No auth token available');
+        return;
+      }
+
       const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 

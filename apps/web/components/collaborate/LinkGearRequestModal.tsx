@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { X, Search, Package, MapPin, Star, CheckCircle } from 'lucide-react';
+import { getAuthToken } from '@/lib/auth-utils';
 
 interface GearRequest {
   id: string;
@@ -104,11 +105,19 @@ export default function LinkGearRequestModal({
     setError(null);
 
     try {
+      const token = await getAuthToken();
+
+      if (!token) {
+        setError('You must be logged in to link listings');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`/api/collab/projects/${projectId}/marketplace/link`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           gearRequestId: gearRequest.id,

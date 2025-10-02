@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { X, Package, MapPin, Euro } from 'lucide-react';
+import { getAuthToken } from '@/lib/auth-utils';
 
 interface GearRequest {
   id: string;
@@ -53,6 +54,14 @@ export default function GearRequestToListingModal({
     setError(null);
 
     try {
+      const token = await getAuthToken();
+
+      if (!token) {
+        setError('You must be logged in to create listings');
+        setLoading(false);
+        return;
+      }
+
       const listingData = {
         title: formData.title,
         description: formData.description,
@@ -67,7 +76,7 @@ export default function GearRequestToListingModal({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           gearRequestId: gearRequest.id,
