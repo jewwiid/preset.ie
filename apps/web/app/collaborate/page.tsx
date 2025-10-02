@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, MapPin, Users, Camera, Plus, Search, Filter, Mail, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { Calendar, MapPin, Users, Camera, Plus, Search, Filter, Mail, Edit, Trash2, MoreVertical, Eye } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '../../lib/supabase';
 import { PROJECT_STATUSES, SORT_OPTIONS, COMMON_COUNTRIES } from './filter-constants';
@@ -94,6 +94,7 @@ function CollaboratePageContent() {
     role_type: searchParams?.get('role_type') || '',
     gear_category: searchParams?.get('gear_category') || ''
   });
+  const [appliedFilters, setAppliedFilters] = useState(filters);
   const [sortBy, setSortBy] = useState(searchParams?.get('sort_by') || 'created_at');
 
   const fetchProjects = async (page = 1, view = 'all') => {
@@ -107,7 +108,7 @@ function CollaboratePageContent() {
         sort_by: sortBy,
         view: view,
         ...Object.fromEntries(
-          Object.entries(filters).filter(([_, value]) => 
+          Object.entries(appliedFilters).filter(([_, value]) => 
             value !== undefined && value !== '' && value !== 'all'
           )
         )
@@ -180,22 +181,29 @@ function CollaboratePageContent() {
 
   useEffect(() => {
     fetchProjects(1, activeTab);
-  }, [filters, sortBy, activeTab]);
+  }, [appliedFilters, sortBy, activeTab]);
 
   const handleFiltersChange = (newFilters: any) => {
     setFilters(newFilters);
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
+  const handleApplyFilters = () => {
+    setAppliedFilters(filters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
   const handleClearFilters = () => {
-    setFilters({
+    const clearedFilters = {
       search: '',
       status: 'all',
       city: '',
       country: '',
       role_type: '',
       gear_category: ''
-    });
+    };
+    setFilters(clearedFilters);
+    setAppliedFilters(clearedFilters);
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
@@ -366,9 +374,14 @@ function CollaboratePageContent() {
               </div>
 
               <div className="mt-4 flex justify-between">
-                <Button variant="outline" onClick={handleClearFilters}>
-                  Clear Filters
-                </Button>
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    Clear Filters
+                  </Button>
+                  <Button onClick={handleApplyFilters} className="bg-primary text-primary-foreground">
+                    Apply Filters
+                  </Button>
+                </div>
                 
                 <div className="flex items-center space-x-4">
                   <Select value={sortBy} onValueChange={setSortBy}>
@@ -439,7 +452,7 @@ function CollaboratePageContent() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map((project) => (
-                <Card key={project.id} className="hover:shadow-lg transition-shadow">
+                <Card key={project.id} className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer border-border hover:border-primary/50">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -513,7 +526,7 @@ function CollaboratePageContent() {
                     </div>
                     
                     <div className="mt-4 pt-4 border-t border-border">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center text-sm text-muted-foreground">
                           <span>by {project.creator.display_name}</span>
                         </div>
@@ -521,6 +534,12 @@ function CollaboratePageContent() {
                           {formatDate(project.created_at)}
                         </span>
                       </div>
+                      <Link href={`/collaborate/projects/${project.id}`}>
+                        <Button className="w-full" variant="outline">
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>
@@ -615,7 +634,7 @@ function CollaboratePageContent() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {projects.map((project) => (
-                  <Card key={project.id} className="hover:shadow-lg transition-shadow">
+                  <Card key={project.id} className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer border-border hover:border-primary/50">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -679,7 +698,8 @@ function CollaboratePageContent() {
                               size="sm"
                               onClick={() => window.location.href = `/collaborate/projects/${project.id}`}
                             >
-                              View
+                              <Eye className="h-4 w-4 mr-1" />
+                              View Details
                             </Button>
                           </div>
                           <Button
