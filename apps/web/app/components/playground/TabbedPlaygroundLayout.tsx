@@ -286,6 +286,7 @@ export default function TabbedPlaygroundLayout({
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
   const [deletingVideo, setDeletingVideo] = useState<string | null>(null)
   const [videoPrompt, setVideoPrompt] = useState('')
+  const [videoProvider, setVideoProvider] = useState<'seedream' | 'wan'>('seedream')
   const savedGalleryRef = useRef<SavedMediaGalleryRef>(null)
 
   const [removeBaseImageCallback, setRemoveBaseImageCallback] = useState<(() => void) | undefined>(undefined)
@@ -868,6 +869,10 @@ export default function TabbedPlaygroundLayout({
                 savedImages={savedImages}
                 onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
                 onPromptChange={setVideoPrompt}
+                userCredits={userCredits}
+                userSubscriptionTier={userSubscriptionTier}
+                selectedProvider={videoProvider}
+                onProviderChange={setVideoProvider}
               />
             </div>
           </div>

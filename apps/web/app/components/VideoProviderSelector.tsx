@@ -31,13 +31,13 @@ const providers: VideoProvider[] = [
   {
     id: 'wan',
     name: 'Wan 2.5',
-    description: 'Advanced video generation with superior motion quality (Coming Soon)',
-    features: ['Ultra-smooth motion', 'Extended duration', 'Advanced effects', '4K output'],
+    description: 'Advanced text-to-video and image-to-video generation',
+    features: ['Text-to-video', 'Image-to-video', 'High quality', 'Multiple resolutions'],
     speed: 'medium',
     quality: 'high',
     costPerCredit: 12,
     icon: <Zap className="h-5 w-5" />,
-    isAvailable: false,
+    isAvailable: true,
   },
 ];
 

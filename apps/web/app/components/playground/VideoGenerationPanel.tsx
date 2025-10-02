@@ -231,15 +231,35 @@ export default function VideoGenerationPanel({
 
   const handleGenerateVideo = async () => {
     const imageToUse = getCurrentImage()
-    if (!imageToUse) return
+    const promptToUse = videoSubject || videoPrompt || (enableCinematicMode ? enhancedPrompt : '')
+
+    // For Wan: allow text-to-video (no image) or image-to-video
+    // For Seedream: require image (image-to-video only)
+    if (selectedProvider === 'seedream' && !imageToUse) {
+      showFeedback({
+        type: 'error',
+        title: 'Error',
+        message: 'Seedream requires an image. Please select or upload an image.'
+      })
+      return
+    }
+
+    if (selectedProvider === 'wan' && !imageToUse && !promptToUse) {
+      showFeedback({
+        type: 'error',
+        title: 'Error',
+        message: 'Please provide either an image or a text prompt for video generation.'
+      })
+      return
+    }
 
     await onGenerateVideo({
-      imageUrl: imageToUse,
+      imageUrl: imageToUse || '', // Can be empty for Wan text-to-video
       duration: videoDuration,
       resolution: videoResolution,
       motionType,
       aspectRatio: selectedAspectRatio,
-      prompt: enableCinematicMode ? enhancedPrompt : videoPrompt,
+      prompt: promptToUse,
       yPosition: imageYPosition,
       cinematicParameters: enableCinematicMode ? cinematicParameters : undefined,
       includeTechnicalDetails,
@@ -421,7 +441,7 @@ export default function VideoGenerationPanel({
           onAspectRatioChange={setSelectedAspectRatio}
           onMotionTypeChange={setMotionType}
           onGenerate={handleGenerateVideo}
-          hasImage={!!getCurrentImage()}
+          hasImage={selectedProvider === 'wan' ? (!!getCurrentImage() || !!(videoSubject || videoPrompt)) : !!getCurrentImage()}
         />
       </CardContent>
     </Card>

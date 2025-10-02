@@ -58,34 +58,53 @@ export async function POST(request: NextRequest) {
     const requestBody = await request.json()
     console.log('📝 Request body:', requestBody)
     
-    const { 
-      imageUrl, 
-      duration, 
-      resolution, 
-      motionType, 
+    const {
+      imageUrl,
+      duration,
+      resolution,
+      motionType,
       aspectRatio,
       prompt,
       yPosition,
       projectId,
       cinematicParameters,
       includeTechnicalDetails,
-      includeStyleReferences
+      includeStyleReferences,
+      selectedProvider = 'seedream'
     } = requestBody
 
-    // Validate required fields
-    if (!imageUrl || !duration || !resolution || !motionType || !aspectRatio) {
-      console.log('❌ Missing required fields:', { imageUrl: !!imageUrl, duration: !!duration, resolution: !!resolution, motionType: !!motionType, aspectRatio: !!aspectRatio })
-      return NextResponse.json(
-        { success: false, error: 'Missing required fields: imageUrl, duration, resolution, motionType, aspectRatio' },
-        { status: 400 }
-      )
+    // Validate required fields based on provider
+    if (selectedProvider === 'wan') {
+      // Wan supports text-to-video (no image required) or image-to-video
+      if (!duration || !resolution || !aspectRatio) {
+        console.log('❌ Missing required fields for Wan:', { duration: !!duration, resolution: !!resolution, aspectRatio: !!aspectRatio })
+        return NextResponse.json(
+          { success: false, error: 'Missing required fields for Wan: duration, resolution, aspectRatio' },
+          { status: 400 }
+        )
+      }
+      if (!imageUrl && !prompt) {
+        return NextResponse.json(
+          { success: false, error: 'Either imageUrl or prompt is required for Wan video generation' },
+          { status: 400 }
+        )
+      }
+    } else {
+      // Seedream only supports image-to-video
+      if (!imageUrl || !duration || !resolution || !motionType || !aspectRatio) {
+        console.log('❌ Missing required fields for Seedream:', { imageUrl: !!imageUrl, duration: !!duration, resolution: !!resolution, motionType: !!motionType, aspectRatio: !!aspectRatio })
+        return NextResponse.json(
+          { success: false, error: 'Missing required fields for Seedream: imageUrl, duration, resolution, motionType, aspectRatio' },
+          { status: 400 }
+        )
+      }
     }
 
-    // Calculate credits based on duration and resolution
-    const baseCredits = 8
-    const durationMultiplier = duration > 5 ? 2 : 1
-    const resolutionMultiplier = resolution === '720p' ? 2 : 1
-    const creditsRequired = baseCredits + (durationMultiplier * resolutionMultiplier)
+    // Calculate credits based on provider, duration and resolution
+    const baseCredits = selectedProvider === 'wan' ? 12 : 8
+    const durationMultiplier = duration > 5 ? 1.5 : 1
+    const resolutionMultiplier = resolution === '720p' ? 1.5 : 1
+    const creditsRequired = Math.ceil(baseCredits * durationMultiplier * resolutionMultiplier)
 
     // Check user credits
     console.log('💰 Checking user credits for user:', user.id)
@@ -113,18 +132,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Process image based on aspect ratio and Y position
-    const processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
-    
-    console.log('🖼️ Image processing completed:', {
-      originalImageUrl: imageUrl,
-      processedImageUrl: processedImageUrl,
-      aspectRatio: aspectRatio,
-      resolution: resolution,
-      yPosition: yPosition,
-      customDimensions: getTargetDimensions(aspectRatio, resolution)
-    })
-
     // Enhance prompt with cinematic parameters if provided
     let enhancedPrompt = prompt
     if (cinematicParameters && Object.keys(cinematicParameters).length > 0) {
@@ -132,10 +139,40 @@ export async function POST(request: NextRequest) {
       console.log('🎬 Enhanced prompt with cinematic parameters:', enhancedPrompt)
     }
 
-    // Call WaveSpeed API for video generation
-    console.log('🚀 Calling WaveSpeed API with processed image...')
-    const videoResult = await generateVideoWithWaveSpeed(processedImageUrl, duration, resolution, motionType, enhancedPrompt)
-    console.log('✅ WaveSpeed API response:', videoResult)
+    let videoResult: { videoUrl: string; taskId: string }
+
+    // Choose provider and generation method
+    if (selectedProvider === 'wan') {
+      console.log('🚀 Using Wan 2.5 for video generation...')
+
+      if (imageUrl) {
+        // Wan image-to-video
+        console.log('🖼️ Wan image-to-video generation')
+        const processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
+        videoResult = await generateVideoWithWan(processedImageUrl, duration, resolution, aspectRatio, enhancedPrompt, true)
+      } else {
+        // Wan text-to-video
+        console.log('📝 Wan text-to-video generation')
+        videoResult = await generateVideoWithWan(null, duration, resolution, aspectRatio, enhancedPrompt, false)
+      }
+    } else {
+      // Seedream (existing implementation)
+      console.log('🚀 Using Seedream for image-to-video generation...')
+      const processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
+
+      console.log('🖼️ Image processing completed:', {
+        originalImageUrl: imageUrl,
+        processedImageUrl: processedImageUrl,
+        aspectRatio: aspectRatio,
+        resolution: resolution,
+        yPosition: yPosition,
+        customDimensions: getTargetDimensions(aspectRatio, resolution)
+      })
+
+      videoResult = await generateVideoWithWaveSpeed(processedImageUrl, duration, resolution, motionType, enhancedPrompt)
+    }
+
+    console.log('✅ Video generation API response:', videoResult)
 
     // Store generation parameters in database for later retrieval
     try {
@@ -442,5 +479,96 @@ async function enhancePromptWithCinematicParameters(
   } catch (error) {
     console.error('Error enhancing prompt with cinematic parameters:', error)
     return basePrompt // Fallback to original prompt
+  }
+}
+
+// Wan 2.5 video generation function
+async function generateVideoWithWan(
+  imageUrl: string | null,
+  duration: number,
+  resolution: string,
+  aspectRatio: string,
+  prompt: string,
+  isImageToVideo: boolean
+): Promise<{ videoUrl: string; taskId: string }> {
+  try {
+    let endpoint: string
+    let requestBody: any
+
+    if (isImageToVideo) {
+      // Wan image-to-video endpoint - uses resolution format (480p/720p/1080p)
+      endpoint = 'https://api.wavespeed.ai/api/v3/alibaba/wan-2.5/image-to-video'
+      requestBody = {
+        image: imageUrl,
+        prompt: prompt || 'Add natural motion to the scene',
+        resolution: resolution || '720p', // 480p, 720p, or 1080p
+        duration,
+        enable_prompt_expansion: false,
+        seed: -1
+      }
+    } else {
+      // Wan text-to-video endpoint - uses size format (width*height)
+      // Map aspect ratio to Wan size format
+      const sizeMap: { [key: string]: string } = {
+        '16:9': resolution === '720p' ? '1280*720' : resolution === '1080p' ? '1920*1080' : '832*480',
+        '9:16': resolution === '720p' ? '720*1280' : resolution === '1080p' ? '1080*1920' : '480*832',
+        '1:1': '1280*720', // Default to 16:9 for 1:1
+        '4:3': '1280*720',
+        '3:4': '720*1280'
+      }
+
+      const size = sizeMap[aspectRatio] || '1280*720'
+
+      endpoint = 'https://api.wavespeed.ai/api/v3/alibaba/wan-2.5/text-to-video'
+      requestBody = {
+        prompt: prompt || 'Create a video',
+        size,
+        duration,
+        enable_prompt_expansion: false,
+        seed: -1
+      }
+    }
+
+    console.log('🌊 Wan API request:', {
+      endpoint,
+      body: requestBody,
+      hasApiKey: !!wavespeedApiKey,
+      mode: isImageToVideo ? 'image-to-video' : 'text-to-video'
+    })
+
+    // Call Wan API
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${wavespeedApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      console.log('❌ Wan API error response:', errorData)
+      throw new Error(`Wan API error: ${errorData.message || 'Unknown error'}`)
+    }
+
+    const result = await response.json()
+    console.log('📋 Wan API result:', result)
+
+    if (result.code !== 200) {
+      console.log('❌ Wan API failed:', result.message)
+      throw new Error(`Wan API error: ${result.message}`)
+    }
+
+    // Return the task ID
+    console.log('✅ Wan video generation task created:', { taskId: result.data.id })
+    return {
+      videoUrl: '', // Will be populated when task completes
+      taskId: result.data.id
+    }
+
+  } catch (error) {
+    console.error('Wan video generation error:', error)
+    throw error
   }
 }
