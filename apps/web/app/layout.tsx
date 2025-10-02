@@ -19,11 +19,10 @@ export const metadata: Metadata = {
   description: "Connect creatives for shoots. Contributors post gigs, Talent applies. Free to start, subscription-based platform.",
   icons: {
     icon: [
-      { url: '/logo.svg', type: 'image/svg+xml' },
-      { url: '/logo.svg', sizes: 'any' }
+      { url: '/logo.png', sizes: '32x32', type: 'image/png' },
+      { url: '/logo.png', sizes: '192x192', type: 'image/png' },
     ],
-    apple: '/logo.svg',
-    shortcut: '/logo.svg',
+    apple: '/logo.png',
   },
   manifest: '/manifest.json',
 };

@@ -15,12 +15,13 @@ export function Logo({
 }: LogoProps) {
   return (
     <div className="flex items-center">
-      <Image 
-        src="/logo.svg" 
-        alt="Preset" 
+      <Image
+        src="/logo.png"
+        alt="Preset"
         width={size}
         height={size}
         className={className}
+        priority
       />
       {showText && (
         <span className={`ml-2 ${textClassName}`}>Preset</span>
