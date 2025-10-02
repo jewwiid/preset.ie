@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Build query
-    let query = supabase
+    // Build base query without pagination for counting
+    let baseQuery = supabase
       .from('collab_projects')
       .select(`
         *,
@@ -102,12 +102,11 @@ export async function GET(request: NextRequest) {
           )
         )
       `)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .order('created_at', { ascending: false });
 
-    // Apply view filter
+    // Apply view filter to base query
     if (view === 'my_projects' && currentUserId) {
-      query = query.eq('creator_id', currentUserId);
+      baseQuery = baseQuery.eq('creator_id', currentUserId);
     } else if (view === 'invited' && currentUserId) {
       // Fetch projects user has been invited to
       const { data: invitations } = await supabase
@@ -118,7 +117,7 @@ export async function GET(request: NextRequest) {
       
       if (invitations && invitations.length > 0) {
         const projectIds = invitations.map(inv => inv.project_id);
-        query = query.in('id', projectIds);
+        baseQuery = baseQuery.in('id', projectIds);
       } else {
         // No invitations, return empty result
         return NextResponse.json({
@@ -128,31 +127,32 @@ export async function GET(request: NextRequest) {
       }
     } else {
       // Default: show public projects only
-      query = query.eq('visibility', 'public');
+      baseQuery = baseQuery.eq('visibility', 'public');
     }
 
-    // Apply filters
+    // Apply filters to base query
     if (status) {
-      query = query.eq('status', status);
+      baseQuery = baseQuery.eq('status', status);
     }
     
     if (city) {
-      query = query.ilike('city', `%${city}%`);
+      baseQuery = baseQuery.ilike('city', `%${city}%`);
     }
     
     if (country) {
-      query = query.eq('country', country);
+      baseQuery = baseQuery.eq('country', country);
     }
     
     if (startDate) {
-      query = query.gte('start_date', startDate);
+      baseQuery = baseQuery.gte('start_date', startDate);
     }
     
     if (endDate) {
-      query = query.lte('end_date', endDate);
+      baseQuery = baseQuery.lte('end_date', endDate);
     }
 
-    const { data: projects, error, count } = await query;
+    // Get all projects first (for filtering and counting)
+    const { data: allProjects, error } = await baseQuery;
 
     if (error) {
       console.error('Error fetching projects:', error);
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter by role type or gear category if specified
-    let filteredProjects = projects || [];
+    let filteredProjects = allProjects || [];
     
     if (roleType) {
       filteredProjects = filteredProjects.filter(project => 
@@ -181,13 +181,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Calculate the actual total after filtering
+    const actualTotal = filteredProjects.length;
+    
+    // Apply pagination to filtered results
+    const paginatedProjects = filteredProjects.slice(offset, offset + limit);
+
     return NextResponse.json({
-      projects: filteredProjects,
+      projects: paginatedProjects,
       pagination: {
         page,
         limit,
-        total: count || 0,
-        pages: Math.ceil((count || 0) / limit)
+        total: actualTotal,
+        pages: Math.ceil(actualTotal / limit)
       }
     });
 
