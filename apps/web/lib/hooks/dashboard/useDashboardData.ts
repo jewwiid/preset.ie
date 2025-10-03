@@ -116,7 +116,8 @@ export const useDashboardData = () => {
     } finally {
       setMatchmakingLoading(false)
     }
-  }, [user, userRole])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // Simplified to prevent loops
 
   const loadRecentMessages = useCallback(async () => {
     if (!user || !supabase) return
@@ -181,7 +182,8 @@ export const useDashboardData = () => {
     } finally {
       setMessagesLoading(false)
     }
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // Simplified to prevent loops
 
   const loadDashboardData = useCallback(async (profileData?: UserProfile) => {
     const currentProfile = profileData || profile
@@ -227,7 +229,8 @@ export const useDashboardData = () => {
     } catch (err) {
       console.error('Error loading dashboard data:', err)
     }
-  }, [user, profile, userRole, loadMatchmakingData, loadRecentMessages])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // Simplified dependencies to prevent loops
 
   const fetchProfile = useCallback(async () => {
     if (!user || !supabase) return
@@ -254,13 +257,15 @@ export const useDashboardData = () => {
     } finally {
       setLoading(false)
     }
-  }, [user, loadDashboardData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // Only depend on user ID to prevent infinite loops
 
   useEffect(() => {
     if (user) {
       fetchProfile()
     }
-  }, [user, fetchProfile])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]) // Only re-run when user ID changes, not the whole user object
 
   return {
     profile,

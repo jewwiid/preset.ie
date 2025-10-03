@@ -48,6 +48,7 @@ interface VideoGenerationPanelProps {
   onPromptChange?: (prompt: string) => void
   onAspectRatioChange?: (aspectRatio: string) => void
   onResolutionChange?: (resolution: string) => void
+  onActiveImageChange?: (imageUrl: string | null) => void
 }
 
 export default function VideoGenerationPanel({
@@ -63,7 +64,8 @@ export default function VideoGenerationPanel({
   onProviderChange,
   onPromptChange,
   onAspectRatioChange,
-  onResolutionChange
+  onResolutionChange,
+  onActiveImageChange
 }: VideoGenerationPanelProps) {
   // Form state
   const [videoDuration, setVideoDuration] = useState(5)
@@ -75,6 +77,16 @@ export default function VideoGenerationPanel({
   const [videoStyle, setVideoStyle] = useState('')
   const [isEnhancing, setIsEnhancing] = useState(false)
   const [videoSubject, setVideoSubject] = useState('')
+
+  // Auto-correct duration when switching to Wan (only allows 5 or 10)
+  useEffect(() => {
+    if (selectedProvider === 'wan' && videoDuration !== 5 && videoDuration !== 10) {
+      // Round to nearest valid value
+      const validDuration = videoDuration < 7.5 ? 5 : 10
+      console.log(`⚠️ Auto-correcting duration from ${videoDuration}s to ${validDuration}s for Wan`)
+      setVideoDuration(validDuration)
+    }
+  }, [selectedProvider, videoDuration])
 
   // Image source state
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
@@ -89,6 +101,17 @@ export default function VideoGenerationPanel({
   const [includeTechnicalDetails, setIncludeTechnicalDetails] = useState(true)
   const [includeStyleReferences, setIncludeStyleReferences] = useState(true)
   const [enhancedPrompt, setEnhancedPrompt] = useState('')
+
+  // Auto-enable cinematic mode when parameters are selected
+  useEffect(() => {
+    const hasParameters = Object.keys(cinematicParameters).length > 0 &&
+      Object.values(cinematicParameters).some(val => val !== undefined && val !== null && val !== '')
+
+    if (hasParameters && !enableCinematicMode) {
+      console.log('🎬 Auto-enabling cinematic mode due to parameter selection')
+      setEnableCinematicMode(true)
+    }
+  }, [cinematicParameters, enableCinematicMode])
 
   // Preset state
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
@@ -266,13 +289,17 @@ export default function VideoGenerationPanel({
     }
   }, [videoPrompt, cinematicParameters, includeTechnicalDetails, includeStyleReferences, enableCinematicMode])
 
-  // Notify parent of prompt changes
+  // Notify parent of prompt changes - use enhanced prompt if available
   useEffect(() => {
-    const currentPrompt = videoSubject || videoPrompt
-    if (onPromptChange && currentPrompt) {
-      onPromptChange(currentPrompt)
+    if (onPromptChange) {
+      const currentPrompt = enableCinematicMode && enhancedPrompt
+        ? enhancedPrompt
+        : videoPrompt || videoSubject
+      if (currentPrompt) {
+        onPromptChange(currentPrompt)
+      }
     }
-  }, [videoSubject, videoPrompt, onPromptChange])
+  }, [videoSubject, videoPrompt, enhancedPrompt, enableCinematicMode, onPromptChange])
 
   // Notify parent of aspect ratio changes
   useEffect(() => {
@@ -287,6 +314,14 @@ export default function VideoGenerationPanel({
       onResolutionChange(videoResolution)
     }
   }, [videoResolution, onResolutionChange])
+
+  // Notify parent of active image changes
+  useEffect(() => {
+    if (onActiveImageChange) {
+      const currentImage = getCurrentImage()
+      onActiveImageChange(currentImage)
+    }
+  }, [uploadedImage, selectedImage, activeImageSource, onActiveImageChange, getCurrentImage])
 
   // Debug: Log savedImages prop
   useEffect(() => {
@@ -482,7 +517,11 @@ export default function VideoGenerationPanel({
 
   const handleGenerateVideo = async () => {
     const imageToUse = getCurrentImage()
-    const promptToUse = videoSubject || videoPrompt || (enableCinematicMode ? enhancedPrompt : '')
+    // Use enhanced prompt if cinematic mode is on, otherwise use video prompt (which includes style)
+    // Only fall back to videoSubject if neither are available
+    const promptToUse = enableCinematicMode && enhancedPrompt
+      ? enhancedPrompt
+      : videoPrompt || videoSubject || ''
 
     // Seedream: image-to-video only (requires image)
     // Wan: supports both text-to-video and image-to-video
@@ -503,6 +542,15 @@ export default function VideoGenerationPanel({
       })
       return
     }
+
+    console.log('🎬 Prompt selection:', {
+      videoSubject,
+      videoPrompt,
+      enhancedPrompt,
+      enableCinematicMode,
+      selectedPrompt: promptToUse,
+      hasCinematicParams: Object.keys(cinematicParameters).length > 0
+    })
 
     await onGenerateVideo({
       imageUrl: imageToUse || '', // Can be empty for Wan text-to-video
@@ -714,6 +762,11 @@ export default function VideoGenerationPanel({
               <div className="flex items-center gap-2">
                 <Wand2 className="h-5 w-5" />
                 <CardTitle className="text-sm">Cinematic Mode</CardTitle>
+                {enableCinematicMode && (
+                  <span className="text-xs text-primary font-medium px-2 py-0.5 bg-primary/10 rounded-full">
+                    Active
+                  </span>
+                )}
               </div>
               <Switch
                 checked={enableCinematicMode}
@@ -721,7 +774,10 @@ export default function VideoGenerationPanel({
               />
             </div>
             <CardDescription className="text-xs">
-              Enable professional cinematic parameters for enhanced video generation
+              {enableCinematicMode
+                ? 'Professional cinematic parameters are active and will enhance your prompt'
+                : 'Enable to apply professional cinematic parameters to your video'
+              }
             </CardDescription>
           </CardHeader>
           {enableCinematicMode && (
@@ -755,6 +811,7 @@ export default function VideoGenerationPanel({
           onMotionTypeChange={setMotionType}
           onGenerate={handleGenerateVideo}
           hasImage={canGenerate}
+          selectedProvider={selectedProvider}
         />
       </CardContent>
     </Card>

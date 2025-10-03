@@ -20,6 +20,7 @@ interface VideoSettingsProps {
   onMotionTypeChange: (motionType: string) => void
   onGenerate: () => void
   hasImage: boolean
+  selectedProvider?: 'seedream' | 'wan'
 }
 
 export function VideoSettings({
@@ -35,7 +36,8 @@ export function VideoSettings({
   onAspectRatioChange,
   onMotionTypeChange,
   onGenerate,
-  hasImage
+  hasImage,
+  selectedProvider = 'seedream'
 }: VideoSettingsProps) {
   const calculateDimensions = (aspectRatio: string, resolution: string) => {
     const [widthRatio, heightRatio] = aspectRatio.split(':').map(Number)
@@ -73,18 +75,37 @@ export function VideoSettings({
           <Label htmlFor="duration" className="text-sm">
             Duration: {duration}s
           </Label>
-          <Slider
-            value={[duration]}
-            onValueChange={(value) => onDurationChange(Array.isArray(value) ? value[0] : value)}
-            min={5}
-            max={10}
-            step={1}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>5s</span>
-            <span>10s</span>
-          </div>
+          {selectedProvider === 'wan' ? (
+            <Select value={duration.toString()} onValueChange={(value) => onDurationChange(parseInt(value))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5 seconds</SelectItem>
+                <SelectItem value="10">10 seconds</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <>
+              <Slider
+                value={[duration]}
+                onValueChange={(value) => onDurationChange(Array.isArray(value) ? value[0] : value)}
+                min={5}
+                max={10}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>5s</span>
+                <span>10s</span>
+              </div>
+            </>
+          )}
+          {selectedProvider === 'wan' && (
+            <p className="text-xs text-muted-foreground">
+              Wan supports 5s or 10s only
+            </p>
+          )}
         </div>
 
         {/* Motion Type */}

@@ -107,27 +107,9 @@ export function NavBar() {
     })
 
     if (user && !loading) {
-      // Verify session is actually available before fetching profile
-      const verifyAndFetch = async () => {
-        try {
-          if (!supabase) return
-
-          const { data: { session } } = await supabase.auth.getSession()
-
-          if (session?.user) {
-            console.log('🎯 NavBar: Session verified, fetching profile...')
-            fetchProfileSimple()
-          } else {
-            console.log('⚠️ NavBar: User exists but no session found, waiting...')
-            // Retry after a short delay
-            setTimeout(verifyAndFetch, 500)
-          }
-        } catch (error) {
-          console.error('❌ NavBar: Session verification failed:', error)
-        }
-      }
-
-      verifyAndFetch()
+      // Directly fetch profile - trust AuthContext's session management
+      console.log('🎯 NavBar: User authenticated, fetching profile...')
+      fetchProfileSimple()
     } else {
       console.log('⏸️ NavBar: No user or still loading, clearing profile')
       setProfile(null)
@@ -159,72 +141,51 @@ export function NavBar() {
     }
   }, [user, loading])
 
-  const fetchProfileSimple = async (retryCount = 0) => {
+  const fetchProfileSimple = async () => {
     if (!user) return
     if (!supabase) {
       console.error('Supabase client not available')
       return
     }
-    
+
     // Check if profile fetching is disabled (e.g., during OAuth callback)
     if ((window as any).__disableNavBarProfileFetch) {
       console.log('⏸️ NavBar: Profile fetching disabled, skipping...')
       return
     }
-    
+
     // Check if we should trigger a retry (from OAuth callback)
     if ((window as any).__triggerNavBarProfileFetch) {
       console.log('🚀 NavBar: Triggered profile fetch retry from OAuth callback')
       ;(window as any).__triggerNavBarProfileFetch = false
     }
-    
-    console.log(`🚀 NavBar: Simple profile fetch started${retryCount > 0 ? ` (retry ${retryCount})` : ''}`)
+
+    console.log('🚀 NavBar: Fetching profile...')
     setProfileLoading(true)
-    if (retryCount === 0) {
-      setProfileFetchFailed(false)
-    }
-    
+    setProfileFetchFailed(false)
+
     try {
-      // Reduced timeout to 5 seconds for faster failure detection
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
-      )
-      
-      const fetchPromise = supabase!
+      const { data, error } = await supabase
         .from('users_profile')
         .select('avatar_url, display_name, role_flags, handle')
         .eq('user_id', user.id)
         .maybeSingle()
 
-      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any
-
       if (error) {
-        console.warn('❌ NavBar: Simple profile fetch failed:', error.message)
-        // Retry once if it's a network error and we haven't retried yet
-        if (retryCount === 0 && (error.message.includes('timeout') || error.message.includes('network'))) {
-          console.log('🔄 NavBar: Retrying profile fetch...')
-          setTimeout(() => fetchProfileSimple(1), 1000)
-          return
-        }
+        console.warn('❌ NavBar: Profile fetch failed:', error.message)
         setProfile(null)
         setProfileFetchFailed(true)
       } else if (data) {
-        console.log('✅ NavBar: Simple profile fetch success:', { hasAvatar: !!data.avatar_url })
+        console.log('✅ NavBar: Profile fetch success')
         setProfile(data)
         setIsAdmin(data.role_flags?.includes('ADMIN'))
         setProfileFetchFailed(false)
       } else {
-        console.log('ℹ️ NavBar: No profile found for user, setting profile to null')
+        console.log('ℹ️ NavBar: No profile found for user')
         setProfile(null)
       }
     } catch (error: any) {
-      console.error('💥 NavBar: Simple profile fetch error:', error.message)
-      // Retry once for timeout errors
-      if (retryCount === 0 && error.message.includes('timeout')) {
-        console.log('🔄 NavBar: Retrying profile fetch after timeout...')
-        setTimeout(() => fetchProfileSimple(1), 2000)
-        return
-      }
+      console.error('💥 NavBar: Profile fetch error:', error.message)
       setProfile(null)
       setProfileFetchFailed(true)
     } finally {

@@ -8,15 +8,27 @@ export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.error('Missing or invalid authorization header');
       return NextResponse.json({ error: 'Authorization required' }, { status: 401 });
     }
     const token = authHeader.replace('Bearer ', '');
 
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase configuration');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 });
+    if (userError) {
+      console.error('Error verifying user token:', userError);
+      return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 });
+    }
+
+    if (!user) {
+      console.error('No user found for token');
+      return NextResponse.json({ error: 'User not found' }, { status: 401 });
     }
 
     // Get user's presets

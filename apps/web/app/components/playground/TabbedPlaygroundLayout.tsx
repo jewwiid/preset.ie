@@ -179,6 +179,8 @@ export default function TabbedPlaygroundLayout({
   }, [onGenerate, scrollToPreview])
 
   const handleVideoGenerate = useCallback(async (...args: any[]) => {
+    // Clear selected video to show loading state
+    setSelectedVideo(null)
     if (videoPreviewRef.current) {
       scrollToPreview(videoPreviewRef)
     }
@@ -325,6 +327,20 @@ export default function TabbedPlaygroundLayout({
   const [videoProvider, setVideoProvider] = useState<'seedream' | 'wan'>('seedream')
   const [videoAspectRatio, setVideoAspectRatio] = useState('16:9')
   const [videoResolution, setVideoResolution] = useState('480p')
+  const [videoSourceImage, setVideoSourceImage] = useState<string | null>(null)
+  // Track temporary unsaved videos
+  const [tempVideos, setTempVideos] = useState<Array<{
+    id: string
+    url: string
+    title: string
+    duration?: number
+    resolution?: string
+    aspectRatio?: string
+    generated_at: string
+    is_saved: boolean
+    source: string
+    prompt?: string
+  }>>([])
   const savedGalleryRef = useRef<SavedMediaGalleryRef>(null)
 
   const [removeBaseImageCallback, setRemoveBaseImageCallback] = useState<(() => void) | undefined>(undefined)
@@ -469,6 +485,48 @@ export default function TabbedPlaygroundLayout({
     fetchVideos()
   }, [fetchVideos])
 
+  // Add newly generated video to temp videos when it becomes available
+  useEffect(() => {
+    if (generatedVideoUrl && generatedVideoMetadata) {
+      // Check if this video is already in tempVideos or savedVideos
+      const alreadyInTemp = tempVideos.some(v => v.url === generatedVideoUrl)
+      const alreadySaved = savedVideos.some(v => v.url === generatedVideoUrl)
+
+      if (!alreadyInTemp && !alreadySaved) {
+        console.log('🎬 Adding new video to temp list:', generatedVideoUrl)
+        const newTempVideo = {
+          id: 'temp-' + Date.now(),
+          url: generatedVideoUrl,
+          title: 'Just Generated',
+          duration: generatedVideoMetadata?.duration,
+          resolution: generatedVideoMetadata?.resolution,
+          aspectRatio: generatedVideoMetadata?.aspectRatio,
+          generated_at: new Date().toISOString(),
+          is_saved: false,
+          source: 'new',
+          prompt: generatedVideoMetadata?.prompt
+        }
+        setTempVideos(prev => [newTempVideo, ...prev])
+        // Auto-select the newly generated video
+        setSelectedVideo(generatedVideoUrl)
+      }
+    }
+  }, [generatedVideoUrl, generatedVideoMetadata, savedVideos])
+
+  // Combine saved videos with temporary unsaved videos
+  const displayVideos = useMemo(() => {
+    const videos = [...savedVideos]
+
+    // Add all temporary videos that aren't already saved
+    tempVideos.forEach(tempVideo => {
+      if (!savedVideos.some(v => v.url === tempVideo.url)) {
+        videos.unshift(tempVideo)
+      }
+    })
+
+    return videos
+  }, [savedVideos, tempVideos])
+
   // Expose refresh function to parent component
   const refreshVideos = useCallback(() => {
     return fetchVideos()
@@ -543,43 +601,64 @@ export default function TabbedPlaygroundLayout({
     if (isNewlyGeneratedVideo && generatedVideoMetadata) {
       // This is the newly generated video, use the metadata we stored
       console.log('🎬 Saving newly generated video with metadata:', generatedVideoMetadata)
-      
+
       try {
+        const requestBody = {
+          videoUrl: url,
+          title: `Video - ${new Date().toLocaleDateString()}`,
+          description: generatedVideoMetadata.prompt,
+          tags: ['ai-generated', 'video'],
+          projectId: null,
+          duration: generatedVideoMetadata.duration,
+          resolution: generatedVideoMetadata.resolution,
+          aspectRatio: generatedVideoMetadata.aspectRatio,
+          motionType: generatedVideoMetadata.motionType,
+          prompt: generatedVideoMetadata.prompt,
+          generationMetadata: {
+            generated_at: new Date().toISOString(),
+            credits_used: 8,
+            duration: generatedVideoMetadata.duration,
+            resolution: generatedVideoMetadata.resolution,
+            aspect_ratio: generatedVideoMetadata.aspectRatio,
+            motion_type: generatedVideoMetadata.motionType,
+            prompt: generatedVideoMetadata.prompt
+          }
+        }
+
+        console.log('🎬 Sending video save request:', requestBody)
+
         const response = await fetch('/api/playground/save-video-to-gallery', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${sessionToken}`
           },
-          body: JSON.stringify({
-            videoUrl: url,
-            title: `Video - ${new Date().toLocaleDateString()}`,
-            description: generatedVideoMetadata.prompt,
-            tags: ['ai-generated', 'video'],
-            projectId: null,
-            duration: generatedVideoMetadata.duration,
-            resolution: generatedVideoMetadata.resolution,
-            aspectRatio: generatedVideoMetadata.aspectRatio,
-            motionType: generatedVideoMetadata.motionType,
-            prompt: generatedVideoMetadata.prompt,
-            generationMetadata: {
-              generated_at: new Date().toISOString(),
-              credits_used: 8,
-              duration: generatedVideoMetadata.duration,
-              resolution: generatedVideoMetadata.resolution,
-              aspect_ratio: generatedVideoMetadata.aspectRatio,
-              motion_type: generatedVideoMetadata.motionType,
-              prompt: generatedVideoMetadata.prompt
-            }
-          })
+          body: JSON.stringify(requestBody)
         })
 
         if (response.ok) {
           console.log('✅ Newly generated video saved with metadata')
+          // Remove from temp videos since it's now saved
+          setTempVideos(prev => prev.filter(v => v.url !== url))
           refreshVideos() // Refresh the video list
         } else {
-          const errorData = await response.json()
-          console.error('❌ Video save failed:', errorData)
+          let errorData: any = {}
+          try {
+            errorData = await response.json()
+          } catch (e) {
+            const text = await response.text()
+            console.error('❌ Video save failed - Response not JSON:', {
+              status: response.status,
+              statusText: response.statusText,
+              text
+            })
+            return
+          }
+          console.error('❌ Video save failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorData
+          })
         }
       } catch (error) {
         console.error('❌ Video save error:', error)
@@ -599,10 +678,25 @@ export default function TabbedPlaygroundLayout({
     if (!sessionToken) return
 
     setDeletingVideo(videoUrl)
-    
+
     try {
       console.log('🗑️ Deleting video:', videoUrl)
-      
+
+      // Check if this is a temp video (unsaved)
+      const isTempVideo = tempVideos.some(v => v.url === videoUrl)
+
+      if (isTempVideo) {
+        // Just remove from temp list, no API call needed
+        console.log('🗑️ Removing temp video from list')
+        setTempVideos(prev => prev.filter(v => v.url !== videoUrl))
+
+        // Clear selection if the deleted video was selected
+        if (selectedVideo === videoUrl) {
+          setSelectedVideo(null)
+        }
+        return
+      }
+
       const response = await fetch('/api/playground/delete-video', {
         method: 'DELETE',
         headers: {
@@ -615,10 +709,10 @@ export default function TabbedPlaygroundLayout({
       if (response.ok) {
         const result = await response.json()
         console.log('✅ Video deleted successfully:', result)
-        
+
         // Refresh videos list
         await fetchVideos()
-        
+
         // Clear selection if the deleted video was selected
         if (selectedVideo === videoUrl) {
           setSelectedVideo(null)
@@ -634,7 +728,7 @@ export default function TabbedPlaygroundLayout({
     } finally {
       setDeletingVideo(null)
     }
-  }, [sessionToken, selectedVideo, fetchVideos])
+  }, [sessionToken, selectedVideo, fetchVideos, tempVideos])
 
   return (
     <div className="space-y-6">
@@ -890,11 +984,11 @@ export default function TabbedPlaygroundLayout({
             {/* Full Width Video Preview Area */}
             <div ref={videoPreviewRef} className="w-full" data-preview-area>
               <VideoPreviewArea
-                sourceImage={selectedImage}
+                sourceImage={videoSourceImage || selectedImage}
                 aspectRatio={videoAspectRatio}
                 resolution={videoResolution}
                 prompt={videoPrompt}
-                videos={savedVideos}
+                videos={displayVideos}
                 selectedVideo={selectedVideo}
                 onSelectVideo={setSelectedVideo}
                 onSaveToGallery={handleSaveToGallery}
@@ -918,6 +1012,7 @@ export default function TabbedPlaygroundLayout({
                 onPromptChange={setVideoPrompt}
                 onAspectRatioChange={setVideoAspectRatio}
                 onResolutionChange={setVideoResolution}
+                onActiveImageChange={setVideoSourceImage}
                 userCredits={userCredits}
                 userSubscriptionTier={userSubscriptionTier}
                 selectedProvider={videoProvider}

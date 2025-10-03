@@ -143,14 +143,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    // Listen for visibility changes to refresh session when tab becomes active
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && supabase) {
+        console.log('Tab became visible, refreshing session...')
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            console.log('Session refreshed on visibility change')
+            setSession(session)
+            setUser(session?.user ?? null)
+            if (session?.user) {
+              getUserRole(session.user.id).then(setUserRole).catch(() => setUserRole(null))
+            }
+          }
+        })
+      }
+    }
+
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', handleStorageChange)
+      document.addEventListener('visibilitychange', handleVisibilityChange)
     }
 
     return () => {
       subscription.unsubscribe()
       if (typeof window !== 'undefined') {
         window.removeEventListener('storage', handleStorageChange)
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
       }
     }
   }, [])

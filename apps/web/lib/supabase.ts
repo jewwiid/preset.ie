@@ -12,10 +12,8 @@ export const supabase = supabaseUrl && supabaseAnonKey
         autoRefreshToken: true,
         detectSessionInUrl: true,
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-        // Don't override storageKey - let Supabase use its default pattern
-        // This ensures proper cross-tab synchronization
         flowType: 'pkce',
-        debug: process.env.NODE_ENV === 'development'
+        debug: false // Disable debug to reduce noise
       },
       realtime: {
         params: {
