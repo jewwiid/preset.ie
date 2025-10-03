@@ -478,7 +478,7 @@ export default function UnifiedImageGenerationPanel({
           setShowAnalysisModal(false)
           setShowSavePresetDialog(true)
         }}
-        subscriptionTier={userRole === 'pro' ? 'pro' : userRole === 'plus' ? 'plus' : 'free'}
+        subscriptionTier="free"
       />
     </>
   )

@@ -159,11 +159,11 @@ export default function TabbedPlaygroundLayout({
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
 
   // Refs for scrolling to preview areas
-  const imagePreviewRef = useRef<HTMLDivElement>(null)
-  const videoPreviewRef = useRef<HTMLDivElement>(null)
+  const imagePreviewRef = useRef<HTMLDivElement | null>(null)
+  const videoPreviewRef = useRef<HTMLDivElement | null>(null)
 
   // Scroll helper function
-  const scrollToPreview = useCallback((ref: React.RefObject<HTMLDivElement>) => {
+  const scrollToPreview = useCallback((ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
       ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
@@ -171,13 +171,17 @@ export default function TabbedPlaygroundLayout({
 
   // Wrapped generate functions with scroll
   const handleImageGenerate = useCallback(async (...args: any[]) => {
-    scrollToPreview(imagePreviewRef)
+    if (imagePreviewRef.current) {
+      scrollToPreview(imagePreviewRef)
+    }
     // @ts-ignore
     return onGenerate(...args)
   }, [onGenerate, scrollToPreview])
 
   const handleVideoGenerate = useCallback(async (...args: any[]) => {
-    scrollToPreview(videoPreviewRef)
+    if (videoPreviewRef.current) {
+      scrollToPreview(videoPreviewRef)
+    }
     // @ts-ignore
     return onGenerateVideo(...args)
   }, [onGenerateVideo, scrollToPreview])
