@@ -53,7 +53,7 @@ export default function UnifiedImageGenerationPanel({
   onPromptChange: propOnPromptChange,
   onEnhancedPromptChange: propOnEnhancedPromptChange
 }: UnifiedImageGenerationPanelProps) {
-  const { user, session } = useAuth()
+  const { user, session, userRole } = useAuth()
   const { showFeedback } = useFeedback()
 
   // Local state for generation mode
@@ -478,7 +478,7 @@ export default function UnifiedImageGenerationPanel({
           setShowAnalysisModal(false)
           setShowSavePresetDialog(true)
         }}
-        subscriptionTier="free"
+        subscriptionTier={userRole === 'pro' ? 'pro' : userRole === 'plus' ? 'plus' : 'free'}
       />
     </>
   )

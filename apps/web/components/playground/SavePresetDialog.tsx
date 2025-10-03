@@ -19,6 +19,10 @@ interface SavePresetDialogProps {
   numImages: number
   enableCinematicMode: boolean
   cinematicParameters: Partial<CinematicParameters>
+  // Optional video-specific fields
+  isVideoMode?: boolean
+  videoPrompt?: string
+  generationMode?: 'image' | 'video' | 'both'
 }
 
 export function SavePresetDialog({
@@ -34,13 +38,19 @@ export function SavePresetDialog({
   intensity,
   numImages,
   enableCinematicMode,
-  cinematicParameters
+  cinematicParameters,
+  isVideoMode = false,
+  videoPrompt,
+  generationMode = 'both'
 }: SavePresetDialogProps) {
   const handleSave = () => {
+    const finalPrompt = enableCinematicMode ? enhancedPrompt : prompt
+
     const queryParams = new URLSearchParams({
       name: userSubject ? `${style} ${userSubject}` : `${style} preset`,
       description: `Preset with ${style} style${userSubject ? ` for ${userSubject}` : ''}`,
-      prompt_template: enableCinematicMode ? enhancedPrompt : prompt,
+      prompt_template: finalPrompt,
+      generation_mode: generationMode,
       style: style,
       resolution: resolution,
       aspect_ratio: aspectRatio,
@@ -49,6 +59,7 @@ export function SavePresetDialog({
       num_images: numImages.toString(),
       is_public: 'false',
       ...(userSubject && { subject: userSubject }),
+      ...(videoPrompt && { prompt_template_video: videoPrompt }),
       ...(enableCinematicMode && Object.keys(cinematicParameters).length > 0 ? {
         cinematic_parameters: JSON.stringify(cinematicParameters),
         enable_cinematic_mode: 'true'

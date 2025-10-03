@@ -118,6 +118,13 @@ interface TabbedPlaygroundLayoutProps {
   sessionToken?: string
   videoGenerationStatus: 'idle' | 'generating' | 'completed'
   generatedVideoUrl: string | null
+  generatedVideoMetadata?: {
+    aspectRatio: string
+    resolution: string
+    duration: number
+    prompt: string
+    motionType: string
+  } | null
   onExpandMedia?: (media: any) => void
   onVideoGenerated?: () => void // Callback when video generation completes
 }
@@ -144,12 +151,37 @@ export default function TabbedPlaygroundLayout({
   sessionToken,
   videoGenerationStatus,
   generatedVideoUrl,
+  generatedVideoMetadata,
   onExpandMedia,
   onVideoGenerated
 }: TabbedPlaygroundLayoutProps) {
   const [activeTab, setActiveTab] = useState('generate')
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
-  
+
+  // Refs for scrolling to preview areas
+  const imagePreviewRef = useRef<HTMLDivElement>(null)
+  const videoPreviewRef = useRef<HTMLDivElement>(null)
+
+  // Scroll helper function
+  const scrollToPreview = useCallback((ref: React.RefObject<HTMLDivElement>) => {
+    if (ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [])
+
+  // Wrapped generate functions with scroll
+  const handleImageGenerate = useCallback(async (...args: any[]) => {
+    scrollToPreview(imagePreviewRef)
+    // @ts-ignore
+    return onGenerate(...args)
+  }, [onGenerate, scrollToPreview])
+
+  const handleVideoGenerate = useCallback(async (...args: any[]) => {
+    scrollToPreview(videoPreviewRef)
+    // @ts-ignore
+    return onGenerateVideo(...args)
+  }, [onGenerateVideo, scrollToPreview])
+
   // Debug: Log when selectedPreset changes
   useEffect(() => {
     console.log('🎯 Parent selectedPreset changed:', selectedPreset)
@@ -399,10 +431,13 @@ export default function TabbedPlaygroundLayout({
   }, [activeTab, additionalPreviewImages, onSelectImage])
 
   const fetchVideos = useCallback(async () => {
-    if (!sessionToken) return
+    if (!sessionToken) {
+      console.log('⚠️ Skipping video fetch - no session token')
+      return []
+    }
 
     try {
-      console.log('🎬 Fetching videos...')
+      console.log('🎬 Fetching videos with token:', sessionToken?.substring(0, 20) + '...')
       const response = await fetch('/api/playground/videos', {
         headers: {
           'Authorization': `Bearer ${sessionToken}`
@@ -415,7 +450,8 @@ export default function TabbedPlaygroundLayout({
         setSavedVideos(data.videos)
         return data.videos
       } else {
-        console.error('❌ Failed to fetch videos:', response.statusText)
+        const errorText = await response.text()
+        console.error('❌ Failed to fetch videos:', response.status, response.statusText, errorText)
         return []
       }
     } catch (error) {
@@ -487,15 +523,22 @@ export default function TabbedPlaygroundLayout({
   }, [videoGenerationStatus, generatedVideoUrl, refreshVideos, onVideoGenerated])
 
   const handleSaveToGallery = useCallback(async (url: string) => {
+    // Check if this is the newly generated video
+    const isNewlyGeneratedVideo = url === generatedVideoUrl && generatedVideoMetadata
+
     // Check if this is a video URL by looking in savedVideos
     const videoData = savedVideos.find(video => video.url === url)
-    
-    console.log('🎬 Video data found:', videoData)
-    console.log('🎬 Aspect ratio:', videoData?.aspectRatio)
-    
-    if (videoData && videoData.aspectRatio) {
-      // This is a video with aspect ratio metadata, use the video save API directly
-      console.log('🎬 Saving video with aspect ratio:', videoData.aspectRatio)
+
+    console.log('🎬 Video save check:', {
+      url,
+      isNewlyGenerated: isNewlyGeneratedVideo,
+      hasMetadata: !!generatedVideoMetadata,
+      videoData: !!videoData
+    })
+
+    if (isNewlyGeneratedVideo && generatedVideoMetadata) {
+      // This is the newly generated video, use the metadata we stored
+      console.log('🎬 Saving newly generated video with metadata:', generatedVideoMetadata)
       
       try {
         const response = await fetch('/api/playground/save-video-to-gallery', {
@@ -506,44 +549,38 @@ export default function TabbedPlaygroundLayout({
           },
           body: JSON.stringify({
             videoUrl: url,
-            title: videoData.title || 'Generated Video',
-            description: `AI-generated video: ${videoData.title || 'Generated Video'}`,
+            title: `Video - ${new Date().toLocaleDateString()}`,
+            description: generatedVideoMetadata.prompt,
             tags: ['ai-generated', 'video'],
-            duration: videoData.duration || 5,
-            resolution: videoData.resolution || '480p',
-            aspectRatio: videoData.aspectRatio, // Use the actual aspect ratio from video data
-            motionType: 'subtle',
-            prompt: videoData.title || 'AI-generated video',
+            projectId: null,
+            duration: generatedVideoMetadata.duration,
+            resolution: generatedVideoMetadata.resolution,
+            aspectRatio: generatedVideoMetadata.aspectRatio,
+            motionType: generatedVideoMetadata.motionType,
+            prompt: generatedVideoMetadata.prompt,
             generationMetadata: {
-              generated_at: videoData.generated_at || new Date().toISOString(),
+              generated_at: new Date().toISOString(),
               credits_used: 8,
-              duration: videoData.duration || 5,
-              resolution: videoData.resolution || '480p',
-              aspect_ratio: videoData.aspectRatio, // Use the actual aspect ratio
-              motion_type: 'subtle',
-              image_url: null,
-              task_id: null,
-              prompt: videoData.title || 'AI-generated video',
-              style: 'realistic',
-              consistency_level: 'high'
+              duration: generatedVideoMetadata.duration,
+              resolution: generatedVideoMetadata.resolution,
+              aspect_ratio: generatedVideoMetadata.aspectRatio,
+              motion_type: generatedVideoMetadata.motionType,
+              prompt: generatedVideoMetadata.prompt
             }
           })
         })
-        
+
         if (response.ok) {
-          console.log('✅ Video saved with correct aspect ratio:', videoData.aspectRatio)
+          console.log('✅ Newly generated video saved with metadata')
+          refreshVideos() // Refresh the video list
         } else {
           const errorData = await response.json()
           console.error('❌ Video save failed:', errorData)
-          // Fallback to regular save
-          await onSaveToGallery(url)
         }
       } catch (error) {
         console.error('❌ Video save error:', error)
-        // Fallback to regular save
-        await onSaveToGallery(url)
       }
-    } else {
+    } else if (videoData && videoData.aspectRatio) {
       // Regular image or video without aspect ratio metadata
       await onSaveToGallery(url)
     }
@@ -552,7 +589,7 @@ export default function TabbedPlaygroundLayout({
     if (savedGalleryRef.current) {
       savedGalleryRef.current.refresh()
     }
-  }, [onSaveToGallery, savedVideos, sessionToken])
+  }, [onSaveToGallery, savedVideos, sessionToken, generatedVideoUrl, generatedVideoMetadata, refreshVideos])
 
   const handleDeleteVideo = useCallback(async (videoUrl: string) => {
     if (!sessionToken) return
@@ -634,7 +671,7 @@ export default function TabbedPlaygroundLayout({
         <TabsContent value="generate" className="mt-6">
           <div className="space-y-6">
             {/* Full Width Generated Content Preview */}
-            <div className="w-full" data-preview-area>
+            <div ref={imagePreviewRef} className="w-full" data-preview-area>
               <DynamicPreviewArea
                 aspectRatio={currentSettings.aspectRatio || currentSettings.baseImageAspectRatio || '1:1'}
                 resolution={currentSettings.resolution}
@@ -693,7 +730,7 @@ export default function TabbedPlaygroundLayout({
             {/* Generation Controls - Full Width Below Preview */}
             <div className="w-full">
               <UnifiedImageGenerationPanel
-                onGenerate={onGenerate}
+                onGenerate={handleImageGenerate}
                 onSettingsChange={handleSettingsChange}
                 loading={loading}
                 userCredits={userCredits}
@@ -847,7 +884,7 @@ export default function TabbedPlaygroundLayout({
         <TabsContent value="video" className="mt-6">
           <div className="space-y-6">
             {/* Full Width Video Preview Area */}
-            <div className="w-full" data-preview-area>
+            <div ref={videoPreviewRef} className="w-full" data-preview-area>
               <VideoPreviewArea
                 sourceImage={selectedImage}
                 aspectRatio={videoAspectRatio}
@@ -868,7 +905,7 @@ export default function TabbedPlaygroundLayout({
             {/* Video Generation Controls - Full Width Below Preview */}
             <div className="w-full">
               <VideoGenerationPanel
-                onGenerateVideo={onGenerateVideo}
+                onGenerateVideo={handleVideoGenerate}
                 loading={loading}
                 selectedImage={selectedImage}
                 aspectRatio={videoAspectRatio}

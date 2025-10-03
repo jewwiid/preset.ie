@@ -89,6 +89,13 @@ function PlaygroundContent() {
   // Video generation states
   const [videoGenerationStatus, setVideoGenerationStatus] = useState<'idle' | 'generating' | 'completed'>('idle')
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null)
+  const [generatedVideoMetadata, setGeneratedVideoMetadata] = useState<{
+    aspectRatio: string
+    resolution: string
+    duration: number
+    prompt: string
+    motionType: string
+  } | null>(null)
   const [fullScreenImage, setFullScreenImage] = useState<{
     url: string
     title?: string
@@ -676,6 +683,14 @@ function PlaygroundContent() {
       if (finalVideoUrl) {
         setGeneratedVideoUrl(finalVideoUrl)
         setVideoGenerationStatus('completed')
+        // Store metadata for saving later
+        setGeneratedVideoMetadata({
+          aspectRatio: params.aspectRatio,
+          resolution: params.resolution,
+          duration: params.duration,
+          prompt: params.prompt,
+          motionType: params.motionType
+        })
         console.log('✅ Video URL ready for preview (not saved):', finalVideoUrl)
       }
       
@@ -1077,6 +1092,7 @@ function PlaygroundContent() {
           sessionToken={session?.access_token}
           videoGenerationStatus={videoGenerationStatus}
           generatedVideoUrl={generatedVideoUrl}
+          generatedVideoMetadata={generatedVideoMetadata}
           onExpandMedia={handleExpandMedia}
           onVideoGenerated={() => {
             console.log('🎬 Video generation callback triggered')

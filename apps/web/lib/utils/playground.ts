@@ -204,21 +204,75 @@ export const isDefaultPrompt = (promptText: string): boolean => {
 export const replaceSubjectInTemplate = (
   template: string,
   subject: string,
-  generationMode: 'text-to-image' | 'image-to-image'
+  generationMode: 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video'
 ): string => {
-  if (generationMode === 'image-to-image') {
-    // For image-to-image, replace {subject} with "this image"
+  const isVideoMode = generationMode === 'text-to-video' || generationMode === 'image-to-video'
+
+  if (generationMode === 'image-to-image' || generationMode === 'image-to-video') {
+    // For image-to-image/video, replace {subject} with "this image"
     if (template.includes('{subject}')) {
       return template.replace(/\{subject\}/g, 'this image')
     } else {
       return `${template} this image`
     }
-  } else if (subject.trim() && template.includes('{subject}')) {
-    // For text-to-image, replace {subject} placeholder with user's input
-    return template.replace(/\{subject\}/g, subject.trim())
+  } else {
+    // For text-to-image/video
+    if (template.includes('{subject}')) {
+      if (subject.trim()) {
+        // Replace {subject} with user's input
+        return template.replace(/\{subject\}/g, subject.trim())
+      } else {
+        // If no subject provided, replace {subject} with "the scene"
+        return template.replace(/\{subject\}/g, 'the scene')
+      }
+    }
   }
 
   return template
+}
+
+/**
+ * Get the appropriate prompt template for the generation mode
+ * Prefers video-specific template for video modes, falls back to image template with adaptation
+ */
+export const getPromptTemplateForMode = (
+  preset: any,
+  generationMode: 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video'
+): string => {
+  const isVideoMode = generationMode === 'text-to-video' || generationMode === 'image-to-video'
+
+  if (isVideoMode) {
+    // Use video-specific template if available
+    if (preset.prompt_template_video) {
+      return preset.prompt_template_video
+    }
+    // Otherwise adapt image template
+    if (preset.prompt_template) {
+      return adaptTemplateForVideo(preset.prompt_template)
+    }
+  }
+
+  // For image modes, use image template
+  return preset.prompt_template || ''
+}
+
+/**
+ * Adapt image preset template for video generation (FALLBACK)
+ * Converts static image descriptions to motion-focused video descriptions
+ */
+export const adaptTemplateForVideo = (template: string): string => {
+  // Remove static image terms and replace with motion equivalents
+  let adapted = template
+    .replace(/\b(photograph|photo|image|picture|shot)\b/gi, 'video')
+    .replace(/\b(instant film photograph)\b/gi, 'instant film style video')
+    .replace(/\b(captured|taken)\b/gi, 'filmed')
+
+  // If the template doesn't mention motion/movement, add it
+  if (!adapted.match(/\b(motion|movement|moving|animated|dynamic)\b/i)) {
+    adapted = `Add motion with ${adapted}`
+  }
+
+  return adapted
 }
 
 /**

@@ -125,11 +125,15 @@ export const usePromptGeneration = ({
       return
     }
 
-    // If a preset is active with {subject} placeholder, replace it
-    if (currentPreset && userSubject.trim() && currentPreset.prompt_template.includes('{subject}')) {
-      const finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
-      setPrompt(finalPrompt)
-      setOriginalPrompt(finalPrompt)
+    // If a preset is active, don't auto-generate prompts
+    // The preset handles its own prompt template
+    if (currentPreset) {
+      // Only update if subject changed and template has {subject} placeholder
+      if (userSubject.trim() && currentPreset.prompt_template?.includes('{subject}')) {
+        const finalPrompt = currentPreset.prompt_template.replace(/\{subject\}/g, userSubject.trim())
+        setPrompt(finalPrompt)
+        setOriginalPrompt(finalPrompt)
+      }
       return
     }
 

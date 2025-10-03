@@ -15,6 +15,8 @@ import { VideoSettings } from '../../../components/playground/VideoSettings'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import { usePexelsSearch } from '../../../lib/hooks/playground/usePexelsSearch'
 import { Input } from '@/components/ui/input'
+import PresetSelector from './PresetSelector'
+import { replaceSubjectInTemplate, getPromptTemplateForMode } from '../../../lib/utils/playground'
 
 interface VideoGenerationPanelProps {
   onGenerateVideo: (params: {
@@ -88,8 +90,54 @@ export default function VideoGenerationPanel({
   const [includeStyleReferences, setIncludeStyleReferences] = useState(true)
   const [enhancedPrompt, setEnhancedPrompt] = useState('')
 
+  // Preset state
+  const [selectedPreset, setSelectedPreset] = useState<any>(null)
+  const [isPresetApplied, setIsPresetApplied] = useState(false)
+
+  // Helper function to get current image
+  const getCurrentImage = useCallback(() => {
+    switch (activeImageSource) {
+      case 'uploaded':
+        return uploadedImage
+      case 'saved':
+      case 'selected':
+      case 'pexels':
+      default:
+        return selectedImage
+    }
+  }, [activeImageSource, uploadedImage, selectedImage])
+
+  // Update preset prompt when subject or image changes
+  useEffect(() => {
+    if (!selectedPreset) return
+
+    const currentImage = getCurrentImage()
+    const generationMode = currentImage ? 'image-to-video' : 'text-to-video'
+    const videoTemplate = getPromptTemplateForMode(selectedPreset, generationMode)
+
+    const finalPrompt = replaceSubjectInTemplate(
+      videoTemplate,
+      videoSubject,
+      generationMode
+    )
+
+    setVideoPrompt(finalPrompt)
+  }, [videoSubject, selectedPreset, getCurrentImage])
+
   // Auto-generate prompt from subject, style, and image selection
   useEffect(() => {
+    // Don't auto-generate if a preset was just applied
+    if (isPresetApplied) {
+      setIsPresetApplied(false)
+      return
+    }
+
+    // Don't auto-generate if a preset is currently selected
+    // The preset manages its own prompt
+    if (selectedPreset) {
+      return
+    }
+
     // Get current image based on active source
     let currentImage: string | null = null
     switch (activeImageSource) {
@@ -190,7 +238,7 @@ export default function VideoGenerationPanel({
     }
 
     generateVideoPrompt()
-  }, [videoSubject, videoStyle, selectedImage, uploadedImage, activeImageSource])
+  }, [videoSubject, videoStyle, selectedImage, uploadedImage, activeImageSource, isPresetApplied])
 
   // Generate enhanced prompt based on cinematic parameters
   useEffect(() => {
@@ -244,18 +292,6 @@ export default function VideoGenerationPanel({
   useEffect(() => {
     console.log('🎬 VideoGenerationPanel received savedImages:', savedImages?.length || 0, savedImages)
   }, [savedImages])
-
-  const getCurrentImage = () => {
-    switch (activeImageSource) {
-      case 'uploaded':
-        return uploadedImage
-      case 'saved':
-      case 'selected':
-      case 'pexels':
-      default:
-        return selectedImage
-    }
-  }
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -343,6 +379,7 @@ export default function VideoGenerationPanel({
     setMotionType('subtle')
     setVideoResolution('480p')
     setSelectedAspectRatio(aspectRatio)
+    setSelectedPreset(null)
 
     showFeedback({
       type: 'success',
@@ -350,6 +387,91 @@ export default function VideoGenerationPanel({
       message: 'All fields cleared'
     })
   }, [aspectRatio, showFeedback])
+
+  const handlePresetSelect = useCallback((preset: any) => {
+    if (!preset) {
+      setSelectedPreset(null)
+      return
+    }
+
+    setSelectedPreset(preset)
+
+    // Apply prompt template with subject replacement
+    // Uses video-specific template if available, otherwise adapts image template
+    if (preset.prompt_template || preset.prompt_template_video) {
+      const currentImage = getCurrentImage()
+      const generationMode = currentImage ? 'image-to-video' : 'text-to-video'
+
+      // Get the appropriate template for video generation
+      const videoTemplate = getPromptTemplateForMode(preset, generationMode)
+
+      // Replace {subject} placeholder with videoSubject or "this image"
+      const finalPrompt = replaceSubjectInTemplate(
+        videoTemplate,
+        videoSubject,
+        generationMode
+      )
+
+      setVideoPrompt(finalPrompt)
+      setIsPresetApplied(true) // Prevent auto-generate from overwriting
+      console.log('🎬 Applied preset prompt:', {
+        imageTemplate: preset.prompt_template,
+        videoTemplate: preset.prompt_template_video,
+        selectedTemplate: videoTemplate,
+        subject: videoSubject,
+        finalPrompt
+      })
+    }
+
+    // Apply cinematic settings from preset
+    if (preset.cinematic_settings) {
+      const { cinematic_settings } = preset
+
+      if (cinematic_settings.enableCinematicMode !== undefined) {
+        setEnableCinematicMode(cinematic_settings.enableCinematicMode)
+      }
+
+      if (cinematic_settings.cinematicParameters) {
+        setCinematicParameters(cinematic_settings.cinematicParameters)
+      }
+
+      if (cinematic_settings.includeTechnicalDetails !== undefined) {
+        setIncludeTechnicalDetails(cinematic_settings.includeTechnicalDetails)
+      }
+
+      if (cinematic_settings.includeStyleReferences !== undefined) {
+        setIncludeStyleReferences(cinematic_settings.includeStyleReferences)
+      }
+
+      if (cinematic_settings.enhancedPrompt) {
+        setEnhancedPrompt(cinematic_settings.enhancedPrompt)
+      }
+    }
+
+    // Apply style settings if available
+    // Note: We don't apply style from preset because it's already in the prompt template
+    // Applying it here would trigger auto-generate and overwrite the preset prompt
+    if (preset.style_settings?.style && !preset.prompt_template && !preset.prompt_template_video) {
+      // Only set style if there's no prompt template (edge case)
+      setVideoStyle(preset.style_settings.style)
+    }
+
+    // Apply technical settings if available
+    if (preset.technical_settings) {
+      if (preset.technical_settings.resolution) {
+        setVideoResolution(preset.technical_settings.resolution)
+      }
+      if (preset.technical_settings.aspectRatio) {
+        setSelectedAspectRatio(preset.technical_settings.aspectRatio)
+      }
+    }
+
+    showFeedback({
+      type: 'success',
+      title: 'Preset Applied',
+      message: `Applied preset: ${preset.name}`
+    })
+  }, [showFeedback, videoSubject])
 
   const getCreditsForVideo = () => {
     const baseCredits = selectedProvider === 'wan' ? 12 : 8
@@ -362,18 +484,18 @@ export default function VideoGenerationPanel({
     const imageToUse = getCurrentImage()
     const promptToUse = videoSubject || videoPrompt || (enableCinematicMode ? enhancedPrompt : '')
 
-    // For Wan: allow text-to-video (no image) or image-to-video
-    // For Seedream: require image (image-to-video only)
+    // Seedream: image-to-video only (requires image)
+    // Wan: supports both text-to-video and image-to-video
     if (selectedProvider === 'seedream' && !imageToUse) {
       showFeedback({
         type: 'error',
         title: 'Error',
-        message: 'Seedream requires an image. Please select or upload an image.'
+        message: 'Seedream requires an image. Please select an image or switch to Wan for text-to-video.'
       })
       return
     }
 
-    if (selectedProvider === 'wan' && !imageToUse && !promptToUse) {
+    if (!imageToUse && !promptToUse) {
       showFeedback({
         type: 'error',
         title: 'Error',
@@ -401,6 +523,8 @@ export default function VideoGenerationPanel({
 
   // Debug: Check button state
   const currentImage = getCurrentImage()
+  // Seedream: image-to-video only (requires image)
+  // Wan: supports both text-to-video and image-to-video
   const canGenerate = selectedProvider === 'wan'
     ? (!!currentImage || !!videoSubject.trim() || !!videoPrompt.trim())
     : !!currentImage
@@ -439,6 +563,28 @@ export default function VideoGenerationPanel({
           }}
         />
 
+        {/* Preset Selector */}
+        <PresetSelector
+          onPresetSelect={handlePresetSelect}
+          selectedPreset={selectedPreset}
+          currentSettings={{
+            prompt: videoPrompt,
+            style: videoStyle,
+            resolution: videoResolution,
+            aspectRatio: selectedAspectRatio,
+            consistencyLevel: 'high',
+            intensity: 1,
+            numImages: 1,
+            enableCinematicMode,
+            cinematicParameters,
+            enhancedPrompt,
+            includeTechnicalDetails,
+            includeStyleReferences,
+            generationMode: getCurrentImage() ? 'image-to-image' : 'text-to-image',
+            selectedProvider: selectedProvider as 'nanobanana' | 'seedream'
+          }}
+        />
+
         {/* Generation Mode Info */}
         <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
           <Label className="text-sm font-medium">
@@ -451,8 +597,8 @@ export default function VideoGenerationPanel({
           </p>
         </div>
 
-        {/* Subject Input - Only show for text-to-video mode */}
-        {!getCurrentImage() && (
+        {/* Subject Input - Only show for text-to-video mode with Wan provider */}
+        {!getCurrentImage() && selectedProvider === 'wan' && (
           <div className="space-y-2">
             <Label htmlFor="videoSubject" className="text-sm">
               What do you want to animate?
@@ -467,6 +613,25 @@ export default function VideoGenerationPanel({
             <p className="text-xs text-muted-foreground">
               Describe the scene or subject you want to bring to life with motion
             </p>
+          </div>
+        )}
+
+        {/* Warning when Seedream is selected without image */}
+        {selectedProvider === 'seedream' && !getCurrentImage() && (
+          <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="h-4 w-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-medium text-amber-600 dark:text-amber-500">
+                Seedream requires an image
+              </p>
+              <p className="text-xs text-amber-600/80 dark:text-amber-500/80 mt-0.5">
+                Please select an image from the "Image Source" section below, or switch to Wan provider for text-to-video generation
+              </p>
+            </div>
           </div>
         )}
 

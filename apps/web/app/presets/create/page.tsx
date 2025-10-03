@@ -19,11 +19,14 @@ interface PresetData {
   description: string
   category: string
   prompt_template: string
+  prompt_template_video?: string
   negative_prompt?: string
   // Dynamic prompt fields
   prompt_subject: string
   prompt_image_url?: string
   enhanced_prompt: string
+  enhanced_prompt_video?: string
+  generation_mode: 'image' | 'video' | 'both'
   style_settings: {
     style?: string
     resolution: string
@@ -133,11 +136,14 @@ function CreatePresetPageContent() {
     description: '',
     category: 'photography',
     prompt_template: '',
+    prompt_template_video: '',
     negative_prompt: '',
+    generation_mode: 'both',
     // Dynamic prompt fields
     prompt_subject: '',
     prompt_image_url: '',
     enhanced_prompt: '',
+    enhanced_prompt_video: '',
     style_settings: {
       style: '',
       resolution: '1024',
@@ -839,30 +845,93 @@ function CreatePresetPageContent() {
 
               {/* Prompts Tab */}
               <TabsContent value="prompts" className="space-y-6">
-                {/* Prompt Template */}
+                {/* Generation Mode Selector */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Prompt Template</CardTitle>
+                    <CardTitle>Generation Mode</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="prompt_template">Base Prompt Template *</Label>
-                      <Textarea
-                        id="prompt_template"
-                        value={presetData.prompt_template}
-                        onChange={(e) => {
-                          setPresetData(prev => ({ ...prev, prompt_template: e.target.value }));
-                          generateEnhancedPrompt();
-                        }}
-                        placeholder="Enter your base prompt template. Use {subject}, {style}, {mood} as placeholders..."
-                        rows={4}
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Use placeholders like {'{subject}'}, {'{style}'}, {'{mood}'} for dynamic content
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Label>This preset works with:</Label>
+                      <Select
+                        value={presetData.generation_mode}
+                        onValueChange={(value: 'image' | 'video' | 'both') =>
+                          setPresetData(prev => ({ ...prev, generation_mode: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="both">📸 🎬 Both Image & Video</SelectItem>
+                          <SelectItem value="image">📸 Image Generation Only</SelectItem>
+                          <SelectItem value="video">🎬 Video Generation Only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-sm text-muted-foreground">
+                        Choose which generation modes this preset supports
                       </p>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Image Prompt Template */}
+                {(presetData.generation_mode === 'image' || presetData.generation_mode === 'both') && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>📸 Image Prompt Template</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="prompt_template">Image Generation Prompt *</Label>
+                        <Textarea
+                          id="prompt_template"
+                          value={presetData.prompt_template}
+                          onChange={(e) => {
+                            setPresetData(prev => ({ ...prev, prompt_template: e.target.value }));
+                            generateEnhancedPrompt();
+                          }}
+                          placeholder="Enter your image prompt template. Use {subject}, {style}, {mood} as placeholders..."
+                          rows={4}
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          For static images - use terms like "photograph", "image", "picture"
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Video Prompt Template */}
+                {(presetData.generation_mode === 'video' || presetData.generation_mode === 'both') && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>🎬 Video Prompt Template</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="prompt_template_video">
+                          Video Generation Prompt {presetData.generation_mode === 'video' ? '*' : '(Optional)'}
+                        </Label>
+                        <Textarea
+                          id="prompt_template_video"
+                          value={presetData.prompt_template_video || ''}
+                          onChange={(e) => {
+                            setPresetData(prev => ({ ...prev, prompt_template_video: e.target.value }));
+                          }}
+                          placeholder="Enter your video prompt template. Use {subject}, {style}, {mood} as placeholders..."
+                          rows={4}
+                        />
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {presetData.generation_mode === 'both'
+                            ? 'Leave empty to auto-adapt image template. For better results, create a video-specific prompt with motion terms.'
+                            : 'For video generation - use terms like "video", "motion", "movement", "animated"'
+                          }
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Dynamic Fields */}
                 <Card>
