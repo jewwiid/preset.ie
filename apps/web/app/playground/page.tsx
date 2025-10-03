@@ -966,15 +966,41 @@ function PlaygroundContent() {
   }
 
   const handleImportProject = (project: any) => {
+    console.log('📥 Importing project:', project)
     setCurrentProject(project)
-    if (project.generated_images && project.generated_images.length > 0) {
+
+    // For videos, set the generated video URL instead of selectedImage
+    if (project.is_video && project.generated_images && project.generated_images.length > 0) {
+      const videoUrl = project.generated_images[0].url
+      setGeneratedVideoUrl(videoUrl)
+      setVideoGenerationStatus('completed')
+
+      // Set video metadata if available
+      if (project.generated_images[0]) {
+        setGeneratedVideoMetadata({
+          aspectRatio: project.aspect_ratio || '16:9',
+          resolution: `${project.generated_images[0].width}x${project.generated_images[0].height}`,
+          duration: 5,
+          prompt: project.prompt || '',
+          motionType: 'camera_movement'
+        })
+      }
+
+      showFeedback({
+        type: 'success',
+        title: 'Video Imported!',
+        message: 'Past video generation has been imported and is ready for viewing.'
+      })
+    } else if (project.generated_images && project.generated_images.length > 0) {
+      // For images, set selected image normally
       setSelectedImage(project.generated_images[0].url)
+
+      showFeedback({
+        type: 'success',
+        title: 'Project Imported!',
+        message: 'Past generation has been imported and is ready for editing.'
+      })
     }
-    showFeedback({
-      type: 'success',
-      title: 'Project Imported!',
-      message: 'Past generation has been imported and is ready for editing.'
-    })
   }
 
   const handleExpandMedia = (media: any) => {

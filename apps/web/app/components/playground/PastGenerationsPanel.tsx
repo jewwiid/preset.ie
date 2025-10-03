@@ -216,6 +216,13 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
       }
 
       const data = await response.json()
+      console.log('📊 Client: Received past generations:', {
+        total: data.total,
+        count: data.generations?.length || 0,
+        videos: data.generations?.filter((g: any) => g.is_video).length || 0,
+        images: data.generations?.filter((g: any) => !g.is_video).length || 0,
+        videoItems: data.generations?.filter((g: any) => g.is_video) || []
+      })
       setGenerations(data.generations || [])
     } catch (error) {
       console.error('Error fetching past generations:', error)
@@ -592,21 +599,20 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                   return (
                     <div
                       key={generation.id}
-                      className={`group relative rounded-lg overflow-hidden border transition-all duration-200 cursor-pointer ${
+                      className={`group relative rounded-lg overflow-hidden border transition-all duration-200 ${
                         isUrgent && !generation.is_saved ? 'border-destructive ring-2 ring-destructive/20' : 'border-border hover:border-primary'
                       }`}
                       style={style}
-                      onClick={() => onImportProject(generation)}
                     >
                       {/* Media */}
                       <div className="relative w-full h-full">
                         {generation.generated_images.length > 0 ? (
                           <>
-                            {generation.generated_images[0].type === 'video' ? (
+                            {generation.is_video || generation.generated_images[0].type === 'video' || generation.generated_images[0].url.match(/\.(mp4|webm|mov)$/i) ? (
                               <ProgressiveVideo
                                 src={generation.generated_images[0].url}
                                 poster={generation.generated_images[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
-                                className="w-full h-full"
+                                className="w-full h-full object-cover"
                                 onLoad={() => handleImageLoad(generation.id)}
                                 onError={() => handleImageLoad(generation.id)}
                                 onPlay={() => handleVideoPlay(generation.id)}
@@ -626,7 +632,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                                   return ''
                                 })()}
                                 alt={generation.title}
-                                className="w-full h-full"
+                                className="w-full h-full object-cover"
                                 onLoad={() => handleImageLoad(generation.id)}
                                 loading="lazy"
                                 quality={75}
@@ -684,7 +690,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex items-center justify-center">
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                             {/* Play button for videos */}
-                            {generation.generated_images.length > 0 && 
+                            {generation.generated_images.length > 0 &&
                              generation.generated_images[0].type === 'video' && (
                               <Button
                                 size="sm"
@@ -712,7 +718,32 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                                 )}
                               </Button>
                             )}
-                            
+
+                            {/* Save button */}
+                            {generation.generated_images.length > 0 && !generation.is_saved && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  saveImageToGallery(
+                                    generation.generated_images[0].url,
+                                    generation.title,
+                                    generation
+                                  )
+                                }}
+                                disabled={savingImage === generation.generated_images[0].url}
+                                title="Save to gallery"
+                              >
+                                {savingImage === generation.generated_images[0].url ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
+                                ) : (
+                                  <Save className="h-4 w-4" />
+                                )}
+                              </Button>
+                            )}
+
                             {/* View all images button */}
                             {generation.generated_images.length > 1 && (
                               <Button
@@ -728,7 +759,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                                 <Eye className="h-4 w-4" />
                               </Button>
                             )}
-                            
+
                             {/* Info button */}
                             <Button
                               size="sm"
@@ -742,7 +773,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                             >
                               <Info className="h-4 w-4" />
                             </Button>
-                            
+
                             {/* Import button */}
                             {!generation.is_edit && (
                               <Button
@@ -758,7 +789,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                                 <Download className="h-4 w-4" />
                               </Button>
                             )}
-                            
+
                             {/* Delete button */}
                             <Button
                               size="sm"

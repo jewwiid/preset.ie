@@ -4,10 +4,15 @@ import { getUserFromRequest } from '../../../../lib/auth-utils'
 
 export async function POST(request: NextRequest) {
   console.log('🎬 Save-video-to-gallery API called')
-  
+
   try {
     const { user, error: authError } = await getUserFromRequest(request)
     console.log('🔐 Auth result:', { user: user?.id, authError })
+
+    if (authError) {
+      console.error('❌ Auth error:', authError)
+      return NextResponse.json({ error: 'Authentication failed', details: authError }, { status: 401 })
+    }
     
     const { 
       videoUrl, 
@@ -145,8 +150,46 @@ export async function POST(request: NextRequest) {
       })
     }
     
-    console.log('💾 Attempting to insert video into playground_gallery table')
-    
+    console.log('💾 Attempting to save video to Supabase Storage and insert into playground_gallery table')
+
+    // Step 1: Download video from external URL (CloudFront)
+    console.log('📥 Downloading video from:', videoUrl)
+    const videoResponse = await fetch(videoUrl)
+    if (!videoResponse.ok) {
+      throw new Error(`Failed to download video: ${videoResponse.statusText}`)
+    }
+
+    const videoBlob = await videoResponse.arrayBuffer()
+    const videoBuffer = Buffer.from(videoBlob)
+    console.log('✅ Video downloaded, size:', videoBuffer.length, 'bytes')
+
+    // Step 2: Upload to Supabase Storage
+    const fileExtension = 'mp4'
+    const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`
+    const bucketName = 'playground-videos' // Make sure this bucket exists in Supabase
+
+    console.log('📤 Uploading video to Supabase Storage:', fileName)
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from(bucketName)
+      .upload(fileName, videoBuffer, {
+        contentType: 'video/mp4',
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (uploadError) {
+      console.error('❌ Failed to upload video to storage:', uploadError)
+      throw new Error(`Storage upload failed: ${uploadError.message}`)
+    }
+
+    // Step 3: Get the public URL from Supabase Storage
+    const { data: publicUrlData } = supabaseAdmin.storage
+      .from(bucketName)
+      .getPublicUrl(fileName)
+
+    const supabaseVideoUrl = publicUrlData.publicUrl
+    console.log('✅ Video uploaded to Supabase Storage:', supabaseVideoUrl)
+
     // Extract actual video dimensions from the video URL
     let actualWidth = resolution === '720p' ? 1280 : 854
     let actualHeight = resolution === '720p' ? 720 : 480
@@ -173,37 +216,55 @@ export async function POST(request: NextRequest) {
       console.warn('Could not extract video dimensions, using defaults:', error)
     }
 
-    // Save video to gallery
-    const insertData = {
+    // Save video to gallery with Supabase Storage URL
+    const insertData: any = {
       user_id: user.id,
       project_id: projectId,
       media_type: 'video',
-      image_url: videoUrl, // Use video URL as image_url to satisfy NOT NULL constraint
-      video_url: videoUrl,
-      thumbnail_url: videoUrl, // Use video URL as thumbnail for now
+      image_url: supabaseVideoUrl, // Use Supabase video URL
+      video_url: supabaseVideoUrl, // Permanent URL in our storage
+      thumbnail_url: supabaseVideoUrl, // Use video URL as thumbnail for now
       title: title || 'Untitled Video',
       description,
       tags: tags || [],
       width: actualWidth,
       height: actualHeight,
-      file_size: 0, // Unknown size for external URLs
       video_duration: duration,
       video_resolution: resolution,
       video_format: 'mp4',
-      generation_metadata: generationMetadata || {}
+      generation_metadata: {
+        ...generationMetadata,
+        original_cloudfront_url: videoUrl, // Keep reference to original URL
+        saved_to_storage: true,
+        storage_path: fileName
+      }
     }
+
+    // Only include file_size if the column exists (optional field)
+    // Removed file_size: 0 since column doesn't exist in schema
     
-    console.log('📝 Insert data:', insertData)
-    
+    console.log('📝 Insert data:', JSON.stringify(insertData, null, 2))
+
     const { data: galleryItem, error: insertError } = await supabaseAdmin
       .from('playground_gallery')
       .insert(insertData)
       .select()
       .single()
-    
+
     if (insertError) {
-      console.error('❌ Gallery insert error:', insertError)
-      throw insertError
+      console.error('❌ Gallery insert error:', {
+        message: insertError.message,
+        code: insertError.code,
+        details: insertError.details,
+        hint: insertError.hint,
+        insertData
+      })
+      return NextResponse.json({
+        error: insertError.message,
+        code: insertError.code,
+        details: insertError.details,
+        hint: insertError.hint
+      }, { status: 500 })
     }
     
     console.log('✅ Successfully saved video to gallery:', galleryItem)

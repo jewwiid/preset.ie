@@ -151,17 +151,20 @@ export async function DELETE(
 
       // Delete related image edits first (due to foreign key constraints)
       console.log('🗑️ Deleting related image edits...')
-      const { error: editsError } = await supabaseAdmin
+      const { data: editsData, error: editsError } = await supabaseAdmin
         .from('playground_image_edits')
         .delete()
         .eq('project_id', projectId)
         .eq('user_id', user.id)
+        .select()
 
       if (editsError) {
         console.error('❌ Error deleting image edits:', editsError)
-        return NextResponse.json({ error: 'Failed to delete related edits' }, { status: 500 })
+        // Don't fail the entire delete - continue even if edits deletion fails
+        // Some projects may not have any edits
+      } else {
+        console.log('✅ Image edits deleted successfully:', editsData?.length || 0, 'edits')
       }
-      console.log('✅ Image edits deleted successfully')
 
       // Delete related batch jobs
       const { error: batchJobsError } = await supabaseAdmin

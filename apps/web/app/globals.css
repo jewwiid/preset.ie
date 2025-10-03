@@ -721,6 +721,11 @@ h1[class*="font-"], h2[class*="font-"], h3[class*="font-"], h4[class*="font-"], 
   font-weight: normal;
 }
 
+/* Scrolling text with Bloc font */
+.scrolling-text-bloc {
+  font-family: 'Bloc W01 Regular', 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
 /* Video generation loading animation */
 @keyframes shimmer {
   0% {
@@ -733,4 +738,31 @@ h1[class*="font-"], h2[class*="font-"], h3[class*="font-"], h4[class*="font-"], 
 
 .animate-shimmer {
   animation: shimmer 2s infinite;
+}
+
+/* Horizontal scrolling animation for connecting section */
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scroll-right {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-scroll-left {
+  animation: scroll-left 25s linear infinite;
+}
+
+.animate-scroll-right {
+  animation: scroll-right 25s linear infinite;
 }

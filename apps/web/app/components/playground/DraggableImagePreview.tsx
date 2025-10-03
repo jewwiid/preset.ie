@@ -28,6 +28,7 @@ export default function DraggableImagePreview({
   const [yPosition, setYPosition] = useState(0)
   const [dragStart, setDragStart] = useState({ y: 0, initialPosition: 0 })
   const [isFramingSaved, setIsFramingSaved] = useState(false)
+  const [zoom, setZoom] = useState(1) // 1 = 100%, 1.5 = 150%, etc.
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
@@ -122,7 +123,16 @@ export default function DraggableImagePreview({
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false)
-  }, [])
+    // Auto-save framing when user finishes dragging
+    if (isDragging) {
+      const dimensions = calculateDimensions(aspectRatio, resolution)
+      onSaveFraming?.({
+        yPosition,
+        dimensions
+      })
+      setIsFramingSaved(true)
+    }
+  }, [isDragging, yPosition, aspectRatio, resolution, onSaveFraming])
 
   const saveFraming = useCallback(() => {
     const dimensions = calculateDimensions(aspectRatio, resolution)
@@ -140,9 +150,26 @@ export default function DraggableImagePreview({
 
   const resetPosition = useCallback(() => {
     setYPosition(0)
+    setZoom(1)
     onPositionChange?.(0)
     setIsFramingSaved(false)
   }, [onPositionChange])
+
+  // Handle mouse wheel zoom
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? -0.1 : 0.1 // Zoom out on scroll down, zoom in on scroll up
+    setZoom(prev => Math.max(1, Math.min(3, prev + delta))) // Clamp between 1x and 3x
+  }, [])
+
+  // Add wheel event listener
+  useEffect(() => {
+    const container = containerRef.current
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false })
+      return () => container.removeEventListener('wheel', handleWheel)
+    }
+  }, [handleWheel])
 
   useEffect(() => {
     if (isDragging) {
@@ -166,22 +193,20 @@ export default function DraggableImagePreview({
   return (
     <div className={`relative ${className}`}>
       {/* Container with fixed aspect ratio */}
-      <div 
+      <div
         ref={containerRef}
-        className={`w-full bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden transition-all duration-300 relative group ${
-          isFramingSaved ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
-        }`}
-        style={{ 
+        className="w-full bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden transition-all duration-300 relative group cursor-grab active:cursor-grabbing"
+        style={{
           aspectRatio: convertAspectRatio(aspectRatio),
           maxWidth: '100%'
         }}
-        onMouseDown={isFramingSaved ? undefined : handleMouseDown}
+        onMouseDown={handleMouseDown}
       >
         {/* Draggable Image */}
         <div
           className="absolute inset-0 transition-transform duration-100"
           style={{
-            transform: `translateY(${yPosition}px)`,
+            transform: `translateY(${yPosition}px) scale(${zoom})`,
             transformOrigin: 'center',
             pointerEvents: 'none'
           }}
@@ -203,21 +228,46 @@ export default function DraggableImagePreview({
 
         {/* Grid overlay */}
         {showGridOverlay && (
-          <div className="absolute inset-0 pointer-events-none z-20">
+          <div className="absolute inset-0 pointer-events-none z-30">
             {gridType === 'horizontal' && (
               /* Horizontal center line */
-              <div className="absolute top-1/2 left-0 right-0 h-px bg-primary-500/90 transform -translate-y-1/2 shadow-lg" />
+              <div className="absolute top-1/2 left-0 right-0 h-0.5 transform -translate-y-1/2"
+                style={{
+                  backgroundColor: '#10b981',
+                  boxShadow: '0 0 10px rgba(16, 185, 129, 0.8)'
+                }}
+              />
             )}
-            
+
             {gridType === 'rule-of-thirds' && (
               <>
                 {/* Rule of thirds grid - horizontal lines */}
-                <div className="absolute top-1/3 left-0 right-0 h-px bg-primary-500/90 transform -translate-y-1/2 shadow-lg" />
-                <div className="absolute top-2/3 left-0 right-0 h-px bg-primary-500/90 transform -translate-y-1/2 shadow-lg" />
-                
+                <div className="absolute top-1/3 left-0 right-0 h-0.5 transform -translate-y-1/2"
+                  style={{
+                    backgroundColor: '#10b981',
+                    boxShadow: '0 0 10px rgba(16, 185, 129, 0.8)'
+                  }}
+                />
+                <div className="absolute top-2/3 left-0 right-0 h-0.5 transform -translate-y-1/2"
+                  style={{
+                    backgroundColor: '#10b981',
+                    boxShadow: '0 0 10px rgba(16, 185, 129, 0.8)'
+                  }}
+                />
+
                 {/* Rule of thirds grid - vertical lines */}
-                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-primary-500/90 transform -translate-x-1/2 shadow-lg" />
-                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-primary-500/90 transform -translate-x-1/2 shadow-lg" />
+                <div className="absolute left-1/3 top-0 bottom-0 w-0.5 transform -translate-x-1/2"
+                  style={{
+                    backgroundColor: '#10b981',
+                    boxShadow: '0 0 10px rgba(16, 185, 129, 0.8)'
+                  }}
+                />
+                <div className="absolute left-2/3 top-0 bottom-0 w-0.5 transform -translate-x-1/2"
+                  style={{
+                    backgroundColor: '#10b981',
+                    boxShadow: '0 0 10px rgba(16, 185, 129, 0.8)'
+                  }}
+                />
               </>
             )}
           </div>
@@ -225,59 +275,33 @@ export default function DraggableImagePreview({
           
         {/* State-based UI */}
         <div className="absolute inset-0 pointer-events-none">
-          {isFramingSaved ? (
-            <>
-              {/* Saved state - show confirmation and options */}
-              <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
-                ✓ Framing saved
-              </div>
-              <div className="absolute bottom-2 right-2 flex gap-2 pointer-events-auto">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    e.preventDefault()
-                    resetPosition()
-                  }}
-                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs px-3 py-2 rounded transition-colors shadow-lg"
-                >
-                  Reset
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    e.preventDefault()
-                    resetFraming()
-                  }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 py-2 rounded transition-colors shadow-lg"
-                >
-                  Adjust More
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Default state - show drag instruction */}
-              <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
-                <Move className="h-3 w-3" />
-                Click & drag to adjust
-              </div>
-              
-              {/* Save button - only show if position has changed */}
-              {yPosition !== 0 && (
-                <div className="absolute bottom-2 right-2 pointer-events-auto">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      e.preventDefault()
-                      saveFraming()
-                    }}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 py-2 rounded transition-colors shadow-lg"
-                  >
-                    Save Framing
-                  </button>
-                </div>
-              )}
-            </>
+          {/* Drag instruction - always visible */}
+          <div className="absolute top-2 left-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
+            <Move className="h-3 w-3" />
+            Click & drag to adjust
+          </div>
+
+          {/* Zoom indicator */}
+          {zoom !== 1 && (
+            <div className="absolute top-2 right-2 bg-secondary/80 text-secondary-foreground text-xs px-2 py-1 rounded">
+              {Math.round(zoom * 100)}%
+            </div>
+          )}
+
+          {/* Reset button - only show if position or zoom has changed */}
+          {(yPosition !== 0 || zoom !== 1) && (
+            <div className="absolute bottom-2 right-2 pointer-events-auto">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  resetPosition()
+                }}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs px-3 py-2 rounded transition-colors shadow-lg"
+              >
+                Reset
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -292,7 +316,7 @@ export default function DraggableImagePreview({
 
       {/* Instructions */}
       <div className="mt-2 p-2 bg-primary-50 rounded text-xs text-primary-700">
-        <strong>💡 Tip:</strong> Hover over the image to see the drag option, then drag to adjust framing. Click "Save Framing" when ready.
+        <strong>💡 Tip:</strong> Drag to adjust position • Scroll to zoom • Framing applies automatically
       </div>
     </div>
   )

@@ -367,8 +367,8 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
 
     {/* Delete Confirmation Dialog */}
     {showDeleteConfirm && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-background rounded-lg p-6 max-w-md w-full mx-4">
+      <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+        <div className="bg-popover rounded-lg p-6 max-w-md w-full mx-4 border border-border shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-foreground">Delete Media</h3>
             <Button
@@ -400,7 +400,7 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
             >
               {deletingMedia === mediaToDelete ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-destructive-foreground mr-2"></div>
                   Deleting...
                 </>
               ) : (

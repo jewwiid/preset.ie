@@ -111,6 +111,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Also fetch video generations from playground_video_generations table
+    console.log('🔍 Querying playground_video_generations for user:', user.id, 'since:', sixDaysAgo.toISOString())
+
     const { data: videoGenerations, error: videoGenerationsError } = await supabaseAdmin
       .from('playground_video_generations')
       .select(`
@@ -128,6 +130,16 @@ export async function GET(request: NextRequest) {
 
     if (videoGenerationsError) {
       console.error('Error fetching video generations:', videoGenerationsError)
+    } else {
+      console.log('🎬 Video generations from DB:', {
+        count: videoGenerations?.length || 0,
+        videos: videoGenerations?.map(v => ({
+          id: v.id,
+          url: v.video_url,
+          isPending: v.video_url === 'pending',
+          created: v.created_at
+        }))
+      })
     }
 
     // Filter projects with images and add saved status
@@ -188,27 +200,30 @@ export async function GET(request: NextRequest) {
     })) || []
 
     // Add video generations from playground_video_generations table
-    const videoGenerationItems = videoGenerations?.map(videoGen => ({
-      id: `video_gen_${videoGen.id}`,
-      title: 'Generated Video',
-      prompt: videoGen.generation_metadata?.prompt || 'AI-generated video',
-      style: 'video',
-      generated_images: [{
-        url: videoGen.video_url || 'pending',
-        width: videoGen.resolution === '720p' ? 1280 : 854,
-        height: videoGen.resolution === '720p' ? 720 : 480,
-        generated_at: videoGen.created_at,
-        type: 'video',
-        duration: videoGen.duration,
-        resolution: videoGen.resolution
-      }],
-      credits_used: 8, // Default credits for video generation
-      created_at: videoGen.created_at,
-      last_generated_at: videoGen.created_at,
-      status: videoGen.video_url === 'pending' ? 'processing' : 'completed',
-      is_saved: false, // Not yet saved to gallery
-      is_video: true
-    })) || []
+    // Filter out videos that are still pending (not yet completed)
+    const videoGenerationItems = videoGenerations
+      ?.filter(videoGen => videoGen.video_url && videoGen.video_url !== 'pending')
+      .map(videoGen => ({
+        id: `video_gen_${videoGen.id}`,
+        title: 'Generated Video',
+        prompt: videoGen.generation_metadata?.prompt || 'AI-generated video',
+        style: 'video',
+        generated_images: [{
+          url: videoGen.video_url,
+          width: videoGen.resolution === '720p' ? 1280 : 854,
+          height: videoGen.resolution === '720p' ? 720 : 480,
+          generated_at: videoGen.created_at,
+          type: 'video',
+          duration: videoGen.duration,
+          resolution: videoGen.resolution
+        }],
+        credits_used: 8, // Default credits for video generation
+        created_at: videoGen.created_at,
+        last_generated_at: videoGen.created_at,
+        status: 'completed',
+        is_saved: false, // Not yet saved to gallery
+        is_video: true
+      })) || []
 
     // Combine projects, edits, videos, and video generations
     const allGenerations = [...filteredProjects, ...editItems, ...videoItems, ...videoGenerationItems]
@@ -232,16 +247,25 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => new Date(b.last_generated_at).getTime() - new Date(a.last_generated_at).getTime())
 
     // Debug logging
+    const videoCount = deduplicatedGenerations.filter(g => g.is_video).length
+    const imageCount = deduplicatedGenerations.filter(g => !g.is_video).length
+
     console.log('📊 Past Generations Debug:', {
       totalProjects: projects?.length || 0,
       totalEdits: edits?.length || 0,
-      totalVideos: videos?.length || 0,
-      totalVideoGenerations: videoGenerations?.length || 0,
+      totalVideosFromGallery: videos?.length || 0,
+      totalVideosFromGenerations: videoGenerations?.length || 0,
+      filteredVideoGenerations: videoGenerationItems.length,
       totalCombined: allGenerations.length,
       totalDeduplicated: deduplicatedGenerations.length,
-      videos: deduplicatedGenerations.filter(g => g.is_video).length,
-      images: deduplicatedGenerations.filter(g => !g.is_video).length
+      videos: videoCount,
+      images: imageCount,
+      videoUrls: deduplicatedGenerations.filter(g => g.is_video).map(g => g.generated_images[0]?.url)
     })
+
+    if (videoCount === 0 && (videos?.length || videoGenerations?.length)) {
+      console.warn('⚠️ Videos were fetched but none appear in final list. Check filtering logic.')
+    }
 
     return NextResponse.json({
       generations: sortedGenerations,

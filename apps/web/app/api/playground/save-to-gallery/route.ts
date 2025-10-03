@@ -48,17 +48,17 @@ export async function POST(request: NextRequest) {
       const mimeType = imageUrl.split(',')[0].split(':')[1].split(';')[0]
       const fileExtension = mimeType.split('/')[1]
       
-      // Generate unique filename
+      // Generate unique filename with user folder
       const timestamp = Date.now()
       const randomId = Math.random().toString(36).substring(2, 15)
-      const fileName = `cropped-image-${timestamp}-${randomId}.${fileExtension}`
-      
+      const fileName = `${user.id}/cropped-image-${timestamp}-${randomId}.${fileExtension}`
+
       // Convert base64 to buffer
       const buffer = Buffer.from(base64Data, 'base64')
-      
-      // Upload to Supabase Storage
+
+      // Upload to Supabase Storage (use playground-images bucket)
       const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-        .from('playground-gallery')
+        .from('playground-images')
         .upload(fileName, buffer, {
           contentType: mimeType,
           upsert: false
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       
       // Get public URL
       const { data: urlData } = supabaseAdmin.storage
-        .from('playground-gallery')
+        .from('playground-images')
         .getPublicUrl(fileName)
       
       finalImageUrl = urlData.publicUrl
@@ -106,14 +106,14 @@ export async function POST(request: NextRequest) {
         
         const fileExtension = contentType.split('/')[1] || 'jpg'
         
-        // Generate unique filename
+        // Generate unique filename with user folder
         const timestamp = Date.now()
         const randomId = Math.random().toString(36).substring(2, 15)
-        const fileName = `saved-image-${timestamp}-${randomId}.${fileExtension}`
-        
-        // Upload to Supabase Storage
+        const fileName = `${user.id}/saved-image-${timestamp}-${randomId}.${fileExtension}`
+
+        // Upload to Supabase Storage (use playground-images bucket)
         const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-          .from('playground-gallery')
+          .from('playground-images')
           .upload(fileName, imageBuffer, {
             contentType: contentType,
             upsert: false
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
         
         // Get public URL
         const { data: urlData } = supabaseAdmin.storage
-          .from('playground-gallery')
+          .from('playground-images')
           .getPublicUrl(fileName)
         
         finalImageUrl = urlData.publicUrl

@@ -18,6 +18,7 @@ import ImagePreviewArea from './ImagePreviewArea'
 import VideoViewer from './VideoViewer'
 import VideoPreviewArea from './VideoPreviewArea'
 import PromptManagementPanel from './PromptManagementPanel'
+import { useFeedback } from '../../../components/feedback/FeedbackContext'
 
 // Import PlaygroundProject type from the main playground page
 interface PlaygroundProject {
@@ -155,6 +156,7 @@ export default function TabbedPlaygroundLayout({
   onExpandMedia,
   onVideoGenerated
 }: TabbedPlaygroundLayoutProps) {
+  const { showFeedback } = useFeedback()
   const [activeTab, setActiveTab] = useState('generate')
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
 
@@ -255,7 +257,14 @@ export default function TabbedPlaygroundLayout({
     onSelectImage(null)
     // Clear additional preview images
     setAdditionalPreviewImages([])
-  }, [onSelectImage])
+    // Clear generated images from current project
+    if (currentProject) {
+      onUpdateProject({
+        ...currentProject,
+        generated_images: []
+      })
+    }
+  }, [onSelectImage, currentProject, onUpdateProject])
 
   // Style change callback
   const handleStyleChange = useCallback((style: string) => {
@@ -482,8 +491,10 @@ export default function TabbedPlaygroundLayout({
 
   // Fetch videos when component mounts or sessionToken changes
   useEffect(() => {
-    fetchVideos()
-  }, [fetchVideos])
+    if (sessionToken) {
+      fetchVideos()
+    }
+  }, [fetchVideos, sessionToken])
 
   // Add newly generated video to temp videos when it becomes available
   useEffect(() => {
@@ -529,8 +540,11 @@ export default function TabbedPlaygroundLayout({
 
   // Expose refresh function to parent component
   const refreshVideos = useCallback(() => {
-    return fetchVideos()
-  }, [fetchVideos])
+    if (sessionToken) {
+      return fetchVideos()
+    }
+    return Promise.resolve([])
+  }, [fetchVideos, sessionToken])
 
   // Set default aspect ratio to 16:9 when switching to Video tab
   useEffect(() => {
@@ -657,14 +671,21 @@ export default function TabbedPlaygroundLayout({
           console.error('❌ Video save failed:', {
             status: response.status,
             statusText: response.statusText,
-            errorData
+            errorData,
+            requestBody
+          })
+          showFeedback({
+            type: 'error',
+            title: 'Failed to Save Video',
+            message: errorData.error || errorData.message || 'Could not save video to gallery'
           })
         }
       } catch (error) {
         console.error('❌ Video save error:', error)
       }
-    } else if (videoData && videoData.aspectRatio) {
-      // Regular image or video without aspect ratio metadata
+    } else {
+      // Regular image or video - delegate to parent save handler
+      console.log('💾 Saving via parent onSaveToGallery handler')
       await onSaveToGallery(url)
     }
     
@@ -672,7 +693,7 @@ export default function TabbedPlaygroundLayout({
     if (savedGalleryRef.current) {
       savedGalleryRef.current.refresh()
     }
-  }, [onSaveToGallery, savedVideos, sessionToken, generatedVideoUrl, generatedVideoMetadata, refreshVideos])
+  }, [onSaveToGallery, savedVideos, sessionToken, generatedVideoUrl, generatedVideoMetadata, refreshVideos, showFeedback])
 
   const handleDeleteVideo = useCallback(async (videoUrl: string) => {
     if (!sessionToken) return
