@@ -546,9 +546,9 @@ export function ProfileHeaderEnhanced() {
           </div>
 
           {/* Profile Details */}
-          <div className="flex-1 pt-16">
+          <div className="flex-1 pt-16 min-w-0">
             <div className="flex items-start justify-between">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0 pr-4">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-2xl font-bold text-foreground">
                     {profile?.display_name || 'Display Name'}
@@ -577,19 +577,19 @@ export function ProfileHeaderEnhanced() {
 
                 {/* Social Links */}
                 {socialLinks.length > 0 && (
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
                     {socialLinks.map((link, index) => (
                       <a
                         key={index}
                         href={link.url || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg hover:shadow-md transition-all duration-200 group"
+                        className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg hover:shadow-md transition-all duration-200 group flex-shrink-0"
                       >
-                        <div className={`w-6 h-6 ${link.color} rounded-full flex items-center justify-center`}>
+                        <div className={`w-6 h-6 ${link.color} rounded-full flex items-center justify-center flex-shrink-0`}>
                           <link.icon className="w-3 h-3 text-primary-foreground" />
                         </div>
-                        <span className="text-sm font-medium text-foreground">
+                        <span className="text-sm font-medium text-foreground whitespace-nowrap">
                           {link.name}
                         </span>
                       </a>
@@ -599,11 +599,11 @@ export function ProfileHeaderEnhanced() {
 
                 {/* Professional Info */}
                 {professionalInfo.length > 0 && (
-                  <div className="flex flex-wrap gap-4 mb-4">
+                  <div className="flex flex-col gap-2 mb-4">
                     {professionalInfo.map((info, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <info.icon className="w-4 h-4" />
-                        <span>{info.value}</span>
+                      <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                        <info.icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{info.value}</span>
                       </div>
                     ))}
                   </div>
