@@ -477,7 +477,7 @@ export default function Home() {
             <div className="bg-background rounded-2xl border border-border overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch min-h-[500px]">
                 {/* Image for Contributors */}
-                <div className="relative h-full w-full order-2 lg:order-1">
+                <div className="relative h-64 lg:h-full w-full order-2 lg:order-1">
                   {(() => {
                     const contributorImage = getHowItWorksContributorImage();
                     return (
@@ -486,6 +486,7 @@ export default function Home() {
                         alt={contributorImage.alt_text}
                         fill
                         className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
                         onError={(e) => {
                           const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg';
                           if ((e.target as HTMLImageElement).src !== fallbackUrl) {
@@ -495,7 +496,7 @@ export default function Home() {
                       />
                     );
                   })()}
-        </div>
+                </div>
 
                 {/* Text Content for Contributors */}
                 <div className="p-8 order-1 lg:order-2 flex flex-col justify-between">
@@ -607,7 +608,7 @@ export default function Home() {
                 </div>
 
                 {/* Image for Talents */}
-                <div className="relative h-full w-full order-2 lg:order-2">
+                <div className="relative h-64 lg:h-full w-full order-2 lg:order-2">
                   {(() => {
                     const talentImage = getHowItWorksTalentImage();
                     return (
@@ -616,8 +617,9 @@ export default function Home() {
                         alt={talentImage.alt_text}
                         fill
                         className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 50vw"
                         onError={(e) => {
-                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg';
                           if ((e.target as HTMLImageElement).src !== fallbackUrl) {
                             (e.target as HTMLImageElement).src = fallbackUrl;
                           }
