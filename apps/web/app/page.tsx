@@ -133,7 +133,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[calc(100vh-4rem)]">
             {/* Left Column - Image */}
-            <div className="relative order-2 lg:order-1">
+            <div className="relative order-1 lg:order-1">
               <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-muted">
           {(() => {
                   const heroImages = getHeroImages();
@@ -172,7 +172,7 @@ export default function Home() {
             </div>
 
             {/* Right Column - Content */}
-            <div className="order-1 lg:order-2 flex flex-col justify-center">
+            <div className="order-2 lg:order-2 flex flex-col justify-center">
               <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
                 Connect Creatives alike. Ready, set, Preset.
           </h1>

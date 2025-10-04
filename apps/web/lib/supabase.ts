@@ -12,8 +12,9 @@ export const supabase = supabaseUrl && supabaseAnonKey
         autoRefreshToken: true,
         detectSessionInUrl: true,
         storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        storageKey: 'sb-auth-token', // Explicit storage key for better Firefox compatibility
         flowType: 'pkce',
-        debug: false // Disable debug to reduce noise
+        debug: true // Always enable debug to see what's happening
       },
       realtime: {
         params: {

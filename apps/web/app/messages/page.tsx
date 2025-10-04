@@ -118,7 +118,14 @@ export default function MessagesPage() {
     if (typeof window !== 'undefined') {
       return window.innerWidth < 1024 // lg breakpoint
     }
-    return false
+    return true // Default to collapsed on mobile
+  })
+  
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024
+    }
+    return true
   })
   
   // Refs for auto-scrolling and input management
@@ -223,8 +230,13 @@ export default function MessagesPage() {
   // Handle window resize for responsive sidebar
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 1024) {
+      const mobile = window.innerWidth < 1024
+      setIsMobile(mobile)
+      if (mobile) {
         setSidebarCollapsed(true)
+      } else {
+        // On desktop, keep sidebar expanded by default
+        setSidebarCollapsed(false)
       }
     }
 
@@ -609,17 +621,17 @@ export default function MessagesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-card rounded-lg shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 8rem)' }}>
           {/* Mobile backdrop overlay */}
-          {!sidebarCollapsed && (
+          {!sidebarCollapsed && isMobile && (
             <div 
-              className="lg:hidden fixed inset-0 bg-backdrop z-5"
+              className="lg:hidden fixed inset-0 bg-black/50 z-10"
               onClick={() => setSidebarCollapsed(true)}
             />
           )}
           <div className="flex h-full">
             {/* Conversations Sidebar */}
-            <div className={`${sidebarCollapsed ? 'w-16' : 'w-1/3'} border-r border-border flex flex-col transition-all duration-300 ease-in-out ${
-              sidebarCollapsed ? 'lg:relative absolute lg:translate-x-0 -translate-x-full z-10 lg:z-auto' : 'lg:relative absolute lg:translate-x-0 translate-x-0 z-10 lg:z-auto'
-            } lg:static ${!sidebarCollapsed ? 'lg:bg-transparent bg-card lg:shadow-none shadow-lg' : ''}`}>
+            <div className={`${sidebarCollapsed ? 'lg:w-16 w-16' : 'lg:w-1/3 w-80'} border-r border-border flex flex-col transition-all duration-300 ease-in-out ${
+              sidebarCollapsed ? 'lg:relative absolute lg:translate-x-0 -translate-x-full z-20 lg:z-auto' : 'lg:relative absolute lg:translate-x-0 translate-x-0 z-20 lg:z-auto'
+            } lg:static ${!sidebarCollapsed ? 'lg:bg-transparent bg-card lg:shadow-none shadow-xl' : ''}`}>
               {/* Header */}
               <div className="p-4 border-b border-border">
                 <div className="flex items-center justify-between">
@@ -669,7 +681,13 @@ export default function MessagesPage() {
                     return (
                       <div
                         key={conversation.id}
-                        onClick={() => setSelectedConversation(conversation.id)}
+                        onClick={() => {
+                          setSelectedConversation(conversation.id)
+                          // Auto-collapse sidebar on mobile when conversation is selected
+                          if (isMobile) {
+                            setSidebarCollapsed(true)
+                          }
+                        }}
                         className={`${sidebarCollapsed ? 'p-2' : 'p-4'} border-b border-border cursor-pointer hover:bg-accent transition-colors ${
                           selectedConversation === conversation.id ? 'bg-primary/10 border-primary/20' : ''
                         } ${
@@ -773,16 +791,30 @@ export default function MessagesPage() {
 
             {/* Chat Area */}
             <div className="flex-1 flex flex-col">
+              {/* Mobile sidebar toggle - always visible when sidebar is collapsed */}
+              {sidebarCollapsed && isMobile && (
+                <div className="lg:hidden p-2 border-b border-border">
+                  <button
+                    onClick={() => setSidebarCollapsed(false)}
+                    className="flex items-center space-x-2 p-2 hover:bg-accent rounded-lg transition-colors w-full"
+                    title="Show conversations"
+                  >
+                    <Menu className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Show Conversations</span>
+                  </button>
+                </div>
+              )}
+              
               {selectedConversation && conversationDetails ? (
                 <>
                   {/* Chat Header */}
                   <div className="p-4 border-b border-border">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        {/* Mobile sidebar toggle */}
+                        {/* Desktop sidebar toggle */}
                         <button
                           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                          className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
+                          className="hidden lg:block p-2 hover:bg-accent rounded-lg transition-colors"
                           title={sidebarCollapsed ? 'Show conversations' : 'Hide conversations'}
                         >
                           <Menu className="h-5 w-5 text-muted-foreground" />
@@ -1038,7 +1070,18 @@ export default function MessagesPage() {
                   <div className="text-center">
                     <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-foreground mb-2">Select a conversation</h3>
-                    <p className="text-muted-foreground">Choose a conversation from the sidebar to start messaging.</p>
+                    <p className="text-muted-foreground mb-4">Choose a conversation from the sidebar to start messaging.</p>
+                    
+                    {/* Show conversations button when no conversation selected */}
+                    {sidebarCollapsed && isMobile && (
+                      <button
+                        onClick={() => setSidebarCollapsed(false)}
+                        className="inline-flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                      >
+                        <Menu className="h-4 w-4" />
+                        <span>Show Conversations</span>
+                      </button>
+                    )}
                     
                     {/* Global connection status when no conversation selected - Temporarily disabled */}
                     {/* <div className="mt-4">

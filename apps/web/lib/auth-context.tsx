@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { debugSession } from './session-debug'
@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
+  const previousUserIdRef = useRef<string | undefined>(undefined)
 
   useEffect(() => {
     // Check if we have a stored session
@@ -92,121 +93,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, {
+        console.log('🔔 Auth state changed:', event, {
           hasSession: !!session,
           hasUser: !!session?.user,
           userEmail: session?.user?.email,
           userId: session?.user?.id
         })
-        setSession(session)
-        setUser(session?.user ?? null)
-        
-        // Update user role on auth state changes with proper error handling
+
+        const newUserId = session?.user?.id
+
+        // Only update if user actually changed (prevent duplicate re-renders)
+        if (newUserId === previousUserIdRef.current && event !== 'INITIAL_SESSION') {
+          console.log('⏭️ Skipping duplicate auth event - user unchanged')
+          return
+        }
+
+        previousUserIdRef.current = newUserId
+
+        // Update user role first (before state updates to batch re-renders)
+        let role = null
         try {
           if (session?.user) {
-            const role = await getUserRole(session.user.id)
-            setUserRole(role)
-          } else {
-            setUserRole(null)
+            role = await getUserRole(session.user.id)
           }
         } catch (error) {
           console.error('Error fetching user role during auth state change:', error)
-          setUserRole(null)
         }
-        
+
+        // Batch all state updates together using React 18 automatic batching
+        setSession(session)
+        setUser(session?.user ?? null)
+        setUserRole(role)
         setLoading(false)
-        
-        // Handle token refresh
-        if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed successfully')
+
+        // Log events
+        if (event === 'SIGNED_IN') {
+          console.log('✅ User signed in - should sync to all tabs')
+        } else if (event === 'SIGNED_OUT') {
+          console.log('✅ User signed out - should sync to all tabs')
+        } else if (event === 'INITIAL_SESSION') {
+          console.log('✅ Initial session loaded')
         }
       }
     )
 
-    // Listen for storage events to sync auth state across tabs
-    const handleStorageChange = (e: StorageEvent) => {
-      // Listen for any Supabase auth-related storage changes
-      // Supabase uses keys like: sb-<project-ref>-auth-token
-      if (e.key && e.key.includes('-auth-token') && e.newValue !== e.oldValue) {
-        console.log('Auth token changed in another tab, refreshing session...')
-        // Refresh the session when storage changes
-        supabase?.auth.getSession().then(({ data: { session } }) => {
-          console.log('Session refreshed from storage event:', session ? 'Found' : 'Not found')
-          setSession(session)
-          setUser(session?.user ?? null)
-          if (session?.user) {
-            getUserRole(session.user.id).then(setUserRole).catch(() => setUserRole(null))
-          } else {
-            setUserRole(null)
-          }
-        })
-      }
-    }
-
-    // Listen for visibility changes to refresh session when tab becomes active
-    let visibilityTimeout: ReturnType<typeof setTimeout> | null = null
-    let isRefreshing = false
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && supabase && !isRefreshing) {
-        // Debounce visibility changes to prevent multiple rapid refreshes
-        if (visibilityTimeout) {
-          clearTimeout(visibilityTimeout)
-        }
-
-        visibilityTimeout = setTimeout(async () => {
-          isRefreshing = true
-          console.log('Tab became visible, refreshing session...')
-
-          try {
-            const { data: { session }, error } = await supabase!.auth.getSession()
-
-            if (error) {
-              console.error('Error refreshing session on visibility change:', error)
-            } else if (session) {
-              console.log('Session refreshed on visibility change')
-              setSession(session)
-              setUser(session?.user ?? null)
-
-              if (session?.user) {
-                try {
-                  const role = await getUserRole(session.user.id)
-                  setUserRole(role)
-                } catch (roleError) {
-                  console.error('Error fetching role on visibility change:', roleError)
-                  setUserRole(null)
-                }
-              }
-            } else {
-              // No session found, clear state
-              console.log('No session found on visibility change')
-              setSession(null)
-              setUser(null)
-              setUserRole(null)
-            }
-          } catch (err) {
-            console.error('Error in visibility change handler:', err)
-          } finally {
-            isRefreshing = false
-          }
-        }, 300) // 300ms debounce
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', handleStorageChange)
-      document.addEventListener('visibilitychange', handleVisibilityChange)
-    }
-
     return () => {
       subscription.unsubscribe()
-      if (visibilityTimeout) {
-        clearTimeout(visibilityTimeout)
-      }
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('storage', handleStorageChange)
-        document.removeEventListener('visibilitychange', handleVisibilityChange)
-      }
     }
   }, [])
 

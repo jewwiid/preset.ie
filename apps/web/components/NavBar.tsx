@@ -106,23 +106,37 @@ export function NavBar() {
       userId: user?.id
     })
 
+    // Timeout safety: if auth is loading for more than 5 seconds, proceed anyway
+    const loadingTimeoutId = setTimeout(() => {
+      if (loading && user) {
+        console.warn('⚠️ NavBar: Auth loading timeout exceeded (5s), proceeding with profile fetch anyway')
+        fetchProfileSimple()
+      }
+    }, 5000) // 5 second timeout
+
     // Debounce profile fetching to prevent rapid re-fetches
     const debounceTimeout = setTimeout(() => {
       if (user && !loading) {
         // Directly fetch profile - trust AuthContext's session management
         console.log('🎯 NavBar: User authenticated, fetching profile...')
         fetchProfileSimple()
+      } else if (user && loading) {
+        console.log('⏳ NavBar: User found but auth still loading, waiting...')
+        // Don't clear profileLoading here - let the timeout handle it
       } else {
-        console.log('⏸️ NavBar: No user or still loading, clearing profile')
+        console.log('⏸️ NavBar: No user, clearing profile and loading state')
         setProfile(null)
-        setIsAdmin(!!userRole?.isAdmin)
-        setProfileLoading(false)
+        setIsAdmin(false)
+        setProfileLoading(false) // Always clear loading when no user
         setProfileFetchFailed(false)
       }
     }, 100) // 100ms debounce
 
-    return () => clearTimeout(debounceTimeout)
-  }, [user, loading, userRole])
+    return () => {
+      clearTimeout(debounceTimeout)
+      clearTimeout(loadingTimeoutId)
+    }
+  }, [user, loading]) // Removed userRole from dependencies - it was causing loops
 
   // Listen for OAuth callback completion to retry profile fetch
   useEffect(() => {
@@ -147,15 +161,21 @@ export function NavBar() {
   }, [user, loading])
 
   const fetchProfileSimple = async () => {
-    if (!user) return
+    if (!user) {
+      // Clear loading if no user
+      setProfileLoading(false)
+      return
+    }
     if (!supabase) {
       console.error('Supabase client not available')
+      setProfileLoading(false)
       return
     }
 
     // Check if profile fetching is disabled (e.g., during OAuth callback)
     if ((window as any).__disableNavBarProfileFetch) {
       console.log('⏸️ NavBar: Profile fetching disabled, skipping...')
+      setProfileLoading(false)
       return
     }
 

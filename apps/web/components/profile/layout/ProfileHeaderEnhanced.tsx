@@ -445,20 +445,20 @@ export function ProfileHeaderEnhanced() {
         <div className="absolute top-4 right-4 flex gap-2">
           {isEditing ? (
             <>
-              <button 
+              <button
                 onClick={() => bannerInputRef.current?.click()}
                 disabled={isUploadingBanner}
-                className="p-2 bg-background bg-opacity-20 hover:bg-opacity-30 text-primary-foreground rounded-lg transition-all duration-200 disabled:opacity-50"
+                className="p-2 bg-background/90 hover:bg-background text-foreground border border-border rounded-lg transition-all duration-200 disabled:opacity-50 shadow-sm"
               >
                 {isUploadingBanner ? (
-                  <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Camera className="w-4 h-4" />
                 )}
               </button>
-              <button 
+              <button
                 onClick={handleCancel}
-                className="px-3 py-2 bg-muted hover:bg-muted/80 text-primary-foreground rounded-lg text-sm font-medium transition-all"
+                className="px-3 py-2 bg-background/90 hover:bg-background text-foreground border border-border rounded-lg text-sm font-medium transition-all shadow-sm"
               >
                 Cancel
               </button>
