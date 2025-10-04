@@ -179,7 +179,7 @@ export default function Home() {
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
                 The go to platform, allowing creators and creatives to collaborate network and brainstorm together.
           </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 mb-8">
             {user ? (
               <>
                 <a

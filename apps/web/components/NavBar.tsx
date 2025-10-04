@@ -54,6 +54,18 @@ export function NavBar() {
   const pathname = usePathname()
   const [isAdmin, setIsAdmin] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  
+  // Close mobile menu on window resize to desktop size
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) { // md breakpoint
+        setMobileMenuOpen(false)
+      }
+    }
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const [profile, setProfile] = useState<any>(null)
   const [profileLoading, setProfileLoading] = useState(false)
@@ -695,7 +707,8 @@ export function NavBar() {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-md nav-item"
+              className="md:hidden p-2 rounded-md nav-item relative z-50"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -704,7 +717,13 @@ export function NavBar() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border-200 pb-3 pt-2">
+          <>
+            {/* Backdrop */}
+            <div 
+              className="md:hidden fixed inset-0 bg-black/50 z-40"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="md:hidden relative z-50 bg-background border-t border-border-200 pb-3 pt-2">
             {/* Dashboard Section */}
             {user && (
               <>
@@ -1093,7 +1112,8 @@ export function NavBar() {
                 </Link>
               </div>
             )}
-          </div>
+            </div>
+          </>
         )}
       </div>
 
