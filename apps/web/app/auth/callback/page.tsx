@@ -52,8 +52,17 @@ function AuthCallbackContent() {
       if (code) {
         console.log('🚀 CALLBACK PAGE: Found OAuth code, Supabase will automatically exchange it for session')
 
-        // Supabase PKCE flow automatically exchanges the code for a session
-        // We just need to wait for the SIGNED_IN event via onAuthStateChange
+        // First, check if session already exists (may have been established before we subscribed)
+        const { data: { session: existingSession } } = await supabase!.auth.getSession()
+
+        if (existingSession?.user) {
+          console.log('🚀 CALLBACK PAGE: Session already established, proceeding to profile check')
+          await handleProfileCheck(existingSession.user)
+          return
+        }
+
+        // If no existing session, wait for SIGNED_IN event
+        console.log('🚀 CALLBACK PAGE: No existing session, waiting for auth state change...')
         let sessionHandled = false
         const timeoutDuration = 10000 // 10 seconds max wait
 
@@ -65,7 +74,7 @@ function AuthCallbackContent() {
           }
         }, timeoutDuration)
 
-        // Listen for auth state change - this is the primary method
+        // Listen for auth state change
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           console.log('🚀 CALLBACK PAGE: Auth state change:', event, {
             hasSession: !!session,
@@ -73,8 +82,8 @@ function AuthCallbackContent() {
             userEmail: session?.user?.email
           })
 
-          // Only handle SIGNED_IN event with valid session
-          if (event === 'SIGNED_IN' && session?.user && !sessionHandled) {
+          // Handle SIGNED_IN or INITIAL_SESSION with valid session
+          if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user && !sessionHandled) {
             sessionHandled = true
             clearTimeout(timeout)
 

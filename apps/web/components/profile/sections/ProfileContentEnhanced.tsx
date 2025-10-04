@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useProfile, useProfileEditing } from '../context/ProfileContext'
+import { useProfile, useProfileEditing, useProfileUI } from '../context/ProfileContext'
 import { ProfileCompletionCard } from './ProfileCompletionCard'
 import { UserRatingDisplay } from './UserRatingDisplay'
 import { supabase } from '../../../lib/supabase'
@@ -43,6 +43,7 @@ import { Button } from '../../ui/button'
 export function ProfileContentEnhanced() {
   const { profile } = useProfile()
   const { isEditing } = useProfileEditing()
+  const { activeSubTab } = useProfileUI()
   const [userRating, setUserRating] = useState<{ average: number; total: number } | null>(null)
   const [stats, setStats] = useState({
     totalGigs: 0,
@@ -347,241 +348,568 @@ export function ProfileContentEnhanced() {
     return <span className="text-sm text-muted-foreground">{item.value}</span>
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Profile Completion Card - Full Width */}
-      <ProfileCompletionCard />
+  // Render content based on active sub-tab
+  const renderSubTabContent = () => {
+    switch (activeSubTab) {
+      case 'personal':
+        return (
+          <div className="space-y-6">
+            {/* Profile Completion Card */}
+            <ProfileCompletionCard />
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {overviewCards.map((card, index) => (
-          <div key={index} className={`${card.bgColor} rounded-xl p-6 border border-border hover:shadow-lg transition-all duration-200`}>
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center`}>
-                <card.icon className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="text-2xl font-bold text-foreground">{card.value}</span>
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">{card.title}</h3>
-            <p className="text-sm text-muted-foreground">{card.description}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Professional Information */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Briefcase className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <CardTitle>Professional Information</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {professionalInfo.map((item, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-foreground">{item.label}</label>
-                    <div className="mt-1">
-                      {renderEditableField(item)}
-                    </div>
+            {/* Bio Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary-foreground" />
                   </div>
+                  <CardTitle>About Me</CardTitle>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardHeader>
+              <CardContent>
+                {isEditing ? (
+                  <Textarea
+                    defaultValue={profile?.bio || ''}
+                    placeholder="Tell us about yourself..."
+                    className="h-32 resize-none"
+                  />
+                ) : (
+                  <p className="text-foreground leading-relaxed">
+                    {profile?.bio || 'No bio provided. Click "Edit Profile" to add your bio.'}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
-        {/* Contact Information */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Mail className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <CardTitle>Contact Information</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {contactInfo.map((item, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-foreground">{item.label}</label>
-                    <div className="mt-1">
-                      {renderEditableField(item)}
-                    </div>
+            {/* Contact Information */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                    <Mail className="w-5 h-5 text-primary-foreground" />
                   </div>
+                  <CardTitle>Contact Information</CardTitle>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Equipment & Software */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Camera className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <CardTitle>Equipment & Software</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {equipmentInfo.map((item, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-foreground">{item.label}</label>
-                    <div className="mt-1">
-                      {renderEditableField(item)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Physical Attributes (for talent) */}
-        {physicalInfo.length > 0 && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                  <Users className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <CardTitle>Physical Attributes</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {physicalInfo.map((item, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <label className="text-sm font-medium text-foreground">{item.label}</label>
-                      <div className="mt-1">
-                        {renderEditableField(item)}
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {contactInfo.map((item, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-foreground">{item.label}</label>
+                        <div className="mt-1">
+                          {renderEditableField(item)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Bio Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <User className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <CardTitle>About Me</CardTitle>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </CardHeader>
-        <CardContent>
-          {isEditing ? (
-            <Textarea
-              defaultValue={profile?.bio || ''}
-              placeholder="Tell us about yourself..."
-              className="h-32 resize-none"
-            />
-          ) : (
-            <p className="text-foreground leading-relaxed">
-              {profile?.bio || 'No bio provided. Click "Edit Profile" to add your bio.'}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Compatible Gigs Section - Only for Talent Users */}
-      {profile?.talent_categories && profile.talent_categories.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Target className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div className="flex-1">
-                <CardTitle>Compatible Gigs</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Gigs that match your profile and preferences
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {compatibleGigs.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-primary font-medium">
-                      {compatibleGigs.length} matches found
-                    </span>
+        )
+      
+      case 'demographics':
+        return (
+          <div className="space-y-6">
+            {/* Demographics content would go here */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Demographics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Demographics information coming soon...</p>
+              </CardContent>
+            </Card>
+          </div>
+        )
+      
+      case 'work-preferences':
+        return (
+          <div className="space-y-6">
+            {/* Professional Information */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                    <Briefcase className="w-5 h-5 text-primary-foreground" />
                   </div>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
+                  <CardTitle>Professional Information</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {professionalInfo.map((item, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-foreground">{item.label}</label>
+                        <div className="mt-1">
+                          {renderEditableField(item)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-          {matchmakingLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-3 text-muted-foreground">Finding compatible gigs...</span>
-            </div>
-          ) : compatibleGigs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {compatibleGigs.map((gig) => (
-                <MatchmakingCard
-                  key={gig.id}
-                  type={gig.type}
-                  data={gig.data}
-                  compatibilityScore={gig.compatibility_score}
-                  compatibilityBreakdown={gig.compatibility_breakdown}
-                  onViewDetails={() => window.open(`/gigs/${gig.id}`, '_blank')}
-                />
+            {/* Equipment & Software */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                    <Camera className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <CardTitle>Equipment & Software</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {equipmentInfo.map((item, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-foreground">{item.label}</label>
+                        <div className="mt-1">
+                          {renderEditableField(item)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )
+      
+      case 'privacy':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Privacy Settings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Privacy settings coming soon...</p>
+              </CardContent>
+            </Card>
+          </div>
+        )
+      
+      case 'style':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Style Preferences</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Style preferences coming soon...</p>
+              </CardContent>
+            </Card>
+          </div>
+        )
+      
+      case 'professional':
+        return (
+          <div className="space-y-6">
+            {/* Overview Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {overviewCards.map((card, index) => (
+                <div key={index} className={`${card.bgColor} rounded-xl p-6 border border-border hover:shadow-lg transition-all duration-200`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center`}>
+                      <card.icon className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <span className="text-2xl font-bold text-foreground">{card.value}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">{card.title}</h3>
+                  <p className="text-sm text-muted-foreground">{card.description}</p>
+                </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                No Compatible Gigs Found
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Complete your profile to get better matches, or check back later for new opportunities.
-              </p>
-              <div className="flex items-center justify-center gap-4">
-                <Button
-                  onClick={() => window.location.href = '/profile?edit=true'}
-                >
-                  Complete Profile
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => window.location.href = '/gigs'}
-                >
-                  Browse All Gigs
-                </Button>
-              </div>
-            </div>
-          )}
-          </CardContent>
-        </Card>
-      )}
 
-      {/* User Ratings Section */}
-      <UserRatingDisplay userId={profile?.id || ''} />
-    </div>
-  )
+            {/* Professional Information */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                    <Briefcase className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <CardTitle>Professional Information</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {professionalInfo.map((item, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <label className="text-sm font-medium text-foreground">{item.label}</label>
+                        <div className="mt-1">
+                          {renderEditableField(item)}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* User Ratings Section */}
+            <UserRatingDisplay userId={profile?.id || ''} />
+          </div>
+        )
+      
+      case 'talent':
+        return (
+          <div className="space-y-6">
+            {/* Physical Attributes (for talent) */}
+            {physicalInfo.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                      <Users className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <CardTitle>Physical Attributes</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {physicalInfo.map((item, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <label className="text-sm font-medium text-foreground">{item.label}</label>
+                          <div className="mt-1">
+                            {renderEditableField(item)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Compatible Gigs Section - Only for Talent Users */}
+            {profile?.talent_categories && profile.talent_categories.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                      <Target className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle>Compatible Gigs</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Gigs that match your profile and preferences
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {compatibleGigs.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-primary" />
+                          <span className="text-sm text-primary font-medium">
+                            {compatibleGigs.length} matches found
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {matchmakingLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <span className="ml-3 text-muted-foreground">Finding compatible gigs...</span>
+                    </div>
+                  ) : compatibleGigs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {compatibleGigs.map((gig) => (
+                        <MatchmakingCard
+                          key={gig.id}
+                          type={gig.type}
+                          data={gig.data}
+                          compatibilityScore={gig.compatibility_score}
+                          compatibilityBreakdown={gig.compatibility_breakdown}
+                          onViewDetails={() => window.open(`/gigs/${gig.id}`, '_blank')}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">
+                        No Compatible Gigs Found
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Complete your profile to get better matches, or check back later for new opportunities.
+                      </p>
+                      <div className="flex items-center justify-center gap-4">
+                        <Button
+                          onClick={() => window.location.href = '/profile?edit=true'}
+                        >
+                          Complete Profile
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => window.location.href = '/gigs'}
+                        >
+                          Browse All Gigs
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )
+      
+      default:
+        return (
+          <div className="space-y-6">
+            {/* Profile Completion Card - Full Width */}
+            <ProfileCompletionCard />
+
+            {/* Overview Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {overviewCards.map((card, index) => (
+                <div key={index} className={`${card.bgColor} rounded-xl p-6 border border-border hover:shadow-lg transition-all duration-200`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center`}>
+                      <card.icon className="w-6 h-6 text-primary-foreground" />
+                    </div>
+                    <span className="text-2xl font-bold text-foreground">{card.value}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-1">{card.title}</h3>
+                  <p className="text-sm text-muted-foreground">{card.description}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Professional Information */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                      <Briefcase className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <CardTitle>Professional Information</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {professionalInfo.map((item, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <label className="text-sm font-medium text-foreground">{item.label}</label>
+                          <div className="mt-1">
+                            {renderEditableField(item)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Contact Information */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <CardTitle>Contact Information</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {contactInfo.map((item, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <label className="text-sm font-medium text-foreground">{item.label}</label>
+                          <div className="mt-1">
+                            {renderEditableField(item)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Equipment & Software */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                      <Camera className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <CardTitle>Equipment & Software</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {equipmentInfo.map((item, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <label className="text-sm font-medium text-foreground">{item.label}</label>
+                          <div className="mt-1">
+                            {renderEditableField(item)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Physical Attributes (for talent) */}
+              {physicalInfo.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <Users className="w-5 h-5 text-primary-foreground" />
+                      </div>
+                      <CardTitle>Physical Attributes</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {physicalInfo.map((item, index) => (
+                        <div key={index} className="flex items-start gap-3">
+                          <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          <div className="flex-1">
+                            <label className="text-sm font-medium text-foreground">{item.label}</label>
+                            <div className="mt-1">
+                              {renderEditableField(item)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Bio Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <CardTitle>About Me</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isEditing ? (
+                  <Textarea
+                    defaultValue={profile?.bio || ''}
+                    placeholder="Tell us about yourself..."
+                    className="h-32 resize-none"
+                  />
+                ) : (
+                  <p className="text-foreground leading-relaxed">
+                    {profile?.bio || 'No bio provided. Click "Edit Profile" to add your bio.'}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Compatible Gigs Section - Only for Talent Users */}
+            {profile?.talent_categories && profile.talent_categories.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                      <Target className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle>Compatible Gigs</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Gigs that match your profile and preferences
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {compatibleGigs.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-primary" />
+                          <span className="text-sm text-primary font-medium">
+                            {compatibleGigs.length} matches found
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {matchmakingLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <span className="ml-3 text-muted-foreground">Finding compatible gigs...</span>
+                    </div>
+                  ) : compatibleGigs.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {compatibleGigs.map((gig) => (
+                        <MatchmakingCard
+                          key={gig.id}
+                          type={gig.type}
+                          data={gig.data}
+                          compatibilityScore={gig.compatibility_score}
+                          compatibilityBreakdown={gig.compatibility_breakdown}
+                          onViewDetails={() => window.open(`/gigs/${gig.id}`, '_blank')}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">
+                        No Compatible Gigs Found
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Complete your profile to get better matches, or check back later for new opportunities.
+                      </p>
+                      <div className="flex items-center justify-center gap-4">
+                        <Button
+                          onClick={() => window.location.href = '/profile?edit=true'}
+                        >
+                          Complete Profile
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => window.location.href = '/gigs'}
+                        >
+                          Browse All Gigs
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* User Ratings Section */}
+            <UserRatingDisplay userId={profile?.id || ''} />
+          </div>
+        )
+    }
+  }
+
+  return renderSubTabContent()
 }

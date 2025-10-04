@@ -348,6 +348,18 @@ a {
   background: var(--preset-600);
 }
 
+/* Hide scrollbars but keep functionality */
+.scrollbar-hide {
+  /* Firefox */
+  scrollbar-width: none;
+  /* Safari and Chrome */
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 .imgDark {
   display: none;
 }

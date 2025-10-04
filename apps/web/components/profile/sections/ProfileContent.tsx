@@ -37,18 +37,14 @@ export function ProfileContent() {
     }
   }
 
-  // Show enhanced view when not in edit mode, show tabs when editing
-  if (!isEditing) {
-    return <ProfileContentEnhanced />
-  }
-
+  // Always show sub-tabs for navigation, but content varies based on edit mode
   return (
     <div>
       <ProfileSubTabs 
         activeSubTab={activeSubTab} 
         onSubTabChange={setActiveSubTab} 
       />
-      {renderSubTabContent()}
+      {isEditing ? renderSubTabContent() : <ProfileContentEnhanced />}
     </div>
   )
 }
