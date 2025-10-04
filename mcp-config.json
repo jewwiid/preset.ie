@@ -45,8 +45,15 @@
     },
     "chrome-devtools": {
       "command": "npx",
-      "args": ["chrome-devtools-mcp@latest"],
-      "description": "Chrome DevTools debugging capabilities for web development"
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--headless=false",
+        "--isolated=true",
+        "--viewport=1280x720",
+        "--channel=stable"
+      ],
+      "description": "Chrome DevTools debugging capabilities for web development - includes input automation, navigation, performance analysis, network debugging, and screenshot capture"
     }
   },
   "contextSources": [

@@ -281,18 +281,18 @@ export default function Home() {
             <div className="flex animate-scroll-left gap-8 lg:gap-12">
               {/* First set */}
               <div className="flex gap-8 lg:gap-12 shrink-0">
-                <Link href="/photographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">PHOTOGRAPHERS</Link>
-                <Link href="/videographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">VIDEOGRAPHERS</Link>
-                <Link href="/freelancers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">FREELANCERS</Link>
-                <Link href="/creative-directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">CREATIVE DIRECTORS</Link>
-                <Link href="/brand-managers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">BRAND MANAGERS</Link>
-                <Link href="/content-creators" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">CONTENT CREATORS</Link>
-                <Link href="/art-directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">ART DIRECTORS</Link>
-                <Link href="/agencies" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">AGENCIES</Link>
-                <Link href="/entrepreneurs" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">ENTREPRENEURS</Link>
-                <Link href="/influencers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">INFLUENCERS</Link>
-                <Link href="/marketing-teams" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">MARKETING TEAMS</Link>
-                <Link href="/social-media-managers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">SOCIAL MEDIA MANAGERS</Link>
+                <Link href="/photographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">PHOTOGRAPHERS</Link>
+                <Link href="/videographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">VIDEOGRAPHERS</Link>
+                <Link href="/freelancers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">FREELANCERS</Link>
+                <Link href="/creative-directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">CREATIVE DIRECTORS</Link>
+                <Link href="/brand-managers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">BRAND MANAGERS</Link>
+                <Link href="/content-creators" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">CONTENT CREATORS</Link>
+                <Link href="/art-directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">ART DIRECTORS</Link>
+                <Link href="/agencies" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">AGENCIES</Link>
+                <Link href="/entrepreneurs" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">ENTREPRENEURS</Link>
+                <Link href="/influencers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">INFLUENCERS</Link>
+                <Link href="/marketing-teams" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">MARKETING TEAMS</Link>
+                <Link href="/social-media-managers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">SOCIAL MEDIA MANAGERS</Link>
               </div>
 
               {/* Duplicate set for seamless loop */}
@@ -340,21 +340,21 @@ export default function Home() {
             <div className="flex animate-scroll-right gap-8 lg:gap-12">
               {/* First set */}
               <div className="flex gap-8 lg:gap-12 shrink-0">
-                <Link href="/studios" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">STUDIOS</Link>
-                <Link href="/models" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">MODELS</Link>
-                <Link href="/makeup-artists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">MAKEUP ARTISTS</Link>
-                <Link href="/hair-stylists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">HAIR STYLISTS</Link>
-                <Link href="/fashion-stylists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">FASHION STYLISTS</Link>
-                <Link href="/producers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">PRODUCERS</Link>
-                <Link href="/designers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">DESIGNERS</Link>
-                <Link href="/artists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">ARTISTS</Link>
-                <Link href="/editors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">EDITORS</Link>
-                <Link href="/writers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">WRITERS</Link>
-                <Link href="/cinematographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">CINEMATOGRAPHERS</Link>
-                <Link href="/directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">DIRECTORS</Link>
-                <Link href="/contractors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">CONTRACTORS</Link>
-                <Link href="/actors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">ACTORS</Link>
-                <Link href="/musicians" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">MUSICIANS</Link>
+                <Link href="/studios" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">STUDIOS</Link>
+                <Link href="/models" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">MODELS</Link>
+                <Link href="/makeup-artists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">MAKEUP ARTISTS</Link>
+                <Link href="/hair-stylists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">HAIR STYLISTS</Link>
+                <Link href="/fashion-stylists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">FASHION STYLISTS</Link>
+                <Link href="/producers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">PRODUCERS</Link>
+                <Link href="/designers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">DESIGNERS</Link>
+                <Link href="/artists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">ARTISTS</Link>
+                <Link href="/editors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">EDITORS</Link>
+                <Link href="/writers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">WRITERS</Link>
+                <Link href="/cinematographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">CINEMATOGRAPHERS</Link>
+                <Link href="/directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">DIRECTORS</Link>
+                <Link href="/contractors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">CONTRACTORS</Link>
+                <Link href="/actors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">ACTORS</Link>
+                <Link href="/musicians" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">MUSICIANS</Link>
               </div>
 
               {/* Duplicate set for seamless loop */}
@@ -436,7 +436,7 @@ export default function Home() {
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 50vw"
                         onError={(e) => {
-                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg';
+                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                           if ((e.target as HTMLImageElement).src !== fallbackUrl) {
                             (e.target as HTMLImageElement).src = fallbackUrl;
                           }
@@ -567,7 +567,7 @@ export default function Home() {
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, 50vw"
                         onError={(e) => {
-                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg';
+                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                           if ((e.target as HTMLImageElement).src !== fallbackUrl) {
                             (e.target as HTMLImageElement).src = fallbackUrl;
                           }
@@ -716,7 +716,7 @@ export default function Home() {
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
-                            const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                            const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                             if ((e.target as HTMLImageElement).src !== fallbackUrl) {
                               (e.target as HTMLImageElement).src = fallbackUrl;
                             }
@@ -764,7 +764,7 @@ export default function Home() {
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
-                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                           if ((e.target as HTMLImageElement).src !== fallbackUrl) {
                             (e.target as HTMLImageElement).src = fallbackUrl;
                           }
@@ -831,7 +831,7 @@ export default function Home() {
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
-                            const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                            const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                             if ((e.target as HTMLImageElement).src !== fallbackUrl) {
                               (e.target as HTMLImageElement).src = fallbackUrl;
                             }
@@ -876,7 +876,7 @@ export default function Home() {
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
-                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                           if ((e.target as HTMLImageElement).src !== fallbackUrl) {
                             (e.target as HTMLImageElement).src = fallbackUrl;
                           }
@@ -932,7 +932,7 @@ export default function Home() {
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
-                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/playground-gallery/saved-image-1759192759863-n6naz0pyecq.jpeg';
+                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                           if ((e.target as HTMLImageElement).src !== fallbackUrl) {
                             (e.target as HTMLImageElement).src = fallbackUrl;
                           }
@@ -983,7 +983,7 @@ export default function Home() {
                       fill
                       className="object-cover"
                       onError={(e) => {
-                        const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                        const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                         if ((e.target as HTMLImageElement).src !== fallbackUrl) {
                           (e.target as HTMLImageElement).src = fallbackUrl;
                         }

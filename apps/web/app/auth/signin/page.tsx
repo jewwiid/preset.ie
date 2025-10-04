@@ -17,7 +17,7 @@ import { Logo } from '../../../components/Logo'
 import { GoogleSignInButton } from '../../../components/auth/GoogleSignInButton'
 
 function SignInContent() {
-  const [email, setEmail] = useState('')
+  const [emailOrHandle, setEmailOrHandle] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -41,8 +41,8 @@ function SignInContent() {
     setLoading(true)
     setError(null)
 
-    const { error, redirectPath } = await signIn(email, password)
-    
+    const { error, redirectPath } = await signIn(emailOrHandle, password)
+
     if (error) {
       setError(error.message)
       setLoading(false)
@@ -101,21 +101,21 @@ function SignInContent() {
         {/* Sign In Form */}
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-              Email address
+            <label htmlFor="emailOrHandle" className="block text-sm font-medium text-foreground mb-2">
+              Email or Handle
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="emailOrHandle"
+                name="emailOrHandle"
+                type="text"
+                autoComplete="username"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={emailOrHandle}
+                onChange={(e) => setEmailOrHandle(e.target.value)}
                 className="w-full pl-10 pr-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground"
-                placeholder="Enter your email"
+                placeholder="Enter your email or handle"
               />
             </div>
           </div>

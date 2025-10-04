@@ -158,28 +158,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error, needsEmailConfirmation }
   }
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (emailOrHandle: string, password: string) => {
     if (!supabase) {
       return { error: null }
     }
-    
+
+    let email = emailOrHandle
+
+    // Check if input is a handle (doesn't contain @) instead of email
+    if (!emailOrHandle.includes('@')) {
+      try {
+        // Look up email from handle via API
+        const response = await fetch('/api/auth/handle-to-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ handle: emailOrHandle })
+        })
+
+        if (!response.ok) {
+          return {
+            error: {
+              message: 'Invalid handle or password',
+              name: 'AuthError',
+              status: 400
+            } as AuthError,
+            redirectPath: undefined
+          }
+        }
+
+        const { email: userEmail } = await response.json()
+        if (!userEmail) {
+          return {
+            error: {
+              message: 'Invalid handle or password',
+              name: 'AuthError',
+              status: 400
+            } as AuthError,
+            redirectPath: undefined
+          }
+        }
+
+        email = userEmail
+      } catch (err) {
+        return {
+          error: {
+            message: 'An error occurred during sign in',
+            name: 'AuthError',
+            status: 500
+          } as AuthError,
+          redirectPath: undefined
+        }
+      }
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-    
+
     let redirectPath = '/dashboard'
-    
+
     if (!error && data.user) {
       // Get user role to determine redirect path
       const role = await getUserRole(data.user.id)
       setUserRole(role)
-      
+
       if (role?.isAdmin) {
         redirectPath = '/admin'
       }
     }
-    
+
     return { error, redirectPath }
   }
 
