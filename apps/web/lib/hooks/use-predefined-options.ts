@@ -22,6 +22,7 @@ export interface PredefinedOptions {
   vibeTags: PredefinedOption[]
   equipmentOptions: PredefinedOption[]
   skills: PredefinedOption[]
+  talentCategories: PredefinedOption[]
 }
 
 export function usePredefinedOptions() {
@@ -38,7 +39,8 @@ export function usePredefinedOptions() {
     styleTags: [],
     vibeTags: [],
     equipmentOptions: [],
-    skills: []
+    skills: [],
+    talentCategories: []
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -69,7 +71,8 @@ export function usePredefinedOptions() {
           styleTagsResult,
           vibeTagsResult,
           equipmentOptionsResult,
-          skillsResult
+          skillsResult,
+          talentCategoriesResult
         ] = await Promise.all([
           supabase
             .from('predefined_gender_identities')
@@ -147,6 +150,12 @@ export function usePredefinedOptions() {
             .from('predefined_skills')
             .select('id, name, is_active, sort_order')
             .eq('is_active', true)
+            .order('sort_order'),
+
+          supabase
+            .from('predefined_talent_categories')
+            .select('id, category_name as name, is_active, sort_order')
+            .eq('is_active', true)
             .order('sort_order')
         ])
 
@@ -164,7 +173,8 @@ export function usePredefinedOptions() {
           styleTagsResult,
           vibeTagsResult,
           equipmentOptionsResult,
-          skillsResult
+          skillsResult,
+          talentCategoriesResult
         ]
 
         for (const result of results) {
@@ -198,7 +208,8 @@ export function usePredefinedOptions() {
           styleTags: safeExtract(styleTagsResult),
           vibeTags: safeExtract(vibeTagsResult),
           equipmentOptions: safeExtract(equipmentOptionsResult),
-          skills: safeExtract(skillsResult)
+          skills: safeExtract(skillsResult),
+          talentCategories: safeExtract(talentCategoriesResult)
         })
 
       } catch (err) {

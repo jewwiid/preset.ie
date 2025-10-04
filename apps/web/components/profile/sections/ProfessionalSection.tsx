@@ -108,10 +108,29 @@ export function ProfessionalSection() {
         Professional Information
       </h2>
 
+      {/* Primary Skill */}
+      <div className="bg-primary/5 border-2 border-primary/20 rounded-lg p-4">
+        <h3 className="text-lg font-medium text-foreground mb-2 flex items-center gap-2">
+          <Briefcase className="w-4 h-4 text-primary" />
+          Primary Skill
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          This is shown on your profile and in directory listings
+        </p>
+
+        <TextField
+          label="Your main profession or category"
+          value={isEditing ? (formData.primary_skill || '') : (profile?.primary_skill || '')}
+          onChange={(e) => handleFieldChange('primary_skill', e.target.value)}
+          placeholder="e.g., Photographer, Model, Videographer"
+          className={isEditing ? '' : 'pointer-events-none'}
+        />
+      </div>
+
       {/* Experience */}
       <div className="bg-muted rounded-lg p-4">
         <h3 className="text-lg font-medium text-foreground mb-4">Experience</h3>
-        
+
         <RangeField
           label="Years of Experience"
           value={isEditing ? (formData.years_experience || 0) : (profile?.years_experience || 0)}

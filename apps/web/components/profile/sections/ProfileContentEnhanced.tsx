@@ -39,6 +39,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
 import { Input } from '../../ui/input'
 import { Textarea } from '../../ui/textarea'
 import { Button } from '../../ui/button'
+import { DemographicsSection } from './DemographicsSection'
+import { PrivacySettingsSection } from './PrivacySettingsSection'
 
 export function ProfileContentEnhanced() {
   const { profile } = useProfile()
@@ -420,7 +422,7 @@ export function ProfileContentEnhanced() {
                 <CardTitle>Demographics</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Demographics information coming soon...</p>
+                <DemographicsSection />
               </CardContent>
             </Card>
           </div>
@@ -493,7 +495,7 @@ export function ProfileContentEnhanced() {
                 <CardTitle>Privacy Settings</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Privacy settings coming soon...</p>
+                <PrivacySettingsSection />
               </CardContent>
             </Card>
           </div>

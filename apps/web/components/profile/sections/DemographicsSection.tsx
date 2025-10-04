@@ -1,10 +1,11 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { useProfile, useProfileEditing, useProfileForm } from '../context/ProfileContext'
 import { TextField, NumberField, SelectField } from '../common/FormField'
 import { ToggleSwitch } from '../common/ToggleSwitch'
 import { User, Globe, MapPin, Clock, Calendar } from 'lucide-react'
+import { supabase } from '../../../lib/supabase'
 
 // Gender identity options
 const GENDER_OPTIONS = [
@@ -33,20 +34,6 @@ const ETHNICITY_OPTIONS = [
   { value: 'prefer_not_to_say', label: 'Prefer not to say' }
 ]
 
-// Body type options
-const BODY_TYPE_OPTIONS = [
-  { value: 'petite', label: 'Petite' },
-  { value: 'slim', label: 'Slim' },
-  { value: 'athletic', label: 'Athletic' },
-  { value: 'average', label: 'Average' },
-  { value: 'curvy', label: 'Curvy' },
-  { value: 'plus_size', label: 'Plus Size' },
-  { value: 'muscular', label: 'Muscular' },
-  { value: 'tall', label: 'Tall' },
-  { value: 'short', label: 'Short' },
-  { value: 'other', label: 'Other' }
-]
-
 // Experience level options
 const EXPERIENCE_LEVEL_OPTIONS = [
   { value: 'beginner', label: 'Beginner' },
@@ -66,10 +53,46 @@ const AVAILABILITY_OPTIONS = [
   { value: 'weekdays_only', label: 'Weekdays Only' }
 ]
 
+// Note: Physical attribute options (body_type, hair_length, skin_tone)
+// have been moved to TalentSpecificSection for better organization
+
 export function DemographicsSection() {
   const { profile } = useProfile()
   const { isEditing } = useProfileEditing()
   const { formData, updateField } = useProfileForm()
+
+  const [nationalityOptions, setNationalityOptions] = useState<Array<{value: string, label: string}>>([])
+  const [loadingNationalities, setLoadingNationalities] = useState(false)
+
+  // Fetch nationalities from database
+  useEffect(() => {
+    const fetchNationalities = async () => {
+      setLoadingNationalities(true)
+      try {
+        if (!supabase) return
+
+        const { data, error } = await (supabase as any)
+          .from('predefined_nationalities')
+          .select('nationality_name')
+          .eq('is_active', true)
+          .order('sort_order')
+
+        if (!error && data) {
+          const options = data.map((n: any) => ({
+            value: n.nationality_name,
+            label: n.nationality_name
+          }))
+          setNationalityOptions(options)
+        }
+      } catch (error) {
+        console.error('Error fetching nationalities:', error)
+      } finally {
+        setLoadingNationalities(false)
+      }
+    }
+
+    fetchNationalities()
+  }, [])
 
   const handleFieldChange = (field: string, value: any) => {
     updateField(field, value)
@@ -104,68 +127,18 @@ export function DemographicsSection() {
           className={isEditing ? '' : 'pointer-events-none'}
         />
 
-        <TextField
+        <SelectField
           label="Nationality"
           value={isEditing ? formData.nationality : profile?.nationality}
           onChange={(value) => handleFieldChange('nationality', value)}
-          placeholder="e.g., American, Canadian, British"
+          options={nationalityOptions}
+          placeholder={loadingNationalities ? "Loading nationalities..." : "Select nationality"}
           className={isEditing ? '' : 'pointer-events-none'}
         />
       </div>
 
-      {/* Physical Attributes */}
-      <div className="space-y-4 border-t border-border pt-6">
-        <h3 className="text-lg font-medium text-foreground">Physical Attributes</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <NumberField
-            label="Height (cm)"
-            value={isEditing ? formData.height_cm : profile?.height_cm}
-            onChange={(value) => handleFieldChange('height_cm', value)}
-            placeholder="e.g., 175"
-            min={100}
-            max={250}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-
-          <NumberField
-            label="Weight (kg)"
-            value={isEditing ? formData.weight_kg : profile?.weight_kg}
-            onChange={(value) => handleFieldChange('weight_kg', value)}
-            placeholder="e.g., 70"
-            min={30}
-            max={200}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-        </div>
-
-        <SelectField
-          label="Body Type"
-          value={isEditing ? formData.body_type : profile?.body_type}
-          onChange={(value) => handleFieldChange('body_type', value)}
-          options={BODY_TYPE_OPTIONS}
-          placeholder="Select body type"
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TextField
-            label="Hair Length"
-            value={isEditing ? formData.hair_length : profile?.hair_length}
-            onChange={(value) => handleFieldChange('hair_length', value)}
-            placeholder="e.g., Short, Medium, Long"
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-
-          <TextField
-            label="Skin Tone"
-            value={isEditing ? formData.skin_tone : profile?.skin_tone}
-            onChange={(value) => handleFieldChange('skin_tone', value)}
-            placeholder="e.g., Light, Medium, Dark"
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-        </div>
-      </div>
+      {/* Note: Physical attributes (height, weight, body type, hair, skin tone)
+          are now in the Talent-Specific section for better organization */}
 
       {/* Professional Information */}
       <div className="space-y-4 border-t border-border pt-6">
@@ -204,22 +177,42 @@ export function DemographicsSection() {
           <MapPin className="h-4 w-4 text-primary-600" />
           <h3 className="text-lg font-medium text-foreground">Location</h3>
         </div>
-        
-        <TextField
-          label="State/Province"
-          value={isEditing ? formData.state_province : profile?.state_province}
-          onChange={(value) => handleFieldChange('state_province', value)}
-          placeholder="e.g., California, Ontario, Bavaria"
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
 
-        <TextField
-          label="Timezone"
-          value={isEditing ? formData.timezone : profile?.timezone}
-          onChange={(value) => handleFieldChange('timezone', value)}
-          placeholder="e.g., PST, EST, GMT"
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TextField
+            label="City"
+            value={isEditing ? formData.city : profile?.city}
+            onChange={(value) => handleFieldChange('city', value)}
+            placeholder="e.g., Los Angeles, London, Paris"
+            className={isEditing ? '' : 'pointer-events-none'}
+          />
+
+          <TextField
+            label="Country"
+            value={isEditing ? formData.country : profile?.country}
+            onChange={(value) => handleFieldChange('country', value)}
+            placeholder="e.g., United States, United Kingdom"
+            className={isEditing ? '' : 'pointer-events-none'}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <TextField
+            label="State/Province (Optional)"
+            value={isEditing ? formData.state_province : profile?.state_province}
+            onChange={(value) => handleFieldChange('state_province', value)}
+            placeholder="e.g., California, Ontario"
+            className={isEditing ? '' : 'pointer-events-none'}
+          />
+
+          <TextField
+            label="Timezone (Optional)"
+            value={isEditing ? formData.timezone : profile?.timezone}
+            onChange={(value) => handleFieldChange('timezone', value)}
+            placeholder="e.g., PST, EST, GMT"
+            className={isEditing ? '' : 'pointer-events-none'}
+          />
+        </div>
 
         <ToggleSwitch
           label="Valid Passport"

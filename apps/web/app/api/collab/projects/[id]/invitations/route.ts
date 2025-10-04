@@ -199,6 +199,27 @@ export async function POST(
     const body = await request.json();
     const validatedData = InvitationSchema.parse(body);
 
+    // Check if invitee accepts collaboration invitations (privacy check)
+    if (validatedData.invitee_id) {
+      const { data: inviteeProfile, error: inviteeError } = await supabase
+        .from('users_profile')
+        .select('allow_collaboration_invites')
+        .eq('id', validatedData.invitee_id)
+        .single();
+
+      if (inviteeError || !inviteeProfile) {
+        return NextResponse.json({
+          error: 'User not found'
+        }, { status: 404 });
+      }
+
+      if (inviteeProfile.allow_collaboration_invites === false) {
+        return NextResponse.json({
+          error: 'This user has disabled collaboration invitations in their privacy settings'
+        }, { status: 403 });
+      }
+    }
+
     // Check if invitation already exists
     const existingQuery = supabase
       .from('collab_invitations')

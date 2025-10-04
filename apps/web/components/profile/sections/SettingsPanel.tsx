@@ -1,75 +1,41 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useProfileSettings, useProfileEditing, useProfile } from '../context/ProfileContext'
+import { useProfileSettings, useProfile } from '../context/ProfileContext'
 import { ValidationMessage } from '../common/ValidationMessage'
-import { Settings, Bell, Eye, Shield } from 'lucide-react'
+import { Settings, Shield } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../lib/auth-context'
 import { Switch } from '../../ui/switch'
-import { Slider } from '../../ui/slider'
 import { Label } from '../../ui/label'
 
 export function SettingsPanel() {
   const { user } = useAuth()
   const { profile } = useProfile()
-  const { settings, notificationPrefs, setSettings, setNotificationPrefs } = useProfileSettings()
-  const { isEditing } = useProfileEditing()
-  
-  const [loading, setLoading] = useState(false)
+  const { settings, setSettings } = useProfileSettings()
+
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
   // Local state for form data
   const [formSettings, setFormSettings] = useState({
-    email_notifications: true,
-    push_notifications: true,
-    marketing_emails: false,
     location_visibility: true,
     profile_visibility: true
-  })
-
-  const [formNotificationPrefs, setFormNotificationPrefs] = useState({
-    location_radius: 50,
-    max_budget: null as number | null,
-    min_budget: null as number | null,
-    preferred_purposes: [] as string[]
   })
 
   // Load settings when component mounts
   useEffect(() => {
     if (settings) {
       setFormSettings({
-        email_notifications: settings.email_notifications,
-        push_notifications: settings.push_notifications,
-        marketing_emails: settings.marketing_emails,
         location_visibility: settings.location_visibility,
         profile_visibility: settings.profile_visibility
       })
     }
   }, [settings])
 
-  useEffect(() => {
-    if (notificationPrefs) {
-      setFormNotificationPrefs({
-        location_radius: notificationPrefs.location_radius,
-        max_budget: notificationPrefs.max_budget,
-        min_budget: notificationPrefs.min_budget,
-        preferred_purposes: notificationPrefs.preferred_purposes
-      })
-    }
-  }, [notificationPrefs])
-
   const handleSettingsChange = (field: string, value: any) => {
     setFormSettings(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
-  const handleNotificationPrefsChange = (field: string, value: any) => {
-    setFormNotificationPrefs(prev => ({
       ...prev,
       [field]: value
     }))
@@ -87,12 +53,13 @@ export function SettingsPanel() {
         throw new Error('Supabase client not available')
       }
 
-      // Update user settings
+      // Update only privacy settings
       const { data: settingsData, error: settingsError } = await (supabase as any)
         .from('user_settings')
         .upsert({
           user_id: profile.user_id,
-          ...formSettings,
+          location_visibility: formSettings.location_visibility,
+          profile_visibility: formSettings.profile_visibility,
           updated_at: new Date().toISOString()
         } as any)
         .select()
@@ -102,29 +69,13 @@ export function SettingsPanel() {
         throw settingsError
       }
 
-      // Update notification preferences
-      const { data: notificationData, error: notificationError } = await (supabase as any)
-        .from('notification_preferences')
-        .upsert({
-          user_id: user.id,
-          ...formNotificationPrefs,
-          updated_at: new Date().toISOString()
-        } as any)
-        .select()
-        .single()
-
-      if (notificationError) {
-        throw notificationError
-      }
-
       // Update context
       setSettings(settingsData as any)
-      setNotificationPrefs(notificationData as any)
-      setSuccess('Settings saved successfully!')
+      setSuccess('Privacy settings saved successfully!')
 
     } catch (err) {
-      console.error('Error saving settings:', err)
-      setError(err instanceof Error ? err.message : 'Failed to save settings')
+      console.error('Error saving privacy settings:', err)
+      setError(err instanceof Error ? err.message : 'Failed to save privacy settings')
     } finally {
       setSaving(false)
     }
@@ -141,68 +92,10 @@ export function SettingsPanel() {
       {success && (
         <ValidationMessage type="success" message={success} />
       )}
-      
+
       {error && (
         <ValidationMessage type="error" message={error} />
       )}
-
-      {/* Notification Settings */}
-      <div className="bg-muted rounded-lg p-4">
-        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
-          <Bell className="w-4 h-4" />
-          Notification Settings
-        </h3>
-        
-        <div className="space-y-4">
-          <div className="flex items-center justify-between py-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="email-notifications" className="text-sm font-medium">
-                Email Notifications
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Receive notifications via email
-              </p>
-            </div>
-            <Switch
-              id="email-notifications"
-              checked={formSettings.email_notifications}
-              onCheckedChange={(checked) => handleSettingsChange('email_notifications', checked)}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between py-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="push-notifications" className="text-sm font-medium">
-                Push Notifications
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Receive push notifications
-              </p>
-            </div>
-            <Switch
-              id="push-notifications"
-              checked={formSettings.push_notifications}
-              onCheckedChange={(checked) => handleSettingsChange('push_notifications', checked)}
-            />
-          </div>
-          
-          <div className="flex items-center justify-between py-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="marketing-emails" className="text-sm font-medium">
-                Marketing Emails
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Receive promotional content and updates
-              </p>
-            </div>
-            <Switch
-              id="marketing-emails"
-              checked={formSettings.marketing_emails}
-              onCheckedChange={(checked) => handleSettingsChange('marketing_emails', checked)}
-            />
-          </div>
-        </div>
-      </div>
 
       {/* Privacy Settings */}
       <div className="bg-muted rounded-lg p-4">
@@ -210,7 +103,7 @@ export function SettingsPanel() {
           <Shield className="w-4 h-4" />
           Privacy Settings
         </h3>
-        
+
         <div className="space-y-4">
           <div className="flex items-center justify-between py-3">
             <div className="space-y-0.5">
@@ -227,7 +120,7 @@ export function SettingsPanel() {
               onCheckedChange={(checked) => handleSettingsChange('location_visibility', checked)}
             />
           </div>
-          
+
           <div className="flex items-center justify-between py-3">
             <div className="space-y-0.5">
               <Label htmlFor="profile-visibility" className="text-sm font-medium">
@@ -246,67 +139,6 @@ export function SettingsPanel() {
         </div>
       </div>
 
-      {/* Notification Preferences */}
-      <div className="bg-muted rounded-lg p-4">
-        <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
-          <Eye className="w-4 h-4" />
-          Notification Preferences
-        </h3>
-        
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="location-radius" className="text-sm font-medium">
-                Location Radius
-              </Label>
-              <span className="text-sm font-medium text-primary">
-                {formNotificationPrefs.location_radius} km
-              </span>
-            </div>
-            <Slider
-              value={formNotificationPrefs.location_radius}
-              onValueChange={(value) => handleNotificationPrefsChange('location_radius', Array.isArray(value) ? value[0] : value)}
-              min={5}
-              max={100}
-              step={5}
-            />
-            <p className="text-xs text-muted-foreground">
-              Receive notifications for gigs within this radius
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="min-budget" className="block text-sm font-medium mb-2">
-                Minimum Budget ($)
-              </Label>
-              <input
-                id="min-budget"
-                type="number"
-                value={formNotificationPrefs.min_budget || ''}
-                onChange={(e) => handleNotificationPrefsChange('min_budget', e.target.value ? parseInt(e.target.value) : null)}
-                placeholder="No minimum"
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="max-budget" className="block text-sm font-medium mb-2">
-                Maximum Budget ($)
-              </Label>
-              <input
-                id="max-budget"
-                type="number"
-                value={formNotificationPrefs.max_budget || ''}
-                onChange={(e) => handleNotificationPrefsChange('max_budget', e.target.value ? parseInt(e.target.value) : null)}
-                placeholder="No maximum"
-                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Save Button */}
       <div className="flex justify-end">
         <button
@@ -321,8 +153,8 @@ export function SettingsPanel() {
             </>
           ) : (
             <>
-              <Settings className="w-4 h-4" />
-              Save Settings
+              <Shield className="w-4 h-4" />
+              Save Privacy Settings
             </>
           )}
         </button>
@@ -330,39 +162,16 @@ export function SettingsPanel() {
 
       {/* Current Settings Display */}
       <div className="bg-card rounded-lg p-4 border border-border">
-        <h3 className="text-lg font-medium text-foreground mb-4">Current Settings</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="space-y-2">
-            <h4 className="font-medium text-foreground">Notifications</h4>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.email_notifications ? 'bg-primary' : 'bg-muted'}`}></div>
-                <span className="text-muted-foreground">Email Notifications</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.push_notifications ? 'bg-primary' : 'bg-muted'}`}></div>
-                <span className="text-muted-foreground">Push Notifications</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.marketing_emails ? 'bg-primary' : 'bg-muted'}`}></div>
-                <span className="text-muted-foreground">Marketing Emails</span>
-              </div>
-            </div>
+        <h3 className="text-lg font-medium text-foreground mb-4">Current Privacy Settings</h3>
+
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${formSettings.location_visibility ? 'bg-primary' : 'bg-muted'}`}></div>
+            <span className="text-muted-foreground">Location Visible</span>
           </div>
-          
-          <div className="space-y-2">
-            <h4 className="font-medium text-foreground">Privacy</h4>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.location_visibility ? 'bg-primary' : 'bg-muted'}`}></div>
-                <span className="text-muted-foreground">Location Visible</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${formSettings.profile_visibility ? 'bg-primary' : 'bg-muted'}`}></div>
-                <span className="text-muted-foreground">Profile Visible</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${formSettings.profile_visibility ? 'bg-primary' : 'bg-muted'}`}></div>
+            <span className="text-muted-foreground">Profile Visible</span>
           </div>
         </div>
       </div>

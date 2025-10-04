@@ -51,6 +51,7 @@ export function usePlatformGeneratedImages() {
   const [presetImages, setPresetImages] = useState<PresetImage[]>([]);
   const [platformImages, setPlatformImages] = useState<PlatformImage[]>([]);
   const [talentProfiles, setTalentProfiles] = useState<TalentProfile[]>([]);
+  const [contributorProfiles, setContributorProfiles] = useState<TalentProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,22 +77,31 @@ export function usePlatformGeneratedImages() {
         const platformData = await platformResponse.json();
         setPlatformImages(platformData || []);
 
-        // Fetch talent profiles (public contributors)
-        const talentResponse = await fetch('/api/talent-profiles?limit=8');
+        // Fetch talent profiles (models, actors, makeup artists, etc.)
+        const talentResponse = await fetch('/api/talent-profiles?limit=8&role=TALENT');
         if (!talentResponse.ok) {
           throw new Error('Failed to fetch talent profiles');
         }
         const talentData = await talentResponse.json();
         setTalentProfiles(talentData || []);
 
+        // Fetch contributor profiles (photographers, videographers, etc.)
+        const contributorResponse = await fetch('/api/talent-profiles?limit=8&role=CONTRIBUTOR');
+        if (!contributorResponse.ok) {
+          throw new Error('Failed to fetch contributor profiles');
+        }
+        const contributorData = await contributorResponse.json();
+        setContributorProfiles(contributorData || []);
+
       } catch (err) {
         console.error('Error fetching platform images:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch images');
-        
+
         // Fallback to empty arrays on error
         setPresetImages([]);
         setPlatformImages([]);
         setTalentProfiles([]);
+        setContributorProfiles([]);
       } finally {
         setLoading(false);
       }
@@ -104,6 +114,7 @@ export function usePlatformGeneratedImages() {
     presetImages,
     platformImages,
     talentProfiles,
+    contributorProfiles,
     loading,
     error,
     // Helper functions
@@ -111,6 +122,7 @@ export function usePlatformGeneratedImages() {
     getTalentCategoryImages: () => presetImages.slice(0, 8), // Get first 8 for talent categories
     getFeaturedWorkImages: () => presetImages, // All images for featured work carousel
     getWhyPresetImage: () => platformImages.find(img => img.category === 'about') || platformImages[0],
-    getTalentProfiles: () => talentProfiles, // Real talent profiles for hire
+    getTalentProfiles: () => talentProfiles, // Real talent profiles for hire (models, actors, etc.)
+    getContributorProfiles: () => contributorProfiles, // Real contributor profiles (photographers, videographers, etc.)
   };
 }

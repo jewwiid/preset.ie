@@ -566,7 +566,17 @@ export function ProfileHeaderEnhanced() {
                     </div>
                   )}
                 </div>
-                
+
+                {/* Primary Skill Badge */}
+                {profile?.primary_skill && (
+                  <div className="mb-2">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary/90 to-primary text-primary-foreground rounded-full text-sm font-semibold shadow-sm">
+                      <Briefcase className="w-3.5 h-3.5" />
+                      {profile.primary_skill}
+                    </div>
+                  </div>
+                )}
+
                 <div className="text-sm text-muted-foreground mb-1">
                   @{profile?.handle || 'handle'}
                 </div>

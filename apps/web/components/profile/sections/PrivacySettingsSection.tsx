@@ -168,6 +168,14 @@ export function PrivacySettingsSection() {
             onChange={(checked) => handleFieldChange('allow_direct_messages', checked)}
             className={isEditing ? '' : 'pointer-events-none'}
           />
+
+          <ToggleSwitch
+            label="Allow Collaboration Invitations"
+            description="Allow other users to invite you to collaborate on projects"
+            checked={isEditing ? (formData.allow_collaboration_invites !== false) : (profile?.allow_collaboration_invites !== false)}
+            onChange={(checked) => handleFieldChange('allow_collaboration_invites', checked)}
+            className={isEditing ? '' : 'pointer-events-none'}
+          />
         </div>
       </div>
 

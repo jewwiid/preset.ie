@@ -36,7 +36,7 @@ export function ProfileTabs() {
 
   return (
     <div className="bg-card rounded-xl shadow-lg p-1 mb-6">
-      <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+      <div className="flex justify-center space-x-1 overflow-x-auto scrollbar-hide">
         {tabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -87,7 +87,7 @@ interface ProfileSubTabsProps {
 export function ProfileSubTabs({ activeSubTab, onSubTabChange }: ProfileSubTabsProps) {
   return (
     <div className="bg-muted rounded-lg p-1 mb-6">
-      <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+      <div className="flex justify-center space-x-1 overflow-x-auto scrollbar-hide">
         {profileSubTabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeSubTab === tab.id

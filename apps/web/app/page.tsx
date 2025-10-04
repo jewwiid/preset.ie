@@ -26,16 +26,18 @@ export default function Home() {
   });
 
   // Fetch platform-generated images
-  const { 
-    presetImages, 
-    platformImages, 
+  const {
+    presetImages,
+    platformImages,
     talentProfiles,
+    contributorProfiles,
     loading: platformImagesLoading,
     getHeroImage,
     getTalentCategoryImages,
     getFeaturedWorkImages,
     getWhyPresetImage,
-    getTalentProfiles
+    getTalentProfiles,
+    getContributorProfiles
   } = usePlatformGeneratedImages();
 
   // Helper functions for How It Works images
@@ -279,182 +281,128 @@ export default function Home() {
             <div className="flex animate-scroll-left gap-8 lg:gap-12">
               {/* First set */}
               <div className="flex gap-8 lg:gap-12 shrink-0">
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">PHOTOGRAPHERS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">VIDEOGRAPHERS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">FREELANCERS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">CREATIVE DIRECTORS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">BRAND MANAGERS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">CONTENT CREATORS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">ART DIRECTORS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">AGENCIES</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">ENTREPRENEURS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">INFLUENCERS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">MARKETING TEAMS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">SOCIAL MEDIA MANAGERS</div>
-          </div>
-        </div>
+                <Link href="/photographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">PHOTOGRAPHERS</Link>
+                <Link href="/videographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">VIDEOGRAPHERS</Link>
+                <Link href="/freelancers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">FREELANCERS</Link>
+                <Link href="/creative-directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">CREATIVE DIRECTORS</Link>
+                <Link href="/brand-managers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">BRAND MANAGERS</Link>
+                <Link href="/content-creators" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">CONTENT CREATORS</Link>
+                <Link href="/art-directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">ART DIRECTORS</Link>
+                <Link href="/agencies" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">AGENCIES</Link>
+                <Link href="/entrepreneurs" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">ENTREPRENEURS</Link>
+                <Link href="/influencers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">INFLUENCERS</Link>
+                <Link href="/marketing-teams" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">MARKETING TEAMS</Link>
+                <Link href="/social-media-managers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">SOCIAL MEDIA MANAGERS</Link>
+              </div>
 
               {/* Duplicate set for seamless loop */}
               <div className="flex gap-8 lg:gap-12 shrink-0">
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">PHOTOGRAPHERS</div>
+                  <Link href="/photographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">PHOTOGRAPHERS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">VIDEOGRAPHERS</div>
+                  <Link href="/videographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">VIDEOGRAPHERS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">FREELANCERS</div>
+                  <Link href="/freelancers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">FREELANCERS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">CREATIVE DIRECTORS</div>
+                  <Link href="/creative-directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">CREATIVE DIRECTORS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">BRAND MANAGERS</div>
+                  <Link href="/brand-managers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">BRAND MANAGERS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">CONTENT CREATORS</div>
+                  <Link href="/content-creators" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">CONTENT CREATORS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">ART DIRECTORS</div>
+                  <Link href="/art-directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">ART DIRECTORS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">AGENCIES</div>
+                  <Link href="/agencies" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">AGENCIES</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">ENTREPRENEURS</div>
+                  <Link href="/entrepreneurs" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">ENTREPRENEURS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">INFLUENCERS</div>
+                  <Link href="/influencers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">INFLUENCERS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">MARKETING TEAMS</div>
+                  <Link href="/marketing-teams" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">MARKETING TEAMS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">SOCIAL MEDIA MANAGERS</div>
+                  <Link href="/social-media-managers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">SOCIAL MEDIA MANAGERS</Link>
                 </div>
-          </div>
-        </div>
+              </div>
+            </div>
 
             {/* Bottom row - right to left */}
             <div className="flex animate-scroll-right gap-8 lg:gap-12">
               {/* First set */}
               <div className="flex gap-8 lg:gap-12 shrink-0">
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">STUDIOS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">MODELS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">MAKEUP ARTISTS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">HAIR STYLISTS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">FASHION STYLISTS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">PRODUCERS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">DESIGNERS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">ARTISTS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">EDITORS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">WRITERS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">CINEMATOGRAPHERS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">DIRECTORS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">CONTRACTORS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">ACTORS</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">MUSICIANS</div>
-          </div>
-        </div>
+                <Link href="/studios" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">STUDIOS</Link>
+                <Link href="/models" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">MODELS</Link>
+                <Link href="/makeup-artists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">MAKEUP ARTISTS</Link>
+                <Link href="/hair-stylists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">HAIR STYLISTS</Link>
+                <Link href="/fashion-stylists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">FASHION STYLISTS</Link>
+                <Link href="/producers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">PRODUCERS</Link>
+                <Link href="/designers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">DESIGNERS</Link>
+                <Link href="/artists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">ARTISTS</Link>
+                <Link href="/editors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">EDITORS</Link>
+                <Link href="/writers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">WRITERS</Link>
+                <Link href="/cinematographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">CINEMATOGRAPHERS</Link>
+                <Link href="/directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">DIRECTORS</Link>
+                <Link href="/contractors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">CONTRACTORS</Link>
+                <Link href="/actors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">ACTORS</Link>
+                <Link href="/musicians" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors">MUSICIANS</Link>
+              </div>
 
               {/* Duplicate set for seamless loop */}
               <div className="flex gap-8 lg:gap-12 shrink-0">
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">STUDIOS</div>
+                  <Link href="/studios" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">STUDIOS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">MODELS</div>
+                  <Link href="/models" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">MODELS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">MAKEUP ARTISTS</div>
+                  <Link href="/makeup-artists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">MAKEUP ARTISTS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">HAIR STYLISTS</div>
+                  <Link href="/hair-stylists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">HAIR STYLISTS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">FASHION STYLISTS</div>
+                  <Link href="/fashion-stylists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">FASHION STYLISTS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">PRODUCERS</div>
+                  <Link href="/producers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">PRODUCERS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">DESIGNERS</div>
+                  <Link href="/designers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">DESIGNERS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">ARTISTS</div>
+                  <Link href="/artists" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">ARTISTS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">EDITORS</div>
+                  <Link href="/editors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">EDITORS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">WRITERS</div>
+                  <Link href="/writers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">WRITERS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">CINEMATOGRAPHERS</div>
+                  <Link href="/cinematographers" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">CINEMATOGRAPHERS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">DIRECTORS</div>
+                  <Link href="/directors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">DIRECTORS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">CONTRACTORS</div>
+                  <Link href="/contractors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">CONTRACTORS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">ACTORS</div>
+                  <Link href="/actors" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">ACTORS</Link>
                 </div>
                 <div className="text-center">
-                  <div className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc">MUSICIANS</div>
+                  <Link href="/musicians" className="text-xl font-semibold text-foreground whitespace-nowrap scrolling-text-bloc hover:text-primary transition-colors cursor-pointer">MUSICIANS</Link>
                 </div>
               </div>
             </div>
@@ -776,24 +724,16 @@ export default function Home() {
                         />
                       </div>
                       
-                      {/* Category Label */}
+                      {/* Talent Info */}
                       <div className="text-center">
                         <h3 className="text-foreground font-medium text-lg">
                           {displayName} <span className="text-muted-foreground font-normal">@{talent.handle}</span>
                         </h3>
                         <p className="text-muted-foreground text-sm mt-1">
-                          {(() => {
-                            if (talent.specializations && talent.specializations.length > 0) {
-                              return talent.specializations[0];
-                            }
-                            if (talent.talent_categories && talent.talent_categories.length > 0) {
-                              return talent.talent_categories[0];
-                            }
-                            if (talent.style_tags && talent.style_tags.length > 0) {
-                              return talent.style_tags[0];
-                            }
-                            return 'Creative Professional';
-                          })()}
+                          {(talent as any).primary_skill ||
+                            (talent.talent_categories && talent.talent_categories.length > 0 ? talent.talent_categories[0] : null) ||
+                            (talent.specializations && talent.specializations.length > 0 ? talent.specializations[0] : null) ||
+                            'Creative Professional'}
                         </p>
                       </div>
                     </a>
@@ -812,9 +752,10 @@ export default function Home() {
                 const image = talentImages[index];
                 const imageSrc = image?.result_image_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
                 const imageAlt = image?.title || `${category} talent`;
-                
+                const categorySlug = category.toLowerCase().replace(/\s+/g, '-').replace(/-s$/, ''); // Remove trailing -s
+
                 return (
-                  <div key={category} className="group cursor-pointer">
+                  <Link key={category} href={`/${categorySlug}`} className="group cursor-pointer">
                     {/* Category Image */}
                     <div className="relative aspect-[4/5] mb-4">
                       <Image
@@ -830,12 +771,124 @@ export default function Home() {
                         }}
                       />
                     </div>
-                    
+
                     {/* Category Label */}
                     <div className="text-center">
                       <h3 className="text-foreground font-medium text-lg">{category}</h3>
                     </div>
+                  </Link>
+                );
+              });
+            })()}
+          </div>
+        </div>
+      </section>
+
+      {/* Contributors Section - Photographers, Videographers, etc. */}
+      <section className="py-20 bg-muted">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold text-foreground mb-4">CONTRIBUTORS</h2>
+            <p className="text-xl text-muted-foreground">
+              Connect with skilled photographers, videographers, and creative professionals
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {(() => {
+              const realContributors = getContributorProfiles();
+
+              // Show loading state if still loading
+              if (platformImagesLoading) {
+                return Array.from({ length: 8 }, (_, index) => (
+                  <div key={index} className="animate-pulse">
+                    <div className="rounded-lg overflow-hidden bg-gray-200 aspect-[4/5] mb-4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24 mx-auto"></div>
                   </div>
+                ));
+              }
+
+              // Show real contributor profiles
+              if (realContributors.length > 0) {
+                return realContributors.map((contributor) => {
+                  const imageSrc = contributor.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                  const displayName = contributor.display_name || contributor.handle || 'Creative Professional';
+                  const primarySkill = contributor.specializations && contributor.specializations.length > 0
+                    ? contributor.specializations[0]
+                    : 'Creative Professional';
+
+                  return (
+                    <Link
+                      key={contributor.id}
+                      href={`/profile/${contributor.handle}`}
+                      className="group cursor-pointer block"
+                    >
+                      {/* Contributor Image */}
+                      <div className="relative aspect-[4/5] mb-4">
+                        <Image
+                          src={imageSrc}
+                          alt={contributor.bio || displayName}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                            if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                              (e.target as HTMLImageElement).src = fallbackUrl;
+                            }
+                          }}
+                        />
+                      </div>
+
+                      {/* Contributor Info */}
+                      <div className="text-center">
+                        <h3 className="text-foreground font-medium text-lg">
+                          {displayName} <span className="text-muted-foreground font-normal">@{contributor.handle}</span>
+                        </h3>
+                        <p className="text-muted-foreground text-sm mt-1">
+                          {primarySkill}
+                        </p>
+                      </div>
+                    </Link>
+                  );
+                });
+              }
+
+              // Fallback to static categories if no real contributors available
+              const contributorCategories = [
+                'Photographers', 'Videographers', 'Directors', 'Editors',
+                'Cinematographers', 'Producers', 'Sound Engineers', 'Lighting Technicians'
+              ];
+              const contributorImages = getTalentCategoryImages();
+
+              return contributorCategories.map((category, index) => {
+                const image = contributorImages[index];
+                const imageSrc = image?.result_image_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                const imageAlt = image?.title || `${category} contributor`;
+                const categorySlug = category.toLowerCase().replace(/\s+/g, '-');
+
+                return (
+                  <Link key={category} href={`/${categorySlug}`} className="group cursor-pointer">
+                    {/* Category Image */}
+                    <div className="relative aspect-[4/5] mb-4">
+                      <Image
+                        src={imageSrc}
+                        alt={imageAlt}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
+                          if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                            (e.target as HTMLImageElement).src = fallbackUrl;
+                          }
+                        }}
+                      />
+                    </div>
+
+                    {/* Category Label */}
+                    <div className="text-center">
+                      <h3 className="text-foreground font-medium text-lg">{category}</h3>
+                    </div>
+                  </Link>
                 );
               });
             })()}
@@ -844,7 +897,7 @@ export default function Home() {
       </section>
 
       {/* User Generated Images Masonry Section */}
-      <section className="py-20 bg-muted">
+      <section className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-foreground mb-4">FEATURED WORK</h2>

@@ -53,6 +53,7 @@ export interface UserProfile {
   hair_length?: string
   skin_tone?: string
   experience_level?: string
+  primary_skill?: string
   availability_status?: string
   preferred_working_hours?: string
   state_province?: string
@@ -70,6 +71,7 @@ export interface UserProfile {
   include_in_search?: boolean
   show_availability?: boolean
   allow_direct_messages?: boolean
+  allow_collaboration_invites?: boolean
   share_analytics?: boolean
   participate_research?: boolean
   accepts_tfp?: boolean
@@ -233,6 +235,7 @@ export interface ToggleSwitchProps {
   onChange: (checked: boolean) => void
   disabled?: boolean
   className?: string
+  description?: string
 }
 
 export interface MediaUploadProps {

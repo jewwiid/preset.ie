@@ -5,6 +5,7 @@ import { ToggleSwitchProps } from '../types/profile'
 
 export function ToggleSwitch({
   label,
+  description,
   checked,
   onChange,
   disabled = false,
@@ -12,9 +13,16 @@ export function ToggleSwitch({
 }: ToggleSwitchProps) {
   return (
     <div className={`flex items-center justify-between ${className}`}>
-      <label className="text-sm font-medium text-foreground">
-        {label}
-      </label>
+      <div className="flex-1">
+        <label className="text-sm font-medium text-foreground">
+          {label}
+        </label>
+        {description && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {description}
+          </p>
+        )}
+      </div>
       
       <button
         type="button"

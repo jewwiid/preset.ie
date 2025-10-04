@@ -62,9 +62,7 @@ const SOFTWARE_OPTIONS = [
   'Final Cut Pro', 'Premiere Pro', 'After Effects'
 ]
 
-const TALENT_CATEGORIES = [
-  'Model', 'Actor', 'Dancer', 'Musician', 'Artist', 'Influencer'
-]
+// TALENT_CATEGORIES removed - now fetched dynamically from database via predefinedOptions.talentCategories
 
 // All predefined options will be fetched from database
 
@@ -90,16 +88,19 @@ export default function CompleteProfilePage() {
   
   // Additional profile fields
   const [profileData, setProfileData] = useState<{
+    // Primary skill (REQUIRED)
+    primarySkill?: string
+
     // Social media & contact
     instagramHandle?: string
     tiktokHandle?: string
     websiteUrl?: string
     portfolioUrl?: string
     phoneNumber?: string
-    
+
     // Age & verification
     dateOfBirth?: string
-    
+
     // Enhanced demographics
     genderIdentity?: string
     ethnicity?: string
@@ -352,7 +353,10 @@ export default function CompleteProfilePage() {
         role_flags: roleFlags,
         style_tags: selectedStyles,
         vibe_tags: selectedVibes,
-        
+
+        // Primary skill - REQUIRED for directory listings
+        primary_skill: profileData.primarySkill || null,
+
         // Social media & contact
         instagram_handle: profileData.instagramHandle || null,
         tiktok_handle: profileData.tiktokHandle || null,
@@ -1175,6 +1179,84 @@ export default function CompleteProfilePage() {
                 </p>
               </div>
 
+              {/* Primary Skill Selection - REQUIRED */}
+              <div className="bg-primary-50 border-2 border-primary-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-primary-900 mb-2 flex items-center">
+                  <Briefcase className="w-5 h-5 mr-2" />
+                  What's your primary skill? <span className="text-destructive-500 ml-1">*</span>
+                </h3>
+                <p className="text-sm text-muted-foreground-600 mb-4">
+                  This will be shown on your profile and in directory listings
+                </p>
+
+                {selectedRole === 'CONTRIBUTOR' && (
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                      Select your primary profession
+                    </label>
+                    <select
+                      value={profileData.primarySkill || ''}
+                      onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, primarySkill: e.target.value }))}
+                      className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
+                      required
+                      disabled={optionsLoading}
+                    >
+                      <option value="">Select your primary skill...</option>
+                      {getOptionNames(predefinedOptions.skills).map(skill => (
+                        <option key={skill} value={skill}>{skill}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {selectedRole === 'TALENT' && (
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                      Select your primary category
+                    </label>
+                    <select
+                      value={profileData.primarySkill || ''}
+                      onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, primarySkill: e.target.value }))}
+                      className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
+                      required
+                      disabled={optionsLoading}
+                    >
+                      <option value="">Select your primary category...</option>
+                      {getOptionNames(predefinedOptions.talentCategories).map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {selectedRole === 'BOTH' && (
+                  <div>
+                    <label className="block text-sm font-medium text-muted-foreground-700 mb-2">
+                      Select your primary skill (contributor or talent)
+                    </label>
+                    <select
+                      value={profileData.primarySkill || ''}
+                      onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, primarySkill: e.target.value }))}
+                      className="w-full px-3 py-2 border border-border-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-muted-foreground-900"
+                      required
+                      disabled={optionsLoading}
+                    >
+                      <option value="">Select your primary skill...</option>
+                      <optgroup label="Contributor Skills">
+                        {getOptionNames(predefinedOptions.skills).map(skill => (
+                          <option key={skill} value={skill}>{skill}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Talent Categories">
+                        {getOptionNames(predefinedOptions.talentCategories).map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </div>
+                )}
+              </div>
+
               {/* Contributor-specific fields */}
               {(selectedRole === 'CONTRIBUTOR' || selectedRole === 'BOTH') && (
                 <div className="border-t pt-6">
@@ -1305,26 +1387,30 @@ export default function CompleteProfilePage() {
                         Categories
                       </label>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {TALENT_CATEGORIES.map(cat => (
-                          <button
-                            key={cat}
-                            type="button"
-                            onClick={() => {
-                              const current = profileData.talentCategories || []
-                              const updated = current.includes(cat) 
-                                ? current.filter((i: string) => i !== cat)
-                                : [...current, cat]
-                              setProfileData((prev: typeof profileData) => ({ ...prev, talentCategories: updated }))
-                            }}
-                            className={`px-3 py-2 text-sm rounded-lg transition ${
-                              (profileData.talentCategories || []).includes(cat)
-                                ? 'bg-primary-600 text-primary-foreground'
-                                : 'bg-muted-100 text-muted-foreground-700 hover:bg-muted-200'
-                            }`}
-                          >
-                            {cat}
-                          </button>
-                        ))}
+                        {optionsLoading ? (
+                          <div className="text-muted-foreground-500 col-span-3">Loading categories...</div>
+                        ) : (
+                          getOptionNames(predefinedOptions.talentCategories).map(cat => (
+                            <button
+                              key={cat}
+                              type="button"
+                              onClick={() => {
+                                const current = profileData.talentCategories || []
+                                const updated = current.includes(cat)
+                                  ? current.filter((i: string) => i !== cat)
+                                  : [...current, cat]
+                                setProfileData((prev: typeof profileData) => ({ ...prev, talentCategories: updated }))
+                              }}
+                              className={`px-3 py-2 text-sm rounded-lg transition ${
+                                (profileData.talentCategories || []).includes(cat)
+                                  ? 'bg-primary-600 text-primary-foreground'
+                                  : 'bg-muted-100 text-muted-foreground-700 hover:bg-muted-200'
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                          ))
+                        )}
                       </div>
                     </div>
                     
