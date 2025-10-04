@@ -106,17 +106,22 @@ export function NavBar() {
       userId: user?.id
     })
 
-    if (user && !loading) {
-      // Directly fetch profile - trust AuthContext's session management
-      console.log('🎯 NavBar: User authenticated, fetching profile...')
-      fetchProfileSimple()
-    } else {
-      console.log('⏸️ NavBar: No user or still loading, clearing profile')
-      setProfile(null)
-      setIsAdmin(!!userRole?.isAdmin)
-      setProfileLoading(false)
-      setProfileFetchFailed(false)
-    }
+    // Debounce profile fetching to prevent rapid re-fetches
+    const debounceTimeout = setTimeout(() => {
+      if (user && !loading) {
+        // Directly fetch profile - trust AuthContext's session management
+        console.log('🎯 NavBar: User authenticated, fetching profile...')
+        fetchProfileSimple()
+      } else {
+        console.log('⏸️ NavBar: No user or still loading, clearing profile')
+        setProfile(null)
+        setIsAdmin(!!userRole?.isAdmin)
+        setProfileLoading(false)
+        setProfileFetchFailed(false)
+      }
+    }, 100) // 100ms debounce
+
+    return () => clearTimeout(debounceTimeout)
   }, [user, loading, userRole])
 
   // Listen for OAuth callback completion to retry profile fetch
@@ -164,6 +169,7 @@ export function NavBar() {
     setProfileLoading(true)
     setProfileFetchFailed(false)
 
+    // Create an AbortController for timeout
     try {
       const { data, error } = await supabase
         .from('users_profile')
@@ -185,9 +191,14 @@ export function NavBar() {
         setProfile(null)
       }
     } catch (error: any) {
-      console.error('💥 NavBar: Profile fetch error:', error.message)
+      if (error.name === 'AbortError') {
+        console.error('💥 NavBar: Profile fetch timed out')
+        setProfileFetchFailed(true)
+      } else {
+        console.error('💥 NavBar: Profile fetch error:', error.message)
+        setProfileFetchFailed(true)
+      }
       setProfile(null)
-      setProfileFetchFailed(true)
     } finally {
       setProfileLoading(false)
     }

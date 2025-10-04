@@ -155,14 +155,20 @@ export default function SignUpPage() {
 
   const handleGoogleSignup = async () => {
     if (!selectedRole) return
-    
+
     setLoading(true)
     setError(null)
 
     try {
-      // Store the selected role for the OAuth callback
+      // Store the selected role and date of birth for the OAuth callback
       sessionStorage.setItem('preset_signup_role', selectedRole)
-      
+      if (dateOfBirth) {
+        sessionStorage.setItem('preset_signup_dob', dateOfBirth.toISOString())
+      }
+      if (email) {
+        sessionStorage.setItem('preset_signup_email', email)
+      }
+
       // Initiate Google OAuth
       const { error } = await signInWithGoogle()
       
@@ -183,9 +189,20 @@ export default function SignUpPage() {
     setError(null)
 
     try {
+      // Store the selected role and date of birth for the complete-profile step
+      if (selectedRole) {
+        sessionStorage.setItem('preset_signup_role', selectedRole)
+      }
+      if (dateOfBirth) {
+        sessionStorage.setItem('preset_signup_dob', dateOfBirth.toISOString())
+      }
+      if (email) {
+        sessionStorage.setItem('preset_signup_email', email)
+      }
+
       // Create auth account
       const { error: signUpError, needsEmailConfirmation } = await signUp(email, password)
-      
+
       if (signUpError) {
         setError(signUpError.message)
         setLoading(false)

@@ -20,11 +20,14 @@ import {
 import { format } from 'date-fns';
 
 interface UserCredits {
-  balance: number;
-  lifetime_earned: number;
+  current_balance: number;
+  monthly_allowance: number;
+  consumed_this_month: number;
   lifetime_consumed: number;
-  last_purchase_at: string | null;
-  last_consumed_at: string | null;
+  subscription_tier: string;
+  last_purchase_at?: string | null;
+  last_consumed_at?: string | null;
+  last_reset_at?: string | null;
 }
 
 interface CreditTransaction {
@@ -279,7 +282,7 @@ export default function CreditsDashboard() {
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary">{userCredits?.balance || 0}</p>
+                <p className="text-3xl font-bold text-primary">{userCredits?.current_balance || 0}</p>
                 <p className="text-sm text-muted-foreground mt-1">Available credits</p>
               </div>
               <Button
@@ -307,7 +310,7 @@ export default function CreditsDashboard() {
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-foreground">{userCredits?.lifetime_earned || 0}</p>
+                <p className="text-3xl font-bold text-foreground">{userCredits?.monthly_allowance || 0}</p>
               </div>
             </div>
           </CardContent>

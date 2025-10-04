@@ -144,19 +144,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Listen for visibility changes to refresh session when tab becomes active
+    let visibilityTimeout: ReturnType<typeof setTimeout> | null = null
+    let isRefreshing = false
+
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && supabase) {
-        console.log('Tab became visible, refreshing session...')
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
-            console.log('Session refreshed on visibility change')
-            setSession(session)
-            setUser(session?.user ?? null)
-            if (session?.user) {
-              getUserRole(session.user.id).then(setUserRole).catch(() => setUserRole(null))
+      if (document.visibilityState === 'visible' && supabase && !isRefreshing) {
+        // Debounce visibility changes to prevent multiple rapid refreshes
+        if (visibilityTimeout) {
+          clearTimeout(visibilityTimeout)
+        }
+
+        visibilityTimeout = setTimeout(async () => {
+          isRefreshing = true
+          console.log('Tab became visible, refreshing session...')
+
+          try {
+            const { data: { session }, error } = await supabase!.auth.getSession()
+
+            if (error) {
+              console.error('Error refreshing session on visibility change:', error)
+            } else if (session) {
+              console.log('Session refreshed on visibility change')
+              setSession(session)
+              setUser(session?.user ?? null)
+
+              if (session?.user) {
+                try {
+                  const role = await getUserRole(session.user.id)
+                  setUserRole(role)
+                } catch (roleError) {
+                  console.error('Error fetching role on visibility change:', roleError)
+                  setUserRole(null)
+                }
+              }
+            } else {
+              // No session found, clear state
+              console.log('No session found on visibility change')
+              setSession(null)
+              setUser(null)
+              setUserRole(null)
             }
+          } catch (err) {
+            console.error('Error in visibility change handler:', err)
+          } finally {
+            isRefreshing = false
           }
-        })
+        }, 300) // 300ms debounce
       }
     }
 
@@ -167,6 +200,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       subscription.unsubscribe()
+      if (visibilityTimeout) {
+        clearTimeout(visibilityTimeout)
+      }
       if (typeof window !== 'undefined') {
         window.removeEventListener('storage', handleStorageChange)
         document.removeEventListener('visibilitychange', handleVisibilityChange)

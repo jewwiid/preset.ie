@@ -2,18 +2,23 @@
 
 export const dynamic = 'force-dynamic'
 
-import React from 'react'
-import { ProfileLayout } from '../../../components/profile/layout/ProfileLayout'
-import { ProfileContent } from '../../../components/profile/sections/ProfileContent'
-import { SettingsPanel } from '../../../components/profile/sections/SettingsPanel'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
-// Profile Settings Page - The original profile editing functionality
-// This is the settings/editing page that was previously at /profile
-
+// Redirect to main profile page (settings are now integrated)
 export default function ProfileSettingsPage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace('/profile')
+  }, [router])
+
   return (
-    <ProfileLayout>
-      <ProfileContent />
-    </ProfileLayout>
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-4 text-muted-foreground">Redirecting to profile...</p>
+      </div>
+    </div>
   )
 }

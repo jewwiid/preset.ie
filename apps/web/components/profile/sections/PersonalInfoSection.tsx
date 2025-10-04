@@ -47,13 +47,19 @@ export function PersonalInfoSection() {
         className={isEditing ? '' : 'pointer-events-none'}
       />
 
-      {/* Date of Birth */}
-      <DateField
-        label="Date of Birth"
-        value={isEditing ? formData.date_of_birth : profile?.date_of_birth}
-        onChange={(value) => handleFieldChange('date_of_birth', value)}
-        className={isEditing ? '' : 'pointer-events-none'}
-      />
+      {/* Date of Birth - Always disabled for security */}
+      <div className="space-y-2">
+        <DateField
+          label="Date of Birth (Cannot be changed)"
+          value={isEditing ? formData.date_of_birth : profile?.date_of_birth}
+          onChange={(value) => handleFieldChange('date_of_birth', value)}
+          className="pointer-events-none opacity-60"
+          disabled
+        />
+        <p className="text-xs text-muted-foreground">
+          Date of birth cannot be changed after signup for security and verification purposes.
+        </p>
+      </div>
 
       {/* Location Toggle */}
       <LocationToggle

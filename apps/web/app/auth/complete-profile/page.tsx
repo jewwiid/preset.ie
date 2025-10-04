@@ -181,7 +181,31 @@ export default function CompleteProfilePage() {
       router.push('/auth/signin')
       return
     }
-    
+
+    // Check if there's stored data from signup
+    const storedRole = sessionStorage.getItem('preset_signup_role') as UserRole | null
+    const storedDob = sessionStorage.getItem('preset_signup_dob')
+    const storedEmail = sessionStorage.getItem('preset_signup_email')
+
+    if (storedRole && !selectedRole) {
+      setSelectedRole(storedRole)
+      setCurrentStep('profile') // Skip role selection if we already have it
+      // Clear the stored role after using it
+      sessionStorage.removeItem('preset_signup_role')
+    }
+
+    if (storedDob && !profileData.dateOfBirth) {
+      setProfileData(prev => ({ ...prev, dateOfBirth: storedDob.split('T')[0] }))
+      // Clear the stored DOB after using it
+      sessionStorage.removeItem('preset_signup_dob')
+    }
+
+    if (storedEmail && user.email) {
+      setProfileData(prev => ({ ...prev, email: user.email }))
+      // Clear the stored email after using it
+      sessionStorage.removeItem('preset_signup_email')
+    }
+
     // Check if user already has a profile
     checkExistingProfile()
   }, [user, router])
@@ -335,7 +359,8 @@ export default function CompleteProfilePage() {
         website_url: profileData.websiteUrl || null,
         portfolio_url: profileData.portfolioUrl || null,
         phone_number: profileData.phoneNumber || null,
-        
+        email: user?.email || null,
+
         // Age & verification - CRITICAL
         date_of_birth: profileData.dateOfBirth || null,
         
@@ -447,6 +472,53 @@ export default function CompleteProfilePage() {
         return
       }
 
+      // Initialize user credits if this is a new profile (not an update)
+      if (!existingProfile) {
+        try {
+          // Check if user already has credits
+          const { data: existingCredits } = await supabase
+            .from('user_credits')
+            .select('id')
+            .eq('user_id', user.id)
+            .single()
+
+          if (!existingCredits) {
+            // Create initial credits record with 5 free credits
+            const { error: creditsError } = await supabase
+              .from('user_credits')
+              .insert({
+                user_id: user.id,
+                subscription_tier: 'FREE',
+                monthly_allowance: 5,
+                current_balance: 5,
+                consumed_this_month: 0,
+                lifetime_consumed: 0
+              })
+
+            if (creditsError) {
+              console.error('Error initializing credits:', creditsError)
+              // Don't block signup if credits fail
+            } else {
+              console.log('✅ Successfully initialized 5 free credits for new user')
+
+              // Log the initial credit transaction
+              await supabase
+                .from('credit_transactions')
+                .insert({
+                  user_id: user.id,
+                  transaction_type: 'allocation',
+                  credits_used: 5,
+                  enhancement_type: 'welcome_bonus',
+                  status: 'completed'
+                })
+            }
+          }
+        } catch (creditsErr) {
+          console.error('Credits initialization error:', creditsErr)
+          // Don't block signup if credits fail
+        }
+      }
+
       // Success! Redirect to dashboard
       router.push('/dashboard')
     } catch (err) {
@@ -504,14 +576,14 @@ export default function CompleteProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-primary/10 to-secondary-primary/10 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-primary/10 to-secondary-primary/10 py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-muted-foreground-900 mb-2">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-muted-foreground-900 mb-2">
             Complete your profile
           </h1>
-          <p className="text-muted-foreground-600">
+          <p className="text-sm sm:text-base text-muted-foreground-600">
             Tell us about yourself to get started on Preset
           </p>
         </div>
@@ -528,7 +600,7 @@ export default function CompleteProfilePage() {
         )}
 
         {/* Step Content */}
-        <div className="bg-background shadow-xl rounded-lg p-8">
+        <div className="bg-background shadow-xl rounded-lg p-4 sm:p-6 md:p-8">
           {/* Role Selection Step */}
           {currentStep === 'role' && (
             <div className="space-y-6">
@@ -791,11 +863,15 @@ export default function CompleteProfilePage() {
                     onChange={(e) => setProfileData((prev: typeof profileData) => ({ ...prev, dateOfBirth: e.target.value }))}
                     className="pl-10"
                     required
+                    disabled={!!profileData.dateOfBirth} // Disable if already set from signup
                     max={new Date().toISOString().split('T')[0]} // Can't be in the future
                   />
                 </div>
                 <p className="text-xs text-muted-foreground-500">
-                  You must be 18 or older to use Preset. This information is required for age verification.
+                  {profileData.dateOfBirth
+                    ? 'Date of birth cannot be changed after signup for security and verification purposes.'
+                    : 'You must be 18 or older to use Preset. This information is required for age verification.'
+                  }
                 </p>
               </div>
 
