@@ -34,11 +34,7 @@ export function ProfileContent() {
       case 'professional':
         return <ProfessionalSection />
       case 'talent':
-        return <TalentSpecificSection 
-          profile={profile}
-          formData={formData}
-          onFieldChange={() => {}}
-        />
+        return <TalentSpecificSection />
       case 'contributor':
         return <ContributorSpecificSection 
           profile={profile}
