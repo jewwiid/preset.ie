@@ -9,6 +9,7 @@ import type { ParsedLocation } from '../../../lib/location-service'
 import { uploadProfilePhoto, compressImage, fileToDataUrl } from '../../../lib/storage'
 import { RoleIndicator } from '../../../components/auth/RoleIndicator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { DemographicsSection } from '../../../components/profile/sections/DemographicsSection'
 
 // Tag categories for better organization
 const TAG_CATEGORIES = {
@@ -58,9 +59,14 @@ export default function CreateProfilePage() {
     handle: '',
     bio: '',
     city: '',
+    country: '',
     role: '',
     styleTags: [] as string[],
-    vibeTags: [] as string[]
+    vibeTags: [] as string[],
+    // Essential demographics only
+    gender_identity: '',
+    nationality: '',
+    experience_level: ''
   })
   const [parsedLocation, setParsedLocation] = useState<ParsedLocation | null>(null)
   const [profilePicture, setProfilePicture] = useState<File | null>(null)
@@ -73,11 +79,60 @@ export default function CreateProfilePage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
+  // Predefined options state (only essential ones)
+  const [genderOptions, setGenderOptions] = useState<Array<{value: string, label: string}>>([])
+  const [experienceLevelOptions, setExperienceLevelOptions] = useState<Array<{value: string, label: string}>>([])
+  const [nationalityOptions, setNationalityOptions] = useState<Array<{value: string, label: string}>>([])
+  const [loadingOptions, setLoadingOptions] = useState(false)
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/auth/signin')
     }
   }, [user, authLoading, router])
+
+  // Fetch predefined options from database (only essential ones)
+  useEffect(() => {
+    const fetchPredefinedOptions = async () => {
+      setLoadingOptions(true)
+      try {
+        const response = await fetch('/api/predefined-data')
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Set gender options
+          setGenderOptions(
+            data.gender_identities?.map((g: any) => ({
+              value: g.identity_name.toLowerCase().replace(/\s+/g, '_'),
+              label: g.identity_name
+            })) || []
+          )
+          
+          // Set experience level options
+          setExperienceLevelOptions(
+            data.experience_levels?.map((el: any) => ({
+              value: el.level_name.toLowerCase().replace(/\s+/g, '_'),
+              label: el.level_name
+            })) || []
+          )
+          
+          // Set nationality options
+          setNationalityOptions(
+            data.nationalities?.map((n: any) => ({
+              value: n.nationality_name,
+              label: n.nationality_name
+            })) || []
+          )
+        }
+      } catch (error) {
+        console.error('Error fetching predefined options:', error)
+      } finally {
+        setLoadingOptions(false)
+      }
+    }
+
+    fetchPredefinedOptions()
+  }, [])
 
   // Pre-fill form data for Google OAuth users
   useEffect(() => {
@@ -280,11 +335,15 @@ export default function CreateProfilePage() {
           handle: formData.handle,
           bio: formData.bio || null,
           city: formData.city || null,
-          country: parsedLocation?.country || null,
+          country: formData.country || parsedLocation?.country || null,
           avatar_url: avatarUrl,
           role_flags: [formData.role],
           style_tags: formData.styleTags,
           vibe_tags: formData.vibeTags,
+          // Essential demographics only
+          gender_identity: formData.gender_identity || null,
+          nationality: formData.nationality || null,
+          experience_level: formData.experience_level || null,
           subscription_tier: 'FREE',
           subscription_status: 'ACTIVE',
           subscription_started_at: new Date().toISOString(),
@@ -625,6 +684,71 @@ export default function CreateProfilePage() {
             />
           </div>
 
+          {/* Essential Demographics - Quick Setup */}
+          <div className="border-t border-border pt-6">
+            <h3 className="text-lg font-medium text-foreground mb-4">Essential Information</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Help us understand your background for better matching. You can add more details later.
+            </p>
+            
+            {/* Gender Identity */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Gender Identity
+              </label>
+              <select
+                value={formData.gender_identity}
+                onChange={(e) => setFormData(prev => ({ ...prev, gender_identity: e.target.value }))}
+                className="mt-1 block w-full px-3 py-2 bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-input text-foreground"
+              >
+                <option value="">Select...</option>
+                {genderOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Nationality */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Nationality
+              </label>
+              <select
+                value={formData.nationality}
+                onChange={(e) => setFormData(prev => ({ ...prev, nationality: e.target.value }))}
+                className="mt-1 block w-full px-3 py-2 bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-input text-foreground"
+              >
+                <option value="">Select...</option>
+                {nationalityOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Experience Level */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Experience Level
+              </label>
+              <select
+                value={formData.experience_level}
+                onChange={(e) => setFormData(prev => ({ ...prev, experience_level: e.target.value }))}
+                className="mt-1 block w-full px-3 py-2 bg-background border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-input text-foreground"
+              >
+                <option value="">Select...</option>
+                {experienceLevelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Style & Vibe Tags */}
           <div>
             <h3 className="text-sm font-medium text-foreground mb-3">Your Style & Interests</h3>
@@ -765,6 +889,13 @@ export default function CreateProfilePage() {
                 {!formData.role ? 'Select a role to continue' : 'Complete tag selection to continue'}
               </p>
             )}
+            
+            {/* Helpful message about comprehensive profile */}
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border/50">
+              <p className="text-xs text-muted-foreground text-center">
+                💡 <strong>Tip:</strong> You can add more detailed information like equipment, rates, physical attributes, and preferences later in your profile settings for better matching.
+              </p>
+            </div>
           </div>
         </form>
       </div>

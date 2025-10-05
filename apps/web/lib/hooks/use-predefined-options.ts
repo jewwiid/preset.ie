@@ -76,73 +76,73 @@ export function usePredefinedOptions() {
         ] = await Promise.all([
           supabase
             .from('predefined_gender_identities')
-            .select('id, identity_name as name, is_active, sort_order') // Fixed malformed query
+            .select('id, identity_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_ethnicities')
-            .select('id, ethnicity_name as name, is_active, sort_order')
+            .select('id, ethnicity_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_body_types')
-            .select('id, body_type_name as name, is_active, sort_order')
+            .select('id, body_type_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_experience_levels')
-            .select('id, level_name as name, is_active, sort_order')
+            .select('id, level_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_availability_statuses')
-            .select('id, status_name as name, is_active, sort_order')
+            .select('id, status_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_hair_lengths')
-            .select('id, length_name as name, is_active, sort_order')
+            .select('id, length_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_skin_tones')
-            .select('id, tone_name as name, is_active, sort_order')
+            .select('id, tone_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_hair_colors')
-            .select('id, color_name as name, is_active, sort_order')
+            .select('id, color_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_eye_colors')
-            .select('id, color_name as name, is_active, sort_order')
+            .select('id, color_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_style_tags')
-            .select('id, tag_name as name, is_active, sort_order')
+            .select('id, tag_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_vibe_tags')
-            .select('id, tag_name as name, is_active, sort_order')
+            .select('id, tag_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
           supabase
             .from('predefined_equipment_options')
-            .select('id, equipment_name as name, is_active, sort_order')
+            .select('id, equipment_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order'),
           
@@ -154,7 +154,7 @@ export function usePredefinedOptions() {
 
           supabase
             .from('predefined_talent_categories')
-            .select('id, category_name as name, is_active, sort_order')
+            .select('id, category_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order')
         ])
@@ -194,23 +194,43 @@ export function usePredefinedOptions() {
           )
         }
 
+        // Helper function to transform data to standard format
+        const transformToStandardFormat = (result: any, nameField: string): PredefinedOption[] => {
+          if (result.error || !result.data || !Array.isArray(result.data)) {
+            return []
+          }
+          return result.data
+            .filter((item: any) => 
+              item && typeof item === 'object' && 
+              'id' in item && nameField in item && 'is_active' in item && 'sort_order' in item
+            )
+            .map((item: any) => ({
+              id: item.id,
+              name: item[nameField],
+              is_active: item.is_active,
+              sort_order: item.sort_order
+            }))
+        }
+
         // Set the options
-        setOptions({
-          genderIdentities: safeExtract(genderIdentitiesResult),
-          ethnicities: safeExtract(ethnicitiesResult),
-          bodyTypes: safeExtract(bodyTypesResult),
-          experienceLevels: safeExtract(experienceLevelsResult),
-          availabilityStatuses: safeExtract(availabilityStatusesResult),
-          hairLengths: safeExtract(hairLengthsResult),
-          skinTones: safeExtract(skinTonesResult),
-          hairColors: safeExtract(hairColorsResult),
-          eyeColors: safeExtract(eyeColorsResult),
-          styleTags: safeExtract(styleTagsResult),
-          vibeTags: safeExtract(vibeTagsResult),
-          equipmentOptions: safeExtract(equipmentOptionsResult),
-          skills: safeExtract(skillsResult),
-          talentCategories: safeExtract(talentCategoriesResult)
-        })
+        const finalOptions = {
+          genderIdentities: transformToStandardFormat(genderIdentitiesResult, 'identity_name'),
+          ethnicities: transformToStandardFormat(ethnicitiesResult, 'ethnicity_name'),
+          bodyTypes: transformToStandardFormat(bodyTypesResult, 'body_type_name'),
+          experienceLevels: transformToStandardFormat(experienceLevelsResult, 'level_name'),
+          availabilityStatuses: transformToStandardFormat(availabilityStatusesResult, 'status_name'),
+          hairLengths: transformToStandardFormat(hairLengthsResult, 'length_name'),
+          skinTones: transformToStandardFormat(skinTonesResult, 'tone_name'),
+          hairColors: transformToStandardFormat(hairColorsResult, 'color_name'),
+          eyeColors: transformToStandardFormat(eyeColorsResult, 'color_name'),
+          styleTags: transformToStandardFormat(styleTagsResult, 'tag_name'),
+          vibeTags: transformToStandardFormat(vibeTagsResult, 'tag_name'),
+          equipmentOptions: transformToStandardFormat(equipmentOptionsResult, 'equipment_name'),
+          skills: transformToStandardFormat(skillsResult, 'name'),
+          talentCategories: transformToStandardFormat(talentCategoriesResult, 'category_name')
+        }
+        
+        setOptions(finalOptions)
 
       } catch (err) {
         console.error('Error fetching predefined options:', err)
