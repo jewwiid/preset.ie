@@ -86,7 +86,8 @@ async function getTalentProfiles(skillSlug: string) {
         years_experience,
         account_status,
         profile_completion_percentage,
-        created_at
+        created_at,
+        availability_status
       `)
       .in('account_status', ['active', 'pending_verification'])
       .gte('profile_completion_percentage', 0)

@@ -16,17 +16,19 @@ interface EquipmentType {
 interface EquipmentBrand {
   id: string
   name: string
-  equipment_type_id: string
-  is_popular: boolean
+  display_name: string
   sort_order: number
+  is_active: boolean
 }
 
 interface EquipmentModel {
   id: string
-  model_name: string
-  brand_id: string
-  is_popular: boolean
+  equipment_type_id: string
+  brand: string
+  model: string
+  description: string
   sort_order: number
+  is_active: boolean
 }
 
 interface UserEquipment {
@@ -74,14 +76,13 @@ export function EquipmentSection() {
 
     setLoadingEquipmentData(true)
     try {
-      // Check if equipment tables exist by trying to query them
-      const { error: typesError } = await (supabase as any)
-        .from('equipment_types')
-        .select('id')
-        .limit(1)
-
-      if (typesError) {
-        // Equipment tables don't exist yet - this is expected
+      // Fetch equipment data from centralized API
+      const response = await fetch('/api/predefined-data')
+      if (response.ok) {
+        const data = await response.json()
+        setEquipmentTypes(data.equipment_types || [])
+        setEquipmentBrands(data.equipment_brands || [])
+      } else {
         console.log('Equipment functionality not yet implemented in database')
         setEquipmentTypes([])
         setEquipmentBrands([])
@@ -90,25 +91,7 @@ export function EquipmentSection() {
         return
       }
 
-      // Fetch equipment types
-      const { data: typesData, error: typesError2 } = await (supabase as any)
-        .from('equipment_types')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order')
-
-      if (typesError2) throw typesError2
-      setEquipmentTypes((typesData as any) || [])
-
-      // Fetch predefined brands and models
-      const { data: brandsData, error: brandsError } = await (supabase as any)
-        .from('equipment_brands')
-        .select('*')
-        .order('sort_order')
-
-      if (brandsError) throw brandsError
-      setEquipmentBrands((brandsData as any) || [])
-
+      // Fetch equipment models directly from database (not in predefined API yet)
       const { data: modelsData, error: modelsError } = await (supabase as any)
         .from('equipment_predefined_models')
         .select('*')
@@ -331,21 +314,26 @@ export function EquipmentSection() {
 
   // Helper functions
   const getBrandsForType = (equipmentTypeId: string) => {
-    return equipmentBrands.filter(brand => brand.equipment_type_id === equipmentTypeId)
+    // Get unique brands from models that belong to this equipment type
+    const typeModels = equipmentModels.filter(model => model.equipment_type_id === equipmentTypeId)
+    const uniqueBrands = [...new Set(typeModels.map(model => model.brand))]
+    
+    // Return brands that match the unique brand names from models
+    return equipmentBrands.filter(brand => uniqueBrands.includes(brand.name))
   }
 
-  const getModelsForBrand = (brandId: string) => {
-    return equipmentModels.filter(model => model.brand_id === brandId)
+  const getModelsForBrand = (brandName: string) => {
+    return equipmentModels.filter(model => model.brand === brandName && model.equipment_type_id === selectedEquipmentType)
   }
 
-  const getBrandDisplayName = (brandId: string) => {
-    const brand = equipmentBrands.find(b => b.id === brandId)
-    return brand ? brand.name : ''
+  const getBrandDisplayName = (brandName: string) => {
+    const brand = equipmentBrands.find(b => b.name === brandName)
+    return brand ? brand.display_name : brandName
   }
 
   const getModelDisplayName = (modelId: string) => {
     const model = equipmentModels.find(m => m.id === modelId)
-    return model ? model.model_name : ''
+    return model ? model.model : ''
   }
 
   // Helper function to format equipment type names for display
@@ -733,8 +721,8 @@ export function EquipmentSection() {
                 >
                   <option value="">Select brand...</option>
                   {getBrandsForType(selectedEquipmentType).map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name} {brand.is_popular && '★'}
+                    <option key={brand.id} value={brand.name}>
+                      {brand.display_name}
                     </option>
                   ))}
                 </select>
@@ -755,7 +743,7 @@ export function EquipmentSection() {
                   <option value="">Select model...</option>
                   {getModelsForBrand(selectedEquipmentBrand).map((model) => (
                     <option key={model.id} value={model.id}>
-                      {model.model_name} {model.is_popular && '★'}
+                      {model.model}
                     </option>
                   ))}
                 </select>

@@ -3,6 +3,7 @@
 import React from 'react'
 import { useProfile, useProfileEditing, useProfileForm } from '../context/ProfileContext'
 import { ToggleSwitch } from '../common/ToggleSwitch'
+import WorkingHoursSection from './WorkingHoursSection'
 import { Briefcase, Clock, Users, Shield, DollarSign, MapPin } from 'lucide-react'
 
 export function WorkPreferencesSection() {
@@ -12,6 +13,18 @@ export function WorkPreferencesSection() {
 
   const handleFieldChange = (field: string, value: any) => {
     updateField(field, value)
+  }
+
+  const handleEdit = () => {
+    // This will be handled by the parent component
+  }
+
+  const handleSave = () => {
+    // This will be handled by the parent component
+  }
+
+  const handleCancel = () => {
+    // This will be handled by the parent component
   }
 
   return (
@@ -66,46 +79,26 @@ export function WorkPreferencesSection() {
             onChange={(checked) => handleFieldChange('prefers_outdoor', checked)}
             className={isEditing ? '' : 'pointer-events-none'}
           />
-        </div>
-      </div>
-
-      {/* Schedule Preferences */}
-      <div className="space-y-4 border-t border-border pt-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-4 w-4 text-primary-600" />
-          <h3 className="text-lg font-medium text-muted-foreground-900 dark:text-primary-foreground">Schedule Preferences</h3>
-        </div>
-        
-        <div className="space-y-3">
-          <ToggleSwitch
-            label="Available Weekdays"
-            checked={isEditing ? (formData.available_weekdays || false) : (profile?.available_weekdays || false)}
-            onChange={(checked) => handleFieldChange('available_weekdays', checked)}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
 
           <ToggleSwitch
-            label="Available Weekends"
-            checked={isEditing ? (formData.available_weekends || false) : (profile?.available_weekends || false)}
-            onChange={(checked) => handleFieldChange('available_weekends', checked)}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-
-          <ToggleSwitch
-            label="Available Evenings"
-            checked={isEditing ? (formData.available_evenings || false) : (profile?.available_evenings || false)}
-            onChange={(checked) => handleFieldChange('available_evenings', checked)}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-
-          <ToggleSwitch
-            label="Available Overnight"
-            checked={isEditing ? (formData.available_overnight || false) : (profile?.available_overnight || false)}
-            onChange={(checked) => handleFieldChange('available_overnight', checked)}
+            label="Available for Travel"
+            checked={isEditing ? (formData.available_for_travel || false) : (profile?.available_for_travel || false)}
+            onChange={(checked) => handleFieldChange('available_for_travel', checked)}
             className={isEditing ? '' : 'pointer-events-none'}
           />
         </div>
       </div>
+
+      {/* Working Hours */}
+      <WorkingHoursSection 
+        profile={profile || undefined}
+        isEditing={isEditing}
+        onEdit={handleEdit}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        onFieldChange={handleFieldChange}
+        formData={formData || undefined}
+      />
 
       {/* Collaboration Preferences */}
       <div className="space-y-4 border-t border-border pt-6">
@@ -114,21 +107,7 @@ export function WorkPreferencesSection() {
           <h3 className="text-lg font-medium text-muted-foreground-900 dark:text-primary-foreground">Collaboration Style</h3>
         </div>
         
-        <div className="space-y-3">
-          <ToggleSwitch
-            label="Works with Teams"
-            checked={isEditing ? (formData.works_with_teams || false) : (profile?.works_with_teams || false)}
-            onChange={(checked) => handleFieldChange('works_with_teams', checked)}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-
-          <ToggleSwitch
-            label="Prefers Solo Work"
-            checked={isEditing ? (formData.prefers_solo_work || false) : (profile?.prefers_solo_work || false)}
-            onChange={(checked) => handleFieldChange('prefers_solo_work', checked)}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-        </div>
+        {/* These fields were removed from the database as redundant */}
       </div>
 
       {/* Content Preferences */}
@@ -141,28 +120,7 @@ export function WorkPreferencesSection() {
           Specify your comfort level with different types of content
         </p>
         
-        <div className="space-y-3">
-          <ToggleSwitch
-            label="Comfortable with Nudity"
-            checked={isEditing ? (formData.comfortable_with_nudity || false) : (profile?.comfortable_with_nudity || false)}
-            onChange={(checked) => handleFieldChange('comfortable_with_nudity', checked)}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-
-          <ToggleSwitch
-            label="Comfortable with Intimate Content"
-            checked={isEditing ? (formData.comfortable_with_intimate_content || false) : (profile?.comfortable_with_intimate_content || false)}
-            onChange={(checked) => handleFieldChange('comfortable_with_intimate_content', checked)}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-
-          <ToggleSwitch
-            label="Requires Model Release"
-            checked={isEditing ? (formData.requires_model_release || false) : (profile?.requires_model_release || false)}
-            onChange={(checked) => handleFieldChange('requires_model_release', checked)}
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
-        </div>
+        {/* These fields were removed from the database as redundant */}
       </div>
 
       {/* Information Notice */}

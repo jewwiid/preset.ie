@@ -34,6 +34,10 @@ export interface UserProfile {
   tattoos?: boolean
   piercings?: boolean
   talent_categories?: string[]
+  contributor_roles?: string[]
+  professional_skills?: string[]
+  behance_url?: string
+  dribbble_url?: string
   role_flags: string[]
   style_tags: string[]
   subscription_tier: string
@@ -55,7 +59,11 @@ export interface UserProfile {
   timezone?: string
   passport_valid?: boolean
   availability_status?: 'available' | 'busy' | 'unavailable' | 'limited' | 'weekends_only' | 'weekdays_only'
-  preferred_working_hours?: string
+  preferred_working_hours?: string // Deprecated - use structured fields below
+  working_time_preference?: string
+  preferred_start_time?: string
+  preferred_end_time?: string
+  working_timezone?: string
   blackout_dates?: string[]
 
   // Privacy controls

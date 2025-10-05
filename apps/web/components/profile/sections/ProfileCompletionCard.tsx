@@ -63,7 +63,7 @@ const PROFILE_FIELDS: ProfileField[] = [
   
   // Additional Info (Lower Priority)
   { key: 'available_for_travel', label: 'Travel Availability', weight: 4, icon: Globe, category: 'professional', description: 'Can you travel for work?', actionText: 'Set Travel Info' },
-  { key: 'has_studio', label: 'Studio Info', weight: 4, icon: Camera, category: 'professional', description: 'Do you have a studio?', actionText: 'Add Studio Info' },
+  { key: 'studio_name', label: 'Studio Info', weight: 4, icon: Camera, category: 'professional', description: 'Do you have a studio?', actionText: 'Add Studio Info' },
   { key: 'languages', label: 'Languages', weight: 4, icon: Users, category: 'contact', description: 'Languages you speak', actionText: 'Add Languages' }
 ]
 

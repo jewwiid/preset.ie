@@ -28,11 +28,12 @@ import {
   Clock,
   DollarSign,
   CheckCircle,
+  ExternalLink,
+  Target,
   XCircle,
   Edit3,
   Save,
   X,
-  Target,
   TrendingUp
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
@@ -40,6 +41,7 @@ import { Input } from '../../ui/input'
 import { Textarea } from '../../ui/textarea'
 import { Button } from '../../ui/button'
 import { DemographicsSection } from './DemographicsSection'
+import WorkingHoursSection from './WorkingHoursSection'
 import { PrivacySettingsSection } from './PrivacySettingsSection'
 
 export function ProfileContentEnhanced() {
@@ -295,7 +297,7 @@ export function ProfileContentEnhanced() {
     },
     {
       label: 'Studio',
-      value: profile?.has_studio ? profile.studio_name || 'Yes' : 'No',
+      value: (profile?.studio_name || profile?.studio_address) ? (profile.studio_name || 'Has Studio') : 'No Studio',
       icon: Briefcase,
       editable: true
     }
@@ -457,6 +459,17 @@ export function ProfileContentEnhanced() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Working Hours */}
+            <WorkingHoursSection
+              profile={profile || undefined}
+              isEditing={isEditing}
+              onEdit={() => {}}
+              onSave={() => {}}
+              onCancel={() => {}}
+              onFieldChange={() => {}}
+              formData={{}}
+            />
 
             {/* Equipment & Software */}
             <Card>
@@ -667,6 +680,133 @@ export function ProfileContentEnhanced() {
                       </div>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )
+      
+      case 'contributor':
+        return (
+          <div className="space-y-6">
+            {/* Contributor Roles Section */}
+            {profile?.contributor_roles && profile.contributor_roles.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                      <Users className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <CardTitle>Contributor Roles</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.contributor_roles.map((role: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Professional Skills Section */}
+            {profile?.professional_skills && profile.professional_skills.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+                      <Award className="w-5 h-5 text-secondary-foreground" />
+                    </div>
+                    <CardTitle>Professional Skills</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {profile.professional_skills.map((skill: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Portfolio Links Section */}
+            {(profile?.website_url || profile?.portfolio_url || profile?.behance_url || profile?.dribbble_url) && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center">
+                      <ExternalLink className="w-5 h-5 text-accent-foreground" />
+                    </div>
+                    <CardTitle>Portfolio & Work Samples</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {profile.website_url && (
+                      <div className="flex items-center gap-3">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        <a 
+                          href={profile.website_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Website
+                        </a>
+                      </div>
+                    )}
+                    {profile.portfolio_url && (
+                      <div className="flex items-center gap-3">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        <a 
+                          href={profile.portfolio_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Portfolio Website
+                        </a>
+                      </div>
+                    )}
+                    {profile.behance_url && (
+                      <div className="flex items-center gap-3">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        <a 
+                          href={profile.behance_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Behance Profile
+                        </a>
+                      </div>
+                    )}
+                    {profile.dribbble_url && (
+                      <div className="flex items-center gap-3">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        <a 
+                          href={profile.dribbble_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Dribbble Profile
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}

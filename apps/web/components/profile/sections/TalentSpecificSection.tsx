@@ -7,6 +7,10 @@ import { ToggleSwitch, TattoosToggle, PiercingsToggle } from '../common/ToggleSw
 import { Star, Ruler, Eye, Palette, Shirt, Plus, X, MapPin } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../lib/auth-context'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 // Types for clothing size system
 interface ClothingSizeSystem {
@@ -108,40 +112,24 @@ export function TalentSpecificSection() {
     const fetchPredefinedOptions = async () => {
       setLoadingPredefined(true)
       try {
-        if (!supabase) return
-
-        // Fetch talent categories
-        const { data: talentCategories, error: talentError } = await (supabase as any)
-          .from('predefined_talent_categories')
-          .select('category_name')
-          .eq('is_active', true)
-          .order('sort_order')
-
-        if (!talentError && talentCategories) {
-          setPredefinedTalentCategories((talentCategories as any).map((c: any) => c.category_name))
+        const response = await fetch('/api/predefined-data')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch predefined data')
         }
-
-        // Fetch eye colors
-        const { data: eyeColors, error: eyeError } = await (supabase as any)
-          .from('predefined_eye_colors')
-          .select('color_name')
-          .eq('is_active', true)
-          .order('sort_order')
-
-        if (!eyeError && eyeColors) {
-          setPredefinedEyeColors((eyeColors as any).map((c: any) => c.color_name))
-        }
-
-        // Fetch hair colors
-        const { data: hairColors, error: hairError } = await (supabase as any)
-          .from('predefined_hair_colors')
-          .select('color_name')
-          .eq('is_active', true)
-          .order('sort_order')
-
-        if (!hairError && hairColors) {
-          setPredefinedHairColors((hairColors as any).map((c: any) => c.color_name))
-        }
+        
+        const data = await response.json()
+        
+        // Extract the data we need
+        setPredefinedTalentCategories(data.talent_categories?.map((c: any) => c.category_name) || [])
+        setPredefinedEyeColors(data.eye_colors?.map((c: any) => c.color_name) || [])
+        setPredefinedHairColors(data.hair_colors?.map((c: any) => c.color_name) || [])
+        
+        // Update clothing and shoe size data
+        setClothingSizeSystems(data.clothing_size_systems || [])
+        setClothingSizes(data.clothing_sizes || [])
+        setShoeSizeSystems(data.shoe_size_systems || [])
+        setShoeSizes(data.shoe_sizes || [])
 
       } catch (error) {
         console.error('Error fetching predefined options:', error)
@@ -165,62 +153,18 @@ export function TalentSpecificSection() {
     fetchPredefinedOptions()
   }, [])
 
-  // Fetch clothing size system data
+  // Fetch user's existing clothing sizes and measurements
   useEffect(() => {
-    const fetchClothingData = async () => {
+    const fetchUserData = async () => {
       setLoadingClothingData(true)
       try {
-        if (!supabase || !user) return
-
-        // Fetch clothing size systems
-        const { data: systemsData, error: systemsError } = await (supabase as any)
-          .from('predefined_clothing_size_systems')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order')
-
-        if (!systemsError && systemsData) {
-          setClothingSizeSystems(systemsData as any)
-        }
-
-        // Fetch clothing sizes
-        const { data: sizesData, error: sizesError } = await (supabase as any)
-          .from('predefined_clothing_sizes')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order')
-
-        if (!sizesError && sizesData) {
-          setClothingSizes(sizesData as any)
-        }
-
-        // Fetch shoe size systems
-        const { data: shoeSystemsData, error: shoeSystemsError } = await (supabase as any)
-          .from('predefined_shoe_size_systems')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order')
-
-        if (!shoeSystemsError && shoeSystemsData) {
-          setShoeSizeSystems(shoeSystemsData as any)
-        }
-
-        // Fetch shoe sizes
-        const { data: shoeSizesData, error: shoeSizesError } = await (supabase as any)
-          .from('predefined_shoe_sizes')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order')
-
-        if (!shoeSizesError && shoeSizesData) {
-          setShoeSizes(shoeSizesData as any)
-        }
+        if (!supabase || !user || !profile) return
 
         // Fetch user's existing clothing sizes
         const { data: userClothingData, error: userClothingError } = await (supabase as any)
           .from('user_clothing_sizes')
           .select('*')
-          .eq('profile_id', profile!.id)
+          .eq('profile_id', profile.id)
 
         if (!userClothingError && userClothingData) {
           setUserClothingSizes(userClothingData as any)
@@ -230,21 +174,23 @@ export function TalentSpecificSection() {
         const { data: userMeasurementData, error: userMeasurementError } = await (supabase as any)
           .from('user_measurements')
           .select('*')
-          .eq('profile_id', profile!.id)
+          .eq('profile_id', profile.id)
 
         if (!userMeasurementError && userMeasurementData) {
           setUserMeasurements(userMeasurementData as any)
         }
 
       } catch (error) {
-        console.error('Error fetching clothing data:', error)
+        console.error('Error fetching user data:', error)
       } finally {
         setLoadingClothingData(false)
       }
     }
 
-    fetchClothingData()
-  }, [user])
+    if (profile) {
+      fetchUserData()
+    }
+  }, [user, profile])
 
   const handleFieldChange = (field: string, value: any) => {
     updateField(field, value)
@@ -455,13 +401,24 @@ export function TalentSpecificSection() {
             className={isEditing ? '' : 'pointer-events-none'}
           />
           
-          <TextField
-            label="Measurements"
-            value={isEditing ? (formData.measurements || '') : (profile?.measurements || '')}
-            onChange={(value) => handleFieldChange('measurements', value)}
-            placeholder="e.g., 34-24-36"
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
+          <div>
+            <Label htmlFor="body-type">Body Type</Label>
+            <Select
+              value={isEditing ? (formData.body_type || '') : (profile?.body_type || '')}
+              onValueChange={(value) => handleFieldChange('body_type', value)}
+              disabled={!isEditing}
+            >
+              <SelectTrigger id="body-type">
+                <SelectValue placeholder="Select body type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="petite">Petite</SelectItem>
+                <SelectItem value="regular">Regular</SelectItem>
+                <SelectItem value="plus">Plus Size</SelectItem>
+                <SelectItem value="tall">Tall</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -474,41 +431,43 @@ export function TalentSpecificSection() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Eye Color
-            </label>
-            <select
+            <Label htmlFor="eye-color">Eye Color</Label>
+            <Select
               value={isEditing ? (formData.eye_color || '') : (profile?.eye_color || '')}
-              onChange={(e) => handleFieldChange('eye_color', e.target.value)}
+              onValueChange={(value) => handleFieldChange('eye_color', value)}
               disabled={!isEditing}
-              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
             >
-              <option value="">Select eye color</option>
-              {predefinedEyeColors.map((color) => (
-                <option key={color} value={color}>
-                  {color}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="eye-color">
+                <SelectValue placeholder="Select eye color" />
+              </SelectTrigger>
+              <SelectContent>
+                {predefinedEyeColors.map((color) => (
+                  <SelectItem key={color} value={color}>
+                    {color}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Hair Color
-            </label>
-            <select
+            <Label htmlFor="hair-color">Hair Color</Label>
+            <Select
               value={isEditing ? (formData.hair_color || '') : (profile?.hair_color || '')}
-              onChange={(e) => handleFieldChange('hair_color', e.target.value)}
+              onValueChange={(value) => handleFieldChange('hair_color', value)}
               disabled={!isEditing}
-              className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
             >
-              <option value="">Select hair color</option>
-              {predefinedHairColors.map((color) => (
-                <option key={color} value={color}>
-                  {color}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="hair-color">
+                <SelectValue placeholder="Select hair color" />
+              </SelectTrigger>
+              <SelectContent>
+                {predefinedHairColors.map((color) => (
+                  <SelectItem key={color} value={color}>
+                    {color}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -559,87 +518,90 @@ export function TalentSpecificSection() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Clothing Type
-                </label>
-                <select
+                <Label htmlFor="clothing-type" className="text-xs">Clothing Type</Label>
+                <Select
                   value={newClothingType}
-                  onChange={(e) => setNewClothingType(e.target.value)}
-                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                  onValueChange={setNewClothingType}
                 >
-                  <option value="">Select type</option>
-                  <option value="tops">Tops</option>
-                  <option value="bottoms">Bottoms</option>
-                  <option value="dresses">Dresses</option>
-                  <option value="outerwear">Outerwear</option>
-                  <option value="accessories">Accessories</option>
-                  <option value="underwear">Underwear</option>
-                  <option value="swimwear">Swimwear</option>
-                </select>
+                  <SelectTrigger id="clothing-type" className="h-8">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="tops">Tops</SelectItem>
+                    <SelectItem value="bottoms">Bottoms</SelectItem>
+                    <SelectItem value="dresses">Dresses</SelectItem>
+                    <SelectItem value="outerwear">Outerwear</SelectItem>
+                    <SelectItem value="accessories">Accessories</SelectItem>
+                    <SelectItem value="underwear">Underwear</SelectItem>
+                    <SelectItem value="swimwear">Swimwear</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Size System
-                </label>
-                <select
+                <Label htmlFor="size-system" className="text-xs">Size System</Label>
+                <Select
                   value={newClothingSizeSystem}
-                  onChange={(e) => {
-                    setNewClothingSizeSystem(e.target.value)
+                  onValueChange={(value) => {
+                    setNewClothingSizeSystem(value)
                     setNewClothingSizeValue('')
                   }}
-                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                 >
-                  <option value="">Select system</option>
-                  {clothingSizeSystems.map((system) => (
-                    <option key={system.id} value={system.id}>
-                      {system.system_name} ({system.region})
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="size-system" className="h-8">
+                    <SelectValue placeholder="Select system" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clothingSizeSystems.map((system) => (
+                      <SelectItem key={system.id} value={system.id.toString()}>
+                        {system.system_name} ({system.region})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Size Value
-                </label>
-                <select
+                <Label htmlFor="size-value" className="text-xs">Size Value</Label>
+                <Select
                   value={newClothingSizeValue}
-                  onChange={(e) => setNewClothingSizeValue(e.target.value)}
+                  onValueChange={setNewClothingSizeValue}
                   disabled={!newClothingSizeSystem}
-                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground disabled:opacity-50"
                 >
-                  <option value="">Select size</option>
-                  {getAvailableSizes(newClothingSizeSystem).map((size) => (
-                    <option key={size.id} value={size.size_value}>
-                      {size.size_value} {size.size_label && `(${size.size_label})`}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="size-value" className="h-8">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableSizes(newClothingSizeSystem).map((size) => (
+                      <SelectItem key={size.id} value={size.size_value}>
+                        {size.size_value} {size.size_label && `(${size.size_label})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Custom Description (Optional)
-                </label>
-                <input
+                <Label htmlFor="custom-description" className="text-xs">Custom Description (Optional)</Label>
+                <Input
+                  id="custom-description"
                   type="text"
                   value={newCustomSizeDescription}
                   onChange={(e) => setNewCustomSizeDescription(e.target.value)}
                   placeholder="e.g., Fits loose"
-                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                  className="h-8"
                 />
               </div>
             </div>
 
-            <button
+            <Button
               onClick={addClothingSize}
               disabled={!newClothingType || !newClothingSizeSystem || !newClothingSizeValue}
-              className="flex items-center gap-2 px-3 py-1 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground text-sm rounded transition-colors"
+              size="sm"
+              className="flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Add Clothing Size
-            </button>
+            </Button>
           </div>
         )}
 
@@ -682,75 +644,77 @@ export function TalentSpecificSection() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Type
-                  </label>
-                  <select
+                  <Label htmlFor="measurement-type" className="text-xs">Type</Label>
+                  <Select
                     value={newMeasurementType}
-                    onChange={(e) => setNewMeasurementType(e.target.value)}
-                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                    onValueChange={setNewMeasurementType}
                   >
-                    <option value="">Select type</option>
-                    <option value="chest">Chest</option>
-                    <option value="waist">Waist</option>
-                    <option value="hips">Hips</option>
-                    <option value="inseam">Inseam</option>
-                    <option value="shoulder">Shoulder</option>
-                    <option value="sleeve">Sleeve</option>
-                    <option value="neck">Neck</option>
-                  </select>
+                    <SelectTrigger id="measurement-type" className="h-8">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="chest">Chest</SelectItem>
+                      <SelectItem value="waist">Waist</SelectItem>
+                      <SelectItem value="hips">Hips</SelectItem>
+                      <SelectItem value="inseam">Inseam</SelectItem>
+                      <SelectItem value="shoulder">Shoulder</SelectItem>
+                      <SelectItem value="sleeve">Sleeve</SelectItem>
+                      <SelectItem value="neck">Neck</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Value
-                  </label>
-                  <input
+                  <Label htmlFor="measurement-value" className="text-xs">Value</Label>
+                  <Input
+                    id="measurement-value"
                     type="number"
                     step="0.1"
                     value={newMeasurementValue}
                     onChange={(e) => setNewMeasurementValue(e.target.value)}
                     placeholder="e.g., 36"
-                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                    className="h-8"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Unit
-                  </label>
-                  <select
+                  <Label htmlFor="measurement-unit" className="text-xs">Unit</Label>
+                  <Select
                     value={newMeasurementUnit}
-                    onChange={(e) => setNewMeasurementUnit(e.target.value)}
-                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                    onValueChange={setNewMeasurementUnit}
                   >
-                    <option value="in">Inches</option>
-                    <option value="cm">Centimeters</option>
-                  </select>
+                    <SelectTrigger id="measurement-unit" className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="in">Inches</SelectItem>
+                      <SelectItem value="cm">Centimeters</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Notes (Optional)
-                </label>
-                <input
+                <Label htmlFor="measurement-notes" className="text-xs">Notes (Optional)</Label>
+                <Input
+                  id="measurement-notes"
                   type="text"
                   value={newMeasurementNotes}
                   onChange={(e) => setNewMeasurementNotes(e.target.value)}
                   placeholder="e.g., Relaxed fit"
-                  className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
+                  className="h-8"
                 />
               </div>
 
-              <button
+              <Button
                 onClick={addMeasurement}
                 disabled={!newMeasurementType || !newMeasurementValue}
-                className="flex items-center gap-2 px-3 py-1 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground text-sm rounded transition-colors"
+                size="sm"
+                className="flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Add Measurement
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -787,54 +751,57 @@ export function TalentSpecificSection() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Size System
-                  </label>
-                  <select
+                  <Label htmlFor="shoe-size-system" className="text-xs">Size System</Label>
+                  <Select
                     value={newShoeSizeSystem}
-                    onChange={(e) => {
-                      setNewShoeSizeSystem(e.target.value)
+                    onValueChange={(value) => {
+                      setNewShoeSizeSystem(value)
                       setNewShoeSizeValue('')
                     }}
-                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground"
                   >
-                    <option value="">Select system</option>
-                    {shoeSizeSystems.map((system) => (
-                      <option key={system.id} value={system.id}>
-                        {system.system_name} ({system.region})
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="shoe-size-system" className="h-8">
+                      <SelectValue placeholder="Select system" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shoeSizeSystems.map((system) => (
+                        <SelectItem key={system.id} value={system.id.toString()}>
+                          {system.system_name} ({system.region})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Size Value
-                  </label>
-                  <select
+                  <Label htmlFor="shoe-size-value" className="text-xs">Size Value</Label>
+                  <Select
                     value={newShoeSizeValue}
-                    onChange={(e) => setNewShoeSizeValue(e.target.value)}
+                    onValueChange={setNewShoeSizeValue}
                     disabled={!newShoeSizeSystem}
-                    className="w-full px-2 py-1 text-sm bg-background border border-border rounded focus:outline-none focus:ring-1 focus:ring-ring text-foreground disabled:opacity-50"
                   >
-                    <option value="">Select size</option>
-                    {getAvailableShoeSizes(newShoeSizeSystem).map((size) => (
-                      <option key={size.id} value={size.size_value}>
-                        {size.size_value} {size.size_label && `(${size.size_label})`}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="shoe-size-value" className="h-8">
+                      <SelectValue placeholder="Select size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableShoeSizes(newShoeSizeSystem).map((size) => (
+                        <SelectItem key={size.id} value={size.size_value}>
+                          {size.size_value} {size.size_label && `(${size.size_label})`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <button
+              <Button
                 onClick={addShoeSize}
                 disabled={!newShoeSizeSystem || !newShoeSizeValue}
-                className="flex items-center gap-2 px-3 py-1 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground text-sm rounded transition-colors"
+                size="sm"
+                className="flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Add Shoe Size
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -866,15 +833,57 @@ export function TalentSpecificSection() {
       <div className="bg-muted rounded-lg p-4">
         <h3 className="text-lg font-medium text-foreground mb-4">Talent Categories</h3>
         
-        <TagInput
-          label="Talent Categories"
-          tags={isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])}
-          onAddTag={addTalentCategory}
-          onRemoveTag={removeTalentCategory}
-          placeholder="Add a talent category..."
-          predefinedOptions={predefinedTalentCategories}
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="talent-category">Add Talent Category</Label>
+            <Select
+              onValueChange={(value) => {
+                if (value && !(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).includes(value)) {
+                  addTalentCategory(value)
+                }
+              }}
+              disabled={!isEditing}
+            >
+              <SelectTrigger id="talent-category">
+                <SelectValue placeholder="Select a talent category..." />
+              </SelectTrigger>
+              <SelectContent>
+                {predefinedTalentCategories
+                  .filter(category => !(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).includes(category))
+                  .map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Display Selected Categories */}
+          {(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).length > 0 && (
+            <div>
+              <Label className="text-sm font-medium text-foreground mb-2">Selected Categories</Label>
+              <div className="flex flex-wrap gap-2">
+                {(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).map((category, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
+                  >
+                    {category}
+                    {isEditing && (
+                      <button
+                        onClick={() => removeTalentCategory(category)}
+                        className="ml-1 text-primary/70 hover:text-primary transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         
         <p className="text-sm text-muted-foreground mt-2">
           Select the types of talent work you're interested in (e.g., Model, Actor, Dancer)
@@ -895,9 +904,9 @@ export function TalentSpecificSection() {
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Measurements:</span>
+                <span className="text-muted-foreground">Body Type:</span>
                 <span className="ml-2 text-foreground">
-                  {profile?.measurements || 'Not specified'}
+                  {profile?.body_type || 'Not specified'}
                 </span>
               </div>
               <div>

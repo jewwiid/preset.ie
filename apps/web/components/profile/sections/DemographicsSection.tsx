@@ -7,51 +7,7 @@ import { ToggleSwitch } from '../common/ToggleSwitch'
 import { User, Globe, MapPin, Clock, Calendar } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 
-// Gender identity options
-const GENDER_OPTIONS = [
-  { value: 'male', label: 'Male' },
-  { value: 'female', label: 'Female' },
-  { value: 'non_binary', label: 'Non-binary' },
-  { value: 'genderfluid', label: 'Genderfluid' },
-  { value: 'agender', label: 'Agender' },
-  { value: 'transgender_male', label: 'Transgender Male' },
-  { value: 'transgender_female', label: 'Transgender Female' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
-  { value: 'other', label: 'Other' }
-]
-
-// Ethnicity options
-const ETHNICITY_OPTIONS = [
-  { value: 'african_american', label: 'African American' },
-  { value: 'asian', label: 'Asian' },
-  { value: 'caucasian', label: 'Caucasian' },
-  { value: 'hispanic_latino', label: 'Hispanic/Latino' },
-  { value: 'middle_eastern', label: 'Middle Eastern' },
-  { value: 'native_american', label: 'Native American' },
-  { value: 'pacific_islander', label: 'Pacific Islander' },
-  { value: 'mixed_race', label: 'Mixed Race' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' }
-]
-
-// Experience level options
-const EXPERIENCE_LEVEL_OPTIONS = [
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-  { value: 'professional', label: 'Professional' },
-  { value: 'expert', label: 'Expert' }
-]
-
-// Availability status options
-const AVAILABILITY_OPTIONS = [
-  { value: 'available', label: 'Available' },
-  { value: 'busy', label: 'Busy' },
-  { value: 'unavailable', label: 'Unavailable' },
-  { value: 'limited', label: 'Limited Availability' },
-  { value: 'weekends_only', label: 'Weekends Only' },
-  { value: 'weekdays_only', label: 'Weekdays Only' }
-]
+// These options are now fetched from the database via the predefined-data API
 
 // Note: Physical attribute options (body_type, hair_length, skin_tone)
 // have been moved to TalentSpecificSection for better organization
@@ -61,37 +17,71 @@ export function DemographicsSection() {
   const { isEditing } = useProfileEditing()
   const { formData, updateField } = useProfileForm()
 
+  // Database-driven options state
+  const [genderOptions, setGenderOptions] = useState<Array<{value: string, label: string}>>([])
+  const [ethnicityOptions, setEthnicityOptions] = useState<Array<{value: string, label: string}>>([])
+  const [experienceLevelOptions, setExperienceLevelOptions] = useState<Array<{value: string, label: string}>>([])
+  const [availabilityOptions, setAvailabilityOptions] = useState<Array<{value: string, label: string}>>([])
   const [nationalityOptions, setNationalityOptions] = useState<Array<{value: string, label: string}>>([])
-  const [loadingNationalities, setLoadingNationalities] = useState(false)
+  const [loadingOptions, setLoadingOptions] = useState(false)
 
-  // Fetch nationalities from database
+  // Fetch all predefined options from database
   useEffect(() => {
-    const fetchNationalities = async () => {
-      setLoadingNationalities(true)
+    const fetchPredefinedOptions = async () => {
+      setLoadingOptions(true)
       try {
-        if (!supabase) return
-
-        const { data, error } = await (supabase as any)
-          .from('predefined_nationalities')
-          .select('nationality_name')
-          .eq('is_active', true)
-          .order('sort_order')
-
-        if (!error && data) {
-          const options = data.map((n: any) => ({
-            value: n.nationality_name,
-            label: n.nationality_name
-          }))
-          setNationalityOptions(options)
+        const response = await fetch('/api/predefined-data')
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Set gender options
+          setGenderOptions(
+            data.gender_identities?.map((g: any) => ({
+              value: g.identity_name.toLowerCase().replace(/\s+/g, '_'),
+              label: g.identity_name
+            })) || []
+          )
+          
+          // Set ethnicity options
+          setEthnicityOptions(
+            data.ethnicities?.map((e: any) => ({
+              value: e.ethnicity_name.toLowerCase().replace(/\s+/g, '_'),
+              label: e.ethnicity_name
+            })) || []
+          )
+          
+          // Set experience level options
+          setExperienceLevelOptions(
+            data.experience_levels?.map((el: any) => ({
+              value: el.level_name.toLowerCase().replace(/\s+/g, '_'),
+              label: el.level_name
+            })) || []
+          )
+          
+          // Set availability options
+          setAvailabilityOptions(
+            data.availability_statuses?.map((as: any) => ({
+              value: as.status_name.toLowerCase().replace(/\s+/g, '_'),
+              label: as.status_name
+            })) || []
+          )
+          
+          // Set nationality options
+          setNationalityOptions(
+            data.nationalities?.map((n: any) => ({
+              value: n.nationality_name,
+              label: n.nationality_name
+            })) || []
+          )
         }
       } catch (error) {
-        console.error('Error fetching nationalities:', error)
+        console.error('Error fetching predefined options:', error)
       } finally {
-        setLoadingNationalities(false)
+        setLoadingOptions(false)
       }
     }
 
-    fetchNationalities()
+    fetchPredefinedOptions()
   }, [])
 
   const handleFieldChange = (field: string, value: any) => {
@@ -113,7 +103,7 @@ export function DemographicsSection() {
           label="Gender Identity"
           value={isEditing ? formData.gender_identity : profile?.gender_identity}
           onChange={(value) => handleFieldChange('gender_identity', value)}
-          options={GENDER_OPTIONS}
+          options={genderOptions}
           placeholder="Select gender identity"
           className={isEditing ? '' : 'pointer-events-none'}
         />
@@ -122,7 +112,7 @@ export function DemographicsSection() {
           label="Ethnicity"
           value={isEditing ? formData.ethnicity : profile?.ethnicity}
           onChange={(value) => handleFieldChange('ethnicity', value)}
-          options={ETHNICITY_OPTIONS}
+          options={ethnicityOptions}
           placeholder="Select ethnicity"
           className={isEditing ? '' : 'pointer-events-none'}
         />
@@ -132,7 +122,7 @@ export function DemographicsSection() {
           value={isEditing ? formData.nationality : profile?.nationality}
           onChange={(value) => handleFieldChange('nationality', value)}
           options={nationalityOptions}
-          placeholder={loadingNationalities ? "Loading nationalities..." : "Select nationality"}
+          placeholder={loadingOptions ? "Loading nationalities..." : "Select nationality"}
           className={isEditing ? '' : 'pointer-events-none'}
         />
       </div>
@@ -148,7 +138,7 @@ export function DemographicsSection() {
           label="Experience Level"
           value={isEditing ? formData.experience_level : profile?.experience_level}
           onChange={(value) => handleFieldChange('experience_level', value)}
-          options={EXPERIENCE_LEVEL_OPTIONS}
+          options={experienceLevelOptions}
           placeholder="Select experience level"
           className={isEditing ? '' : 'pointer-events-none'}
         />
@@ -157,18 +147,12 @@ export function DemographicsSection() {
           label="Availability Status"
           value={isEditing ? formData.availability_status : profile?.availability_status}
           onChange={(value) => handleFieldChange('availability_status', value)}
-          options={AVAILABILITY_OPTIONS}
+          options={availabilityOptions}
           placeholder="Select availability status"
           className={isEditing ? '' : 'pointer-events-none'}
         />
 
-        <TextField
-          label="Preferred Working Hours"
-          value={isEditing ? formData.preferred_working_hours : profile?.preferred_working_hours}
-          onChange={(value) => handleFieldChange('preferred_working_hours', value)}
-          placeholder="e.g., 9am-5pm, evenings only, flexible"
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
+        {/* Working Hours moved to separate WorkingHoursSection component */}
       </div>
 
       {/* Location Information */}
@@ -187,11 +171,12 @@ export function DemographicsSection() {
             className={isEditing ? '' : 'pointer-events-none'}
           />
 
-          <TextField
+          <SelectField
             label="Country"
             value={isEditing ? formData.country : profile?.country}
             onChange={(value) => handleFieldChange('country', value)}
-            placeholder="e.g., United States, United Kingdom"
+            options={nationalityOptions}
+            placeholder={loadingOptions ? "Loading countries..." : "Select country..."}
             className={isEditing ? '' : 'pointer-events-none'}
           />
         </div>
@@ -205,13 +190,7 @@ export function DemographicsSection() {
             className={isEditing ? '' : 'pointer-events-none'}
           />
 
-          <TextField
-            label="Timezone (Optional)"
-            value={isEditing ? formData.timezone : profile?.timezone}
-            onChange={(value) => handleFieldChange('timezone', value)}
-            placeholder="e.g., PST, EST, GMT"
-            className={isEditing ? '' : 'pointer-events-none'}
-          />
+          {/* Timezone moved to WorkingHoursSection component */}
         </div>
 
         <ToggleSwitch

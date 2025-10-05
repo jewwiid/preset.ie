@@ -1,7 +1,8 @@
 'use client'
 
 import React from 'react'
-import { useProfileUI, useProfileEditing } from '../context/ProfileContext'
+import { useProfileUI, useProfileEditing, useProfile } from '../context/ProfileContext'
+import { UserProfile } from '../../../lib/types/dashboard'
 import { 
   User, 
   Settings, 
@@ -76,7 +77,8 @@ const profileSubTabs: ProfileSubTab[] = [
   { id: 'privacy', label: 'Privacy', icon: Shield },
   { id: 'style', label: 'Style', icon: Palette },
   { id: 'professional', label: 'Professional', icon: Star },
-  { id: 'talent', label: 'Talent', icon: Users }
+  { id: 'talent', label: 'Talent', icon: Users },
+  { id: 'contributor', label: 'Contributor', icon: Users }
 ]
 
 interface ProfileSubTabsProps {
@@ -85,10 +87,27 @@ interface ProfileSubTabsProps {
 }
 
 export function ProfileSubTabs({ activeSubTab, onSubTabChange }: ProfileSubTabsProps) {
+  const { profile } = useProfile()
+  
+  // Filter tabs based on user role
+  const getVisibleTabs = () => {
+    const profileData = profile as UserProfile | null
+    const hasTalentRole = profileData?.role_flags?.includes('TALENT')
+    const hasContributorRole = profileData?.role_flags?.includes('CONTRIBUTOR')
+    
+    return profileSubTabs.filter(tab => {
+      if (tab.id === 'talent' && !hasTalentRole) return false
+      if (tab.id === 'contributor' && !hasContributorRole) return false
+      return true
+    })
+  }
+
+  const visibleTabs = getVisibleTabs()
+
   return (
     <div className="bg-muted rounded-lg p-1 mb-6">
       <div className="flex justify-center space-x-1 overflow-x-auto scrollbar-hide">
-        {profileSubTabs.map((tab) => {
+        {visibleTabs.map((tab) => {
           const Icon = tab.icon
           const isActive = activeSubTab === tab.id
           

@@ -578,7 +578,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                   compatibilityScore={result.compatibility_score}
                   compatibilityBreakdown={result.compatibility_breakdown}
                   onViewDetails={() => {
-                    const url = result.type === 'gig' ? `/gigs/${result.id}` : `/profile/${result.id}`
+                    const url = result.type === 'gig' ? `/gigs/${result.id}` : `/users/${result.data?.handle || result.id}`
                     window.open(url, '_blank')
                   }}
                 />

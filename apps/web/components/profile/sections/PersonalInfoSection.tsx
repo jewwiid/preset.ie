@@ -68,23 +68,7 @@ export function PersonalInfoSection() {
         className={isEditing ? '' : 'pointer-events-none'}
       />
 
-      {/* City */}
-      <TextField
-        label="City"
-        value={isEditing ? formData.city : profile?.city}
-        onChange={(value) => handleFieldChange('city', value)}
-        placeholder="Enter your city"
-        className={isEditing ? '' : 'pointer-events-none'}
-      />
-
-      {/* Country */}
-      <TextField
-        label="Country"
-        value={isEditing ? formData.country : profile?.country}
-        onChange={(value) => handleFieldChange('country', value)}
-        placeholder="Enter your country"
-        className={isEditing ? '' : 'pointer-events-none'}
-      />
+      {/* Location moved to DemographicsSection */}
 
       {/* Contact Information */}
       <div className="border-t border-border pt-6">
@@ -114,21 +98,6 @@ export function PersonalInfoSection() {
           className={isEditing ? '' : 'pointer-events-none'}
         />
 
-        <TextField
-          label="Website URL"
-          value={isEditing ? formData.website_url : profile?.website_url}
-          onChange={(value) => handleFieldChange('website_url', value)}
-          placeholder="https://yourwebsite.com"
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
-
-        <TextField
-          label="Portfolio URL"
-          value={isEditing ? formData.portfolio_url : profile?.portfolio_url}
-          onChange={(value) => handleFieldChange('portfolio_url', value)}
-          placeholder="https://yourportfolio.com"
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
       </div>
     </div>
   )

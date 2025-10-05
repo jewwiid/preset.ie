@@ -509,7 +509,7 @@ export default function ApplicationsPage({ params }: { params: Promise<{ id: str
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => router.push(`/profile/${application.users_profile.handle}`)}
+                            onClick={() => router.push(`/users/${application.users_profile.handle}`)}
                           >
                             <Eye className="w-4 h-4 mr-2" />
                             View Profile

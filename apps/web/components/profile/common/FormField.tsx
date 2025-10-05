@@ -1,7 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { X } from 'lucide-react'
 import { FormFieldProps } from '../types/profile'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export function FormField({
   label,
@@ -34,6 +40,8 @@ export function FormField({
     return baseClasses
   }
 
+  const fieldId = `input-${label.toLowerCase().replace(/\s+/g, '-')}`
+
   const renderInput = () => {
     const commonProps = {
       value: value || '',
@@ -48,6 +56,7 @@ export function FormField({
       case 'textarea':
         return (
           <textarea
+            id={fieldId}
             {...commonProps}
             rows={3}
             className={`${getInputClasses()} resize-none`}
@@ -56,12 +65,14 @@ export function FormField({
       
       case 'number':
         return (
-          <input
+          <Input
+            id={fieldId}
             {...commonProps}
             type="number"
             min={min}
             max={max}
             step={step}
+            className={error ? 'border-destructive focus:ring-destructive' : ''}
           />
         )
       
@@ -103,25 +114,27 @@ export function FormField({
       
       default:
         return (
-          <input
+          <Input
+            id={fieldId}
             {...commonProps}
             type="text"
+            className={error ? 'border-destructive focus:ring-destructive' : ''}
           />
         )
     }
   }
 
   return (
-    <div className={`mb-4 ${className}`}>
-      <label className={getLabelClasses()}>
+    <div className={`space-y-2 ${className}`}>
+      <Label htmlFor={fieldId} className={error ? 'text-destructive' : ''}>
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
-      </label>
+      </Label>
       
       {renderInput()}
       
       {error && (
-        <p className="mt-1 text-sm text-destructive">
+        <p className="text-xs text-destructive">
           {error}
         </p>
       )}
@@ -212,38 +225,39 @@ export function SelectField({
     return baseClasses
   }
 
+  const selectFieldId = `select-${label.toLowerCase().replace(/\s+/g, '-')}`
+
   return (
-    <div className={`space-y-1 ${className}`}>
-      <label className={getLabelClasses()}>
+    <div className={`space-y-2 ${className}`}>
+      <Label htmlFor={selectFieldId} className={error ? 'text-destructive' : ''}>
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
-      </label>
+      </Label>
       
       {description && (
         <p className="text-xs text-muted-foreground">{description}</p>
       )}
       
-      <select
+      <Select
         value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
+        onValueChange={onChange}
         disabled={disabled}
-        className={getSelectClasses()}
         required={required}
       >
-        {placeholder && (
-          <option value="" disabled>
-            {placeholder}
-          </option>
-        )}
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger id={selectFieldId} className={error ? 'border-destructive focus:ring-destructive' : ''}>
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-xs text-destructive">{error}</p>
       )}
     </div>
   )
@@ -318,6 +332,9 @@ interface TagInputProps {
   disabled?: boolean
   className?: string
   predefinedOptions?: string[]
+  strictMode?: boolean // Only allow predefined options
+  hint?: string
+  loading?: boolean
 }
 
 export function TagInput({ 
@@ -328,7 +345,10 @@ export function TagInput({
   placeholder = "Add a tag...", 
   disabled = false, 
   className = '',
-  predefinedOptions = []
+  predefinedOptions = [],
+  strictMode = false,
+  hint,
+  loading = false
 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -342,9 +362,23 @@ export function TagInput({
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputValue.trim()) {
       e.preventDefault()
-      onAddTag(inputValue.trim())
-      setInputValue('')
-      setShowSuggestions(false)
+      const trimmedValue = inputValue.trim()
+      
+      // In strict mode, only allow predefined options
+      if (strictMode) {
+        const isValidOption = predefinedOptions.includes(trimmedValue)
+        if (isValidOption) {
+          onAddTag(trimmedValue)
+          setInputValue('')
+          setShowSuggestions(false)
+        }
+        // If not valid, do nothing (user must select from suggestions)
+      } else {
+        // Normal mode - allow any input
+        onAddTag(trimmedValue)
+        setInputValue('')
+        setShowSuggestions(false)
+      }
     }
   }
 
@@ -361,33 +395,38 @@ export function TagInput({
 
   return (
     <div className={`mb-4 ${className}`}>
-      <label className="block text-sm font-medium text-foreground mb-2">
-        {label}
-      </label>
+      {label && (
+        <Label className="block text-sm font-medium text-foreground mb-2">
+          {label}
+        </Label>
+      )}
       
       {/* Tags Display */}
       <div className="flex flex-wrap gap-2 mb-2">
         {tags.map((tag, index) => (
-          <span
+          <Badge
             key={index}
-            className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary"
+            variant="secondary"
+            className="inline-flex items-center gap-1 pr-1"
           >
             {tag}
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => onRemoveTag(tag)}
               disabled={disabled}
-              className="ml-2 text-primary hover:text-primary/90"
+              className="h-auto p-0 ml-1 hover:bg-transparent"
             >
-              ×
-            </button>
-          </span>
+              <X className="h-3 w-3" />
+            </Button>
+          </Badge>
         ))}
       </div>
 
       {/* Input Field */}
       <div className="relative">
-        <input
+        <Input
           type="text"
           value={inputValue}
           onChange={handleInputChange}
@@ -396,22 +435,45 @@ export function TagInput({
           onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground transition-all duration-200"
         />
         
         {/* Suggestions Dropdown */}
         {showSuggestions && filteredSuggestions.length > 0 && (
           <div className="absolute z-10 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
-            {filteredSuggestions.map((suggestion, index) => (
-              <button
+            {filteredSuggestions.slice(0, 10).map((suggestion, index) => (
+              <Button
                 key={index}
                 type="button"
+                variant="ghost"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="w-full px-3 py-2 text-left text-sm text-foreground hover:bg-muted-100 dark:hover:bg-muted-600 focus:outline-none focus:bg-muted-100 dark:focus:bg-muted-600"
+                className="w-full justify-start text-left text-sm h-auto p-3"
               >
                 {suggestion}
-              </button>
+              </Button>
             ))}
+          </div>
+        )}
+        
+        {/* Show available options hint */}
+        {loading ? (
+          <div className="text-xs text-muted-foreground mt-1">
+            Loading options...
+          </div>
+        ) : hint ? (
+          <div className="text-xs text-muted-foreground mt-1">
+            {hint}
+          </div>
+        ) : predefinedOptions.length > 0 && !showSuggestions && (
+          <div className="text-xs text-muted-foreground mt-1">
+            {strictMode ? (
+              <>
+                {predefinedOptions.length} predefined options available. Select from suggestions only.
+              </>
+            ) : (
+              <>
+                {predefinedOptions.length} predefined options available. Start typing to see suggestions.
+              </>
+            )}
           </div>
         )}
       </div>

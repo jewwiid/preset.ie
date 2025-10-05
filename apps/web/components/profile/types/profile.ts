@@ -9,6 +9,7 @@ export interface UserProfile {
   avatar_url?: string
   header_banner_url?: string
   header_banner_position?: string
+  role_flags?: string[]
   bio?: string
   city?: string
   country?: string
@@ -42,6 +43,10 @@ export interface UserProfile {
   tattoos?: boolean
   piercings?: boolean
   talent_categories?: string[]
+  contributor_roles?: string[]
+  professional_skills?: string[]
+  behance_url?: string
+  dribbble_url?: string
   style_tags?: string[]
   vibe_tags?: string[]
   date_of_birth?: string
@@ -55,7 +60,11 @@ export interface UserProfile {
   experience_level?: string
   primary_skill?: string
   availability_status?: string
-  preferred_working_hours?: string
+  preferred_working_hours?: string // Deprecated - use structured fields below
+  working_time_preference?: string
+  preferred_start_time?: string
+  preferred_end_time?: string
+  working_timezone?: string
   state_province?: string
   timezone?: string
   passport_valid?: boolean
@@ -70,6 +79,7 @@ export interface UserProfile {
   show_rates?: boolean
   include_in_search?: boolean
   show_availability?: boolean
+  allow_direct_booking?: boolean
   allow_direct_messages?: boolean
   allow_collaboration_invites?: boolean
   share_analytics?: boolean
@@ -78,15 +88,10 @@ export interface UserProfile {
   accepts_expenses_only?: boolean
   prefers_studio?: boolean
   prefers_outdoor?: boolean
-  available_weekdays?: boolean
-  available_weekends?: boolean
-  available_evenings?: boolean
-  available_overnight?: boolean
-  works_with_teams?: boolean
-  prefers_solo_work?: boolean
-  comfortable_with_nudity?: boolean
-  comfortable_with_intimate_content?: boolean
-  requires_model_release?: boolean
+  // These fields were removed from the database as redundant:
+  // available_weekdays, available_weekends, available_evenings, available_overnight,
+  // works_with_teams, prefers_solo_work, comfortable_with_nudity, 
+  // comfortable_with_intimate_content, requires_model_release
   verification_status?: string
   created_at?: string
   updated_at?: string

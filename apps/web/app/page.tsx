@@ -425,7 +425,7 @@ export default function Home() {
             <div className="bg-background rounded-2xl border border-border overflow-hidden">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch min-h-[500px]">
                 {/* Image for Contributors */}
-                <div className="relative h-64 lg:h-full w-full order-2 lg:order-1">
+                <div className="relative h-64 lg:h-full w-full order-2 lg:order-1 overflow-hidden">
                   {(() => {
                     const contributorImage = getHowItWorksContributorImage();
                     return (
@@ -433,7 +433,7 @@ export default function Home() {
                         src={contributorImage.image_url}
                         alt={contributorImage.alt_text}
                         fill
-                        className="object-cover"
+                        className="object-cover object-center"
                         sizes="(max-width: 768px) 100vw, 50vw"
                         onError={(e) => {
                           const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
@@ -556,7 +556,7 @@ export default function Home() {
                 </div>
 
                 {/* Image for Talents */}
-                <div className="relative h-64 lg:h-full w-full order-2 lg:order-2">
+                <div className="relative h-64 lg:h-full w-full order-2 lg:order-2 overflow-hidden">
                   {(() => {
                     const talentImage = getHowItWorksTalentImage();
                     return (
@@ -564,7 +564,7 @@ export default function Home() {
                         src={talentImage.image_url}
                         alt={talentImage.alt_text}
                         fill
-                        className="object-cover"
+                        className="object-cover object-center"
                         sizes="(max-width: 768px) 100vw, 50vw"
                         onError={(e) => {
                           const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
@@ -820,7 +820,7 @@ export default function Home() {
                   return (
                     <Link
                       key={contributor.id}
-                      href={`/profile/${contributor.handle}`}
+                      href={`/users/${contributor.handle}`}
                       className="group cursor-pointer block"
                     >
                       {/* Contributor Image */}

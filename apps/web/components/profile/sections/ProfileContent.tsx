@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useProfileEditing, useProfileUI } from '../context/ProfileContext'
+import { useProfileEditing, useProfileUI, useProfile, useProfileForm } from '../context/ProfileContext'
 import { ProfileContentEnhanced } from './ProfileContentEnhanced'
 import { ProfileSubTabs } from '../layout/ProfileTabs'
 import { PersonalInfoSection } from './PersonalInfoSection'
@@ -11,9 +11,12 @@ import { PrivacySettingsSection } from './PrivacySettingsSection'
 import { StyleSection } from './StyleSection'
 import { ProfessionalSection } from './ProfessionalSection'
 import { TalentSpecificSection } from './TalentSpecificSection'
+import { ContributorSpecificSection } from './ContributorSpecificSection'
 
 export function ProfileContent() {
   const { isEditing } = useProfileEditing()
+  const { profile } = useProfile()
+  const { formData } = useProfileForm()
   const { activeSubTab, setActiveSubTab } = useProfileUI()
 
   const renderSubTabContent = () => {
@@ -31,7 +34,17 @@ export function ProfileContent() {
       case 'professional':
         return <ProfessionalSection />
       case 'talent':
-        return <TalentSpecificSection />
+        return <TalentSpecificSection 
+          profile={profile}
+          formData={formData}
+          onFieldChange={() => {}}
+        />
+      case 'contributor':
+        return <ContributorSpecificSection 
+          profile={profile}
+          formData={formData}
+          onFieldChange={() => {}}
+        />
       default:
         return <PersonalInfoSection />
     }

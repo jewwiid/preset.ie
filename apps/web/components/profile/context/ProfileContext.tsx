@@ -577,6 +577,36 @@ export function useProfileForm() {
         avatar_url: state.formData.avatar_url || null,
         header_banner_url: state.formData.header_banner_url || null,
         header_banner_position: state.formData.header_banner_position || null,
+        // Demographics fields
+        gender_identity: state.formData.gender_identity?.trim() || null,
+        ethnicity: state.formData.ethnicity?.trim() || null,
+        nationality: state.formData.nationality?.trim() || null,
+        experience_level: state.formData.experience_level?.trim() || null,
+        availability_status: state.formData.availability_status?.trim() || null,
+        state_province: state.formData.state_province?.trim() || null,
+        timezone: state.formData.timezone?.trim() || null,
+        passport_valid: state.formData.passport_valid || false,
+        show_age: state.formData.show_age || false,
+        show_physical_attributes: state.formData.show_physical_attributes || false,
+        // Work preferences fields
+        accepts_tfp: state.formData.accepts_tfp || false,
+        accepts_expenses_only: state.formData.accepts_expenses_only || false,
+        prefers_studio: state.formData.prefers_studio || false,
+        prefers_outdoor: state.formData.prefers_outdoor || false,
+        // These fields were removed from the database as redundant
+        // Privacy settings fields
+        show_phone: state.formData.show_phone || false,
+        show_social_links: state.formData.show_social_links || false,
+        show_website: state.formData.show_website || false,
+        show_experience: state.formData.show_experience || false,
+        show_specializations: state.formData.show_specializations || false,
+        show_equipment: state.formData.show_equipment || false,
+        show_rates: state.formData.show_rates || false,
+        include_in_search: state.formData.include_in_search !== undefined ? state.formData.include_in_search : true,
+        show_availability: state.formData.show_availability || false,
+        allow_direct_booking: state.formData.allow_direct_booking || false,
+        // Professional fields
+        primary_skill: state.formData.primary_skill?.trim() || null,
         updated_at: new Date().toISOString()
       }
 
@@ -603,8 +633,11 @@ export function useProfileForm() {
           code: error.code,
           message: error.message,
           details: error.details,
-          hint: error.hint
+          hint: error.hint,
+          status: error.status,
+          statusText: error.statusText
         })
+        console.error('Full error object:', JSON.parse(JSON.stringify(error)))
         
         // Provide more specific error messages
         let errorMessage = 'Failed to save profile'
@@ -633,6 +666,7 @@ export function useProfileForm() {
       console.error('Error saving profile:', err)
       console.error('Error type:', typeof err)
       console.error('Error constructor:', err?.constructor?.name)
+      console.error('Full error object:', JSON.parse(JSON.stringify(err)))
       
       let errorMessage = 'An unexpected error occurred'
       if (err instanceof Error) {
@@ -641,6 +675,14 @@ export function useProfileForm() {
         errorMessage = err
       } else if (err && typeof err === 'object' && 'message' in err) {
         errorMessage = String(err.message)
+      } else if (err && typeof err === 'object') {
+        // Try to extract error info from Supabase error
+        const serializedErr = JSON.parse(JSON.stringify(err))
+        if (serializedErr.message) {
+          errorMessage = serializedErr.message
+        } else if (serializedErr.error) {
+          errorMessage = serializedErr.error
+        }
       }
       
       dispatch({ type: 'SET_ERROR', payload: errorMessage })

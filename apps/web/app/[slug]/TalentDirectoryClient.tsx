@@ -15,6 +15,7 @@ interface DirectoryProfile {
   primary_skill?: string;
   created_at: string;
   role_flags?: string[];
+  availability_status?: string;
 }
 
 interface TalentDirectoryClientProps {
@@ -229,26 +230,50 @@ export default function TalentDirectoryClient({
               </div>
               
               {/* Role Badge */}
-              {profile.role_flags && profile.role_flags.length > 0 && (
-                <div className="flex gap-1 mb-2">
-                  {profile.role_flags.map((role, index) => (
-                    <span
-                      key={index}
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        role === 'TALENT' 
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                          : role === 'CONTRIBUTOR'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                          : role === 'BOTH'
-                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                      }`}
-                    >
-                      {role === 'BOTH' ? 'Both' : role}
-                    </span>
-                  ))}
-                </div>
-              )}
+              {/* Role and Availability Badges */}
+              <div className="flex gap-1 mb-2 flex-wrap">
+                {/* Role Badges */}
+                {profile.role_flags && profile.role_flags.length > 0 && (
+                  <>
+                    {profile.role_flags.map((role, index) => (
+                      <span
+                        key={`role-${index}`}
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          role === 'TALENT' 
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            : role === 'CONTRIBUTOR'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : role === 'BOTH'
+                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                        }`}
+                      >
+                        {role === 'BOTH' ? 'Both' : role}
+                      </span>
+                    ))}
+                  </>
+                )}
+                
+                {/* Availability Status Badge */}
+                {profile.availability_status && (
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full font-medium ${
+                      profile.availability_status === 'available'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : profile.availability_status === 'limited'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                        : profile.availability_status === 'busy'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                    }`}
+                  >
+                    {profile.availability_status === 'available' && 'Available'}
+                    {profile.availability_status === 'limited' && 'Limited'}
+                    {profile.availability_status === 'busy' && 'Busy'}
+                    {profile.availability_status === 'unavailable' && 'Unavailable'}
+                  </span>
+                )}
+              </div>
               
               {/* Action Buttons */}
               <div className="flex gap-2 mt-4">

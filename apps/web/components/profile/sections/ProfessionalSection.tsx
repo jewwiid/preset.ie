@@ -6,41 +6,78 @@ import { TextField, NumberField, RangeField, TagInput } from '../common/FormFiel
 import { TravelToggle, StudioToggle } from '../common/ToggleSwitch'
 import { Briefcase, DollarSign, MapPin, Building, Clock } from 'lucide-react'
 import { EquipmentSection } from './EquipmentSection'
+import { UserSkillsSection } from './UserSkillsSection'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
 
 export function ProfessionalSection() {
   const { profile } = useProfile()
   const { isEditing } = useProfileEditing()
   const { formData, updateField } = useProfileForm()
+
+  // Guard against SSR issues
+  const [isMounted, setIsMounted] = useState(false)
+  
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
   
   const [predefinedSpecializations, setPredefinedSpecializations] = useState<string[]>([])
   const [predefinedLanguages, setPredefinedLanguages] = useState<string[]>([])
+  const [predefinedRoles, setPredefinedRoles] = useState<Array<{name: string, category: string}>>([])
+  const [predefinedSkills, setPredefinedSkills] = useState<Array<{skill_name: string, category: string}>>([])
+  const [predefinedStudioNames, setPredefinedStudioNames] = useState<Array<{name: string, category: string}>>([])
+  const [predefinedStudioAddresses, setPredefinedStudioAddresses] = useState<Array<{address_type: string, description: string}>>([])
   const [loadingPredefined, setLoadingPredefined] = useState(false)
 
   // Fetch predefined options from database
   useEffect(() => {
     const fetchPredefinedOptions = async () => {
+      // Only fetch on client side
+      if (typeof window === 'undefined') return
+      
       setLoadingPredefined(true)
       try {
-        // Fetch predefined skills from our database
-        const skillsResponse = await fetch('/api/collab/predefined/skills')
-        if (skillsResponse.ok) {
-          const skillsData = await skillsResponse.json()
-          setPredefinedSpecializations(skillsData.skills.map((s: any) => s.name))
+        console.log('Fetching predefined data from API...')
+        // Fetch predefined data from our API
+        const response = await fetch('/api/predefined-data')
+        console.log('API response status:', response.status, response.statusText)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('API data received:', {
+            roles: data.predefined_roles?.length || 0,
+            skills: data.professional_skills?.length || 0,
+            specializations: data.specializations?.length || 0,
+            languages: data.languages?.length || 0
+          })
+          
+          setPredefinedRoles(data.predefined_roles || [])
+          setPredefinedSkills(data.professional_skills || [])
+          
+          // Use specializations table for specializations
+          setPredefinedSpecializations(
+            data.specializations?.map((spec: any) => spec.name) || []
+          )
+          
+          // Use languages_master table for languages
+          setPredefinedLanguages(
+            data.languages?.map((lang: any) => lang.name) || []
+          )
         } else {
-          // Fallback to basic specializations if API fails
-          setPredefinedSpecializations([
-            'Portrait Photography', 'Fashion Photography', 'Wedding Photography',
-            'Event Photography', 'Commercial Photography', 'Editorial Photography',
-            'Product Photography', 'Architecture Photography', 'Street Photography',
-            'Documentary Photography', 'Fine Art Photography', 'Sports Photography'
-          ])
+          console.error('Failed to fetch predefined data from API:', response.status, response.statusText)
+          // No fallback - let the UI handle empty state
+          setPredefinedRoles([])
+          setPredefinedSpecializations([])
+          setPredefinedLanguages([])
         }
-        setPredefinedLanguages([
-          'English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese',
-          'Chinese', 'Japanese', 'Korean', 'Arabic', 'Russian', 'Dutch'
-        ])
       } catch (error) {
         console.error('Error fetching predefined options:', error)
+        console.error('Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : 'Unknown'
+        })
       } finally {
         setLoadingPredefined(false)
       }
@@ -101,6 +138,18 @@ export function ProfessionalSection() {
     handleFieldChange('turnaround_unit_preference', newUnit)
   }
 
+  // Don't render until mounted to prevent SSR issues
+  if (!isMounted) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-muted rounded-lg p-4">
+          <h3 className="text-lg font-medium text-foreground mb-4">Professional Information</h3>
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
@@ -118,39 +167,31 @@ export function ProfessionalSection() {
           This is shown on your profile and in directory listings
         </p>
 
-        <TextField
-          label="Your main profession or category"
-          value={isEditing ? (formData.primary_skill || '') : (profile?.primary_skill || '')}
-          onChange={(e) => handleFieldChange('primary_skill', e.target.value)}
-          placeholder="e.g., Photographer, Model, Videographer"
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
+        <div>
+          <Label htmlFor="primary-skill">Your main profession or category</Label>
+          <Select
+            value={isEditing ? (formData.primary_skill || '') : (profile?.primary_skill || '')}
+            onValueChange={(value) => handleFieldChange('primary_skill', value)}
+            disabled={!isEditing || loadingPredefined}
+          >
+            <SelectTrigger id="primary-skill">
+              <SelectValue placeholder={loadingPredefined ? "Loading options..." : "Select your primary skill..."} />
+            </SelectTrigger>
+            <SelectContent>
+              {predefinedRoles
+                .filter(role => role.category !== 'admin') // Exclude admin roles
+                .map((role) => (
+                  <SelectItem key={role.name} value={role.name}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Experience */}
-      <div className="bg-muted rounded-lg p-4">
-        <h3 className="text-lg font-medium text-foreground mb-4">Experience</h3>
-
-        <RangeField
-          label="Years of Experience"
-          value={isEditing ? (formData.years_experience || 0) : (profile?.years_experience || 0)}
-          onChange={(value) => handleFieldChange('years_experience', parseInt(value))}
-          min={0}
-          max={50}
-          step={1}
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
-
-        <TagInput
-          label="Specializations"
-          tags={isEditing ? (formData.specializations || []) : (profile?.specializations || [])}
-          onAddTag={addSpecialization}
-          onRemoveTag={removeSpecialization}
-          placeholder="Add a specialization..."
-          predefinedOptions={predefinedSpecializations}
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
-      </div>
+      {/* Skills & Experience */}
+      <UserSkillsSection />
 
       {/* Rates */}
       <div className="bg-muted rounded-lg p-4">
@@ -226,31 +267,23 @@ export function ProfessionalSection() {
           Studio Information
         </h3>
         
-        <StudioToggle
-          checked={isEditing ? (formData.has_studio || false) : (profile?.has_studio || false)}
-          onChange={(checked) => handleFieldChange('has_studio', checked)}
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
-
-        {(isEditing ? formData.has_studio : profile?.has_studio) && (
-          <div className="mt-4 space-y-4">
-            <TextField
-              label="Studio Name"
-              value={isEditing ? (formData.studio_name || '') : (profile?.studio_name || '')}
-              onChange={(value) => handleFieldChange('studio_name', value)}
-              placeholder="Enter studio name"
-              className={isEditing ? '' : 'pointer-events-none'}
-            />
-            
-            <TextField
-              label="Studio Address"
-              value={isEditing ? (formData.studio_address || '') : (profile?.studio_address || '')}
-              onChange={(value) => handleFieldChange('studio_address', value)}
-              placeholder="Enter studio address"
-              className={isEditing ? '' : 'pointer-events-none'}
-            />
-          </div>
-        )}
+        <div className="space-y-4">
+          <TextField
+            label="Studio Name (Optional)"
+            value={isEditing ? (formData.studio_name || '') : (profile?.studio_name || '')}
+            onChange={(value) => handleFieldChange('studio_name', value)}
+            placeholder="Enter studio name"
+            className={isEditing ? '' : 'pointer-events-none'}
+          />
+          
+          <TextField
+            label="Studio Address (Optional)"
+            value={isEditing ? (formData.studio_address || '') : (profile?.studio_address || '')}
+            onChange={(value) => handleFieldChange('studio_address', value)}
+            placeholder="Enter studio address"
+            className={isEditing ? '' : 'pointer-events-none'}
+          />
+        </div>
       </div>
 
       {/* Turnaround Time */}
@@ -307,12 +340,11 @@ export function ProfessionalSection() {
           onAddTag={addEditingSoftware}
           onRemoveTag={removeEditingSoftware}
           placeholder="Add editing software..."
-          predefinedOptions={[
-            'Adobe Photoshop', 'Adobe Lightroom', 'Adobe Premiere Pro', 'Adobe After Effects',
-            'Final Cut Pro', 'DaVinci Resolve', 'Capture One', 'Skylum Luminar',
-            'ON1 Photo RAW', 'Corel PaintShop Pro', 'GIMP', 'Darktable',
-            'Affinity Photo', 'Pixelmator Pro', 'Canva', 'Figma'
-          ]}
+          predefinedOptions={
+            predefinedSkills
+              .filter((skill: any) => skill.category === 'software')
+              .map((skill: any) => skill.skill_name)
+          }
           className={isEditing ? '' : 'pointer-events-none'}
         />
       </div>

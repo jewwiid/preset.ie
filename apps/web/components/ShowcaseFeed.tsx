@@ -233,8 +233,8 @@ export default function ShowcaseFeed({
               )}
               
               <div className="flex items-center justify-between text-sm text-slate-500 pt-2 border-t border-slate-100">
-                <Link 
-                  href={`/profile/${showcase.creator.handle}`} 
+                <Link
+                  href={`/users/${showcase.creator.handle}`}
                   className="flex items-center space-x-2 hover:text-slate-700 transition-colors"
                 >
                   {showcase.creator.avatar_url ? (

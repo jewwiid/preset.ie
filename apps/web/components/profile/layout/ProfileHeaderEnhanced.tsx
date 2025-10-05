@@ -162,7 +162,7 @@ export function ProfileHeaderEnhanced() {
     },
     {
       label: 'Studio',
-      value: profile?.has_studio ? profile.studio_name || 'Yes' : 'No',
+      value: (profile?.studio_name || profile?.studio_address) ? (profile.studio_name || 'Has Studio') : 'No Studio',
       icon: Briefcase
     }
   ]

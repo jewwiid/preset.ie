@@ -153,7 +153,7 @@ export default function SimilarTalentSlim({ gigId, className = "" }: SimilarTale
             <div
               key={profile.id}
               className="flex-shrink-0 w-48 bg-muted/20 rounded-lg p-3 border border-border hover:bg-muted/40 transition-colors cursor-pointer group"
-              onClick={() => router.push(`/profile/${profile.handle}`)}
+              onClick={() => router.push(`/users/${profile.handle}`)}
             >
               <div className="flex items-center gap-3">
                 {/* Avatar */}
