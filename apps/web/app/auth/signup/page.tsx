@@ -42,6 +42,8 @@ export default function SignUpPage() {
   // Form data
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
   const [selectedSignupMethod, setSelectedSignupMethod] = useState<SignupMethod | null>(null)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -125,11 +127,16 @@ export default function SignUpPage() {
     }
 
     // Email signup validation
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Please enter your first and last name')
+      return
+    }
+
     if (!isPasswordValid) {
       setError('Password must meet all requirements')
       return
     }
-    
+
     if (!passwordsMatch) {
       setError('Passwords do not match')
       return
@@ -189,7 +196,7 @@ export default function SignUpPage() {
     setError(null)
 
     try {
-      // Store the selected role and date of birth for the complete-profile step
+      // Store the selected role, date of birth, and name for the complete-profile step
       if (selectedRole) {
         sessionStorage.setItem('preset_signup_role', selectedRole)
       }
@@ -199,9 +206,21 @@ export default function SignUpPage() {
       if (email) {
         sessionStorage.setItem('preset_signup_email', email)
       }
+      if (firstName) {
+        sessionStorage.setItem('preset_signup_firstName', firstName)
+      }
+      if (lastName) {
+        sessionStorage.setItem('preset_signup_lastName', lastName)
+      }
 
-      // Create auth account
-      const { error: signUpError, needsEmailConfirmation } = await signUp(email, password)
+      // Create auth account with user metadata
+      const { error: signUpError, needsEmailConfirmation } = await signUp(email, password, {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          full_name: `${firstName} ${lastName}`.trim()
+        }
+      })
 
       if (signUpError) {
         setError(signUpError.message)
@@ -477,6 +496,31 @@ export default function SignUpPage() {
                 <>
 
               <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      type="text"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="John"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      type="text"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <Label htmlFor="email">Email address</Label>
                   <div className="relative">

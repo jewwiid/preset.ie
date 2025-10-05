@@ -1,15 +1,9 @@
--- Simple OAuth fix - create a basic trigger that should work
--- Drop existing triggers first
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP TRIGGER IF EXISTS trigger_create_user_profile ON auth.users;
-DROP TRIGGER IF EXISTS on_auth_user_created_comprehensive ON auth.users;
+-- Update the user creation trigger to properly store first_name and last_name from user metadata
+-- This ensures names from signup are persisted to the database
 
--- Drop existing functions
-DROP FUNCTION IF EXISTS handle_new_user();
-DROP FUNCTION IF EXISTS create_user_profile_on_signup();
-DROP FUNCTION IF EXISTS handle_new_user_comprehensive();
+-- Drop and recreate the trigger function with improved name handling
+DROP FUNCTION IF EXISTS handle_new_user_simple() CASCADE;
 
--- Create a simple, robust function for user creation
 CREATE OR REPLACE FUNCTION handle_new_user_simple()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -23,14 +17,14 @@ BEGIN
         NOW()
     )
     ON CONFLICT (id) DO NOTHING;
-    
+
     -- Generate a simple handle
     DECLARE
         profile_handle TEXT;
     BEGIN
         profile_handle := 'user_' || EXTRACT(EPOCH FROM NOW())::BIGINT;
-        
-        -- Insert into users_profile table
+
+        -- Insert into users_profile table with improved name handling
         INSERT INTO users_profile (
             user_id,
             email,
@@ -47,8 +41,15 @@ BEGIN
         ) VALUES (
             NEW.id,
             NEW.email,
+            -- Extract first_name from user metadata
             COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
+            -- Extract last_name from user metadata
             COALESCE(NEW.raw_user_meta_data->>'last_name', ''),
+            -- Create display_name with fallback logic:
+            -- 1. Use full_name if provided (Google OAuth)
+            -- 2. Use name if provided (generic OAuth)
+            -- 3. Combine first_name + last_name if provided (email signup)
+            -- 4. Fallback to email username
             COALESCE(
                 NEW.raw_user_meta_data->>'full_name',
                 NEW.raw_user_meta_data->>'name',
@@ -68,7 +69,7 @@ BEGIN
         )
         ON CONFLICT (user_id) DO NOTHING;
     END;
-    
+
     RETURN NEW;
 EXCEPTION
     WHEN OTHERS THEN
@@ -78,10 +79,12 @@ EXCEPTION
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create the trigger
+-- Recreate the trigger
+DROP TRIGGER IF EXISTS on_auth_user_created_simple ON auth.users;
+
 CREATE TRIGGER on_auth_user_created_simple
     AFTER INSERT ON auth.users
-    FOR EACH ROW 
+    FOR EACH ROW
     EXECUTE FUNCTION handle_new_user_simple();
 
 -- Grant permissions
@@ -89,4 +92,4 @@ GRANT EXECUTE ON FUNCTION handle_new_user_simple() TO service_role;
 GRANT EXECUTE ON FUNCTION handle_new_user_simple() TO authenticated;
 
 -- Add comment
-COMMENT ON FUNCTION handle_new_user_simple() IS 'Simple function to create user and profile records when a new auth user is created';
+COMMENT ON FUNCTION handle_new_user_simple() IS 'Creates user and profile records with first_name, last_name, and display_name from user metadata when a new auth user is created';

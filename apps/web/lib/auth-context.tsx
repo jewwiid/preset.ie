@@ -12,7 +12,7 @@ export interface AuthContextType {
   session: Session | null
   userRole: UserRole | null
   loading: boolean
-  signUp: (email: string, password: string) => Promise<{ error: AuthError | null; needsEmailConfirmation?: boolean }>
+  signUp: (email: string, password: string, options?: { data?: Record<string, any> }) => Promise<{ error: AuthError | null; needsEmailConfirmation?: boolean }>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null; redirectPath?: string }>
   signInWithGoogle: () => Promise<{ error: AuthError | null; redirectPath?: string }>
   signOut: () => Promise<{ error: AuthError | null }>
@@ -142,19 +142,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, options?: { data?: Record<string, any> }) => {
     if (!supabase) {
       return { error: null }
     }
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: options?.data || {}
+      }
     })
-    
+
     // Check if email confirmation is required
     const needsEmailConfirmation = !error && data.user && !data.session ? true : undefined
-    
+
     return { error, needsEmailConfirmation }
   }
 

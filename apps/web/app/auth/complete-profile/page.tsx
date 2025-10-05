@@ -148,8 +148,6 @@ export default function CompleteProfilePage() {
     prefersOutdoor?: boolean
     availableWeekdays?: boolean
     availableWeekends?: boolean
-    availableEvenings?: boolean
-    availableOvernight?: boolean
     worksWithTeams?: boolean
     prefersSoloWork?: boolean
     
@@ -175,6 +173,73 @@ export default function CompleteProfilePage() {
   // Handle validation
   const [handleError, setHandleError] = useState('')
   const [handleAvailable, setHandleAvailable] = useState(true)
+  
+  // Predefined options state
+  const [genderOptions, setGenderOptions] = useState<Array<{value: string, label: string}>>([])
+  const [ethnicityOptions, setEthnicityOptions] = useState<Array<{value: string, label: string}>>([])
+  const [nationalityOptions, setNationalityOptions] = useState<Array<{value: string, label: string}>>([])
+  const [experienceLevelOptions, setExperienceLevelOptions] = useState<Array<{value: string, label: string}>>([])
+  const [availabilityOptions, setAvailabilityOptions] = useState<Array<{value: string, label: string}>>([])
+  const [loadingOptions, setLoadingOptions] = useState(true)
+
+  // Fetch predefined options
+  useEffect(() => {
+    const fetchPredefinedOptions = async () => {
+      setLoadingOptions(true)
+      try {
+        const response = await fetch('/api/predefined-data')
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Set gender options
+          setGenderOptions(
+            data.gender_identities?.map((g: any) => ({
+              value: g.identity_name.toLowerCase().replace(/\s+/g, '_'),
+              label: g.identity_name
+            })) || []
+          )
+          
+          // Set ethnicity options
+          setEthnicityOptions(
+            data.ethnicities?.map((e: any) => ({
+              value: e.ethnicity_name.toLowerCase().replace(/\s+/g, '_'),
+              label: e.ethnicity_name
+            })) || []
+          )
+          
+          // Set nationality options
+          setNationalityOptions(
+            data.nationalities?.map((n: any) => ({
+              value: n.nationality_name,
+              label: n.nationality_name
+            })) || []
+          )
+          
+          // Set experience level options
+          setExperienceLevelOptions(
+            data.experience_levels?.map((el: any) => ({
+              value: el.level_name.toLowerCase().replace(/\s+/g, '_'),
+              label: el.level_name
+            })) || []
+          )
+          
+          // Set availability options
+          setAvailabilityOptions(
+            data.availability_statuses?.map((a: any) => ({
+              value: a.status_name.toLowerCase().replace(/\s+/g, '_'),
+              label: a.status_name
+            })) || []
+          )
+        }
+      } catch (error) {
+        console.error('Error fetching predefined options:', error)
+      } finally {
+        setLoadingOptions(false)
+      }
+    }
+
+    fetchPredefinedOptions()
+  }, [])
 
   useEffect(() => {
     // Check if user is authenticated
@@ -187,6 +252,8 @@ export default function CompleteProfilePage() {
     const storedRole = sessionStorage.getItem('preset_signup_role') as UserRole | null
     const storedDob = sessionStorage.getItem('preset_signup_dob')
     const storedEmail = sessionStorage.getItem('preset_signup_email')
+    const storedFirstName = sessionStorage.getItem('preset_signup_firstName')
+    const storedLastName = sessionStorage.getItem('preset_signup_lastName')
 
     if (storedRole && !selectedRole) {
       setSelectedRole(storedRole)
@@ -207,19 +274,78 @@ export default function CompleteProfilePage() {
       sessionStorage.removeItem('preset_signup_email')
     }
 
-    // Check if user already has a profile
-    checkExistingProfile()
+    // Pre-fill name fields from signup
+    if (storedFirstName || storedLastName) {
+      const fullName = `${storedFirstName || ''} ${storedLastName || ''}`.trim()
+      setDisplayName(fullName)
+
+      // Generate a default handle from the name
+      if (storedFirstName && !handle) {
+        const generatedHandle = `${storedFirstName}${storedLastName || ''}`.toLowerCase().replace(/[^a-z0-9]/g, '')
+        setHandle(generatedHandle)
+      }
+
+      // Clear the stored names after using them
+      sessionStorage.removeItem('preset_signup_firstName')
+      sessionStorage.removeItem('preset_signup_lastName')
+    }
+
+    // Check if user already has a profile (with a small delay to ensure auth is ready)
+    setTimeout(() => {
+      checkExistingProfile()
+    }, 100)
   }, [user, router])
 
   const checkExistingProfile = async () => {
-    if (!user || !supabase) return
+    if (!user || !supabase) {
+      console.log('No user or supabase client available')
+      return
+    }
+    
+    // Check if we have a valid session
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) {
+      console.error('Error getting session:', sessionError)
+      setError('Authentication error. Please sign in again.')
+      router.push('/auth/signin')
+      return
+    }
+    
+    if (!session) {
+      console.log('No session found, redirecting to signin')
+      router.push('/auth/signin')
+      return
+    }
+    
+    console.log('Checking for existing profile for user:', user.id)
     
     try {
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from('users_profile')
         .select('*')
         .eq('user_id', user.id)
         .single()
+      
+      if (error) {
+        // Check if this is the expected error when no profile exists
+        if (error.code === 'PGRST116') {
+          console.log('User has no profile, showing complete-profile form')
+          return
+        }
+        
+        // Check if this is an authentication error
+        if (error.code === 'PGRST301' || error.message?.includes('JWT')) {
+          console.error('Authentication error checking profile:', error)
+          setError('Authentication error. Please sign in again.')
+          router.push('/auth/signin')
+          return
+        }
+        
+        // Other database errors
+        console.error('Error checking for existing profile:', error)
+        setError('Unable to check profile status. Please try again.')
+        return
+      }
       
       if (profile) {
         // User already has a complete profile, redirect to dashboard
@@ -228,18 +354,9 @@ export default function CompleteProfilePage() {
         return
       }
     } catch (err) {
-      // No profile exists, continue with setup
-      console.log('No existing profile found, continuing with setup:', err)
-      
-      // Check if this is a database error vs no profile found
-      if (err && typeof err === 'object' && 'code' in err && err.code === 'PGRST116') {
-        // This is the expected error when no profile exists
-        console.log('User has no profile, showing complete-profile form')
-      } else {
-        // This might be a database error
-        console.error('Error checking for existing profile:', err)
-        setError('Unable to check profile status. Please try again.')
-      }
+      // Unexpected error
+      console.error('Unexpected error checking for existing profile:', err)
+      setError('An unexpected error occurred. Please try again.')
     }
   }
 
@@ -415,8 +532,6 @@ export default function CompleteProfilePage() {
         prefers_outdoor: profileData.prefersOutdoor || false,
         available_weekdays: profileData.availableWeekdays || false,
         available_weekends: profileData.availableWeekends || false,
-        available_evenings: profileData.availableEvenings || false,
-        available_overnight: profileData.availableOvernight || false,
         works_with_teams: profileData.worksWithTeams || false,
         prefers_solo_work: profileData.prefersSoloWork || false,
         
