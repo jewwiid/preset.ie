@@ -56,10 +56,88 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
 
   const generationMetadata = media.metadata?.generation_metadata
   const cinematicParams = generationMetadata?.cinematic_parameters
-  const prompt = generationMetadata?.prompt
-  const enhancedPrompt = generationMetadata?.enhanced_prompt
+  const rawPrompt = generationMetadata?.prompt
+  const rawEnhancedPrompt = generationMetadata?.enhanced_prompt
   const stylePrompt = generationMetadata?.style_prompt
-  
+
+  // Clean up duplicate prompts and replace {subject} with actual subject used
+  // Returns both cleaned text and the subject for highlighting
+  const cleanPromptWithSubject = (text: string): { cleanedText: string; subject: string | null } => {
+    if (!text) return { cleanedText: text, subject: null }
+
+    // Extract the actual subject from the prompt if it exists
+    let actualSubject = generationMetadata?.user_subject || null
+
+    // Check if text has duplicate pattern by looking for the preset template repeated
+    const parts = text.split(',').map(p => p.trim())
+    if (parts.length >= 6) {
+      // Find the midpoint and check if the pattern repeats
+      const midpoint = Math.floor(parts.length / 2)
+      const firstHalf = parts.slice(0, midpoint)
+      const secondHalf = parts.slice(midpoint)
+
+      // Check if second half is very similar to first half (accounting for subject replacement)
+      let duplicateCount = 0
+      for (let i = 0; i < Math.min(firstHalf.length, secondHalf.length); i++) {
+        if (firstHalf[i] === secondHalf[i] || secondHalf[i].includes('{subject}')) {
+          duplicateCount++
+        }
+
+        // Extract actual subject by comparing first and second half
+        if (!actualSubject && firstHalf[i] !== secondHalf[i] && secondHalf[i].includes('{subject}')) {
+          // The difference in first half is likely the actual subject used
+          const firstPart = firstHalf[i].toLowerCase()
+          const secondPart = secondHalf[i].toLowerCase().replace('{subject}', '').trim()
+
+          // Extract the subject by finding what's different
+          const words = firstPart.split(' ')
+          const templateWords = secondPart.split(' ')
+          const subjectWords = words.filter(w => !templateWords.includes(w))
+          if (subjectWords.length > 0 && subjectWords.length < 10) {
+            actualSubject = subjectWords.join(' ')
+          }
+        }
+      }
+
+      // If more than 70% match, it's a duplicate - use first half only
+      if (duplicateCount / Math.min(firstHalf.length, secondHalf.length) > 0.7) {
+        text = firstHalf.join(', ')
+      }
+    }
+
+    // Determine the subject to use for replacement
+    const subjectReplacement = actualSubject ||
+                               (generationMetadata?.generation_mode === 'image-to-image' ? 'this image' : '')
+
+    // Replace {subject} placeholder with actual subject, or remove it if no subject found
+    if (subjectReplacement) {
+      const cleanedText = text.replace(/\{subject\}/g, subjectReplacement).replace(/,\s*,/g, ',').trim()
+      return { cleanedText, subject: subjectReplacement }
+    } else {
+      // Remove {subject} and clean up resulting empty parts
+      const cleanedText = text.replace(/\{subject\}/g, '').replace(/\s+of\s*,/g, ',').replace(/,\s*,/g, ',').trim()
+      return { cleanedText, subject: null }
+    }
+  }
+
+  const promptResult = cleanPromptWithSubject(rawPrompt)
+  const enhancedPromptResult = cleanPromptWithSubject(rawEnhancedPrompt)
+
+  const prompt = promptResult.cleanedText
+  const enhancedPrompt = enhancedPromptResult.cleanedText
+  const highlightedSubject = enhancedPromptResult.subject || promptResult.subject
+
+  // Helper to highlight the subject in green and italic
+  const highlightSubjectInText = (text: string) => {
+    if (!highlightedSubject) return text
+
+    // Escape special regex characters in the subject
+    const escapedSubject = highlightedSubject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`\\b${escapedSubject}\\b`, 'gi')
+
+    return text.replace(regex, `<span class="text-green-500 italic font-medium">${highlightedSubject}</span>`)
+  }
+
   // Extract preset information
   const customStylePreset = generationMetadata?.custom_style_preset
   const presetStyle = generationMetadata?.style_applied || generationMetadata?.style || 'photorealistic'
@@ -571,15 +649,15 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
               <div className="overflow-y-auto max-h-[50vh]">
           {activeTab === 'prompt' && (
             <div className="space-y-4">
-              {prompt && (
+              {(enhancedPrompt || prompt) && (
                 <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium">Main Prompt</CardTitle>
+                      <CardTitle className="text-sm font-medium">Prompt</CardTitle>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => copyToClipboard(prompt, 'Main prompt')}
+                        onClick={() => copyToClipboard(enhancedPrompt || prompt, 'Prompt')}
                       >
                         <Copy className="h-3 w-3 mr-1" />
                         Copy
@@ -587,33 +665,9 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div 
+                    <div
                       className="text-sm text-muted-foreground whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{ __html: highlightPrompt(prompt) }}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-
-              {enhancedPrompt && enhancedPrompt !== prompt && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium">Enhanced Prompt</CardTitle>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(enhancedPrompt, 'Enhanced prompt')}
-                      >
-                        <Copy className="h-3 w-3 mr-1" />
-                        Copy
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div 
-                      className="text-sm text-muted-foreground whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{ __html: highlightPrompt(enhancedPrompt) }}
+                      dangerouslySetInnerHTML={{ __html: highlightSubjectInText(highlightPrompt(enhancedPrompt || prompt)) }}
                     />
                   </CardContent>
                 </Card>

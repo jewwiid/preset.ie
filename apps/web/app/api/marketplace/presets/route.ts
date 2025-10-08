@@ -20,16 +20,44 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Use the search function we created
-    const { data: presets, error } = await supabase.rpc('search_marketplace_presets', {
-      p_query: query,
-      p_category: category,
-      p_min_price: minPrice,
-      p_max_price: maxPrice,
-      p_sort_by: sortBy,
-      p_limit: limit,
-      p_offset: offset
-    });
+    // SECURITY: Use preset_marketplace_preview view (hides prompts/settings)
+    let presetsQuery = supabase
+      .from('preset_marketplace_preview')
+      .select('*')
+      .range(offset, offset + limit - 1);
+
+    // Apply filters
+    if (query) {
+      presetsQuery = presetsQuery.or(`name.ilike.%${query}%,display_name.ilike.%${query}%,description.ilike.%${query}%`);
+    }
+    if (category) {
+      presetsQuery = presetsQuery.eq('category', category);
+    }
+    if (minPrice) {
+      presetsQuery = presetsQuery.gte('sale_price', minPrice);
+    }
+    if (maxPrice) {
+      presetsQuery = presetsQuery.lte('sale_price', maxPrice);
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'price_low':
+        presetsQuery = presetsQuery.order('sale_price', { ascending: true });
+        break;
+      case 'price_high':
+        presetsQuery = presetsQuery.order('sale_price', { ascending: false });
+        break;
+      case 'popular':
+        presetsQuery = presetsQuery.order('total_sales', { ascending: false });
+        break;
+      case 'recent':
+      default:
+        presetsQuery = presetsQuery.order('created_at', { ascending: false });
+        break;
+    }
+
+    const { data: presets, error } = await presetsQuery;
 
     if (error) {
       console.error('Error searching marketplace presets:', error);
@@ -41,15 +69,14 @@ export async function GET(request: NextRequest) {
 
     // Get total count for pagination
     let countQuery = supabase
-      .from('preset_marketplace_listings')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'approved');
+      .from('preset_marketplace_preview')
+      .select('id', { count: 'exact', head: true });
 
     if (query) {
-      countQuery = countQuery.or(`marketplace_title.ilike.%${query}%,marketplace_description.ilike.%${query}%`);
+      countQuery = countQuery.or(`name.ilike.%${query}%,display_name.ilike.%${query}%,description.ilike.%${query}%`);
     }
     if (category) {
-      countQuery = countQuery.eq('presets.category', category);
+      countQuery = countQuery.eq('category', category);
     }
     if (minPrice) {
       countQuery = countQuery.gte('sale_price', minPrice);

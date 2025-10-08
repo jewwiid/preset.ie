@@ -201,13 +201,23 @@ export default function ApplicationsPage({ params }: { params: Promise<{ id: str
     try {
       if (!supabase) return
 
+      // Check if trying to accept and if spots are full
+      if (status === 'ACCEPTED') {
+        const acceptedCount = applications.filter(app => app.status === 'ACCEPTED').length
+
+        if (acceptedCount >= (gig?.max_applicants || 0)) {
+          alert(`Cannot accept more applicants. All ${gig?.max_applicants} spots are filled. Please decline or remove an accepted applicant first.`)
+          return
+        }
+      }
+
       const { error } = await supabase
         .from('applications')
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', applicationId)
-      
+
       if (error) throw error
-      
+
       // Refresh applications
       fetchApplications()
     } catch (error) {
@@ -311,11 +321,19 @@ export default function ApplicationsPage({ params }: { params: Promise<{ id: str
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <Card>
             <CardContent className="p-6 text-center">
               <div className="text-2xl font-bold text-foreground">{applications.length}</div>
               <div className="text-sm text-muted-foreground">Total Applications</div>
+            </CardContent>
+          </Card>
+          <Card className={applications.filter(app => app.status === 'ACCEPTED').length >= (gig?.max_applicants || 0) ? 'border-primary' : ''}>
+            <CardContent className="p-6 text-center">
+              <div className="text-2xl font-bold text-primary">
+                {applications.filter(app => app.status === 'ACCEPTED').length}/{gig?.max_applicants || 0}
+              </div>
+              <div className="text-sm text-muted-foreground">Spots Filled</div>
             </CardContent>
           </Card>
           <Card>

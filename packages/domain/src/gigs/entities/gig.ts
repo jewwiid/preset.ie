@@ -26,9 +26,11 @@ export interface GigProps {
 export class Gig extends BaseAggregateRoot {
   private props: GigProps;
   private id: EntityId;
+
   constructor(id: EntityId, props: GigProps) {
     super();
-    this.id = id;    this.props = props;
+    this.id = id;
+    this.props = props;
   }
 
   static create(
@@ -132,6 +134,12 @@ export class Gig extends BaseAggregateRoot {
     this.props.updatedAt = new Date();
   }
 
+  attachMoodboard(moodboardId: EntityId): void {
+    // This method would be implemented based on business requirements
+    // For now, just update the timestamp
+    this.props.updatedAt = new Date();
+  }
+
   isApplicationOpen(): boolean {
     return this.props.status === GigStatus.PUBLISHED && 
            new Date() < this.props.applicationDeadline;
@@ -163,8 +171,5 @@ export class Gig extends BaseAggregateRoot {
       getStartTime: () => this.props.startTime,
       getEndTime: () => this.props.endTime
     };
-  }
-  attachMoodboard(moodboardId: EntityId): void {
-    this.props.updatedAt = new Date();
   }
 }

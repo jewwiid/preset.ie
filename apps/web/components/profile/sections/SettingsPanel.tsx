@@ -18,21 +18,23 @@ export function SettingsPanel() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  // Local state for form data
+  // Local state for form data (using profile fields, not settings)
   const [formSettings, setFormSettings] = useState({
-    location_visibility: true,
-    profile_visibility: true
+    show_location: true,
+    show_age: true,
+    show_physical_attributes: true
   })
 
-  // Load settings when component mounts
+  // Load settings from profile when component mounts
   useEffect(() => {
-    if (settings) {
+    if (profile) {
       setFormSettings({
-        location_visibility: settings.location_visibility,
-        profile_visibility: settings.profile_visibility
+        show_location: profile.show_location ?? true,
+        show_age: profile.show_age ?? true,
+        show_physical_attributes: profile.show_physical_attributes ?? true
       })
     }
-  }, [settings])
+  }, [profile])
 
   const handleSettingsChange = (field: string, value: any) => {
     setFormSettings(prev => ({
@@ -53,24 +55,21 @@ export function SettingsPanel() {
         throw new Error('Supabase client not available')
       }
 
-      // Update only privacy settings
-      const { data: settingsData, error: settingsError } = await (supabase as any)
-        .from('user_settings')
-        .upsert({
-          user_id: profile.user_id,
-          location_visibility: formSettings.location_visibility,
-          profile_visibility: formSettings.profile_visibility,
+      // Update privacy settings in users_profile table
+      const { error: updateError } = await (supabase as any)
+        .from('users_profile')
+        .update({
+          show_location: formSettings.show_location,
+          show_age: formSettings.show_age,
+          show_physical_attributes: formSettings.show_physical_attributes,
           updated_at: new Date().toISOString()
-        } as any)
-        .select()
-        .single()
+        })
+        .eq('id', profile.id)
 
-      if (settingsError) {
-        throw settingsError
+      if (updateError) {
+        throw updateError
       }
 
-      // Update context
-      setSettings(settingsData as any)
       setSuccess('Privacy settings saved successfully!')
 
     } catch (err) {
@@ -107,33 +106,49 @@ export function SettingsPanel() {
         <div className="space-y-4">
           <div className="flex items-center justify-between py-3">
             <div className="space-y-0.5">
-              <Label htmlFor="location-visibility" className="text-sm font-medium">
-                Location Visibility
+              <Label htmlFor="show-location" className="text-sm font-medium">
+                Show Location
               </Label>
               <p className="text-xs text-muted-foreground">
-                Allow others to see your location
+                Allow others to see your city and country
               </p>
             </div>
             <Switch
-              id="location-visibility"
-              checked={formSettings.location_visibility}
-              onCheckedChange={(checked) => handleSettingsChange('location_visibility', checked)}
+              id="show-location"
+              checked={formSettings.show_location}
+              onCheckedChange={(checked) => handleSettingsChange('show_location', checked)}
             />
           </div>
 
           <div className="flex items-center justify-between py-3">
             <div className="space-y-0.5">
-              <Label htmlFor="profile-visibility" className="text-sm font-medium">
-                Profile Visibility
+              <Label htmlFor="show-age" className="text-sm font-medium">
+                Show Age
               </Label>
               <p className="text-xs text-muted-foreground">
-                Make your profile visible to others
+                Display your age on your profile
               </p>
             </div>
             <Switch
-              id="profile-visibility"
-              checked={formSettings.profile_visibility}
-              onCheckedChange={(checked) => handleSettingsChange('profile_visibility', checked)}
+              id="show-age"
+              checked={formSettings.show_age}
+              onCheckedChange={(checked) => handleSettingsChange('show_age', checked)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="show-physical" className="text-sm font-medium">
+                Show Physical Attributes
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Display height, weight, body type, etc. (for talents)
+              </p>
+            </div>
+            <Switch
+              id="show-physical"
+              checked={formSettings.show_physical_attributes}
+              onCheckedChange={(checked) => handleSettingsChange('show_physical_attributes', checked)}
             />
           </div>
         </div>
@@ -166,12 +181,16 @@ export function SettingsPanel() {
 
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${formSettings.location_visibility ? 'bg-primary' : 'bg-muted'}`}></div>
-            <span className="text-muted-foreground">Location Visible</span>
+            <div className={`w-2 h-2 rounded-full ${formSettings.show_location ? 'bg-green-500' : 'bg-muted'}`}></div>
+            <span className="text-muted-foreground">Location {formSettings.show_location ? 'Visible' : 'Hidden'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${formSettings.profile_visibility ? 'bg-primary' : 'bg-muted'}`}></div>
-            <span className="text-muted-foreground">Profile Visible</span>
+            <div className={`w-2 h-2 rounded-full ${formSettings.show_age ? 'bg-green-500' : 'bg-muted'}`}></div>
+            <span className="text-muted-foreground">Age {formSettings.show_age ? 'Visible' : 'Hidden'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${formSettings.show_physical_attributes ? 'bg-green-500' : 'bg-muted'}`}></div>
+            <span className="text-muted-foreground">Physical Attributes {formSettings.show_physical_attributes ? 'Visible' : 'Hidden'}</span>
           </div>
         </div>
       </div>

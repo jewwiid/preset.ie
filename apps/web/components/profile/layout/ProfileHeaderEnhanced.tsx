@@ -87,13 +87,30 @@ export function ProfileHeaderEnhanced() {
   const profileCompletion = profile ? calculateProfileCompletion(profile) : 0
   const isProfileComplete = profileCompletion === 100
 
-  // Tab configuration
-  const tabs = [
+  // Tab configuration - role-aware
+  const hasContributor = profile?.role_flags?.includes('CONTRIBUTOR') || false
+  const hasTalent = profile?.role_flags?.includes('TALENT') || false
+  
+  const allTabs = [
     { id: 'professional', label: 'Professional', icon: Briefcase },
     { id: 'contact', label: 'Contact', icon: Mail },
     { id: 'equipment', label: 'Equipment & Software', icon: Camera },
     { id: 'physical', label: 'Physical Attributes', icon: Users }
   ]
+  
+  // Filter tabs based on user role
+  const tabs = allTabs.filter(tab => {
+    if (tab.id === 'equipment') {
+      // Equipment & Software only for contributors
+      return hasContributor
+    }
+    if (tab.id === 'physical') {
+      // Physical Attributes only for talents
+      return hasTalent
+    }
+    // Professional and Contact tabs for everyone
+    return true
+  })
 
   // Professional Information
   const professionalInfo = [
@@ -288,6 +305,11 @@ export function ProfileHeaderEnhanced() {
       setIsUploadingAvatar(true)
       console.log('Starting avatar upload for user:', user.id)
 
+      // 🎯 IMMEDIATE PREVIEW: Create object URL for instant preview
+      const previewUrl = URL.createObjectURL(file)
+      updateField('avatar_url', previewUrl)
+      console.log('Avatar preview URL set:', previewUrl)
+
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}.${fileExt}`
       const filePath = `${user.id}/${fileName}`
@@ -325,6 +347,9 @@ export function ProfileHeaderEnhanced() {
       }
 
       console.log('Database updated successfully')
+      
+      // 🎯 Replace preview URL with actual uploaded URL
+      URL.revokeObjectURL(previewUrl) // Clean up the preview URL
       updateField('avatar_url', data.publicUrl)
     } catch (error: any) {
       console.error('Avatar upload error:', error)
@@ -344,6 +369,11 @@ export function ProfileHeaderEnhanced() {
     try {
       setIsUploadingBanner(true)
       console.log('Starting banner upload for user:', user.id)
+
+      // 🎯 IMMEDIATE PREVIEW: Create object URL for instant preview
+      const previewUrl = URL.createObjectURL(file)
+      updateField('header_banner_url', previewUrl)
+      console.log('Preview URL set:', previewUrl)
 
       const fileExt = file.name.split('.').pop()
       const fileName = `banner_${Date.now()}.${fileExt}`
@@ -382,6 +412,9 @@ export function ProfileHeaderEnhanced() {
       }
 
       console.log('Database updated successfully')
+      
+      // 🎯 Replace preview URL with actual uploaded URL
+      URL.revokeObjectURL(previewUrl) // Clean up the preview URL
       updateField('header_banner_url', data.publicUrl)
     } catch (error: any) {
       console.error('Banner upload error:', error)

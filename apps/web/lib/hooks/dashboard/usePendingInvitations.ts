@@ -26,7 +26,8 @@ export const usePendingInvitations = () => {
         const { invitations: data } = await response.json()
         setInvitations(data || [])
       } else {
-        throw new Error('Failed to load invitations')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Failed to load invitations (${response.status})`)
       }
     } catch (err) {
       console.error('Error loading invitations:', err)

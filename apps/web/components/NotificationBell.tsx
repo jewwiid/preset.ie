@@ -1,18 +1,12 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Check, CheckCheck, X, BellOff, Volume2, VolumeX } from 'lucide-react'
+import { Bell, Check, CheckCheck, X, BellOff, Volume2, VolumeX, RefreshCw } from 'lucide-react'
 import { useNotifications, type Notification } from '../lib/hooks/useNotifications'
+import { Button } from './ui/button'
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
-  const [isMuted, setIsMuted] = useState(() => {
-    // Load mute state from localStorage
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('notifications-muted') === 'true'
-    }
-    return false
-  })
   const dropdownRef = useRef<HTMLDivElement>(null)
   const {
     notifications,
@@ -20,8 +14,14 @@ export function NotificationBell() {
     loading,
     markAsRead,
     markAllAsRead,
-    dismiss
+    dismiss,
+    refresh,
+    preferences,
+    updatePreferences
   } = useNotifications()
+
+  // Get mute state from preferences (push_enabled: false = muted)
+  const isMuted = preferences?.push_enabled === false
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -50,14 +50,13 @@ export function NotificationBell() {
     }
   }
 
-  const toggleMute = () => {
-    const newMutedState = !isMuted
-    setIsMuted(newMutedState)
-    
-    // Save to localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('notifications-muted', newMutedState.toString())
-    }
+  const toggleMute = async () => {
+    const newSoundEnabled = isMuted // If currently muted, enable sound (and vice versa)
+
+    // Update in database
+    await updatePreferences({
+      sound_enabled: newSoundEnabled
+    })
   }
 
   const getNotificationIcon = (notification: Notification) => {
@@ -98,30 +97,28 @@ export function NotificationBell() {
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className={`relative p-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary rounded-md transition-colors ${
-          isMuted 
-            ? 'text-muted-foreground-400 hover:text-muted-foreground-500' 
-            : 'text-muted-foreground-600 hover:text-muted-foreground-900'
-        }`}
+        className="relative w-9 h-9 hover:bg-accent hover:text-accent-foreground"
         aria-label={`Notifications ${isMuted ? '(muted)' : ''} ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
       >
         {isMuted ? (
-          <BellOff className="w-6 h-6" />
+          <BellOff className="h-4 w-4" />
         ) : (
-          <Bell className="w-6 h-6" />
+          <Bell className="h-4 w-4" />
         )}
         
         {/* Badge - show even when muted but with different style */}
         {unreadCount > 0 && (
-          <span className={`absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-primary-foreground transform translate-x-1/2 -translate-y-1/2 rounded-full ${
-            isMuted ? 'bg-muted-400' : 'bg-destructive-500'
+          <span className={`absolute top-0 left-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-primary-foreground transform -translate-x-1/2 -translate-y-1/2 rounded-full min-w-[1.25rem] h-5 ${
+            isMuted ? 'bg-muted-400' : 'bg-primary'
           }`}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Dropdown Panel */}
       {isOpen && (
@@ -132,6 +129,16 @@ export function NotificationBell() {
               Notifications {isMuted && <span className="text-sm text-muted-foreground-500">(muted)</span>}
             </h3>
             <div className="flex items-center gap-2">
+              {/* Refresh Button */}
+              <button
+                onClick={refresh}
+                disabled={loading}
+                className="flex items-center gap-1 text-sm font-medium transition-colors p-1.5 rounded-md text-muted-foreground-500 hover:text-muted-foreground-600 disabled:opacity-50"
+                title="Refresh notifications"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+
               {/* Mute Toggle */}
               <button
                 onClick={toggleMute}
@@ -148,7 +155,7 @@ export function NotificationBell() {
                   <Volume2 className="w-4 h-4" />
                 )}
               </button>
-              
+
               {/* Mark All Read */}
               {unreadCount > 0 && (
                 <button
@@ -267,20 +274,7 @@ export function NotificationBell() {
             )}
           </div>
 
-          {/* Footer */}
-          {notifications.length > 0 && (
-            <div className="border-t border-border-100 p-3">
-              <button
-                onClick={() => {
-                  setIsOpen(false)
-                  window.location.href = '/notifications'
-                }}
-                className="w-full text-center text-sm text-primary-600 hover:text-primary/80 font-medium transition-colors"
-              >
-                View all notifications
-              </button>
-            </div>
-          )}
+          {/* Footer - Removed "View all notifications" since no dedicated page exists */}
         </div>
       )}
     </div>

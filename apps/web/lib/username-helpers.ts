@@ -64,7 +64,7 @@ export async function resolveUsernameToEmail(usernameOrEmail: string): Promise<{
         error: `Username lookup failed. Please use your email address to sign in.`
       }
     }
-  } catch (error) {
+  } catch {
     return { 
       email: null, 
       error: `Error looking up username "${usernameOrEmail}". Please use your email address to sign in.`

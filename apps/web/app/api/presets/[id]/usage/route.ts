@@ -1,140 +1,95 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const body = await request.json();
-    
-    const {
-      usageType,
-      usageData = {}
-    } = body;
+    const { id: presetId } = await params
 
-    // Validate required fields
-    if (!usageType) {
-      return NextResponse.json(
-        { error: 'Usage type is required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate usage type
-    const validUsageTypes = ['playground_generation', 'showcase_creation', 'sample_verification'];
-    if (!validUsageTypes.includes(usageType)) {
-      return NextResponse.json(
-        { error: 'Invalid usage type' },
-        { status: 400 }
-      );
-    }
-
-    // Get the authorization header
-    const authHeader = request.headers.get('authorization');
+    // Get user from authorization header
+    const authHeader = request.headers.get('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Authorization required' },
         { status: 401 }
-      );
+      )
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Create Supabase client with the user's access token for auth
-    const supabase = createClient(
-      supabaseUrl,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      }
-    );
-    
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
+    const token = authHeader.replace('Bearer ', '')
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Verify user token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) {
       return NextResponse.json(
         { error: 'Invalid authentication' },
         { status: 401 }
-      );
+      )
     }
 
-    // Track the usage using the database function
-    const { data, error } = await supabase.rpc('track_preset_usage', {
-      preset_uuid: id,
-      usage_type_param: usageType,
-      usage_data_param: usageData
-    });
+    // Insert into preset_usage table
+    // This will trigger the notify_preset_usage() function which creates notifications
+    const { data: usageRecord, error: usageError } = await supabase
+      .from('preset_usage')
+      .insert({
+        preset_id: presetId,
+        user_id: user.id
+      })
+      .select()
+      .single()
 
-    if (error) {
-      console.error('Error tracking preset usage:', error);
+    if (usageError) {
+      console.error('Error tracking preset usage:', usageError)
       return NextResponse.json(
-        { error: 'Failed to track usage', details: error.message },
+        { error: 'Failed to track preset usage', details: usageError.message },
         { status: 500 }
-      );
+      )
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      usageId: data,
-      message: 'Usage tracked successfully' 
-    });
+    console.log('✅ Preset usage tracked:', {
+      presetId,
+      userId: user.id,
+      usageRecordId: usageRecord.id
+    })
 
-  } catch (error) {
-    console.error('Error in preset usage API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+    // Also increment the usage_count on the preset
+    // First get the current usage count
+    const { data: presetData, error: fetchError } = await supabase
+      .from('presets')
+      .select('usage_count')
+      .eq('id', presetId)
+      .single()
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    
-    // Create Supabase client with service role key for stats
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (!fetchError && presetData) {
+      const { error: updateError } = await supabase
+        .from('presets')
+        .update({
+          usage_count: (presetData.usage_count || 0) + 1,
+          last_used_at: new Date().toISOString()
+        })
+        .eq('id', presetId)
 
-    // Get usage statistics
-    const { data: stats, error: statsError } = await supabase.rpc('get_preset_usage_stats', {
-      preset_uuid: id
-    });
-
-    if (statsError) {
-      console.error('Error fetching preset usage stats:', statsError);
-      return NextResponse.json(
-        { error: 'Failed to fetch usage stats', details: statsError.message },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ 
-      stats: stats[0] || {
-        total_uses: 0,
-        uses_24h: 0,
-        uses_7d: 0,
-        uses_30d: 0,
-        unique_users: 0
+      if (updateError) {
+        console.error('Error updating preset usage count:', updateError)
+        // Don't fail the request if this fails, usage is already tracked
       }
-    });
+    }
+
+    return NextResponse.json({
+      success: true,
+      usageRecordId: usageRecord.id
+    })
 
   } catch (error) {
-    console.error('Error in preset usage stats API:', error);
+    console.error('Error in preset usage API:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
 }

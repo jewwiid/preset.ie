@@ -31,7 +31,7 @@ const tabInfo: Record<string, TabInfo> = {
     icon: Wand2,
     description: 'Create stunning AI-generated images from text prompts',
     features: ['AI Image Creation', 'Style Presets', 'Custom Sizes', 'High Quality'],
-    creditCost: '2 credits per image',
+    creditCost: '1-2 credits per image',
     color: 'text-primary',
     gradient: 'bg-primary'
   },

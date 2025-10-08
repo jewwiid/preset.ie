@@ -157,7 +157,7 @@ export const CONTACT_PLATFORMS: Record<string, ContactPlatform> = {
           isValid: true,
           error: null
         }
-      } catch (error) {
+      } catch {
         return {
           value: input,
           displayValue: input,

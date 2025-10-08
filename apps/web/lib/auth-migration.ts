@@ -29,18 +29,27 @@ export function migrateAuthStorage() {
 
       // If we have old token but no current token, migrate it
       if (oldToken && !currentToken) {
-        console.log(`Migrating auth token from ${oldKey} to ${currentSupabaseKey}...`)
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Migrating auth token from ${oldKey} to ${currentSupabaseKey}...`)
+        }
         localStorage.setItem(currentSupabaseKey, oldToken)
       }
 
       // Clean up old key if we have a valid current token
       if (currentToken && oldToken) {
         localStorage.removeItem(oldKey)
-        console.log(`Cleaned up old auth storage key: ${oldKey}`)
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Cleaned up old auth storage key: ${oldKey}`)
+        }
       }
     }
   } catch (error) {
-    console.error('Error migrating auth storage:', error)
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error migrating auth storage:', error)
+    }
   }
 }
 
@@ -65,12 +74,21 @@ export function clearAuthStorage() {
     allKeys.forEach(key => {
       if (authKeyPatterns.some(pattern => pattern.test(key))) {
         localStorage.removeItem(key)
-        console.log(`Removed auth key: ${key}`)
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Removed auth key: ${key}`)
+        }
       }
     })
 
-    console.log('Cleared all auth storage')
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Cleared all auth storage')
+    }
   } catch (error) {
-    console.error('Error clearing auth storage:', error)
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error clearing auth storage:', error)
+    }
   }
 }

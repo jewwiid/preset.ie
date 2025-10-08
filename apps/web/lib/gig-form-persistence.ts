@@ -4,6 +4,75 @@ import { debounce } from 'lodash'
 export type CompType = 'TFP' | 'PAID' | 'EXPENSES' | 'OTHER'
 export type PurposeType = 'PORTFOLIO' | 'COMMERCIAL' | 'EDITORIAL' | 'FASHION' | 'BEAUTY' | 'LIFESTYLE' | 'WEDDING' | 'EVENT' | 'PRODUCT' | 'ARCHITECTURE' | 'STREET' | 'CONCEPTUAL' | 'OTHER'
 export type StatusType = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'COMPLETED'
+export type LookingForType =
+  // 🎭 Talent & Performers
+  | 'MODELS'
+  | 'MODELS_FASHION'
+  | 'MODELS_COMMERCIAL'
+  | 'MODELS_FITNESS'
+  | 'MODELS_EDITORIAL'
+  | 'MODELS_RUNWAY'
+  | 'MODELS_HAND'
+  | 'MODELS_PARTS'
+  | 'ACTORS'
+  | 'DANCERS'
+  | 'MUSICIANS'
+  | 'SINGERS'
+  | 'VOICE_ACTORS'
+  | 'PERFORMERS'
+  | 'INFLUENCERS'
+
+  // 📸 Visual Creators
+  | 'PHOTOGRAPHERS'
+  | 'VIDEOGRAPHERS'
+  | 'CINEMATOGRAPHERS'
+
+  // 🎬 Production & Crew
+  | 'PRODUCTION_CREW'
+  | 'PRODUCERS'
+  | 'DIRECTORS'
+  | 'CREATIVE_DIRECTORS'
+  | 'ART_DIRECTORS'
+
+  // 💄 Styling & Beauty
+  | 'MAKEUP_ARTISTS'
+  | 'HAIR_STYLISTS'
+  | 'FASHION_STYLISTS'
+  | 'WARDROBE_STYLISTS'
+
+  // 🎨 Post-Production
+  | 'EDITORS'
+  | 'VIDEO_EDITORS'
+  | 'PHOTO_EDITORS'
+  | 'VFX_ARTISTS'
+  | 'MOTION_GRAPHICS'
+  | 'RETOUCHERS'
+  | 'COLOR_GRADERS'
+
+  // 🎨 Design & Creative
+  | 'DESIGNERS'
+  | 'GRAPHIC_DESIGNERS'
+  | 'ILLUSTRATORS'
+  | 'ANIMATORS'
+
+  // 📱 Content & Social
+  | 'CONTENT_CREATORS'
+  | 'SOCIAL_MEDIA_MANAGERS'
+  | 'DIGITAL_MARKETERS'
+
+  // 💼 Business & Teams
+  | 'AGENCIES'
+  | 'BRAND_MANAGERS'
+  | 'MARKETING_TEAMS'
+  | 'STUDIOS'
+
+  // ✍️ Writing
+  | 'WRITERS'
+  | 'COPYWRITERS'
+  | 'SCRIPTWRITERS'
+
+  // Other
+  | 'OTHER'
 
 export interface ApplicantPreferences {
   physical: {
@@ -38,6 +107,7 @@ export interface ApplicantPreferences {
 export interface GigFormData {
   title: string
   description: string
+  lookingFor?: LookingForType[]  // Changed to array for multi-select
   purpose?: PurposeType
   compType: CompType
   compDetails?: string

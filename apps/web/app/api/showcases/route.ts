@@ -227,9 +227,9 @@ export async function GET(request: NextRequest) {
         thumbnail_url: sm.media.thumbnail_url
       })),
     tags: showcase.tags || [],
-    likes_count: showcase.showcase_likes.length,
-    is_liked_by_user: showcase.showcase_likes.some((like: any) => like.user_id === user.id),
-    comments_count: 0, // TODO: Implement comments
+    likes_count: showcase.showcase_likes?.length || 0,
+    is_liked_by_user: showcase.showcase_likes?.some((like: any) => like.user_id === user.id) || false,
+    comments_count: showcase.comments_count || 0,
     created_at: showcase.created_at,
     creator: showcase.creator,
     moodboard_summary: showcase.moodboard_summary,

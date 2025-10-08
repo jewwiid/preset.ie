@@ -271,25 +271,55 @@ export function TalentSpecificSection() {
     if (!supabase || !user || !profile || !newMeasurementType || !newMeasurementValue) return
 
     try {
-      const { data, error } = await (supabase as any)
-        .from('user_measurements')
-        .insert({
-          profile_id: profile.id, // Use profile ID instead of user ID
-          measurement_type: newMeasurementType,
-          measurement_value: parseFloat(newMeasurementValue),
-          unit: newMeasurementUnit,
-          notes: newMeasurementNotes || null
-        } as any)
-        .select()
-        .single()
+      // Check if a measurement of this type already exists
+      const existingMeasurement = userMeasurements.find(
+        m => m.measurement_type === newMeasurementType
+      )
 
-      if (error) {
-        console.error('Error adding measurement:', error)
-        return
+      if (existingMeasurement) {
+        // UPDATE existing measurement
+        const { data, error } = await (supabase as any)
+          .from('user_measurements')
+          .update({
+            measurement_value: parseFloat(newMeasurementValue),
+            unit: newMeasurementUnit,
+            notes: newMeasurementNotes || null
+          } as any)
+          .eq('id', existingMeasurement.id)
+          .select()
+          .single()
+
+        if (error) {
+          console.error('Error updating measurement:', error)
+          return
+        }
+
+        // Update local state
+        setUserMeasurements(prev => 
+          prev.map(m => m.id === existingMeasurement.id ? data as any : m)
+        )
+      } else {
+        // INSERT new measurement
+        const { data, error } = await (supabase as any)
+          .from('user_measurements')
+          .insert({
+            profile_id: profile.id,
+            measurement_type: newMeasurementType,
+            measurement_value: parseFloat(newMeasurementValue),
+            unit: newMeasurementUnit,
+            notes: newMeasurementNotes || null
+          } as any)
+          .select()
+          .single()
+
+        if (error) {
+          console.error('Error adding measurement:', error)
+          return
+        }
+
+        // Update local state
+        setUserMeasurements(prev => [...prev, data as any])
       }
-
-      // Update local state
-      setUserMeasurements(prev => [...prev, data as any])
       
       // Clear form
       setNewMeasurementType('')
@@ -888,6 +918,36 @@ export function TalentSpecificSection() {
         <p className="text-sm text-muted-foreground mt-2">
           Select the types of talent work you're interested in (e.g., Model, Actor, Dancer)
         </p>
+      </div>
+
+      {/* Portfolio & Links Section */}
+      <div className="space-y-3">
+        <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+          <Star className="w-4 h-4" />
+          Portfolio & Links
+        </h3>
+        
+        <div>
+          <TextField
+            label="Portfolio URL"
+            value={formData?.portfolio_url || ''}
+            onChange={(value) => updateField('portfolio_url', value)}
+            placeholder="https://your-portfolio.com"
+            disabled={!isEditing}
+          />
+          <p className="text-xs text-muted-foreground mt-1">Link to your online portfolio or modeling book</p>
+        </div>
+        
+        <div>
+          <TextField
+            label="Website URL"
+            value={formData?.website_url || ''}
+            onChange={(value) => updateField('website_url', value)}
+            placeholder="https://your-website.com"
+            disabled={!isEditing}
+          />
+          <p className="text-xs text-muted-foreground mt-1">Your personal website or professional page</p>
+        </div>
       </div>
 
       {/* Current Information Display (when not editing) */}

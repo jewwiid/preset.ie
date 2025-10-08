@@ -8,7 +8,7 @@ export interface NotificationData {
   userEmail: string;
   userName: string;
   type: NotificationType;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   actionUrl?: string;
 }
 
@@ -114,25 +114,25 @@ export class NotificationService {
           return await this.emailService.sendWelcomeEmail(recipient, actionUrl);
         
         case 'email_verification':
-          return await this.emailService.sendEmailVerification(recipient, notification.data.verificationUrl);
+          return await this.emailService.sendEmailVerification(recipient, notification.data.verificationUrl as string);
         
         case 'password_reset':
-          return await this.emailService.sendPasswordReset(recipient, notification.data.resetUrl);
+          return await this.emailService.sendPasswordReset(recipient, notification.data.resetUrl as string);
 
         // Marketplace Emails
         case 'listing_created':
           return await this.emailService.sendListingCreated(
             recipient,
-            notification.data.listingTitle,
+            notification.data.listingTitle as string,
             actionUrl
           );
         
         case 'new_offer_received':
           return await this.emailService.sendNewOffer(
             recipient,
-            notification.data.offererName,
-            notification.data.listingTitle,
-            notification.data.offerAmount,
+            notification.data.offererName as string,
+            notification.data.listingTitle as string,
+            notification.data.offerAmount as string,
             actionUrl
           );
 
@@ -140,7 +140,7 @@ export class NotificationService {
         case 'showcase_published':
           return await this.emailService.sendShowcasePublished(
             recipient,
-            notification.data.showcaseTitle,
+            notification.data.showcaseTitle as string,
             actionUrl
           );
 
@@ -148,8 +148,8 @@ export class NotificationService {
         case 'collaboration_invite':
           return await this.emailService.sendCollaborationInvite(
             recipient,
-            notification.data.inviterName,
-            notification.data.projectTitle,
+            notification.data.inviterName as string,
+            notification.data.projectTitle as string,
             actionUrl
           );
 
@@ -157,7 +157,7 @@ export class NotificationService {
         case 'gig_posted':
           return await this.emailService.sendGigPosted(
             recipient,
-            notification.data.gigTitle,
+            notification.data.gigTitle as string,
             actionUrl
           );
 
@@ -166,9 +166,9 @@ export class NotificationService {
         case 'payment_received':
           return await this.emailService.sendPaymentConfirmation(
             recipient,
-            notification.data.amount,
-            notification.data.description,
-            notification.data.transactionId,
+            notification.data.amount as string,
+            notification.data.description as string,
+            notification.data.transactionId as string,
             actionUrl
           );
 
@@ -176,15 +176,15 @@ export class NotificationService {
         case 'weekly_digest':
           return await this.emailService.sendWeeklyDigest(
             recipient,
-            notification.data.stats,
+            notification.data.stats as { newGigs: number; newShowcases: number; newConnections: number },
             actionUrl
           );
 
         case 'new_feature':
           return await this.emailService.sendFeatureAnnouncement(
             recipient,
-            notification.data.featureName,
-            notification.data.featureDescription,
+            notification.data.featureName as string,
+            notification.data.featureDescription as string,
             actionUrl
           );
 
@@ -209,17 +209,17 @@ export class NotificationService {
       
       case 'listing_created':
       case 'new_offer_received':
-        return `${baseUrl}/marketplace/listings/${notification.data.listingId}`;
+        return `${baseUrl}/marketplace/listings/${notification.data.listingId as string}`;
       
       case 'showcase_published':
-        return `${baseUrl}/showcases/${notification.data.showcaseId}`;
+        return `${baseUrl}/showcases/${notification.data.showcaseId as string}`;
       
       case 'collaboration_invite':
-        return `${baseUrl}/collaborate/projects/${notification.data.projectId}`;
+        return `${baseUrl}/collaborate/projects/${notification.data.projectId as string}`;
       
       case 'gig_posted':
       case 'new_application':
-        return `${baseUrl}/gigs/${notification.data.gigId}`;
+        return `${baseUrl}/gigs/${notification.data.gigId as string}`;
       
       case 'credit_purchase':
       case 'payment_received':

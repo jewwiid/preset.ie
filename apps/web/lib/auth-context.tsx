@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Migrate auth storage first
         migrateAuthStorage()
         
-        // Debug session storage
+        // Debug session storage - only in development
         if (process.env.NODE_ENV === 'development') {
           debugSession()
         }
@@ -50,20 +50,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('Error getting session:', error)
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error getting session:', error)
+          }
           setSession(null)
           setUser(null)
           setUserRole(null)
         } else {
-          console.log('Initial session:', session ? 'Found' : 'Not found')
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Initial session:', session ? 'Found' : 'Not found')
+            if (session) {
+              console.log('Session expires at:', new Date(session.expires_at! * 1000).toLocaleString())
+            }
+          }
           if (session) {
-            console.log('Session expires at:', new Date(session.expires_at! * 1000).toLocaleString())
             // Fetch user role when session is found with error handling
             try {
               const role = await getUserRole(session.user.id)
               setUserRole(role)
             } catch (roleError) {
-              console.error('Error fetching user role during initialization:', roleError)
+              // Only log in development
+              if (process.env.NODE_ENV === 'development') {
+                console.error('Error fetching user role during initialization:', roleError)
+              }
               setUserRole(null)
             }
           } else {
@@ -73,7 +84,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session?.user ?? null)
         }
       } catch (err) {
-        console.error('Error initializing auth:', err)
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error initializing auth:', err)
+        }
         // Reset all auth state on error
         setSession(null)
         setUser(null)
@@ -87,24 +101,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     if (!supabase) {
-      console.error('Supabase client not available for auth state change listener')
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Supabase client not available for auth state change listener')
+      }
       return () => {} // Return empty cleanup function
     }
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔔 Auth state changed:', event, {
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          userEmail: session?.user?.email,
-          userId: session?.user?.id
-        })
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔔 Auth state changed:', event, {
+            hasSession: !!session,
+            hasUser: !!session?.user,
+            userEmail: session?.user?.email,
+            userId: session?.user?.id
+          })
+        }
 
         const newUserId = session?.user?.id
 
         // Only update if user actually changed (prevent duplicate re-renders)
         if (newUserId === previousUserIdRef.current && event !== 'INITIAL_SESSION') {
-          console.log('⏭️ Skipping duplicate auth event - user unchanged')
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('⏭️ Skipping duplicate auth event - user unchanged')
+          }
           return
         }
 
@@ -117,7 +140,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role = await getUserRole(session.user.id)
           }
         } catch (error) {
-          console.error('Error fetching user role during auth state change:', error)
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error fetching user role during auth state change:', error)
+          }
         }
 
         // Batch all state updates together using React 18 automatic batching
@@ -127,12 +153,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false)
 
         // Log events
-        if (event === 'SIGNED_IN') {
-          console.log('✅ User signed in - should sync to all tabs')
-        } else if (event === 'SIGNED_OUT') {
-          console.log('✅ User signed out - should sync to all tabs')
-        } else if (event === 'INITIAL_SESSION') {
-          console.log('✅ Initial session loaded')
+        // Log events - only in development
+        if (process.env.NODE_ENV === 'development') {
+          if (event === 'SIGNED_IN') {
+            console.log('✅ User signed in - should sync to all tabs')
+          } else if (event === 'SIGNED_OUT') {
+            console.log('✅ User signed out - should sync to all tabs')
+          } else if (event === 'INITIAL_SESSION') {
+            console.log('✅ Initial session loaded')
+          }
         }
       }
     )
@@ -228,6 +257,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (role?.isAdmin) {
         redirectPath = '/admin'
+      } else {
+        // Check if user has a complete profile
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('users_profile')
+            .select('id')
+            .eq('user_id', data.user.id)
+            .single()
+
+          // If no profile exists, redirect to complete-profile
+          if (profileError?.code === 'PGRST116' || !profile) {
+            redirectPath = '/auth/complete-profile'
+          }
+        } catch (profileCheckError) {
+          console.error('Error checking profile completion:', profileCheckError)
+          // On error, assume profile is incomplete and redirect to complete-profile
+          redirectPath = '/auth/complete-profile'
+        }
       }
     }
 
@@ -255,7 +302,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (error) {
           // Log the error but don't throw - we've already cleared local state
-          console.warn('Supabase sign out warning:', error.message)
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Supabase sign out warning:', error.message)
+          }
         }
       }
       
@@ -263,7 +313,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { error: null }
     } catch (err) {
       // Even on error, local state is cleared so UI updates correctly
-      console.warn('Sign out process warning:', err)
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Sign out process warning:', err)
+      }
       return { error: null }
     }
   }

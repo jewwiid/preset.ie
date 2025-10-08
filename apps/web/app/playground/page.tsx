@@ -11,7 +11,6 @@ import { ToastContainer, useToast } from '../../components/ui/toast'
 import { Button } from '../../components/ui/button'
 
 // Import the new components
-import ImageGenerationPanel from '../components/playground/ImageGenerationPanel'
 import AdvancedEditingPanel from '../components/playground/AdvancedEditingPanel'
 import SequentialGenerationPanel from '../components/playground/SequentialGenerationPanel'
 import StyleVariationsPanel from '../components/playground/StyleVariationsPanel'
@@ -59,30 +58,29 @@ function PlaygroundContent() {
   const { showFeedback } = useFeedback()
   const { toasts, removeToast } = useToast()
   const searchParams = useSearchParams()
-  
+
   // Core state
   const [currentProject, setCurrentProject] = useState<PlaygroundProject | null>(null)
   const [loading, setLoading] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [userCredits, setUserCredits] = useState(0)
   const [userSubscriptionTier, setUserSubscriptionTier] = useState<string>('FREE')
-  
+
   // Preset state from URL parameters
   const [activePreset, setActivePreset] = useState<{id: string, name: string} | null>(null)
   const [savingImage, setSavingImage] = useState<string | null>(null)
   const [currentPrompt, setCurrentPrompt] = useState('')
-  
+
   // Read URL parameters for preset
   useEffect(() => {
     const presetId = searchParams?.get('preset')
     const presetName = searchParams?.get('name')
-    
+
     if (presetId && presetName) {
       setActivePreset({
         id: presetId,
         name: decodeURIComponent(presetName)
       })
-      console.log('🎯 Active preset from URL:', { id: presetId, name: presetName })
     }
   }, [searchParams])
   
@@ -239,8 +237,58 @@ function PlaygroundContent() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to generate images')
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          throw new Error(`Server error (${response.status}): ${response.statusText}`)
+        }
+
+        console.log('API Error Response:', {
+          status: response.status,
+          errorData
+        })
+
+        // Parse specific error types for better user messaging
+        let errorMessage = errorData.error || 'Failed to generate images'
+        let errorTitle = 'Generation Failed'
+
+        // Check for service unavailability (API platform issues)
+        if (response.status === 503 || errorMessage.includes('temporarily unavailable')) {
+          errorTitle = 'Service Unavailable'
+          errorMessage = 'The image generation service is temporarily unavailable. Please try again in a few minutes.'
+        }
+        // Check for insufficient user credits (not API platform credits)
+        else if (errorMessage.includes('Insufficient credits') && response.status === 403) {
+          errorTitle = 'Insufficient Credits'
+
+          // Extract needed credits from error message if available
+          const needMatch = errorMessage.match(/Need (\d+) credits/)
+          const imagesMatch = errorMessage.match(/for (\d+) image/)
+
+          if (needMatch && imagesMatch) {
+            const needed = needMatch[1]
+            const images = imagesMatch[1]
+            errorMessage = `You need ${needed} credits to generate ${images} image(s), but you currently have ${userCredits} credits. Each image costs 2 credits.`
+          } else {
+            errorMessage = `You don't have enough credits to generate images. Current balance: ${userCredits} credits. Each image costs 2 credits.`
+          }
+        }
+        // Check for rate limiting
+        else if (errorMessage.includes('rate limit') || errorMessage.includes('too many requests')) {
+          errorTitle = 'Rate Limited'
+          errorMessage = 'Too many requests. Please wait a moment before trying again.'
+        }
+        // Check for authentication errors
+        else if (errorMessage.includes('authentication') || errorMessage.includes('unauthorized')) {
+          errorTitle = 'Authentication Error'
+          errorMessage = 'Your session has expired. Please sign in again.'
+        }
+
+        const error = new Error(errorMessage)
+        error.name = errorTitle
+        throw error
       }
 
       const { project, images, creditsUsed, warning } = await response.json()
@@ -251,24 +299,18 @@ function PlaygroundContent() {
         images: images,
         responseImagesLength: images?.length
       })
+      console.log('🔍 Project Metadata Debug:', {
+        hasMetadata: !!project.metadata,
+        hasCustomStylePreset: !!project.metadata?.custom_style_preset,
+        customStylePreset: project.metadata?.custom_style_preset,
+        style: project.style
+      })
       setCurrentProject(project)
       setUserCredits(prev => prev - creditsUsed)
-      
-      // Track preset usage if a custom preset was used
-      if (params.customStylePreset?.id) {
-        try {
-          await fetch(`/api/presets/${params.customStylePreset.id}/usage`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`
-            }
-          })
-        } catch (error) {
-          console.error('Failed to track preset usage:', error)
-          // Don't show error to user as this is not critical
-        }
-      }
-      
+
+      // Note: Preset usage tracking happens when image is saved to gallery
+      // (see save-to-gallery/route.ts which updates last_used_at)
+
       showFeedback({
         type: 'success',
         title: 'Images Generated!',
@@ -285,10 +327,19 @@ function PlaygroundContent() {
       }
     } catch (error) {
       console.error('Generation failed:', error)
+
+      const errorTitle = error instanceof Error && error.name !== 'Error'
+        ? error.name
+        : 'Generation Failed'
+
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Unknown error occurred'
+
       showFeedback({
         type: 'error',
-        title: 'Generation Failed',
-        message: error instanceof Error ? error.message : 'Unknown error occurred'
+        title: errorTitle,
+        message: errorMessage
       })
     } finally {
       setLoading(false)
@@ -915,6 +966,14 @@ function PlaygroundContent() {
           actual_height: currentProject.generated_images?.[0]?.height || 1024
         } : {}
 
+        console.log('📤 Sending to save-to-gallery API:', {
+          imageUrl: actualImageUrl.substring(0, 50) + '...',
+          hasCustomStylePreset: !!generationMetadata?.custom_style_preset,
+          presetId: generationMetadata?.custom_style_preset?.id,
+          presetName: generationMetadata?.custom_style_preset?.name,
+          style: generationMetadata?.style
+        })
+
         const response = await fetch('/api/playground/save-to-gallery', {
           method: 'POST',
           headers: {
@@ -1113,6 +1172,7 @@ function PlaygroundContent() {
           onSelectImage={setSelectedImage}
           onSaveToGallery={saveToGallery}
           onSetPrompt={setCurrentPrompt}
+          initialPresetId={activePreset?.id}
           onUpdateProject={setCurrentProject}
           savingImage={savingImage}
           sessionToken={session?.access_token}

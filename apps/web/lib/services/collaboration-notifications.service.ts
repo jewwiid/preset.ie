@@ -8,7 +8,7 @@ const supabase = createClient(
 export interface CollaborationNotification {
   id: string;
   type: string;
-  metadata: any;
+  metadata: Record<string, unknown>;
   read: boolean;
   created_at: string;
 }
@@ -26,7 +26,7 @@ export class CollaborationNotificationsService {
   static async createNotification(
     userId: string,
     type: string,
-    metadata: any = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<{ success: boolean; notificationId?: string; error?: string }> {
     try {
       const { data, error } = await supabase.rpc('create_collaboration_notification', {
@@ -54,7 +54,7 @@ export class CollaborationNotificationsService {
   static async notifyProjectParticipants(
     projectId: string,
     type: string,
-    metadata: any = {},
+    metadata: Record<string, unknown> = {},
     excludeUserId?: string
   ): Promise<{ success: boolean; count?: number; error?: string }> {
     try {
@@ -173,7 +173,7 @@ export class CollaborationNotificationsService {
   /**
    * Get notification details with related data
    */
-  static async getNotificationDetails(notificationId: string): Promise<any> {
+  static async getNotificationDetails(notificationId: string): Promise<CollaborationNotification | null> {
     try {
       const { data: notification, error } = await supabase
         .from('notifications')

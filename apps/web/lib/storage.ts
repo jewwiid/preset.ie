@@ -28,7 +28,7 @@ export async function uploadProfilePhoto(file: File, userId: string): Promise<st
     const fileName = `${userId}/profile_${Date.now()}.${fileExt}`
 
     // Upload to storage
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from('avatars')
       .upload(fileName, file, {
         cacheControl: '3600',

@@ -172,7 +172,7 @@ export class EnhancementService {
         );
 
         if (canUseBenefit && enhancementType === 'basic_bump') {
-          const success = await SubscriptionBenefitsService.useMonthlyBump(userId, listingId);
+          const success = await SubscriptionBenefitsService.applyMonthlyBump(userId, listingId);
           if (success) {
             return { 
               success: true, 

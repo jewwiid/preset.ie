@@ -87,7 +87,7 @@ export default function OrderManagement({
     try {
       const orderType = userRole === 'renter' ? 'rental' : userRole === 'buyer' ? 'sale' : undefined;
       const userOrders = await OrderProcessingService.getUserOrders(userId, orderType);
-      setOrders(userOrders);
+      setOrders(userOrders as unknown as Order[]);
     } catch (err) {
       console.error('Error loading orders:', err);
       setError('Failed to load orders');

@@ -24,7 +24,7 @@ export interface Preset {
   }
   cinematic_settings?: {
     enableCinematicMode?: boolean
-    cinematicParameters?: any
+    cinematicParameters?: Record<string, unknown>
     enhancedPrompt?: string
     includeTechnicalDetails?: boolean
     includeStyleReferences?: boolean
@@ -254,5 +254,5 @@ export interface SavePresetDialogProps {
   selectedProvider: string
   generationMode: 'text-to-image' | 'image-to-image'
   onClose: () => void
-  onSave: (presetData: any) => void
+  onSave: (presetData: Record<string, unknown>) => void
 }

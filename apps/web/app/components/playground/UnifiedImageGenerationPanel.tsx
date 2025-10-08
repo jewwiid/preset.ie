@@ -213,6 +213,13 @@ export default function UnifiedImageGenerationPanel({
     const effectiveResolution = userSubscriptionTier === 'FREE' ? '1024' : formState.resolution
     const calculatedResolution = calculateResolution(formState.aspectRatio, effectiveResolution)
 
+    console.log('🎨 UnifiedImageGenerationPanel - About to generate with preset:', {
+      hasCurrentPreset: !!presetState.currentPreset,
+      presetId: presetState.currentPreset?.id,
+      presetName: presetState.currentPreset?.name,
+      presetStyle: presetState.currentPreset?.style_settings?.style
+    })
+
     await onGenerate({
       prompt: cinematicState.enableCinematicMode ? cinematicState.enhancedPrompt : promptState.prompt,
       style: presetState.currentPreset ? presetState.currentPreset.style_settings?.style || formState.style : formState.style,

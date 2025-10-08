@@ -48,6 +48,7 @@ import {
   HAIR_COLORS,
   CLOTHING_SIZES
 } from '@/lib/constants/creative-options'
+import type { LookingForType } from '@/lib/gig-form-persistence'
 
 export interface ApplicantPreferences {
   physical: {
@@ -80,6 +81,7 @@ export interface ApplicantPreferences {
 }
 
 interface ApplicantPreferencesStepProps {
+  lookingFor?: LookingForType[]  // Changed to array for multi-select support
   preferences: ApplicantPreferences
   onPreferencesChange: (preferences: ApplicantPreferences) => void
   onNext: () => void
@@ -121,12 +123,51 @@ const defaultPreferences: ApplicantPreferences = {
 // This centralizes options and makes them easier to maintain
 
 export default function ApplicantPreferencesStep({
+  lookingFor,
   preferences: initialPreferences,
   onPreferencesChange,
   onNext,
   onBack,
   loading = false
 }: ApplicantPreferencesStepProps) {
+  // Determine which sections to show based on lookingFor type
+  const shouldShowPhysicalAttributes = () => {
+    const physicalRoles = [
+      'MODELS', 'MODELS_FASHION', 'MODELS_COMMERCIAL', 'MODELS_FITNESS',
+      'MODELS_EDITORIAL', 'MODELS_RUNWAY', 'MODELS_HAND', 'MODELS_PARTS',
+      'ACTORS', 'DANCERS', 'PERFORMERS'
+    ]
+    return lookingFor ? lookingFor.some(role => physicalRoles.includes(role)) : false
+  }
+
+  const shouldShowProfessionalSkills = () => {
+    const professionalRoles = [
+      'PHOTOGRAPHERS', 'VIDEOGRAPHERS', 'CINEMATOGRAPHERS',
+      'MAKEUP_ARTISTS', 'HAIR_STYLISTS', 'FASHION_STYLISTS', 'WARDROBE_STYLISTS',
+      'PRODUCTION_CREW', 'PRODUCERS', 'DIRECTORS',
+      'CREATIVE_DIRECTORS', 'ART_DIRECTORS'
+    ]
+    return lookingFor ? lookingFor.some(role => professionalRoles.includes(role)) : false
+  }
+
+  const shouldShowEquipment = () => {
+    const equipmentRoles = [
+      'PHOTOGRAPHERS', 'VIDEOGRAPHERS', 'CINEMATOGRAPHERS',
+      'PRODUCTION_CREW', 'PRODUCERS', 'DIRECTORS'
+    ]
+    return lookingFor ? lookingFor.some(role => equipmentRoles.includes(role)) : false
+  }
+
+  const shouldShowSoftware = () => {
+    const softwareRoles = [
+      'PHOTOGRAPHERS', 'VIDEOGRAPHERS', 'CINEMATOGRAPHERS',
+      'EDITORS', 'VIDEO_EDITORS', 'PHOTO_EDITORS',
+      'VFX_ARTISTS', 'MOTION_GRAPHICS', 'RETOUCHERS', 'COLOR_GRADERS',
+      'DESIGNERS', 'GRAPHIC_DESIGNERS', 'ILLUSTRATORS', 'ANIMATORS',
+      'CREATIVE_DIRECTORS', 'ART_DIRECTORS'
+    ]
+    return lookingFor ? lookingFor.some(role => softwareRoles.includes(role)) : false
+  }
   // Helper function to safely merge preferences with defaults
   const mergeWithDefaults = (initial: any): ApplicantPreferences => {
     if (!initial) return defaultPreferences
@@ -251,35 +292,51 @@ export default function ApplicantPreferencesStep({
   }
 
   const addArrayItem = (section: keyof ApplicantPreferences, field: string, subfield: 'required' | 'preferred', item: string) => {
-    const currentArray = (preferences[section] as any)[field][subfield] as string[]
+    const currentArray = ((preferences[section] as any)[field][subfield] as string[]) || []
     if (!currentArray.includes(item)) {
       const newArray = [...currentArray, item]
-      updatePreferences(section, field, {
-        ...(preferences[section] as any)[field],
-        [subfield]: newArray
-      })
+      const newPreferences = {
+        ...preferences,
+        [section]: {
+          ...preferences[section],
+          [field]: {
+            ...(preferences[section] as any)[field],
+            [subfield]: newArray
+          }
+        }
+      }
+      setPreferences(newPreferences)
+      onPreferencesChange(newPreferences)
     }
   }
 
   const removeArrayItem = (section: keyof ApplicantPreferences, field: string, subfield: 'required' | 'preferred', item: string) => {
-    const currentArray = (preferences[section] as any)[field][subfield] as string[]
+    const currentArray = ((preferences[section] as any)[field][subfield] as string[]) || []
     const newArray = currentArray.filter(i => i !== item)
-    updatePreferences(section, field, {
-      ...(preferences[section] as any)[field],
-      [subfield]: newArray
-    })
+    const newPreferences = {
+      ...preferences,
+      [section]: {
+        ...preferences[section],
+        [field]: {
+          ...(preferences[section] as any)[field],
+          [subfield]: newArray
+        }
+      }
+    }
+    setPreferences(newPreferences)
+    onPreferencesChange(newPreferences)
   }
 
   // Helper function for number input with increment/decrement
-  const NumberInputWithButtons = ({ 
-    id, 
-    label, 
-    value, 
-    onChange, 
-    placeholder, 
-    min = 0, 
+  const NumberInputWithButtons = ({
+    id,
+    label,
+    value,
+    onChange,
+    placeholder,
+    min = 0,
     max = 999,
-    step = 1 
+    step = 1
   }: {
     id: string
     label: string
@@ -290,6 +347,14 @@ export default function ApplicantPreferencesStep({
     max?: number
     step?: number
   }) => {
+    // Local state to track the input text while typing
+    const [inputText, setInputText] = useState<string>(value?.toString() || '')
+
+    // Update local state when value prop changes externally
+    useEffect(() => {
+      setInputText(value?.toString() || '')
+    }, [value])
+
     const increment = () => {
       const currentValue = value || 0
       const newValue = Math.min(currentValue + step, max)
@@ -304,24 +369,26 @@ export default function ApplicantPreferencesStep({
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const inputValue = e.target.value
-      if (inputValue === '') {
-        onChange(null)
-      } else {
-        const numValue = parseInt(inputValue)
-        if (!isNaN(numValue)) {
-          // Allow typing outside min/max temporarily, clamp on blur
-          onChange(numValue)
-        }
-      }
+      // Only update local state, don't call onChange yet
+      setInputText(inputValue)
     }
 
     const handleBlur = () => {
-      // Clamp value to min/max range when user finishes typing
-      if (value !== null) {
-        const clampedValue = Math.min(Math.max(value, min), max)
-        if (clampedValue !== value) {
-          onChange(clampedValue)
-        }
+      // Parse and validate when user finishes typing
+      if (inputText === '') {
+        onChange(null)
+        return
+      }
+      
+      const numValue = parseInt(inputText, 10)
+      if (!isNaN(numValue) && numValue >= 0) {
+        // Clamp value to min/max range
+        const clampedValue = Math.min(Math.max(numValue, min), max)
+        onChange(clampedValue)
+        setInputText(clampedValue.toString())
+      } else {
+        // Invalid input, reset to current value
+        setInputText(value?.toString() || '')
       }
     }
 
@@ -343,7 +410,7 @@ export default function ApplicantPreferencesStep({
             id={id}
             type="text"
             placeholder={placeholder}
-            value={value || ''}
+            value={inputText}
             onChange={handleInputChange}
             onBlur={handleBlur}
             className="rounded-none border-x-0 text-center h-10"
@@ -369,6 +436,89 @@ export default function ApplicantPreferencesStep({
     onNext()
   }
 
+  const getLookingForLabel = () => {
+    const labels: Record<LookingForType, string> = {
+      // Talent & Performers
+      'MODELS': '🎭 Models (All Types)',
+      'MODELS_FASHION': '🎭 Fashion Models',
+      'MODELS_COMMERCIAL': '🎭 Commercial Models',
+      'MODELS_FITNESS': '🎭 Fitness Models',
+      'MODELS_EDITORIAL': '🎭 Editorial Models',
+      'MODELS_RUNWAY': '🎭 Runway Models',
+      'MODELS_HAND': '🎭 Hand Models',
+      'MODELS_PARTS': '🎭 Parts Models',
+      'ACTORS': '🎬 Actors / Actresses',
+      'DANCERS': '💃 Dancers',
+      'MUSICIANS': '🎸 Musicians',
+      'SINGERS': '🎤 Singers',
+      'VOICE_ACTORS': '🎙️ Voice Actors',
+      'PERFORMERS': '🎭 Performers',
+      'INFLUENCERS': '⭐ Influencers',
+
+      // Visual Creators
+      'PHOTOGRAPHERS': '📷 Photographers',
+      'VIDEOGRAPHERS': '🎥 Videographers',
+      'CINEMATOGRAPHERS': '🎬 Cinematographers',
+
+      // Production & Crew
+      'PRODUCTION_CREW': '🎬 Production Crew',
+      'PRODUCERS': '🎬 Producers',
+      'DIRECTORS': '🎬 Directors',
+      'CREATIVE_DIRECTORS': '🎨 Creative Directors',
+      'ART_DIRECTORS': '🖼️ Art Directors',
+
+      // Styling & Beauty
+      'MAKEUP_ARTISTS': '💄 Makeup Artists',
+      'HAIR_STYLISTS': '💇 Hair Stylists',
+      'FASHION_STYLISTS': '👗 Fashion Stylists',
+      'WARDROBE_STYLISTS': '👔 Wardrobe Stylists',
+
+      // Post-Production
+      'EDITORS': '✂️ Editors (All Types)',
+      'VIDEO_EDITORS': '✂️ Video Editors',
+      'PHOTO_EDITORS': '✂️ Photo Editors',
+      'VFX_ARTISTS': '✨ VFX Artists',
+      'MOTION_GRAPHICS': '🎞️ Motion Graphics Artists',
+      'RETOUCHERS': '🖌️ Retouchers',
+      'COLOR_GRADERS': '🎨 Color Graders',
+
+      // Design & Creative
+      'DESIGNERS': '🎨 Designers (All Types)',
+      'GRAPHIC_DESIGNERS': '🎨 Graphic Designers',
+      'ILLUSTRATORS': '🖼️ Illustrators',
+      'ANIMATORS': '🎬 Animators',
+
+      // Content & Social
+      'CONTENT_CREATORS': '📱 Content Creators',
+      'SOCIAL_MEDIA_MANAGERS': '📱 Social Media Managers',
+      'DIGITAL_MARKETERS': '📱 Digital Marketers',
+
+      // Business & Teams
+      'AGENCIES': '💼 Agencies',
+      'BRAND_MANAGERS': '💼 Brand Managers',
+      'MARKETING_TEAMS': '💼 Marketing Teams',
+      'STUDIOS': '🏢 Studios',
+
+      // Writing
+      'WRITERS': '✍️ Writers',
+      'COPYWRITERS': '✍️ Copywriters',
+      'SCRIPTWRITERS': '✍️ Scriptwriters',
+
+      // Other
+      'OTHER': '✨ Other Creative Roles'
+    }
+    
+    if (!lookingFor || lookingFor.length === 0) return 'talent'
+    
+    // For multiple selections, join them
+    if (lookingFor.length > 1) {
+      return lookingFor.map(role => labels[role]).join(', ')
+    }
+    
+    // For single selection
+    return labels[lookingFor[0]] || 'talent'
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -377,6 +527,11 @@ export default function ApplicantPreferencesStep({
           <Target className="w-8 h-8 text-primary" />
         </div>
         <h2 className="text-2xl font-bold mb-2">Applicant Preferences</h2>
+        {lookingFor && (
+          <p className="text-lg font-medium text-primary mb-2">
+            Looking for: {getLookingForLabel()}
+          </p>
+        )}
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Set your preferences for applicants to improve matchmaking quality. All preferences are optional and will help us find the best matches for your project.
         </p>
@@ -412,7 +567,8 @@ export default function ApplicantPreferencesStep({
 
       {hasPreferences && (
         <>
-          {/* Physical Preferences */}
+          {/* Physical Preferences - Only show for Models and Actors */}
+          {shouldShowPhysicalAttributes() && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -431,32 +587,44 @@ export default function ApplicantPreferencesStep({
                   <p className="text-sm text-muted-foreground mt-1">Specify preferred height range for applicants</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <NumberInputWithButtons
-                    id="min-height"
-                    label="Minimum height"
-                    placeholder="e.g., 150"
-                    value={preferences.physical.height_range.min}
-                    onChange={(value) => updatePreferences('physical', 'height_range', {
-                      ...preferences.physical.height_range,
-                      min: value
-                    })}
-                    min={100}
-                    max={250}
-                    step={5}
-                  />
-                  <NumberInputWithButtons
-                    id="max-height"
-                    label="Maximum height"
-                    placeholder="e.g., 200"
-                    value={preferences.physical.height_range.max}
-                    onChange={(value) => updatePreferences('physical', 'height_range', {
-                      ...preferences.physical.height_range,
-                      max: value
-                    })}
-                    min={100}
-                    max={250}
-                    step={5}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="min-height" className="text-sm">Minimum height</Label>
+                    <Input
+                      id="min-height"
+                      type="number"
+                      placeholder="e.g., 150"
+                      value={preferences.physical.height_range.min || ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
+                        updatePreferences('physical', 'height_range', {
+                          ...preferences.physical.height_range,
+                          min: value
+                        })
+                      }}
+                      min={100}
+                      max={250}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="max-height" className="text-sm">Maximum height</Label>
+                    <Input
+                      id="max-height"
+                      type="number"
+                      placeholder="e.g., 200"
+                      value={preferences.physical.height_range.max || ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
+                        updatePreferences('physical', 'height_range', {
+                          ...preferences.physical.height_range,
+                          max: value
+                        })
+                      }}
+                      min={100}
+                      max={250}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -475,9 +643,9 @@ export default function ApplicantPreferencesStep({
                           id={`eye-color-${color.toLowerCase()}`}
                           checked={preferences.physical.eye_color.preferred.includes(color)}
                           onCheckedChange={(checked) => {
-                            if (checked) {
+                            if (checked === true) {
                               addArrayItem('physical', 'eye_color', 'preferred', color)
-                            } else {
+                            } else if (checked === false) {
                               removeArrayItem('physical', 'eye_color', 'preferred', color)
                             }
                           }}
@@ -501,9 +669,9 @@ export default function ApplicantPreferencesStep({
                           id={`eye-color-${color.toLowerCase()}`}
                           checked={preferences.physical.eye_color.preferred.includes(color)}
                           onCheckedChange={(checked) => {
-                            if (checked) {
+                            if (checked === true) {
                               addArrayItem('physical', 'eye_color', 'preferred', color)
-                            } else {
+                            } else if (checked === false) {
                               removeArrayItem('physical', 'eye_color', 'preferred', color)
                             }
                           }}
@@ -589,32 +757,44 @@ export default function ApplicantPreferencesStep({
                   <p className="text-sm text-muted-foreground mt-1">Specify age requirements for applicants (18+ minimum)</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <NumberInputWithButtons
-                    id="min-age"
-                    label="Minimum age"
-                    placeholder="e.g., 18"
-                    value={preferences.other.age_range.min}
-                    onChange={(value) => updatePreferences('other', 'age_range', {
-                      ...preferences.other.age_range,
-                      min: value
-                    })}
-                    min={18}
-                    max={80}
-                    step={1}
-                  />
-                  <NumberInputWithButtons
-                    id="max-age"
-                    label="Maximum age"
-                    placeholder="e.g., 65"
-                    value={preferences.other.age_range.max}
-                    onChange={(value) => updatePreferences('other', 'age_range', {
-                      ...preferences.other.age_range,
-                      max: value
-                    })}
-                    min={18}
-                    max={80}
-                    step={1}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="min-age" className="text-sm">Minimum age</Label>
+                    <Input
+                      id="min-age"
+                      type="number"
+                      placeholder="e.g., 18"
+                      value={preferences.other.age_range.min || ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
+                        updatePreferences('other', 'age_range', {
+                          ...preferences.other.age_range,
+                          min: value
+                        })
+                      }}
+                      min={18}
+                      max={80}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="max-age" className="text-sm">Maximum age</Label>
+                    <Input
+                      id="max-age"
+                      type="number"
+                      placeholder="e.g., 65"
+                      value={preferences.other.age_range.max || ''}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
+                        updatePreferences('other', 'age_range', {
+                          ...preferences.other.age_range,
+                          max: value
+                        })
+                      }}
+                      min={18}
+                      max={80}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -636,7 +816,7 @@ export default function ApplicantPreferencesStep({
                         checked={preferences.physical.tattoos.allowed}
                         onCheckedChange={(checked) => updatePreferences('physical', 'tattoos', {
                           ...preferences.physical.tattoos,
-                          allowed: checked as boolean
+                          allowed: !!checked
                         })}
                       />
                     </div>
@@ -650,7 +830,7 @@ export default function ApplicantPreferencesStep({
                         checked={preferences.physical.tattoos.required}
                         onCheckedChange={(checked) => updatePreferences('physical', 'tattoos', {
                           ...preferences.physical.tattoos,
-                          required: checked as boolean
+                          required: !!checked
                         })}
                       />
                     </div>
@@ -673,7 +853,7 @@ export default function ApplicantPreferencesStep({
                         checked={preferences.physical.piercings.allowed}
                         onCheckedChange={(checked) => updatePreferences('physical', 'piercings', {
                           ...preferences.physical.piercings,
-                          allowed: checked as boolean
+                          allowed: !!checked
                         })}
                       />
                     </div>
@@ -687,7 +867,7 @@ export default function ApplicantPreferencesStep({
                         checked={preferences.physical.piercings.required}
                         onCheckedChange={(checked) => updatePreferences('physical', 'piercings', {
                           ...preferences.physical.piercings,
-                          required: checked as boolean
+                          required: !!checked
                         })}
                       />
                     </div>
@@ -696,8 +876,10 @@ export default function ApplicantPreferencesStep({
               </div>
             </CardContent>
           </Card>
+          )}
 
-          {/* Professional Preferences */}
+          {/* Professional Preferences - Only show for creative professionals */}
+          {shouldShowProfessionalSkills() && (
           <Card>
             <CardHeader 
               className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -729,32 +911,44 @@ export default function ApplicantPreferencesStep({
                       <p className="text-sm text-muted-foreground mt-1">Specify required experience level</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <NumberInputWithButtons
-                        id="min-experience"
-                        label="Minimum experience"
-                        placeholder="e.g., 2"
-                        value={preferences.professional.experience_years.min}
-                        onChange={(value) => updatePreferences('professional', 'experience_years', {
-                          ...preferences.professional.experience_years,
-                          min: value
-                        })}
-                        min={0}
-                        max={30}
-                        step={1}
-                      />
-                      <NumberInputWithButtons
-                        id="max-experience"
-                        label="Maximum experience"
-                        placeholder="e.g., 10"
-                        value={preferences.professional.experience_years.max}
-                        onChange={(value) => updatePreferences('professional', 'experience_years', {
-                          ...preferences.professional.experience_years,
-                          max: value
-                        })}
-                        min={0}
-                        max={30}
-                        step={1}
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="min-experience" className="text-sm">Minimum experience</Label>
+                        <Input
+                          id="min-experience"
+                          type="number"
+                          placeholder="e.g., 2"
+                          value={preferences.professional.experience_years.min || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
+                            updatePreferences('professional', 'experience_years', {
+                              ...preferences.professional.experience_years,
+                              min: value
+                            })
+                          }}
+                          min={0}
+                          max={30}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="max-experience" className="text-sm">Maximum experience</Label>
+                        <Input
+                          id="max-experience"
+                          type="number"
+                          placeholder="e.g., 10"
+                          value={preferences.professional.experience_years.max || ''}
+                          onChange={(e) => {
+                            const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
+                            updatePreferences('professional', 'experience_years', {
+                              ...preferences.professional.experience_years,
+                              max: value
+                            })
+                          }}
+                          min={0}
+                          max={30}
+                          className="w-full"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -763,7 +957,7 @@ export default function ApplicantPreferencesStep({
                     <Checkbox
                       id="portfolio-required"
                       checked={preferences.professional.portfolio_required}
-                      onCheckedChange={(checked) => updatePreferences('professional', 'portfolio_required', checked as boolean)}
+                      onCheckedChange={(checked) => updatePreferences('professional', 'portfolio_required', !!checked)}
                     />
                     <Label htmlFor="portfolio-required">Portfolio required</Label>
                   </div>
@@ -787,9 +981,10 @@ export default function ApplicantPreferencesStep({
                                 id={`spec-required-${spec.toLowerCase().replace(/\s+/g, '-')}`}
                                 checked={preferences.professional.specializations.required.includes(spec)}
                                 onCheckedChange={(checked) => {
-                                  if (checked) {
+                                  // Handle Radix UI checkbox type (boolean | "indeterminate")
+                                  if (checked === true) {
                                     addArrayItem('professional', 'specializations', 'required', spec)
-                                  } else {
+                                  } else if (checked === false) {
                                     removeArrayItem('professional', 'specializations', 'required', spec)
                                   }
                                 }}
@@ -843,8 +1038,10 @@ export default function ApplicantPreferencesStep({
               </CardContent>
             )}
           </Card>
+          )}
 
-          {/* Equipment Requirements */}
+          {/* Equipment Requirements - Only show for photographers, videographers, and production crew */}
+          {shouldShowEquipment() && (
           <Card>
             <CardHeader 
               className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -941,8 +1138,10 @@ export default function ApplicantPreferencesStep({
               </CardContent>
             )}
           </Card>
+          )}
 
-          {/* Software Requirements */}
+          {/* Software Requirements - Only show for photographers, videographers, and directors */}
+          {shouldShowSoftware() && (
           <Card>
             <CardHeader 
               className="cursor-pointer hover:bg-muted/50 transition-colors"
@@ -1039,8 +1238,9 @@ export default function ApplicantPreferencesStep({
               </CardContent>
             )}
           </Card>
+          )}
 
-          {/* Availability Preferences */}
+          {/* Availability Preferences - Always show */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

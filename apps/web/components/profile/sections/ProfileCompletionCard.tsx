@@ -34,28 +34,29 @@ interface ProfileField {
   category: 'basic' | 'professional' | 'contact' | 'social' | 'equipment'
   description: string
   actionText: string
+  applicableRoles?: ('CONTRIBUTOR' | 'TALENT' | 'BOTH')[] // Which roles this field applies to
 }
 
 const PROFILE_FIELDS: ProfileField[] = [
-  // Basic Information (High Priority)
+  // Basic Information (High Priority) - Applies to ALL roles
   { key: 'bio', label: 'Bio', weight: 10, icon: Edit3, category: 'basic', description: 'Tell others about yourself', actionText: 'Add Bio' },
   { key: 'city', label: 'Location', weight: 8, icon: MapPin, category: 'basic', description: 'Where are you based?', actionText: 'Set Location' },
   { key: 'country', label: 'Country', weight: 5, icon: MapPin, category: 'basic', description: 'Your country', actionText: 'Set Country' },
   
-  // Professional Information (High Priority)
+  // Professional Information (High Priority) - Applies to ALL roles
   { key: 'years_experience', label: 'Experience', weight: 12, icon: Award, category: 'professional', description: 'Years of experience', actionText: 'Add Experience' },
   { key: 'specializations', label: 'Specializations', weight: 15, icon: Star, category: 'professional', description: 'What do you specialize in?', actionText: 'Add Specializations' },
   { key: 'hourly_rate_min', label: 'Rate Range', weight: 10, icon: DollarSign, category: 'professional', description: 'Your hourly rate', actionText: 'Set Rates' },
   { key: 'typical_turnaround_days', label: 'Turnaround Time', weight: 6, icon: Clock, category: 'professional', description: 'How fast do you work?', actionText: 'Set Turnaround' },
   
-  // Equipment & Software (Medium Priority)
-  { key: 'equipment_list', label: 'Equipment', weight: 8, icon: Camera, category: 'equipment', description: 'What gear do you use?', actionText: 'Add Equipment' },
-  { key: 'editing_software', label: 'Software', weight: 6, icon: Settings, category: 'equipment', description: 'Editing software you use', actionText: 'Add Software' },
+  // Equipment & Software (Medium Priority) - ONLY for CONTRIBUTORS
+  { key: 'equipment_list', label: 'Equipment', weight: 8, icon: Camera, category: 'equipment', description: 'What gear do you use?', actionText: 'Add Equipment', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  { key: 'editing_software', label: 'Software', weight: 6, icon: Settings, category: 'equipment', description: 'Editing software you use', actionText: 'Add Software', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
   
-  // Contact Information (Medium Priority)
+  // Contact Information (Medium Priority) - Applies to ALL roles
   { key: 'phone_number', label: 'Phone', weight: 5, icon: Phone, category: 'contact', description: 'Contact number', actionText: 'Add Phone' },
   
-  // Social & Portfolio (Lower Priority)
+  // Social & Portfolio (Lower Priority) - Applies to ALL roles
   { key: 'portfolio_url', label: 'Portfolio', weight: 8, icon: Briefcase, category: 'social', description: 'Showcase your work', actionText: 'Add Portfolio' },
   { key: 'website_url', label: 'Website', weight: 5, icon: Globe, category: 'social', description: 'Your website', actionText: 'Add Website' },
   { key: 'instagram_handle', label: 'Instagram', weight: 3, icon: ExternalLink, category: 'social', description: 'Instagram profile', actionText: 'Add Instagram' },
@@ -63,9 +64,27 @@ const PROFILE_FIELDS: ProfileField[] = [
   
   // Additional Info (Lower Priority)
   { key: 'available_for_travel', label: 'Travel Availability', weight: 4, icon: Globe, category: 'professional', description: 'Can you travel for work?', actionText: 'Set Travel Info' },
-  { key: 'studio_name', label: 'Studio Info', weight: 4, icon: Camera, category: 'professional', description: 'Do you have a studio?', actionText: 'Add Studio Info' },
+  { key: 'studio_name', label: 'Studio Info', weight: 4, icon: Camera, category: 'professional', description: 'Do you have a studio?', actionText: 'Add Studio Info', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
   { key: 'languages', label: 'Languages', weight: 4, icon: Users, category: 'contact', description: 'Languages you speak', actionText: 'Add Languages' }
 ]
+
+// Helper function to get applicable fields for a user's role
+const getApplicableFields = (roleFlags: string[]): ProfileField[] => {
+  const hasContributor = roleFlags.includes('CONTRIBUTOR')
+  const hasTalent = roleFlags.includes('TALENT')
+  
+  return PROFILE_FIELDS.filter(field => {
+    // If no applicableRoles specified, field applies to everyone
+    if (!field.applicableRoles) return true
+    
+    // Check if user's role matches any of the applicable roles
+    if (hasContributor && hasTalent && field.applicableRoles.includes('BOTH')) return true
+    if (hasContributor && field.applicableRoles.includes('CONTRIBUTOR')) return true
+    if (hasTalent && field.applicableRoles.includes('TALENT')) return true
+    
+    return false
+  })
+}
 
 const calculateProfileCompletion = (profile: UserProfile): { 
   percentage: number
@@ -85,7 +104,10 @@ const calculateProfileCompletion = (profile: UserProfile): {
     categoryProgress[cat] = { completed: 0, total: 0, percentage: 0 }
   })
 
-  PROFILE_FIELDS.forEach(field => {
+  // Get only the fields applicable to this user's role
+  const applicableFields = getApplicableFields(profile.role_flags || [])
+
+  applicableFields.forEach(field => {
     totalWeight += field.weight
     categoryProgress[field.category].total += field.weight
 

@@ -68,9 +68,12 @@ interface TabbedPlaygroundLayoutProps {
     selectedProvider?: string
     enhancedPrompt?: string
   }) => Promise<void>
-  
+
   // Tab change callback
   onTabChange?: (tab: string) => void
+
+  // Initial preset from URL
+  initialPresetId?: string | null
   
   // Editing props
   onEdit: (params: {
@@ -154,11 +157,26 @@ export default function TabbedPlaygroundLayout({
   generatedVideoUrl,
   generatedVideoMetadata,
   onExpandMedia,
-  onVideoGenerated
+  onVideoGenerated,
+  initialPresetId
 }: TabbedPlaygroundLayoutProps) {
   const { showFeedback } = useFeedback()
   const [activeTab, setActiveTab] = useState('generate')
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
+
+  // Load preset from URL on mount
+  useEffect(() => {
+    if (initialPresetId && !selectedPreset) {
+      fetch(`/api/presets/${initialPresetId}`)
+        .then(res => res.json())
+        .then(presetData => {
+          if (presetData && presetData.id) {
+            setSelectedPreset(presetData)
+          }
+        })
+        .catch(err => console.error('Error loading preset:', err))
+    }
+  }, [initialPresetId])
 
   // Refs for scrolling to preview areas
   const imagePreviewRef = useRef<HTMLDivElement | null>(null)
@@ -857,7 +875,10 @@ export default function TabbedPlaygroundLayout({
                 savedImages={savedImages}
                 onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
                 selectedPreset={selectedPreset}
-                onPresetApplied={() => setSelectedPreset(null)}
+                onPresetApplied={() => {
+                  // Don't clear the preset - keep it so it can be saved with the image
+                  console.log('🎯 Preset applied, keeping preset data for image generation')
+                }}
                 currentStyle={currentSettings.style}
                 aspectRatio={currentSettings.aspectRatio}
                 onStyleChange={handleStyleChange}
@@ -1038,6 +1059,7 @@ export default function TabbedPlaygroundLayout({
                 userSubscriptionTier={userSubscriptionTier}
                 selectedProvider={videoProvider}
                 onProviderChange={setVideoProvider}
+                selectedPreset={selectedPreset}
               />
             </div>
           </div>

@@ -93,6 +93,7 @@ export interface UserProfile {
   // works_with_teams, prefers_solo_work, comfortable_with_nudity, 
   // comfortable_with_intimate_content, requires_model_release
   verification_status?: string
+  profile_completion_percentage?: number
   created_at?: string
   updated_at?: string
 }

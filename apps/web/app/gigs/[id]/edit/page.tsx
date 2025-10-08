@@ -248,9 +248,10 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
       setMaxApplicants(gig.max_applicants || 10)
       setSafetyNotes(gig.safety_notes || '')
       
-      // Load applicant preferences
+      // Load applicant preferences and looking_for_types
       setFormData((prev: any) => ({
         ...prev,
+        lookingFor: gig.looking_for_types || [],  // Load looking_for_types from database
         applicantPreferences: gig.applicant_preferences || null
       }))
       
@@ -339,16 +340,37 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
         return
       }
 
+      // Parse location into city and country if formatted correctly
+      const parseLocation = (locationText: string): { city: string | null; country: string | null } => {
+        if (!locationText) return { city: null, country: null }
+        
+        // Check if location is in "City, Country" format
+        const parts = locationText.split(',').map(p => p.trim())
+        if (parts.length >= 2) {
+          return {
+            city: parts[0],
+            country: parts.slice(1).join(', ')
+          }
+        }
+        
+        return { city: null, country: null }
+      }
+      
+      const { city: parsedCity, country: parsedCountry } = parseLocation(location)
+      
       // Update the gig
       const { error: updateError } = await supabase
         .from('gigs')
         .update({
           title,
           description,
+          looking_for_types: formData.lookingFor || [],  // Add looking_for_types mapping
           purpose,
           comp_type: compType,
           usage_rights: usageRights,
           location_text: location,
+          city: parsedCity,  // Parse and save city
+          country: parsedCountry,  // Parse and save country
           start_time: startDateTime.toISOString(),
           end_time: endDateTime.toISOString(),
           application_deadline: deadlineDateTime.toISOString(),

@@ -21,8 +21,8 @@ export interface GearRequestWithMatches {
   retainer_acceptable: boolean;
   max_daily_rate_cents?: number;
   status: string;
-  matching_listings: any[];
-  suggested_listings: any[];
+  matching_listings: Array<Record<string, unknown>>;
+  suggested_listings: Array<Record<string, unknown>>;
 }
 
 export class ProjectMarketplaceService {
@@ -66,9 +66,9 @@ export class ProjectMarketplaceService {
   /**
    * Find marketplace listings that match a gear request
    */
-  static async findMatchingListings(gearRequest: any): Promise<{
-    exactMatches: any[];
-    suggestions: any[];
+  static async findMatchingListings(gearRequest: Record<string, unknown>): Promise<{
+    exactMatches: Array<Record<string, unknown>>;
+    suggestions: Array<Record<string, unknown>>;
   }> {
     try {
       const supabase = getSupabaseClient()
@@ -128,7 +128,7 @@ export class ProjectMarketplaceService {
 
       // Broader category matching
       if (gearRequest.category) {
-        const broaderCategories = this.getBroaderCategories(gearRequest.category);
+        const broaderCategories = this.getBroaderCategories(gearRequest.category as string);
         suggestionsQuery = suggestionsQuery.or(
           broaderCategories.map(cat => `category.ilike.%${cat}%`).join(',')
         );
@@ -290,21 +290,23 @@ export class ProjectMarketplaceService {
   /**
    * Check compatibility between gear request and listing
    */
-  private static checkCompatibility(gearRequest: any, listing: any): {
+  private static checkCompatibility(gearRequest: Record<string, unknown>, listing: Record<string, unknown>): {
     compatible: boolean;
     reason?: string;
   } {
     // Check category compatibility
     if (gearRequest.category && listing.category) {
-      if (!listing.category.toLowerCase().includes(gearRequest.category.toLowerCase()) &&
-          !gearRequest.category.toLowerCase().includes(listing.category.toLowerCase())) {
+      const requestCategory = (gearRequest.category as string).toLowerCase();
+      const listingCategory = (listing.category as string).toLowerCase();
+      if (!listingCategory.includes(requestCategory) &&
+          !requestCategory.includes(listingCategory)) {
         return { compatible: false, reason: 'Category mismatch' };
       }
     }
 
     // Check price compatibility for rentals
     if (gearRequest.borrow_preferred && gearRequest.max_daily_rate_cents && listing.rent_day_cents) {
-      if (listing.rent_day_cents > gearRequest.max_daily_rate_cents * 1.2) {
+      if ((listing.rent_day_cents as number) > (gearRequest.max_daily_rate_cents as number) * 1.2) {
         return { compatible: false, reason: 'Price exceeds budget' };
       }
     }

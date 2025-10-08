@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
           is_featured,
           is_active,
           sort_order,
+          latest_promoted_image_url,
           created_at,
           updated_at
         `),
@@ -85,6 +86,7 @@ export async function GET(request: NextRequest) {
         is_featured,
           is_active,
           sort_order,
+          latest_promoted_image_url,
         created_at,
           updated_at
         `)
@@ -143,11 +145,11 @@ export async function GET(request: NextRequest) {
       filteredPresets.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
-    // Apply pagination
-    const from = (page - 1) * limit;
-    const to = from + limit;
-    const presets = filteredPresets.slice(from, to);
-    const count = filteredPresets.length;
+    // Store total count before pagination
+    const totalCount = filteredPresets.length;
+
+    // Get all presets for formatting (don't paginate yet)
+    const presets = filteredPresets;
 
     // Fetch user profiles for presets that have user_id
     const userIds = [...new Set(presets?.map(p => p.user_id).filter(Boolean) || [])];
@@ -191,6 +193,7 @@ export async function GET(request: NextRequest) {
         is_featured: preset.is_featured,
         is_active: preset.is_active,
         sort_order: preset.sort_order,
+        latest_promoted_image_url: preset.latest_promoted_image_url,
         created_at: preset.created_at,
         updated_at: preset.updated_at,
         creator: userProfile ? {
@@ -310,20 +313,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Apply pagination to combined results
-    const totalPresets = formattedPresets.length;
+    // Apply pagination to formatted results
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedPresets = formattedPresets.slice(startIndex, endIndex);
-    
-    const totalPages = Math.ceil(totalPresets / limit);
+
+    const totalPages = Math.ceil(totalCount / limit);
 
     return NextResponse.json({
       presets: paginatedPresets,
       pagination: {
         page,
         limit,
-        total: totalPresets,
+        total: totalCount,
         pages: totalPages
       }
     });

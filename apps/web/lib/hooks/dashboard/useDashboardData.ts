@@ -194,7 +194,7 @@ export const useDashboardData = () => {
 
       // Load gigs
       const gigsQuery = isContributor
-        ? (supabase as any).from('gigs').select('*').eq('owner_user_id', user.id).order('created_at', { ascending: false }).limit(5)
+        ? (supabase as any).from('gigs').select('*').eq('owner_user_id', currentProfile.id).order('created_at', { ascending: false }).limit(5)
         : (supabase as any).from('gigs').select('*').eq('status', 'PUBLISHED').order('created_at', { ascending: false }).limit(5)
 
       const { data: gigs } = await gigsQuery
@@ -202,10 +202,10 @@ export const useDashboardData = () => {
 
       // Load stats
       const [gigsCount, applicationsCount, showcasesCount, messagesCount, userCredits] = await Promise.all([
-        (supabase as any).from('gigs').select('*', { count: 'exact', head: true }).eq(isContributor ? 'owner_user_id' : 'status', isContributor ? user.id : 'PUBLISHED'),
-        (supabase as any).from('gig_applications').select('*', { count: 'exact', head: true }).eq('applicant_user_id', user.id),
-        (supabase as any).from('showcases').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-        (supabase as any).from('messages').select('*', { count: 'exact', head: true }).or(`from_user_id.eq.${user.id},to_user_id.eq.${user.id}`),
+        (supabase as any).from('gigs').select('*', { count: 'exact', head: true }).eq(isContributor ? 'owner_user_id' : 'status', isContributor ? currentProfile.id : 'PUBLISHED'),
+        (supabase as any).from('gig_applications').select('*', { count: 'exact', head: true }).eq('applicant_user_id', currentProfile.id),
+        (supabase as any).from('showcases').select('*', { count: 'exact', head: true }).eq('user_id', currentProfile.id),
+        (supabase as any).from('messages').select('*', { count: 'exact', head: true }).or(`from_user_id.eq.${currentProfile.id},to_user_id.eq.${currentProfile.id}`),
         (supabase as any).from('user_credits').select('*').eq('user_id', user.id).single()
       ])
 

@@ -1,18 +1,21 @@
 'use client'
 
-import { ChevronRight, FileText, Target, DollarSign } from 'lucide-react'
+import { ChevronRight, FileText, Target, DollarSign, Users, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { CompType, PurposeType } from '../../../lib/gig-form-persistence'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { CompType, PurposeType, LookingForType } from '../../../lib/gig-form-persistence'
 
 interface BasicDetailsStepProps {
   title: string
   description: string
+  lookingFor?: LookingForType[]  // Changed to array for multi-select
   purpose: PurposeType
   compType: CompType
   compDetails: string
   onTitleChange: (value: string) => void
   onDescriptionChange: (value: string) => void
+  onLookingForChange?: (value: LookingForType[]) => void  // Changed to array
   onPurposeChange: (value: PurposeType) => void
   onCompTypeChange: (value: CompType) => void
   onCompDetailsChange: (value: string) => void
@@ -23,11 +26,13 @@ interface BasicDetailsStepProps {
 export default function BasicDetailsStep({
   title,
   description,
+  lookingFor,
   purpose,
   compType,
   compDetails,
   onTitleChange,
   onDescriptionChange,
+  onLookingForChange,
   onPurposeChange,
   onCompTypeChange,
   onCompDetailsChange,
@@ -56,6 +61,169 @@ export default function BasicDetailsStep({
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        {/* Looking For - Multi-Select */}
+        <div>
+          <label htmlFor="looking-for" className="block text-sm font-medium text-foreground mb-2">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Who are you looking for? <span className="text-destructive">*</span>
+            </div>
+          </label>
+          
+          {/* Selected badges */}
+          {lookingFor && lookingFor.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3 p-3 bg-muted/50 rounded-lg border border-border">
+              {lookingFor.map((type) => (
+                <Badge key={type} variant="secondary" className="flex items-center gap-1">
+                  {type.replace(/_/g, ' ')}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newTypes = lookingFor.filter(t => t !== type)
+                      onLookingForChange?.(newTypes)
+                    }}
+                    className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          
+          <Select value="" onValueChange={(value) => {
+            const newType = value as LookingForType
+            if (newType && !lookingFor?.includes(newType)) {
+              onLookingForChange?.([...(lookingFor || []), newType])
+            }
+          }}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={lookingFor && lookingFor.length > 0 ? "Add another role..." : "Select roles (you can choose multiple)"} />
+            </SelectTrigger>
+            <SelectContent className="max-h-[400px]">
+              {/* 🎭 Talent & Performers */}
+              <SelectGroup>
+                <SelectLabel>🎭 Talent & Performers</SelectLabel>
+                <SelectItem value="MODELS">Models (All Types)</SelectItem>
+                <SelectItem value="MODELS_FASHION">  • Fashion Models</SelectItem>
+                <SelectItem value="MODELS_COMMERCIAL">  • Commercial Models</SelectItem>
+                <SelectItem value="MODELS_FITNESS">  • Fitness Models</SelectItem>
+                <SelectItem value="MODELS_EDITORIAL">  • Editorial Models</SelectItem>
+                <SelectItem value="MODELS_RUNWAY">  • Runway Models</SelectItem>
+                <SelectItem value="MODELS_HAND">  • Hand Models</SelectItem>
+                <SelectItem value="MODELS_PARTS">  • Parts Models</SelectItem>
+                <SelectItem value="ACTORS">Actors / Actresses</SelectItem>
+                <SelectItem value="DANCERS">Dancers</SelectItem>
+                <SelectItem value="MUSICIANS">Musicians</SelectItem>
+                <SelectItem value="SINGERS">Singers</SelectItem>
+                <SelectItem value="VOICE_ACTORS">Voice Actors</SelectItem>
+                <SelectItem value="PERFORMERS">Performers</SelectItem>
+                <SelectItem value="INFLUENCERS">Influencers</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* 📸 Visual Creators */}
+              <SelectGroup>
+                <SelectLabel>📸 Visual Creators</SelectLabel>
+                <SelectItem value="PHOTOGRAPHERS">Photographers</SelectItem>
+                <SelectItem value="VIDEOGRAPHERS">Videographers</SelectItem>
+                <SelectItem value="CINEMATOGRAPHERS">Cinematographers</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* 🎬 Production & Crew */}
+              <SelectGroup>
+                <SelectLabel>🎬 Production & Crew</SelectLabel>
+                <SelectItem value="PRODUCTION_CREW">Production Crew</SelectItem>
+                <SelectItem value="PRODUCERS">Producers</SelectItem>
+                <SelectItem value="DIRECTORS">Directors</SelectItem>
+                <SelectItem value="CREATIVE_DIRECTORS">Creative Directors</SelectItem>
+                <SelectItem value="ART_DIRECTORS">Art Directors</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* 💄 Styling & Beauty */}
+              <SelectGroup>
+                <SelectLabel>💄 Styling & Beauty</SelectLabel>
+                <SelectItem value="MAKEUP_ARTISTS">Makeup Artists</SelectItem>
+                <SelectItem value="HAIR_STYLISTS">Hair Stylists</SelectItem>
+                <SelectItem value="FASHION_STYLISTS">Fashion Stylists</SelectItem>
+                <SelectItem value="WARDROBE_STYLISTS">Wardrobe Stylists</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* 🎨 Post-Production */}
+              <SelectGroup>
+                <SelectLabel>🎨 Post-Production</SelectLabel>
+                <SelectItem value="EDITORS">Editors (All Types)</SelectItem>
+                <SelectItem value="VIDEO_EDITORS">  • Video Editors</SelectItem>
+                <SelectItem value="PHOTO_EDITORS">  • Photo Editors</SelectItem>
+                <SelectItem value="VFX_ARTISTS">VFX Artists</SelectItem>
+                <SelectItem value="MOTION_GRAPHICS">Motion Graphics Artists</SelectItem>
+                <SelectItem value="RETOUCHERS">Retouchers</SelectItem>
+                <SelectItem value="COLOR_GRADERS">Color Graders</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* 🎨 Design & Creative */}
+              <SelectGroup>
+                <SelectLabel>🎨 Design & Creative</SelectLabel>
+                <SelectItem value="DESIGNERS">Designers (All Types)</SelectItem>
+                <SelectItem value="GRAPHIC_DESIGNERS">  • Graphic Designers</SelectItem>
+                <SelectItem value="ILLUSTRATORS">Illustrators</SelectItem>
+                <SelectItem value="ANIMATORS">Animators</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* 📱 Content & Social */}
+              <SelectGroup>
+                <SelectLabel>📱 Content & Social</SelectLabel>
+                <SelectItem value="CONTENT_CREATORS">Content Creators</SelectItem>
+                <SelectItem value="SOCIAL_MEDIA_MANAGERS">Social Media Managers</SelectItem>
+                <SelectItem value="DIGITAL_MARKETERS">Digital Marketers</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* 💼 Business & Teams */}
+              <SelectGroup>
+                <SelectLabel>💼 Business & Teams</SelectLabel>
+                <SelectItem value="AGENCIES">Agencies</SelectItem>
+                <SelectItem value="BRAND_MANAGERS">Brand Managers</SelectItem>
+                <SelectItem value="MARKETING_TEAMS">Marketing Teams</SelectItem>
+                <SelectItem value="STUDIOS">Studios</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* ✍️ Writing */}
+              <SelectGroup>
+                <SelectLabel>✍️ Writing</SelectLabel>
+                <SelectItem value="WRITERS">Writers</SelectItem>
+                <SelectItem value="COPYWRITERS">Copywriters</SelectItem>
+                <SelectItem value="SCRIPTWRITERS">Scriptwriters</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* Other */}
+              <SelectGroup>
+                <SelectLabel>Other</SelectLabel>
+                <SelectItem value="OTHER">Other Creative Roles</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <p className="mt-1 text-xs text-muted-foreground">
+            💡 Select one or more roles. This customizes the preferences step to show only relevant options and improves matchmaking quality.
+          </p>
+        </div>
+
         {/* Title */}
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-foreground mb-2">

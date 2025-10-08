@@ -24,7 +24,8 @@ CREATE TABLE IF NOT EXISTS content_moderation_queue (
 -- Enable RLS on the table
 ALTER TABLE content_moderation_queue ENABLE ROW LEVEL SECURITY;
 
--- Create policies for the table
+-- Create policies for the table (with idempotency)
+DROP POLICY IF EXISTS "Admins can view all moderation queue items" ON content_moderation_queue;
 CREATE POLICY "Admins can view all moderation queue items" ON content_moderation_queue
     FOR SELECT USING (
         EXISTS (
@@ -34,6 +35,7 @@ CREATE POLICY "Admins can view all moderation queue items" ON content_moderation
         )
     );
 
+DROP POLICY IF EXISTS "Admins can update moderation queue items" ON content_moderation_queue;
 CREATE POLICY "Admins can update moderation queue items" ON content_moderation_queue
     FOR UPDATE USING (
         EXISTS (
@@ -43,6 +45,7 @@ CREATE POLICY "Admins can update moderation queue items" ON content_moderation_q
         )
     );
 
+DROP POLICY IF EXISTS "System can insert moderation queue items" ON content_moderation_queue;
 CREATE POLICY "System can insert moderation queue items" ON content_moderation_queue
     FOR INSERT WITH CHECK (true);
 

@@ -236,7 +236,10 @@ export default function SignUpPage() {
         router.push('/auth/complete-profile')
       }
     } catch (err) {
-      console.error('Signup error:', err)
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Signup error:', err)
+      }
       setError('An unexpected error occurred. Please try again.')
       setLoading(false)
     }

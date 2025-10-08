@@ -324,7 +324,7 @@ Manage your notification preferences: ${process.env.NEXT_PUBLIC_APP_URL || 'http
   async sendEmail(
     to: EmailRecipient,
     template: EmailTemplate,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ): Promise<boolean> {
     try {
       // If Gmail API is not initialized, log the email for development

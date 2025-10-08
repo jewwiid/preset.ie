@@ -28,8 +28,8 @@ export interface TreatmentContext {
   title: string;
   format: string;
   theme?: string;
-  gigData?: any;
-  moodboardData?: any;
+  gigData?: Record<string, unknown>;
+  moodboardData?: Record<string, unknown>;
   moodboardImages?: string[]; // Array of image URLs from moodboard
   gigImages?: string[]; // Array of image URLs from gig
   genre?: string;
@@ -41,7 +41,7 @@ export interface TreatmentContext {
   mood?: string;
   visualStyle?: string;
   colors?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TreatmentSection {
@@ -171,7 +171,7 @@ async function generateLoglines(context: TreatmentContext): Promise<TreatmentLog
     const lines = response.split('\n').filter(line => line.trim());
     return lines.map((line, index) => ({
       text: line.replace(/^\d+\.\s*/, '').trim(),
-      type: ['hook', 'character', 'conflict', 'stake'][index % 4] as any
+      type: (['hook', 'character', 'conflict', 'stake'][index % 4] as 'hook' | 'character' | 'conflict' | 'stake')
     }));
   }
 }

@@ -524,6 +524,7 @@ export async function POST(request: NextRequest) {
     hasBaseImage: !!baseImage,
     baseImageUrl: baseImage ? baseImage.substring(0, 50) + '...' : 'none',
     hasCustomStylePreset: !!customStylePreset,
+    customStylePreset: customStylePreset ? { id: customStylePreset.id, name: customStylePreset.name } : null,
     intensity,
     selectedProvider: selectedProvider || 'seedream', // Default to seedream for backward compatibility
     requestBodyKeys: Object.keys(requestBody)
@@ -600,12 +601,17 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Calculate credits needed (2 credits per image)
-    let creditsNeeded = (maxImages || 1) * 2
-    console.log('💰 Credits calculation:', { 
-      maxImages: maxImages || 1, 
+    // Calculate credits needed based on provider
+    // NanoBanana: 1 credit per image
+    // Seedream: 2 credits per image
+    const provider = selectedProvider || 'seedream'
+    const creditsPerImage = provider === 'nanobanana' ? 1 : 2
+    let creditsNeeded = (maxImages || 1) * creditsPerImage
+    console.log('💰 Credits calculation:', {
+      provider,
+      maxImages: maxImages || 1,
       creditsNeeded,
-      creditsPerImage: 2 
+      creditsPerImage
     })
     
     // Check user credits
@@ -634,10 +640,12 @@ export async function POST(request: NextRequest) {
       console.log('❌ Insufficient credits:', {
         currentBalance: userCredits?.current_balance || 0,
         creditsNeeded,
-        shortfall: creditsNeeded - (userCredits?.current_balance || 0)
+        shortfall: creditsNeeded - (userCredits?.current_balance || 0),
+        provider,
+        creditsPerImage
       })
       return NextResponse.json(
-        { error: `Insufficient credits. Need ${creditsNeeded} credits for ${maxImages || 1} image(s).` },
+        { error: `Insufficient credits. Need ${creditsNeeded} credits for ${maxImages || 1} image(s) with ${provider}. Each image costs ${creditsPerImage} credit(s).` },
         { status: 403 }
       )
     }
@@ -672,18 +680,8 @@ export async function POST(request: NextRequest) {
         // Prompt is just the template, add style information
         enhancedPrompt = `${prompt}, ${stylePrompt}${intensityModifier}`
       }
-      
-      // Update usage count for the preset (only if it's a real preset, not a custom one)
-      if (customStylePreset.id && customStylePreset.id !== 'local-preset') {
-        try {
-          await supabaseAdmin
-            .from('presets')
-            .update({ usage_count: (customStylePreset.usage_count || 0) + 1 })
-            .eq('id', customStylePreset.id)
-        } catch (error) {
-          console.error('Error updating preset usage count:', error)
-        }
-      }
+
+      // Usage count will be updated after successful generation
     } else {
       // Use context-aware style prompts based on generation mode
       const getContextAwareStylePrompt = (styleType: string, mode: 'text-to-image' | 'image-to-image') => {
@@ -941,14 +939,28 @@ export async function POST(request: NextRequest) {
                   status: 'processing',
                   last_generated_at: new Date().toISOString(),
                   metadata: {
-                    provider: 'nanobanana',
-                    taskId: callbackResult.taskId,
-                    generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
-                    cinematic_parameters: cinematicParameters,
                     enhanced_prompt: enhancedPrompt,
-                    include_technical_details: includeTechnicalDetails,
-                    include_style_references: includeStyleReferences,
-                    base_image: baseImage || null
+                    style_applied: style,
+                    style_prompt: stylePrompt,
+                    consistency_level: consistencyLevel || 'high',
+                    intensity: intensity || (customStylePreset ? customStylePreset.intensity : 1.0),
+                    custom_style_preset: customStylePreset ? {
+                      id: customStylePreset.id,
+                      name: customStylePreset.name,
+                      style_type: customStylePreset.style_settings?.style || customStylePreset.style_type,
+                      intensity: customStylePreset.style_settings?.intensity || customStylePreset.intensity,
+                      style_settings: customStylePreset.style_settings,
+                      technical_settings: customStylePreset.technical_settings
+                    } : null,
+                    generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
+                    base_image: baseImage || null,
+                    api_endpoint: isImageToImage ? 'nanobanana/edit' : 'nanobanana/text-to-image',
+                    cinematic_parameters: cinematicParameters || null,
+                    include_technical_details: includeTechnicalDetails ?? true,
+                    include_style_references: includeStyleReferences ?? true,
+                    user_subject: userSubject || null,
+                    provider: 'nanobanana',
+                    taskId: callbackResult.taskId
                   }
                 })
             }
@@ -1022,14 +1034,28 @@ export async function POST(request: NextRequest) {
                 status: result.imageUrl ? 'generated' : 'processing',
                 last_generated_at: new Date().toISOString(),
                 metadata: {
-                  provider: result.provider,
-                  taskId: result.taskId,
-                  generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
-                  cinematic_parameters: cinematicParameters,
                   enhanced_prompt: enhancedPrompt,
-                  include_technical_details: includeTechnicalDetails,
-                  include_style_references: includeStyleReferences,
-                  base_image: baseImage || null
+                  style_applied: style,
+                  style_prompt: stylePrompt,
+                  consistency_level: consistencyLevel || 'high',
+                  intensity: intensity || (customStylePreset ? customStylePreset.intensity : 1.0),
+                  custom_style_preset: customStylePreset ? {
+                    id: customStylePreset.id,
+                    name: customStylePreset.name,
+                    style_type: customStylePreset.style_settings?.style || customStylePreset.style_type,
+                    intensity: customStylePreset.style_settings?.intensity || customStylePreset.intensity,
+                    style_settings: customStylePreset.style_settings,
+                    technical_settings: customStylePreset.technical_settings
+                  } : null,
+                  generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
+                  base_image: baseImage || null,
+                  api_endpoint: isImageToImage ? 'nanobanana/edit' : 'nanobanana/text-to-image',
+                  cinematic_parameters: cinematicParameters || null,
+                  include_technical_details: includeTechnicalDetails ?? true,
+                  include_style_references: includeStyleReferences ?? true,
+                  user_subject: userSubject || null,
+                  provider: result.provider,
+                  taskId: result.taskId
                 }
               }
               
@@ -1402,6 +1428,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Save or update project
+    console.log('🔍 customStylePreset before building projectData:', {
+      exists: !!customStylePreset,
+      id: customStylePreset?.id,
+      name: customStylePreset?.name
+    })
+
     const projectData = {
       user_id: user.id,
       title: prompt.substring(0, 50),
@@ -1454,7 +1486,9 @@ export async function POST(request: NextRequest) {
       generatedImagesCount: projectData.generated_images?.length,
       creditsUsed: projectData.credits_used,
       status: projectData.status,
-      hasMetadata: !!projectData.metadata
+      hasMetadata: !!projectData.metadata,
+      hasCustomStylePreset: !!projectData.metadata?.custom_style_preset,
+      customStylePreset: projectData.metadata?.custom_style_preset
     })
     
     if (projectId) {
@@ -1557,22 +1591,36 @@ export async function POST(request: NextRequest) {
     
     console.log('🎉 === GENERATION COMPLETED SUCCESSFULLY ===')
     console.log('📸 Final response images:', responseImages)
-    console.log('💾 Project saved:', { 
+    console.log('💾 Project saved:', {
       projectId: project.id,
       projectTitle: project.title,
       projectStatus: project.status
     })
     console.log('💰 Credits used:', creditsNeeded)
     console.log('⚠️ Warning:', warning)
-    
-    const finalResponse = { 
-      success: true, 
+
+    // Update usage count for the preset ONLY after successful generation
+    if (customStylePreset?.id && customStylePreset.id !== 'local-preset') {
+      try {
+        await supabaseAdmin
+          .from('presets')
+          .update({ usage_count: (customStylePreset.usage_count || 0) + 1 })
+          .eq('id', customStylePreset.id)
+        console.log('📊 Updated preset usage count for:', customStylePreset.id)
+      } catch (error) {
+        console.error('Error updating preset usage count:', error)
+        // Don't fail the request if usage tracking fails
+      }
+    }
+
+    const finalResponse = {
+      success: true,
       project,
       images: responseImages,
       creditsUsed: creditsNeeded,
       warning: warning
     }
-    
+
     console.log('📤 Sending response to client:', {
       success: finalResponse.success,
       projectId: finalResponse.project?.id,
@@ -1580,7 +1628,7 @@ export async function POST(request: NextRequest) {
       creditsUsed: finalResponse.creditsUsed,
       hasWarning: !!finalResponse.warning
     })
-    
+
     return NextResponse.json(finalResponse)
   } catch (innerError) {
     console.error('Inner try block error:', innerError)

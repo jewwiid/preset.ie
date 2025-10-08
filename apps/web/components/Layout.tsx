@@ -12,7 +12,7 @@ export default function Layout({ children }: LayoutProps) {
   const pathname = usePathname()
   
   // Pages that shouldn't show navigation (keep only profile creation and test admin)
-  const noNavPages = ['/auth/create-profile', '/test-admin']
+  const noNavPages = ['/auth/complete-profile', '/test-admin']
   const shouldShowNav = pathname ? !noNavPages.includes(pathname) : true
 
   return (

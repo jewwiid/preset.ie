@@ -17,12 +17,25 @@ export function DemographicsSection() {
   const { isEditing } = useProfileEditing()
   const { formData, updateField } = useProfileForm()
 
+  // Helper function to get contextual experience level label
+  const getExperienceLevelLabel = (primarySkill: string | null | undefined) => {
+    if (!primarySkill) return 'Experience Level'
+    return `${primarySkill} Experience Level`
+  }
+
+  // Helper function to get contextual help text
+  const getExperienceLevelHelpText = (primarySkill: string | null | undefined) => {
+    if (!primarySkill) return 'Select your primary skill first'
+    return `Your experience level in ${primarySkill}`
+  }
+
   // Database-driven options state
   const [genderOptions, setGenderOptions] = useState<Array<{value: string, label: string}>>([])
   const [ethnicityOptions, setEthnicityOptions] = useState<Array<{value: string, label: string}>>([])
   const [experienceLevelOptions, setExperienceLevelOptions] = useState<Array<{value: string, label: string}>>([])
   const [availabilityOptions, setAvailabilityOptions] = useState<Array<{value: string, label: string}>>([])
   const [nationalityOptions, setNationalityOptions] = useState<Array<{value: string, label: string}>>([])
+  const [countryOptions, setCountryOptions] = useState<Array<{value: string, label: string}>>([])
   const [loadingOptions, setLoadingOptions] = useState(false)
 
   // Fetch all predefined options from database
@@ -61,7 +74,7 @@ export function DemographicsSection() {
           // Set availability options
           setAvailabilityOptions(
             data.availability_statuses?.map((as: any) => ({
-              value: as.status_name.toLowerCase().replace(/\s+/g, '_'),
+              value: as.status_name, // Use the original capitalized value from database
               label: as.status_name
             })) || []
           )
@@ -72,6 +85,70 @@ export function DemographicsSection() {
               value: n.nationality_name,
               label: n.nationality_name
             })) || []
+          )
+          
+          // Set country options - map nationality to country name
+          const nationalityToCountryMap: { [key: string]: string } = {
+            'Irish': 'Ireland',
+            'American': 'United States',
+            'British': 'United Kingdom',
+            'Canadian': 'Canada',
+            'Australian': 'Australia',
+            'German': 'Germany',
+            'French': 'France',
+            'Spanish': 'Spain',
+            'Italian': 'Italy',
+            'Dutch': 'Netherlands',
+            'Swedish': 'Sweden',
+            'Norwegian': 'Norway',
+            'Danish': 'Denmark',
+            'Finnish': 'Finland',
+            'Polish': 'Poland',
+            'Russian': 'Russia',
+            'Chinese': 'China',
+            'Japanese': 'Japan',
+            'Korean': 'South Korea',
+            'Indian': 'India',
+            'Brazilian': 'Brazil',
+            'Mexican': 'Mexico',
+            'Argentine': 'Argentina',
+            'Chilean': 'Chile',
+            'Peruvian': 'Peru',
+            'Colombian': 'Colombia',
+            'Venezuelan': 'Venezuela',
+            'South African': 'South Africa',
+            'Egyptian': 'Egypt',
+            'Nigerian': 'Nigeria',
+            'Kenyan': 'Kenya',
+            'Moroccan': 'Morocco',
+            'Turkish': 'Turkey',
+            'Israeli': 'Israel',
+            'Saudi': 'Saudi Arabia',
+            'Emirati': 'United Arab Emirates',
+            'Qatari': 'Qatar',
+            'Kuwaiti': 'Kuwait',
+            'Lebanese': 'Lebanon',
+            'Jordanian': 'Jordan',
+            'Pakistani': 'Pakistan',
+            'Bangladeshi': 'Bangladesh',
+            'Sri Lankan': 'Sri Lanka',
+            'Thai': 'Thailand',
+            'Vietnamese': 'Vietnam',
+            'Indonesian': 'Indonesia',
+            'Malaysian': 'Malaysia',
+            'Singaporean': 'Singapore',
+            'Filipino': 'Philippines',
+            'New Zealander': 'New Zealand'
+          }
+          
+          setCountryOptions(
+            data.nationalities?.map((n: any) => ({
+              value: nationalityToCountryMap[n.nationality_name] || n.nationality_name,
+              label: nationalityToCountryMap[n.nationality_name] || n.nationality_name
+            })).filter((option: any, index: number, self: any[]) => 
+              // Remove duplicates
+              index === self.findIndex((t) => t.value === option.value)
+            ).sort((a: any, b: any) => a.label.localeCompare(b.label)) || []
           )
         }
       } catch (error) {
@@ -134,14 +211,23 @@ export function DemographicsSection() {
       <div className="space-y-4 border-t border-border pt-6">
         <h3 className="text-lg font-medium text-foreground">Professional</h3>
         
-        <SelectField
-          label="Experience Level"
-          value={isEditing ? formData.experience_level : profile?.experience_level}
-          onChange={(value) => handleFieldChange('experience_level', value)}
-          options={experienceLevelOptions}
-          placeholder="Select experience level"
-          className={isEditing ? '' : 'pointer-events-none'}
-        />
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">
+            {getExperienceLevelLabel(isEditing ? formData.primary_skill : profile?.primary_skill)}
+          </label>
+          <p className="text-xs text-muted-foreground">
+            {getExperienceLevelHelpText(isEditing ? formData.primary_skill : profile?.primary_skill)}
+          </p>
+          <SelectField
+            label=""
+            value={isEditing ? formData.experience_level : profile?.experience_level}
+            onChange={(value) => handleFieldChange('experience_level', value)}
+            options={experienceLevelOptions}
+            placeholder="Select experience level"
+            className={isEditing ? '' : 'pointer-events-none'}
+            disabled={!isEditing || !(isEditing ? formData.primary_skill : profile?.primary_skill)}
+          />
+        </div>
 
         <SelectField
           label="Availability Status"
@@ -175,7 +261,7 @@ export function DemographicsSection() {
             label="Country"
             value={isEditing ? formData.country : profile?.country}
             onChange={(value) => handleFieldChange('country', value)}
-            options={nationalityOptions}
+            options={countryOptions}
             placeholder={loadingOptions ? "Loading countries..." : "Select country..."}
             className={isEditing ? '' : 'pointer-events-none'}
           />

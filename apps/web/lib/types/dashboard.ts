@@ -85,6 +85,7 @@ export interface UserProfile {
   comfortable_with_nudity?: boolean
   comfortable_with_intimate_content?: boolean
   requires_model_release?: boolean
+  profile_completion_percentage?: number
 }
 
 export interface BannerPosition {

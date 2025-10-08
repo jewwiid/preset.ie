@@ -1190,9 +1190,9 @@ function CreatePresetPageContent() {
                       </div>
 
                       <div>
-                        <Label htmlFor="generation_mode">Generation Mode</Label>
+                        <Label htmlFor="generation_mode">Recommended Input Mode</Label>
                         <Select
-                          value={presetData.technical_settings.generation_mode}
+                          value={presetData.technical_settings.generation_mode || 'flexible'}
                           onValueChange={(value) => setPresetData(prev => ({
                             ...prev,
                             technical_settings: { ...prev.technical_settings, generation_mode: value }
@@ -1202,11 +1202,14 @@ function CreatePresetPageContent() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="text-to-image">Text to Image</SelectItem>
-                            <SelectItem value="image-to-image">Image to Image</SelectItem>
+                            <SelectItem value="text-to-image">Text → Image (Best with text prompts)</SelectItem>
+                            <SelectItem value="image-to-image">Image → Image (Best with base image)</SelectItem>
+                            <SelectItem value="flexible">Flexible (Works with both)</SelectItem>
                           </SelectContent>
                         </Select>
-                        <p className="text-sm text-muted-foreground mt-1">Default generation mode</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Guides users on the best way to use this preset. Users can still override this.
+                        </p>
                       </div>
                     </div>
                   </CardContent>

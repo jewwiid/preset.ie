@@ -177,10 +177,10 @@ export default function LocationScheduleStep({
             required
             value={location}
             onChange={(e) => onLocationChange(e.target.value)}
-            placeholder="e.g., Downtown Studio, Central Park, Dublin City Centre"
+            placeholder="e.g., Manchester, United Kingdom  •  Dublin, Ireland  •  Paris, France"
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Be specific about the location to help talent plan their journey
+            💡 Use format: <strong>City, Country</strong> (e.g., "London, United Kingdom") to help talent find and filter gigs
           </p>
         </div>
 

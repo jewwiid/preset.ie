@@ -386,7 +386,7 @@ export function Component() {
         const { files } = await response.json();
         return files;
       }
-    } catch (error) {
+    } catch {
       console.warn('Failed to get file paths from API, using fallback');
     }
     

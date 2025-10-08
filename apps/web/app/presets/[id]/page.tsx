@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from '../../../lib/auth-context'
-import { 
-  Palette, 
-  Download, 
-  Share2, 
-  PlayCircle, 
-  Heart, 
+import {
+  Palette,
+  Download,
+  Share2,
+  PlayCircle,
+  Heart,
   MessageCircle,
   User,
   Calendar,
@@ -18,7 +18,9 @@ import {
   Copy,
   ExternalLink,
   ArrowLeft,
-  CheckCircle
+  CheckCircle,
+  Sparkles,
+  Video
 } from 'lucide-react'
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
@@ -40,8 +42,10 @@ interface Preset {
   usage_count: number
   is_public: boolean
   is_featured: boolean
+  generation_mode?: 'image' | 'video' | 'both'
   created_at: string
   updated_at: string
+  last_used_at?: string
   creator: {
     id: string
     display_name: string
@@ -95,6 +99,50 @@ interface ShowcaseUsingPreset {
   updated_at: string
 }
 
+// Helper function to format relative time
+const getRelativeTime = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (diffInSeconds < 60) return 'just now'
+
+  const minutes = Math.floor(diffInSeconds / 60)
+  if (diffInSeconds < 3600) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`
+
+  const hours = Math.floor(diffInSeconds / 3600)
+  if (diffInSeconds < 86400) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+
+  const days = Math.floor(diffInSeconds / 86400)
+  if (diffInSeconds < 604800) return `${days} day${days === 1 ? '' : 's'} ago`
+
+  const weeks = Math.floor(diffInSeconds / 604800)
+  if (diffInSeconds < 2592000) return `${weeks} week${weeks === 1 ? '' : 's'} ago`
+
+  const months = Math.floor(diffInSeconds / 2592000)
+  if (diffInSeconds < 31536000) return `${months} month${months === 1 ? '' : 's'} ago`
+
+  const years = Math.floor(diffInSeconds / 31536000)
+  return `${years} year${years === 1 ? '' : 's'} ago`
+}
+
+// Helper function for last used display (shows both relative time and date if > 1 day)
+const getLastUsedDisplay = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  // Less than 24 hours - show only relative time
+  if (diffInSeconds < 86400) {
+    return getRelativeTime(dateString)
+  }
+
+  // More than 24 hours - show relative time + date
+  const relativeTime = getRelativeTime(dateString)
+  const dateDisplay = date.toLocaleDateString()
+  return `${relativeTime} (${dateDisplay})`
+}
+
 const CATEGORIES = {
   photography: { label: 'Photography', icon: '📸', color: 'bg-primary/10 text-primary' },
   cinematic: { label: 'Cinematic', icon: '🎬', color: 'bg-primary/10 text-primary' },
@@ -122,7 +170,6 @@ export default function PresetDetailPage() {
   const { user, session, userRole } = useAuth()
   
   const [preset, setPreset] = useState<Preset | null>(null)
-  const [samples, setSamples] = useState<PresetSample[]>([])
   const [showcases, setShowcases] = useState<ShowcaseUsingPreset[]>([])
   const [examples, setExamples] = useState<any[]>([])
   const [examplesLoading, setExamplesLoading] = useState(false)
@@ -135,7 +182,6 @@ export default function PresetDetailPage() {
   useEffect(() => {
     if (params?.id) {
       fetchPreset()
-      fetchSamples()
       fetchShowcases()
       fetchExamples()
     }
@@ -163,21 +209,6 @@ export default function PresetDetailPage() {
       setError('Failed to load preset')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchSamples = async () => {
-    if (!params?.id) return
-    try {
-      const response = await fetch(`/api/presets/${params.id}/samples`)
-      
-      if (response.ok) {
-        const data = await response.json()
-        setSamples(data.samples || [])
-      }
-    } catch (err) {
-      console.error('Error fetching samples:', err)
-      // Don't set error state for samples, just log it
     }
   }
 
@@ -272,47 +303,36 @@ export default function PresetDetailPage() {
     }
   }
 
-  const verifyAsSample = async (example: any) => {
+  const promoteExample = async (example: any) => {
     if (!user || !preset || !session) return
 
-    console.log('Session object:', session)
-    console.log('Access token:', session.access_token)
-
     try {
-      const response = await fetch(`/api/presets/${preset.id}/samples`, {
-        method: 'POST',
+      const response = await fetch(`/api/presets/${preset.id}`, {
+        method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          sourceImageUrl: example.images[0]?.url,
-          sourceImageHash: 'placeholder_hash', // In production, calculate actual hash
-          resultImageUrl: example.images[0]?.url,
-          resultImageHash: 'placeholder_hash', // In production, calculate actual hash
-          generationId: example.id,
-          generationProvider: 'nanobanana',
-          generationModel: 'baroque-style',
-          generationCredits: 1,
-          prompt: example.prompt,
-          negativePrompt: '',
-          generationSettings: {}
+          action: 'promote',
+          exampleId: example.id
         })
       })
 
-      if (response.ok) {
-        // Refresh both samples and examples to update UI
-        fetchSamples()
-        fetchExamples()
-        // Show success message
-        console.log('Example verified as sample successfully!')
-      } else {
-        const error = await response.json()
-        alert(`Failed to verify sample: ${error.error}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Promote failed:', response.status, errorData)
+        throw new Error(errorData.error || 'Failed to promote example')
       }
+
+      const result = await response.json()
+      console.log('Promote successful:', result)
+
+      // Refresh examples to show the updated promoted status
+      fetchExamples()
     } catch (error) {
-      console.error('Error verifying sample:', error)
-      alert('Failed to verify sample')
+      console.error('Error promoting example:', error)
+      alert('Failed to promote example')
     }
   }
 
@@ -347,99 +367,146 @@ export default function PresetDetailPage() {
 
   const categoryInfo = CATEGORIES[preset.category as keyof typeof CATEGORIES] || CATEGORIES.custom
 
+  // Get promoted examples for background
+  const promotedExamples = examples.filter(ex => ex.is_verified).slice(0, 6)
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            {/* Back Button */}
-            <div className="mb-4">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => router.push('/presets')}
-                className="flex items-center"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Presets
-              </Button>
-            </div>
-            
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <Badge className={categoryInfo.color}>
-                    {categoryInfo.icon} {categoryInfo.label}
-                  </Badge>
-                  {preset.is_featured && (
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      ⭐ Featured
-                    </Badge>
+      {/* Hero Header with Masonry Background */}
+      <div className="relative bg-card border-b border-border overflow-hidden">
+        {/* Masonry Grid Background */}
+        {promotedExamples.length > 0 && (
+          <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <div className="grid grid-cols-3 gap-2 h-full p-4">
+              {promotedExamples.map((example, idx) => (
+                <div
+                  key={example.id}
+                  className={`relative overflow-hidden rounded-lg ${
+                    idx % 3 === 0 ? 'row-span-2' :
+                    idx % 3 === 1 ? 'row-span-1' :
+                    'row-span-2'
+                  }`}
+                >
+                  {example.images?.[0]?.url && (
+                    <Image
+                      src={example.images[0].url}
+                      alt=""
+                      fill
+                      className="object-cover"
+                      loading="lazy"
+                    />
                   )}
                 </div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">{preset.name}</h1>
-                {/* Show approval status for preset creators */}
-                {user && preset.creator.id === user.id && (
-                  <div className="mb-4">
-                    <ApprovalStatusBadge presetId={preset.id} isCreator={true} />
-                  </div>
-                )}
-                {preset.description && (
-                  <p className="text-muted-foreground text-lg">{preset.description}</p>
-                )}
-              </div>
-              <div className="flex items-center space-x-3">
-                <Button variant="outline" onClick={sharePreset}>
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
-                <Button 
-                  variant={isLiked ? "default" : "outline"}
-                  onClick={toggleLike}
-                  disabled={!user}
-                >
-                  <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-                  {likeCount}
-                </Button>
-                <Button onClick={useInPlayground}>
-                  <Wand2 className="h-4 w-4 mr-2" />
-                  Use in Playground
-                </Button>
-              </div>
+              ))}
             </div>
-            
-            {/* Creator Info */}
-            <div className="flex items-center space-x-4 mt-4 pt-4 border-t border-border">
-              <div className="flex items-center space-x-2">
-                {preset.creator.avatar_url ? (
-                  <img
-                    src={preset.creator.avatar_url}
-                    alt={preset.creator.display_name}
-                    className="w-8 h-8 rounded-full"
-                  />
-                ) : (
-                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-foreground">
-                      {preset.creator.display_name.charAt(0)}
-                    </span>
+          </div>
+        )}
+
+        {/* Content Overlay */}
+        <div className="relative z-10 bg-background/80 backdrop-blur-sm">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="py-6">
+              {/* Back Button */}
+              <div className="mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push('/presets')}
+                  className="flex items-center"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Presets
+                </Button>
+              </div>
+
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Badge className={categoryInfo.color}>
+                      {categoryInfo.icon} {categoryInfo.label}
+                    </Badge>
+                    {preset.is_featured && (
+                      <Badge variant="secondary" className="bg-primary/10 text-primary">
+                        ⭐ Featured
+                      </Badge>
+                    )}
+                    {/* Recommended Mode Badge */}
+                    {preset.technical_settings?.generation_mode && preset.technical_settings.generation_mode !== 'flexible' && (
+                      <Badge variant="outline" className="border-blue-500 text-blue-600">
+                        {preset.technical_settings.generation_mode === 'text-to-image' && '📝 Best for: Text → Image'}
+                        {preset.technical_settings.generation_mode === 'image-to-image' && '🖼️ Best for: Image → Image'}
+                      </Badge>
+                    )}
                   </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {preset.creator.display_name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">@{preset.creator.handle}</p>
+                  <h1 className="text-3xl font-bold text-foreground mb-2">{preset.name}</h1>
+                  {/* Show approval status for preset creators */}
+                  {user && preset.creator.id === user.id && (
+                    <div className="mb-4">
+                      <ApprovalStatusBadge presetId={preset.id} isCreator={true} />
+                    </div>
+                  )}
+                  {preset.description && (
+                    <p className="text-muted-foreground text-lg">{preset.description}</p>
+                  )}
+                </div>
+                <div className="flex items-center space-x-3">
+                  <Button variant="outline" onClick={sharePreset}>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                  <Button
+                    variant={isLiked ? "default" : "outline"}
+                    onClick={toggleLike}
+                    disabled={!user}
+                  >
+                    <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+                    {likeCount}
+                  </Button>
+                  <Button onClick={useInPlayground}>
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Use in Playground
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                <div className="flex items-center">
-                  <PlayCircle className="h-4 w-4 mr-1" />
-                  {preset.usage_count} uses
+
+              {/* Creator Info */}
+              <div className="flex items-center space-x-4 mt-4 pt-4 border-t border-border">
+                <div className="flex items-center space-x-2">
+                  {preset.creator.avatar_url ? (
+                    <img
+                      src={preset.creator.avatar_url}
+                      alt={preset.creator.display_name}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-foreground">
+                        {preset.creator.display_name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {preset.creator.display_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">@{preset.creator.handle}</p>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  {new Date(preset.created_at).toLocaleDateString()}
+                <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                  <div className="flex items-center">
+                    <PlayCircle className="h-4 w-4 mr-1" />
+                    {preset.usage_count} uses
+                  </div>
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    {new Date(preset.created_at).toLocaleDateString()}
+                  </div>
+                  {preset.last_used_at && (
+                    <div className="flex items-center" title={new Date(preset.last_used_at).toLocaleString()}>
+                      <Sparkles className="h-4 w-4 mr-1" />
+                      {getLastUsedDisplay(preset.last_used_at)}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -449,13 +516,12 @@ export default function PresetDetailPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="samples">Samples ({samples.length})</TabsTrigger>
+            <TabsTrigger value="examples">Gallery ({examples.length})</TabsTrigger>
             <TabsTrigger value="showcases">Showcases ({showcases.length})</TabsTrigger>
             <TabsTrigger value="prompts">Prompts</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
-            <TabsTrigger value="examples">Examples ({examples.length})</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -567,132 +633,88 @@ export default function PresetDetailPage() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
 
-          {/* Samples Tab */}
-          <TabsContent value="samples" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  Sample Images
-                  <Badge variant="secondary" className="ml-2">
-                    {samples.length} samples
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {samples.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Palette className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-foreground mb-2">No sample images yet</h3>
-                    <p className="text-muted-foreground mb-4">
-                      This preset doesn't have any sample images yet.
-                    </p>
-                    {(preset?.creator.id === user?.id || userRole?.isAdmin) && (
-                      <p className="text-sm text-muted-foreground">
-                        {preset?.creator.id === user?.id 
-                          ? "As the creator, you can add verified samples from your actual generations."
-                          : "As an admin, you can add verified samples for this system preset."
-                        }
-                      </p>
+            {/* Video Generation Support Section */}
+            {(preset.generation_mode === 'both' || preset.generation_mode === 'video') && (
+              <Card className="border-green-200 bg-green-50/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-700">
+                    <Video className="h-5 w-5" />
+                    Video Generation Support
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Main Badge */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className="border-green-500 text-green-600 bg-green-100">
+                      🎬 Supports Video Generation
+                    </Badge>
+
+                    {/* Mode-specific badges */}
+                    {preset.technical_settings?.generation_mode === 'flexible' && (
+                      <>
+                        <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50">
+                          📝 Text-to-Video
+                        </Badge>
+                        <Badge variant="outline" className="border-purple-500 text-purple-600 bg-purple-50">
+                          🖼️ Image-to-Video
+                        </Badge>
+                      </>
+                    )}
+
+                    {preset.technical_settings?.generation_mode === 'text-to-image' && (
+                      <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50">
+                        📝 Best for Text-to-Video
+                      </Badge>
+                    )}
+
+                    {preset.technical_settings?.generation_mode === 'image-to-image' && (
+                      <Badge variant="outline" className="border-purple-500 text-purple-600 bg-purple-50">
+                        🖼️ Best for Image-to-Video
+                      </Badge>
                     )}
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {samples.map((sample) => (
-                      <Card key={sample.id} className="overflow-hidden">
-                        <div className="grid grid-cols-2">
-                          {/* Source Image */}
-                          <div className="relative bg-muted/20">
-                            {sample.source_image_url ? (
-                              <>
-                                <img
-                                  src={sample.source_image_url}
-                                  alt="Source image"
-                                  className="w-full h-48 object-cover"
-                                />
-                                <div className="absolute top-2 left-2">
-                                  <Badge variant="secondary" className="text-xs">
-                                    Source
-                                  </Badge>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="w-full h-48 flex items-center justify-center">
-                                <div className="text-center text-muted-foreground">
-                                  <Wand2 className="h-8 w-8 mx-auto mb-2" />
-                                  <p className="text-sm">Text-to-Image</p>
-                                  <p className="text-xs">No source image</p>
-                                </div>
-                                <div className="absolute top-2 left-2">
-                                  <Badge variant="secondary" className="text-xs">
-                                    Prompt
-                                  </Badge>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Result Image */}
-                          <div className="relative">
-                            <img
-                              src={sample.result_image_url}
-                              alt="Generated result"
-                              className="w-full h-48 object-cover"
-                            />
-                            <div className="absolute top-2 left-2">
-                              <Badge variant="default" className="text-xs bg-primary">
-                                Result
-                              </Badge>
-                            </div>
-                            <div className="absolute top-2 right-2">
-                              <Badge variant="outline" className="text-xs bg-background">
-                                ✓ Verified
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <CardContent className="p-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>
-                                {(() => {
-                                  // Format provider/model names nicely
-                                  const formatName = (name: string) => {
-                                    return name
-                                      .replace(/-v\d+/g, ' V$&'.replace('-v', '')) // Convert -v4 to V4
-                                      .replace(/seedream/gi, 'Seedream')
-                                      .replace(/nanobanana/gi, 'Nanobanana')
-                                      .replace(/wavespeed/gi, 'Wavespeed')
-                                      .replace(/dalle/gi, 'DALL-E')
-                                      .replace(/midjourney/gi, 'Midjourney')
-                                      .replace(/stable-diffusion/gi, 'Stable Diffusion');
-                                  };
 
-                                  // Determine what to show
-                                  if (sample.generation_model) {
-                                    return formatName(sample.generation_model);
-                                  }
-                                  if (sample.generation_provider) {
-                                    return formatName(sample.generation_provider);
-                                  }
-                                  return 'Unknown';
-                                })()}
-                              </span>
-                              <span>{new Date(sample.created_at).toLocaleDateString()}</span>
-                            </div>
-                            <p className="text-sm text-foreground line-clamp-2">
-                              {sample.prompt_used}
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                  {/* Provider Compatibility */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Compatible Providers:</p>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      {preset.technical_settings?.generation_mode === 'flexible' ? (
+                        <>
+                          <p>• <strong>Seedream:</strong> Image-to-video mode</p>
+                          <p>• <strong>Wan:</strong> Both text-to-video and image-to-video modes</p>
+                        </>
+                      ) : preset.technical_settings?.generation_mode === 'text-to-image' ? (
+                        <>
+                          <p>• <strong>Wan:</strong> Text-to-video mode (recommended)</p>
+                          <p>• <strong>Seedream:</strong> Requires an image for image-to-video</p>
+                        </>
+                      ) : preset.technical_settings?.generation_mode === 'image-to-image' ? (
+                        <>
+                          <p>• <strong>Seedream:</strong> Image-to-video mode (optimal)</p>
+                          <p>• <strong>Wan:</strong> Image-to-video mode</p>
+                        </>
+                      ) : (
+                        <>
+                          <p>• <strong>Seedream:</strong> Image-to-video mode</p>
+                          <p>• <strong>Wan:</strong> Both text-to-video and image-to-video modes</p>
+                        </>
+                      )}
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  {/* Use in Video Generator Button */}
+                  <Button
+                    onClick={() => router.push(`/playground?tab=video&preset=${preset.id}`)}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Video className="h-4 w-4 mr-2" />
+                    Use in Video Generator
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Showcases Tab */}
@@ -1001,11 +1023,18 @@ export default function PresetDetailPage() {
             </div>
           </TabsContent>
 
-          {/* Examples Tab */}
+          {/* Gallery Tab */}
           <TabsContent value="examples" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Example Generations ({examples.length})</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Gallery ({examples.length})</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {examples.filter(ex => ex.is_verified).length} Promoted
+                    </Badge>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {examplesLoading ? (
@@ -1033,41 +1062,46 @@ export default function PresetDetailPage() {
                         )}
                         <div className="p-4 space-y-3">
                           <div className="space-y-2">
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                              {example.creator.avatar_url ? (
-                                <img 
-                                  src={example.creator.avatar_url} 
-                                  alt={example.creator.display_name}
-                                  className="h-4 w-4 rounded-full object-cover flex-shrink-0"
-                                />
-                              ) : (
-                                <User className="h-4 w-4 flex-shrink-0" />
-                              )}
-                              <span className="truncate">@{example.creator.handle}</span>
-                              <span>•</span>
-                              <Calendar className="h-4 w-4 flex-shrink-0" />
-                              <span className="whitespace-nowrap">{new Date(example.created_at).toLocaleDateString()}</span>
-                              {example.is_verified && (
-                                <>
-                                  <span>•</span>
-                                  <CheckCircle className="h-4 w-4 text-primary-500 flex-shrink-0" />
-                                  <span className="text-primary-600 font-medium">Verified</span>
-                                </>
-                              )}
-                            </div>
-                            {(preset?.creator.id === user?.id || userRole?.isAdmin) && !example.is_verified && (
-                              <div className="flex justify-end">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex flex-col gap-1 text-sm text-muted-foreground flex-1 min-w-0">
+                                <div className="flex items-center space-x-2">
+                                  {example.creator.avatar_url ? (
+                                    <img
+                                      src={example.creator.avatar_url}
+                                      alt={example.creator.display_name}
+                                      className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                                    />
+                                  ) : (
+                                    <User className="h-8 w-8 flex-shrink-0" />
+                                  )}
+                                  <span className="truncate">@{example.creator.handle}</span>
+                                </div>
+                                <div className="flex items-center space-x-2 text-xs">
+                                  <Calendar className="h-3 w-3 flex-shrink-0" />
+                                  <span className="whitespace-nowrap" title={new Date(example.created_at).toLocaleString()}>
+                                    {getRelativeTime(example.created_at)}
+                                  </span>
+                                  {example.is_verified && (
+                                    <>
+                                      <span>•</span>
+                                      <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
+                                      <span className="text-green-600 font-medium">Promoted</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                              {userRole?.isAdmin && !example.is_verified && (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() => verifyAsSample(example)}
-                                  className="text-xs"
+                                  onClick={() => promoteExample(example)}
+                                  className="text-xs flex-shrink-0"
                                 >
                                   <CheckCircle className="h-3 w-3 mr-1" />
-                                  Verify
+                                  Promote
                                 </Button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
                           <h4 className="font-medium text-sm line-clamp-2">{example.title}</h4>
                         </div>

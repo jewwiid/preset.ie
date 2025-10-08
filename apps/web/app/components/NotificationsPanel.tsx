@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
-import { Bell, CheckCircle, X, ExternalLink, Palette, Users, Shield } from 'lucide-react'
+import { Bell, CheckCircle, X, ExternalLink, Palette, Users, Shield, RefreshCw } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
@@ -166,9 +166,20 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
               </Badge>
             )}
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={fetchNotifications}
+              disabled={loading}
+              title="Refresh notifications"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         
         <CardContent className="flex-1 overflow-hidden">

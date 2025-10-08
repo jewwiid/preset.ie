@@ -20,7 +20,14 @@
         "STRIPE_SECRET_KEY",
         "NODE_ENV",
         "IMAGE_PROVIDER",
-        "WAVESPEED_API_KEY"
+        "WAVESPEED_API_KEY",
+        "AI_TREATMENT_MODEL",
+        "FROM_EMAIL",
+        "FROM_NAME",
+        "GOOGLE_WORKSPACE_DOMAIN",
+        "GOOGLE_WORKSPACE_SERVICE_ACCOUNT_EMAIL",
+        "GOOGLE_WORKSPACE_PRIVATE_KEY",
+        "GOOGLE_WORKSPACE_PROJECT_ID"
       ]
     },
     "lint": {
@@ -38,7 +45,14 @@
         "STRIPE_SECRET_KEY",
         "NODE_ENV",
         "IMAGE_PROVIDER",
-        "WAVESPEED_API_KEY"
+        "WAVESPEED_API_KEY",
+        "AI_TREATMENT_MODEL",
+        "FROM_EMAIL",
+        "FROM_NAME",
+        "GOOGLE_WORKSPACE_DOMAIN",
+        "GOOGLE_WORKSPACE_SERVICE_ACCOUNT_EMAIL",
+        "GOOGLE_WORKSPACE_PRIVATE_KEY",
+        "GOOGLE_WORKSPACE_PROJECT_ID"
       ]
     },
     "check-types": {

@@ -148,77 +148,30 @@ export default function SimilarTalentSlim({ gigId, className = "" }: SimilarTale
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="flex gap-4 overflow-x-auto pb-2">
           {talent.map((profile) => (
             <div
               key={profile.id}
-              className="flex-shrink-0 w-48 bg-muted/20 rounded-lg p-3 border border-border hover:bg-muted/40 transition-colors cursor-pointer group"
+              className="flex-shrink-0 group cursor-pointer"
               onClick={() => router.push(`/users/${profile.handle}`)}
             >
-              <div className="flex items-center gap-3">
+              <div className="relative">
                 {/* Avatar */}
-                <Avatar className="w-12 h-12 border border-border">
-                  <AvatarImage 
-                    src={profile.avatar_url || undefined} 
+                <Avatar className="w-20 h-20 border-2 border-border group-hover:border-primary transition-colors">
+                  <AvatarImage
+                    src={profile.avatar_url || undefined}
                     alt={profile.display_name}
                   />
-                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
                     {profile.display_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
                   </AvatarFallback>
                 </Avatar>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-foreground truncate">
-                      {profile.display_name}
-                    </h4>
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs ${getCompatibilityColor(profile.compatibility_score || 0)}`}
-                    >
-                      {profile.compatibility_score}%
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    {profile.city && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="w-3 h-3" />
-                        <span className="truncate">{profile.city}</span>
-                      </div>
-                    )}
-                    
-                    {profile.years_experience && (
-                      <div className="text-xs text-muted-foreground">
-                        {profile.years_experience} years experience
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Specializations */}
-              {profile.specializations && profile.specializations.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {profile.specializations.slice(0, 2).map((spec, index) => (
-                    <Badge key={index} variant="outline" className="text-xs py-0 px-1">
-                      {spec}
-                    </Badge>
-                  ))}
-                  {profile.specializations.length > 2 && (
-                    <Badge variant="outline" className="text-xs py-0 px-1">
-                      +{profile.specializations.length - 2}
-                    </Badge>
-                  )}
-                </div>
-              )}
-
-              {/* Hover indicator */}
-              <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{getCompatibilityLabel(profile.compatibility_score || 0)}</span>
-                  <ExternalLink className="w-3 h-3" />
+                {/* Compatibility Badge - Overlay on bottom */}
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+                  <Badge className="text-xs font-bold px-2 py-1 shadow-lg bg-primary text-primary-foreground">
+                    {profile.compatibility_score}%
+                  </Badge>
                 </div>
               </div>
             </div>
@@ -227,9 +180,9 @@ export default function SimilarTalentSlim({ gigId, className = "" }: SimilarTale
 
         {/* View All Button */}
         {talent.length >= 6 && (
-          <div className="mt-4 text-center">
-            <Button 
-              variant="outline" 
+          <div className="mt-6 text-center">
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => router.push(`/gigs/${gigId}/applications`)}
             >

@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Wand2 } from 'lucide-react'
+import { Wand2, Sparkles } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
 import CinematicParameterSelector from '../cinematic/CinematicParameterSelector'
 import { CinematicParameters } from '../../../../../packages/types/src/cinematic-parameters'
 import { VideoProviderSelector } from '../VideoProviderSelector'
@@ -49,6 +50,7 @@ interface VideoGenerationPanelProps {
   onAspectRatioChange?: (aspectRatio: string) => void
   onResolutionChange?: (resolution: string) => void
   onActiveImageChange?: (imageUrl: string | null) => void
+  selectedPreset?: any
 }
 
 export default function VideoGenerationPanel({
@@ -63,6 +65,7 @@ export default function VideoGenerationPanel({
   selectedProvider = 'seedream',
   onProviderChange,
   onPromptChange,
+  selectedPreset,
   onAspectRatioChange,
   onResolutionChange,
   onActiveImageChange
@@ -102,6 +105,32 @@ export default function VideoGenerationPanel({
   const [includeStyleReferences, setIncludeStyleReferences] = useState(true)
   const [enhancedPrompt, setEnhancedPrompt] = useState('')
 
+  // Load preset when selectedPreset changes
+  useEffect(() => {
+    if (selectedPreset) {
+      console.log('🎬 Loading video preset:', selectedPreset)
+
+      // Set prompt from preset
+      if (selectedPreset.prompt_template_video || selectedPreset.prompt_template) {
+        const promptToUse = selectedPreset.prompt_template_video || selectedPreset.prompt_template
+        setVideoPrompt(promptToUse)
+        console.log('🎬 Set video prompt from preset:', promptToUse)
+      }
+
+      // Set aspect ratio from preset
+      if (selectedPreset.technical_settings?.aspect_ratio) {
+        setSelectedAspectRatio(selectedPreset.technical_settings.aspect_ratio)
+        onAspectRatioChange?.(selectedPreset.technical_settings.aspect_ratio)
+      }
+
+      // Set cinematic parameters if available
+      if (selectedPreset.cinematic_settings) {
+        setEnableCinematicMode(true)
+        setCinematicParameters(selectedPreset.cinematic_settings.cinematicParameters || {})
+      }
+    }
+  }, [selectedPreset])
+
   // Auto-enable cinematic mode when parameters are selected
   useEffect(() => {
     const hasParameters = Object.keys(cinematicParameters).length > 0 &&
@@ -113,8 +142,7 @@ export default function VideoGenerationPanel({
     }
   }, [cinematicParameters, enableCinematicMode])
 
-  // Preset state
-  const [selectedPreset, setSelectedPreset] = useState<any>(null)
+  // Preset applied state (selectedPreset now comes from props)
   const [isPresetApplied, setIsPresetApplied] = useState(false)
 
   // Helper function to get current image
@@ -414,7 +442,6 @@ export default function VideoGenerationPanel({
     setMotionType('subtle')
     setVideoResolution('480p')
     setSelectedAspectRatio(aspectRatio)
-    setSelectedPreset(null)
 
     showFeedback({
       type: 'success',
@@ -425,11 +452,8 @@ export default function VideoGenerationPanel({
 
   const handlePresetSelect = useCallback((preset: any) => {
     if (!preset) {
-      setSelectedPreset(null)
       return
     }
-
-    setSelectedPreset(preset)
 
     // Apply prompt template with subject replacement
     // Uses video-specific template if available, otherwise adapts image template
@@ -633,6 +657,63 @@ export default function VideoGenerationPanel({
           }}
         />
 
+        {/* Video Mode Badge for Selected Preset */}
+        {selectedPreset && (
+          <div className="flex items-center gap-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-medium">Video Support:</span>
+              {(() => {
+                const mode = selectedPreset.technical_settings?.generation_mode
+
+                if (mode === 'text-to-image') {
+                  return (
+                    <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50">
+                      📝 Best for: Text-to-Video
+                    </Badge>
+                  )
+                }
+
+                if (mode === 'image-to-image') {
+                  return (
+                    <Badge variant="outline" className="border-purple-500 text-purple-600 bg-purple-50">
+                      🎬 Best for: Image-to-Video
+                    </Badge>
+                  )
+                }
+
+                // Flexible mode
+                return (
+                  <>
+                    <Badge variant="outline" className="border-green-500 text-green-600 bg-green-50">
+                      ✨ Works with Both
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      (Text-to-Video & Image-to-Video)
+                    </span>
+                  </>
+                )
+              })()}
+            </div>
+
+            {/* Provider Compatibility */}
+            <div className="ml-auto text-xs text-muted-foreground">
+              {(() => {
+                const mode = selectedPreset.technical_settings?.generation_mode
+
+                if (selectedProvider === 'seedream') {
+                  if (mode === 'text-to-image') {
+                    return '⚠️ Better with Wan'
+                  }
+                  return '✅ Compatible with Seedream'
+                } else {
+                  // Wan provider
+                  return '✅ Compatible with Wan'
+                }
+              })()}
+            </div>
+          </div>
+        )}
+
         {/* Generation Mode Info */}
         <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
           <Label className="text-sm font-medium">
@@ -682,6 +763,82 @@ export default function VideoGenerationPanel({
             </div>
           </div>
         )}
+
+        {/* Provider-Aware Preset Hints */}
+        {selectedPreset && (() => {
+          const mode = selectedPreset.technical_settings?.generation_mode
+          const hasImage = !!getCurrentImage()
+
+          // Seedream + text-to-image preset + no image
+          if (selectedProvider === 'seedream' && mode === 'text-to-image' && !hasImage) {
+            return (
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <Sparkles className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-blue-700">
+                    💡 Preset Recommendation
+                  </p>
+                  <p className="text-xs text-blue-600/80 mt-0.5">
+                    This preset works best with text prompts, but Seedream requires an image. Switch to <strong>Wan provider</strong> for text-to-video or upload an image below.
+                  </p>
+                </div>
+              </div>
+            )
+          }
+
+          // Wan + image-to-image preset + no image
+          if (selectedProvider === 'wan' && mode === 'image-to-image' && !hasImage) {
+            return (
+              <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                <Sparkles className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-purple-700">
+                    💡 Preset Recommendation
+                  </p>
+                  <p className="text-xs text-purple-600/80 mt-0.5">
+                    This preset is optimized for <strong>image-to-video</strong>. Upload or select an image from the "Image Source" section below for best results.
+                  </p>
+                </div>
+              </div>
+            )
+          }
+
+          // Any provider + text-to-image preset + has image
+          if (mode === 'text-to-image' && hasImage) {
+            return (
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <Sparkles className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-blue-700">
+                    💡 Preset Recommendation
+                  </p>
+                  <p className="text-xs text-blue-600/80 mt-0.5">
+                    This preset works best with <strong>text prompts only</strong>. Consider removing the image or switching to a different preset for image-to-video.
+                  </p>
+                </div>
+              </div>
+            )
+          }
+
+          // Seedream + flexible preset + no image
+          if (selectedProvider === 'seedream' && mode === 'flexible' && !hasImage) {
+            return (
+              <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <Sparkles className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-green-700">
+                    💡 Preset Recommendation
+                  </p>
+                  <p className="text-xs text-green-600/80 mt-0.5">
+                    This flexible preset works with both modes, but Seedream requires an image. Upload an image below or switch to <strong>Wan provider</strong> for text-to-video.
+                  </p>
+                </div>
+              </div>
+            )
+          }
+
+          return null
+        })()}
 
         {/* Style Selector */}
         <div className="space-y-2">

@@ -206,8 +206,6 @@ export const replaceSubjectInTemplate = (
   subject: string,
   generationMode: 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video'
 ): string => {
-  const isVideoMode = generationMode === 'text-to-video' || generationMode === 'image-to-video'
-
   if (generationMode === 'image-to-image' || generationMode === 'image-to-video') {
     // For image-to-image/video, replace {subject} with "this image"
     if (template.includes('{subject}')) {
@@ -236,7 +234,7 @@ export const replaceSubjectInTemplate = (
  * Prefers video-specific template for video modes, falls back to image template with adaptation
  */
 export const getPromptTemplateForMode = (
-  preset: any,
+  preset: Record<string, unknown>,
   generationMode: 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video'
 ): string => {
   const isVideoMode = generationMode === 'text-to-video' || generationMode === 'image-to-video'
@@ -244,16 +242,16 @@ export const getPromptTemplateForMode = (
   if (isVideoMode) {
     // Use video-specific template if available
     if (preset.prompt_template_video) {
-      return preset.prompt_template_video
+      return preset.prompt_template_video as string
     }
     // Otherwise adapt image template
     if (preset.prompt_template) {
-      return adaptTemplateForVideo(preset.prompt_template)
+      return adaptTemplateForVideo(preset.prompt_template as string)
     }
   }
 
   // For image modes, use image template
-  return preset.prompt_template || ''
+  return (preset.prompt_template as string) || ''
 }
 
 /**
@@ -278,7 +276,7 @@ export const adaptTemplateForVideo = (template: string): string => {
 /**
  * Debounce function for search input
  */
-export const debounce = <T extends (...args: any[]) => any>(
+export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {

@@ -1,10 +1,13 @@
 export function debugSession() {
   if (typeof window === 'undefined') return
 
+  // Only run in development
+  if (process.env.NODE_ENV !== 'development') return
+
   console.group('🔐 Session Debug')
   
   // Check localStorage
-  const keys = Object.keys(localStorage).filter(key => 
+  const keys = Object.keys(localStorage).filter(key =>
     key.includes('supabase') || key.includes('auth') || key.includes('preset')
   )
   

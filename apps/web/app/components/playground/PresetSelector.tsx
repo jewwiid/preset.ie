@@ -482,6 +482,29 @@ export default function PresetSelector({
     )
   }
 
+  const getGenerationModeBadge = (preset: Preset) => {
+    const mode = preset.technical_settings?.generation_mode
+    if (!mode || mode === 'flexible') return null
+
+    if (mode === 'text-to-image') {
+      return (
+        <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50">
+          📝 Text → Image
+        </Badge>
+      )
+    }
+
+    if (mode === 'image-to-image') {
+      return (
+        <Badge variant="outline" className="border-purple-500 text-purple-600 bg-purple-50">
+          🖼️ Image → Image
+        </Badge>
+      )
+    }
+
+    return null
+  }
+
   return (
     <div className="space-y-4">
       {/* Preset Selector Header */}
@@ -662,11 +685,12 @@ export default function PresetSelector({
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
                                     {preset.category}
                                   </Badge>
                                   {getPresetTypeBadge(preset.id)}
+                                  {getGenerationModeBadge(preset)}
                                   <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                     <PlayCircle className="h-3 w-3" />
                                     <span>{preset.usage_count}</span>
@@ -695,13 +719,14 @@ export default function PresetSelector({
                               onClick={() => handlePresetSelect(preset)}
                             >
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
                                   <h3 className="font-medium text-sm truncate">{preset.name}</h3>
                                   <Star className="h-3 w-3 text-primary fill-current" />
                                   <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
                                     {preset.category}
                                   </Badge>
                                   {getPresetTypeBadge(preset.id)}
+                                  {getGenerationModeBadge(preset)}
                                   <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                     <PlayCircle className="h-3 w-3" />
                                     <span>{preset.usage_count}</span>
@@ -781,11 +806,12 @@ export default function PresetSelector({
                                   </Button>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
                                   {preset.category}
                                 </Badge>
                                 {getPresetTypeBadge(preset.id)}
+                                {getGenerationModeBadge(preset)}
                                 <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                   <PlayCircle className="h-3 w-3" />
                                   <span>{preset.usage_count}</span>
@@ -845,12 +871,13 @@ export default function PresetSelector({
                             onClick={() => handlePresetSelect(preset)}
                           >
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <h3 className="font-medium text-sm truncate">{preset.name}</h3>
                                 <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
                                   {preset.category}
                                 </Badge>
                                 {getPresetTypeBadge(preset.id)}
+                                {getGenerationModeBadge(preset)}
                                 <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                   <PlayCircle className="h-3 w-3" />
                                   <span>{preset.usage_count}</span>
@@ -1239,16 +1266,33 @@ export default function PresetSelector({
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-sm text-foreground">{selectedPreset.name}</p>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-medium text-sm text-foreground">{selectedPreset.name}</p>
+                  {getGenerationModeBadge(selectedPreset)}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {selectedPreset.description || 'No description'}
                 </p>
+                {/* Contextual Hint based on generation mode */}
+                {selectedPreset.technical_settings?.generation_mode === 'text-to-image' && (
+                  <div className="mt-2 flex items-start gap-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                    <Lightbulb className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>This preset works best with text prompts only</span>
+                  </div>
+                )}
+                {selectedPreset.technical_settings?.generation_mode === 'image-to-image' && (
+                  <div className="mt-2 flex items-start gap-2 text-xs text-purple-600 bg-purple-50 p-2 rounded">
+                    <Lightbulb className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>This preset works best with a base image. Upload or select one for optimal results.</span>
+                  </div>
+                )}
               </div>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => onPresetSelect(null)}
+                className="ml-2"
               >
                 Clear
               </Button>

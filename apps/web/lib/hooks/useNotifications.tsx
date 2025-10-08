@@ -55,7 +55,8 @@ export interface UseNotificationsResult {
   markAllAsRead: () => Promise<void>
   dismiss: (notificationId: string) => Promise<void>
   refresh: () => Promise<void>
-  
+  updatePreferences: (updates: Partial<any>) => Promise<void>
+
   // Filters
   setFilters: (filters: NotificationFilters) => void
   filters: NotificationFilters
@@ -367,73 +368,89 @@ export function useNotifications(): UseNotificationsResult {
     ])
   }, [fetchNotifications, fetchPreferences])
 
-  // Set up real-time subscription
-  useEffect(() => {
+  // Update preferences
+  const updatePreferences = useCallback(async (updates: Partial<any>) => {
     if (!user || !supabase) return
 
-    console.log('Setting up notification real-time subscription for user:', user.id)
-
     try {
-      const channel = supabase
-        .channel(`notifications:${user.id}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `recipient_id=eq.${user.id}`
-        }, (payload) => {
-          const newNotification = payload.new as Notification
-          
-          console.log('Real-time notification received:', newNotification)
+      const { data, error } = await supabase
+        .from('notification_preferences')
+        .update(updates)
+        .eq('user_id', user.id)
+        .select()
+        .single()
 
-          // Add to local state
-          setNotifications(prev => [newNotification, ...prev])
-          setUnreadCount(prev => prev + 1)
-
-          // Show toast notification with enhanced features
-          showFeedback({
-            type: 'notification',
-            title: newNotification.title,
-            message: newNotification.message,
-            avatar: newNotification.avatar_url,
-            actions: newNotification.action_url ? [
-              {
-                label: 'View',
-                action: () => {
-                  if (typeof window !== 'undefined' && newNotification.action_url) {
-                    window.location.href = newNotification.action_url
-                  }
-                },
-                style: 'primary'
-              }
-            ] : undefined,
-            duration: 8000 // Longer duration for notifications
-          })
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('✅ Notification subscription established')
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Notification subscription error')
-          } else if (status === 'TIMED_OUT') {
-            console.warn('⏰ Notification subscription timeout')
-          }
-        })
-
-      return () => {
-        console.log('Cleaning up notification subscription')
-        try {
-          if (supabase) {
-            supabase.removeChannel(channel)
-          }
-        } catch (error) {
-          console.error('Error removing notification channel:', error)
+      if (error) {
+        // If table doesn't exist, just update local state
+        if (error.code === 'PGRST205' || error.message.includes('Could not find the table')) {
+          console.log('Notification preferences table not found, updating local state only')
+          setPreferences(prev => prev ? { ...prev, ...updates } : null)
+          return
         }
+        throw error
       }
-    } catch (error) {
-      console.error('Error setting up notification subscription:', error)
+
+      // Update local state
+      setPreferences(data)
+
+      showFeedback({
+        type: 'success',
+        title: 'Preferences updated',
+        message: 'Your notification preferences have been saved'
+      })
+    } catch (err: any) {
+      console.error('Failed to update preferences:', err)
+      showFeedback({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to update preferences'
+      })
     }
   }, [user, showFeedback])
+
+  // Real-time subscription disabled - using manual refresh instead
+  // TODO: Re-enable when real-time is properly configured in Supabase
+  // useEffect(() => {
+  //   if (!user || !supabase) return
+  //   console.log('Setting up notification real-time subscription for user:', user.id)
+  //   try {
+  //     const channel = supabase
+  //       .channel(`notifications:${user.id}`)
+  //       .on('postgres_changes', {
+  //         event: 'INSERT',
+  //         schema: 'public',
+  //         table: 'notifications',
+  //         filter: `recipient_id=eq.${user.id}`
+  //       }, (payload) => {
+  //         const newNotification = payload.new as Notification
+  //         console.log('Real-time notification received:', newNotification)
+  //         setNotifications(prev => [newNotification, ...prev])
+  //         setUnreadCount(prev => prev + 1)
+  //         showFeedback({
+  //           type: 'notification',
+  //           title: newNotification.title,
+  //           message: newNotification.message,
+  //           avatar: newNotification.avatar_url,
+  //           actions: newNotification.action_url ? [
+  //             { label: 'View', action: () => { if (typeof window !== 'undefined' && newNotification.action_url) { window.location.href = newNotification.action_url } }, style: 'primary' }
+  //           ] : undefined,
+  //           duration: 8000
+  //         })
+  //       })
+  //       .subscribe((status) => {
+  //         if (status === 'SUBSCRIBED') { console.log('✅ Notification subscription established') }
+  //         else if (status === 'CHANNEL_ERROR') { console.error('❌ Notification subscription error') }
+  //         else if (status === 'TIMED_OUT') { console.warn('⏰ Notification subscription timeout') }
+  //       })
+  //     return () => {
+  //       console.log('Cleaning up notification subscription')
+  //       try { if (supabase) { supabase.removeChannel(channel) } }
+  //       catch (error) { console.error('Error removing notification channel:', error) }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error setting up notification subscription:', error)
+  //   }
+  // }, [user, showFeedback])
 
   // Initial data fetch
   useEffect(() => {
@@ -466,6 +483,7 @@ export function useNotifications(): UseNotificationsResult {
     markAllAsRead,
     dismiss,
     refresh,
+    updatePreferences,
     setFilters,
     filters
   }

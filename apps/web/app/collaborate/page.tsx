@@ -232,29 +232,63 @@ function CollaboratePageContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <h1 className="text-3xl font-bold text-foreground">Collaborate</h1>
-              <span className="ml-3 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
-                Beta
-              </span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/collaborate/create">
-                <Button className="inline-flex items-center">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Project
-                </Button>
-              </Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Hero Banner */}
+        <div className="relative mb-8 rounded-2xl overflow-hidden border border-border shadow-lg">
+          {/* Background with gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-background" />
+
+          {/* Optional: Add a subtle pattern or texture */}
+          <div className="absolute inset-0 opacity-5" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          }} />
+
+          {/* Content */}
+          <div className="relative p-12">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <div className="flex items-center mb-4">
+                    <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                      <Users className="h-8 w-8 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-5xl md:text-6xl font-bold text-foreground">Collaborate</h1>
+                        <Badge variant="secondary" className="px-3 py-1">Beta</Badge>
+                      </div>
+                      <p className="text-xl text-muted-foreground">Connect with creators and bring your projects to life</p>
+                    </div>
+                  </div>
+
+                  {/* Stats or additional info */}
+                  <div className="flex items-center gap-6 mt-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      <span>{projects.length} Active Projects</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      <span>Find Creative Opportunities</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <Link href="/collaborate/create">
+                    <Button size="lg" className="px-8 py-3 text-base font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-shadow">
+                      <Plus className="h-5 w-5" />
+                      Create Project
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="for_you">

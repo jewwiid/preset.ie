@@ -44,16 +44,23 @@
       "description": "shadcn/ui component library access and management"
     },
     "chrome-devtools": {
-      "command": "npx",
+      "command": "chrome-devtools-mcp",
       "args": [
-        "-y",
-        "chrome-devtools-mcp@latest",
         "--headless=false",
         "--isolated=true",
         "--viewport=1280x720",
         "--channel=stable"
       ],
       "description": "Chrome DevTools debugging capabilities for web development - includes input automation, navigation, performance analysis, network debugging, and screenshot capture"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--headless"
+      ],
+      "description": "Playwright browser automation for testing web applications, taking screenshots, and automating user interactions"
     }
   },
   "contextSources": [

@@ -339,27 +339,108 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted-50">
-      {/* Header */}
-      <div className="bg-background border-b border-border-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-6">
+    <div className="min-h-screen bg-background">
+      {/* Hero Banner with Moodboard Background */}
+      <div className="relative h-[500px] overflow-hidden border-b border-border">
+        {/* Background Image - Use moodboard images if available */}
+        {project.moodboard && project.moodboard.moodboard_items && project.moodboard.moodboard_items.length > 0 ? (
+          <>
+            {/* Moodboard Image Grid */}
+            <div className="absolute inset-0 grid grid-cols-3 gap-1">
+              {project.moodboard.moodboard_items.slice(0, 6).map((item, index) => (
+                <div
+                  key={item.id}
+                  className="relative w-full h-full"
+                >
+                  <img
+                    src={item.image_url}
+                    alt={item.description || `Moodboard ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+            {/* Stronger gradient overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+          </>
+        ) : (
+          <>
+            {/* Fallback gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-background" />
+            <div className="absolute inset-0 opacity-10" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+            }} />
+          </>
+        )}
+
+        {/* Content */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-between py-8">
+          {/* Top Navigation */}
+          <div className="flex items-center justify-between">
             <Button
-              variant="ghost"
+              variant="secondary"
+              size="sm"
               onClick={() => router.push('/collaborate')}
-              className="mr-4"
+              className="backdrop-blur-sm bg-background/80 hover:bg-background/90"
             >
-              ← Back
+              ← Back to Projects
             </Button>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-muted-foreground-900">{project.title}</h1>
-              <div className="flex items-center space-x-4 mt-2">
-                <Badge className={getStatusColor(project.status)}>
-                  {project.status.replace('_', ' ')}
+
+            <div className="flex items-center gap-2">
+              <Badge className={`${getStatusColor(project.status)} backdrop-blur-sm`}>
+                {project.status.replace('_', ' ')}
+              </Badge>
+              {project.creator.verified_id && (
+                <Badge variant="secondary" className="backdrop-blur-sm bg-background/80">
+                  Verified Creator
                 </Badge>
-                {project.creator.verified_id && (
-                  <Badge variant="secondary">Verified Creator</Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Main Title Section */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-4 leading-tight">
+                {project.title}
+              </h1>
+
+              {/* Metadata Row */}
+              <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-14 h-14 border-2 border-background shadow-xl ring-2 ring-primary/20">
+                    <AvatarImage
+                      src={project.creator.avatar_url || undefined}
+                      alt={project.creator.display_name}
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
+                      {project.creator.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="backdrop-blur-sm bg-background/60 px-3 py-2 rounded-lg">
+                    <p className="text-xs text-muted-foreground/80">Created by</p>
+                    <p className="font-semibold text-foreground">{project.creator.display_name}</p>
+                  </div>
+                </div>
+
+                {(project.city || project.country) && (
+                  <div className="flex items-center gap-2 backdrop-blur-sm bg-background/60 px-4 py-2 rounded-lg">
+                    <MapPin className="w-4 h-4" />
+                    <span className="font-medium">{[project.city, project.country].filter(Boolean).join(', ')}</span>
+                  </div>
                 )}
+
+                {project.start_date && (
+                  <div className="flex items-center gap-2 backdrop-blur-sm bg-background/60 px-4 py-2 rounded-lg">
+                    <Calendar className="w-4 h-4" />
+                    <span className="font-medium">{format(new Date(project.start_date), 'MMM d, yyyy')}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 backdrop-blur-sm bg-background/60 px-4 py-2 rounded-lg">
+                  <Users className="w-4 h-4" />
+                  <span className="font-medium">{project.collab_roles.length} roles</span>
+                </div>
               </div>
             </div>
           </div>

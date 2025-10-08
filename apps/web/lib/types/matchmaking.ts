@@ -39,7 +39,7 @@ export interface MatchmakingFilters {
 export interface Recommendation {
   id: string
   type: 'gig' | 'user'
-  data: any // Will be typed as Gig or UserProfile
+  data: Record<string, unknown> // Will be typed as Gig or UserProfile
   compatibility_score: number
   compatibility_breakdown: CompatibilityBreakdown
   reason: string
@@ -95,7 +95,7 @@ export interface MatchmakingContextType {
 // API Response Types
 export interface CompatibilityResponse {
   compatibility_score: number
-  match_factors: any
+  match_factors: Record<string, unknown>
 }
 
 export interface RecommendationsResponse {

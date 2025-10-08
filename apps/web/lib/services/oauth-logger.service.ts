@@ -5,7 +5,7 @@ export interface OAuthLogEvent {
   user_id?: string
   session_id?: string
   provider: 'google' | 'email'
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   error_message?: string
   error_code?: string
   ip_address?: string
@@ -82,7 +82,7 @@ class OAuthLoggerService {
     }
   }
 
-  async logOAuthStart(provider: 'google' | 'email', sessionId: string, metadata?: Record<string, any>) {
+  async logOAuthStart(provider: 'google' | 'email', sessionId: string, metadata?: Record<string, unknown>) {
     await this.logEvent({
       event_type: 'oauth_start',
       provider,
@@ -106,7 +106,7 @@ class OAuthLoggerService {
     })
   }
 
-  async logOAuthSuccess(userId: string, provider: 'google' | 'email', sessionId: string, metadata?: Record<string, any>) {
+  async logOAuthSuccess(userId: string, provider: 'google' | 'email', sessionId: string, metadata?: Record<string, unknown>) {
     await this.logEvent({
       event_type: 'oauth_success',
       user_id: userId,
@@ -123,7 +123,7 @@ class OAuthLoggerService {
     error: string, 
     step?: string,
     errorCode?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
   ) {
     await this.logEvent({
       event_type: 'oauth_error',
@@ -243,7 +243,7 @@ class OAuthLoggerService {
   }
 
   private getClientInfo() {
-    let ip = 'unknown'
+    const ip = 'unknown'
     let userAgent = 'unknown'
 
     if (typeof window !== 'undefined') {
@@ -270,13 +270,13 @@ export function useOAuthLogger() {
 
   return {
     sessionId,
-    logOAuthStart: (provider: 'google' | 'email', metadata?: Record<string, any>) => 
+    logOAuthStart: (provider: 'google' | 'email', metadata?: Record<string, unknown>) => 
       oauthLogger.logOAuthStart(provider, sessionId, metadata),
     logOAuthCallback: (provider: 'google' | 'email', code?: string, error?: string) =>
       oauthLogger.logOAuthCallback(provider, sessionId, code, error),
-    logOAuthSuccess: (userId: string, provider: 'google' | 'email', metadata?: Record<string, any>) =>
+    logOAuthSuccess: (userId: string, provider: 'google' | 'email', metadata?: Record<string, unknown>) =>
       oauthLogger.logOAuthSuccess(userId, provider, sessionId, metadata),
-    logOAuthError: (provider: 'google' | 'email', error: string, step?: string, errorCode?: string, metadata?: Record<string, any>) =>
+    logOAuthError: (provider: 'google' | 'email', error: string, step?: string, errorCode?: string, metadata?: Record<string, unknown>) =>
       oauthLogger.logOAuthError(provider, sessionId, error, step, errorCode, metadata),
     logProfileCreation: (userId: string, provider: 'google' | 'email', success: boolean, error?: string) =>
       oauthLogger.logProfileCreation(userId, provider, sessionId, success, error)

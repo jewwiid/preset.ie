@@ -205,7 +205,7 @@ export interface RetryOptions {
   baseDelay?: number // ms
   maxDelay?: number // ms
   exponentialBackoff?: boolean
-  shouldRetry?: (error: any, attempt: number) => boolean
+  shouldRetry?: (error: unknown, attempt: number) => boolean
 }
 
 export class RetryHandler {
@@ -215,7 +215,7 @@ export class RetryHandler {
       baseDelay: 1000,
       maxDelay: 30000,
       exponentialBackoff: true,
-      shouldRetry: (error) => !error?.permanent,
+      shouldRetry: (error) => !(error as any)?.permanent,
       ...options
     }
   }
@@ -235,12 +235,12 @@ export class RetryHandler {
         }
         
         return result
-      } catch (error: any) {
+      } catch (error: unknown) {
         lastError = error
         
         console.warn(
           `${context || 'Operation'} failed on attempt ${attempt}:`,
-          error.message
+          (error as any).message
         )
         
         // Check if we should retry
@@ -316,7 +316,7 @@ export function usePerformanceMonitor(componentName: string) {
         `${componentName} render took ${renderTime.toFixed(2)}ms (slow render detected)`
       )
     }
-  })
+  }, [componentName])
   
   return metrics
 }

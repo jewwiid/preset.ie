@@ -43,11 +43,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user notifications using the database function
-    const { data: notifications, error } = await supabase.rpc('get_user_notifications', {
-      limit_count: limit,
-      offset_count: offset
-    });
+    // Get user notifications directly from the table
+    // creator_id in preset_notifications references auth.users(id)
+    const { data: notifications, error } = await supabase
+      .from('preset_notifications')
+      .select('*')
+      .eq('creator_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
       console.error('Error fetching notifications:', error);
@@ -58,9 +61,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get unread count
-    const { data: unreadCount, error: countError } = await supabase
+    const { count: unreadCount, error: countError } = await supabase
       .from('preset_notifications')
-      .select('id', { count: 'exact' })
+      .select('*', { count: 'exact', head: true })
       .eq('creator_id', user.id)
       .eq('is_read', false);
 
@@ -68,9 +71,9 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching unread count:', countError);
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       notifications: notifications || [],
-      unreadCount: unreadCount?.length || 0,
+      unreadCount: unreadCount || 0,
       total: notifications?.length || 0
     });
 

@@ -336,7 +336,7 @@ export class OrderProcessingService {
   /**
    * Get order details
    */
-  static async getOrderDetails(orderId: string, orderType: 'rental' | 'sale'): Promise<any> {
+  static async getOrderDetails(orderId: string, orderType: 'rental' | 'sale'): Promise<Record<string, unknown> | null> {
     try {
       const supabase = getSupabaseClient()
       const tableName = orderType === 'rental' ? 'rental_orders' : 'sale_orders';
@@ -400,7 +400,7 @@ export class OrderProcessingService {
       const supabase = getSupabaseClient()
       const tableName = orderType === 'rental' ? 'rental_orders' : 'sale_orders';
       
-      const updateData: any = { 
+      const updateData: Record<string, unknown> = { 
         status,
         updated_at: new Date().toISOString()
       };
@@ -441,7 +441,7 @@ export class OrderProcessingService {
   private static async createOrderNotification(
     userId: string,
     type: string,
-    metadata: any
+    metadata: Record<string, unknown>
   ): Promise<void> {
     try {
       const supabase = getSupabaseClient()
@@ -481,10 +481,10 @@ export class OrderProcessingService {
     userId: string,
     orderType?: 'rental' | 'sale',
     status?: string
-  ): Promise<any[]> {
+  ): Promise<Array<Record<string, unknown>>> {
     try {
       const supabase = getSupabaseClient()
-      let orders: any[] = [];
+      let orders: Array<Record<string, unknown>> = [];
 
       // Get rental orders
       if (!orderType || orderType === 'rental') {
@@ -554,7 +554,7 @@ export class OrderProcessingService {
       }
 
       // Sort by creation date
-      orders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      orders.sort((a, b) => new Date((b.created_at as string)).getTime() - new Date((a.created_at as string)).getTime());
 
       return orders;
 

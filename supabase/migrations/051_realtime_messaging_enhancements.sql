@@ -1,14 +1,18 @@
 -- Messaging System Real-time Enhancements
 -- This migration adds support for real-time messaging, typing indicators, and message status tracking
 
--- Create message status enum
-CREATE TYPE message_status AS ENUM ('sent', 'delivered', 'read');
+-- Create message status enum (only if it doesn't exist)
+DO $$ BEGIN
+    CREATE TYPE message_status AS ENUM ('sent', 'delivered', 'read');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
--- Add new columns to messages table
+-- Add new columns to messages table (only if they don't exist)
 ALTER TABLE messages 
-ADD COLUMN conversation_id UUID,
-ADD COLUMN updated_at TIMESTAMPTZ,
-ADD COLUMN status message_status DEFAULT 'sent';
+ADD COLUMN IF NOT EXISTS conversation_id UUID,
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS status message_status DEFAULT 'sent';
 
 -- Create function to generate conversation_id based on gig_id and participants
 CREATE OR REPLACE FUNCTION generate_conversation_id(gig_uuid UUID, user1_uuid UUID, user2_uuid UUID)
@@ -26,16 +30,25 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Update existing messages to have conversation_id
+-- Update existing messages to have conversation_id (only if gig_id is not null)
 UPDATE messages 
 SET conversation_id = generate_conversation_id(gig_id, from_user_id, to_user_id)
-WHERE conversation_id IS NULL;
+WHERE conversation_id IS NULL 
+  AND gig_id IS NOT NULL
+  AND from_user_id IS NOT NULL
+  AND to_user_id IS NOT NULL;
 
--- Make conversation_id NOT NULL after populating it
-ALTER TABLE messages ALTER COLUMN conversation_id SET NOT NULL;
+-- Only make conversation_id NOT NULL if all messages have been populated
+-- Skip this constraint if there are still null values (they'll be handled when the gig is set)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM messages WHERE conversation_id IS NULL LIMIT 1) THEN
+    ALTER TABLE messages ALTER COLUMN conversation_id SET NOT NULL;
+  END IF;
+END $$;
 
 -- Create typing indicators table for real-time typing status
-CREATE TABLE typing_indicators (
+CREATE TABLE IF NOT EXISTS typing_indicators (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     conversation_id UUID NOT NULL,
     user_id UUID NOT NULL REFERENCES users_profile(id) ON DELETE CASCADE,
@@ -48,17 +61,18 @@ CREATE TABLE typing_indicators (
     UNIQUE(conversation_id, user_id)
 );
 
--- Create indexes for better performance
-CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
-CREATE INDEX idx_messages_conversation_created_at ON messages(conversation_id, created_at);
-CREATE INDEX idx_messages_status ON messages(status);
-CREATE INDEX idx_typing_indicators_conversation ON typing_indicators(conversation_id);
-CREATE INDEX idx_typing_indicators_activity ON typing_indicators(last_activity);
+-- Create indexes for better performance (only if they don't exist)
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_created_at ON messages(conversation_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status);
+CREATE INDEX IF NOT EXISTS idx_typing_indicators_conversation ON typing_indicators(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_typing_indicators_activity ON typing_indicators(last_activity);
 
 -- Enable Row Level Security on typing_indicators
 ALTER TABLE typing_indicators ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for typing_indicators
+DROP POLICY IF EXISTS "Users can view typing indicators in their conversations" ON typing_indicators;
 CREATE POLICY "Users can view typing indicators in their conversations" ON typing_indicators
     FOR SELECT USING (
         EXISTS (
@@ -71,6 +85,7 @@ CREATE POLICY "Users can view typing indicators in their conversations" ON typin
         )
     );
 
+DROP POLICY IF EXISTS "Users can manage their own typing indicators" ON typing_indicators;
 CREATE POLICY "Users can manage their own typing indicators" ON typing_indicators
     FOR ALL USING (
         user_id = (SELECT id FROM users_profile WHERE user_id = auth.uid())
@@ -93,6 +108,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger to automatically update message status and timestamp
+DROP TRIGGER IF EXISTS trigger_update_message_status ON messages;
 CREATE TRIGGER trigger_update_message_status
     BEFORE UPDATE ON messages
     FOR EACH ROW

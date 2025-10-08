@@ -233,7 +233,10 @@ export function usePredefinedOptions() {
         setOptions(finalOptions)
 
       } catch (err) {
-        console.error('Error fetching predefined options:', err)
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error fetching predefined options:', err)
+        }
         setError(err instanceof Error ? err.message : 'Failed to fetch options')
       } finally {
         setLoading(false)

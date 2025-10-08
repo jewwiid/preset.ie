@@ -229,7 +229,7 @@ export function estimateProcessingTime(
   const megapixels = pixels / 1000000;
   
   // Base time in seconds
-  let baseTime = 20;
+  const baseTime = 20;
   
   // Adjust based on enhancement type
   const typeMultipliers: Record<string, number> = {

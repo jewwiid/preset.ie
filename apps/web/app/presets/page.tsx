@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useAuth } from '../../lib/auth-context'
-import { Palette, Plus, Search, Filter, Grid, List, Star, Users, PlayCircle, Camera, Wand2, Bell, CheckCircle, Eye, Store } from 'lucide-react'
+import { Palette, Plus, Search, Filter, Grid, Grid2x2, Grid3x3, Star, Users, PlayCircle, Camera, Wand2, Bell, CheckCircle, Eye, Store, Sparkles } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Badge } from '../../components/ui/badge'
@@ -17,6 +18,7 @@ interface Preset {
   name: string
   description?: string
   category: string
+  preset_type?: 'regular' | 'cinematic'
   prompt_template: string
   negative_prompt?: string
   style_settings: any
@@ -26,6 +28,7 @@ interface Preset {
   usage_count: number
   is_public: boolean
   is_featured: boolean
+  latest_promoted_image_url?: string
   created_at: string
   updated_at: string
   creator: {
@@ -262,7 +265,7 @@ export default function PresetsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [selectedPresetType, setSelectedPresetType] = useState('all')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [gridCols, setGridCols] = useState<2 | 3 | 4>(3)
   const [sortBy, setSortBy] = useState('popular')
   const [activeTab, setActiveTab] = useState('browse')
   const [myPresets, setMyPresets] = useState<Preset[]>([])
@@ -270,6 +273,10 @@ export default function PresetsPage() {
   const [myPresetsError, setMyPresetsError] = useState<string | null>(null)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const isFirstRender = useRef(true)
 
   const categories = [
     { value: 'all', label: 'All Categories' },
@@ -307,9 +314,18 @@ export default function PresetsPage() {
   ]
 
   useEffect(() => {
-    // Always fetch presets, even without authentication (for public presets)
-    fetchPresets()
+    // Fetch presets when filters change and reset to page 1
+    if (!isFirstRender.current) {
+      setCurrentPage(1)
+    } else {
+      isFirstRender.current = false
+    }
   }, [selectedCategory, selectedPresetType, sortBy])
+
+  useEffect(() => {
+    // Fetch presets whenever current page or filters are set
+    fetchPresets()
+  }, [currentPage])
 
   useEffect(() => {
     // Fetch user presets when switching to my-presets tab or when user changes
@@ -334,6 +350,8 @@ export default function PresetsPage() {
       if (selectedCategory !== 'all') params.append('category', selectedCategory)
       if (searchQuery) params.append('search', searchQuery)
       params.append('sort', sortBy)
+      params.append('limit', '20')
+      params.append('page', currentPage.toString())
 
       const url = `/api/presets?${params.toString()}`
       
@@ -356,13 +374,28 @@ export default function PresetsPage() {
       // Apply client-side preset type filtering
       if (selectedPresetType !== 'all') {
         filteredPresets = filteredPresets.filter((preset: Preset) => {
-          const presetType = getPresetType(preset.id)
-          return presetType === selectedPresetType
+          // Map the old type system to the new preset_type field
+          if (selectedPresetType === 'cinematic') {
+            return preset.preset_type === 'cinematic'
+          } else if (selectedPresetType === 'regular' || selectedPresetType === 'specialized') {
+            return preset.preset_type !== 'cinematic'
+          }
+          return true
         })
       }
 
+      // Sort featured presets to the top
+      filteredPresets = filteredPresets.sort((a: Preset, b: Preset) => {
+        // Featured presets always come first
+        if (a.is_featured && !b.is_featured) return -1
+        if (!a.is_featured && b.is_featured) return 1
+        // If both featured or both not featured, maintain existing order
+        return 0
+      })
 
       setPresets(filteredPresets)
+      setTotalCount(data.pagination?.total || 0)
+      setTotalPages(data.pagination?.pages || 1)
     } catch (err) {
       console.error('Error fetching presets:', err)
       setError('Failed to load presets')
@@ -448,46 +481,25 @@ export default function PresetsPage() {
     return colors[category as keyof typeof colors] || 'bg-muted text-muted-foreground'
   }
 
-  const getPresetType = (presetId: string) => {
-    if (presetId.startsWith('cinematic_')) return 'cinematic'
-    
-    // Check if it's a specialized preset by looking at the category
-    // We'll need to get the preset data to check the category
-    const preset = presets.find(p => p.id === presetId)
-    if (preset) {
-      const specializedCategories = [
-        'headshot', 'product_photography', 'ecommerce', 'corporate_portrait',
-        'linkedin_photo', 'professional_portrait', 'business_headshot',
-        'product_catalog', 'product_lifestyle', 'product_studio'
-      ]
-      if (specializedCategories.includes(preset.category)) {
-        return 'specialized'
-      }
-    }
-    
-    return 'regular'
+  const formatCategoryName = (category: string) => {
+    // Convert snake_case to Title Case
+    return category
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
   }
 
-  const getPresetTypeBadge = (presetId: string) => {
-    const type = getPresetType(presetId)
-    if (type === 'cinematic') {
+  const getPresetTypeBadge = (preset: Preset) => {
+    if (preset.preset_type === 'cinematic') {
       return (
-        <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
+        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">
           <Camera className="h-3 w-3 mr-1" />
           Cinematic
         </Badge>
       )
     }
-    if (type === 'specialized') {
-      return (
-        <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
-          <Camera className="h-3 w-3 mr-1" />
-          Specialized
-        </Badge>
-      )
-    }
     return (
-      <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
+      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
         <Wand2 className="h-3 w-3 mr-1" />
         Style
       </Badge>
@@ -538,19 +550,12 @@ export default function PresetsPage() {
                   )}
                 </Button>
               )}
-              {userRole?.isAdmin ? (
-                <Button asChild variant="outline">
-                  <a href="/presets/marketplace">
-                    <Store className="h-4 w-4 mr-2" />
-                    Marketplace
-                  </a>
-                </Button>
-              ) : (
-                <Button variant="outline" disabled>
+              <Button asChild variant="outline">
+                <a href="/presets/marketplace">
                   <Store className="h-4 w-4 mr-2" />
-                  Marketplace (Coming Soon)
-                </Button>
-              )}
+                  Marketplace
+                </a>
+              </Button>
               <Button asChild variant="outline">
                 <a href="/gear">
                   <Camera className="h-4 w-4 mr-2" />
@@ -633,27 +638,75 @@ export default function PresetsPage() {
                   </SelectContent>
                 </Select>
 
-                {/* View Mode */}
+                {/* Grid Size Options */}
                 <div className="flex items-center bg-muted rounded-lg p-1">
                   <button
-                    onClick={() => setViewMode('grid')}
+                    onClick={() => setGridCols(2)}
                     className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'grid' ? 'bg-background shadow-sm' : 'hover:bg-accent'
+                      gridCols === 2 ? 'bg-background shadow-sm' : 'hover:bg-accent'
                     }`}
+                    title="2 columns"
                   >
-                    <Grid className="h-4 w-4" />
+                    <Grid2x2 className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => setViewMode('list')}
+                    onClick={() => setGridCols(3)}
                     className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'list' ? 'bg-background shadow-sm' : 'hover:bg-accent'
+                      gridCols === 3 ? 'bg-background shadow-sm' : 'hover:bg-accent'
                     }`}
+                    title="3 columns"
                   >
-                    <List className="h-4 w-4" />
+                    <Grid3x3 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setGridCols(4)}
+                    className={`p-2 rounded-md transition-colors ${
+                      gridCols === 4 ? 'bg-background shadow-sm' : 'hover:bg-accent'
+                    }`}
+                    title="4 columns"
+                  >
+                    <Grid className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             </div>
+
+            {/* Pagination Controls - Top */}
+            {!loading && !error && presets.length > 0 && totalPages > 1 && (
+              <div className="flex items-center justify-end gap-2 mb-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="min-w-[40px]"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
 
             {/* Presets Grid/List */}
             {error ? (
@@ -671,87 +724,160 @@ export default function PresetsPage() {
                 </Button>
               </div>
             ) : (
-              <div className={viewMode === 'grid' 
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
-                : 'space-y-4'
+              <div className={
+                gridCols === 2
+                  ? 'grid grid-cols-1 sm:grid-cols-2 gap-6'
+                  : gridCols === 3
+                  ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+                  : 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6'
               }>
-                {presets.map(preset => (
-                  <Card key={preset.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg mb-2">{preset.name}</CardTitle>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge className={getCategoryColor(preset.category)}>
-                              {preset.category}
+                {presets.map(preset => {
+                  // Determine border color based on preset type
+                  const borderClass = preset.preset_type === 'cinematic'
+                    ? 'border-2 border-purple-500/40 hover:border-purple-500/60'
+                    : 'border-2 border-blue-500/20 hover:border-blue-500/40'
+
+                  return (
+                  <Card key={preset.id} className={`hover:shadow-lg transition-all cursor-pointer flex flex-col h-full overflow-hidden ${borderClass}`}>
+                    {/* Featured Image Background */}
+                    {preset.latest_promoted_image_url && (
+                      <div className="relative w-full h-48 overflow-hidden bg-muted">
+                        <Image
+                          src={preset.latest_promoted_image_url}
+                          alt={`Example from ${preset.name}`}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
+                        {/* Overlay gradient for better text readability */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                        {/* Badges on image overlay */}
+                        {preset.is_featured && (
+                          <div className="absolute top-2 left-2">
+                            <Badge variant="secondary" className="bg-yellow-500/90 text-white backdrop-blur-sm">
+                              <Star className="h-3 w-3 mr-1" />
+                              Featured
                             </Badge>
-                            {getPresetTypeBadge(preset.id)}
-                            {preset.is_featured && (
-                              <Badge variant="secondary" className="bg-primary-100 text-primary-800">
-                                <Star className="h-3 w-3 mr-1" />
-                                Featured
-                              </Badge>
-                            )}
-                            {preset.is_public && (
-                              <Badge variant="outline" className="text-primary-600">
-                                <Users className="h-3 w-3 mr-1" />
-                                Public
-                              </Badge>
-                            )}
                           </div>
+                        )}
+                        <div className="absolute top-2 right-2">
+                          <Badge variant="secondary" className="bg-primary/90 text-primary-foreground backdrop-blur-sm">
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            Example
+                          </Badge>
                         </div>
-                        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                          <PlayCircle className="h-4 w-4" />
+                      </div>
+                    )}
+
+                    <CardHeader className="pb-3 flex-shrink-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <CardTitle className="text-lg flex-1">{preset.name}</CardTitle>
+                        <div className="flex items-center space-x-1 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                          <PlayCircle className="h-3 w-3" />
                           <span>{preset.usage_count}</span>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {getPresetTypeBadge(preset)}
+                        <Badge className={getCategoryColor(preset.category)}>
+                          {formatCategoryName(preset.category)}
+                        </Badge>
+                        {preset.is_public && (
+                          <Badge variant="outline" className="text-primary-600">
+                            <Users className="h-3 w-3 mr-1" />
+                            Public
+                          </Badge>
+                        )}
+                      </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                      {preset.description && (
-                        <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-                          {preset.description}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-2">
-                          {preset.creator.avatar_url ? (
-                            <img
-                              src={preset.creator.avatar_url}
-                              alt={preset.creator.display_name}
-                              className="w-6 h-6 rounded-full"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
-                              <span className="text-xs font-medium">
-                                {preset.creator.display_name.charAt(0)}
-                              </span>
-                            </div>
-                          )}
-                          <span>@{preset.creator.handle}</span>
-                        </div>
-                        <span>{formatDate(preset.created_at)}</span>
+                    <CardContent className="pt-0 flex flex-col flex-grow">
+                      <div className="flex-grow">
+                        {preset.description && (
+                          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                            {preset.description}
+                          </p>
+                        )}
                       </div>
 
-                      <div className="mt-4 flex space-x-2">
-                        <Button 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => router.push(`/playground?preset=${preset.id}`)}
-                        >
-                          Use Preset
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => router.push(`/presets/${preset.id}`)}
-                        >
-                          Preview
-                        </Button>
+                      <div className="mt-4 space-y-3 flex-shrink-0">
+                        <div className="flex items-center justify-between text-sm text-muted-foreground">
+                          <div className="flex items-center space-x-2">
+                            {preset.creator.avatar_url ? (
+                              <img
+                                src={preset.creator.avatar_url}
+                                alt={preset.creator.display_name}
+                                className="w-6 h-6 rounded-full"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
+                                <span className="text-xs font-medium">
+                                  {preset.creator.display_name.charAt(0)}
+                                </span>
+                              </div>
+                            )}
+                            <span>@{preset.creator.handle}</span>
+                          </div>
+                          <span>{formatDate(preset.created_at)}</span>
+                        </div>
+                        
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => router.push(`/playground?preset=${preset.id}&name=${encodeURIComponent(preset.name)}`)}
+                          >
+                            Use Preset
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => router.push(`/presets/${preset.id}`)}
+                          >
+                            Preview
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {!loading && !error && presets.length > 0 && totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="min-w-[40px]"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
               </div>
             )}
           </TabsContent>
@@ -815,67 +941,72 @@ export default function PresetsPage() {
                 </Card>
 
                 {/* Presets Grid */}
-                <div className={viewMode === 'grid' 
-                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
-                  : 'space-y-4'
+                <div className={
+                  gridCols === 2
+                    ? 'grid grid-cols-1 md:grid-cols-2 gap-6'
+                    : gridCols === 3
+                    ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                    : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
                 }>
                   {myPresets.map(preset => (
-                    <Card key={preset.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-lg mb-2">{preset.name}</CardTitle>
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge className={getCategoryColor(preset.category)}>
-                                {preset.category}
-                              </Badge>
-                              {getPresetTypeBadge(preset.id)}
-                              {preset.is_public ? (
-                                <Badge variant="outline" className="text-primary-600">
-                                  <Users className="h-3 w-3 mr-1" />
-                                  Public
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-muted-foreground-600">
-                                  <Users className="h-3 w-3 mr-1" />
-                                  Private
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                            <PlayCircle className="h-4 w-4" />
+                    <Card key={preset.id} className="hover:shadow-lg transition-shadow cursor-pointer flex flex-col h-full">
+                      <CardHeader className="pb-3 flex-shrink-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <CardTitle className="text-lg flex-1">{preset.name}</CardTitle>
+                          <div className="flex items-center space-x-1 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                            <PlayCircle className="h-3 w-3" />
                             <span>{preset.usage_count}</span>
                           </div>
                         </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className={getCategoryColor(preset.category)}>
+                            {formatCategoryName(preset.category)}
+                          </Badge>
+                          {getPresetTypeBadge(preset)}
+                          {preset.is_public ? (
+                            <Badge variant="outline" className="text-primary-600">
+                              <Users className="h-3 w-3 mr-1" />
+                              Public
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground-600">
+                              <Users className="h-3 w-3 mr-1" />
+                              Private
+                            </Badge>
+                          )}
+                        </div>
                       </CardHeader>
-                      <CardContent className="pt-0">
-                        {preset.description && (
-                          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-                            {preset.description}
-                          </p>
-                        )}
-                        
-                        <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                          <span>Created {formatDate(preset.created_at)}</span>
-                          <span>Updated {formatDate(preset.updated_at)}</span>
+                      <CardContent className="pt-0 flex flex-col flex-grow">
+                        <div className="flex-grow">
+                          {preset.description && (
+                            <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                              {preset.description}
+                            </p>
+                          )}
                         </div>
 
-                        <div className="flex space-x-2">
-                          <Button 
-                            size="sm" 
-                            className="flex-1"
-                            onClick={() => router.push(`/playground?preset=${preset.id}`)}
-                          >
-                            Use Preset
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => router.push(`/presets/${preset.id}`)}
-                          >
-                            Preview
-                          </Button>
+                        <div className="mt-4 space-y-3 flex-shrink-0">
+                          <div className="flex items-center justify-between text-sm text-muted-foreground">
+                            <span>Created {formatDate(preset.created_at)}</span>
+                            <span>Updated {formatDate(preset.updated_at)}</span>
+                          </div>
+                          
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => router.push(`/playground?preset=${preset.id}&name=${encodeURIComponent(preset.name)}`)}
+                            >
+                              Use Preset
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => router.push(`/presets/${preset.id}`)}
+                            >
+                              Preview
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

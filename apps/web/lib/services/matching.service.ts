@@ -384,7 +384,7 @@ export class MatchingService {
   static async findProjectsForUser(
     userId: string,
     limit: number = 10
-  ): Promise<any[]> {
+  ): Promise<Array<Record<string, unknown>>> {
     try {
       // Get user profile
       const { data: user, error: userError } = await supabase

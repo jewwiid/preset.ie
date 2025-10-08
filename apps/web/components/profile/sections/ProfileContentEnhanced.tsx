@@ -211,7 +211,7 @@ export function ProfileContentEnhanced() {
     },
     {
       title: 'Rating',
-      value: userRating ? userRating.average.toFixed(1) : 'N/A',
+      value: userRating ? userRating.average.toFixed(1) : '0',
       icon: Star,
       color: 'bg-primary',
       bgColor: 'bg-primary/10',
@@ -649,7 +649,7 @@ export function ProfileContentEnhanced() {
                         <MatchmakingCard
                           key={gig.id}
                           type={gig.type}
-                          data={gig.data}
+                          data={gig.data as unknown as any}
                           compatibilityScore={gig.compatibility_score}
                           compatibilityBreakdown={gig.compatibility_breakdown}
                           onViewDetails={() => window.open(`/gigs/${gig.id}`, '_blank')}
@@ -1011,7 +1011,7 @@ export function ProfileContentEnhanced() {
                         <MatchmakingCard
                           key={gig.id}
                           type={gig.type}
-                          data={gig.data}
+                          data={gig.data as unknown as any}
                           compatibilityScore={gig.compatibility_score}
                           compatibilityBreakdown={gig.compatibility_breakdown}
                           onViewDetails={() => window.open(`/gigs/${gig.id}`, '_blank')}

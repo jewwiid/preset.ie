@@ -46,7 +46,7 @@ export class SubscriptionBenefitsService {
   /**
    * Use a monthly bump benefit for a listing
    */
-  static async useMonthlyBump(userId: string, listingId: string): Promise<boolean> {
+  static async applyMonthlyBump(userId: string, listingId: string): Promise<boolean> {
     try {
       if (!supabase) {
         console.error('Supabase client not available');
@@ -124,7 +124,7 @@ export class SubscriptionBenefitsService {
       console.log(`Monthly bump used successfully for listing: ${listingId}`);
       return true;
     } catch (error) {
-      console.error('Error in useMonthlyBump:', error);
+      console.error('Error in applyMonthlyBump:', error);
       return false;
     }
   }

@@ -37,6 +37,35 @@ export async function POST(request: NextRequest) {
 
     const { imageUrl, title, description, tags, projectId, editId, overrideExisting, generationMetadata } = await request.json()
     console.log('Request data:', { imageUrl, title, description, tags, projectId, editId, overrideExisting, generationMetadata })
+
+    // If custom_style_preset is missing but we have a style, try to look up the preset by name
+    let customStylePreset = generationMetadata?.custom_style_preset
+
+    if (!customStylePreset && generationMetadata?.style) {
+      console.log('🔍 No custom_style_preset found, attempting to lookup by style name:', generationMetadata.style)
+
+      try {
+        const { data: preset, error: presetError } = await supabaseAdmin
+          .from('presets')
+          .select('id, name')
+          .eq('name', generationMetadata.style)
+          .single()
+
+        if (preset && !presetError) {
+          customStylePreset = { id: preset.id, name: preset.name }
+          console.log('✅ Found preset by name:', customStylePreset)
+        }
+      } catch (lookupError) {
+        console.log('⚠️ Could not find preset by name:', lookupError)
+      }
+    }
+
+    console.log('🔍 Custom style preset data:', {
+      hasCustomStylePreset: !!customStylePreset,
+      presetId: customStylePreset?.id,
+      presetName: customStylePreset?.name,
+      style: generationMetadata?.style
+    })
     let finalImageUrl = imageUrl
     
     // Handle data URLs and external URLs by uploading to Supabase Storage
@@ -284,13 +313,31 @@ export async function POST(request: NextRequest) {
         ...generationMetadata,
         original_url: imageUrl, // Store original URL for reference
         permanently_stored: finalImageUrl !== imageUrl, // Track if image was downloaded and stored
-        storage_method: imageUrl.startsWith('data:') ? 'base64' : 
+        storage_method: imageUrl.startsWith('data:') ? 'base64' :
                       imageUrl.startsWith('http') ? 'downloaded' : 'external_reference',
         // Ensure custom dimensions are preserved
         saved_width: imageWidth,
         saved_height: imageHeight,
         saved_aspect_ratio: generationMetadata?.aspect_ratio || `${imageWidth}:${imageHeight}`,
         saved_at: new Date().toISOString()
+      },
+      exif_json: {
+        promoted_from_playground: true,
+        generation_metadata: {
+          prompt: generationMetadata?.prompt,
+          enhanced_prompt: generationMetadata?.enhanced_prompt,
+          // Use preset name as style if custom_style_preset exists, otherwise use style field
+          style: customStylePreset?.name?.toLowerCase() ||
+                 generationMetadata?.style?.toLowerCase(),
+          preset_id: customStylePreset?.id,
+          preset_name: customStylePreset?.name,
+          aspect_ratio: generationMetadata?.aspect_ratio,
+          resolution: generationMetadata?.resolution,
+          consistency_level: generationMetadata?.consistency_level,
+          generation_mode: generationMetadata?.generation_mode,
+          provider: generationMetadata?.provider,
+          generated_at: generationMetadata?.generated_at || new Date().toISOString()
+        }
       },
       // Set default values for required fields that might be missing
       used_in_moodboard: false,
@@ -354,30 +401,43 @@ export async function POST(request: NextRequest) {
             path: finalImageUrl,
             width: imageWidth,
             height: imageHeight,
-            ai_metadata: {
-              ...cinematicMetadata,
-              generation_metadata: generationMetadata,
-              enhanced_prompt: generationMetadata?.enhanced_prompt,
-              include_technical_details: generationMetadata?.include_technical_details,
-              include_style_references: generationMetadata?.include_style_references,
-              // Preserve all generation settings for reuse
-              original_prompt: generationMetadata?.prompt,
-              style: generationMetadata?.style,
-              aspect_ratio: generationMetadata?.aspect_ratio,
-              resolution: generationMetadata?.resolution,
-              consistency_level: generationMetadata?.consistency_level,
-              generation_mode: generationMetadata?.generation_mode,
-              base_image: generationMetadata?.base_image,
-              provider: generationMetadata?.provider,
-              intensity: generationMetadata?.intensity,
-              // Preserve actual dimensions
-              actual_width: imageWidth,
-              actual_height: imageHeight,
-              saved_at: new Date().toISOString()
+            exif_json: {
+              promoted_from_playground: true,
+              generation_metadata: {
+                prompt: generationMetadata?.prompt,
+                enhanced_prompt: generationMetadata?.enhanced_prompt,
+                // Use preset name as style if custom_style_preset exists, otherwise use style field
+                style: customStylePreset?.name?.toLowerCase() ||
+                       generationMetadata?.style?.toLowerCase(),
+                preset_id: customStylePreset?.id,
+                preset_name: customStylePreset?.name,
+                aspect_ratio: generationMetadata?.aspect_ratio,
+                resolution: generationMetadata?.resolution,
+                consistency_level: generationMetadata?.consistency_level,
+                generation_mode: generationMetadata?.generation_mode,
+                provider: generationMetadata?.provider,
+                generated_at: generationMetadata?.generated_at || new Date().toISOString(),
+                // Include cinematic metadata if present
+                ...cinematicMetadata,
+                include_technical_details: generationMetadata?.include_technical_details,
+                include_style_references: generationMetadata?.include_style_references,
+                intensity: generationMetadata?.intensity,
+                actual_width: imageWidth,
+                actual_height: imageHeight,
+                saved_at: new Date().toISOString()
+              }
             }
           })
           .select()
           .single()
+
+        console.log('✅ Media entry created with exif_json:', {
+          mediaId: mediaItem?.id,
+          style: generationMetadata?.custom_style_preset?.name?.toLowerCase() ||
+                 generationMetadata?.style?.toLowerCase(),
+          preset_id: generationMetadata?.custom_style_preset?.id,
+          preset_name: generationMetadata?.custom_style_preset?.name
+        })
 
         if (mediaError) {
           console.error('Error creating media entry:', mediaError)
@@ -390,13 +450,54 @@ export async function POST(request: NextRequest) {
         // Don't fail the whole operation if media creation fails
       }
     }
-    
+
     if (insertError) {
       console.error('Gallery insert error:', insertError)
       throw insertError
     }
-    
+
     console.log('Successfully saved to gallery:', galleryItem)
+
+    // Update preset's last_used_at timestamp and usage_count if this was generated with a preset
+    if (galleryItem && customStylePreset?.id) {
+      try {
+        const presetId = customStylePreset.id
+        console.log('Updating last_used_at and usage_count for preset:', presetId)
+
+        // First, get the current usage count
+        const { data: currentPreset, error: fetchError } = await supabaseAdmin
+          .from('presets')
+          .select('usage_count')
+          .eq('id', presetId)
+          .single()
+
+        if (fetchError) {
+          console.error('Error fetching current preset:', fetchError)
+        } else {
+          // Update both last_used_at and usage_count
+          const { error: presetUpdateError } = await supabaseAdmin
+            .from('presets')
+            .update({
+              last_used_at: new Date().toISOString(),
+              usage_count: (currentPreset?.usage_count || 0) + 1
+            })
+            .eq('id', presetId)
+
+          if (presetUpdateError) {
+            console.error('Error updating preset last_used_at and usage_count:', presetUpdateError)
+            // Don't fail the whole operation if preset update fails
+          } else {
+            console.log('Successfully updated preset last_used_at and usage_count:', {
+              presetId,
+              newUsageCount: (currentPreset?.usage_count || 0) + 1
+            })
+          }
+        }
+      } catch (presetError) {
+        console.error('Error updating preset:', presetError)
+        // Don't fail the whole operation if preset update fails
+      }
+    }
     
     return NextResponse.json({ 
       success: true, 

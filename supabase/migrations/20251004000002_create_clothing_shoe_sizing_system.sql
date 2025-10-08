@@ -303,33 +303,48 @@ ALTER TABLE predefined_shoe_size_systems ENABLE ROW LEVEL SECURITY;
 ALTER TABLE predefined_shoe_sizes ENABLE ROW LEVEL SECURITY;
 
 -- Public read access to predefined tables
+DROP POLICY IF EXISTS "Anyone can view clothing size systems" ON predefined_clothing_size_systems;
 CREATE POLICY "Anyone can view clothing size systems" ON predefined_clothing_size_systems FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can view clothing sizes" ON predefined_clothing_sizes;
 CREATE POLICY "Anyone can view clothing sizes" ON predefined_clothing_sizes FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can view shoe size systems" ON predefined_shoe_size_systems;
 CREATE POLICY "Anyone can view shoe size systems" ON predefined_shoe_size_systems FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can view shoe sizes" ON predefined_shoe_sizes;
 CREATE POLICY "Anyone can view shoe sizes" ON predefined_shoe_sizes FOR SELECT USING (true);
 
 -- User-specific data policies
+DROP POLICY IF EXISTS "Users can view their own clothing sizes" ON user_clothing_sizes;
 CREATE POLICY "Users can view their own clothing sizes" ON user_clothing_sizes
 FOR SELECT USING (auth.uid() = (SELECT user_id FROM users_profile WHERE id = profile_id));
 
+DROP POLICY IF EXISTS "Users can insert their own clothing sizes" ON user_clothing_sizes;
 CREATE POLICY "Users can insert their own clothing sizes" ON user_clothing_sizes
 FOR INSERT WITH CHECK (auth.uid() = (SELECT user_id FROM users_profile WHERE id = profile_id));
 
+DROP POLICY IF EXISTS "Users can update their own clothing sizes" ON user_clothing_sizes;
 CREATE POLICY "Users can update their own clothing sizes" ON user_clothing_sizes
 FOR UPDATE USING (auth.uid() = (SELECT user_id FROM users_profile WHERE id = profile_id));
 
+DROP POLICY IF EXISTS "Users can delete their own clothing sizes" ON user_clothing_sizes;
 CREATE POLICY "Users can delete their own clothing sizes" ON user_clothing_sizes
 FOR DELETE USING (auth.uid() = (SELECT user_id FROM users_profile WHERE id = profile_id));
 
+DROP POLICY IF EXISTS "Users can view their own measurements" ON user_measurements;
 CREATE POLICY "Users can view their own measurements" ON user_measurements
 FOR SELECT USING (auth.uid() = (SELECT user_id FROM users_profile WHERE id = profile_id));
 
+DROP POLICY IF EXISTS "Users can insert their own measurements" ON user_measurements;
 CREATE POLICY "Users can insert their own measurements" ON user_measurements
 FOR INSERT WITH CHECK (auth.uid() = (SELECT user_id FROM users_profile WHERE id = profile_id));
 
+DROP POLICY IF EXISTS "Users can update their own measurements" ON user_measurements;
 CREATE POLICY "Users can update their own measurements" ON user_measurements
 FOR UPDATE USING (auth.uid() = (SELECT user_id FROM users_profile WHERE id = profile_id));
 
+DROP POLICY IF EXISTS "Users can delete their own measurements" ON user_measurements;
 CREATE POLICY "Users can delete their own measurements" ON user_measurements
 FOR DELETE USING (auth.uid() = (SELECT user_id FROM users_profile WHERE id = profile_id));
 
@@ -345,26 +360,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_predefined_clothing_size_systems_updated_at ON predefined_clothing_size_systems;
 CREATE TRIGGER update_predefined_clothing_size_systems_updated_at
 BEFORE UPDATE ON predefined_clothing_size_systems
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_predefined_clothing_sizes_updated_at ON predefined_clothing_sizes;
 CREATE TRIGGER update_predefined_clothing_sizes_updated_at
 BEFORE UPDATE ON predefined_clothing_sizes
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_clothing_sizes_updated_at ON user_clothing_sizes;
 CREATE TRIGGER update_user_clothing_sizes_updated_at
 BEFORE UPDATE ON user_clothing_sizes
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_measurements_updated_at ON user_measurements;
 CREATE TRIGGER update_user_measurements_updated_at
 BEFORE UPDATE ON user_measurements
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_predefined_shoe_size_systems_updated_at ON predefined_shoe_size_systems;
 CREATE TRIGGER update_predefined_shoe_size_systems_updated_at
 BEFORE UPDATE ON predefined_shoe_size_systems
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_predefined_shoe_sizes_updated_at ON predefined_shoe_sizes;
 CREATE TRIGGER update_predefined_shoe_sizes_updated_at
 BEFORE UPDATE ON predefined_shoe_sizes
 FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

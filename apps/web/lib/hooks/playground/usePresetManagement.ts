@@ -43,7 +43,6 @@ export const usePresetManagement = ({
     if (storedPreset) {
       try {
         const presetData = JSON.parse(storedPreset)
-        console.log('🎯 Found stored preset:', presetData.name)
 
         // Create a Preset object from the stored data
         const presetObject: Preset = {
@@ -69,24 +68,16 @@ export const usePresetManagement = ({
 
         // Clear the stored preset so it doesn't apply again
         localStorage.removeItem('selectedPreset')
-
-        console.log('🎯 Applied preset from localStorage:', presetData.name)
       } catch (error) {
         console.error('Error parsing stored preset:', error)
         localStorage.removeItem('selectedPreset')
       }
     } else if (presetId && presetName) {
       // Fetch preset data from API when URL parameters are present
-      console.log('🎯 Found preset in URL, fetching from API:', { presetId, presetName })
-
-      fetch('/api/presets')
+      fetch(`/api/presets/${presetId}`)
         .then(response => response.json())
-        .then(data => {
-          if (data.presets) {
-            const presetData = data.presets.find((p: any) => p.id === presetId)
-            if (presetData) {
-              console.log('🎯 Fetched preset from API:', presetData.name)
-
+        .then(presetData => {
+          if (presetData && presetData.id) {
               const presetObject: Preset = {
                 id: presetData.id,
                 name: presetData.name,
@@ -107,11 +98,8 @@ export const usePresetManagement = ({
               }
 
               setCurrentPreset(presetObject)
-
-              console.log('🎯 Applied preset from API:', presetData.name)
-            } else {
-              console.error('Preset not found in API response:', presetId)
-            }
+          } else {
+            console.error('Preset not found in API response:', presetId)
           }
         })
         .catch(error => {
@@ -122,18 +110,13 @@ export const usePresetManagement = ({
 
   // Handle preset selection from parent component
   useEffect(() => {
-    console.log('🎯 selectedPreset useEffect running:', selectedPreset)
-
     if (selectedPreset) {
-      console.log('🎯 Applying preset:', selectedPreset.name || selectedPreset.id, 'prompt:', selectedPreset.prompt_template)
       setCurrentPreset(selectedPreset)
 
-      // Clear the selected preset after applying it
-      if (onPresetApplied) {
-        onPresetApplied()
-      }
+      // Don't clear the preset immediately - keep it for generation
+      // Only clear when user explicitly clears or selects a different preset
     }
-  }, [selectedPreset, onPresetApplied])
+  }, [selectedPreset])
 
   // Apply preset to form
   const applyPreset = useCallback((preset: Preset | null): {

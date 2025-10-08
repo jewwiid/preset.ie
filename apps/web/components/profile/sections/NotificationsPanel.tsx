@@ -7,12 +7,12 @@ import { supabase } from '../../../lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Badge } from '../../ui/badge'
-import { 
-  Bell, 
-  BellOff, 
-  Mail, 
-  Smartphone, 
-  Clock, 
+import {
+  Bell,
+  BellOff,
+  Mail,
+  Smartphone,
+  Clock,
   Settings,
   CheckCircle,
   XCircle,
@@ -22,7 +22,8 @@ import {
   Volume2,
   VolumeX,
   Vibrate,
-  Smartphone as Mobile
+  Smartphone as Mobile,
+  RefreshCw
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -518,7 +519,10 @@ export function NotificationsPanel() {
                 variant="outline"
                 size="sm"
                 onClick={refresh}
+                disabled={loading}
+                title="Refresh notifications"
               >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
             </div>

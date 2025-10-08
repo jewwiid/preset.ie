@@ -51,7 +51,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ email: userData.user.email })
   } catch (error) {
-    console.error('Error in handle-to-email lookup:', error)
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error in handle-to-email lookup:', error)
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

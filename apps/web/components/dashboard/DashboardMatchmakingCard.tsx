@@ -117,17 +117,17 @@ export function DashboardMatchmakingCard({
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h5 className="font-semibold text-foreground">{rec.data.title}</h5>
+                        <h5 className="font-semibold text-foreground">{rec.data.title as string}</h5>
                         <CompatibilityScore
                           score={rec.compatibility_score}
                           size="sm"
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground mb-1">{rec.data.location_text}</p>
+                      <p className="text-xs text-muted-foreground mb-1">{rec.data.location_text as string}</p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{rec.data.comp_type}</span>
+                        <span>{rec.data.comp_type as string}</span>
                         <span>•</span>
-                        <span>{new Date(rec.data.start_time).toLocaleDateString()}</span>
+                        <span>{new Date(rec.data.start_time as string).toLocaleDateString()}</span>
                       </div>
                     </div>
                     <button className="px-3 py-1.5 bg-foreground text-background text-xs font-medium rounded-lg hover:bg-foreground/90 transition-colors">

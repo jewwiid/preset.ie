@@ -922,19 +922,24 @@ export default function SavedMediaMasonry({
                       </div>
                       <div className="flex flex-wrap gap-1 p-2 border rounded-md min-h-[2rem]">
                         {editableTags.length > 0 ? (
-                          editableTags.map((tag, index) => (
-                            <Badge 
-                              key={index} 
-                              variant="secondary" 
-                              className="text-xs cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-                              onClick={() => {
-                                const newTags = editableTags.filter((_, i) => i !== index)
-                                setEditableTags(newTags)
-                              }}
-                            >
-                              {tag} ×
-                            </Badge>
-                          ))
+                          editableTags.map((tag, index) => {
+                            const isAiGenerated = tag === 'ai-generated'
+                            return (
+                              <Badge
+                                key={index}
+                                variant="secondary"
+                                className={`text-xs ${!isAiGenerated ? 'cursor-pointer hover:bg-destructive hover:text-destructive-foreground' : 'cursor-not-allowed opacity-70'}`}
+                                onClick={() => {
+                                  if (!isAiGenerated) {
+                                    const newTags = editableTags.filter((_, i) => i !== index)
+                                    setEditableTags(newTags)
+                                  }
+                                }}
+                              >
+                                {tag} {!isAiGenerated && '×'}
+                              </Badge>
+                            )
+                          })
                         ) : (
                           <span className="text-xs text-muted-foreground">No tags yet. Click "AI Generate Tags" to add some!</span>
                         )}

@@ -14,12 +14,18 @@ function AuthCallbackContent() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      console.log('🚀 CALLBACK PAGE: Starting handleAuthCallback')
-      console.log('🚀 CALLBACK PAGE: Current URL:', window.location.href)
-      console.log('🚀 CALLBACK PAGE: Search params:', searchParams ? Object.fromEntries(searchParams.entries()) : {})
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 CALLBACK PAGE: Starting handleAuthCallback')
+        console.log('🚀 CALLBACK PAGE: Current URL:', window.location.href)
+        console.log('🚀 CALLBACK PAGE: Search params:', searchParams ? Object.fromEntries(searchParams.entries()) : {})
+      }
 
       if (!supabase) {
-        console.error('🚀 CALLBACK PAGE: Supabase client not available')
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('🚀 CALLBACK PAGE: Supabase client not available')
+        }
         setStatus('error')
         setMessage('Authentication service unavailable. Please try again.')
         return
@@ -30,7 +36,10 @@ function AuthCallbackContent() {
       const errorDescription = searchParams?.get('error_description')
       
       if (error) {
-        console.error('🚀 CALLBACK PAGE: Error in callback:', { error, errorDescription })
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('🚀 CALLBACK PAGE: Error in callback:', { error, errorDescription })
+        }
         setStatus('error')
         if (error === 'access_denied') {
           setMessage('Access was denied. Please try again and make sure to grant all requested permissions.')
@@ -44,31 +53,46 @@ function AuthCallbackContent() {
       const code = searchParams?.get('code')
       const hasState = searchParams?.has('state')
       
-      console.log('OAuth callback parameters:', { 
-        code: !!code, 
-        state: hasState 
-      })
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('OAuth callback parameters:', {
+          code: !!code,
+          state: hasState
+        })
+      }
 
       if (code) {
-        console.log('🚀 CALLBACK PAGE: Found OAuth code, Supabase will automatically exchange it for session')
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚀 CALLBACK PAGE: Found OAuth code, Supabase will automatically exchange it for session')
+        }
 
         // First, check if session already exists (may have been established before we subscribed)
         const { data: { session: existingSession } } = await supabase!.auth.getSession()
 
         if (existingSession?.user) {
-          console.log('🚀 CALLBACK PAGE: Session already established, proceeding to profile check')
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🚀 CALLBACK PAGE: Session already established, proceeding to profile check')
+          }
           await handleProfileCheck(existingSession.user)
           return
         }
 
         // If no existing session, wait for SIGNED_IN event
-        console.log('🚀 CALLBACK PAGE: No existing session, waiting for auth state change...')
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚀 CALLBACK PAGE: No existing session, waiting for auth state change...')
+        }
         let sessionHandled = false
         const timeoutDuration = 10000 // 10 seconds max wait
 
         const timeout = setTimeout(() => {
           if (!sessionHandled) {
-            console.error('🚀 CALLBACK PAGE: Session establishment timed out')
+            // Only log in development
+            if (process.env.NODE_ENV === 'development') {
+              console.error('🚀 CALLBACK PAGE: Session establishment timed out')
+            }
             setStatus('error')
             setMessage('Authentication is taking longer than expected. Please try signing in again.')
           }
@@ -76,18 +100,24 @@ function AuthCallbackContent() {
 
         // Listen for auth state change
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('🚀 CALLBACK PAGE: Auth state change:', event, {
-            hasSession: !!session,
-            hasUser: !!session?.user,
-            userEmail: session?.user?.email
-          })
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🚀 CALLBACK PAGE: Auth state change:', event, {
+              hasSession: !!session,
+              hasUser: !!session?.user,
+              userEmail: session?.user?.email
+            })
+          }
 
           // Handle SIGNED_IN or INITIAL_SESSION with valid session
           if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user && !sessionHandled) {
             sessionHandled = true
             clearTimeout(timeout)
 
-            console.log('🚀 CALLBACK PAGE: Session established successfully!')
+            // Only log in development
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🚀 CALLBACK PAGE: Session established successfully!')
+            }
 
             // Unsubscribe from further events
             subscription.unsubscribe()
@@ -108,14 +138,20 @@ function AuthCallbackContent() {
         const { data: { session }, error: sessionError } = await supabase!.auth.getSession()
         
         if (sessionError) {
-          console.error('🚀 CALLBACK PAGE: Session error:', sessionError)
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.error('🚀 CALLBACK PAGE: Session error:', sessionError)
+          }
           setStatus('error')
           setMessage('Failed to retrieve session. Please try again.')
           return
         }
 
         if (session && session.user) {
-          console.log('🚀 CALLBACK PAGE: Existing session found')
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🚀 CALLBACK PAGE: Existing session found')
+          }
           await handleProfileCheck(session.user)
         } else {
           setStatus('error')
@@ -125,10 +161,18 @@ function AuthCallbackContent() {
     }
 
     const handleProfileCheck = async (user: any) => {
-      console.log('🚀 CALLBACK PAGE: Checking for user profile:', user.id)
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 CALLBACK PAGE: Checking for user profile:', user.id)
+      }
 
       setStatus('success')
       setMessage('Authentication successful! Checking your profile...')
+      
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 CALLBACK PAGE: Starting profile query...')
+      }
 
       try {
         console.log('🚀 CALLBACK PAGE: Starting profile query...')
@@ -139,38 +183,53 @@ function AuthCallbackContent() {
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle() // Use maybeSingle instead of single to avoid error on no rows
-
-        console.log('🚀 CALLBACK PAGE: Profile query result:', {
-          hasData: !!profile,
-          hasError: !!profileError,
-          errorCode: profileError?.code
-        })
+  
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚀 CALLBACK PAGE: Profile query result:', {
+            hasData: !!profile,
+            hasError: !!profileError,
+            errorCode: profileError?.code
+          })
+        }
 
         if (profileError) {
-          console.error('🚀 CALLBACK PAGE: Profile query error:', profileError)
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.error('🚀 CALLBACK PAGE: Profile query error:', profileError)
+          }
           // On error, assume no profile and redirect to creation
           setMessage('Setting up your account...')
-          router.replace('/auth/create-profile')
+          router.replace('/auth/complete-profile')
           return
         }
 
         if (profile) {
           // Profile exists - redirect to dashboard
-          console.log('🚀 CALLBACK PAGE: Profile found, redirecting to dashboard')
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🚀 CALLBACK PAGE: Profile found, redirecting to dashboard')
+          }
           setMessage('Welcome back! Redirecting to your dashboard...')
           router.replace('/dashboard')
         } else {
           // No profile found - redirect to profile creation
-          console.log('🚀 CALLBACK PAGE: No profile found, redirecting to profile creation')
+          // Only log in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🚀 CALLBACK PAGE: No profile found, redirecting to profile creation')
+          }
           setMessage('Setting up your account...')
-          router.replace('/auth/create-profile')
+          router.replace('/auth/complete-profile')
         }
 
       } catch (error: any) {
-        console.error('🚀 CALLBACK PAGE: Unexpected error in profile check:', error)
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('🚀 CALLBACK PAGE: Unexpected error in profile check:', error)
+        }
         // On any unexpected error, redirect to profile creation
         setMessage('Setting up your account...')
-        router.replace('/auth/create-profile')
+        router.replace('/auth/complete-profile')
       }
     }
 

@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MapPin, Calendar, Clock, Users, Eye, Edit, ArrowLeft, Palette, Camera, Star } from 'lucide-react'
+import { MapPin, Calendar, Clock, Users, Eye, Edit, ArrowLeft, Palette, Camera, Star, Sparkles, CheckCircle } from 'lucide-react'
 import LocationMap from '../../../components/LocationMap'
 
 interface GigDetails {
@@ -55,6 +55,8 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
   const [moodboardData, setMoodboardData] = useState<any>(null)
   const [applications, setApplications] = useState<any[]>([])
   const [applicationCount, setApplicationCount] = useState(0)
+  const [acceptedApplicants, setAcceptedApplicants] = useState<any[]>([])
+  const [acceptedCount, setAcceptedCount] = useState(0)
   
   // Matchmaking state
   const [compatibilityData, setCompatibilityData] = useState<CompatibilityData | null>(null)
@@ -71,15 +73,18 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
     fetchGigDetails()
     fetchMoodboardData()
     fetchApplications()
+    fetchAcceptedApplicants()
     if (user) {
       fetchUserProfile()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gigId, user])
 
   useEffect(() => {
     if (gig && userProfile) {
       fetchMatchmakingData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gig, userProfile])
 
   const fetchUserProfile = async () => {
@@ -136,15 +141,45 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
         .eq('gig_id', gigId)
         .order('applied_at', { ascending: false })
         .limit(10)
-      
+
       if (error) throw error
-      
+
       if (data) {
         setApplications(data)
         setApplicationCount(count || 0)
       }
     } catch (error) {
       console.log('Error fetching applications:', error)
+    }
+  }
+
+  const fetchAcceptedApplicants = async () => {
+    if (!supabase) return
+
+    try {
+      const { data, error, count } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          users_profile (
+            id,
+            display_name,
+            handle,
+            avatar_url
+          )
+        `, { count: 'exact' })
+        .eq('gig_id', gigId)
+        .eq('status', 'ACCEPTED')
+        .order('updated_at', { ascending: false })
+
+      if (error) throw error
+
+      if (data) {
+        setAcceptedApplicants(data)
+        setAcceptedCount(count || 0)
+      }
+    } catch (error) {
+      console.log('Error fetching accepted applicants:', error)
     }
   }
 
@@ -323,49 +358,80 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section with Moodboard Background */}
-      {moodboardData && moodboardData.items && moodboardData.items.length > 0 && (
-        <div className="relative h-96 overflow-hidden">
-          {/* Background Image Grid */}
-          <div className="absolute inset-0 grid grid-cols-3 gap-1 opacity-20">
-            {moodboardData.items.slice(0, 6).map((item: any, index: number) => (
-              <div
-                key={index}
-                className="bg-cover bg-center"
-                style={{ backgroundImage: `url(${item.url})` }}
-              />
-            ))}
-          </div>
-          
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
-          
-          {/* Content */}
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-end pb-12">
-            <div className="w-full">
-              <div className="flex items-center gap-3 mb-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push('/gigs')}
-                  className="text-muted-foreground hover:text-foreground"
+      {/* Hero Banner with Moodboard Background */}
+      <div className="relative h-[500px] overflow-hidden border-b border-border">
+        {/* Background Image - Use moodboard images if available */}
+        {moodboardData && moodboardData.items && moodboardData.items.length > 0 ? (
+          <>
+            {/* Moodboard Image Grid */}
+            <div className="absolute inset-0 grid grid-cols-3 gap-1">
+              {moodboardData.items.slice(0, 6).map((item: any, index: number) => (
+                <div
+                  key={index}
+                  className="relative w-full h-full"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Gigs
-                </Button>
-                <Badge variant={gig.status === 'PUBLISHED' ? 'default' : 'secondary'}>
-                  {gig.status}
+                  <img
+                    src={item.thumbnail_url || item.url}
+                    alt={`Moodboard ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+            {/* Stronger gradient overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+          </>
+        ) : (
+          <>
+            {/* Fallback gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-background" />
+            <div className="absolute inset-0 opacity-10" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+            }} />
+          </>
+        )}
+
+        {/* Content */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-between py-8">
+          {/* Top Navigation */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push('/gigs')}
+              className="backdrop-blur-sm bg-background/80 hover:bg-background/90"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Gigs
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Badge variant={gig.status === 'PUBLISHED' ? 'default' : 'secondary'} className="backdrop-blur-sm">
+                {gig.status}
+              </Badge>
+              {gig.purpose && (
+                <Badge variant="outline" className="backdrop-blur-sm bg-background/80">
+                  {getPurposeLabel(gig.purpose)}
                 </Badge>
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              )}
+              <Badge variant="outline" className="backdrop-blur-sm bg-background/80">
+                {getCompensationType(gig.comp_type)}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Main Title Section */}
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-4 leading-tight">
                 {gig.title}
               </h1>
-              
-              <div className="flex items-center gap-6 text-muted-foreground">
+
+              {/* Metadata Row */}
+              <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
                 <div className="flex items-center gap-3">
-                  <Avatar className="w-12 h-12 border-2 border-primary-foreground/20 shadow-lg">
-                    <AvatarImage 
+                  <Avatar className="w-14 h-14 border-2 border-background shadow-xl ring-2 ring-primary/20">
+                    <AvatarImage
                       src={gig.users_profile?.avatar_url || undefined}
                       alt={`${gig.users_profile?.display_name || 'User'} avatar`}
                     />
@@ -373,22 +439,49 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                       {gig.users_profile?.display_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="text-sm text-muted-foreground/80">Posted by</p>
+                  <div className="backdrop-blur-sm bg-background/60 px-3 py-2 rounded-lg">
+                    <p className="text-xs text-muted-foreground/80">Posted by</p>
                     <p className="font-semibold text-foreground">{gig.users_profile?.display_name || 'Unknown'}</p>
                   </div>
                 </div>
+
                 {gig.users_profile?.city && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2 backdrop-blur-sm bg-background/60 px-4 py-2 rounded-lg">
                     <MapPin className="w-4 h-4" />
-                    <span>{gig.users_profile.city}</span>
+                    <span className="font-medium">{gig.users_profile.city}</span>
                   </div>
+                )}
+
+                <div className="flex items-center gap-2 backdrop-blur-sm bg-background/60 px-4 py-2 rounded-lg">
+                  <Calendar className="w-4 h-4" />
+                  <span className="font-medium">{new Date(gig.start_time).toLocaleDateString()}</span>
+                </div>
+
+                <div className="flex items-center gap-2 backdrop-blur-sm bg-background/60 px-4 py-2 rounded-lg">
+                  <Users className="w-4 h-4" />
+                  <span className="font-medium">{gig.max_applicants} spots</span>
+                </div>
+
+                {/* Style Tags */}
+                {gig.users_profile?.style_tags && gig.users_profile.style_tags.length > 0 && (
+                  <>
+                    {gig.users_profile.style_tags.slice(0, 3).map((tag) => (
+                      <Badge key={tag} variant="outline" className="backdrop-blur-sm bg-background/80 px-3 py-1">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {gig.users_profile.style_tags.length > 3 && (
+                      <Badge variant="outline" className="backdrop-blur-sm bg-background/80 px-3 py-1">
+                        +{gig.users_profile.style_tags.length - 3}
+                      </Badge>
+                    )}
+                  </>
                 )}
               </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -460,13 +553,13 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                 <div className="prose prose-sm max-w-none text-foreground">
                   <p className="whitespace-pre-wrap leading-relaxed">{gig.description}</p>
                 </div>
-                
+
                 <Separator />
-                
+
                 {/* Location Section */}
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Shoot Location</h3>
-                  <LocationMap 
+                  <LocationMap
                     location={gig.location_text}
                     latitude={gig.location?.lat}
                     longitude={gig.location?.lng}
@@ -474,24 +567,6 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                 </div>
               </CardContent>
             </Card>
-
-            {/* Contributor Styles */}
-            {gig.users_profile?.style_tags && gig.users_profile.style_tags.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contributor's Style</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {gig.users_profile.style_tags.map((tag) => (
-                      <Badge key={tag} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Sidebar */}
@@ -618,8 +693,20 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Availability</p>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-primary" />
-                    <span className="text-sm">{gig.max_applicants} spots available</span>
+                    <span className="text-sm">
+                      {acceptedCount}/{gig.max_applicants} spots filled
+                    </span>
                   </div>
+                  {acceptedCount > 0 && (
+                    <div className="mt-2">
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all"
+                          style={{ width: `${(acceptedCount / gig.max_applicants) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -662,17 +749,91 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
           </div>
         </div>
 
-        {/* Similar Talent Section - Slim Design */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        {/* Accepted Talent Section */}
+        {acceptedCount > 0 && (
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-primary" />
+                      Accepted Talent
+                    </CardTitle>
+                    <CardDescription>
+                      {acceptedCount} of {gig.max_applicants} spots filled
+                    </CardDescription>
+                  </div>
+                  {isOwner && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/gigs/${gigId}/applications`)}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Manage Applications
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-4 overflow-x-auto pb-2">
+                  {acceptedApplicants.map((application) => (
+                    <div
+                      key={application.id}
+                      className="flex-shrink-0 group cursor-pointer"
+                      onClick={() => router.push(`/users/${application.users_profile.handle}`)}
+                    >
+                      <div className="relative">
+                        {/* Avatar */}
+                        <Avatar className="w-20 h-20 border-2 border-primary group-hover:border-primary/70 transition-colors ring-2 ring-primary/20">
+                          <AvatarImage
+                            src={application.users_profile.avatar_url || undefined}
+                            alt={application.users_profile.display_name}
+                          />
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xl">
+                            {application.users_profile.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        {/* Checkmark Badge - Overlay on top right */}
+                        <div className="absolute -top-1 -right-1">
+                          <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow-lg ring-2 ring-background">
+                            <CheckCircle className="w-4 h-4 text-primary-foreground fill-current" />
+                          </div>
+                        </div>
+
+                        {/* Name on hover */}
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                          <div className="bg-background/90 backdrop-blur-sm px-3 py-1 rounded-lg border border-border shadow-lg">
+                            <p className="text-xs font-medium text-foreground">
+                              {application.users_profile.display_name}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Similar Talent Section - Full Width */}
+        <div className="mt-8">
           <SimilarTalentSlim gigId={gigId} />
         </div>
 
         {/* Similar Gigs Section */}
         {similarGigs.length > 0 && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-12">
+          <div className="mt-8 mb-12">
             <Card>
               <CardHeader>
-                <CardTitle>Similar Gigs</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-primary" />
+                  Similar Gigs
+                </CardTitle>
                 <CardDescription>Other gigs that match your profile</CardDescription>
               </CardHeader>
               <CardContent>

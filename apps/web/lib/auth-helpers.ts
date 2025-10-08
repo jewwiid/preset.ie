@@ -26,7 +26,10 @@ export async function getUserRole(userId: string): Promise<UserRole | null> {
       isTalent: profile.role_flags?.includes('TALENT') || false
     }
   } catch (error) {
-    console.error('Error fetching user role:', error)
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching user role:', error)
+    }
     return null
   }
 }

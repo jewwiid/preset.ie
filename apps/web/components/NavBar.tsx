@@ -18,12 +18,12 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
-import { 
-  Home, 
-  Search, 
-  Briefcase, 
-  MessageSquare, 
-  Image, 
+import {
+  Home,
+  Search,
+  Briefcase,
+  MessageSquare,
+  Image,
   Plus,
   Menu,
   X,
@@ -35,6 +35,7 @@ import {
   ChevronDown,
   Target,
   ShoppingBag,
+  ShoppingCart,
   Store,
   Calendar,
   Palette,
@@ -44,7 +45,9 @@ import {
   Camera,
   Video,
   Wand2,
-  Clock
+  Clock,
+  TrendingUp,
+  Package
 } from 'lucide-react'
 import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
@@ -399,7 +402,7 @@ export function NavBar() {
                     <button
                       className={`
                         inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                        ${(isActive('/gear'))
+                        ${(isActive('/gear') || isActive('/presets/marketplace'))
                           ? 'text-primary bg-primary/10'
                           : 'nav-item'
                         }
@@ -411,10 +414,38 @@ export function NavBar() {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-48" align="start">
+                    <DropdownMenuLabel>Preset Marketplace</DropdownMenuLabel>
+                    <DropdownMenuItem asChild>
+                      <Link href="/presets/marketplace" className="flex items-center">
+                        <Palette className="mr-2 h-4 w-4" />
+                        Browse Presets
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/presets/marketplace/my-listings" className="flex items-center">
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        My Preset Listings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/presets/marketplace/purchases" className="flex items-center">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Purchase History
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/presets/marketplace/analytics" className="flex items-center">
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        Analytics
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Equipment Marketplace</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
                       <Link href="/gear" className="flex items-center">
-                        <Store className="mr-2 h-4 w-4" />
-                        Browse Marketplace
+                        <Camera className="mr-2 h-4 w-4" />
+                        Browse Equipment
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -425,8 +456,8 @@ export function NavBar() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/gear/my-listings" className="flex items-center">
-                        <ShoppingBag className="mr-2 h-4 w-4" />
-                        My Listings
+                        <Package className="mr-2 h-4 w-4" />
+                        My Equipment Listings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
@@ -439,7 +470,7 @@ export function NavBar() {
                     <DropdownMenuSub>
                       <DropdownMenuSubTrigger>
                         <MessageSquare className="mr-2 h-4 w-4" />
-                        Requests
+                        Equipment Requests
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="w-48">
                         <DropdownMenuItem asChild>
@@ -551,12 +582,21 @@ export function NavBar() {
               <>
                 {/* Create Gig Button */}
                 {profile?.role_flags?.includes('CONTRIBUTOR') && (
-                  <Button asChild className="hidden md:inline-flex">
-                    <Link href="/gigs/create">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create Gig
-                    </Link>
-                  </Button>
+                  <>
+                    {/* Desktop - Full button */}
+                    <Button asChild className="hidden md:inline-flex">
+                      <Link href="/gigs/create">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Gig
+                      </Link>
+                    </Button>
+                    {/* Mobile - Just green [+] button */}
+                    <Button asChild size="icon" className="md:hidden">
+                      <Link href="/gigs/create">
+                        <Plus className="w-4 h-4" />
+                      </Link>
+                    </Button>
+                  </>
                 )}
 
                 {/* Theme Toggle */}

@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/auth-context';
 import { supabase } from '../../lib/supabase';
-import { MapPin, Calendar, Users, Search, Filter, Heart, Clock, DollarSign, Camera, Video, Sparkles, ChevronLeft, ChevronRight, X, Tag, Eye, Shield, TrendingUp, Radius, Building } from 'lucide-react';
+import { MapPin, Calendar, Users, Search, Filter, Heart, Clock, DollarSign, Camera, Video, Sparkles, ChevronLeft, ChevronRight, X, Tag, Eye, Shield, TrendingUp, Radius, Building, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 
 type CompensationType = 'TFP' | 'PAID' | 'EXPENSES' | 'OTHER';
 type PurposeType = 'PORTFOLIO' | 'COMMERCIAL' | 'EDITORIAL' | 'FASHION' | 'BEAUTY' | 'LIFESTYLE' | 'WEDDING' | 'EVENT' | 'PRODUCT' | 'ARCHITECTURE' | 'STREET' | 'CONCEPTUAL' | 'OTHER';
@@ -21,6 +24,7 @@ interface Gig {
   description: string;
   purpose?: PurposeType;
   comp_type: CompensationType;
+  looking_for_types?: string[];
   location_text: string;
   start_time: string;
   end_time: string;
@@ -81,7 +85,9 @@ export default function GigDiscoveryPage() {
   const [selectedVibeTags, setSelectedVibeTags] = useState<string[]>([]);
   const [availableStyleTags, setAvailableStyleTags] = useState<string[]>([]);
   const [availableVibeTags, setAvailableVibeTags] = useState<string[]>([]);
-  
+  const [selectedRoleTypes, setSelectedRoleTypes] = useState<string[]>([]);
+  const [availableRoleTypes, setAvailableRoleTypes] = useState<string[]>([]);
+
   // New filters for creator profile data
   const [minExperienceFilter, setMinExperienceFilter] = useState<number | null>(null);
   const [maxExperienceFilter, setMaxExperienceFilter] = useState<number | null>(null);
@@ -100,13 +106,14 @@ export default function GigDiscoveryPage() {
     fetchGigs();
     fetchSavedGigs(); // Will handle gracefully if table doesn't exist
     fetchAvailablePalettes();
+    fetchAvailableRoleTypes();
     fetchAvailableSpecializations();
     initializeSimulatedData();
   }, []);
 
   useEffect(() => {
     filterGigs();
-  }, [searchTerm, selectedCompType, selectedPurpose, selectedUsageRights, locationFilter, selectedPalette, selectedStyleTags, selectedVibeTags, startDateFilter, endDateFilter, maxApplicantsFilter, minExperienceFilter, maxExperienceFilter, selectedSpecializations, minRateFilter, maxRateFilter, travelOnlyFilter, studioOnlyFilter, gigs]);
+  }, [searchTerm, selectedCompType, selectedPurpose, selectedUsageRights, locationFilter, selectedPalette, selectedStyleTags, selectedVibeTags, selectedRoleTypes, startDateFilter, endDateFilter, maxApplicantsFilter, minExperienceFilter, maxExperienceFilter, selectedSpecializations, minRateFilter, maxRateFilter, travelOnlyFilter, studioOnlyFilter, gigs]);
 
   const fetchGigs = async () => {
     try {
@@ -259,6 +266,33 @@ export default function GigDiscoveryPage() {
         '#EE5A24', '#009432', '#0652DD', '#9C88FF', '#FFC312',
         '#C4E538', '#12CBC4', '#FDA7DF', '#ED4C67', '#F79F1F'
       ]);
+    }
+  };
+
+  const fetchAvailableRoleTypes = async () => {
+    try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
+      // Get unique role types from all gigs
+      const { data, error } = await supabase
+        .from('gigs')
+        .select('looking_for_types')
+        .not('looking_for_types', 'is', null);
+
+      if (!error && data) {
+        const roleTypesSet = new Set<string>();
+        data.forEach(gig => {
+          if (gig.looking_for_types && Array.isArray(gig.looking_for_types)) {
+            gig.looking_for_types.forEach(type => roleTypesSet.add(type));
+          }
+        });
+        setAvailableRoleTypes(Array.from(roleTypesSet).sort());
+      }
+    } catch (error) {
+      console.log('Error fetching role types:', error);
     }
   };
 
@@ -521,8 +555,16 @@ export default function GigDiscoveryPage() {
 
     if (selectedVibeTags.length > 0) {
       filtered = filtered.filter(gig =>
-        gig.vibe_tags && gig.vibe_tags.some(tag => 
+        gig.vibe_tags && gig.vibe_tags.some(tag =>
           selectedVibeTags.includes(tag)
+        )
+      );
+    }
+
+    if (selectedRoleTypes.length > 0) {
+      filtered = filtered.filter(gig =>
+        gig.looking_for_types && gig.looking_for_types.some(type =>
+          selectedRoleTypes.includes(type)
         )
       );
     }
@@ -675,6 +717,67 @@ export default function GigDiscoveryPage() {
     return diffDays;
   };
 
+  const getLookingForLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      'MODELS': '🎭 Models',
+      'MODELS_FASHION': '👗 Fashion Models',
+      'MODELS_COMMERCIAL': '📺 Commercial',
+      'MODELS_FITNESS': '💪 Fitness',
+      'MODELS_EDITORIAL': '📰 Editorial',
+      'MODELS_RUNWAY': '🚶 Runway',
+      'MODELS_HAND': '🤲 Hand',
+      'MODELS_PARTS': '👤 Parts',
+      'ACTORS': '🎬 Actors',
+      'DANCERS': '💃 Dancers',
+      'MUSICIANS': '🎵 Musicians',
+      'SINGERS': '🎤 Singers',
+      'VOICE_ACTORS': '🎙️ Voice Actors',
+      'PERFORMERS': '🎪 Performers',
+      'INFLUENCERS': '📱 Influencers',
+      'PHOTOGRAPHERS': '📸 Photographers',
+      'VIDEOGRAPHERS': '🎥 Videographers',
+      'CINEMATOGRAPHERS': '🎞️ Cinematographers',
+      'MAKEUP_ARTISTS': '💄 MUA',
+      'HAIR_STYLISTS': '💇 Hair',
+      'FASHION_STYLISTS': '👔 Fashion Stylist',
+      'WARDROBE_STYLISTS': '👘 Wardrobe',
+      'NAIL_ARTISTS': '💅 Nails',
+      'SFX_MAKEUP': '🎭 SFX Makeup',
+      'PRODUCTION_CREW': '🎬 Production',
+      'PRODUCERS': '🎯 Producers',
+      'DIRECTORS': '🎬 Directors',
+      'ASSISTANT_DIRECTORS': '📋 AD',
+      'CASTING_DIRECTORS': '🎭 Casting',
+      'GAFFERS': '💡 Gaffer',
+      'GRIPS': '🔧 Grip',
+      'SOUND_ENGINEERS': '🔊 Sound',
+      'EDITORS': '✂️ Editors',
+      'VIDEO_EDITORS': '🎬 Video Editor',
+      'PHOTO_EDITORS': '🖼️ Photo Editor',
+      'COLOR_GRADERS': '🎨 Color',
+      'VFX_ARTISTS': '✨ VFX',
+      'ANIMATORS': '🎞️ Animator',
+      'MOTION_GRAPHICS': '🎬 Motion',
+      'DESIGNERS': '🎨 Designers',
+      'GRAPHIC_DESIGNERS': '🖌️ Graphic',
+      'UI_UX_DESIGNERS': '📱 UI/UX',
+      'ART_DIRECTORS': '🎨 Art Director',
+      'SET_DESIGNERS': '🏗️ Set Design',
+      'PROP_STYLISTS': '🪴 Props',
+      'CONTENT_CREATORS': '📱 Content',
+      'SOCIAL_MEDIA_MANAGERS': '📲 Social',
+      'COPYWRITERS': '✍️ Copy',
+      'WRITERS': '📝 Writers',
+      'BRAND_MANAGERS': '🏢 Brand',
+      'AGENCIES': '🏢 Agencies',
+      'TALENT_MANAGERS': '👥 Talent Mgr',
+      'BOOKING_AGENTS': '📅 Booking',
+      'EVENT_COORDINATORS': '🎉 Events',
+      'OTHER': '🔧 Other'
+    };
+    return labels[type] || type;
+  };
+
   // Pagination
   const indexOfLastGig = currentPage * gigsPerPage;
   const indexOfFirstGig = indexOfLastGig - gigsPerPage;
@@ -693,23 +796,59 @@ export default function GigDiscoveryPage() {
     <>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="mb-8 rounded-2xl p-8 border border-border">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <Camera className="h-8 w-8 text-primary mr-3" />
-              <div>
-                <h1 className="text-5xl font-bold text-primary mb-2">Gigs</h1>
-                <p className="text-xl text-muted-foreground">Discover creative opportunities and collaborate with talented professionals</p>
+        {/* Hero Banner */}
+        <div className="relative mb-8 rounded-2xl overflow-hidden border border-border shadow-lg">
+          {/* Background with gradient */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-background" />
+
+          {/* Optional: Add a subtle pattern or texture */}
+          <div className="absolute inset-0 opacity-5" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+          }} />
+
+          {/* Content */}
+          <div className="relative p-12">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <div className="flex items-center mb-4">
+                    <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mr-4 shadow-lg">
+                      <Camera className="h-8 w-8 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-2">Gigs</h1>
+                      <p className="text-xl text-muted-foreground">Discover creative opportunities and collaborate with talented professionals</p>
+                    </div>
+                  </div>
+
+                  {/* Stats or additional info */}
+                  <div className="flex items-center gap-6 mt-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>{gigs.length} Active Gigs</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      <span>Find Your Next Creative Project</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <Link href="/gigs/my-gigs">
+                    <Button size="lg" variant="outline" className="px-6 py-3 text-base font-semibold">
+                      <Eye className="h-5 w-5 mr-2" />
+                      My Gigs
+                    </Button>
+                  </Link>
+                  <Link href="/gigs/create">
+                    <Button size="lg" className="px-8 py-3 text-base font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-shadow">
+                      <Sparkles className="h-5 w-5" />
+                      Create Gig
+                    </Button>
+                  </Link>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/gigs/create">
-                <Button size="lg" className="px-8 py-3 text-lg font-semibold flex items-center gap-2">
-                  <Sparkles className="h-5 w-5" />
-                  Create Gig
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
@@ -958,6 +1097,54 @@ export default function GigDiscoveryPage() {
                           <button
                             onClick={() => setSelectedVibeTags(prev => prev.filter(t => t !== tag))}
                             className="hover:text-secondary-foreground/80"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Role Types Filter */}
+              {availableRoleTypes.length > 0 && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Looking For
+                  </label>
+                  <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+                    {availableRoleTypes.map((type, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          if (selectedRoleTypes.includes(type)) {
+                            setSelectedRoleTypes(prev => prev.filter(t => t !== type));
+                          } else {
+                            setSelectedRoleTypes(prev => [...prev, type]);
+                          }
+                        }}
+                        className={`px-3 py-1 rounded-full text-sm transition-all hover:scale-105 ${
+                          selectedRoleTypes.includes(type)
+                            ? 'bg-primary-100 text-primary-700 border-2 border-primary-300'
+                            : 'bg-muted text-foreground border-2 border-border hover:border-primary/50'
+                        }`}
+                      >
+                        {getLookingForLabel(type)}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedRoleTypes.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {selectedRoleTypes.map((type, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full"
+                        >
+                          {getLookingForLabel(type)}
+                          <button
+                            onClick={() => setSelectedRoleTypes(prev => prev.filter(t => t !== type))}
+                            className="hover:text-primary-800"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -1239,227 +1426,178 @@ export default function GigDiscoveryPage() {
         {/* Gig Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {currentGigs.map((gig) => (
-            <div key={gig.id} className="bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
-              {/* Gig Image/Moodboard Preview */}
-              <div className="relative h-48 bg-muted-200 rounded-t-lg overflow-hidden">
-                {gig.moodboard_urls && gig.moodboard_urls.length > 0 ? (
-                  <img
-                    src={gig.moodboard_urls[0]}
-                    alt={gig.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20">
-                    <Camera className="w-12 h-12 text-primary" />
+            <Link key={gig.id} href={`/gigs/${gig.id}`}>
+              <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-border hover:border-primary/50">
+                {/* Gig Image/Moodboard Preview */}
+                <div className="relative h-56 bg-muted overflow-hidden">
+                  {gig.moodboard_urls && gig.moodboard_urls.length > 0 ? (
+                    <img
+                      src={gig.moodboard_urls[0]}
+                      alt={gig.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20">
+                      <Camera className="w-16 h-16 text-primary/40" />
+                    </div>
+                  )}
+
+                  {/* Save Button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      toggleSaveGig(gig.id)
+                    }}
+                    className="absolute top-3 right-3 p-2 bg-background/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg hover:bg-background transition-all z-10"
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${savedGigs.has(gig.id) ? 'fill-primary text-primary' : 'text-muted-foreground hover:text-primary'}`}
+                    />
+                  </button>
+
+                  {/* Compensation Badge */}
+                  <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 backdrop-blur-sm shadow-sm ${getCompTypeColor(gig.comp_type)}`}>
+                    {getCompTypeIcon(gig.comp_type)}
+                    <span>{gig.comp_type}</span>
                   </div>
-                )}
-
-                {/* Save Button */}
-                <button
-                  onClick={() => toggleSaveGig(gig.id)}
-                  className="absolute top-3 right-3 p-2 bg-card rounded-full shadow-md hover:shadow-lg transition-shadow"
-                >
-                  <Heart
-                    className={`w-5 h-5 ${savedGigs.has(gig.id) ? 'fill-destructive-primary text-destructive-500' : 'text-muted-foreground'}`}
-                  />
-                </button>
-
-                {/* Compensation Badge */}
-                <div className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getCompTypeColor(gig.comp_type)}`}>
-                  {getCompTypeIcon(gig.comp_type)}
-                  {gig.comp_type}
                 </div>
-              </div>
 
               {/* Gig Details */}
-              <div className="p-4">
-                {/* Title and Owner */}
-                <Link href={`/gigs/${gig.id}`}>
-                  <h3 className="font-semibold text-lg hover:text-primary transition-colors">
+              <CardContent className="p-5 space-y-4">
+                {/* Title */}
+                <div>
+                  <h3 className="font-bold text-xl text-foreground group-hover:text-primary transition-colors line-clamp-2">
                     {gig.title}
                   </h3>
-                </Link>
 
-                <div className="mt-3 p-3 bg-muted rounded-lg">
-                  <div className="flex items-center gap-3 mb-2">
-                    <img
-                      src={gig.users_profile?.avatar_url || '/default-avatar.png'}
-                      alt={gig.users_profile?.display_name || 'User'}
-                      className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-semibold text-muted-foreground-900 truncate">
-                          {gig.users_profile?.display_name || 'Unknown User'}
-                        </h4>
-                        {gig.users_profile?.verified_id && (
-                          <div className="flex items-center gap-1 bg-primary-100 text-primary-700 px-2 py-1 rounded-full text-xs font-medium">
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            Verified
-                          </div>
-                        )}
-                      </div>
+                  {/* Looking For Role Badges */}
+                  {gig.looking_for_types && gig.looking_for_types.length > 0 && (
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-muted-foreground font-medium">Looking for:</span>
+                      {gig.looking_for_types.slice(0, 2).map((type) => (
+                        <Badge
+                          key={type}
+                          variant="secondary"
+                          className="text-xs font-medium"
+                        >
+                          👤 {getLookingForLabel(type)}
+                        </Badge>
+                      ))}
+                      {gig.looking_for_types.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{gig.looking_for_types.length - 2}
+                        </Badge>
+                      )}
                     </div>
-                  </div>
-                  
-                  {/* Enhanced Creator Profile Information */}
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    {gig.users_profile?.years_experience && (
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        <span>{gig.users_profile.years_experience} years experience</span>
-                      </div>
-                    )}
-                    
-                    {(gig.users_profile?.hourly_rate_min || gig.users_profile?.hourly_rate_max) && (
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="w-3 h-3" />
-                        <span>
-                          ${gig.users_profile.hourly_rate_min || 0} - ${gig.users_profile.hourly_rate_max || '∞'} / hour
-                        </span>
-                      </div>
-                    )}
-                    
-                    {gig.users_profile?.available_for_travel && (
-                      <div className="flex items-center gap-1">
-                        <Radius className="w-3 h-3" />
-                        <span>Available for travel ({gig.users_profile.travel_radius_km || 50}km)</span>
-                      </div>
-                    )}
-                    
-                    {gig.users_profile?.has_studio && (
-                      <div className="flex items-center gap-1">
-                        <Building className="w-3 h-3" />
-                        <span>Has studio{gig.users_profile.studio_name ? `: ${gig.users_profile.studio_name}` : ''}</span>
-                      </div>
-                    )}
-                    
-                    {gig.users_profile?.specializations && gig.users_profile.specializations.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <Tag className="w-3 h-3" />
-                        <span className="truncate">
-                          {gig.users_profile.specializations.slice(0, 2).join(', ')}
-                          {gig.users_profile.specializations.length > 2 && ` +${gig.users_profile.specializations.length - 2} more`}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  {gig.users_profile?.handle && (
-                    <p className="text-xs text-muted-foreground mt-0.5">@{gig.users_profile.handle}</p>
                   )}
                 </div>
 
-                {/* Location and Date */}
-                <div className="mt-3 space-y-1">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="w-4 h-4" />
-                    {gig.location_text}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    {formatDate(gig.start_time)}
+                {/* Creator Info - Simplified */}
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-12 h-12 ring-2 ring-primary/10">
+                    <AvatarImage
+                      src={gig.users_profile?.avatar_url || undefined}
+                      alt={gig.users_profile?.display_name || 'User'}
+                    />
+                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                      {gig.users_profile?.display_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {gig.users_profile?.display_name || 'Unknown User'}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {gig.users_profile?.years_experience && (
+                        <span>{gig.users_profile.years_experience} years exp</span>
+                      )}
+                      {gig.users_profile?.hourly_rate_min && gig.users_profile?.hourly_rate_max && (
+                        <>
+                          <span>•</span>
+                          <span>${gig.users_profile.hourly_rate_min}-${gig.users_profile.hourly_rate_max}/hr</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Purpose Tag */}
-                {gig.purpose && (
-                  <div className="mt-3">
-                    <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
-                      {gig.purpose.replace('_', ' ')}
-                    </span>
+                {/* Location and Date */}
+                <Separator />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{gig.location_text}</span>
                   </div>
-                )}
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4 flex-shrink-0" />
+                    <span>{formatDate(gig.start_time)}</span>
+                  </div>
+                </div>
 
-                {/* Style Tags */}
-                {gig.style_tags && gig.style_tags.length > 0 && (
-                  <div className="mt-3">
-                    <div className="flex flex-wrap gap-1">
-                      {gig.style_tags.slice(0, 3).map((tag, index) => (
-                        <span
-                          key={index}
-                          className="text-xs bg-primary-100 text-primary-700 px-2 py-1 rounded-full flex items-center gap-1"
-                        >
-                          <Tag className="w-2 h-2" />
+                {/* Purpose and Style Tags - Compact */}
+                {(gig.purpose || (gig.style_tags && gig.style_tags.length > 0)) && (
+                  <>
+                    <Separator />
+                    <div className="flex flex-wrap gap-1.5">
+                      {gig.purpose && (
+                        <Badge variant="outline" className="text-xs">
+                          {gig.purpose.replace('_', ' ')}
+                        </Badge>
+                      )}
+                      {gig.style_tags && gig.style_tags.slice(0, 3).map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
                           {tag}
-                        </span>
+                        </Badge>
                       ))}
-                      {gig.style_tags.length > 3 && (
-                        <span className="text-xs text-muted-foreground">
-                          +{gig.style_tags.length - 3} more
-                        </span>
+                      {gig.style_tags && gig.style_tags.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{gig.style_tags.length - 3}
+                        </Badge>
                       )}
                     </div>
-                  </div>
+                  </>
                 )}
 
-                {/* Vibe Tags */}
-                {gig.vibe_tags && gig.vibe_tags.length > 0 && (
-                  <div className="mt-2">
-                    <div className="flex flex-wrap gap-1">
-                      {gig.vibe_tags.slice(0, 2).map((tag, index) => (
-                        <span
-                          key={index}
-                          className="text-xs bg-secondary/20 text-secondary-foreground px-2 py-1 rounded-full flex items-center gap-1"
-                        >
-                          <Sparkles className="w-2 h-2" />
-                          {tag}
-                        </span>
-                      ))}
-                      {gig.vibe_tags.length > 2 && (
-                        <span className="text-xs text-muted-foreground">
-                          +{gig.vibe_tags.length - 2} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Color Palette Preview */}
+                {/* Color Palette Preview - Compact */}
                 {gig.palette_colors && gig.palette_colors.length > 0 && (
-                  <div className="mt-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        {gig.palette_colors.slice(0, 4).map((color, index) => (
-                          <div
-                            key={index}
-                            className="w-4 h-4 rounded-full border border-border-200"
-                            style={{ backgroundColor: color }}
-                            title={color}
-                          />
-                        ))}
-                      </div>
-                      {gig.palette_colors.length > 4 && (
-                        <span className="text-xs text-muted-foreground">
-                          +{gig.palette_colors.length - 4}
-                        </span>
-                      )}
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      {gig.palette_colors.slice(0, 5).map((color, index) => (
+                        <div
+                          key={index}
+                          className="w-5 h-5 rounded-full border-2 border-background shadow-sm"
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
                     </div>
+                    {gig.palette_colors.length > 5 && (
+                      <span className="text-xs text-muted-foreground">+{gig.palette_colors.length - 5}</span>
+                    )}
                   </div>
                 )}
 
                 {/* Footer Stats */}
-                <div className="mt-4 pt-3 border-t flex justify-between items-center">
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
+                <Separator />
+                <div className="flex justify-between items-center text-sm">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
                       <Users className="w-4 h-4" />
-                      {gig.current_applicants}/{gig.max_applicants}
+                      <span className="font-medium">{gig.current_applicants}/{gig.max_applicants}</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       <Clock className="w-4 h-4" />
-                      {getDaysUntilDeadline(gig.application_deadline)}d left
+                      <span className="font-medium">{getDaysUntilDeadline(gig.application_deadline)}d left</span>
                     </div>
                   </div>
-                  <Link
-                    href={`/gigs/${gig.id}`}
-                    className="text-sm text-primary hover:text-primary-700 font-medium"
-                  >
-                    View Details →
-                  </Link>
+                  <span className="text-primary font-semibold group-hover:gap-2 flex items-center gap-1 transition-all">
+                    View
+                    <ArrowLeft className="w-4 h-4 rotate-180" />
+                  </span>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
 

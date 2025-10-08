@@ -200,7 +200,7 @@ export default function Home() {
             ) : (
               <>
                 <a
-                  href="/auth/signin"
+                  href="/gigs"
                       className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-all hover:scale-105"
                 >
                       Browse Gigs
@@ -489,7 +489,7 @@ export default function Home() {
                       </Link>
                     ) : (
                       <Link 
-                        href="/auth/signin"
+                        href="/gigs"
                         className="inline-block bg-primary text-background px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm"
                       >
                         Browse Talent
@@ -546,10 +546,10 @@ export default function Home() {
                       </Link>
                     ) : (
                       <Link 
-                        href="/auth/signin"
+                        href="/gigs"
                         className="inline-block border border-primary text-primary px-4 py-2 rounded-lg font-medium hover:bg-primary/10 transition-colors text-sm"
                       >
-                        Find Jobs
+                        Find Gigs
                       </Link>
                     )}
                   </div>
@@ -705,7 +705,7 @@ export default function Home() {
                   return (
                     <a 
                       key={talent.id} 
-                      href="/auth/signin"
+                      href={`/users/${talent.handle}`}
                       className="group cursor-pointer block"
                     >
                       {/* Talent Image */}
@@ -802,7 +802,7 @@ export default function Home() {
               if (platformImagesLoading) {
                 return Array.from({ length: 8 }, (_, index) => (
                   <div key={index} className="animate-pulse">
-                    <div className="rounded-lg overflow-hidden bg-gray-200 aspect-[4/5] mb-4"></div>
+                    <div className="w-[200px] h-[200px] mx-auto rounded-full bg-gray-200 mb-4"></div>
                     <div className="h-4 bg-gray-200 rounded w-24 mx-auto"></div>
                   </div>
                 ));
@@ -824,12 +824,12 @@ export default function Home() {
                       className="group cursor-pointer block"
                     >
                       {/* Contributor Image */}
-                      <div className="relative aspect-[4/5] mb-4">
+                      <div className="relative w-[200px] h-[200px] mx-auto mb-4">
                         <Image
                           src={imageSrc}
                           alt={contributor.bio || displayName}
                           fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="object-cover rounded-full group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
                             const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                             if ((e.target as HTMLImageElement).src !== fallbackUrl) {

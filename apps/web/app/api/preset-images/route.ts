@@ -11,11 +11,24 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') || '20';
 
-    // Fetch preset images (including unverified for more content)
+    // Fetch promoted preset examples from playground_gallery
     const { data: images, error: imagesError } = await supabase
-      .from('preset_images')
-      .select('*')
-      .order('is_verified', { ascending: false }) // Show verified first
+      .from('playground_gallery')
+      .select(`
+        id,
+        result_image_url,
+        prompt,
+        preset_id,
+        user_id,
+        created_at,
+        is_promoted_to_preset_example,
+        presets (
+          title,
+          description
+        )
+      `)
+      .eq('is_promoted_to_preset_example', true)
+      .not('result_image_url', 'is', null)
       .order('created_at', { ascending: false })
       .limit(parseInt(limit));
 
@@ -26,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // Get unique user IDs
     const userIds = [...new Set(images?.map(img => img.user_id) || [])];
-    
+
     // Fetch user profiles
     const { data: profiles, error: profilesError } = await supabase
       .from('users_profile')
@@ -38,9 +51,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch user profiles' }, { status: 500 });
     }
 
-    // Combine images with user profiles
+    // Combine images with user profiles and format for homepage
     const data = images?.map(image => ({
-      ...image,
+      id: image.id,
+      result_image_url: image.result_image_url,
+      title: image.presets?.title || 'Creative Project',
+      description: image.prompt || image.presets?.description || '',
+      tags: [],
+      created_at: image.created_at,
+      user_id: image.user_id,
       users_profile: profiles?.find(profile => profile.user_id === image.user_id)
     })) || [];
 

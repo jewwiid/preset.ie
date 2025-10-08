@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
-import { CompType, PurposeType, StatusType, GigFormData } from '../../../lib/gig-form-persistence'
+import { CompType, PurposeType, StatusType, LookingForType, GigFormData } from '../../../lib/gig-form-persistence'
 import StepIndicator, { GigEditStep } from '../../components/gig-edit-steps/StepIndicator'
 import BasicDetailsStep from '../../components/gig-edit-steps/BasicDetailsStep'
 import LocationScheduleStep from '../../components/gig-edit-steps/LocationScheduleStep'
@@ -34,6 +34,7 @@ export default function CreateGigPage() {
   const [formData, setFormData] = useState<GigFormData>({
     title: '',
     description: '',
+    lookingFor: undefined,
     purpose: 'PORTFOLIO',
     compType: 'TFP',
     compDetails: '',
@@ -147,13 +148,14 @@ export default function CreateGigPage() {
   
   // Validation functions
   const validateBasicDetails = () => {
+    const lookingForValid = formData.lookingFor !== undefined
     const titleValid = formData.title.trim() !== ''
     const descriptionValid = formData.description.trim().length >= 50
-    const compDetailsValid = formData.compType === 'TFP' || formData.compType === 'OTHER' || 
+    const compDetailsValid = formData.compType === 'TFP' || formData.compType === 'OTHER' ||
                             (formData.compType === 'PAID' && formData.compDetails?.trim() !== '') ||
                             (formData.compType === 'EXPENSES' && formData.compDetails?.trim() !== '')
-    
-    return titleValid && descriptionValid && compDetailsValid
+
+    return lookingForValid && titleValid && descriptionValid && compDetailsValid
   }
   
   const validateSchedule = () => {
@@ -249,11 +251,31 @@ export default function CreateGigPage() {
       // Always create new gig since temp gigs are not stored in database
       let gigId = null
       
+      // Parse location into city and country if formatted correctly
+      const parseLocation = (locationText: string): { city: string | null; country: string | null } => {
+        if (!locationText) return { city: null, country: null }
+        
+        // Check if location is in "City, Country" format
+        const parts = locationText.split(',').map(p => p.trim())
+        if (parts.length >= 2) {
+          return {
+            city: parts[0],
+            country: parts.slice(1).join(', ') // In case country has commas (e.g., "Bosnia and Herzegovina")
+          }
+        }
+        
+        // If not formatted correctly, just save to location_text
+        return { city: null, country: null }
+      }
+      
+      const { city, country } = parseLocation(formData.location)
+      
       // Create new gig
       const gigData = {
         owner_user_id: profile.id,
         title: formData.title,
         description: formData.description,
+        looking_for_types: formData.lookingFor || [],  // Map to database column name
         purpose: formData.purpose,
         comp_type: formData.compType,
         comp_details: formData.compDetails,
@@ -262,6 +284,8 @@ export default function CreateGigPage() {
         end_time: formData.endDate,
         status: formData.status,
         location_text: formData.location,
+        city: city,  // Parse city from location
+        country: country,  // Parse country from location
         application_deadline: formData.applicationDeadline,
         max_applicants: formData.maxApplicants,
         safety_notes: formData.safetyNotes,
@@ -348,11 +372,13 @@ export default function CreateGigPage() {
           <BasicDetailsStep
             title={formData.title}
             description={formData.description}
+            lookingFor={formData.lookingFor}
             purpose={formData.purpose!}
             compType={formData.compType}
             compDetails={formData.compDetails || ''}
             onTitleChange={(value) => saveFormData({ title: value })}
             onDescriptionChange={(value) => saveFormData({ description: value })}
+            onLookingForChange={(value) => saveFormData({ lookingFor: value })}
             onPurposeChange={(value) => saveFormData({ purpose: value })}
             onCompTypeChange={(value) => saveFormData({ compType: value })}
             onCompDetailsChange={(value) => saveFormData({ compDetails: value })}
@@ -398,6 +424,7 @@ export default function CreateGigPage() {
       case 'preferences':
         return (
           <ApplicantPreferencesStep
+            lookingFor={formData.lookingFor}
             preferences={formData.applicantPreferences || {
               physical: {
                 height_range: { min: null, max: null },

@@ -12,6 +12,7 @@ interface Gig {
   description: string
   purpose?: string
   comp_type: string
+  looking_for_types?: string[]
   location_text: string
   start_time: string
   end_time: string
@@ -140,6 +141,84 @@ export default function MyGigsPage() {
     return types[type] || type
   }
 
+  const getLookingForLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      // Talent & Performers
+      'MODELS': '🎭 Models (All Types)',
+      'MODELS_FASHION': '👗 Fashion Models',
+      'MODELS_COMMERCIAL': '📺 Commercial Models',
+      'MODELS_FITNESS': '💪 Fitness Models',
+      'MODELS_EDITORIAL': '📰 Editorial Models',
+      'MODELS_RUNWAY': '🚶 Runway Models',
+      'MODELS_HAND': '🤲 Hand Models',
+      'MODELS_PARTS': '👤 Parts Models',
+      'ACTORS': '🎬 Actors',
+      'DANCERS': '💃 Dancers',
+      'MUSICIANS': '🎵 Musicians',
+      'SINGERS': '🎤 Singers',
+      'VOICE_ACTORS': '🎙️ Voice Actors',
+      'PERFORMERS': '🎪 Performers',
+      'INFLUENCERS': '📱 Influencers',
+
+      // Visual Creators
+      'PHOTOGRAPHERS': '📸 Photographers',
+      'VIDEOGRAPHERS': '🎥 Videographers',
+      'CINEMATOGRAPHERS': '🎞️ Cinematographers',
+
+      // Beauty & Styling
+      'MAKEUP_ARTISTS': '💄 Makeup Artists',
+      'HAIR_STYLISTS': '💇 Hair Stylists',
+      'FASHION_STYLISTS': '👔 Fashion Stylists',
+      'WARDROBE_STYLISTS': '👘 Wardrobe Stylists',
+      'NAIL_ARTISTS': '💅 Nail Artists',
+      'SFX_MAKEUP': '🎭 SFX Makeup Artists',
+
+      // Production & Technical
+      'PRODUCTION_CREW': '🎬 Production Crew',
+      'PRODUCERS': '🎯 Producers',
+      'DIRECTORS': '🎬 Directors',
+      'ASSISTANT_DIRECTORS': '📋 Assistant Directors',
+      'CASTING_DIRECTORS': '🎭 Casting Directors',
+      'GAFFERS': '💡 Gaffers',
+      'GRIPS': '🔧 Grips',
+      'SOUND_ENGINEERS': '🔊 Sound Engineers',
+
+      // Post-Production
+      'EDITORS': '✂️ Editors',
+      'VIDEO_EDITORS': '🎬 Video Editors',
+      'PHOTO_EDITORS': '🖼️ Photo Editors',
+      'COLOR_GRADERS': '🎨 Color Graders',
+      'VFX_ARTISTS': '✨ VFX Artists',
+      'ANIMATORS': '🎞️ Animators',
+      'MOTION_GRAPHICS': '🎬 Motion Graphics Artists',
+
+      // Design & Creative
+      'DESIGNERS': '🎨 Designers',
+      'GRAPHIC_DESIGNERS': '🖌️ Graphic Designers',
+      'UI_UX_DESIGNERS': '📱 UI/UX Designers',
+      'ART_DIRECTORS': '🎨 Art Directors',
+      'SET_DESIGNERS': '🏗️ Set Designers',
+      'PROP_STYLISTS': '🪴 Prop Stylists',
+
+      // Content & Marketing
+      'CONTENT_CREATORS': '📱 Content Creators',
+      'SOCIAL_MEDIA_MANAGERS': '📲 Social Media Managers',
+      'COPYWRITERS': '✍️ Copywriters',
+      'WRITERS': '📝 Writers',
+      'BRAND_MANAGERS': '🏢 Brand Managers',
+
+      // Business & Management
+      'AGENCIES': '🏢 Agencies',
+      'TALENT_MANAGERS': '👥 Talent Managers',
+      'BOOKING_AGENTS': '📅 Booking Agents',
+      'EVENT_COORDINATORS': '🎉 Event Coordinators',
+
+      // Other
+      'OTHER': '🔧 Other'
+    }
+    return labels[type] || type
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -224,7 +303,26 @@ export default function MyGigsPage() {
                         </div>
                         
                         <p className="text-muted-foreground mb-3 line-clamp-2">{gig.description}</p>
-                        
+
+                        {/* Looking For Role Badges */}
+                        {gig.looking_for_types && gig.looking_for_types.length > 0 && (
+                          <div className="mb-3 flex flex-wrap gap-1.5">
+                            {gig.looking_for_types.slice(0, 3).map((type) => (
+                              <span
+                                key={type}
+                                className="px-2 py-0.5 bg-primary-50 text-primary-700 text-xs rounded-full border border-primary-200"
+                              >
+                                {getLookingForLabel(type)}
+                              </span>
+                            ))}
+                            {gig.looking_for_types.length > 3 && (
+                              <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
+                                +{gig.looking_for_types.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center">
                             <MapPin className="w-4 h-4 mr-1" />
@@ -236,7 +334,7 @@ export default function MyGigsPage() {
                           </span>
                           <span className="flex items-center">
                             <Users className="w-4 h-4 mr-1" />
-                            {gig.application_count}/{gig.max_applicants} applicants
+                            {`${gig.application_count || 0}/${gig.max_applicants} applicants`}
                           </span>
                           <span>{getCompType(gig.comp_type)}</span>
                         </div>
@@ -266,13 +364,13 @@ export default function MyGigsPage() {
                       </div>
                     </div>
                     
-                    {gig.application_count && gig.application_count > 0 && (
+                    {(gig.application_count || 0) > 0 && (
                       <div className="mt-4 pt-4 border-t">
                         <button
                           onClick={() => router.push(`/gigs/${gig.id}/applications`)}
                           className="text-sm text-primary-600 hover:text-primary/80 font-medium"
                         >
-                          View {gig.application_count} application{gig.application_count !== 1 ? 's' : ''} →
+                          View {gig.application_count || 0} application{(gig.application_count || 0) !== 1 ? 's' : ''} →
                         </button>
                       </div>
                     )}
