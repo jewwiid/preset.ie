@@ -1,9 +1,10 @@
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, MapPin, Calendar, ExternalLink, Instagram, Globe } from 'lucide-react'
+import { ArrowLeft, MapPin, Calendar, ExternalLink, Instagram, Globe, Lock } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
+import { Button } from '../../../components/ui/button'
 
 interface UserProfile {
   id: string
@@ -12,6 +13,8 @@ interface UserProfile {
   handle: string
   bio?: string
   avatar_url?: string
+  header_banner_url?: string
+  header_banner_position?: string
   city?: string
   country?: string
   role_flags?: string[]
@@ -34,6 +37,7 @@ interface UserProfile {
   has_studio?: boolean
   studio_name?: string
   availability_status?: string
+  account_status?: string
 }
 
 interface Showcase {
@@ -70,6 +74,7 @@ interface ProfileData {
     gigs_created: number
     member_since: string
   }
+  isPrivate: boolean
 }
 
 async function resolveHandle(handle: string): Promise<string> {
@@ -104,7 +109,7 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
 
     // First resolve the handle to get the current handle
     const currentHandle = await resolveHandle(handle)
-    
+
     // If the handle changed, redirect to the new handle
     if (currentHandle !== handle) {
       redirect(`/users/${currentHandle}`)
@@ -120,6 +125,8 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
         handle,
         bio,
         avatar_url,
+        header_banner_url,
+        header_banner_position,
         city,
         country,
         role_flags,
@@ -141,14 +148,52 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
         available_for_travel,
         has_studio,
         studio_name,
-        availability_status
+        availability_status,
+        account_status
       `)
       .eq('handle', currentHandle)
       .single();
 
     if (profileError) {
-      console.error('Error fetching profile:', profileError);
+      console.error('Error fetching profile:', JSON.stringify(profileError, null, 2));
       return null;
+    }
+
+    if (!profile) {
+      console.error('No profile found for handle:', currentHandle);
+      return null;
+    }
+
+    // Block access to suspended/deactivated/banned accounts
+    const blockedStatuses = ['suspended', 'deactivated', 'banned'];
+    if (profile.account_status && blockedStatuses.includes(profile.account_status.toLowerCase())) {
+      console.log(`Access blocked: account status is ${profile.account_status}`);
+      return null;
+    }
+
+    // Fetch user settings to check profile visibility
+    const { data: userSettings } = await supabase
+      .from('user_settings')
+      .select('profile_visibility')
+      .eq('user_id', profile.user_id)
+      .single();
+
+    // Check if profile is private
+    const isPrivate = userSettings?.profile_visibility?.toLowerCase() === 'private';
+
+    // If private, return minimal data (just banner/avatar/name)
+    if (isPrivate) {
+      return {
+        profile,
+        showcases: [],
+        createdGigs: [],
+        stats: {
+          showcases_count: 0,
+          gigs_created: 0,
+          member_since: profile.created_at
+        },
+        isPrivate: true
+      };
     }
 
     // Fetch public showcases for this user
@@ -178,6 +223,7 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
     }
 
     // Fetch public gigs created by this user
+    // NOTE: owner_user_id references users_profile.id (NOT user_id)
     const { data: createdGigs, error: gigsError } = await supabase
       .from('gigs')
       .select(`
@@ -187,16 +233,35 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
         location_text,
         comp_type,
         status,
-        created_at
+        created_at,
+        application_deadline,
+        start_time
       `)
-      .eq('owner_user_id', profile.user_id) // Corrected from creator_user_id to owner_user_id
-      .eq('status', 'PUBLISHED')
+      .eq('owner_user_id', profile.id)
+      .in('status', ['PUBLISHED', 'APPLICATIONS_CLOSED', 'BOOKED'])
       .order('created_at', { ascending: false })
       .limit(10);
 
     if (gigsError) {
       console.error('Error fetching gigs:', gigsError);
     }
+
+    // Fetch featured images for gigs
+    const gigsWithImages = await Promise.all(
+      (createdGigs || []).map(async (gig: any) => {
+        const { data: media } = await supabase
+          .from('media')
+          .select('url, type')
+          .eq('gig_id', gig.id)
+          .limit(1)
+          .single();
+
+        return {
+          ...gig,
+          featured_image: media?.url || null
+        };
+      })
+    );
 
     // Get user stats
     const stats = {
@@ -211,8 +276,9 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
         ...s,
         gig: Array.isArray(s.gig) ? s.gig[0] : s.gig
       })) as Showcase[],
-      createdGigs: createdGigs || [],
-      stats
+      createdGigs: gigsWithImages || [],
+      stats,
+      isPrivate: false
     };
   } catch (error: any) {
     console.error('Error fetching user profile:', error);
@@ -253,7 +319,7 @@ export default async function UserProfilePage({ params }: PageProps) {
     )
   }
 
-  const { profile, showcases, createdGigs, stats } = profileData
+  const { profile, showcases, createdGigs, stats, isPrivate } = profileData
 
   const memberSinceDate = new Date(stats.member_since).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -261,112 +327,181 @@ export default async function UserProfilePage({ params }: PageProps) {
     day: 'numeric',
   });
 
+  // Parse banner position if available
+  let bannerStyle: React.CSSProperties = {};
+  if (profile.header_banner_position) {
+    try {
+      const position = JSON.parse(profile.header_banner_position);
+      bannerStyle = {
+        objectPosition: `${position.x || 50}% ${position.y || 50}%`,
+        transform: `scale(${position.scale || 1})`
+      };
+    } catch (e) {
+      console.error('Error parsing banner position:', e);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back to Home */}
-        <div className="mb-8">
-          <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
-        </div>
+      {/* Hero Banner */}
+      <div className="relative h-80 overflow-hidden">
+        {/* Banner Background */}
+        {profile.header_banner_url ? (
+          <>
+            {/* User's custom banner */}
+            <div className="absolute inset-0">
+              <Image
+                src={profile.header_banner_url}
+                alt={`${profile.display_name}'s banner`}
+                fill
+                className="object-cover"
+                style={bannerStyle}
+                priority
+              />
+            </div>
+            {/* Dark overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
+          </>
+        ) : (
+          <>
+            {/* Gradient fallback */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-background" />
+          </>
+        )}
 
-        {/* Profile Header */}
-        <div className="bg-card rounded-lg border p-6 mb-8">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+        {/* Profile Content */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-between py-6">
+          {/* Back Button - Inside banner at top */}
+          <div>
+            <Button variant="ghost" size="sm" asChild className="text-white hover:text-white hover:bg-white/10">
+              <Link href="/">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Link>
+            </Button>
+          </div>
+
+          {/* Profile Info - At bottom */}
+          <div className="flex items-center gap-6 w-full">
+            {/* Avatar */}
+            <div className="w-28 h-28 rounded-full border-4 border-white shadow-xl overflow-hidden flex-shrink-0">
               {profile.avatar_url ? (
                 <Image
                   src={profile.avatar_url}
                   alt={profile.display_name}
-                  width={128}
-                  height={128}
+                  width={112}
+                  height={112}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl font-semibold text-muted-foreground">
+                <div className="w-full h-full flex items-center justify-center text-3xl font-bold bg-background text-foreground">
                   {profile.display_name.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
+
+            {/* Name and Info */}
             <div className="flex-1">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground mb-2">
-                    {profile.display_name}
-                  </h1>
-                  <p className="text-muted-foreground text-lg mb-2">
-                    @{profile.handle}
-                  </p>
-                </div>
-              </div>
+              <h1 className="text-4xl font-bold text-white mb-1">
+                {profile.display_name}
+              </h1>
+              <p className="text-base text-white/90 mb-3">
+                @{profile.handle}
+              </p>
 
-              {profile.city && profile.country && (
-                <div className="flex items-center text-muted-foreground mb-3">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  {profile.city}, {profile.country}
-                </div>
-              )}
-
-              <div className="flex items-center text-muted-foreground mb-4">
-                <Calendar className="h-4 w-4 mr-2" />
-                Member since {memberSinceDate}
-              </div>
-
-              {profile.bio && (
-                <p className="text-foreground mb-4">
-                  {profile.bio}
-                </p>
-              )}
-
-              {/* Role and Availability Badges */}
-              <div className="flex gap-2 mb-4 flex-wrap">
-                {/* Role Badges */}
-                {profile.role_flags && profile.role_flags.length > 0 && (
-                  <>
-                    {profile.role_flags.map((role: string, index: number) => (
-                      <span
-                        key={`role-${index}`}
-                        className={`px-3 py-1 text-sm rounded-full ${
-                          role === 'TALENT'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                            : role === 'CONTRIBUTOR'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                            : role === 'BOTH'
-                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                        }`}
-                      >
-                        {role === 'BOTH' ? 'Both' : role}
-                      </span>
-                    ))}
-                  </>
+              {/* Info Pills Row 1 - Location, Member, Specialization */}
+              <div className="flex flex-wrap gap-2 items-center mb-2">
+                {!isPrivate && profile.city && profile.country && (
+                  <div className="flex items-center gap-1.5 text-sm text-white bg-white/10 backdrop-blur-sm px-3 py-1 rounded-lg">
+                    <MapPin className="h-4 w-4" />
+                    <span>{profile.city}, {profile.country}</span>
+                  </div>
                 )}
-                
-                {/* Availability Status Badge */}
-                {profile.availability_status && (
-                  <span
-                    className={`px-3 py-1 text-sm rounded-full font-medium ${
-                      profile.availability_status === 'available'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : profile.availability_status === 'limited'
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        : profile.availability_status === 'busy'
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                    }`}
-                  >
-                    {profile.availability_status === 'available' && 'Available'}
-                    {profile.availability_status === 'limited' && 'Limited'}
-                    {profile.availability_status === 'busy' && 'Busy'}
-                    {profile.availability_status === 'unavailable' && 'Unavailable'}
+
+                <div className="flex items-center gap-1.5 text-sm text-white bg-white/10 backdrop-blur-sm px-3 py-1 rounded-lg">
+                  <Calendar className="h-4 w-4" />
+                  <span>Member since {memberSinceDate}</span>
+                </div>
+
+                {/* Specializations - primary badge */}
+                {!isPrivate && profile.specializations && profile.specializations.length > 0 && (
+                  <span className="px-3 py-1 text-sm font-medium rounded-lg bg-primary text-primary-foreground">
+                    {profile.specializations[0]}
                   </span>
                 )}
               </div>
 
+              {/* Badges Row 2 - Style Tags */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {!isPrivate && profile.style_tags && profile.style_tags.length > 0 && (
+                  <>
+                    {profile.style_tags.slice(0, 3).map((tag: string, index: number) => (
+                      <span
+                        key={`style-${index}`}
+                        className="px-3 py-1 text-sm font-medium rounded-lg bg-muted text-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {isPrivate ? (
+          // Private Profile Message
+          <div className="bg-card rounded-lg border p-12 text-center">
+            <Lock className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-2xl font-bold text-foreground mb-3">This profile is private</h2>
+            <p className="text-muted-foreground">
+              {profile.display_name} has set their profile to private.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Bio Section */}
+            {profile.bio && (
+              <div className="bg-card rounded-lg border p-6 mb-8">
+                <h2 className="text-xl font-semibold mb-3">About</h2>
+                <p className="text-foreground leading-relaxed">
+                  {profile.bio}
+                </p>
+              </div>
+            )}
+
+            {/* Professional Details */}
+            <div className="bg-card rounded-lg border p-6 mb-8">
+              <h2 className="text-xl font-semibold mb-4">Professional Information</h2>
+
+              {/* Availability Status */}
+              {profile.availability_status && (
+                <div className="mb-4">
+                  <span
+                    className={`inline-flex px-3 py-1.5 text-sm rounded-lg font-medium ${
+                      profile.availability_status === 'available'
+                        ? 'bg-primary/20 text-primary'
+                        : profile.availability_status === 'limited'
+                        ? 'bg-secondary/20 text-secondary-foreground'
+                        : profile.availability_status === 'busy'
+                        ? 'bg-destructive/20 text-destructive'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {profile.availability_status === 'available' && '🟢 Available'}
+                    {profile.availability_status === 'limited' && '🟡 Limited'}
+                    {profile.availability_status === 'busy' && '🔴 Busy'}
+                    {profile.availability_status === 'unavailable' && '⚫ Unavailable'}
+                  </span>
+                </div>
+              )}
+
               {/* Social Links */}
-              <div className="flex gap-3">
+              <div className="flex gap-3 mb-6">
                 {profile.website_url && (
                   <Link href={profile.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center text-muted-foreground hover:text-foreground transition-colors">
                     <Globe className="h-4 w-4 mr-1" />
@@ -385,57 +520,169 @@ export default async function UserProfilePage({ params }: PageProps) {
                     Portfolio
                   </Link>
                 )}
-                {/* TODO: Add TikTok and other social links */}
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-card rounded-lg border p-6 text-center">
+                  <div className="text-2xl font-bold text-foreground">{stats.showcases_count}</div>
+                  <div className="text-muted-foreground">Showcases</div>
+                </div>
+                <div className="bg-card rounded-lg border p-6 text-center">
+                  <div className="text-2xl font-bold text-foreground">{stats.gigs_created}</div>
+                  <div className="text-muted-foreground">Gigs Created</div>
+                </div>
+                <div className="bg-card rounded-lg border p-6 text-center">
+                  <div className="text-2xl font-bold text-foreground">{profile.years_experience || 0}</div>
+                  <div className="text-muted-foreground">Years Experience</div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-card rounded-lg border p-6 text-center">
-            <div className="text-2xl font-bold text-foreground">{stats.showcases_count}</div>
-            <div className="text-muted-foreground">Showcases</div>
-          </div>
-          <div className="bg-card rounded-lg border p-6 text-center">
-            <div className="text-2xl font-bold text-foreground">{stats.gigs_created}</div>
-            <div className="text-muted-foreground">Gigs Created</div>
-          </div>
-          <div className="bg-card rounded-lg border p-6 text-center">
-            <div className="text-2xl font-bold text-foreground">{profile.years_experience || 0}</div>
-            <div className="text-muted-foreground">Years Experience</div>
-          </div>
-        </div>
 
-        {/* Style Tags */}
-        {profile.style_tags && profile.style_tags.length > 0 && (
-          <div className="bg-card rounded-lg border p-6 mb-8">
-            <h2 className="text-xl font-bold text-foreground mb-4">Style &amp; Skills</h2>
-            <div className="flex flex-wrap gap-2">
-              {profile.style_tags.map((tag: string, index: number) => (
-                <span key={index} className="px-3 py-1 bg-muted text-foreground rounded-full text-sm">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
+            {/* Active Gigs Carousel */}
+            {createdGigs && createdGigs.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4">Active Gigs ({createdGigs.length})</h2>
+
+                {/* Horizontal scroll carousel */}
+                <div className="overflow-x-auto pb-4 -mx-4 px-4">
+                  <div className="flex gap-4" style={{ width: 'max-content' }}>
+                    {createdGigs.map((gig: any) => {
+                      // Calculate days left until application deadline
+                      const daysLeft = gig.application_deadline
+                        ? Math.ceil((new Date(gig.application_deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                        : null;
+
+                      return (
+                        <div
+                          key={gig.id}
+                          className="w-[340px] flex-shrink-0 rounded-xl border bg-card/50 backdrop-blur-sm hover:bg-card hover:border-primary/50 transition-all hover:shadow-md overflow-hidden"
+                        >
+                          {/* Featured Image */}
+                          {gig.featured_image && (
+                            <div className="relative h-40 w-full overflow-hidden">
+                              <Image
+                                src={gig.featured_image}
+                                alt={gig.title}
+                                fill
+                                className="object-cover"
+                              />
+                              {/* Status Badge Overlay on Image */}
+                              <div className="absolute top-3 left-3">
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium backdrop-blur-sm ${
+                                  gig.status === 'PUBLISHED'
+                                    ? 'bg-primary/90 text-primary-foreground'
+                                    : gig.status === 'APPLICATIONS_CLOSED'
+                                    ? 'bg-destructive/90 text-destructive-foreground'
+                                    : gig.status === 'BOOKED'
+                                    ? 'bg-secondary/90 text-secondary-foreground'
+                                    : 'bg-muted/90 text-muted-foreground'
+                                }`}>
+                                  {gig.status === 'PUBLISHED' && '✓ Open'}
+                                  {gig.status === 'APPLICATIONS_CLOSED' && 'Closed'}
+                                  {gig.status === 'BOOKED' && 'Booked'}
+                                </span>
+                              </div>
+                              {/* Days Left Badge */}
+                              {daysLeft !== null && daysLeft > 0 && gig.status === 'PUBLISHED' && (
+                                <div className="absolute top-3 right-3">
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-background/80 text-foreground backdrop-blur-sm">
+                                    {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="p-5">
+                            {/* Status Badge (only show if no image) */}
+                            {!gig.featured_image && (
+                              <div className="mb-3">
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+                                  gig.status === 'PUBLISHED'
+                                    ? 'bg-primary/10 text-primary'
+                                    : gig.status === 'APPLICATIONS_CLOSED'
+                                    ? 'bg-destructive/10 text-destructive'
+                                    : gig.status === 'BOOKED'
+                                    ? 'bg-secondary/10 text-secondary-foreground'
+                                    : 'bg-muted text-muted-foreground'
+                                }`}>
+                                  {gig.status === 'PUBLISHED' && '✓ Accepting Applications'}
+                                  {gig.status === 'APPLICATIONS_CLOSED' && 'Applications Closed'}
+                                  {gig.status === 'BOOKED' && 'Booked'}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Title */}
+                            <h3 className="font-semibold text-base text-foreground mb-2 line-clamp-2">
+                              {gig.title}
+                            </h3>
+
+                            {/* Description */}
+                            {gig.description && (
+                              <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                                {gig.description}
+                              </p>
+                            )}
+
+                            {/* Gig Details */}
+                            <div className="space-y-1.5 mb-4">
+                              {gig.location_text && (
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  <span>{gig.location_text}</span>
+                                </div>
+                              )}
+                              {gig.comp_type && (
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <span>💰</span>
+                                  <span className="capitalize">{gig.comp_type.toLowerCase()}</span>
+                                </div>
+                              )}
+                              {/* Days left (only show if no image) */}
+                              {!gig.featured_image && daysLeft !== null && daysLeft > 0 && gig.status === 'PUBLISHED' && (
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <Calendar className="h-3.5 w-3.5" />
+                                  <span>{daysLeft} {daysLeft === 1 ? 'day' : 'days'} left to apply</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* CTA Button */}
+                            {gig.status === 'PUBLISHED' ? (
+                              <Link
+                                href={`/gigs/${gig.id}`}
+                                className="block w-full text-center px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors"
+                              >
+                                Apply Now
+                              </Link>
+                            ) : (
+                              <Link
+                                href={`/gigs/${gig.id}`}
+                                className="block w-full text-center px-4 py-2 border border-border text-foreground rounded-lg font-medium text-sm hover:bg-muted/50 transition-colors"
+                              >
+                                View Details
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Scroll hint */}
+                {createdGigs.length > 1 && (
+                  <div className="text-center text-xs text-muted-foreground mt-2">
+                    Scroll to see all gigs →
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
-
-        {/* Specializations */}
-        {profile.specializations && profile.specializations.length > 0 && (
-          <div className="bg-card rounded-lg border p-6 mb-8">
-            <h2 className="text-xl font-bold text-foreground mb-4">Specializations</h2>
-            <div className="flex flex-wrap gap-2">
-              {profile.specializations.map((spec: string, index: number) => (
-                <span key={index} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                  {spec}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TODO: Add sections for Showcases and Created Gigs */}
       </div>
     </div>
   );

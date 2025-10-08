@@ -11,34 +11,26 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') || '20';
 
-    // Fetch promoted preset examples from playground_gallery
+    // Fetch recent images from playground_gallery
     const { data: images, error: imagesError } = await supabase
       .from('playground_gallery')
-      .select(`
-        id,
-        result_image_url,
-        prompt,
-        preset_id,
-        user_id,
-        created_at,
-        is_promoted_to_preset_example,
-        presets (
-          title,
-          description
-        )
-      `)
-      .eq('is_promoted_to_preset_example', true)
-      .not('result_image_url', 'is', null)
+      .select('id, image_url, thumbnail_url, title, description, tags, user_id, created_at')
+      .not('image_url', 'is', null)
       .order('created_at', { ascending: false })
       .limit(parseInt(limit));
 
     if (imagesError) {
       console.error('Error fetching preset images:', imagesError);
-      return NextResponse.json({ error: 'Failed to fetch preset images' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to fetch preset images', details: imagesError }, { status: 500 });
+    }
+
+    if (!images || images.length === 0) {
+      console.log('No images found, returning empty array');
+      return NextResponse.json([]);
     }
 
     // Get unique user IDs
-    const userIds = [...new Set(images?.map(img => img.user_id) || [])];
+    const userIds = [...new Set(images.map(img => img.user_id).filter(Boolean))];
 
     // Fetch user profiles
     const { data: profiles, error: profilesError } = await supabase
@@ -48,24 +40,27 @@ export async function GET(request: NextRequest) {
 
     if (profilesError) {
       console.error('Error fetching user profiles:', profilesError);
-      return NextResponse.json({ error: 'Failed to fetch user profiles' }, { status: 500 });
     }
 
-    // Combine images with user profiles and format for homepage
-    const data = images?.map(image => ({
-      id: image.id,
-      result_image_url: image.result_image_url,
-      title: image.presets?.title || 'Creative Project',
-      description: image.prompt || image.presets?.description || '',
-      tags: [],
-      created_at: image.created_at,
-      user_id: image.user_id,
-      users_profile: profiles?.find(profile => profile.user_id === image.user_id)
-    })) || [];
+    // Combine images with user profiles
+    const data = images.map(image => {
+      const profile = profiles?.find(p => p.user_id === image.user_id);
+
+      return {
+        id: image.id,
+        result_image_url: image.image_url,
+        title: image.title || 'Creative Project',
+        description: image.description || '',
+        tags: image.tags || [],
+        created_at: image.created_at,
+        user_id: image.user_id,
+        users_profile: profile
+      };
+    });
 
     return NextResponse.json(data);
   } catch (error) {
     console.error('API Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error', details: error }, { status: 500 });
   }
 }

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       `)
       .in('account_status', ['active', 'pending_verification']) // Active or pending verification accounts
       .gte('profile_completion_percentage', 0) // Any profile completion level
-      .not('avatar_url', 'is', null) // Must have avatar
+      .order('profile_completion_percentage', { ascending: false }) // Show most complete profiles first
       .order('created_at', { ascending: false })
       .limit(parseInt(limit) * 2); // Get more to filter by role
 
@@ -63,7 +63,13 @@ export async function GET(request: NextRequest) {
     // Limit results after filtering
     publicProfiles = publicProfiles.slice(0, parseInt(limit));
 
-    return NextResponse.json(publicProfiles);
+    // Add fallback avatar for users without one
+    const profilesWithAvatars = publicProfiles.map(profile => ({
+      ...profile,
+      avatar_url: profile.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/presetie_logo.png'
+    }));
+
+    return NextResponse.json(profilesWithAvatars);
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
