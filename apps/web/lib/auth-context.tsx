@@ -258,22 +258,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (role?.isAdmin) {
         redirectPath = '/admin'
       } else {
-        // Check if user has a complete profile
+        // Check if user has a profile (profile is only created after email verification)
         try {
           const { data: profile, error: profileError } = await supabase
             .from('users_profile')
-            .select('id')
+            .select('id, email_verified')
             .eq('user_id', data.user.id)
             .single()
 
-          // If no profile exists, redirect to complete-profile
+          // If no profile exists, user hasn't verified email yet
           if (profileError?.code === 'PGRST116' || !profile) {
-            redirectPath = '/auth/complete-profile'
+            redirectPath = '/auth/verification-pending'
+          } else if (profile && !profile.email_verified) {
+            // Profile exists but not verified (edge case from old flow)
+            redirectPath = '/auth/verification-pending'
           }
         } catch (profileCheckError) {
-          console.error('Error checking profile completion:', profileCheckError)
-          // On error, assume profile is incomplete and redirect to complete-profile
-          redirectPath = '/auth/complete-profile'
+          console.error('Error checking profile:', profileCheckError)
+          // On error, redirect to verification page for safety
+          redirectPath = '/auth/verification-pending'
         }
       }
     }

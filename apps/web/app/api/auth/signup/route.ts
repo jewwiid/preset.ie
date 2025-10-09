@@ -15,10 +15,21 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Create auth user
+    // Create auth user with signup data in metadata
+    // Profile will be created AFTER email verification
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          full_name: `${firstName} ${lastName}`,
+          role,
+          date_of_birth: dateOfBirth,
+          email_verified: false,
+        },
+      },
     });
 
     if (authError) {
@@ -35,36 +46,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user profile (this will fire the welcome_email_trigger!)
-    const { data: profileData, error: profileError } = await supabase
-      .from('users_profile')
-      .insert({
-        user_id: authData.user.id,
-        display_name: `${firstName} ${lastName}`,
-        handle: `${firstName.toLowerCase()}_${lastName.toLowerCase()}_${Date.now()}`,
-        role_flags: [role],
-        first_name: firstName,
-        last_name: lastName,
-        date_of_birth: dateOfBirth,
-        availability_status: 'Available',
-        city: 'Manchester',  // From Jewdie's profile
-      })
-      .select()
-      .single();
+    // Generate verification token
+    const verificationToken = `${authData.user.id}:${Math.floor(Date.now() / 1000)}:${Math.random().toString(36).substring(2, 18)}`;
 
-    if (profileError) {
-      console.error('Profile creation error:', profileError);
-      return NextResponse.json(
-        { error: 'Failed to create profile', details: profileError.message },
-        { status: 500 }
-      );
+    // Send verification email
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com';
+      await fetch(`${baseUrl}/api/emails/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          authUserId: authData.user.id,
+          email: email,
+          name: `${firstName} ${lastName}`,
+          verificationToken,
+        }),
+      });
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+      // Continue anyway - user exists, they can request resend
     }
 
     return NextResponse.json({
       success: true,
       user: authData.user,
-      profile: profileData,
-      message: 'Account created successfully! Welcome email trigger should fire.'
+      message: 'Account created! Please check your email to verify your account.',
+      requiresVerification: true,
     });
 
   } catch (error) {

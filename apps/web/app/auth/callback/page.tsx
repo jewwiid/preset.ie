@@ -213,13 +213,51 @@ function AuthCallbackContent() {
           setMessage('Welcome back! Redirecting to your dashboard...')
           router.replace('/dashboard')
         } else {
-          // No profile found - redirect to profile creation
-          // Only log in development
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🚀 CALLBACK PAGE: No profile found, redirecting to profile creation')
+          // No profile found - check if OAuth user (Google)
+          const isOAuthUser = user.app_metadata?.provider === 'google' || 
+                             user.app_metadata?.providers?.includes('google');
+          
+          if (isOAuthUser) {
+            // OAuth users have verified emails - auto-create profile
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🚀 CALLBACK PAGE: OAuth user, creating profile with email_verified=true')
+            }
+            
+            const metadata = user.user_metadata;
+            const fullName = metadata.full_name || metadata.name || 'User';
+            const [firstName, ...lastNameParts] = fullName.split(' ');
+            const lastName = lastNameParts.join(' ') || firstName;
+            
+            // Create profile with email_verified=TRUE (will trigger welcome email!)
+            const { error: createError } = await supabase!
+              .from('users_profile')
+              .insert({
+                user_id: user.id,
+                display_name: fullName,
+                handle: `${firstName.toLowerCase()}_${lastName.toLowerCase()}_${Date.now()}`,
+                role_flags: ['TALENT'], // Default, user can change later
+                first_name: firstName,
+                last_name: lastName,
+                email_verified: true, // OAuth emails are pre-verified!
+                email_verified_at: new Date().toISOString(),
+                availability_status: 'Available',
+              });
+            
+            if (createError) {
+              console.error('Failed to create OAuth profile:', createError);
+              router.replace('/auth/complete-profile');
+            } else {
+              setMessage('Welcome! Redirecting to your dashboard...')
+              router.replace('/dashboard');
+            }
+          } else {
+            // Email signup - redirect to complete profile or verification pending
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🚀 CALLBACK PAGE: Email signup user, needs verification')
+            }
+            setMessage('Please verify your email to continue...')
+            router.replace('/auth/verification-pending')
           }
-          setMessage('Setting up your account...')
-          router.replace('/auth/complete-profile')
         }
 
       } catch (error: any) {
