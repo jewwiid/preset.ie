@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
-import { Shield, AlertTriangle, Ban, Users, Search, MoreVertical } from 'lucide-react'
+import { Shield, AlertTriangle, Ban, Users, Search, MoreVertical, Trash2 } from 'lucide-react'
 
 interface User {
   id: string
@@ -74,7 +74,7 @@ export function UserManagement() {
       if (!user) return
 
       let updatedRoleFlags = [...user.role_flags]
-      
+
       switch (action) {
         case 'makeAdmin':
           if (!updatedRoleFlags.includes('ADMIN')) {
@@ -105,11 +105,41 @@ export function UserManagement() {
         .eq('user_id', userId)
 
       if (error) throw error
-      
+
       await fetchUsers()
       setShowActionMenu(null)
     } catch (error) {
       console.error('Error updating user role:', error)
+    }
+  }
+
+  const deleteUser = async (userId: string) => {
+    const confirmed = confirm('Are you sure you want to delete this user? This action cannot be undone.')
+    if (!confirmed) return
+
+    try {
+      if (!supabase) {
+        console.error('Supabase client not available')
+        return
+      }
+
+      // Call the admin_delete_user function
+      const { data, error } = await supabase.rpc('admin_delete_user', {
+        user_id_to_delete: userId
+      })
+
+      if (error) throw error
+
+      if (data?.success) {
+        alert('User deleted successfully')
+        await fetchUsers()
+        setShowActionMenu(null)
+      } else {
+        throw new Error(data?.error || 'Failed to delete user')
+      }
+    } catch (error: any) {
+      console.error('Error deleting user:', error)
+      alert(`Failed to delete user: ${error.message}`)
     }
   }
 
@@ -292,6 +322,16 @@ export function UserManagement() {
                               Unban User
                             </button>
                           )}
+
+                          <div className="border-t border-border my-1"></div>
+
+                          <button
+                            onClick={() => deleteUser(user.user_id)}
+                            className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-destructive-600 hover:bg-destructive-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete User
+                          </button>
                         </div>
                       )}
                     </div>
