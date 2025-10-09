@@ -51,7 +51,10 @@ export function ThemeToggle() {
     <Button
       variant="ghost"
       size="sm"
-      onClick={toggleTheme}
+      onClick={(e) => {
+        e.stopPropagation()
+        toggleTheme()
+      }}
       className="w-9 h-9 hover:bg-accent hover:text-accent-foreground"
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >

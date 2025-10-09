@@ -746,7 +746,10 @@ export function NavBar() {
 
             {/* Mobile menu button */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={(e) => {
+                e.stopPropagation()
+                setMobileMenuOpen(!mobileMenuOpen)
+              }}
               className="md:hidden p-2 rounded-md nav-item relative z-50"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
