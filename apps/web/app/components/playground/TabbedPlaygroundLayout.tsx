@@ -95,10 +95,15 @@ interface TabbedPlaygroundLayoutProps {
     imageUrl: string
     duration: number
     resolution: string
-    motionType: string
+    cameraMovement: string
     aspectRatio: string
     prompt: string
+    videoStyle?: string
     yPosition?: number
+    cinematicParameters?: any
+    includeTechnicalDetails?: boolean
+    includeStyleReferences?: boolean
+    presetId?: string
   }) => Promise<void>
   
   // History props
@@ -127,8 +132,9 @@ interface TabbedPlaygroundLayoutProps {
     resolution: string
     duration: number
     prompt: string
-    motionType: string
+    cameraMovement: string
     styledImageUrl?: string | null
+    presetId?: string | null
   } | null
   onExpandMedia?: (media: any) => void
   onVideoGenerated?: () => void // Callback when video generation completes
@@ -356,6 +362,7 @@ export default function TabbedPlaygroundLayout({
   const [videoAspectRatio, setVideoAspectRatio] = useState('16:9')
   const [videoResolution, setVideoResolution] = useState('480p')
   const [videoSourceImage, setVideoSourceImage] = useState<string | null>(null)
+  const [videoStyledImage, setVideoStyledImage] = useState<string | null>(null)
   // Track temporary unsaved videos
   const [tempVideos, setTempVideos] = useState<Array<{
     id: string
@@ -645,7 +652,7 @@ export default function TabbedPlaygroundLayout({
           duration: generatedVideoMetadata.duration,
           resolution: generatedVideoMetadata.resolution,
           aspectRatio: generatedVideoMetadata.aspectRatio,
-          motionType: generatedVideoMetadata.motionType,
+          motionType: generatedVideoMetadata.cameraMovement,
           prompt: generatedVideoMetadata.prompt,
           generationMetadata: {
             generated_at: new Date().toISOString(),
@@ -653,7 +660,7 @@ export default function TabbedPlaygroundLayout({
             duration: generatedVideoMetadata.duration,
             resolution: generatedVideoMetadata.resolution,
             aspect_ratio: generatedVideoMetadata.aspectRatio,
-            motion_type: generatedVideoMetadata.motionType,
+            motion_type: generatedVideoMetadata.cameraMovement,
             prompt: generatedVideoMetadata.prompt
           }
         }
@@ -1028,7 +1035,7 @@ export default function TabbedPlaygroundLayout({
             <div ref={videoPreviewRef} className="w-full" data-preview-area>
               <VideoPreviewArea
                 sourceImage={videoSourceImage || selectedImage}
-                styledImageUrl={generatedVideoMetadata?.styledImageUrl || null}
+                styledImageUrl={videoStyledImage || generatedVideoMetadata?.styledImageUrl || null}
                 aspectRatio={videoAspectRatio}
                 resolution={videoResolution}
                 prompt={videoPrompt}
@@ -1057,6 +1064,7 @@ export default function TabbedPlaygroundLayout({
                 onAspectRatioChange={setVideoAspectRatio}
                 onResolutionChange={setVideoResolution}
                 onActiveImageChange={setVideoSourceImage}
+                onStyledImageChange={setVideoStyledImage}
                 userCredits={userCredits}
                 userSubscriptionTier={userSubscriptionTier}
                 selectedProvider={videoProvider}

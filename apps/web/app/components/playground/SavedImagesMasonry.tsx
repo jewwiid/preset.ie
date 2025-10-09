@@ -47,7 +47,7 @@ interface SavedMedia {
     include_style_references?: boolean
     // Video-specific metadata
     duration?: number
-    motion_type?: string
+    camera_movement?: string
   }
   project_id?: string
 }

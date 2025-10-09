@@ -1,10 +1,29 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Wand2, Settings } from 'lucide-react'
+
+interface CameraMovement {
+  id: string
+  value: string
+  label: string
+  description: string
+  category: string
+  is_active: boolean
+}
+
+interface AspectRatio {
+  id: string
+  value: string
+  label: string
+  description: string
+  category: string
+  is_active: boolean
+}
 
 interface VideoSettingsProps {
   duration: number
@@ -39,6 +58,46 @@ export function VideoSettings({
   hasImage,
   selectedProvider = 'seedream'
 }: VideoSettingsProps) {
+  const [cameraMovements, setCameraMovements] = useState<CameraMovement[]>([])
+  const [loadingMovements, setLoadingMovements] = useState(true)
+  const [aspectRatios, setAspectRatios] = useState<AspectRatio[]>([])
+  const [loadingAspectRatios, setLoadingAspectRatios] = useState(true)
+
+  useEffect(() => {
+    const fetchCameraMovements = async () => {
+      try {
+        const response = await fetch('/api/cinematic-parameters?category=camera_movements')
+        const data = await response.json()
+        if (data.success && data.parameters) {
+          setCameraMovements(data.parameters)
+        }
+      } catch (error) {
+        console.error('Error fetching camera movements:', error)
+      } finally {
+        setLoadingMovements(false)
+      }
+    }
+
+    fetchCameraMovements()
+  }, [])
+
+  useEffect(() => {
+    const fetchAspectRatios = async () => {
+      try {
+        const response = await fetch('/api/cinematic-parameters?category=aspect_ratios')
+        const data = await response.json()
+        if (data.success && data.parameters) {
+          setAspectRatios(data.parameters)
+        }
+      } catch (error) {
+        console.error('Error fetching aspect ratios:', error)
+      } finally {
+        setLoadingAspectRatios(false)
+      }
+    }
+
+    fetchAspectRatios()
+  }, [])
   const calculateDimensions = (aspectRatio: string, resolution: string) => {
     const [widthRatio, heightRatio] = aspectRatio.split(':').map(Number)
     const aspectRatioValue = widthRatio / heightRatio
@@ -108,23 +167,28 @@ export function VideoSettings({
           )}
         </div>
 
-        {/* Motion Type */}
+        {/* Camera Movement */}
         <div className="space-y-2">
           <Label htmlFor="motionType" className="text-sm">
-            Motion Type
+            Camera Movement
           </Label>
-          <Select value={motionType} onValueChange={onMotionTypeChange}>
+          <Select value={motionType} onValueChange={onMotionTypeChange} disabled={loadingMovements}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder={loadingMovements ? "Loading..." : "Select movement"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="subtle">Subtle Motion</SelectItem>
-              <SelectItem value="moderate">Moderate Motion</SelectItem>
-              <SelectItem value="dynamic">Dynamic Motion</SelectItem>
-              <SelectItem value="camera_pan">Camera Pan</SelectItem>
-              <SelectItem value="zoom">Zoom</SelectItem>
+              {cameraMovements.map((movement) => (
+                <SelectItem key={movement.id} value={movement.value} title={movement.description}>
+                  {movement.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+          {motionType && cameraMovements.find(m => m.value === motionType)?.description && (
+            <p className="text-xs text-muted-foreground">
+              {cameraMovements.find(m => m.value === motionType)?.description}
+            </p>
+          )}
         </div>
       </div>
 
@@ -136,21 +200,24 @@ export function VideoSettings({
             <Settings className="h-4 w-4 inline mr-1" />
             Aspect Ratio
           </Label>
-          <Select value={aspectRatio} onValueChange={onAspectRatioChange}>
+          <Select value={aspectRatio} onValueChange={onAspectRatioChange} disabled={loadingAspectRatios}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder={loadingAspectRatios ? "Loading..." : "Select aspect ratio"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1:1">1:1 (Square)</SelectItem>
-              <SelectItem value="16:9">16:9 (Widescreen)</SelectItem>
-              <SelectItem value="9:16">9:16 (Vertical)</SelectItem>
-              <SelectItem value="4:3">4:3 (Traditional)</SelectItem>
-              <SelectItem value="3:4">3:4 (Portrait)</SelectItem>
-              <SelectItem value="21:9">21:9 (Ultrawide)</SelectItem>
+              {aspectRatios.map((ratio) => (
+                <SelectItem key={ratio.id} value={ratio.value} title={ratio.description}>
+                  {ratio.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <div className="text-xs text-muted-foreground">
-            Target: {calculateDimensions(aspectRatio, resolution).width} × {calculateDimensions(aspectRatio, resolution).height}
+            {aspectRatio && aspectRatio.includes(':') ? (
+              <>Target: {calculateDimensions(aspectRatio, resolution).width} × {calculateDimensions(aspectRatio, resolution).height}</>
+            ) : (
+              aspectRatios.find(r => r.value === aspectRatio)?.description || ''
+            )}
           </div>
         </div>
 

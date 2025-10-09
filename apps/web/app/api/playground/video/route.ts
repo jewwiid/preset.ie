@@ -62,15 +62,17 @@ export async function POST(request: NextRequest) {
       imageUrl,
       duration,
       resolution,
-      motionType,
+      cameraMovement,
       aspectRatio,
       prompt,
+      videoStyle,
       yPosition,
       projectId,
       cinematicParameters,
       includeTechnicalDetails,
       includeStyleReferences,
-      selectedProvider = 'seedream'
+      selectedProvider = 'seedream',
+      presetId
     } = requestBody
 
     // Validate required fields based on provider
@@ -91,10 +93,10 @@ export async function POST(request: NextRequest) {
       }
     } else {
       // Seedream only supports image-to-video
-      if (!imageUrl || !duration || !resolution || !motionType || !aspectRatio) {
-        console.log('❌ Missing required fields for Seedream:', { imageUrl: !!imageUrl, duration: !!duration, resolution: !!resolution, motionType: !!motionType, aspectRatio: !!aspectRatio })
+      if (!imageUrl || !duration || !resolution || !cameraMovement || !aspectRatio) {
+        console.log('❌ Missing required fields for Seedream:', { imageUrl: !!imageUrl, duration: !!duration, resolution: !!resolution, cameraMovement: !!cameraMovement, aspectRatio: !!aspectRatio })
         return NextResponse.json(
-          { success: false, error: 'Missing required fields for Seedream: imageUrl, duration, resolution, motionType, aspectRatio' },
+          { success: false, error: 'Missing required fields for Seedream: imageUrl, duration, resolution, cameraMovement, aspectRatio' },
           { status: 400 }
         )
       }
@@ -160,25 +162,15 @@ export async function POST(request: NextRequest) {
       // Seedream (existing implementation)
       console.log('🚀 Using Seedream for image-to-video generation...')
 
-      // If a style prompt is provided, apply it to the image first
+      // If videoStyle is explicitly provided, apply it to the image first
       let finalImageUrl = imageUrl
-      const shouldApplyStyle = enhancedPrompt && (
-        enhancedPrompt.toLowerCase().includes('anime') ||
-        enhancedPrompt.toLowerCase().includes('transform') ||
-        enhancedPrompt.toLowerCase().includes('apply') ||
-        enhancedPrompt.toLowerCase().includes('style') ||
-        enhancedPrompt.toLowerCase().includes('cinematic') ||
-        enhancedPrompt.toLowerCase().includes('dreamy') ||
-        enhancedPrompt.toLowerCase().includes('dramatic') ||
-        enhancedPrompt.toLowerCase().includes('vintage') ||
-        enhancedPrompt.toLowerCase().includes('glitch')
-      )
+      const shouldApplyStyle = videoStyle && videoStyle.trim() !== '' && videoStyle.toLowerCase() !== 'none'
 
       if (shouldApplyStyle) {
-        // This looks like a style prompt, not a motion prompt
-        // Apply the style to the image first
-        console.log('🎨 Style prompt detected - applying style to image before video generation...')
-        console.log('🎨 Style prompt:', enhancedPrompt)
+        // Video style explicitly selected - apply the style to the image first
+        console.log('🎨 Video style selected - applying style to image before video generation...')
+        console.log('🎨 Video style:', videoStyle)
+        console.log('🎨 Enhanced prompt:', enhancedPrompt)
         try {
           finalImageUrl = await applyStyleToImage(imageUrl, enhancedPrompt, aspectRatio, resolution)
           console.log('✅ Style applied to image successfully:', finalImageUrl)
@@ -188,7 +180,7 @@ export async function POST(request: NextRequest) {
           console.log('⚠️ Continuing with original image...')
         }
       } else {
-        console.log('💨 Motion prompt detected - skipping style application, using original image')
+        console.log('💨 No video style selected - using original image for video generation')
       }
 
       processedImageUrl = await processImageForAspectRatio(finalImageUrl, aspectRatio, resolution, yPosition)
@@ -203,7 +195,7 @@ export async function POST(request: NextRequest) {
         customDimensions: getTargetDimensions(aspectRatio, resolution)
       })
 
-      videoResult = await generateVideoWithWaveSpeed(processedImageUrl, duration, resolution, motionType, enhancedPrompt)
+      videoResult = await generateVideoWithWaveSpeed(processedImageUrl, duration, resolution, cameraMovement, enhancedPrompt)
 
       // Store the styled image URL if style was applied (for Seedream only)
       const styledImageUrl = finalImageUrl !== imageUrl ? finalImageUrl : null
@@ -222,7 +214,7 @@ export async function POST(request: NextRequest) {
         resolution: resolution,
         generation_metadata: {
           aspect_ratio: aspectRatio,
-          motion_type: motionType,
+          camera_movement: cameraMovement,
           prompt: prompt,
           enhanced_prompt: enhancedPrompt,
           image_url: imageUrl,
@@ -277,11 +269,32 @@ export async function POST(request: NextRequest) {
         credits_used: creditsRequired,
         balance_before: userCredits.current_balance,
         balance_after: userCredits.current_balance - creditsRequired,
-        description: `Video generation: ${duration}s ${resolution} ${motionType} motion`,
+        description: `Video generation: ${duration}s ${resolution} ${cameraMovement} camera movement`,
         reference_id: projectId || null,
         cost_usd: creditsRequired * 0.01, // Assuming $0.01 per credit
         status: 'completed'
       })
+
+    // Track preset usage if a preset was used
+    if (presetId && presetId !== 'local-preset') {
+      try {
+        const usageResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/presets/${presetId}/usage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': request.headers.get('authorization') || ''
+          }
+        })
+
+        if (usageResponse.ok) {
+          console.log('📊 Tracked video preset usage for:', presetId)
+        } else {
+          console.warn('⚠️ Failed to track video preset usage:', await usageResponse.text())
+        }
+      } catch (error) {
+        console.warn('⚠️ Error tracking video preset usage:', error)
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -293,7 +306,8 @@ export async function POST(request: NextRequest) {
       aspectRatio,
       resolution,
       duration,
-      motionType
+      cameraMovement,
+      presetId: presetId || null
     })
 
   } catch (error) {
@@ -403,18 +417,29 @@ function getTargetDimensions(aspectRatio: string, resolution: string): { width: 
 }
 
 
-async function generateVideoWithWaveSpeed(imageUrl: string, duration: number, resolution: string, motionType: string, prompt?: string): Promise<{ videoUrl: string; taskId: string }> {
+async function generateVideoWithWaveSpeed(imageUrl: string, duration: number, resolution: string, cameraMovement: string, prompt?: string): Promise<{ videoUrl: string; taskId: string }> {
   try {
     // Choose the appropriate WaveSpeed model based on resolution
     const modelEndpoint = resolution === '720p' 
       ? 'https://api.wavespeed.ai/api/v3/bytedance/seedance-v1-pro-i2v-720p'
       : 'https://api.wavespeed.ai/api/v3/bytedance/seedance-v1-pro-i2v-480p'
 
-    // Create motion prompt based on motionType and user input
-    const motionPrompt = prompt && prompt.trim() ? prompt.trim() : getMotionPrompt(motionType)
-    
+    // Create motion prompt based on camera movement and user input
+    // If both style prompt and camera movement exist, combine them
+    let motionPrompt = ''
+    if (prompt && prompt.trim()) {
+      // Has style prompt - add camera movement description to it
+      const movementDesc = await getCameraMovementDescription(cameraMovement)
+      motionPrompt = `${prompt.trim()}. ${movementDesc}`
+    } else {
+      // No style prompt - use camera movement only
+      const movementPrompt = await getCameraMovementPrompt(cameraMovement)
+      motionPrompt = movementPrompt
+    }
+
     console.log('🎬 Final motion prompt being sent to WaveSpeed:', motionPrompt)
     console.log('🎬 Original prompt parameter:', prompt)
+    console.log('🎬 Camera movement:', cameraMovement)
 
     const requestBody = {
       image: imageUrl,
@@ -482,14 +507,37 @@ async function generateVideoWithWaveSpeed(imageUrl: string, duration: number, re
   }
 }
 
-function getMotionPrompt(motionType: string): string {
-  const motionPrompts = {
-    'subtle': 'Gentle, subtle movement with soft camera motion',
-    'moderate': 'Smooth, moderate movement with natural camera transitions',
-    'dynamic': 'Dynamic, energetic movement with dramatic camera work'
+// Fetch camera movement description from database
+async function getCameraMovementPrompt(cameraMovement: string): Promise<string> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    const { data, error } = await supabase
+      .from('camera_movements')
+      .select('label, description')
+      .eq('value', cameraMovement)
+      .eq('is_active', true)
+      .single()
+
+    if (error || !data) {
+      console.error('Error fetching camera movement:', error)
+      return 'Smooth, controlled camera movement'
+    }
+
+    return `${data.label}: ${data.description}`
+  } catch (error) {
+    console.error('Error in getCameraMovementPrompt:', error)
+    return 'Smooth, controlled camera movement'
   }
-  
-  return motionPrompts[motionType as keyof typeof motionPrompts] || motionPrompts.moderate
+}
+
+// Get camera movement description to append to prompts
+async function getCameraMovementDescription(cameraMovement: string): Promise<string> {
+  const prompt = await getCameraMovementPrompt(cameraMovement)
+  return `Add ${prompt.toLowerCase()}`
 }
 
 async function enhancePromptWithCinematicParameters(

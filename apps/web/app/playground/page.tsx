@@ -92,8 +92,9 @@ function PlaygroundContent() {
     resolution: string
     duration: number
     prompt: string
-    motionType: string
+    cameraMovement: string
     styledImageUrl?: string | null
+    presetId?: string | null
   } | null>(null)
   const [fullScreenImage, setFullScreenImage] = useState<{
     url: string
@@ -683,13 +684,15 @@ function PlaygroundContent() {
     imageUrl: string
     duration: number
     resolution: string
-    motionType: string
+    cameraMovement: string
     aspectRatio: string
     prompt: string
+    videoStyle?: string
     yPosition?: number
     cinematicParameters?: any
     includeTechnicalDetails?: boolean
     includeStyleReferences?: boolean
+    presetId?: string
   }) => {
     setLoading(true)
     setVideoGenerationStatus('generating')
@@ -741,8 +744,9 @@ function PlaygroundContent() {
           resolution: params.resolution,
           duration: params.duration,
           prompt: params.prompt,
-          motionType: params.motionType,
-          styledImageUrl: styledImageUrl || null
+          cameraMovement: params.cameraMovement,
+          styledImageUrl: styledImageUrl || null,
+          presetId: params.presetId || null
         })
         console.log('✅ Video URL ready for preview (not saved):', finalVideoUrl)
       }
@@ -896,7 +900,7 @@ function PlaygroundContent() {
           duration: (videoMetadata as any)?.duration || 5,
           resolution: (videoMetadata as any)?.resolution || '480p',
           aspectRatio: currentProject?.aspect_ratio || '1:1', // Use current project's aspect ratio
-          motionType: (videoMetadata as any)?.motion_type || 'subtle',
+          cameraMovement: (videoMetadata as any)?.cameraMovement || 'smooth',
           prompt: currentProject?.prompt || 'AI-generated video',
           generationMetadata: {
             generated_at: new Date().toISOString(),
@@ -904,12 +908,13 @@ function PlaygroundContent() {
             duration: (videoMetadata as any)?.duration || 5,
             resolution: (videoMetadata as any)?.resolution || '480p',
             aspect_ratio: currentProject?.aspect_ratio || '1:1', // Use current project's aspect ratio
-            motion_type: (videoMetadata as any)?.motion_type || 'subtle',
+            camera_movement: (videoMetadata as any)?.cameraMovement || 'smooth',
             image_url: null,
             task_id: null,
             prompt: currentProject?.prompt || 'AI-generated video',
             style: currentProject?.style || 'realistic',
-            consistency_level: projectMetadata?.consistency_level || 'high'
+            consistency_level: projectMetadata?.consistency_level || 'high',
+            preset_id: (videoMetadata as any)?.presetId || null
           }
         }
         
@@ -1061,7 +1066,7 @@ function PlaygroundContent() {
           resolution: `${project.generated_images[0].width}x${project.generated_images[0].height}`,
           duration: 5,
           prompt: project.prompt || '',
-          motionType: 'camera_movement'
+          cameraMovement: 'smooth'
         })
       }
 

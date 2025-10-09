@@ -28,6 +28,13 @@ interface Preset {
     includeStyleReferences?: boolean
     generationMode?: 'text-to-image' | 'image-to-image'
     selectedProvider?: 'nanobanana' | 'seedream'
+    video?: {
+      cameraMovement?: string
+      videoStyle?: string
+      duration?: number
+      provider?: 'seedream' | 'wan'
+      resolution?: string
+    }
   }
   sample_images?: {
     before_images: string[]
@@ -69,6 +76,11 @@ interface PresetSelectorProps {
     includeStyleReferences?: boolean
     generationMode?: 'text-to-image' | 'image-to-image'
     selectedProvider?: 'nanobanana' | 'seedream'
+    // Video-specific settings
+    motionType?: string
+    videoStyle?: string
+    duration?: number
+    videoResolution?: string
   }
 }
 
@@ -363,7 +375,15 @@ export default function PresetSelector({
           includeTechnicalDetails: currentSettings.includeTechnicalDetails,
           includeStyleReferences: currentSettings.includeStyleReferences,
           generationMode: currentSettings.generationMode,
-          selectedProvider: currentSettings.selectedProvider
+          selectedProvider: currentSettings.selectedProvider,
+          // Video-specific settings
+          video: {
+            cameraMovement: currentSettings.motionType || 'smooth',
+            videoStyle: currentSettings.videoStyle || '',
+            duration: currentSettings.duration || 5,
+            provider: currentSettings.selectedProvider || 'seedream',
+            resolution: currentSettings.videoResolution || '480p'
+          }
         },
         sample_images: selectedSampleImages.before_images.length > 0 || selectedSampleImages.after_images.length > 0 ? selectedSampleImages : undefined,
         is_public: saveFormData.is_public
@@ -503,6 +523,23 @@ export default function PresetSelector({
     }
 
     return null
+  }
+
+  const getVideoSettingsBadge = (preset: Preset) => {
+    const hasVideoSettings = preset.cinematic_settings?.video && (
+      preset.cinematic_settings.video.cameraMovement ||
+      preset.cinematic_settings.video.videoStyle ||
+      preset.cinematic_settings.video.duration
+    )
+
+    if (!hasVideoSettings) return null
+
+    return (
+      <Badge variant="outline" className="border-green-500 text-green-600 bg-green-50">
+        <PlayCircle className="h-3 w-3 mr-1" />
+        Video Ready
+      </Badge>
+    )
   }
 
   return (
@@ -691,6 +728,7 @@ export default function PresetSelector({
                                   </Badge>
                                   {getPresetTypeBadge(preset.id)}
                                   {getGenerationModeBadge(preset)}
+                                  {getVideoSettingsBadge(preset)}
                                   <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                     <PlayCircle className="h-3 w-3" />
                                     <span>{preset.usage_count}</span>
@@ -727,6 +765,7 @@ export default function PresetSelector({
                                   </Badge>
                                   {getPresetTypeBadge(preset.id)}
                                   {getGenerationModeBadge(preset)}
+                                  {getVideoSettingsBadge(preset)}
                                   <div className="flex items-center space-x-1 text-xs text-muted-foreground">
                                     <PlayCircle className="h-3 w-3" />
                                     <span>{preset.usage_count}</span>
@@ -1166,6 +1205,30 @@ export default function PresetSelector({
                         </div>
                       </div>
 
+                      {/* Video Settings */}
+                      {(currentSettings.motionType || currentSettings.videoStyle || currentSettings.duration || currentSettings.videoResolution) && (
+                        <div>
+                          <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                            <PlayCircle className="h-3 w-3" />
+                            Video Settings
+                          </h4>
+                          <div className="space-y-1 text-xs">
+                            {currentSettings.motionType && (
+                              <div><strong>Camera Movement:</strong> {currentSettings.motionType}</div>
+                            )}
+                            {currentSettings.videoStyle && (
+                              <div><strong>Video Style:</strong> {currentSettings.videoStyle}</div>
+                            )}
+                            {currentSettings.duration && (
+                              <div><strong>Duration:</strong> {currentSettings.duration}s</div>
+                            )}
+                            {currentSettings.videoResolution && (
+                              <div><strong>Video Resolution:</strong> {currentSettings.videoResolution}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Sample Images Preview */}
                       {(selectedSampleImages.before_images.length > 0 || selectedSampleImages.after_images.length > 0) && (
                         <div>
@@ -1285,6 +1348,29 @@ export default function PresetSelector({
                   <div className="mt-2 flex items-start gap-2 text-xs text-purple-600 bg-purple-50 p-2 rounded">
                     <Lightbulb className="h-3 w-3 mt-0.5 flex-shrink-0" />
                     <span>This preset works best with a base image. Upload or select one for optimal results.</span>
+                  </div>
+                )}
+                {/* Video Settings Info */}
+                {selectedPreset.cinematic_settings?.video && (
+                  <div className="mt-2 flex items-start gap-2 text-xs text-green-600 bg-green-50 p-2 rounded">
+                    <PlayCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="font-medium mb-1">Video Settings Configured</div>
+                      <div className="space-y-0.5 text-green-700">
+                        {selectedPreset.cinematic_settings.video.cameraMovement && (
+                          <div>Camera: {selectedPreset.cinematic_settings.video.cameraMovement}</div>
+                        )}
+                        {selectedPreset.cinematic_settings.video.videoStyle && (
+                          <div>Style: {selectedPreset.cinematic_settings.video.videoStyle}</div>
+                        )}
+                        {selectedPreset.cinematic_settings.video.duration && (
+                          <div>Duration: {selectedPreset.cinematic_settings.video.duration}s</div>
+                        )}
+                        {selectedPreset.cinematic_settings.video.provider && (
+                          <div>Provider: {selectedPreset.cinematic_settings.video.provider}</div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

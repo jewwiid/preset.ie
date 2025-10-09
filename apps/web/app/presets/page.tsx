@@ -23,6 +23,15 @@ interface Preset {
   negative_prompt?: string
   style_settings: any
   technical_settings: any
+  cinematic_settings?: {
+    video?: {
+      cameraMovement?: string
+      videoStyle?: string
+      duration?: number
+      provider?: string
+      resolution?: string
+    }
+  }
   ai_metadata: any
   seedream_config: any
   usage_count: number
@@ -506,6 +515,23 @@ export default function PresetsPage() {
     )
   }
 
+  const getVideoSettingsBadge = (preset: Preset) => {
+    const hasVideoSettings = preset.cinematic_settings?.video && (
+      preset.cinematic_settings.video.cameraMovement ||
+      preset.cinematic_settings.video.videoStyle ||
+      preset.cinematic_settings.video.duration
+    )
+
+    if (!hasVideoSettings) return null
+
+    return (
+      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+        <PlayCircle className="h-3 w-3 mr-1" />
+        Video Ready
+      </Badge>
+    )
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -779,6 +805,7 @@ export default function PresetsPage() {
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         {getPresetTypeBadge(preset)}
+                        {getVideoSettingsBadge(preset)}
                         <Badge className={getCategoryColor(preset.category)}>
                           {formatCategoryName(preset.category)}
                         </Badge>
@@ -963,6 +990,7 @@ export default function PresetsPage() {
                             {formatCategoryName(preset.category)}
                           </Badge>
                           {getPresetTypeBadge(preset)}
+                          {getVideoSettingsBadge(preset)}
                           {preset.is_public ? (
                             <Badge variant="outline" className="text-primary-600">
                               <Users className="h-3 w-3 mr-1" />

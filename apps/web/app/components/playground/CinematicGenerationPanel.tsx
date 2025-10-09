@@ -94,8 +94,32 @@ export default function CinematicGenerationPanel({
   const [showCinematicPreview, setShowCinematicPreview] = useState(false)
   const [includeTechnicalDetails, setIncludeTechnicalDetails] = useState(true)
   const [includeStyleReferences, setIncludeStyleReferences] = useState(true)
-  
+  const [availableStyles, setAvailableStyles] = useState<Array<{ style_name: string; display_name: string }>>([])
+  const [loadingStyles, setLoadingStyles] = useState(true)
+
   const promptBuilder = useRef(new CinematicPromptBuilder())
+
+  // Fetch available styles from database
+  useEffect(() => {
+    const fetchStyles = async () => {
+      try {
+        setLoadingStyles(true)
+        const response = await fetch('/api/style-prompts')
+        if (response.ok) {
+          const data = await response.json()
+          setAvailableStyles(data.stylePrompts || [])
+        } else {
+          console.error('Failed to fetch styles')
+        }
+      } catch (error) {
+        console.error('Error fetching styles:', error)
+      } finally {
+        setLoadingStyles(false)
+      }
+    }
+
+    fetchStyles()
+  }, [])
 
   // Update enhanced prompt when cinematic parameters change
   useEffect(() => {
@@ -229,16 +253,16 @@ export default function CinematicGenerationPanel({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="style">Style</Label>
-                  <Select value={style} onValueChange={setStyle}>
+                  <Select value={style} onValueChange={setStyle} disabled={loadingStyles}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select style" />
+                      <SelectValue placeholder={loadingStyles ? "Loading styles..." : "Select style"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="photorealistic">Photorealistic</SelectItem>
-                      <SelectItem value="artistic">Artistic</SelectItem>
-                      <SelectItem value="cinematic">Cinematic</SelectItem>
-                      <SelectItem value="portrait">Portrait</SelectItem>
-                      <SelectItem value="landscape">Landscape</SelectItem>
+                      {availableStyles.map((styleOption) => (
+                        <SelectItem key={styleOption.style_name} value={styleOption.style_name}>
+                          {styleOption.display_name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

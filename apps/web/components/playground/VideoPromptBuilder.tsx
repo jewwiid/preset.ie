@@ -3,7 +3,7 @@
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Wand2, Sparkles, Trash2, X, Loader2 } from 'lucide-react'
+import { Wand2, Sparkles, Trash2, X, Loader2, RefreshCw } from 'lucide-react'
 
 interface VideoPromptBuilderProps {
   prompt: string
@@ -14,6 +14,7 @@ interface VideoPromptBuilderProps {
   onEnhancedPromptChange?: (prompt: string) => void
   onAIEnhance?: () => void
   onClearAll?: () => void
+  onRegeneratePrompt?: () => void
   maxLength?: number
   style?: string
 }
@@ -27,6 +28,7 @@ export function VideoPromptBuilder({
   onEnhancedPromptChange,
   onAIEnhance,
   onClearAll,
+  onRegeneratePrompt,
   maxLength = 2000,
   style
 }: VideoPromptBuilderProps) {
@@ -97,6 +99,17 @@ export function VideoPromptBuilder({
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2">
+        {onRegeneratePrompt && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRegeneratePrompt}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className="w-3 h-3" />
+            Regenerate Prompt
+          </Button>
+        )}
         {onAIEnhance && (
           <Button
             variant="default"
