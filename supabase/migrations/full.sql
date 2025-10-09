@@ -12,49 +12,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 
+CREATE SCHEMA IF NOT EXISTS "public";
+
+
+ALTER SCHEMA "public" OWNER TO "pg_database_owner";
+
+
 COMMENT ON SCHEMA "public" IS 'standard public schema';
-
-
-
-CREATE EXTENSION IF NOT EXISTS "pg_graphql" WITH SCHEMA "graphql";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "postgis" WITH SCHEMA "public";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
-
-
-
-
-
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
-
-
-
 
 
 
@@ -784,12 +748,8 @@ BEGIN
         RAISE EXCEPTION 'Verification request not found or not pending';
     END IF;
     
-    -- Determine badge type - map 'age' to 'identity'
-    IF v_verification_type = 'age' THEN
-        v_badge_type := 'verified_identity';
-    ELSE
-        v_badge_type := 'verified_' || v_verification_type;
-    END IF;
+    -- Determine badge type
+    v_badge_type := 'verified_' || v_verification_type;
     
     -- Calculate expiration
     IF p_badge_expires_in_days IS NOT NULL THEN
@@ -811,7 +771,7 @@ BEGIN
         revoke_reason = 'Superseded by new verification'
     WHERE user_id = v_user_id
     AND badge_type = v_badge_type
-    AND revoked_at IS NULL;
+    AND is_active = true;
     
     -- Issue new badge
     INSERT INTO verification_badges (
@@ -829,17 +789,19 @@ BEGIN
     ) RETURNING id INTO v_badge_id;
     
     -- Update user profile with verification flag
-    IF v_verification_type = 'identity' OR v_verification_type = 'age' THEN
+    IF v_verification_type = 'identity' THEN
         UPDATE users_profile
-        SET verified_id = true
+        SET role_flags = array_append(
+            array_remove(role_flags, 'VERIFIED_ID'),
+            'VERIFIED_ID'
+        )
         WHERE user_id = v_user_id;
     ELSIF v_verification_type = 'professional' THEN
         UPDATE users_profile
-        SET verified_id = true
-        WHERE user_id = v_user_id;
-    ELSIF v_verification_type = 'business' THEN
-        UPDATE users_profile
-        SET verified_id = true
+        SET role_flags = array_append(
+            array_remove(role_flags, 'VERIFIED_PRO'),
+            'VERIFIED_PRO'
+        )
         WHERE user_id = v_user_id;
     END IF;
     
@@ -2432,6 +2394,8 @@ CREATE TABLE IF NOT EXISTS "public"."users_profile" (
     "available_weekends" boolean DEFAULT false,
     "available_evenings" boolean DEFAULT false,
     "available_overnight" boolean DEFAULT false,
+    "allow_collaboration_invites" boolean DEFAULT true,
+    "allow_gig_invites" boolean DEFAULT true,
     CONSTRAINT "check_account_status_valid" CHECK ((("account_status")::"text" = ANY ((ARRAY['pending_verification'::character varying, 'active'::character varying, 'suspended'::character varying, 'banned'::character varying])::"text"[]))),
     CONSTRAINT "check_availability_status" CHECK ((("availability_status")::"text" = ANY ((ARRAY['Available'::character varying, 'Busy'::character varying, 'Unavailable'::character varying, 'Limited'::character varying, 'Weekends Only'::character varying, 'Weekdays Only'::character varying])::"text"[]))),
     CONSTRAINT "check_behance_url_format" CHECK ((("behance_url" IS NULL) OR ("behance_url" ~ '^https?://.*behance\.net.*'::"text"))),
@@ -2476,7 +2440,7 @@ COMMENT ON COLUMN "public"."users_profile"."vibe_tags" IS 'Array of vibe tags (m
 
 
 
-COMMENT ON COLUMN "public"."users_profile"."country" IS 'User country for location-based matching';
+COMMENT ON COLUMN "public"."users_profile"."country" IS 'Country where the user is located';
 
 
 
@@ -2508,11 +2472,11 @@ COMMENT ON COLUMN "public"."users_profile"."phone_number" IS 'Contact phone numb
 
 
 
-COMMENT ON COLUMN "public"."users_profile"."years_experience" IS 'Years of experience in creative field';
+COMMENT ON COLUMN "public"."users_profile"."years_experience" IS 'Number of years of professional experience';
 
 
 
-COMMENT ON COLUMN "public"."users_profile"."specializations" IS 'Array of specializations/skills';
+COMMENT ON COLUMN "public"."users_profile"."specializations" IS 'Array of specialized skills or areas of expertise';
 
 
 
@@ -2536,7 +2500,7 @@ COMMENT ON COLUMN "public"."users_profile"."hourly_rate_max" IS 'Maximum hourly 
 
 
 
-COMMENT ON COLUMN "public"."users_profile"."available_for_travel" IS 'Whether available for travel shoots';
+COMMENT ON COLUMN "public"."users_profile"."available_for_travel" IS 'Whether the user is available for travel assignments';
 
 
 
@@ -2592,7 +2556,7 @@ COMMENT ON COLUMN "public"."users_profile"."piercings" IS 'Physical attribute: H
 
 
 
-COMMENT ON COLUMN "public"."users_profile"."talent_categories" IS 'Array of talent categories (model, actor, etc.)';
+COMMENT ON COLUMN "public"."users_profile"."talent_categories" IS 'Array of talent categories (e.g., Fashion, Portrait, Commercial)';
 
 
 
@@ -2625,6 +2589,10 @@ COMMENT ON COLUMN "public"."users_profile"."travel_unit_preference" IS 'User pre
 
 
 COMMENT ON COLUMN "public"."users_profile"."turnaround_unit_preference" IS 'User preference for turnaround time unit (days or hours)';
+
+
+
+COMMENT ON COLUMN "public"."users_profile"."profile_completion_percentage" IS 'Percentage of profile completion (0-100)';
 
 
 
@@ -2788,7 +2756,7 @@ COMMENT ON COLUMN "public"."users_profile"."participate_research" IS 'Privacy: P
 
 
 
-COMMENT ON COLUMN "public"."users_profile"."primary_skill" IS 'User''s primary profession/specialty (e.g., "Photographer", "Model", "Videographer"). Used for directory pages and profile display. Should match either a specialization (for contributors) or talent_category (for talent).';
+COMMENT ON COLUMN "public"."users_profile"."primary_skill" IS 'Primary skill or profession (e.g., Photographer, Model, Makeup Artist)';
 
 
 
@@ -2844,6 +2812,14 @@ COMMENT ON COLUMN "public"."users_profile"."available_overnight" IS 'User is ava
 
 
 
+COMMENT ON COLUMN "public"."users_profile"."allow_collaboration_invites" IS 'Privacy: Allow users to send collaboration/project invitations. When false, user will not appear in invitation search results and cannot receive new invitations.';
+
+
+
+COMMENT ON COLUMN "public"."users_profile"."allow_gig_invites" IS 'Whether the user allows receiving gig invitations from contributors';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."calculate_profile_completion"("profile_record" "public"."users_profile") RETURNS integer
     LANGUAGE "plpgsql" IMMUTABLE
     AS $$
@@ -2856,7 +2832,23 @@ BEGIN
   -- Determine user's role
   has_contributor := profile_record.role_flags && ARRAY['CONTRIBUTOR']::user_role[];
   has_talent := profile_record.role_flags && ARRAY['TALENT']::user_role[];
-  -- ============ UNIVERSAL FIELDS (Apply to all roles) ============
+  
+  -- ============================================================
+  -- UNIVERSAL FIELDS (Apply to ALL roles)
+  -- ============================================================
+  
+  -- Basic Profile Info
+  -- avatar_url (weight: 15) - CRITICAL: Profile photo is essential for visual platforms
+  IF profile_record.avatar_url IS NOT NULL AND profile_record.avatar_url != '' THEN
+    completed_weight := completed_weight + 15;
+  END IF;
+  total_weight := total_weight + 15;
+  
+  -- primary_skill (weight: 15) - What you do is as important as who you are
+  IF profile_record.primary_skill IS NOT NULL AND profile_record.primary_skill != '' THEN
+    completed_weight := completed_weight + 15;
+  END IF;
+  total_weight := total_weight + 15;
   
   -- bio (weight: 10)
   IF profile_record.bio IS NOT NULL AND profile_record.bio != '' THEN
@@ -2876,18 +2868,26 @@ BEGIN
   END IF;
   total_weight := total_weight + 5;
   
-  -- years_experience (weight: 12)
-  IF profile_record.years_experience IS NOT NULL THEN
+  -- specializations (weight: 12) - Additional specializations beyond primary
+  IF profile_record.specializations IS NOT NULL AND array_length(profile_record.specializations, 1) > 0 THEN
     completed_weight := completed_weight + 12;
   END IF;
   total_weight := total_weight + 12;
   
-  -- specializations (weight: 15)
-  IF profile_record.specializations IS NOT NULL AND array_length(profile_record.specializations, 1) > 0 THEN
-    completed_weight := completed_weight + 15;
+  -- Professional Experience
+  -- years_experience (weight: 10)
+  IF profile_record.years_experience IS NOT NULL THEN
+    completed_weight := completed_weight + 10;
   END IF;
-  total_weight := total_weight + 15;
+  total_weight := total_weight + 10;
   
+  -- experience_level (weight: 8)
+  IF profile_record.experience_level IS NOT NULL AND profile_record.experience_level != '' THEN
+    completed_weight := completed_weight + 8;
+  END IF;
+  total_weight := total_weight + 8;
+  
+  -- Rates & Availability
   -- hourly_rate_min (weight: 10)
   IF profile_record.hourly_rate_min IS NOT NULL THEN
     completed_weight := completed_weight + 10;
@@ -2900,32 +2900,20 @@ BEGIN
   END IF;
   total_weight := total_weight + 6;
   
-  -- ============ CONTRIBUTOR-ONLY FIELDS ============
-  
-  -- equipment_list (weight: 8) - Only for contributors
-  IF has_contributor THEN
-    IF profile_record.equipment_list IS NOT NULL AND array_length(profile_record.equipment_list, 1) > 0 THEN
-      completed_weight := completed_weight + 8;
-    END IF;
-    total_weight := total_weight + 8;
+  -- availability_status (weight: 5)
+  IF profile_record.availability_status IS NOT NULL AND profile_record.availability_status != '' THEN
+    completed_weight := completed_weight + 5;
   END IF;
+  total_weight := total_weight + 5;
   
-  -- editing_software (weight: 6) - Only for contributors
-  IF has_contributor THEN
-    IF profile_record.editing_software IS NOT NULL AND array_length(profile_record.editing_software, 1) > 0 THEN
-      completed_weight := completed_weight + 6;
-    END IF;
-    total_weight := total_weight + 6;
-  END IF;
-  
-  -- ============ UNIVERSAL FIELDS (continued) ============
-  
+  -- Contact Information
   -- phone_number (weight: 5)
   IF profile_record.phone_number IS NOT NULL AND profile_record.phone_number != '' THEN
     completed_weight := completed_weight + 5;
   END IF;
   total_weight := total_weight + 5;
   
+  -- Portfolio & Social Links
   -- portfolio_url (weight: 8)
   IF profile_record.portfolio_url IS NOT NULL AND profile_record.portfolio_url != '' THEN
     completed_weight := completed_weight + 8;
@@ -2950,6 +2938,7 @@ BEGIN
   END IF;
   total_weight := total_weight + 2;
   
+  -- Additional Info
   -- available_for_travel (weight: 4)
   IF profile_record.available_for_travel IS NOT NULL THEN
     completed_weight := completed_weight + 4;
@@ -2962,14 +2951,115 @@ BEGIN
   END IF;
   total_weight := total_weight + 4;
   
-  -- ============ CONTRIBUTOR-ONLY FIELDS (continued) ============
-  
-  -- studio_name (weight: 4) - Only for contributors
+  -- ============================================================
+  -- CONTRIBUTOR-SPECIFIC FIELDS
+  -- ============================================================
   IF has_contributor THEN
+    -- equipment_list (weight: 8)
+    IF profile_record.equipment_list IS NOT NULL AND array_length(profile_record.equipment_list, 1) > 0 THEN
+      completed_weight := completed_weight + 8;
+    END IF;
+    total_weight := total_weight + 8;
+    
+    -- editing_software (weight: 6)
+    IF profile_record.editing_software IS NOT NULL AND array_length(profile_record.editing_software, 1) > 0 THEN
+      completed_weight := completed_weight + 6;
+    END IF;
+    total_weight := total_weight + 6;
+    
+    -- studio_name (weight: 4)
     IF profile_record.studio_name IS NOT NULL AND profile_record.studio_name != '' THEN
       completed_weight := completed_weight + 4;
     END IF;
     total_weight := total_weight + 4;
+    
+    -- has_studio (weight: 3)
+    IF profile_record.has_studio IS NOT NULL THEN
+      completed_weight := completed_weight + 3;
+    END IF;
+    total_weight := total_weight + 3;
+  END IF;
+  
+  -- ============================================================
+  -- TALENT-SPECIFIC FIELDS
+  -- ============================================================
+  IF has_talent THEN
+    -- talent_categories (weight: 10)
+    IF profile_record.talent_categories IS NOT NULL AND array_length(profile_record.talent_categories, 1) > 0 THEN
+      completed_weight := completed_weight + 10;
+    END IF;
+    total_weight := total_weight + 10;
+    
+    -- Physical Attributes
+    -- height_cm (weight: 6)
+    IF profile_record.height_cm IS NOT NULL THEN
+      completed_weight := completed_weight + 6;
+    END IF;
+    total_weight := total_weight + 6;
+    
+    -- weight_kg (weight: 4)
+    IF profile_record.weight_kg IS NOT NULL THEN
+      completed_weight := completed_weight + 4;
+    END IF;
+    total_weight := total_weight + 4;
+    
+    -- body_type (weight: 4)
+    IF profile_record.body_type IS NOT NULL AND profile_record.body_type != '' THEN
+      completed_weight := completed_weight + 4;
+    END IF;
+    total_weight := total_weight + 4;
+    
+    -- eye_color (weight: 3)
+    IF profile_record.eye_color IS NOT NULL AND profile_record.eye_color != '' THEN
+      completed_weight := completed_weight + 3;
+    END IF;
+    total_weight := total_weight + 3;
+    
+    -- hair_color (weight: 3)
+    IF profile_record.hair_color IS NOT NULL AND profile_record.hair_color != '' THEN
+      completed_weight := completed_weight + 3;
+    END IF;
+    total_weight := total_weight + 3;
+    
+    -- hair_length (weight: 2)
+    IF profile_record.hair_length IS NOT NULL AND profile_record.hair_length != '' THEN
+      completed_weight := completed_weight + 2;
+    END IF;
+    total_weight := total_weight + 2;
+    
+    -- skin_tone (weight: 2)
+    IF profile_record.skin_tone IS NOT NULL AND profile_record.skin_tone != '' THEN
+      completed_weight := completed_weight + 2;
+    END IF;
+    total_weight := total_weight + 2;
+    
+    -- Demographics (for talent profiles)
+    -- gender_identity (weight: 4)
+    IF profile_record.gender_identity IS NOT NULL AND profile_record.gender_identity != '' THEN
+      completed_weight := completed_weight + 4;
+    END IF;
+    total_weight := total_weight + 4;
+    
+    -- ethnicity (weight: 3)
+    IF profile_record.ethnicity IS NOT NULL AND profile_record.ethnicity != '' THEN
+      completed_weight := completed_weight + 3;
+    END IF;
+    total_weight := total_weight + 3;
+    
+    -- nationality (weight: 3)
+    IF profile_record.nationality IS NOT NULL AND profile_record.nationality != '' THEN
+      completed_weight := completed_weight + 3;
+    END IF;
+    total_weight := total_weight + 3;
+    
+    -- tattoos/piercings info (weight: 2)
+    IF profile_record.tattoos IS NOT NULL THEN
+      completed_weight := completed_weight + 1;
+    END IF;
+    IF profile_record.piercings IS NOT NULL THEN
+      completed_weight := completed_weight + 1;
+    END IF;
+    total_weight := total_weight + 2;
   END IF;
   
   -- Prevent division by zero
@@ -3077,6 +3167,39 @@ $$;
 
 
 ALTER FUNCTION "public"."calculate_user_risk_score"("p_user_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."call_email_api"("endpoint" "text", "payload" "jsonb") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  api_url TEXT;
+BEGIN
+  api_url := current_setting('app.base_url', true);
+  IF api_url IS NULL THEN
+    api_url := 'http://localhost:3000';
+  END IF;
+
+  PERFORM net.http_post(
+    url := api_url || endpoint,
+    headers := jsonb_build_object('Content-Type', 'application/json'),
+    body := payload
+  );
+  
+  INSERT INTO email_logs (endpoint, payload, created_at)
+  VALUES (endpoint, payload, NOW());
+  
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'Email API call failed: %', SQLERRM;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."call_email_api"("endpoint" "text", "payload" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."call_email_api"("endpoint" "text", "payload" "jsonb") IS 'Makes async HTTP requests to email API endpoints';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."can_access_conversation"("conversation_uuid" "uuid", "requesting_user_id" "uuid") RETURNS boolean
@@ -3417,6 +3540,61 @@ $$;
 ALTER FUNCTION "public"."check_refund_eligibility"("p_task_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."check_user_connection"("sender_user_id" "uuid", "recipient_user_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  -- Check if they've worked together on completed gigs
+  -- Case 1: One applied to the other's gig and was accepted
+  RETURN EXISTS (
+    SELECT 1 
+    FROM applications a1
+    JOIN gigs g ON a1.gig_id = g.id
+    JOIN users_profile up ON g.owner_user_id = up.id
+    WHERE a1.applicant_user_id = sender_user_id
+    AND up.user_id = recipient_user_id
+    AND a1.status = 'ACCEPTED'
+    AND g.status = 'COMPLETED'
+  ) OR EXISTS (
+    SELECT 1 
+    FROM applications a2
+    JOIN gigs g ON a2.gig_id = g.id
+    JOIN users_profile up ON g.owner_user_id = up.id
+    WHERE a2.applicant_user_id = recipient_user_id
+    AND up.user_id = sender_user_id
+    AND a2.status = 'ACCEPTED'
+    AND g.status = 'COMPLETED'
+  ) OR EXISTS (
+    -- Case 2: They both worked on the same gig (both were accepted)
+    SELECT 1 
+    FROM applications a1
+    JOIN applications a2 ON a1.gig_id = a2.gig_id
+    WHERE a1.applicant_user_id = sender_user_id
+    AND a2.applicant_user_id = recipient_user_id
+    AND a1.status = 'ACCEPTED'
+    AND a2.status = 'ACCEPTED'
+    AND a1.gig_id IN (
+      SELECT id FROM gigs WHERE status = 'COMPLETED'
+    )
+  ) OR EXISTS (
+    -- Case 3: They have mutual showcases together
+    SELECT 1 
+    FROM showcases s
+    WHERE (s.creator_user_id = sender_user_id AND s.talent_user_id = recipient_user_id)
+    OR (s.creator_user_id = recipient_user_id AND s.talent_user_id = sender_user_id)
+    AND s.visibility = 'PUBLIC'
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."check_user_connection"("sender_user_id" "uuid", "recipient_user_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."check_user_connection"("sender_user_id" "uuid", "recipient_user_id" "uuid") IS 'Checks if two users have worked together through completed gigs or showcases';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."check_user_rate_limit"("checking_user_profile_id" "uuid", "resource" character varying, "action_count" integer DEFAULT 1) RETURNS TABLE("allowed" boolean, "remaining" integer, "reset_at" timestamp with time zone, "current_tier" "public"."subscription_tier")
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -3705,36 +3883,29 @@ $$;
 ALTER FUNCTION "public"."create_default_user_settings"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."create_default_user_settings_safe"("user_uuid" "uuid") RETURNS TABLE("id" "uuid", "user_id" "uuid", "email_notifications" boolean, "push_notifications" boolean, "marketing_emails" boolean, "profile_visibility" character varying, "show_contact_info" boolean, "two_factor_enabled" boolean, "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "profile_id" "uuid")
+CREATE OR REPLACE FUNCTION "public"."create_default_user_settings_safe"("user_uuid" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
 BEGIN
-    RETURN QUERY
-    EXECUTE format('
-        WITH inserted AS (
-            INSERT INTO user_settings (
-                user_id,
-                email_notifications,
-                push_notifications,
-                marketing_emails,
-                profile_visibility,
-                show_contact_info,
-                two_factor_enabled
-            )
-            VALUES (
-                %L,
-                true,
-                true,
-                false,
-                ''public'',
-                true,
-                false
-            )
-            ON CONFLICT (user_id) DO NOTHING
-            RETURNING *
-        )
-        SELECT * FROM inserted
-    ', user_uuid);
+    INSERT INTO user_settings (
+        user_id,
+        email_notifications,
+        push_notifications,
+        marketing_emails,
+        profile_visibility,
+        show_contact_info,
+        two_factor_enabled
+    )
+    VALUES (
+        user_uuid,
+        true,
+        true,
+        false,
+        'public',
+        true,
+        false
+    )
+    ON CONFLICT (user_id) DO NOTHING;
 END;
 $$;
 
@@ -4192,6 +4363,30 @@ $$;
 
 
 ALTER FUNCTION "public"."expire_equipment_requests"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."expire_old_gig_invitations"() RETURNS integer
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  expired_count INTEGER;
+BEGIN
+  UPDATE gig_invitations
+  SET status = 'expired'
+  WHERE status = 'pending'
+  AND expires_at < NOW();
+  
+  GET DIAGNOSTICS expired_count = ROW_COUNT;
+  RETURN expired_count;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."expire_old_gig_invitations"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."expire_old_gig_invitations"() IS 'Marks expired gig invitations as expired. Should be run periodically via cron job.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."expire_old_invitations"() RETURNS "void"
@@ -5627,6 +5822,52 @@ $$;
 ALTER FUNCTION "public"."gig_is_looking_for"("gig_types" "text"[], "search_type" "text") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."handle_gig_invitation_acceptance"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  -- If invitation was accepted, auto-create application
+  IF NEW.status = 'accepted' AND OLD.status = 'pending' THEN
+    -- Check if user hasn't already applied
+    IF NOT EXISTS (
+      SELECT 1 FROM applications 
+      WHERE gig_id = NEW.gig_id 
+      AND applicant_user_id = NEW.invitee_id
+    ) THEN
+      -- Create application
+      INSERT INTO applications (
+        gig_id,
+        applicant_user_id,
+        note,
+        status,
+        applied_at
+      ) VALUES (
+        NEW.gig_id,
+        NEW.invitee_id,
+        COALESCE(NEW.message, 'Applied via invitation'),
+        'PENDING',
+        NOW()
+      );
+    END IF;
+    
+    -- Update accepted_at timestamp
+    NEW.accepted_at = NOW();
+    NEW.responded_at = NOW();
+  END IF;
+  
+  -- If declined, update responded_at
+  IF NEW.status = 'declined' AND OLD.status = 'pending' THEN
+    NEW.responded_at = NOW();
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_gig_invitation_acceptance"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."handle_new_user_complete"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -6276,6 +6517,179 @@ COMMENT ON FUNCTION "public"."notify_application_status_changed"() IS 'Sends not
 
 
 
+CREATE OR REPLACE FUNCTION "public"."notify_collab_invitation_response"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_invitee_profile RECORD;
+  v_inviter_user_id UUID;
+  v_project_title TEXT;
+  v_notification_title TEXT;
+  v_notification_message TEXT;
+BEGIN
+  -- Only notify on status change to accepted or declined
+  IF NEW.status NOT IN ('accepted', 'declined') OR OLD.status = NEW.status THEN
+    RETURN NEW;
+  END IF;
+
+  -- Skip if no invitee (email invitation)
+  IF NEW.invitee_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Get invitee profile info
+  SELECT 
+    up.display_name,
+    up.avatar_url
+  INTO v_invitee_profile
+  FROM users_profile up
+  WHERE up.id = NEW.invitee_id;
+
+  -- Get inviter user_id
+  SELECT user_id INTO v_inviter_user_id
+  FROM users_profile
+  WHERE id = NEW.inviter_id;
+
+  -- Get project title
+  SELECT title INTO v_project_title
+  FROM collab_projects
+  WHERE id = NEW.project_id;
+
+  -- Set notification content based on response
+  IF NEW.status = 'accepted' THEN
+    v_notification_title := 'Project invitation accepted!';
+    v_notification_message := v_invitee_profile.display_name || ' accepted your invitation to "' || v_project_title || '"';
+  ELSE
+    v_notification_title := 'Project invitation declined';
+    v_notification_message := v_invitee_profile.display_name || ' declined your invitation to "' || v_project_title || '"';
+  END IF;
+
+  -- Create notification for inviter
+  INSERT INTO notifications (
+    user_id,
+    recipient_id,
+    type,
+    category,
+    title,
+    message,
+    avatar_url,
+    action_url,
+    data
+  ) VALUES (
+    (SELECT user_id FROM users_profile WHERE id = NEW.invitee_id),
+    v_inviter_user_id,
+    'collab_invitation_response',
+    'collaboration',
+    v_notification_title,
+    v_notification_message,
+    v_invitee_profile.avatar_url,
+    '/collaborate/projects/' || NEW.project_id,
+    jsonb_build_object(
+      'invitation_id', NEW.id,
+      'project_id', NEW.project_id,
+      'invitee_id', NEW.invitee_id,
+      'invitee_name', v_invitee_profile.display_name,
+      'project_title', v_project_title,
+      'response', NEW.status
+    )
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."notify_collab_invitation_response"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."notify_collab_invitation_response"() IS 'Sends notification when a collaboration invitation is accepted or declined';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."notify_collab_invitation_sent"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_inviter_profile RECORD;
+  v_invitee_user_id UUID;
+  v_project_title TEXT;
+  v_role_name TEXT;
+BEGIN
+  -- Get inviter profile info
+  SELECT 
+    up.display_name,
+    up.avatar_url,
+    up.user_id
+  INTO v_inviter_profile
+  FROM users_profile up
+  WHERE up.id = NEW.inviter_id;
+
+  -- Get invitee user_id (if invitee exists in system)
+  IF NEW.invitee_id IS NOT NULL THEN
+    SELECT user_id INTO v_invitee_user_id
+    FROM users_profile
+    WHERE id = NEW.invitee_id;
+  ELSE
+    -- Email invitation, skip notification for now
+    -- TODO: Implement email notifications
+    RETURN NEW;
+  END IF;
+
+  -- Get project title
+  SELECT title INTO v_project_title
+  FROM collab_projects
+  WHERE id = NEW.project_id;
+
+  -- Get role name if specified
+  IF NEW.role_id IS NOT NULL THEN
+    SELECT role_name INTO v_role_name
+    FROM collab_roles
+    WHERE id = NEW.role_id;
+  END IF;
+
+  -- Create notification for invitee
+  INSERT INTO notifications (
+    user_id,
+    recipient_id,
+    type,
+    category,
+    title,
+    message,
+    avatar_url,
+    action_url,
+    data
+  ) VALUES (
+    v_inviter_profile.user_id,
+    v_invitee_user_id,
+    'collab_invitation',
+    'collaboration',
+    'You''ve been invited to a project!',
+    v_inviter_profile.display_name || ' invited you to join "' || v_project_title || '"' || 
+      CASE WHEN v_role_name IS NOT NULL THEN ' as ' || v_role_name ELSE '' END,
+    v_inviter_profile.avatar_url,
+    '/dashboard/invitations?type=collabs',
+    jsonb_build_object(
+      'invitation_id', NEW.id,
+      'project_id', NEW.project_id,
+      'inviter_id', NEW.inviter_id,
+      'inviter_name', v_inviter_profile.display_name,
+      'project_title', v_project_title,
+      'role_name', v_role_name
+    )
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."notify_collab_invitation_sent"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."notify_collab_invitation_sent"() IS 'Sends notification when a collaboration invitation is created';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."notify_credits_added"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -6443,6 +6857,158 @@ ALTER FUNCTION "public"."notify_gig_application_received"() OWNER TO "postgres";
 
 
 COMMENT ON FUNCTION "public"."notify_gig_application_received"() IS 'Sends notification to gig owner when a new application is received. Respects notification_preferences.application_notifications.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."notify_gig_invitation_response"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_invitee_profile RECORD;
+  v_inviter_user_id UUID;
+  v_gig_title TEXT;
+  v_notification_title TEXT;
+  v_notification_message TEXT;
+BEGIN
+  -- Only notify on status change to accepted or declined
+  IF NEW.status NOT IN ('accepted', 'declined') OR OLD.status = NEW.status THEN
+    RETURN NEW;
+  END IF;
+
+  -- Get invitee profile info
+  SELECT 
+    up.display_name,
+    up.avatar_url
+  INTO v_invitee_profile
+  FROM users_profile up
+  WHERE up.id = NEW.invitee_id;
+
+  -- Get inviter user_id
+  SELECT user_id INTO v_inviter_user_id
+  FROM users_profile
+  WHERE id = NEW.inviter_id;
+
+  -- Get gig title
+  SELECT title INTO v_gig_title
+  FROM gigs
+  WHERE id = NEW.gig_id;
+
+  -- Set notification content based on response
+  IF NEW.status = 'accepted' THEN
+    v_notification_title := 'Gig invitation accepted!';
+    v_notification_message := v_invitee_profile.display_name || ' accepted your invitation to "' || v_gig_title || '"';
+  ELSE
+    v_notification_title := 'Gig invitation declined';
+    v_notification_message := v_invitee_profile.display_name || ' declined your invitation to "' || v_gig_title || '"';
+  END IF;
+
+  -- Create notification for inviter
+  INSERT INTO notifications (
+    user_id,
+    recipient_id,
+    type,
+    category,
+    title,
+    message,
+    avatar_url,
+    action_url,
+    data
+  ) VALUES (
+    (SELECT user_id FROM users_profile WHERE id = NEW.invitee_id),
+    v_inviter_user_id,
+    'gig_invitation_response',
+    'gig',
+    v_notification_title,
+    v_notification_message,
+    v_invitee_profile.avatar_url,
+    '/gigs/' || NEW.gig_id,
+    jsonb_build_object(
+      'invitation_id', NEW.id,
+      'gig_id', NEW.gig_id,
+      'invitee_id', NEW.invitee_id,
+      'invitee_name', v_invitee_profile.display_name,
+      'gig_title', v_gig_title,
+      'response', NEW.status
+    )
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."notify_gig_invitation_response"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."notify_gig_invitation_response"() IS 'Sends notification when a gig invitation is accepted or declined';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."notify_gig_invitation_sent"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_inviter_profile RECORD;
+  v_invitee_user_id UUID;
+  v_gig_title TEXT;
+BEGIN
+  -- Get inviter profile info
+  SELECT 
+    up.display_name,
+    up.avatar_url,
+    up.user_id
+  INTO v_inviter_profile
+  FROM users_profile up
+  WHERE up.id = NEW.inviter_id;
+
+  -- Get invitee user_id
+  SELECT user_id INTO v_invitee_user_id
+  FROM users_profile
+  WHERE id = NEW.invitee_id;
+
+  -- Get gig title
+  SELECT title INTO v_gig_title
+  FROM gigs
+  WHERE id = NEW.gig_id;
+
+  -- Create notification for invitee
+  INSERT INTO notifications (
+    user_id,
+    recipient_id,
+    type,
+    category,
+    title,
+    message,
+    avatar_url,
+    action_url,
+    data
+  ) VALUES (
+    v_inviter_profile.user_id,
+    v_invitee_user_id,
+    'gig_invitation',
+    'gig',
+    'You''ve been invited to a gig!',
+    v_inviter_profile.display_name || ' invited you to apply for "' || v_gig_title || '"',
+    v_inviter_profile.avatar_url,
+    '/dashboard/invitations?type=gigs',
+    jsonb_build_object(
+      'invitation_id', NEW.id,
+      'gig_id', NEW.gig_id,
+      'inviter_id', NEW.inviter_id,
+      'inviter_name', v_inviter_profile.display_name,
+      'gig_title', v_gig_title
+    )
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."notify_gig_invitation_sent"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."notify_gig_invitation_sent"() IS 'Sends notification when a gig invitation is created';
 
 
 
@@ -8280,6 +8846,142 @@ COMMENT ON FUNCTION "public"."search_roles_and_skills"("search_term" "text") IS 
 
 
 
+CREATE OR REPLACE FUNCTION "public"."send_deadline_reminders"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  gig_record RECORD;
+BEGIN
+  -- Find gigs with deadlines in 24 hours
+  FOR gig_record IN
+    SELECT 
+      g.id,
+      g.title,
+      g.owner_user_id,
+      g.application_deadline,
+      (SELECT COUNT(*) FROM applications WHERE gig_id = g.id) as application_count
+    FROM gigs g
+    WHERE g.status = 'PUBLISHED'
+    AND g.application_deadline >= NOW() + INTERVAL '23 hours'
+    AND g.application_deadline <= NOW() + INTERVAL '25 hours'
+  LOOP
+    PERFORM call_email_api(
+      '/api/emails/deadline-approaching',
+      jsonb_build_object(
+        'gigId', gig_record.id,
+        'ownerId', gig_record.owner_user_id,
+        'applicationCount', gig_record.application_count
+      )
+    );
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."send_deadline_reminders"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."send_deadline_reminders"() IS 'Scheduled job to send deadline approaching emails';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."send_gig_match_notifications"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  talent_record RECORD;
+  matched_gigs JSONB;
+BEGIN
+  -- Find talent users
+  FOR talent_record IN
+    SELECT 
+      user_id,
+      id as profile_id,
+      display_name,
+      city,
+      style_tags
+    FROM users_profile
+    WHERE 'TALENT' = ANY(role_flags)
+  LOOP
+    -- Find gigs matching talent's location and style tags (simplified)
+    -- This is a basic version - you'd want more sophisticated matching
+    SELECT json_agg(json_build_object('id', id, 'title', title, 'location', location_text))
+    INTO matched_gigs
+    FROM gigs
+    WHERE status = 'PUBLISHED'
+    AND created_at >= NOW() - INTERVAL '24 hours' -- Only new gigs
+    AND (
+      city IS NULL OR 
+      city = talent_record.city OR
+      style_tags && talent_record.style_tags -- Array overlap
+    )
+    LIMIT 5;
+    
+    -- Send email if there are matches
+    IF matched_gigs IS NOT NULL AND json_array_length(matched_gigs) > 0 THEN
+      PERFORM call_email_api(
+        '/api/emails/gig-matches',
+        jsonb_build_object(
+          'authUserId', talent_record.user_id,
+          'name', talent_record.display_name,
+          'matches', matched_gigs
+        )
+      );
+    END IF;
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."send_gig_match_notifications"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."send_gig_match_notifications"() IS 'Daily digest of matching gigs for talent';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."send_marketplace_milestones"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  seller_record RECORD;
+BEGIN
+  -- Find sellers who just hit sales milestones (10, 50, 100, 500 sales)
+  FOR seller_record IN
+    SELECT 
+      p.seller_user_id,
+      up.user_id as auth_user_id,
+      up.display_name,
+      COUNT(pp.id) as total_sales,
+      SUM(pp.seller_payout) as total_revenue
+    FROM preset_purchases pp
+    JOIN presets p ON pp.preset_id = p.id
+    JOIN users_profile up ON p.seller_user_id = up.user_id
+    WHERE pp.payment_status = 'completed'
+    GROUP BY p.seller_user_id, up.user_id, up.display_name
+    HAVING COUNT(pp.id) IN (10, 50, 100, 500, 1000)
+  LOOP
+    PERFORM call_email_api(
+      '/api/emails/marketplace/sales-milestone',
+      jsonb_build_object(
+        'authUserId', seller_record.auth_user_id,
+        'name', seller_record.display_name,
+        'totalSales', seller_record.total_sales,
+        'totalRevenue', seller_record.total_revenue
+      )
+    );
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."send_marketplace_milestones"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."send_marketplace_milestones"() IS 'Celebrates sales milestones';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."send_platform_announcement"("p_title" "text", "p_message" "text", "p_action_url" "text" DEFAULT NULL::"text") RETURNS integer
     LANGUAGE "plpgsql"
     AS $$
@@ -8340,6 +9042,160 @@ COMMENT ON FUNCTION "public"."send_platform_announcement"("p_title" "text", "p_m
 
 
 
+CREATE OR REPLACE FUNCTION "public"."send_profile_completion_reminders"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  user_record RECORD;
+  completion_percentage INTEGER;
+BEGIN
+  -- Find incomplete profiles created 3+ days ago
+  FOR user_record IN
+    SELECT 
+      user_id,
+      display_name,
+      avatar_url,
+      bio,
+      city,
+      created_at
+    FROM users_profile
+    WHERE created_at <= NOW() - INTERVAL '3 days'
+    AND created_at >= NOW() - INTERVAL '7 days'
+  LOOP
+    -- Calculate completion (simple version)
+    completion_percentage := 0;
+    IF user_record.avatar_url IS NOT NULL THEN completion_percentage := completion_percentage + 25; END IF;
+    IF user_record.bio IS NOT NULL THEN completion_percentage := completion_percentage + 25; END IF;
+    IF user_record.city IS NOT NULL THEN completion_percentage := completion_percentage + 25; END IF;
+    completion_percentage := completion_percentage + 25; -- Display name always exists
+    
+    -- Send reminder if less than 75% complete
+    IF completion_percentage < 75 THEN
+      PERFORM call_email_api(
+        '/api/emails/profile-completion',
+        jsonb_build_object(
+          'authUserId', user_record.user_id,
+          'name', user_record.display_name,
+          'completionPercentage', completion_percentage
+        )
+      );
+    END IF;
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."send_profile_completion_reminders"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."send_profile_completion_reminders"() IS 'Scheduled job to remind users to complete profile';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."send_shoot_reminders"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  gig_record RECORD;
+BEGIN
+  -- Find gigs starting in 24 hours
+  FOR gig_record IN
+    SELECT 
+      g.id,
+      g.title,
+      g.owner_user_id,
+      g.start_time,
+      g.location_text,
+      g.comp_type
+    FROM gigs g
+    WHERE g.status = 'BOOKED'
+    AND g.start_time >= NOW() + INTERVAL '23 hours'
+    AND g.start_time <= NOW() + INTERVAL '25 hours'
+  LOOP
+    PERFORM call_email_api(
+      '/api/emails/shoot-reminder',
+      jsonb_build_object(
+        'gigId', gig_record.id,
+        'ownerId', gig_record.owner_user_id
+      )
+    );
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."send_shoot_reminders"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."send_shoot_reminders"() IS 'Scheduled job to send 24h shoot reminders';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."send_subscription_expiring_reminders"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  user_record RECORD;
+BEGIN
+  -- Find subscriptions expiring in 7 days
+  FOR user_record IN
+    SELECT 
+      user_id,
+      display_name,
+      subscription_tier,
+      subscription_expires_at
+    FROM users_profile
+    WHERE subscription_status = 'ACTIVE'
+    AND subscription_expires_at IS NOT NULL
+    AND subscription_expires_at >= NOW() + INTERVAL '6 days'
+    AND subscription_expires_at <= NOW() + INTERVAL '8 days'
+  LOOP
+    PERFORM call_email_api(
+      '/api/emails/subscription-expiring',
+      jsonb_build_object(
+        'authUserId', user_record.user_id,
+        'name', user_record.display_name,
+        'tier', user_record.subscription_tier,
+        'expiresAt', user_record.subscription_expires_at
+      )
+    );
+  END LOOP;
+  
+  -- Also find subscriptions expiring in 1 day (final reminder)
+  FOR user_record IN
+    SELECT 
+      user_id,
+      display_name,
+      subscription_tier,
+      subscription_expires_at
+    FROM users_profile
+    WHERE subscription_status = 'ACTIVE'
+    AND subscription_expires_at IS NOT NULL
+    AND subscription_expires_at >= NOW() + INTERVAL '23 hours'
+    AND subscription_expires_at <= NOW() + INTERVAL '25 hours'
+  LOOP
+    PERFORM call_email_api(
+      '/api/emails/subscription-expiring-urgent',
+      jsonb_build_object(
+        'authUserId', user_record.user_id,
+        'name', user_record.display_name,
+        'tier', user_record.subscription_tier,
+        'expiresAt', user_record.subscription_expires_at,
+        'urgent', true
+      )
+    );
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."send_subscription_expiring_reminders"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."send_subscription_expiring_reminders"() IS 'Sends reminders 7 days and 1 day before expiry';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."send_targeted_announcement"("p_title" "text", "p_message" "text", "p_role_filter" "text"[] DEFAULT NULL::"text"[], "p_city_filter" "text" DEFAULT NULL::"text", "p_action_url" "text" DEFAULT NULL::"text") RETURNS integer
     LANGUAGE "plpgsql"
     AS $$
@@ -8395,6 +9251,126 @@ ALTER FUNCTION "public"."send_targeted_announcement"("p_title" "text", "p_messag
 
 
 COMMENT ON FUNCTION "public"."send_targeted_announcement"("p_title" "text", "p_message" "text", "p_role_filter" "text"[], "p_city_filter" "text", "p_action_url" "text") IS 'Admin helper function to send targeted announcements to specific user segments (by role or city). Returns count of notifications created.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."send_unread_messages_digest"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  user_record RECORD;
+  unread_count INTEGER;
+  unread_messages JSONB;
+BEGIN
+  -- Find users with unread messages
+  FOR user_record IN
+    SELECT DISTINCT 
+      up.user_id,
+      up.display_name
+    FROM users_profile up
+    WHERE EXISTS (
+      SELECT 1 
+      FROM messages m
+      WHERE m.to_user_id = up.id
+      AND m.read_at IS NULL
+      AND m.created_at >= NOW() - INTERVAL '24 hours'
+    )
+  LOOP
+    -- Count unread messages
+    SELECT COUNT(*) INTO unread_count
+    FROM messages m
+    JOIN users_profile up ON m.to_user_id = up.id
+    WHERE up.user_id = user_record.user_id
+    AND m.read_at IS NULL;
+    
+    -- Get unread message previews (max 5)
+    SELECT json_agg(
+      json_build_object(
+        'senderName', sender.display_name,
+        'gigTitle', g.title,
+        'preview', substring(m.body, 1, 50),
+        'sentAt', m.created_at
+      )
+    ) INTO unread_messages
+    FROM messages m
+    JOIN users_profile sender ON m.from_user_id = sender.id
+    JOIN users_profile recipient ON m.to_user_id = recipient.id
+    JOIN gigs g ON m.gig_id = g.id
+    WHERE recipient.user_id = user_record.user_id
+    AND m.read_at IS NULL
+    ORDER BY m.created_at DESC
+    LIMIT 5;
+    
+    -- Send digest
+    PERFORM call_email_api(
+      '/api/emails/messaging/unread-digest',
+      jsonb_build_object(
+        'authUserId', user_record.user_id,
+        'name', user_record.display_name,
+        'unreadCount', unread_count,
+        'messages', unread_messages
+      )
+    );
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."send_unread_messages_digest"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."send_unread_messages_digest"() IS 'Sends digest of unread messages twice daily';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."send_weekly_digest"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  user_record RECORD;
+  user_stats JSONB;
+BEGIN
+  FOR user_record IN
+    SELECT user_id, id, display_name, role_flags
+    FROM users_profile
+  LOOP
+    -- Gather user stats for the week
+    SELECT jsonb_build_object(
+      'newGigs', (
+        SELECT COUNT(*) FROM gigs 
+        WHERE owner_user_id = user_record.id 
+        AND created_at >= NOW() - INTERVAL '7 days'
+      ),
+      'newApplications', (
+        SELECT COUNT(*) FROM applications a
+        JOIN gigs g ON a.gig_id = g.id
+        WHERE g.owner_user_id = user_record.id 
+        AND a.applied_at >= NOW() - INTERVAL '7 days'
+      ),
+      'profileViews', 0, -- Placeholder
+      'newFollowers', 0  -- Placeholder
+    ) INTO user_stats;
+    
+    -- Only send if there's activity
+    IF (user_stats->>'newGigs')::int > 0 OR (user_stats->>'newApplications')::int > 0 THEN
+      PERFORM call_email_api(
+        '/api/emails/weekly-digest',
+        jsonb_build_object(
+          'authUserId', user_record.user_id,
+          'name', user_record.display_name,
+          'stats', user_stats
+        )
+      );
+    END IF;
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."send_weekly_digest"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."send_weekly_digest"() IS 'Weekly activity summary';
 
 
 
@@ -8600,6 +9576,525 @@ $$;
 
 
 ALTER FUNCTION "public"."track_treatment_view"("p_treatment_id" "uuid", "p_session_id" "text", "p_referrer" "text", "p_user_agent" "text", "p_ip_address" "inet") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_application_milestone"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  gig_record RECORD;
+  application_count INTEGER;
+  milestone_percentage INTEGER;
+BEGIN
+  SELECT * INTO gig_record FROM gigs WHERE id = NEW.gig_id;
+  SELECT COUNT(*) INTO application_count FROM applications WHERE gig_id = NEW.gig_id;
+  
+  milestone_percentage := (application_count * 100) / gig_record.max_applicants;
+  
+  IF milestone_percentage >= 50 AND milestone_percentage < 55 THEN
+    PERFORM call_email_api(
+      '/api/emails/application-milestone',
+      jsonb_build_object(
+        'gigId', NEW.gig_id,
+        'ownerId', gig_record.owner_user_id,
+        'applicationCount', application_count,
+        'maxApplicants', gig_record.max_applicants,
+        'milestone', 50
+      )
+    );
+  ELSIF milestone_percentage >= 80 AND milestone_percentage < 85 THEN
+    PERFORM call_email_api(
+      '/api/emails/application-milestone',
+      jsonb_build_object(
+        'gigId', NEW.gig_id,
+        'ownerId', gig_record.owner_user_id,
+        'applicationCount', application_count,
+        'maxApplicants', gig_record.max_applicants,
+        'milestone', 80
+      )
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_application_milestone"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_application_status_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF NEW.status != OLD.status THEN
+    PERFORM call_email_api(
+      '/api/emails/application-status',
+      jsonb_build_object(
+        'applicationId', NEW.id,
+        'gigId', NEW.gig_id,
+        'applicantId', NEW.applicant_user_id,
+        'oldStatus', OLD.status,
+        'newStatus', NEW.status
+      )
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_application_status_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_application_status_email"() IS 'Sends status update emails to applicants';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_application_withdrawn_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF NEW.status = 'WITHDRAWN' AND (OLD.status IS NULL OR OLD.status != 'WITHDRAWN') THEN
+    PERFORM call_email_api(
+      '/api/emails/application-withdrawn',
+      jsonb_build_object(
+        'applicationId', NEW.id,
+        'gigId', NEW.gig_id,
+        'applicantId', NEW.applicant_user_id
+      )
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_application_withdrawn_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_application_withdrawn_email"() IS 'Notifies gig owner when applicant withdraws';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_applications_closed_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF NEW.status = 'APPLICATIONS_CLOSED' AND OLD.status = 'PUBLISHED' THEN
+    PERFORM call_email_api(
+      '/api/emails/applications-closed',
+      jsonb_build_object(
+        'gigId', NEW.id,
+        'ownerId', NEW.owner_user_id,
+        'gigTitle', NEW.title,
+        'applicationCount', (SELECT COUNT(*) FROM applications WHERE gig_id = NEW.id)
+      )
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_applications_closed_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_applications_closed_email"() IS 'Notifies owner when application period ends';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_credits_low_warning"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  -- Warn when credits drop below 5
+  IF NEW.credits < 5 AND (OLD.credits IS NULL OR OLD.credits >= 5) THEN
+    PERFORM call_email_api(
+      '/api/emails/credits-low',
+      jsonb_build_object(
+        'authUserId', NEW.user_id,
+        'remainingCredits', NEW.credits
+      )
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_credits_low_warning"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_gig_cancelled_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF NEW.status = 'CANCELLED' AND (OLD IS NULL OR OLD.status != 'CANCELLED') THEN
+    PERFORM call_email_api(
+      '/api/emails/gig-cancelled',
+      jsonb_build_object(
+        'gigId', NEW.id,
+        'ownerId', NEW.owner_user_id,
+        'gigTitle', NEW.title
+      )
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_gig_cancelled_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_gig_cancelled_email"() IS 'Notifies applicants when gig is cancelled';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_gig_completed_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF NEW.status = 'COMPLETED' AND (OLD IS NULL OR OLD.status != 'COMPLETED') THEN
+    PERFORM call_email_api(
+      '/api/emails/gig-completed',
+      jsonb_build_object(
+        'gigId', NEW.id,
+        'ownerId', NEW.owner_user_id,
+        'gigTitle', NEW.title
+      )
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_gig_completed_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_gig_completed_email"() IS 'Notifies both parties when gig is completed';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_gig_published_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF NEW.status = 'PUBLISHED' AND (OLD IS NULL OR OLD.status IS NULL OR OLD.status != 'PUBLISHED') THEN
+    PERFORM call_email_api(
+      '/api/emails/gig-published',
+      jsonb_build_object('gigId', NEW.id, 'ownerId', NEW.owner_user_id)
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_gig_published_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_gig_published_email"() IS 'Sends notification when gig is published';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_message_received_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  PERFORM call_email_api(
+    '/api/emails/messaging/new-message',
+    jsonb_build_object(
+      'messageId', NEW.id,
+      'gigId', NEW.gig_id,
+      'fromUserId', NEW.from_user_id,
+      'toUserId', NEW.to_user_id,
+      'messagePreview', substring(NEW.body, 1, 100)
+    )
+  );
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_message_received_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_message_received_email"() IS 'Notifies recipient of new message';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_new_application_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  PERFORM call_email_api(
+    '/api/emails/new-application',
+    jsonb_build_object(
+      'applicationId', NEW.id,
+      'gigId', NEW.gig_id,
+      'applicantId', NEW.applicant_user_id
+    )
+  );
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_new_application_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_new_application_email"() IS 'Notifies contributor of new application';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_preset_listing_status_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  seller_auth_id UUID;
+  preset_name TEXT;
+BEGIN
+  -- Only trigger when status changes
+  IF NEW.status != OLD.status THEN
+    
+    SELECT user_id INTO seller_auth_id
+    FROM users_profile
+    WHERE user_id = NEW.seller_user_id;
+    
+    SELECT COALESCE(title, name) INTO preset_name
+    FROM presets
+    WHERE id = NEW.preset_id;
+    
+    -- Approved
+    IF NEW.status = 'approved' AND OLD.status = 'pending_review' THEN
+      PERFORM call_email_api(
+        '/api/emails/marketplace/listing-approved',
+        jsonb_build_object(
+          'authUserId', seller_auth_id,
+          'presetName', preset_name,
+          'listingTitle', NEW.marketplace_title,
+          'salePrice', NEW.sale_price,
+          'listingId', NEW.id
+        )
+      );
+    
+    -- Rejected
+    ELSIF NEW.status = 'rejected' THEN
+      PERFORM call_email_api(
+        '/api/emails/marketplace/listing-rejected',
+        jsonb_build_object(
+          'authUserId', seller_auth_id,
+          'presetName', preset_name,
+          'listingTitle', NEW.marketplace_title,
+          'rejectionReason', NEW.rejection_reason,
+          'listingId', NEW.id
+        )
+      );
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_preset_listing_status_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_preset_listing_status_email"() IS 'Notifies seller of listing approval/rejection';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_preset_purchase_confirmation_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  buyer_auth_id UUID;
+  preset_name TEXT;
+  seller_name TEXT;
+BEGIN
+  IF NEW.payment_status = 'completed' THEN
+    
+    SELECT user_id INTO buyer_auth_id
+    FROM users_profile
+    WHERE user_id = NEW.buyer_user_id;
+    
+    SELECT display_name INTO seller_name
+    FROM users_profile
+    WHERE user_id = NEW.seller_user_id;
+    
+    SELECT COALESCE(title, name) INTO preset_name
+    FROM presets
+    WHERE id = NEW.preset_id;
+    
+    PERFORM call_email_api(
+      '/api/emails/marketplace/preset-purchased',
+      jsonb_build_object(
+        'authUserId', buyer_auth_id,
+        'presetName', preset_name,
+        'sellerName', seller_name,
+        'purchasePrice', NEW.purchase_price,
+        'purchaseId', NEW.id,
+        'presetId', NEW.preset_id
+      )
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_preset_purchase_confirmation_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_preset_purchase_confirmation_email"() IS 'Sends purchase confirmation to buyer';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_preset_review_received_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  seller_auth_id UUID;
+  reviewer_name TEXT;
+  preset_name TEXT;
+  purchase_record RECORD;
+BEGIN
+  -- Get purchase details
+  SELECT * INTO purchase_record
+  FROM preset_purchases
+  WHERE id = NEW.purchase_id;
+  
+  -- Get seller auth ID
+  SELECT user_id INTO seller_auth_id
+  FROM users_profile
+  WHERE user_id = purchase_record.seller_user_id;
+  
+  -- Get reviewer name
+  SELECT display_name INTO reviewer_name
+  FROM users_profile
+  WHERE user_id = NEW.reviewer_user_id;
+  
+  -- Get preset name
+  SELECT COALESCE(title, name) INTO preset_name
+  FROM presets
+  WHERE id = NEW.preset_id;
+  
+  PERFORM call_email_api(
+    '/api/emails/marketplace/review-received',
+    jsonb_build_object(
+      'authUserId', seller_auth_id,
+      'reviewerName', reviewer_name,
+      'presetName', preset_name,
+      'rating', NEW.rating,
+      'reviewTitle', NEW.title,
+      'reviewComment', NEW.comment,
+      'reviewId', NEW.id
+    )
+  );
+  
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_preset_review_received_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_preset_review_received_email"() IS 'Notifies seller when preset is reviewed';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_preset_sold_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF NEW.payment_status = 'completed' AND (OLD IS NULL OR OLD.payment_status IS NULL OR OLD.payment_status != 'completed') THEN
+    PERFORM call_email_api(
+      '/api/emails/marketplace/preset-sold',
+      jsonb_build_object(
+        'purchaseId', NEW.id,
+        'presetId', NEW.preset_id,
+        'buyerUserId', NEW.buyer_user_id,
+        'sellerUserId', NEW.seller_user_id,
+        'purchasePrice', NEW.purchase_price,
+        'sellerPayout', NEW.seller_payout
+      )
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_preset_sold_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_preset_sold_email"() IS 'Notifies seller when their preset is purchased';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_subscription_change_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  IF NEW.subscription_tier != OLD.subscription_tier THEN
+    PERFORM call_email_api(
+      '/api/emails/subscription-changed',
+      jsonb_build_object(
+        'authUserId', NEW.user_id,
+        'name', NEW.display_name,
+        'oldTier', OLD.subscription_tier,
+        'newTier', NEW.subscription_tier
+      )
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_subscription_change_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_subscription_change_email"() IS 'Notifies user of subscription changes';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."trigger_welcome_email"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+  PERFORM call_email_api(
+    '/api/emails/welcome',
+    jsonb_build_object(
+      'authUserId', NEW.user_id,
+      'name', NEW.display_name,
+      'role', (
+        CASE 
+          WHEN 'CONTRIBUTOR' = ANY(NEW.role_flags) AND 'TALENT' = ANY(NEW.role_flags) THEN 'BOTH'
+          WHEN 'CONTRIBUTOR' = ANY(NEW.role_flags) THEN 'CONTRIBUTOR'
+          ELSE 'TALENT'
+        END
+      )
+    )
+  );
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."trigger_welcome_email"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."trigger_welcome_email"() IS 'Sends welcome email when user profile is created';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."unblock_user"("blocked_profile_id" "uuid") RETURNS boolean
@@ -8842,6 +10337,60 @@ $$;
 
 
 ALTER FUNCTION "public"."update_preset_images_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."update_preset_latest_promoted_image"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    preset_name_from_metadata TEXT;
+    preset_record RECORD;
+BEGIN
+    -- Only proceed if is_verified was set to true
+    IF NEW.is_verified = TRUE AND (OLD.is_verified IS NULL OR OLD.is_verified = FALSE) THEN
+
+        -- Get the preset name from the gallery image's exif_json metadata
+        preset_name_from_metadata := NEW.exif_json->'generation_metadata'->>'style';
+
+        IF preset_name_from_metadata IS NOT NULL THEN
+            -- Try to find matching preset in regular presets table (case-insensitive)
+            SELECT id, name INTO preset_record
+            FROM presets
+            WHERE LOWER(name) = LOWER(preset_name_from_metadata)
+            LIMIT 1;
+
+            IF FOUND THEN
+                -- Update the regular preset's latest promoted image
+                UPDATE presets
+                SET latest_promoted_image_url = NEW.image_url
+                WHERE id = preset_record.id;
+
+                RAISE NOTICE 'Updated latest_promoted_image_url for preset: % (ID: %)', preset_record.name, preset_record.id;
+            ELSE
+                -- Try cinematic_presets table
+                SELECT id, name INTO preset_record
+                FROM cinematic_presets
+                WHERE LOWER(name) = LOWER(preset_name_from_metadata)
+                LIMIT 1;
+
+                IF FOUND THEN
+                    -- Update the cinematic preset's latest promoted image
+                    UPDATE cinematic_presets
+                    SET latest_promoted_image_url = NEW.image_url
+                    WHERE id = preset_record.id;
+
+                    RAISE NOTICE 'Updated latest_promoted_image_url for cinematic preset: % (ID: %)', preset_record.name, preset_record.id;
+                END IF;
+            END IF;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_preset_latest_promoted_image"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_preset_likes_count"() RETURNS "trigger"
@@ -9836,6 +11385,45 @@ COMMENT ON FUNCTION "public"."validate_message_before_insert"() IS 'Validates an
 
 
 
+CREATE OR REPLACE FUNCTION "public"."validate_message_permission"("sender_user_id" "uuid", "recipient_user_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+  recipient_settings RECORD;
+  are_connected BOOLEAN;
+BEGIN
+  -- Get recipient's messaging settings
+  SELECT allow_stranger_messages 
+  INTO recipient_settings
+  FROM user_settings 
+  WHERE user_id = recipient_user_id;
+  
+  -- If no settings found, default to allowing strangers
+  IF recipient_settings IS NULL THEN
+    RETURN TRUE;
+  END IF;
+  
+  -- If recipient allows stranger messages, allow it
+  IF recipient_settings.allow_stranger_messages THEN
+    RETURN TRUE;
+  END IF;
+  
+  -- Check if they have a connection
+  SELECT check_user_connection(sender_user_id, recipient_user_id) INTO are_connected;
+  
+  -- Allow if they have a connection
+  RETURN are_connected;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."validate_message_permission"("sender_user_id" "uuid", "recipient_user_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."validate_message_permission"("sender_user_id" "uuid", "recipient_user_id" "uuid") IS 'Validates if a user can send a message to another user based on stranger message settings';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."validate_preset_style"("style_name" "text") RETURNS boolean
     LANGUAGE "plpgsql" IMMUTABLE
     AS $$
@@ -10307,7 +11895,7 @@ CREATE TABLE IF NOT EXISTS "public"."verification_requests" (
     "updated_at" timestamp with time zone DEFAULT "now"(),
     CONSTRAINT "document_arrays_match" CHECK (("array_length"("document_urls", 1) = "array_length"("document_types", 1))),
     CONSTRAINT "verification_requests_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'reviewing'::"text", 'approved'::"text", 'rejected'::"text", 'expired'::"text", 'additional_info_required'::"text"]))),
-    CONSTRAINT "verification_requests_verification_type_check" CHECK (("verification_type" = ANY (ARRAY['age'::"text", 'identity'::"text", 'professional'::"text", 'business'::"text"])))
+    CONSTRAINT "verification_requests_verification_type_check" CHECK (("verification_type" = ANY (ARRAY['identity'::"text", 'professional'::"text", 'business'::"text"])))
 );
 
 
@@ -10666,6 +12254,7 @@ CREATE TABLE IF NOT EXISTS "public"."cinematic_presets" (
     "likes_count" integer DEFAULT 0,
     "prompt_template_video" "text",
     "cinematic_settings" "jsonb" DEFAULT '{}'::"jsonb",
+    "latest_promoted_image_url" "text",
     CONSTRAINT "cinematic_presets_generation_mode_check" CHECK ((("generation_mode")::"text" = ANY ((ARRAY['image'::character varying, 'video'::character varying, 'both'::character varying])::"text"[]))),
     CONSTRAINT "cinematic_presets_marketplace_status_check" CHECK ((("marketplace_status")::"text" = ANY ((ARRAY['private'::character varying, 'pending_review'::character varying, 'approved'::character varying, 'rejected'::character varying, 'sold_out'::character varying])::"text"[]))),
     CONSTRAINT "valid_likes_count" CHECK (("likes_count" >= 0)),
@@ -10728,6 +12317,10 @@ COMMENT ON COLUMN "public"."cinematic_presets"."prompt_template_video" IS 'Promp
 
 
 COMMENT ON COLUMN "public"."cinematic_presets"."cinematic_settings" IS 'Video-specific cinematic settings (camera movements, motion type, etc.)';
+
+
+
+COMMENT ON COLUMN "public"."cinematic_presets"."latest_promoted_image_url" IS 'URL of the most recently promoted gallery image for this preset (auto-updated)';
 
 
 
@@ -11226,16 +12819,17 @@ CREATE OR REPLACE VIEW "public"."directory_profiles" AS
     "available_for_travel",
     "profile_completion_percentage",
     "account_status",
+    "allow_collaboration_invites",
     "created_at"
    FROM "public"."users_profile"
-  WHERE ((("account_status")::"text" = ANY ((ARRAY['active'::character varying, 'pending_verification'::character varying])::"text"[])) AND ("avatar_url" IS NOT NULL) AND ("primary_skill" IS NOT NULL) AND (NOT ("role_flags" @> ARRAY['ADMIN'::"public"."user_role"])))
+  WHERE ((("account_status")::"text" = ANY ((ARRAY['active'::character varying, 'pending_verification'::character varying])::"text"[])) AND ("avatar_url" IS NOT NULL) AND ("primary_skill" IS NOT NULL) AND (NOT ("role_flags" @> ARRAY['ADMIN'::"public"."user_role"])) AND ("allow_collaboration_invites" = true))
   ORDER BY "created_at" DESC;
 
 
 ALTER VIEW "public"."directory_profiles" OWNER TO "postgres";
 
 
-COMMENT ON VIEW "public"."directory_profiles" IS 'Public directory view of user profiles filtered by primary_skill, excluding admins and incomplete profiles. Used for directory pages like /directory/photographers, /directory/models, etc.';
+COMMENT ON VIEW "public"."directory_profiles" IS 'Public directory view of user profiles filtered by primary_skill, excluding admins, incomplete profiles, and users who disabled collaboration invites. Used for directory pages like /photographers, /models, etc.';
 
 
 
@@ -11251,6 +12845,23 @@ CREATE TABLE IF NOT EXISTS "public"."domain_events" (
 
 
 ALTER TABLE "public"."domain_events" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."email_logs" (
+    "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
+    "endpoint" "text" NOT NULL,
+    "payload" "jsonb" NOT NULL,
+    "status" "text" DEFAULT 'pending'::"text",
+    "error" "text",
+    "created_at" timestamp with time zone DEFAULT "now"()
+);
+
+
+ALTER TABLE "public"."email_logs" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."email_logs" IS 'Logs all email trigger attempts for debugging and monitoring';
+
 
 
 CREATE TABLE IF NOT EXISTS "public"."enhancement_tasks" (
@@ -11637,6 +13248,35 @@ ALTER TABLE "public"."foreground_elements" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."foreground_elements" IS 'Predefined foreground element options';
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."gig_invitations" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "gig_id" "uuid" NOT NULL,
+    "inviter_id" "uuid" NOT NULL,
+    "invitee_id" "uuid" NOT NULL,
+    "message" "text",
+    "status" "text" DEFAULT 'pending'::"text",
+    "expires_at" timestamp with time zone DEFAULT ("now"() + '7 days'::interval),
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "accepted_at" timestamp with time zone,
+    "responded_at" timestamp with time zone
+);
+
+
+ALTER TABLE "public"."gig_invitations" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "public"."gig_invitations" IS 'Direct invitations from gig owners to talent to apply for specific gigs';
+
+
+
+COMMENT ON COLUMN "public"."gig_invitations"."message" IS 'Personal message from gig owner to invitee (max 1000 characters)';
+
+
+
+COMMENT ON COLUMN "public"."gig_invitations"."expires_at" IS 'Invitation expires after 7 days (shorter than project invitations)';
 
 
 
@@ -12322,7 +13962,10 @@ CREATE TABLE IF NOT EXISTS "public"."playground_gallery" (
     "video_resolution" character varying(20),
     "video_format" character varying(20),
     "generation_metadata" "jsonb",
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "exif_json" "jsonb",
+    "is_verified" boolean DEFAULT false,
+    "verification_timestamp" timestamp with time zone
 );
 
 
@@ -12346,6 +13989,18 @@ COMMENT ON COLUMN "public"."playground_gallery"."project_id" IS 'Reference to th
 
 
 COMMENT ON COLUMN "public"."playground_gallery"."generation_metadata" IS 'JSON metadata about how the image was generated';
+
+
+
+COMMENT ON COLUMN "public"."playground_gallery"."exif_json" IS 'EXIF data and generation metadata including promoted_from_playground flag and generation parameters';
+
+
+
+COMMENT ON COLUMN "public"."playground_gallery"."is_verified" IS 'Whether this image has been promoted to be featured as a preset example';
+
+
+
+COMMENT ON COLUMN "public"."playground_gallery"."verification_timestamp" IS 'Timestamp when the image was promoted';
 
 
 
@@ -13107,6 +14762,7 @@ CREATE TABLE IF NOT EXISTS "public"."presets" (
     "revenue_earned" integer DEFAULT 0,
     "prompt_template_video" "text",
     "cinematic_settings" "jsonb" DEFAULT '{}'::"jsonb",
+    "latest_promoted_image_url" "text",
     CONSTRAINT "presets_generation_mode_check" CHECK ((("generation_mode")::"text" = ANY ((ARRAY['image'::character varying, 'video'::character varying, 'both'::character varying])::"text"[]))),
     CONSTRAINT "presets_marketplace_status_check" CHECK ((("marketplace_status")::"text" = ANY ((ARRAY['private'::character varying, 'pending_review'::character varying, 'approved'::character varying, 'rejected'::character varying, 'sold_out'::character varying])::"text"[]))),
     CONSTRAINT "valid_category" CHECK ((("category")::"text" = ANY ((ARRAY['style'::character varying, 'effects'::character varying, 'cinematic'::character varying, 'technical'::character varying, 'custom'::character varying, 'headshot'::character varying, 'product_photography'::character varying, 'instant_film'::character varying, 'wedding_events'::character varying, 'real_estate'::character varying, 'fashion_lifestyle'::character varying, 'food_culinary'::character varying, 'pet_animal'::character varying, 'travel_landscape'::character varying, 'artistic'::character varying, 'corporate_portrait'::character varying, 'ecommerce'::character varying, 'linkedin_photo'::character varying, 'product_lifestyle'::character varying, 'product_studio'::character varying])::"text"[]))),
@@ -13117,7 +14773,7 @@ CREATE TABLE IF NOT EXISTS "public"."presets" (
 ALTER TABLE "public"."presets" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."presets" IS 'Additional specialized headshot and product photography presets added';
+COMMENT ON TABLE "public"."presets" IS 'Includes 18 video-specific presets with cinematic_settings.video configuration (added 2025-10-09)';
 
 
 
@@ -13180,6 +14836,10 @@ COMMENT ON COLUMN "public"."presets"."prompt_template_video" IS 'Prompt template
 
 
 COMMENT ON COLUMN "public"."presets"."cinematic_settings" IS 'Video-specific cinematic settings (camera movements, motion type, etc.)';
+
+
+
+COMMENT ON COLUMN "public"."presets"."latest_promoted_image_url" IS 'URL of the most recently promoted gallery image for this preset (auto-updated)';
 
 
 
@@ -14457,6 +16117,9 @@ CREATE TABLE IF NOT EXISTS "public"."user_settings" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
     "profile_id" "uuid",
+    "message_notifications" boolean DEFAULT true,
+    "message_read_receipts" boolean DEFAULT true,
+    "allow_stranger_messages" boolean DEFAULT true,
     CONSTRAINT "user_settings_profile_visibility_check" CHECK ((("profile_visibility")::"text" = ANY ((ARRAY['public'::character varying, 'private'::character varying])::"text"[])))
 );
 
@@ -14465,6 +16128,18 @@ ALTER TABLE "public"."user_settings" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."user_settings" IS 'User-specific application settings including notifications, privacy, and security preferences';
+
+
+
+COMMENT ON COLUMN "public"."user_settings"."message_notifications" IS 'Whether user wants to receive notifications for new messages';
+
+
+
+COMMENT ON COLUMN "public"."user_settings"."message_read_receipts" IS 'Whether user wants to show read receipts to others';
+
+
+
+COMMENT ON COLUMN "public"."user_settings"."allow_stranger_messages" IS 'Whether user allows messages from users they havent worked with';
 
 
 
@@ -14986,6 +16661,11 @@ ALTER TABLE ONLY "public"."domain_events"
 
 
 
+ALTER TABLE ONLY "public"."email_logs"
+    ADD CONSTRAINT "email_logs_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."enhancement_tasks"
     ADD CONSTRAINT "enhancement_tasks_pkey" PRIMARY KEY ("id");
 
@@ -15078,6 +16758,16 @@ ALTER TABLE ONLY "public"."foreground_elements"
 
 ALTER TABLE ONLY "public"."foreground_elements"
     ADD CONSTRAINT "foreground_elements_value_key" UNIQUE ("value");
+
+
+
+ALTER TABLE ONLY "public"."gig_invitations"
+    ADD CONSTRAINT "gig_invitations_gig_id_invitee_id_key" UNIQUE ("gig_id", "invitee_id");
+
+
+
+ALTER TABLE ONLY "public"."gig_invitations"
+    ADD CONSTRAINT "gig_invitations_pkey" PRIMARY KEY ("id");
 
 
 
@@ -16010,6 +17700,10 @@ CREATE INDEX "idx_applications_status" ON "public"."applications" USING "btree" 
 
 
 
+CREATE INDEX "idx_applications_user_gig_status" ON "public"."applications" USING "btree" ("applicant_user_id", "gig_id", "status") WHERE ("status" = 'ACCEPTED'::"public"."application_status");
+
+
+
 CREATE INDEX "idx_aspect_ratios_value" ON "public"."aspect_ratios" USING "btree" ("value");
 
 
@@ -16326,6 +18020,10 @@ CREATE INDEX "idx_domain_events_occurred_at" ON "public"."domain_events" USING "
 
 
 
+CREATE INDEX "idx_email_logs_created_at" ON "public"."email_logs" USING "btree" ("created_at");
+
+
+
 CREATE INDEX "idx_enhancement_tasks_created_at" ON "public"."enhancement_tasks" USING "btree" ("created_at");
 
 
@@ -16434,6 +18132,22 @@ CREATE INDEX "idx_foreground_elements_value" ON "public"."foreground_elements" U
 
 
 
+CREATE INDEX "idx_gig_invitations_expires_at" ON "public"."gig_invitations" USING "btree" ("expires_at");
+
+
+
+CREATE INDEX "idx_gig_invitations_gig_id" ON "public"."gig_invitations" USING "btree" ("gig_id");
+
+
+
+CREATE INDEX "idx_gig_invitations_invitee_id" ON "public"."gig_invitations" USING "btree" ("invitee_id");
+
+
+
+CREATE INDEX "idx_gig_invitations_status" ON "public"."gig_invitations" USING "btree" ("status");
+
+
+
 CREATE INDEX "idx_gigs_city" ON "public"."gigs" USING "btree" ("city");
 
 
@@ -16459,6 +18173,10 @@ CREATE INDEX "idx_gigs_looking_for_types" ON "public"."gigs" USING "gin" ("looki
 
 
 CREATE INDEX "idx_gigs_owner" ON "public"."gigs" USING "btree" ("owner_user_id");
+
+
+
+CREATE INDEX "idx_gigs_owner_status" ON "public"."gigs" USING "btree" ("owner_user_id", "status") WHERE ("status" = 'COMPLETED'::"public"."gig_status");
 
 
 
@@ -16878,7 +18596,23 @@ CREATE INDEX "idx_playground_gallery_created_at" ON "public"."playground_gallery
 
 
 
+CREATE INDEX "idx_playground_gallery_exif_preset_id" ON "public"."playground_gallery" USING "gin" (((("exif_json" -> 'generation_metadata'::"text") -> 'preset_id'::"text")));
+
+
+
+CREATE INDEX "idx_playground_gallery_exif_promoted" ON "public"."playground_gallery" USING "gin" ((("exif_json" -> 'promoted_from_playground'::"text")));
+
+
+
+CREATE INDEX "idx_playground_gallery_exif_style" ON "public"."playground_gallery" USING "gin" (((("exif_json" -> 'generation_metadata'::"text") -> 'style'::"text")));
+
+
+
 CREATE INDEX "idx_playground_gallery_image_url" ON "public"."playground_gallery" USING "btree" ("image_url");
+
+
+
+CREATE INDEX "idx_playground_gallery_is_verified" ON "public"."playground_gallery" USING "btree" ("is_verified");
 
 
 
@@ -17406,6 +19140,10 @@ CREATE INDEX "idx_showcases_creator" ON "public"."showcases" USING "btree" ("cre
 
 
 
+CREATE INDEX "idx_showcases_participants" ON "public"."showcases" USING "btree" ("creator_user_id", "talent_user_id", "visibility") WHERE ("visibility" = 'PUBLIC'::"public"."showcase_visibility");
+
+
+
 CREATE INDEX "idx_showcases_talent" ON "public"."showcases" USING "btree" ("talent_user_id");
 
 
@@ -17594,6 +19332,14 @@ CREATE INDEX "idx_user_rate_limits_window_start" ON "public"."user_rate_limits" 
 
 
 
+CREATE INDEX "idx_user_settings_allow_stranger_messages" ON "public"."user_settings" USING "btree" ("allow_stranger_messages") WHERE ("allow_stranger_messages" = false);
+
+
+
+CREATE INDEX "idx_user_settings_message_notifications" ON "public"."user_settings" USING "btree" ("message_notifications") WHERE ("message_notifications" = false);
+
+
+
 CREATE INDEX "idx_user_settings_profile_id" ON "public"."user_settings" USING "btree" ("profile_id");
 
 
@@ -17670,6 +19416,10 @@ CREATE INDEX "idx_users_profile_age_verified" ON "public"."users_profile" USING 
 
 
 
+CREATE INDEX "idx_users_profile_allow_collaboration_invites" ON "public"."users_profile" USING "btree" ("allow_collaboration_invites");
+
+
+
 CREATE INDEX "idx_users_profile_allow_direct_booking" ON "public"."users_profile" USING "btree" ("allow_direct_booking");
 
 
@@ -17679,6 +19429,10 @@ CREATE INDEX "idx_users_profile_allow_direct_messages" ON "public"."users_profil
 
 
 CREATE INDEX "idx_users_profile_availability_status" ON "public"."users_profile" USING "btree" ("availability_status");
+
+
+
+CREATE INDEX "idx_users_profile_available_for_travel" ON "public"."users_profile" USING "btree" ("available_for_travel");
 
 
 
@@ -17791,6 +19545,10 @@ CREATE INDEX "idx_users_profile_primary_skill" ON "public"."users_profile" USING
 
 
 CREATE INDEX "idx_users_profile_professional_skills" ON "public"."users_profile" USING "gin" ("professional_skills");
+
+
+
+CREATE INDEX "idx_users_profile_profile_completion" ON "public"."users_profile" USING "btree" ("profile_completion_percentage");
 
 
 
@@ -17910,6 +19668,18 @@ CREATE OR REPLACE TRIGGER "add_project_creator_as_participant_trigger" AFTER INS
 
 
 
+CREATE OR REPLACE TRIGGER "application_milestone_trigger" AFTER INSERT ON "public"."applications" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_application_milestone"();
+
+
+
+CREATE OR REPLACE TRIGGER "application_status_trigger" AFTER UPDATE ON "public"."applications" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_application_status_email"();
+
+
+
+CREATE OR REPLACE TRIGGER "applications_closed_trigger" AFTER UPDATE ON "public"."gigs" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_applications_closed_email"();
+
+
+
 CREATE OR REPLACE TRIGGER "auto_escalate_report_trigger" BEFORE INSERT ON "public"."reports" FOR EACH ROW EXECUTE FUNCTION "public"."auto_escalate_report_priority"();
 
 
@@ -17930,11 +19700,51 @@ CREATE OR REPLACE TRIGGER "generate_invitation_token_trigger" BEFORE INSERT ON "
 
 
 
+CREATE OR REPLACE TRIGGER "gig_cancelled_trigger" AFTER UPDATE ON "public"."gigs" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_gig_cancelled_email"();
+
+
+
+CREATE OR REPLACE TRIGGER "gig_completed_trigger" AFTER UPDATE ON "public"."gigs" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_gig_completed_email"();
+
+
+
+CREATE OR REPLACE TRIGGER "gig_published_trigger" AFTER INSERT OR UPDATE ON "public"."gigs" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_gig_published_email"();
+
+
+
 CREATE OR REPLACE TRIGGER "handle_change_redirect" AFTER UPDATE OF "handle" ON "public"."users_profile" FOR EACH ROW EXECUTE FUNCTION "public"."create_handle_redirect"();
 
 
 
+CREATE OR REPLACE TRIGGER "message_received_email_trigger" AFTER INSERT ON "public"."messages" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_message_received_email"();
+
+
+
+CREATE OR REPLACE TRIGGER "new_application_trigger" AFTER INSERT ON "public"."applications" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_new_application_email"();
+
+
+
+CREATE OR REPLACE TRIGGER "preset_listing_status_trigger" AFTER UPDATE ON "public"."preset_marketplace_listings" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_preset_listing_status_email"();
+
+
+
+CREATE OR REPLACE TRIGGER "preset_purchase_confirmation_trigger" AFTER INSERT ON "public"."preset_purchases" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_preset_purchase_confirmation_email"();
+
+
+
+CREATE OR REPLACE TRIGGER "preset_review_received_trigger" AFTER INSERT ON "public"."preset_reviews" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_preset_review_received_email"();
+
+
+
+CREATE OR REPLACE TRIGGER "preset_sold_email_trigger" AFTER INSERT OR UPDATE ON "public"."preset_purchases" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_preset_sold_email"();
+
+
+
 CREATE OR REPLACE TRIGGER "reports_updated_at_trigger" BEFORE UPDATE ON "public"."reports" FOR EACH ROW EXECUTE FUNCTION "public"."update_reports_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "subscription_change_trigger" AFTER UPDATE ON "public"."users_profile" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_subscription_change_email"();
 
 
 
@@ -17958,11 +19768,23 @@ CREATE OR REPLACE TRIGGER "trigger_auto_update_profile_completion" BEFORE INSERT
 
 
 
+CREATE OR REPLACE TRIGGER "trigger_handle_gig_invitation_acceptance" BEFORE UPDATE ON "public"."gig_invitations" FOR EACH ROW WHEN (("new"."status" <> "old"."status")) EXECUTE FUNCTION "public"."handle_gig_invitation_acceptance"();
+
+
+
 CREATE OR REPLACE TRIGGER "trigger_notify_application_status_changed" AFTER UPDATE ON "public"."applications" FOR EACH ROW EXECUTE FUNCTION "public"."notify_application_status_changed"();
 
 
 
 COMMENT ON TRIGGER "trigger_notify_application_status_changed" ON "public"."applications" IS 'Triggers notification when application status is updated';
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_notify_collab_invitation_response" AFTER UPDATE ON "public"."collab_invitations" FOR EACH ROW WHEN ((("old"."status" = 'pending'::"text") AND ("new"."status" = ANY (ARRAY['accepted'::"text", 'declined'::"text"])))) EXECUTE FUNCTION "public"."notify_collab_invitation_response"();
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_notify_collab_invitation_sent" AFTER INSERT ON "public"."collab_invitations" FOR EACH ROW WHEN ((("new"."status" = 'pending'::"text") AND ("new"."invitee_id" IS NOT NULL))) EXECUTE FUNCTION "public"."notify_collab_invitation_sent"();
 
 
 
@@ -17979,6 +19801,14 @@ CREATE OR REPLACE TRIGGER "trigger_notify_gig_application_received" AFTER INSERT
 
 
 COMMENT ON TRIGGER "trigger_notify_gig_application_received" ON "public"."applications" IS 'Triggers notification when new gig application is created';
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_notify_gig_invitation_response" AFTER UPDATE ON "public"."gig_invitations" FOR EACH ROW WHEN ((("old"."status" = 'pending'::"text") AND ("new"."status" = ANY (ARRAY['accepted'::"text", 'declined'::"text"])))) EXECUTE FUNCTION "public"."notify_gig_invitation_response"();
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_notify_gig_invitation_sent" AFTER INSERT ON "public"."gig_invitations" FOR EACH ROW WHEN (("new"."status" = 'pending'::"text")) EXECUTE FUNCTION "public"."notify_gig_invitation_sent"();
 
 
 
@@ -18067,6 +19897,10 @@ CREATE OR REPLACE TRIGGER "trigger_update_message_status" BEFORE UPDATE ON "publ
 
 
 CREATE OR REPLACE TRIGGER "trigger_update_preset_images_updated_at" BEFORE UPDATE ON "public"."preset_images" FOR EACH ROW EXECUTE FUNCTION "public"."update_preset_images_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trigger_update_preset_latest_promoted_image" AFTER UPDATE OF "is_verified" ON "public"."playground_gallery" FOR EACH ROW EXECUTE FUNCTION "public"."update_preset_latest_promoted_image"();
 
 
 
@@ -18378,6 +20212,10 @@ CREATE OR REPLACE TRIGGER "verification_updated_at_trigger" BEFORE UPDATE ON "pu
 
 
 
+CREATE OR REPLACE TRIGGER "welcome_email_trigger" AFTER INSERT ON "public"."users_profile" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_welcome_email"();
+
+
+
 ALTER TABLE ONLY "public"."age_verification_logs"
     ADD CONSTRAINT "age_verification_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
@@ -18635,6 +20473,21 @@ ALTER TABLE ONLY "public"."featured_preset_requests"
 
 ALTER TABLE ONLY "public"."featured_preset_requests"
     ADD CONSTRAINT "featured_preset_requests_reviewed_by_fkey" FOREIGN KEY ("reviewed_by") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."gig_invitations"
+    ADD CONSTRAINT "gig_invitations_gig_id_fkey" FOREIGN KEY ("gig_id") REFERENCES "public"."gigs"("id");
+
+
+
+ALTER TABLE ONLY "public"."gig_invitations"
+    ADD CONSTRAINT "gig_invitations_invitee_id_fkey" FOREIGN KEY ("invitee_id") REFERENCES "public"."users_profile"("id");
+
+
+
+ALTER TABLE ONLY "public"."gig_invitations"
+    ADD CONSTRAINT "gig_invitations_inviter_id_fkey" FOREIGN KEY ("inviter_id") REFERENCES "public"."users_profile"("id");
 
 
 
@@ -19695,6 +21548,16 @@ CREATE POLICY "Gig owners can delete own gigs" ON "public"."gigs" FOR DELETE USI
 
 
 
+CREATE POLICY "Gig owners can send invitations" ON "public"."gig_invitations" FOR INSERT WITH CHECK ((("inviter_id" = ( SELECT "users_profile"."id"
+   FROM "public"."users_profile"
+  WHERE ("users_profile"."user_id" = "auth"."uid"()))) AND (EXISTS ( SELECT 1
+   FROM "public"."gigs"
+  WHERE (("gigs"."id" = "gig_invitations"."gig_id") AND ("gigs"."owner_user_id" = "gig_invitations"."inviter_id")))) AND ("inviter_id" <> "invitee_id") AND (EXISTS ( SELECT 1
+   FROM "public"."users_profile"
+  WHERE (("users_profile"."id" = "gig_invitations"."invitee_id") AND (("users_profile"."allow_gig_invites" = true) OR ("users_profile"."allow_gig_invites" IS NULL)))))));
+
+
+
 CREATE POLICY "Gig owners can update applications to their gigs" ON "public"."applications" FOR UPDATE USING (("gig_id" IN ( SELECT "gigs"."id"
    FROM "public"."gigs"
   WHERE ("gigs"."owner_user_id" = ( SELECT "users_profile"."id"
@@ -19716,6 +21579,22 @@ CREATE POLICY "Gig owners can view applications to their gigs" ON "public"."appl
           WHERE ("users_profile"."user_id" = "auth"."uid"()))))) OR ("applicant_user_id" = ( SELECT "users_profile"."id"
    FROM "public"."users_profile"
   WHERE ("users_profile"."user_id" = "auth"."uid"())))));
+
+
+
+CREATE POLICY "Invitees can respond to invitations" ON "public"."gig_invitations" FOR UPDATE USING (("invitee_id" = ( SELECT "users_profile"."id"
+   FROM "public"."users_profile"
+  WHERE ("users_profile"."user_id" = "auth"."uid"())))) WITH CHECK (("invitee_id" = ( SELECT "users_profile"."id"
+   FROM "public"."users_profile"
+  WHERE ("users_profile"."user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Inviters can cancel invitations" ON "public"."gig_invitations" FOR UPDATE USING (("inviter_id" = ( SELECT "users_profile"."id"
+   FROM "public"."users_profile"
+  WHERE ("users_profile"."user_id" = "auth"."uid"())))) WITH CHECK (("inviter_id" = ( SELECT "users_profile"."id"
+   FROM "public"."users_profile"
+  WHERE ("users_profile"."user_id" = "auth"."uid"()))));
 
 
 
@@ -20628,6 +22507,14 @@ CREATE POLICY "Users can view responses to their requests" ON "public"."request_
 
 
 
+CREATE POLICY "Users can view their gig invitations" ON "public"."gig_invitations" FOR SELECT USING ((("inviter_id" = ( SELECT "users_profile"."id"
+   FROM "public"."users_profile"
+  WHERE ("users_profile"."user_id" = "auth"."uid"()))) OR ("invitee_id" = ( SELECT "users_profile"."id"
+   FROM "public"."users_profile"
+  WHERE ("users_profile"."user_id" = "auth"."uid"())))));
+
+
+
 CREATE POLICY "Users can view their own application attachments" ON "public"."application_attachments" FOR SELECT USING ((EXISTS ( SELECT 1
    FROM ("public"."applications" "a"
      JOIN "public"."users_profile" "up" ON (("a"."applicant_user_id" = "up"."id")))
@@ -21107,6 +22994,15 @@ ALTER TABLE "public"."director_styles" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."domain_events" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."email_logs" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "email_logs_admin_access" ON "public"."email_logs" USING ((EXISTS ( SELECT 1
+   FROM "public"."users_profile"
+  WHERE (("users_profile"."user_id" = "auth"."uid"()) AND ('ADMIN'::"public"."user_role" = ANY ("users_profile"."role_flags"))))));
+
+
+
 ALTER TABLE "public"."enhancement_tasks" ENABLE ROW LEVEL SECURITY;
 
 
@@ -21135,6 +23031,9 @@ ALTER TABLE "public"."featured_preset_requests" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."foreground_elements" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."gig_invitations" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."gigs" ENABLE ROW LEVEL SECURITY;
@@ -21587,870 +23486,10 @@ ALTER TABLE "public"."weather_conditions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."working_time_preferences" ENABLE ROW LEVEL SECURITY;
 
 
-
-
-ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
-
-
-
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."conversation_participants";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."conversations";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."messages";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."notification_preferences";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."notifications";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."playground_gallery";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."preset_notifications";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."typing_indicators";
-
-
-
-ALTER PUBLICATION "supabase_realtime" ADD TABLE ONLY "public"."users_profile";
-
-
-
 GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
 GRANT USAGE ON SCHEMA "public" TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box2d_in"("cstring") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box2d_in"("cstring") TO "anon";
-GRANT ALL ON FUNCTION "public"."box2d_in"("cstring") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box2d_in"("cstring") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box2d_out"("public"."box2d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box2d_out"("public"."box2d") TO "anon";
-GRANT ALL ON FUNCTION "public"."box2d_out"("public"."box2d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box2d_out"("public"."box2d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box2df_in"("cstring") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box2df_in"("cstring") TO "anon";
-GRANT ALL ON FUNCTION "public"."box2df_in"("cstring") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box2df_in"("cstring") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box2df_out"("public"."box2df") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box2df_out"("public"."box2df") TO "anon";
-GRANT ALL ON FUNCTION "public"."box2df_out"("public"."box2df") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box2df_out"("public"."box2df") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box3d_in"("cstring") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box3d_in"("cstring") TO "anon";
-GRANT ALL ON FUNCTION "public"."box3d_in"("cstring") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box3d_in"("cstring") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box3d_out"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box3d_out"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."box3d_out"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box3d_out"("public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_analyze"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_analyze"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_analyze"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_analyze"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_in"("cstring", "oid", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_in"("cstring", "oid", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_in"("cstring", "oid", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_in"("cstring", "oid", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_out"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_out"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_out"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_out"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_recv"("internal", "oid", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_recv"("internal", "oid", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_recv"("internal", "oid", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_recv"("internal", "oid", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_send"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_send"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_send"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_send"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_typmod_in"("cstring"[]) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_typmod_in"("cstring"[]) TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_typmod_in"("cstring"[]) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_typmod_in"("cstring"[]) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_typmod_out"(integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_typmod_out"(integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_typmod_out"(integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_typmod_out"(integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_analyze"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_analyze"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_analyze"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_analyze"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_in"("cstring") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_in"("cstring") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_in"("cstring") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_in"("cstring") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_out"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_out"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_out"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_out"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_recv"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_recv"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_recv"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_recv"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_send"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_send"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_send"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_send"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_typmod_in"("cstring"[]) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_typmod_in"("cstring"[]) TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_typmod_in"("cstring"[]) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_typmod_in"("cstring"[]) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_typmod_out"(integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_typmod_out"(integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_typmod_out"(integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_typmod_out"(integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."gidx_in"("cstring") TO "postgres";
-GRANT ALL ON FUNCTION "public"."gidx_in"("cstring") TO "anon";
-GRANT ALL ON FUNCTION "public"."gidx_in"("cstring") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."gidx_in"("cstring") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."gidx_out"("public"."gidx") TO "postgres";
-GRANT ALL ON FUNCTION "public"."gidx_out"("public"."gidx") TO "anon";
-GRANT ALL ON FUNCTION "public"."gidx_out"("public"."gidx") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."gidx_out"("public"."gidx") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."spheroid_in"("cstring") TO "postgres";
-GRANT ALL ON FUNCTION "public"."spheroid_in"("cstring") TO "anon";
-GRANT ALL ON FUNCTION "public"."spheroid_in"("cstring") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."spheroid_in"("cstring") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."spheroid_out"("public"."spheroid") TO "postgres";
-GRANT ALL ON FUNCTION "public"."spheroid_out"("public"."spheroid") TO "anon";
-GRANT ALL ON FUNCTION "public"."spheroid_out"("public"."spheroid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."spheroid_out"("public"."spheroid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box3d"("public"."box2d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box3d"("public"."box2d") TO "anon";
-GRANT ALL ON FUNCTION "public"."box3d"("public"."box2d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box3d"("public"."box2d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry"("public"."box2d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."box2d") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."box2d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."box2d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."box"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box"("public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box2d"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box2d"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."box2d"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box2d"("public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."bytea"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."bytea"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."bytea"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."bytea"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography"("public"."geography", integer, boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography"("public"."geography", integer, boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."geography"("public"."geography", integer, boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography"("public"."geography", integer, boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."box"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box2d"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box2d"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."box2d"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box2d"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box3d"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box3d"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."box3d"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box3d"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."bytea"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."bytea"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."bytea"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."bytea"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry"("public"."geometry", integer, boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."geometry", integer, boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."geometry", integer, boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry"("public"."geometry", integer, boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."json"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."json"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."json"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."json"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."jsonb"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."jsonb"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."jsonb"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."jsonb"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."path"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."path"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."path"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."path"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."point"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."point"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."point"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."point"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."polygon"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."polygon"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."polygon"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."polygon"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."text"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."text"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."text"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."text"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry"("path") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry"("path") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry"("path") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry"("path") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry"("point") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry"("point") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry"("point") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry"("point") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry"("polygon") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry"("polygon") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry"("polygon") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry"("polygon") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry"("text") TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-GRANT ALL ON FUNCTION "public"."_postgis_deprecate"("oldname" "text", "newname" "text", "version" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_postgis_deprecate"("oldname" "text", "newname" "text", "version" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."_postgis_deprecate"("oldname" "text", "newname" "text", "version" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_postgis_deprecate"("oldname" "text", "newname" "text", "version" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_postgis_index_extent"("tbl" "regclass", "col" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_postgis_index_extent"("tbl" "regclass", "col" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."_postgis_index_extent"("tbl" "regclass", "col" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_postgis_index_extent"("tbl" "regclass", "col" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_postgis_join_selectivity"("regclass", "text", "regclass", "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_postgis_join_selectivity"("regclass", "text", "regclass", "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."_postgis_join_selectivity"("regclass", "text", "regclass", "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_postgis_join_selectivity"("regclass", "text", "regclass", "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_postgis_pgsql_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."_postgis_pgsql_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."_postgis_pgsql_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_postgis_pgsql_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_postgis_scripts_pgsql_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."_postgis_scripts_pgsql_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."_postgis_scripts_pgsql_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_postgis_scripts_pgsql_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_postgis_selectivity"("tbl" "regclass", "att_name" "text", "geom" "public"."geometry", "mode" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_postgis_selectivity"("tbl" "regclass", "att_name" "text", "geom" "public"."geometry", "mode" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."_postgis_selectivity"("tbl" "regclass", "att_name" "text", "geom" "public"."geometry", "mode" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_postgis_selectivity"("tbl" "regclass", "att_name" "text", "geom" "public"."geometry", "mode" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_postgis_stats"("tbl" "regclass", "att_name" "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_postgis_stats"("tbl" "regclass", "att_name" "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."_postgis_stats"("tbl" "regclass", "att_name" "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_postgis_stats"("tbl" "regclass", "att_name" "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_3ddfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_3ddfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_3ddfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_3ddfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_3ddwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_3ddwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_3ddwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_3ddwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_3dintersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_3dintersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_3dintersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_3dintersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_asgml"(integer, "public"."geometry", integer, integer, "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_asgml"(integer, "public"."geometry", integer, integer, "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_asgml"(integer, "public"."geometry", integer, integer, "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_asgml"(integer, "public"."geometry", integer, integer, "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_asx3d"(integer, "public"."geometry", integer, integer, "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_asx3d"(integer, "public"."geometry", integer, integer, "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_asx3d"(integer, "public"."geometry", integer, integer, "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_asx3d"(integer, "public"."geometry", integer, integer, "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_bestsrid"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_bestsrid"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_bestsrid"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_bestsrid"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_bestsrid"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_bestsrid"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_bestsrid"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_bestsrid"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_containsproperly"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_containsproperly"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_containsproperly"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_containsproperly"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_coveredby"("geog1" "public"."geography", "geog2" "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_coveredby"("geog1" "public"."geography", "geog2" "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_coveredby"("geog1" "public"."geography", "geog2" "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_coveredby"("geog1" "public"."geography", "geog2" "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_coveredby"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_coveredby"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_coveredby"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_coveredby"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_covers"("geog1" "public"."geography", "geog2" "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_covers"("geog1" "public"."geography", "geog2" "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_covers"("geog1" "public"."geography", "geog2" "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_covers"("geog1" "public"."geography", "geog2" "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_covers"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_covers"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_covers"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_covers"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_crosses"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_crosses"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_crosses"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_crosses"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_dfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_dfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_dfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_dfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_distancetree"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_distancetree"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_distancetree"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_distancetree"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_distancetree"("public"."geography", "public"."geography", double precision, boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_distancetree"("public"."geography", "public"."geography", double precision, boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_distancetree"("public"."geography", "public"."geography", double precision, boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_distancetree"("public"."geography", "public"."geography", double precision, boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography", boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography", boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography", boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography", boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography", double precision, boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography", double precision, boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography", double precision, boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_distanceuncached"("public"."geography", "public"."geography", double precision, boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_dwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_dwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_dwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_dwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_dwithin"("geog1" "public"."geography", "geog2" "public"."geography", "tolerance" double precision, "use_spheroid" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_dwithin"("geog1" "public"."geography", "geog2" "public"."geography", "tolerance" double precision, "use_spheroid" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_dwithin"("geog1" "public"."geography", "geog2" "public"."geography", "tolerance" double precision, "use_spheroid" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_dwithin"("geog1" "public"."geography", "geog2" "public"."geography", "tolerance" double precision, "use_spheroid" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_dwithinuncached"("public"."geography", "public"."geography", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_dwithinuncached"("public"."geography", "public"."geography", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_dwithinuncached"("public"."geography", "public"."geography", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_dwithinuncached"("public"."geography", "public"."geography", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_dwithinuncached"("public"."geography", "public"."geography", double precision, boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_dwithinuncached"("public"."geography", "public"."geography", double precision, boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_dwithinuncached"("public"."geography", "public"."geography", double precision, boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_dwithinuncached"("public"."geography", "public"."geography", double precision, boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_expand"("public"."geography", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_expand"("public"."geography", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_expand"("public"."geography", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_expand"("public"."geography", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_geomfromgml"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_geomfromgml"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_geomfromgml"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_geomfromgml"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_intersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_intersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_intersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_intersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_linecrossingdirection"("line1" "public"."geometry", "line2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_linecrossingdirection"("line1" "public"."geometry", "line2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_linecrossingdirection"("line1" "public"."geometry", "line2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_linecrossingdirection"("line1" "public"."geometry", "line2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_longestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_longestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_longestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_longestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_maxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_maxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_maxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_maxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_orderingequals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_orderingequals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_orderingequals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_orderingequals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_pointoutside"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_pointoutside"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_pointoutside"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_pointoutside"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_sortablehash"("geom" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_sortablehash"("geom" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_sortablehash"("geom" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_sortablehash"("geom" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_touches"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_touches"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_touches"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_touches"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_voronoi"("g1" "public"."geometry", "clip" "public"."geometry", "tolerance" double precision, "return_polygons" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_voronoi"("g1" "public"."geometry", "clip" "public"."geometry", "tolerance" double precision, "return_polygons" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_voronoi"("g1" "public"."geometry", "clip" "public"."geometry", "tolerance" double precision, "return_polygons" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_voronoi"("g1" "public"."geometry", "clip" "public"."geometry", "tolerance" double precision, "return_polygons" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."_st_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."_st_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."_st_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."_st_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
 
 
 
@@ -22487,34 +23526,6 @@ GRANT ALL ON FUNCTION "public"."add_user_violation"("p_user_id" "uuid", "p_viola
 GRANT ALL ON FUNCTION "public"."add_verified_preset_sample"("preset_uuid" "uuid", "result_image_url_param" "text", "prompt_param" "text", "generation_id_param" "text", "source_image_url_param" "text", "source_image_hash_param" "text", "result_image_hash_param" "text", "generation_provider_param" "text", "generation_model_param" "text", "generation_credits_param" integer, "negative_prompt_param" "text", "generation_settings_param" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."add_verified_preset_sample"("preset_uuid" "uuid", "result_image_url_param" "text", "prompt_param" "text", "generation_id_param" "text", "source_image_url_param" "text", "source_image_hash_param" "text", "result_image_hash_param" "text", "generation_provider_param" "text", "generation_model_param" "text", "generation_credits_param" integer, "negative_prompt_param" "text", "generation_settings_param" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."add_verified_preset_sample"("preset_uuid" "uuid", "result_image_url_param" "text", "prompt_param" "text", "generation_id_param" "text", "source_image_url_param" "text", "source_image_hash_param" "text", "result_image_hash_param" "text", "generation_provider_param" "text", "generation_model_param" "text", "generation_credits_param" integer, "negative_prompt_param" "text", "generation_settings_param" "jsonb") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."addauth"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."addauth"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."addauth"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."addauth"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("table_name" character varying, "column_name" character varying, "new_srid" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("table_name" character varying, "column_name" character varying, "new_srid" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("table_name" character varying, "column_name" character varying, "new_srid" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("table_name" character varying, "column_name" character varying, "new_srid" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid_in" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid_in" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid_in" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."addgeometrycolumn"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid_in" integer, "new_type" character varying, "new_dim" integer, "use_typmod" boolean) TO "service_role";
 
 
 
@@ -22569,13 +23580,6 @@ GRANT ALL ON FUNCTION "public"."auto_update_profile_completion"() TO "service_ro
 GRANT ALL ON FUNCTION "public"."block_user"("blocked_profile_id" "uuid", "block_reason" character varying) TO "anon";
 GRANT ALL ON FUNCTION "public"."block_user"("blocked_profile_id" "uuid", "block_reason" character varying) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."block_user"("blocked_profile_id" "uuid", "block_reason" character varying) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."box3dtobox"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."box3dtobox"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."box3dtobox"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."box3dtobox"("public"."box3d") TO "service_role";
 
 
 
@@ -22663,6 +23667,12 @@ GRANT ALL ON FUNCTION "public"."calculate_user_risk_score"("p_user_id" "uuid") T
 
 
 
+GRANT ALL ON FUNCTION "public"."call_email_api"("endpoint" "text", "payload" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."call_email_api"("endpoint" "text", "payload" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."call_email_api"("endpoint" "text", "payload" "jsonb") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."can_access_conversation"("conversation_uuid" "uuid", "requesting_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."can_access_conversation"("conversation_uuid" "uuid", "requesting_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."can_access_conversation"("conversation_uuid" "uuid", "requesting_user_id" "uuid") TO "service_role";
@@ -22717,30 +23727,15 @@ GRANT ALL ON FUNCTION "public"."check_refund_eligibility"("p_task_id" "uuid") TO
 
 
 
+GRANT ALL ON FUNCTION "public"."check_user_connection"("sender_user_id" "uuid", "recipient_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."check_user_connection"("sender_user_id" "uuid", "recipient_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_user_connection"("sender_user_id" "uuid", "recipient_user_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."check_user_rate_limit"("checking_user_profile_id" "uuid", "resource" character varying, "action_count" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."check_user_rate_limit"("checking_user_profile_id" "uuid", "resource" character varying, "action_count" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_user_rate_limit"("checking_user_profile_id" "uuid", "resource" character varying, "action_count" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."checkauth"("text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."checkauth"("text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."checkauth"("text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."checkauth"("text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."checkauth"("text", "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."checkauth"("text", "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."checkauth"("text", "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."checkauth"("text", "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."checkauthtrigger"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."checkauthtrigger"() TO "anon";
-GRANT ALL ON FUNCTION "public"."checkauthtrigger"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."checkauthtrigger"() TO "service_role";
 
 
 
@@ -22783,27 +23778,6 @@ GRANT ALL ON FUNCTION "public"."consume_user_credits"("p_user_id" "uuid", "p_cre
 GRANT ALL ON FUNCTION "public"."consume_user_credits"("p_user_id" "uuid", "p_credits" integer, "p_enhancement_type" character varying) TO "anon";
 GRANT ALL ON FUNCTION "public"."consume_user_credits"("p_user_id" "uuid", "p_credits" integer, "p_enhancement_type" character varying) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."consume_user_credits"("p_user_id" "uuid", "p_credits" integer, "p_enhancement_type" character varying) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."box2df", "public"."box2df") TO "postgres";
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."box2df", "public"."box2df") TO "anon";
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."box2df", "public"."box2df") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."box2df", "public"."box2df") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."box2df", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."box2df", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."box2df", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."box2df", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."geometry", "public"."box2df") TO "postgres";
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."geometry", "public"."box2df") TO "anon";
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."geometry", "public"."box2df") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."contains_2d"("public"."geometry", "public"."box2df") TO "service_role";
 
 
 
@@ -22855,72 +23829,15 @@ GRANT ALL ON FUNCTION "public"."diagnose_oauth_system"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."disablelongtransactions"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."disablelongtransactions"() TO "anon";
-GRANT ALL ON FUNCTION "public"."disablelongtransactions"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."disablelongtransactions"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("table_name" character varying, "column_name" character varying) TO "postgres";
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("table_name" character varying, "column_name" character varying) TO "anon";
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("table_name" character varying, "column_name" character varying) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("table_name" character varying, "column_name" character varying) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("schema_name" character varying, "table_name" character varying, "column_name" character varying) TO "postgres";
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("schema_name" character varying, "table_name" character varying, "column_name" character varying) TO "anon";
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("schema_name" character varying, "table_name" character varying, "column_name" character varying) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("schema_name" character varying, "table_name" character varying, "column_name" character varying) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying) TO "postgres";
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying) TO "anon";
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."dropgeometrycolumn"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("table_name" character varying) TO "postgres";
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("table_name" character varying) TO "anon";
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("table_name" character varying) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("table_name" character varying) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("schema_name" character varying, "table_name" character varying) TO "postgres";
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("schema_name" character varying, "table_name" character varying) TO "anon";
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("schema_name" character varying, "table_name" character varying) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("schema_name" character varying, "table_name" character varying) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying) TO "postgres";
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying) TO "anon";
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."dropgeometrytable"("catalog_name" character varying, "schema_name" character varying, "table_name" character varying) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."enablelongtransactions"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."enablelongtransactions"() TO "anon";
-GRANT ALL ON FUNCTION "public"."enablelongtransactions"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."enablelongtransactions"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."expire_equipment_requests"() TO "anon";
 GRANT ALL ON FUNCTION "public"."expire_equipment_requests"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."expire_equipment_requests"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."expire_old_gig_invitations"() TO "anon";
+GRANT ALL ON FUNCTION "public"."expire_old_gig_invitations"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."expire_old_gig_invitations"() TO "service_role";
 
 
 
@@ -22960,13 +23877,6 @@ GRANT ALL ON FUNCTION "public"."find_demographic_compatible_users"("p_user_id" "
 
 
 
-GRANT ALL ON FUNCTION "public"."find_srid"(character varying, character varying, character varying) TO "postgres";
-GRANT ALL ON FUNCTION "public"."find_srid"(character varying, character varying, character varying) TO "anon";
-GRANT ALL ON FUNCTION "public"."find_srid"(character varying, character varying, character varying) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."find_srid"(character varying, character varying, character varying) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."find_users_by_vibe_similarity"("target_user_id" "uuid", "limit_count" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."find_users_by_vibe_similarity"("target_user_id" "uuid", "limit_count" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."find_users_by_vibe_similarity"("target_user_id" "uuid", "limit_count" integer) TO "service_role";
@@ -22994,685 +23904,6 @@ GRANT ALL ON FUNCTION "public"."generate_invitation_token"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."generate_profile_photo_path"("user_id" "uuid", "file_extension" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."generate_profile_photo_path"("user_id" "uuid", "file_extension" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."generate_profile_photo_path"("user_id" "uuid", "file_extension" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geog_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geog_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geog_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geog_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_cmp"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_cmp"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_cmp"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_cmp"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_distance_knn"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_distance_knn"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_distance_knn"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_distance_knn"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_eq"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_eq"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_eq"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_eq"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_ge"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_ge"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_ge"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_ge"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_gist_compress"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_gist_compress"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_gist_compress"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_gist_compress"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_gist_consistent"("internal", "public"."geography", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_gist_consistent"("internal", "public"."geography", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_gist_consistent"("internal", "public"."geography", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_gist_consistent"("internal", "public"."geography", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_gist_decompress"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_gist_decompress"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_gist_decompress"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_gist_decompress"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_gist_distance"("internal", "public"."geography", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_gist_distance"("internal", "public"."geography", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_gist_distance"("internal", "public"."geography", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_gist_distance"("internal", "public"."geography", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_gist_penalty"("internal", "internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_gist_penalty"("internal", "internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_gist_penalty"("internal", "internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_gist_penalty"("internal", "internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_gist_picksplit"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_gist_picksplit"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_gist_picksplit"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_gist_picksplit"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_gist_same"("public"."box2d", "public"."box2d", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_gist_same"("public"."box2d", "public"."box2d", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_gist_same"("public"."box2d", "public"."box2d", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_gist_same"("public"."box2d", "public"."box2d", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_gist_union"("bytea", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_gist_union"("bytea", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_gist_union"("bytea", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_gist_union"("bytea", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_gt"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_gt"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_gt"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_gt"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_le"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_le"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_le"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_le"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_lt"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_lt"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_lt"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_lt"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_overlaps"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_overlaps"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_overlaps"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_overlaps"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_spgist_choose_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_spgist_choose_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_spgist_choose_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_spgist_choose_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_spgist_compress_nd"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_spgist_compress_nd"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_spgist_compress_nd"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_spgist_compress_nd"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_spgist_config_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_spgist_config_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_spgist_config_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_spgist_config_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_spgist_inner_consistent_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_spgist_inner_consistent_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_spgist_inner_consistent_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_spgist_inner_consistent_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_spgist_leaf_consistent_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_spgist_leaf_consistent_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_spgist_leaf_consistent_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_spgist_leaf_consistent_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geography_spgist_picksplit_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geography_spgist_picksplit_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geography_spgist_picksplit_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geography_spgist_picksplit_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geom2d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geom2d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geom2d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geom2d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geom3d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geom3d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geom3d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geom3d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geom4d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geom4d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geom4d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geom4d_brin_inclusion_add_value"("internal", "internal", "internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_above"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_above"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_above"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_above"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_below"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_below"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_below"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_below"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_cmp"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_cmp"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_cmp"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_cmp"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_contained_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_contained_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_contained_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_contained_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_contains_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_contains_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_contains_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_contains_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_contains_nd"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_contains_nd"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_contains_nd"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_contains_nd"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_distance_box"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_distance_box"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_distance_box"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_distance_box"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_distance_centroid"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_distance_centroid"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_distance_centroid"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_distance_centroid"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_distance_centroid_nd"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_distance_centroid_nd"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_distance_centroid_nd"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_distance_centroid_nd"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_distance_cpa"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_distance_cpa"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_distance_cpa"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_distance_cpa"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_eq"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_eq"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_eq"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_eq"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_ge"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_ge"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_ge"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_ge"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_compress_2d"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_compress_2d"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_compress_2d"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_compress_2d"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_compress_nd"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_compress_nd"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_compress_nd"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_compress_nd"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_consistent_2d"("internal", "public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_consistent_2d"("internal", "public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_consistent_2d"("internal", "public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_consistent_2d"("internal", "public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_consistent_nd"("internal", "public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_consistent_nd"("internal", "public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_consistent_nd"("internal", "public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_consistent_nd"("internal", "public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_decompress_2d"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_decompress_2d"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_decompress_2d"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_decompress_2d"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_decompress_nd"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_decompress_nd"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_decompress_nd"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_decompress_nd"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_distance_2d"("internal", "public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_distance_2d"("internal", "public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_distance_2d"("internal", "public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_distance_2d"("internal", "public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_distance_nd"("internal", "public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_distance_nd"("internal", "public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_distance_nd"("internal", "public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_distance_nd"("internal", "public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_penalty_2d"("internal", "internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_penalty_2d"("internal", "internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_penalty_2d"("internal", "internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_penalty_2d"("internal", "internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_penalty_nd"("internal", "internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_penalty_nd"("internal", "internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_penalty_nd"("internal", "internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_penalty_nd"("internal", "internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_picksplit_2d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_picksplit_2d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_picksplit_2d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_picksplit_2d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_picksplit_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_picksplit_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_picksplit_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_picksplit_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_same_2d"("geom1" "public"."geometry", "geom2" "public"."geometry", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_same_2d"("geom1" "public"."geometry", "geom2" "public"."geometry", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_same_2d"("geom1" "public"."geometry", "geom2" "public"."geometry", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_same_2d"("geom1" "public"."geometry", "geom2" "public"."geometry", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_same_nd"("public"."geometry", "public"."geometry", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_same_nd"("public"."geometry", "public"."geometry", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_same_nd"("public"."geometry", "public"."geometry", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_same_nd"("public"."geometry", "public"."geometry", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_sortsupport_2d"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_sortsupport_2d"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_sortsupport_2d"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_sortsupport_2d"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_union_2d"("bytea", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_union_2d"("bytea", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_union_2d"("bytea", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_union_2d"("bytea", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gist_union_nd"("bytea", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gist_union_nd"("bytea", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gist_union_nd"("bytea", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gist_union_nd"("bytea", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_gt"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_gt"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_gt"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_gt"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_hash"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_hash"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_hash"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_hash"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_le"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_le"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_le"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_le"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_left"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_left"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_left"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_left"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_lt"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_lt"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_lt"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_lt"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_overabove"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_overabove"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_overabove"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_overabove"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_overbelow"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_overbelow"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_overbelow"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_overbelow"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_overlaps_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_overlaps_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_overlaps_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_overlaps_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_overlaps_nd"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_overlaps_nd"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_overlaps_nd"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_overlaps_nd"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_overleft"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_overleft"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_overleft"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_overleft"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_overright"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_overright"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_overright"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_overright"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_right"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_right"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_right"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_right"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_same"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_same"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_same"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_same"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_same_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_same_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_same_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_same_3d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_same_nd"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_same_nd"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_same_nd"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_same_nd"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_sortsupport"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_sortsupport"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_sortsupport"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_sortsupport"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_2d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_2d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_2d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_2d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_3d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_3d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_3d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_3d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_choose_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_2d"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_2d"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_2d"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_2d"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_3d"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_3d"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_3d"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_3d"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_nd"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_nd"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_nd"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_compress_nd"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_2d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_2d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_2d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_2d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_3d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_3d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_3d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_3d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_config_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_2d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_2d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_2d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_2d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_3d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_3d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_3d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_3d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_inner_consistent_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_2d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_2d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_2d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_2d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_3d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_3d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_3d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_3d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_leaf_consistent_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_2d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_2d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_2d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_2d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_3d"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_3d"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_3d"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_3d"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_nd"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_nd"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_nd"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_spgist_picksplit_nd"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometry_within_nd"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometry_within_nd"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometry_within_nd"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometry_within_nd"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometrytype"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometrytype"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometrytype"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometrytype"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geometrytype"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geometrytype"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."geometrytype"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geometrytype"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geomfromewkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geomfromewkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."geomfromewkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geomfromewkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."geomfromewkt"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."geomfromewkt"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."geomfromewkt"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."geomfromewkt"("text") TO "service_role";
 
 
 
@@ -23739,13 +23970,6 @@ GRANT ALL ON FUNCTION "public"."get_preset_by_id"("preset_id" "uuid") TO "servic
 GRANT ALL ON FUNCTION "public"."get_preset_usage_stats"("preset_uuid" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_preset_usage_stats"("preset_uuid" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_preset_usage_stats"("preset_uuid" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."get_proj4_from_srid"(integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."get_proj4_from_srid"(integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."get_proj4_from_srid"(integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_proj4_from_srid"(integer) TO "service_role";
 
 
 
@@ -23899,44 +24123,15 @@ GRANT ALL ON FUNCTION "public"."get_users_blocking_user"("blocked_user_profile_i
 
 
 
-GRANT ALL ON FUNCTION "public"."gettransactionid"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."gettransactionid"() TO "anon";
-GRANT ALL ON FUNCTION "public"."gettransactionid"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."gettransactionid"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."gig_is_looking_for"("gig_types" "text"[], "search_type" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."gig_is_looking_for"("gig_types" "text"[], "search_type" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."gig_is_looking_for"("gig_types" "text"[], "search_type" "text") TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."gserialized_gist_joinsel_2d"("internal", "oid", "internal", smallint) TO "postgres";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_joinsel_2d"("internal", "oid", "internal", smallint) TO "anon";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_joinsel_2d"("internal", "oid", "internal", smallint) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_joinsel_2d"("internal", "oid", "internal", smallint) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."gserialized_gist_joinsel_nd"("internal", "oid", "internal", smallint) TO "postgres";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_joinsel_nd"("internal", "oid", "internal", smallint) TO "anon";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_joinsel_nd"("internal", "oid", "internal", smallint) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_joinsel_nd"("internal", "oid", "internal", smallint) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."gserialized_gist_sel_2d"("internal", "oid", "internal", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_sel_2d"("internal", "oid", "internal", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_sel_2d"("internal", "oid", "internal", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_sel_2d"("internal", "oid", "internal", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."gserialized_gist_sel_nd"("internal", "oid", "internal", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_sel_nd"("internal", "oid", "internal", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_sel_nd"("internal", "oid", "internal", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."gserialized_gist_sel_nd"("internal", "oid", "internal", integer) TO "service_role";
+GRANT ALL ON FUNCTION "public"."handle_gig_invitation_acceptance"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_gig_invitation_acceptance"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_gig_invitation_acceptance"() TO "service_role";
 
 
 
@@ -23964,27 +24159,6 @@ GRANT ALL ON FUNCTION "public"."increment_preset_usage"("preset_id" "uuid", "pre
 
 
 
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."box2df", "public"."box2df") TO "postgres";
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."box2df", "public"."box2df") TO "anon";
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."box2df", "public"."box2df") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."box2df", "public"."box2df") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."box2df", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."box2df", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."box2df", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."box2df", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."geometry", "public"."box2df") TO "postgres";
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."geometry", "public"."box2df") TO "anon";
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."geometry", "public"."box2df") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."is_contained_2d"("public"."geometry", "public"."box2df") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."is_spam_message"("content" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."is_spam_message"("content" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."is_spam_message"("content" "text") TO "service_role";
@@ -24003,34 +24177,6 @@ GRANT ALL ON FUNCTION "public"."is_user_suspended_or_banned"("p_user_id" "uuid")
 
 
 
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", timestamp without time zone) TO "postgres";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", timestamp without time zone) TO "anon";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", timestamp without time zone) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", timestamp without time zone) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", "text", timestamp without time zone) TO "postgres";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", "text", timestamp without time zone) TO "anon";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", "text", timestamp without time zone) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."lockrow"("text", "text", "text", "text", timestamp without time zone) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."log_provider_performance"("p_provider" character varying, "p_success" boolean, "p_processing_time_ms" integer, "p_quality_score" numeric, "p_cost" numeric) TO "anon";
 GRANT ALL ON FUNCTION "public"."log_provider_performance"("p_provider" character varying, "p_success" boolean, "p_processing_time_ms" integer, "p_quality_score" numeric, "p_cost" numeric) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."log_provider_performance"("p_provider" character varying, "p_success" boolean, "p_processing_time_ms" integer, "p_quality_score" numeric, "p_cost" numeric) TO "service_role";
@@ -24040,13 +24186,6 @@ GRANT ALL ON FUNCTION "public"."log_provider_performance"("p_provider" character
 GRANT ALL ON FUNCTION "public"."log_security_event"("event_type" "text", "user_id" "uuid", "details" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."log_security_event"("event_type" "text", "user_id" "uuid", "details" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."log_security_event"("event_type" "text", "user_id" "uuid", "details" "jsonb") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."longtransactionsenabled"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."longtransactionsenabled"() TO "anon";
-GRANT ALL ON FUNCTION "public"."longtransactionsenabled"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."longtransactionsenabled"() TO "service_role";
 
 
 
@@ -24080,6 +24219,18 @@ GRANT ALL ON FUNCTION "public"."notify_application_status_changed"() TO "service
 
 
 
+GRANT ALL ON FUNCTION "public"."notify_collab_invitation_response"() TO "anon";
+GRANT ALL ON FUNCTION "public"."notify_collab_invitation_response"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."notify_collab_invitation_response"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."notify_collab_invitation_sent"() TO "anon";
+GRANT ALL ON FUNCTION "public"."notify_collab_invitation_sent"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."notify_collab_invitation_sent"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."notify_credits_added"() TO "anon";
 GRANT ALL ON FUNCTION "public"."notify_credits_added"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."notify_credits_added"() TO "service_role";
@@ -24089,6 +24240,18 @@ GRANT ALL ON FUNCTION "public"."notify_credits_added"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."notify_gig_application_received"() TO "anon";
 GRANT ALL ON FUNCTION "public"."notify_gig_application_received"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."notify_gig_application_received"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."notify_gig_invitation_response"() TO "anon";
+GRANT ALL ON FUNCTION "public"."notify_gig_invitation_response"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."notify_gig_invitation_response"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."notify_gig_invitation_sent"() TO "anon";
+GRANT ALL ON FUNCTION "public"."notify_gig_invitation_sent"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."notify_gig_invitation_sent"() TO "service_role";
 
 
 
@@ -24155,524 +24318,6 @@ GRANT ALL ON FUNCTION "public"."notify_showcase_liked"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."notify_verification_status"() TO "anon";
 GRANT ALL ON FUNCTION "public"."notify_verification_status"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."notify_verification_status"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."box2df", "public"."box2df") TO "postgres";
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."box2df", "public"."box2df") TO "anon";
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."box2df", "public"."box2df") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."box2df", "public"."box2df") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."box2df", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."box2df", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."box2df", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."box2df", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."geometry", "public"."box2df") TO "postgres";
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."geometry", "public"."box2df") TO "anon";
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."geometry", "public"."box2df") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."overlaps_2d"("public"."geometry", "public"."box2df") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."geography", "public"."gidx") TO "postgres";
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."geography", "public"."gidx") TO "anon";
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."geography", "public"."gidx") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."geography", "public"."gidx") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."gidx", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."gidx", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."gidx", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."gidx", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."gidx", "public"."gidx") TO "postgres";
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."gidx", "public"."gidx") TO "anon";
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."gidx", "public"."gidx") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."overlaps_geog"("public"."gidx", "public"."gidx") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."geometry", "public"."gidx") TO "postgres";
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."geometry", "public"."gidx") TO "anon";
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."geometry", "public"."gidx") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."geometry", "public"."gidx") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."gidx", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."gidx", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."gidx", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."gidx", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."gidx", "public"."gidx") TO "postgres";
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."gidx", "public"."gidx") TO "anon";
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."gidx", "public"."gidx") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."overlaps_nd"("public"."gidx", "public"."gidx") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_finalfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_finalfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_finalfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_finalfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement", boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement", boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement", boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement", boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement", boolean, "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement", boolean, "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement", boolean, "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asflatgeobuf_transfn"("internal", "anyelement", boolean, "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_finalfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_finalfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_finalfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_finalfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_transfn"("internal", "anyelement") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_transfn"("internal", "anyelement") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_transfn"("internal", "anyelement") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_transfn"("internal", "anyelement") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_transfn"("internal", "anyelement", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_transfn"("internal", "anyelement", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_transfn"("internal", "anyelement", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asgeobuf_transfn"("internal", "anyelement", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_combinefn"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_combinefn"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_combinefn"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_combinefn"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_deserialfn"("bytea", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_deserialfn"("bytea", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_deserialfn"("bytea", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_deserialfn"("bytea", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_finalfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_finalfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_finalfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_finalfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_serialfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_serialfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_serialfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_serialfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer, "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer, "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer, "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer, "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer, "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer, "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer, "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_asmvt_transfn"("internal", "anyelement", "text", integer, "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry", double precision, integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry", double precision, integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry", double precision, integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_accum_transfn"("internal", "public"."geometry", double precision, integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_clusterintersecting_finalfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_clusterintersecting_finalfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_clusterintersecting_finalfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_clusterintersecting_finalfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_clusterwithin_finalfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_clusterwithin_finalfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_clusterwithin_finalfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_clusterwithin_finalfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_collect_finalfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_collect_finalfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_collect_finalfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_collect_finalfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_makeline_finalfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_makeline_finalfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_makeline_finalfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_makeline_finalfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_polygonize_finalfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_polygonize_finalfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_polygonize_finalfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_polygonize_finalfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_combinefn"("internal", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_combinefn"("internal", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_combinefn"("internal", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_combinefn"("internal", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_deserialfn"("bytea", "internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_deserialfn"("bytea", "internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_deserialfn"("bytea", "internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_deserialfn"("bytea", "internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_finalfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_finalfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_finalfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_finalfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_serialfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_serialfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_serialfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_serialfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_transfn"("internal", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_transfn"("internal", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_transfn"("internal", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_transfn"("internal", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_transfn"("internal", "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_transfn"("internal", "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_transfn"("internal", "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."pgis_geometry_union_parallel_transfn"("internal", "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."populate_geometry_columns"("use_typmod" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."populate_geometry_columns"("use_typmod" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."populate_geometry_columns"("use_typmod" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."populate_geometry_columns"("use_typmod" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."populate_geometry_columns"("tbl_oid" "oid", "use_typmod" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."populate_geometry_columns"("tbl_oid" "oid", "use_typmod" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."populate_geometry_columns"("tbl_oid" "oid", "use_typmod" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."populate_geometry_columns"("tbl_oid" "oid", "use_typmod" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_addbbox"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_addbbox"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_addbbox"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_addbbox"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_cache_bbox"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_cache_bbox"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_cache_bbox"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_cache_bbox"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_constraint_dims"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_constraint_dims"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_constraint_dims"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_constraint_dims"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_constraint_srid"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_constraint_srid"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_constraint_srid"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_constraint_srid"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_constraint_type"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_constraint_type"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_constraint_type"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_constraint_type"("geomschema" "text", "geomtable" "text", "geomcolumn" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_dropbbox"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_dropbbox"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_dropbbox"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_dropbbox"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_extensions_upgrade"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_extensions_upgrade"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_extensions_upgrade"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_extensions_upgrade"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_full_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_full_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_full_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_full_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_geos_noop"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_geos_noop"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_geos_noop"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_geos_noop"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_geos_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_geos_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_geos_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_geos_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_getbbox"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_getbbox"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_getbbox"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_getbbox"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_hasbbox"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_hasbbox"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_hasbbox"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_hasbbox"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_index_supportfn"("internal") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_index_supportfn"("internal") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_index_supportfn"("internal") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_index_supportfn"("internal") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_lib_build_date"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_lib_build_date"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_lib_build_date"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_lib_build_date"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_lib_revision"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_lib_revision"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_lib_revision"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_lib_revision"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_lib_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_lib_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_lib_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_lib_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_libjson_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_libjson_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_libjson_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_libjson_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_liblwgeom_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_liblwgeom_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_liblwgeom_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_liblwgeom_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_libprotobuf_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_libprotobuf_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_libprotobuf_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_libprotobuf_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_libxml_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_libxml_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_libxml_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_libxml_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_noop"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_noop"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_noop"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_noop"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_proj_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_proj_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_proj_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_proj_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_scripts_build_date"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_scripts_build_date"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_scripts_build_date"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_scripts_build_date"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_scripts_installed"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_scripts_installed"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_scripts_installed"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_scripts_installed"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_scripts_released"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_scripts_released"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_scripts_released"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_scripts_released"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_svn_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_svn_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_svn_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_svn_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_transform_geometry"("geom" "public"."geometry", "text", "text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_transform_geometry"("geom" "public"."geometry", "text", "text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_transform_geometry"("geom" "public"."geometry", "text", "text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_transform_geometry"("geom" "public"."geometry", "text", "text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_type_name"("geomname" character varying, "coord_dimension" integer, "use_new_name" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_type_name"("geomname" character varying, "coord_dimension" integer, "use_new_name" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_type_name"("geomname" character varying, "coord_dimension" integer, "use_new_name" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_type_name"("geomname" character varying, "coord_dimension" integer, "use_new_name" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_typmod_dims"(integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_typmod_dims"(integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_typmod_dims"(integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_typmod_dims"(integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_typmod_srid"(integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_typmod_srid"(integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_typmod_srid"(integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_typmod_srid"(integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_typmod_type"(integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_typmod_type"(integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_typmod_type"(integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_typmod_type"(integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_version"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."postgis_wagyu_version"() TO "postgres";
-GRANT ALL ON FUNCTION "public"."postgis_wagyu_version"() TO "anon";
-GRANT ALL ON FUNCTION "public"."postgis_wagyu_version"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."postgis_wagyu_version"() TO "service_role";
 
 
 
@@ -24748,9 +24393,45 @@ GRANT ALL ON FUNCTION "public"."search_roles_and_skills"("search_term" "text") T
 
 
 
+GRANT ALL ON FUNCTION "public"."send_deadline_reminders"() TO "anon";
+GRANT ALL ON FUNCTION "public"."send_deadline_reminders"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."send_deadline_reminders"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."send_gig_match_notifications"() TO "anon";
+GRANT ALL ON FUNCTION "public"."send_gig_match_notifications"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."send_gig_match_notifications"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."send_marketplace_milestones"() TO "anon";
+GRANT ALL ON FUNCTION "public"."send_marketplace_milestones"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."send_marketplace_milestones"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."send_platform_announcement"("p_title" "text", "p_message" "text", "p_action_url" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."send_platform_announcement"("p_title" "text", "p_message" "text", "p_action_url" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."send_platform_announcement"("p_title" "text", "p_message" "text", "p_action_url" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."send_profile_completion_reminders"() TO "anon";
+GRANT ALL ON FUNCTION "public"."send_profile_completion_reminders"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."send_profile_completion_reminders"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."send_shoot_reminders"() TO "anon";
+GRANT ALL ON FUNCTION "public"."send_shoot_reminders"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."send_shoot_reminders"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."send_subscription_expiring_reminders"() TO "anon";
+GRANT ALL ON FUNCTION "public"."send_subscription_expiring_reminders"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."send_subscription_expiring_reminders"() TO "service_role";
 
 
 
@@ -24760,2935 +24441,21 @@ GRANT ALL ON FUNCTION "public"."send_targeted_announcement"("p_title" "text", "p
 
 
 
+GRANT ALL ON FUNCTION "public"."send_unread_messages_digest"() TO "anon";
+GRANT ALL ON FUNCTION "public"."send_unread_messages_digest"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."send_unread_messages_digest"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."send_weekly_digest"() TO "anon";
+GRANT ALL ON FUNCTION "public"."send_weekly_digest"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."send_weekly_digest"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."share_contact_details"("p_conversation_id" "uuid", "p_conversation_type" "text", "p_offer_id" "uuid", "p_sharer_id" "uuid", "p_recipient_id" "uuid", "p_contact_type" "text", "p_contact_value" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."share_contact_details"("p_conversation_id" "uuid", "p_conversation_type" "text", "p_offer_id" "uuid", "p_sharer_id" "uuid", "p_recipient_id" "uuid", "p_contact_type" "text", "p_contact_value" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."share_contact_details"("p_conversation_id" "uuid", "p_conversation_type" "text", "p_offer_id" "uuid", "p_sharer_id" "uuid", "p_recipient_id" "uuid", "p_contact_type" "text", "p_contact_value" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dclosestpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dclosestpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dclosestpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dclosestpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3ddfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3ddfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3ddfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3ddfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3ddistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3ddistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3ddistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3ddistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3ddwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3ddwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3ddwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3ddwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dintersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dintersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dintersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dintersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dlength"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dlength"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dlength"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dlength"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dlineinterpolatepoint"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dlineinterpolatepoint"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dlineinterpolatepoint"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dlineinterpolatepoint"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dlongestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dlongestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dlongestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dlongestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dmakebox"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dmakebox"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dmakebox"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dmakebox"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dmaxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dmaxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dmaxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dmaxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dperimeter"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dperimeter"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dperimeter"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dperimeter"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dshortestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dshortestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dshortestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dshortestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_addmeasure"("public"."geometry", double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_addmeasure"("public"."geometry", double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_addmeasure"("public"."geometry", double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_addmeasure"("public"."geometry", double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_addpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_addpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_addpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_addpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_addpoint"("geom1" "public"."geometry", "geom2" "public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_addpoint"("geom1" "public"."geometry", "geom2" "public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_addpoint"("geom1" "public"."geometry", "geom2" "public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_addpoint"("geom1" "public"."geometry", "geom2" "public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_affine"("public"."geometry", double precision, double precision, double precision, double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_affine"("public"."geometry", double precision, double precision, double precision, double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_affine"("public"."geometry", double precision, double precision, double precision, double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_affine"("public"."geometry", double precision, double precision, double precision, double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_affine"("public"."geometry", double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_affine"("public"."geometry", double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_affine"("public"."geometry", double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_affine"("public"."geometry", double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_angle"("line1" "public"."geometry", "line2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_angle"("line1" "public"."geometry", "line2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_angle"("line1" "public"."geometry", "line2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_angle"("line1" "public"."geometry", "line2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_angle"("pt1" "public"."geometry", "pt2" "public"."geometry", "pt3" "public"."geometry", "pt4" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_angle"("pt1" "public"."geometry", "pt2" "public"."geometry", "pt3" "public"."geometry", "pt4" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_angle"("pt1" "public"."geometry", "pt2" "public"."geometry", "pt3" "public"."geometry", "pt4" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_angle"("pt1" "public"."geometry", "pt2" "public"."geometry", "pt3" "public"."geometry", "pt4" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_area"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_area"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_area"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_area"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_area"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_area"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_area"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_area"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_area"("geog" "public"."geography", "use_spheroid" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_area"("geog" "public"."geography", "use_spheroid" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_area"("geog" "public"."geography", "use_spheroid" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_area"("geog" "public"."geography", "use_spheroid" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_area2d"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_area2d"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_area2d"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_area2d"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geography", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geography", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geography", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geography", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geometry", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geometry", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geometry", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asbinary"("public"."geometry", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asencodedpolyline"("geom" "public"."geometry", "nprecision" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asencodedpolyline"("geom" "public"."geometry", "nprecision" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asencodedpolyline"("geom" "public"."geometry", "nprecision" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asencodedpolyline"("geom" "public"."geometry", "nprecision" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asewkb"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asewkb"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asewkb"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asewkb"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asewkb"("public"."geometry", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asewkb"("public"."geometry", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asewkb"("public"."geometry", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asewkb"("public"."geometry", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asewkt"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geography", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geography", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geography", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geography", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asewkt"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("geog" "public"."geography", "maxdecimaldigits" integer, "options" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("geog" "public"."geography", "maxdecimaldigits" integer, "options" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("geog" "public"."geography", "maxdecimaldigits" integer, "options" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("geog" "public"."geography", "maxdecimaldigits" integer, "options" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("r" "record", "geom_column" "text", "maxdecimaldigits" integer, "pretty_bool" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("r" "record", "geom_column" "text", "maxdecimaldigits" integer, "pretty_bool" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("r" "record", "geom_column" "text", "maxdecimaldigits" integer, "pretty_bool" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgeojson"("r" "record", "geom_column" "text", "maxdecimaldigits" integer, "pretty_bool" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgml"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgml"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgml"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgml"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgml"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgml"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgml"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgml"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgml"("geog" "public"."geography", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgml"("geog" "public"."geography", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgml"("geog" "public"."geography", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgml"("geog" "public"."geography", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgml"("version" integer, "geog" "public"."geography", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgml"("version" integer, "geog" "public"."geography", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgml"("version" integer, "geog" "public"."geography", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgml"("version" integer, "geog" "public"."geography", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgml"("version" integer, "geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgml"("version" integer, "geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgml"("version" integer, "geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgml"("version" integer, "geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer, "nprefix" "text", "id" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_ashexewkb"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_ashexewkb"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_ashexewkb"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_ashexewkb"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_ashexewkb"("public"."geometry", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_ashexewkb"("public"."geometry", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_ashexewkb"("public"."geometry", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_ashexewkb"("public"."geometry", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_askml"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_askml"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_askml"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_askml"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_askml"("geog" "public"."geography", "maxdecimaldigits" integer, "nprefix" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_askml"("geog" "public"."geography", "maxdecimaldigits" integer, "nprefix" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_askml"("geog" "public"."geography", "maxdecimaldigits" integer, "nprefix" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_askml"("geog" "public"."geography", "maxdecimaldigits" integer, "nprefix" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_askml"("geom" "public"."geometry", "maxdecimaldigits" integer, "nprefix" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_askml"("geom" "public"."geometry", "maxdecimaldigits" integer, "nprefix" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_askml"("geom" "public"."geometry", "maxdecimaldigits" integer, "nprefix" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_askml"("geom" "public"."geometry", "maxdecimaldigits" integer, "nprefix" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_aslatlontext"("geom" "public"."geometry", "tmpl" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_aslatlontext"("geom" "public"."geometry", "tmpl" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_aslatlontext"("geom" "public"."geometry", "tmpl" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_aslatlontext"("geom" "public"."geometry", "tmpl" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asmarc21"("geom" "public"."geometry", "format" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asmarc21"("geom" "public"."geometry", "format" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asmarc21"("geom" "public"."geometry", "format" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asmarc21"("geom" "public"."geometry", "format" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asmvtgeom"("geom" "public"."geometry", "bounds" "public"."box2d", "extent" integer, "buffer" integer, "clip_geom" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asmvtgeom"("geom" "public"."geometry", "bounds" "public"."box2d", "extent" integer, "buffer" integer, "clip_geom" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asmvtgeom"("geom" "public"."geometry", "bounds" "public"."box2d", "extent" integer, "buffer" integer, "clip_geom" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asmvtgeom"("geom" "public"."geometry", "bounds" "public"."box2d", "extent" integer, "buffer" integer, "clip_geom" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_assvg"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_assvg"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_assvg"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_assvg"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_assvg"("geog" "public"."geography", "rel" integer, "maxdecimaldigits" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_assvg"("geog" "public"."geography", "rel" integer, "maxdecimaldigits" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_assvg"("geog" "public"."geography", "rel" integer, "maxdecimaldigits" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_assvg"("geog" "public"."geography", "rel" integer, "maxdecimaldigits" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_assvg"("geom" "public"."geometry", "rel" integer, "maxdecimaldigits" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_assvg"("geom" "public"."geometry", "rel" integer, "maxdecimaldigits" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_assvg"("geom" "public"."geometry", "rel" integer, "maxdecimaldigits" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_assvg"("geom" "public"."geometry", "rel" integer, "maxdecimaldigits" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_astext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_astext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_astext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_astext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geography", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geography", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geography", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geography", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_astext"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_astwkb"("geom" "public"."geometry", "prec" integer, "prec_z" integer, "prec_m" integer, "with_sizes" boolean, "with_boxes" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_astwkb"("geom" "public"."geometry", "prec" integer, "prec_z" integer, "prec_m" integer, "with_sizes" boolean, "with_boxes" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_astwkb"("geom" "public"."geometry", "prec" integer, "prec_z" integer, "prec_m" integer, "with_sizes" boolean, "with_boxes" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_astwkb"("geom" "public"."geometry", "prec" integer, "prec_z" integer, "prec_m" integer, "with_sizes" boolean, "with_boxes" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_astwkb"("geom" "public"."geometry"[], "ids" bigint[], "prec" integer, "prec_z" integer, "prec_m" integer, "with_sizes" boolean, "with_boxes" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_astwkb"("geom" "public"."geometry"[], "ids" bigint[], "prec" integer, "prec_z" integer, "prec_m" integer, "with_sizes" boolean, "with_boxes" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_astwkb"("geom" "public"."geometry"[], "ids" bigint[], "prec" integer, "prec_z" integer, "prec_m" integer, "with_sizes" boolean, "with_boxes" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_astwkb"("geom" "public"."geometry"[], "ids" bigint[], "prec" integer, "prec_z" integer, "prec_m" integer, "with_sizes" boolean, "with_boxes" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asx3d"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asx3d"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asx3d"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asx3d"("geom" "public"."geometry", "maxdecimaldigits" integer, "options" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_azimuth"("geog1" "public"."geography", "geog2" "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_azimuth"("geog1" "public"."geography", "geog2" "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_azimuth"("geog1" "public"."geography", "geog2" "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_azimuth"("geog1" "public"."geography", "geog2" "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_azimuth"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_azimuth"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_azimuth"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_azimuth"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_bdmpolyfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_bdmpolyfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_bdmpolyfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_bdmpolyfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_bdpolyfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_bdpolyfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_bdpolyfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_bdpolyfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_boundary"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_boundary"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_boundary"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_boundary"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_boundingdiagonal"("geom" "public"."geometry", "fits" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_boundingdiagonal"("geom" "public"."geometry", "fits" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_boundingdiagonal"("geom" "public"."geometry", "fits" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_boundingdiagonal"("geom" "public"."geometry", "fits" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_box2dfromgeohash"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_box2dfromgeohash"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_box2dfromgeohash"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_box2dfromgeohash"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision, integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision, integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision, integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision, integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision, "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision, "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision, "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_buffer"("text", double precision, "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision, integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision, integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision, integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision, integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision, "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision, "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision, "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_buffer"("public"."geography", double precision, "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_buffer"("geom" "public"."geometry", "radius" double precision, "quadsegs" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_buffer"("geom" "public"."geometry", "radius" double precision, "quadsegs" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_buffer"("geom" "public"."geometry", "radius" double precision, "quadsegs" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_buffer"("geom" "public"."geometry", "radius" double precision, "quadsegs" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_buffer"("geom" "public"."geometry", "radius" double precision, "options" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_buffer"("geom" "public"."geometry", "radius" double precision, "options" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_buffer"("geom" "public"."geometry", "radius" double precision, "options" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_buffer"("geom" "public"."geometry", "radius" double precision, "options" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_buildarea"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_buildarea"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_buildarea"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_buildarea"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_centroid"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_centroid"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_centroid"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_centroid"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_centroid"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_centroid"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_centroid"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_centroid"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_centroid"("public"."geography", "use_spheroid" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_centroid"("public"."geography", "use_spheroid" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_centroid"("public"."geography", "use_spheroid" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_centroid"("public"."geography", "use_spheroid" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_chaikinsmoothing"("public"."geometry", integer, boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_chaikinsmoothing"("public"."geometry", integer, boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_chaikinsmoothing"("public"."geometry", integer, boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_chaikinsmoothing"("public"."geometry", integer, boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_cleangeometry"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_cleangeometry"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_cleangeometry"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_cleangeometry"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_clipbybox2d"("geom" "public"."geometry", "box" "public"."box2d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_clipbybox2d"("geom" "public"."geometry", "box" "public"."box2d") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_clipbybox2d"("geom" "public"."geometry", "box" "public"."box2d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_clipbybox2d"("geom" "public"."geometry", "box" "public"."box2d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_closestpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_closestpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_closestpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_closestpoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_closestpointofapproach"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_closestpointofapproach"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_closestpointofapproach"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_closestpointofapproach"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_clusterdbscan"("public"."geometry", "eps" double precision, "minpoints" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_clusterdbscan"("public"."geometry", "eps" double precision, "minpoints" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_clusterdbscan"("public"."geometry", "eps" double precision, "minpoints" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_clusterdbscan"("public"."geometry", "eps" double precision, "minpoints" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_clusterintersecting"("public"."geometry"[]) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_clusterintersecting"("public"."geometry"[]) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_clusterintersecting"("public"."geometry"[]) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_clusterintersecting"("public"."geometry"[]) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_clusterkmeans"("geom" "public"."geometry", "k" integer, "max_radius" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_clusterkmeans"("geom" "public"."geometry", "k" integer, "max_radius" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_clusterkmeans"("geom" "public"."geometry", "k" integer, "max_radius" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_clusterkmeans"("geom" "public"."geometry", "k" integer, "max_radius" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_clusterwithin"("public"."geometry"[], double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_clusterwithin"("public"."geometry"[], double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_clusterwithin"("public"."geometry"[], double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_clusterwithin"("public"."geometry"[], double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_collect"("public"."geometry"[]) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_collect"("public"."geometry"[]) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_collect"("public"."geometry"[]) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_collect"("public"."geometry"[]) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_collect"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_collect"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_collect"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_collect"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_collectionextract"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_collectionextract"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_collectionextract"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_collectionextract"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_collectionextract"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_collectionextract"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_collectionextract"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_collectionextract"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_collectionhomogenize"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_collectionhomogenize"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_collectionhomogenize"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_collectionhomogenize"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box2d", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box2d", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box2d", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box2d", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box3d", "public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box3d", "public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box3d", "public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box3d", "public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box3d", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box3d", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box3d", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_combinebbox"("public"."box3d", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_concavehull"("param_geom" "public"."geometry", "param_pctconvex" double precision, "param_allow_holes" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_concavehull"("param_geom" "public"."geometry", "param_pctconvex" double precision, "param_allow_holes" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_concavehull"("param_geom" "public"."geometry", "param_pctconvex" double precision, "param_allow_holes" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_concavehull"("param_geom" "public"."geometry", "param_pctconvex" double precision, "param_allow_holes" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_contains"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_containsproperly"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_containsproperly"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_containsproperly"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_containsproperly"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_convexhull"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_convexhull"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_convexhull"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_convexhull"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_coorddim"("geometry" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_coorddim"("geometry" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_coorddim"("geometry" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_coorddim"("geometry" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_coveredby"("text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_coveredby"("text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_coveredby"("text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_coveredby"("text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_coveredby"("geog1" "public"."geography", "geog2" "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_coveredby"("geog1" "public"."geography", "geog2" "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_coveredby"("geog1" "public"."geography", "geog2" "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_coveredby"("geog1" "public"."geography", "geog2" "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_coveredby"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_coveredby"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_coveredby"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_coveredby"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_covers"("text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_covers"("text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_covers"("text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_covers"("text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_covers"("geog1" "public"."geography", "geog2" "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_covers"("geog1" "public"."geography", "geog2" "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_covers"("geog1" "public"."geography", "geog2" "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_covers"("geog1" "public"."geography", "geog2" "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_covers"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_covers"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_covers"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_covers"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_cpawithin"("public"."geometry", "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_cpawithin"("public"."geometry", "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_cpawithin"("public"."geometry", "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_cpawithin"("public"."geometry", "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_crosses"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_crosses"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_crosses"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_crosses"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_curvetoline"("geom" "public"."geometry", "tol" double precision, "toltype" integer, "flags" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_curvetoline"("geom" "public"."geometry", "tol" double precision, "toltype" integer, "flags" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_curvetoline"("geom" "public"."geometry", "tol" double precision, "toltype" integer, "flags" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_curvetoline"("geom" "public"."geometry", "tol" double precision, "toltype" integer, "flags" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_delaunaytriangles"("g1" "public"."geometry", "tolerance" double precision, "flags" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_delaunaytriangles"("g1" "public"."geometry", "tolerance" double precision, "flags" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_delaunaytriangles"("g1" "public"."geometry", "tolerance" double precision, "flags" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_delaunaytriangles"("g1" "public"."geometry", "tolerance" double precision, "flags" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_dfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_dfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_dfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_dfullywithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_difference"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_difference"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_difference"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_difference"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_dimension"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_dimension"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_dimension"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_dimension"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_disjoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_disjoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_disjoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_disjoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_distance"("text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_distance"("text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_distance"("text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_distance"("text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_distance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_distance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_distance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_distance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_distance"("geog1" "public"."geography", "geog2" "public"."geography", "use_spheroid" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_distance"("geog1" "public"."geography", "geog2" "public"."geography", "use_spheroid" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_distance"("geog1" "public"."geography", "geog2" "public"."geography", "use_spheroid" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_distance"("geog1" "public"."geography", "geog2" "public"."geography", "use_spheroid" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_distancecpa"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_distancecpa"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_distancecpa"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_distancecpa"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_distancesphere"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_distancesphere"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_distancesphere"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_distancesphere"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_distancesphere"("geom1" "public"."geometry", "geom2" "public"."geometry", "radius" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_distancesphere"("geom1" "public"."geometry", "geom2" "public"."geometry", "radius" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_distancesphere"("geom1" "public"."geometry", "geom2" "public"."geometry", "radius" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_distancesphere"("geom1" "public"."geometry", "geom2" "public"."geometry", "radius" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_distancespheroid"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_distancespheroid"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_distancespheroid"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_distancespheroid"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_distancespheroid"("geom1" "public"."geometry", "geom2" "public"."geometry", "public"."spheroid") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_distancespheroid"("geom1" "public"."geometry", "geom2" "public"."geometry", "public"."spheroid") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_distancespheroid"("geom1" "public"."geometry", "geom2" "public"."geometry", "public"."spheroid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_distancespheroid"("geom1" "public"."geometry", "geom2" "public"."geometry", "public"."spheroid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_dump"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_dump"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_dump"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_dump"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_dumppoints"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_dumppoints"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_dumppoints"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_dumppoints"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_dumprings"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_dumprings"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_dumprings"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_dumprings"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_dumpsegments"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_dumpsegments"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_dumpsegments"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_dumpsegments"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_dwithin"("text", "text", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_dwithin"("text", "text", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_dwithin"("text", "text", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_dwithin"("text", "text", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_dwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_dwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_dwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_dwithin"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_dwithin"("geog1" "public"."geography", "geog2" "public"."geography", "tolerance" double precision, "use_spheroid" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_dwithin"("geog1" "public"."geography", "geog2" "public"."geography", "tolerance" double precision, "use_spheroid" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_dwithin"("geog1" "public"."geography", "geog2" "public"."geography", "tolerance" double precision, "use_spheroid" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_dwithin"("geog1" "public"."geography", "geog2" "public"."geography", "tolerance" double precision, "use_spheroid" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_endpoint"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_endpoint"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_endpoint"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_endpoint"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_envelope"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_envelope"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_envelope"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_envelope"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_equals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text", "text", boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text", "text", boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text", "text", boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_estimatedextent"("text", "text", "text", boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."box2d", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."box2d", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."box2d", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."box2d", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."box3d", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."box3d", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."box3d", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."box3d", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_expand"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_expand"("box" "public"."box2d", "dx" double precision, "dy" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_expand"("box" "public"."box2d", "dx" double precision, "dy" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_expand"("box" "public"."box2d", "dx" double precision, "dy" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_expand"("box" "public"."box2d", "dx" double precision, "dy" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_expand"("box" "public"."box3d", "dx" double precision, "dy" double precision, "dz" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_expand"("box" "public"."box3d", "dx" double precision, "dy" double precision, "dz" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_expand"("box" "public"."box3d", "dx" double precision, "dy" double precision, "dz" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_expand"("box" "public"."box3d", "dx" double precision, "dy" double precision, "dz" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_expand"("geom" "public"."geometry", "dx" double precision, "dy" double precision, "dz" double precision, "dm" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_expand"("geom" "public"."geometry", "dx" double precision, "dy" double precision, "dz" double precision, "dm" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_expand"("geom" "public"."geometry", "dx" double precision, "dy" double precision, "dz" double precision, "dm" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_expand"("geom" "public"."geometry", "dx" double precision, "dy" double precision, "dz" double precision, "dm" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_exteriorring"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_exteriorring"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_exteriorring"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_exteriorring"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_filterbym"("public"."geometry", double precision, double precision, boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_filterbym"("public"."geometry", double precision, double precision, boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_filterbym"("public"."geometry", double precision, double precision, boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_filterbym"("public"."geometry", double precision, double precision, boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_findextent"("text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_findextent"("text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_findextent"("text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_findextent"("text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_findextent"("text", "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_findextent"("text", "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_findextent"("text", "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_findextent"("text", "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_flipcoordinates"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_flipcoordinates"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_flipcoordinates"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_flipcoordinates"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_force2d"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_force2d"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_force2d"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_force2d"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_force3d"("geom" "public"."geometry", "zvalue" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_force3d"("geom" "public"."geometry", "zvalue" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_force3d"("geom" "public"."geometry", "zvalue" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_force3d"("geom" "public"."geometry", "zvalue" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_force3dm"("geom" "public"."geometry", "mvalue" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_force3dm"("geom" "public"."geometry", "mvalue" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_force3dm"("geom" "public"."geometry", "mvalue" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_force3dm"("geom" "public"."geometry", "mvalue" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_force3dz"("geom" "public"."geometry", "zvalue" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_force3dz"("geom" "public"."geometry", "zvalue" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_force3dz"("geom" "public"."geometry", "zvalue" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_force3dz"("geom" "public"."geometry", "zvalue" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_force4d"("geom" "public"."geometry", "zvalue" double precision, "mvalue" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_force4d"("geom" "public"."geometry", "zvalue" double precision, "mvalue" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_force4d"("geom" "public"."geometry", "zvalue" double precision, "mvalue" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_force4d"("geom" "public"."geometry", "zvalue" double precision, "mvalue" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_forcecollection"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_forcecollection"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_forcecollection"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_forcecollection"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_forcecurve"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_forcecurve"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_forcecurve"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_forcecurve"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_forcepolygonccw"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_forcepolygonccw"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_forcepolygonccw"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_forcepolygonccw"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_forcepolygoncw"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_forcepolygoncw"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_forcepolygoncw"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_forcepolygoncw"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_forcerhr"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_forcerhr"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_forcerhr"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_forcerhr"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_forcesfs"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_forcesfs"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_forcesfs"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_forcesfs"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_forcesfs"("public"."geometry", "version" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_forcesfs"("public"."geometry", "version" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_forcesfs"("public"."geometry", "version" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_forcesfs"("public"."geometry", "version" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_frechetdistance"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_frechetdistance"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_frechetdistance"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_frechetdistance"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_fromflatgeobuf"("anyelement", "bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_fromflatgeobuf"("anyelement", "bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_fromflatgeobuf"("anyelement", "bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_fromflatgeobuf"("anyelement", "bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_fromflatgeobuftotable"("text", "text", "bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_fromflatgeobuftotable"("text", "text", "bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_fromflatgeobuftotable"("text", "text", "bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_fromflatgeobuftotable"("text", "text", "bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_generatepoints"("area" "public"."geometry", "npoints" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_generatepoints"("area" "public"."geometry", "npoints" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_generatepoints"("area" "public"."geometry", "npoints" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_generatepoints"("area" "public"."geometry", "npoints" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_generatepoints"("area" "public"."geometry", "npoints" integer, "seed" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_generatepoints"("area" "public"."geometry", "npoints" integer, "seed" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_generatepoints"("area" "public"."geometry", "npoints" integer, "seed" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_generatepoints"("area" "public"."geometry", "npoints" integer, "seed" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geogfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geogfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geogfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geogfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geogfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geogfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geogfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geogfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geographyfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geographyfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geographyfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geographyfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geohash"("geog" "public"."geography", "maxchars" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geohash"("geog" "public"."geography", "maxchars" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geohash"("geog" "public"."geography", "maxchars" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geohash"("geog" "public"."geography", "maxchars" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geohash"("geom" "public"."geometry", "maxchars" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geohash"("geom" "public"."geometry", "maxchars" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geohash"("geom" "public"."geometry", "maxchars" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geohash"("geom" "public"."geometry", "maxchars" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomcollfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomcollfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomcollfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomcollfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomcollfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geometricmedian"("g" "public"."geometry", "tolerance" double precision, "max_iter" integer, "fail_if_not_converged" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geometricmedian"("g" "public"."geometry", "tolerance" double precision, "max_iter" integer, "fail_if_not_converged" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geometricmedian"("g" "public"."geometry", "tolerance" double precision, "max_iter" integer, "fail_if_not_converged" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geometricmedian"("g" "public"."geometry", "tolerance" double precision, "max_iter" integer, "fail_if_not_converged" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geometryfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geometryfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geometryfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geometryfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geometryfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geometryfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geometryfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geometryfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geometryn"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geometryn"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geometryn"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geometryn"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geometrytype"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geometrytype"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geometrytype"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geometrytype"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromewkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromewkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromewkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromewkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromewkt"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromewkt"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromewkt"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromewkt"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromgeohash"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeohash"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeohash"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeohash"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"(json) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"(json) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"(json) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"(json) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"("jsonb") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"("jsonb") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"("jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"("jsonb") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromgeojson"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromgml"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromgml"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromgml"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromgml"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromgml"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromgml"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromgml"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromgml"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromkml"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromkml"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromkml"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromkml"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfrommarc21"("marc21xml" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfrommarc21"("marc21xml" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfrommarc21"("marc21xml" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfrommarc21"("marc21xml" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromtwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromtwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromtwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromtwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_geomfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_geomfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_geomfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_geomfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_gmltosql"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_gmltosql"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_gmltosql"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_gmltosql"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_gmltosql"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_gmltosql"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_gmltosql"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_gmltosql"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_hasarc"("geometry" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_hasarc"("geometry" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_hasarc"("geometry" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_hasarc"("geometry" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_hausdorffdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_hausdorffdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_hausdorffdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_hausdorffdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_hausdorffdistance"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_hausdorffdistance"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_hausdorffdistance"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_hausdorffdistance"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_hexagon"("size" double precision, "cell_i" integer, "cell_j" integer, "origin" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_hexagon"("size" double precision, "cell_i" integer, "cell_j" integer, "origin" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_hexagon"("size" double precision, "cell_i" integer, "cell_j" integer, "origin" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_hexagon"("size" double precision, "cell_i" integer, "cell_j" integer, "origin" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_hexagongrid"("size" double precision, "bounds" "public"."geometry", OUT "geom" "public"."geometry", OUT "i" integer, OUT "j" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_hexagongrid"("size" double precision, "bounds" "public"."geometry", OUT "geom" "public"."geometry", OUT "i" integer, OUT "j" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_hexagongrid"("size" double precision, "bounds" "public"."geometry", OUT "geom" "public"."geometry", OUT "i" integer, OUT "j" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_hexagongrid"("size" double precision, "bounds" "public"."geometry", OUT "geom" "public"."geometry", OUT "i" integer, OUT "j" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_interiorringn"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_interiorringn"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_interiorringn"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_interiorringn"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_interpolatepoint"("line" "public"."geometry", "point" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_interpolatepoint"("line" "public"."geometry", "point" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_interpolatepoint"("line" "public"."geometry", "point" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_interpolatepoint"("line" "public"."geometry", "point" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_intersection"("text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_intersection"("text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_intersection"("text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_intersection"("text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_intersection"("public"."geography", "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_intersection"("public"."geography", "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_intersection"("public"."geography", "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_intersection"("public"."geography", "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_intersection"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_intersection"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_intersection"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_intersection"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_intersects"("text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_intersects"("text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_intersects"("text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_intersects"("text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_intersects"("geog1" "public"."geography", "geog2" "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_intersects"("geog1" "public"."geography", "geog2" "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_intersects"("geog1" "public"."geography", "geog2" "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_intersects"("geog1" "public"."geography", "geog2" "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_intersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_intersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_intersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_intersects"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_isclosed"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_isclosed"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_isclosed"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_isclosed"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_iscollection"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_iscollection"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_iscollection"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_iscollection"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_isempty"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_isempty"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_isempty"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_isempty"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_ispolygonccw"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_ispolygonccw"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_ispolygonccw"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_ispolygonccw"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_ispolygoncw"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_ispolygoncw"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_ispolygoncw"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_ispolygoncw"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_isring"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_isring"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_isring"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_isring"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_issimple"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_issimple"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_issimple"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_issimple"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_isvalid"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_isvalid"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_isvalid"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_isvalid"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_isvalid"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_isvalid"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_isvalid"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_isvalid"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_isvaliddetail"("geom" "public"."geometry", "flags" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_isvaliddetail"("geom" "public"."geometry", "flags" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_isvaliddetail"("geom" "public"."geometry", "flags" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_isvaliddetail"("geom" "public"."geometry", "flags" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_isvalidreason"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_isvalidreason"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_isvalidreason"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_isvalidreason"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_isvalidreason"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_isvalidreason"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_isvalidreason"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_isvalidreason"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_isvalidtrajectory"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_isvalidtrajectory"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_isvalidtrajectory"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_isvalidtrajectory"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_length"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_length"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_length"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_length"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_length"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_length"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_length"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_length"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_length"("geog" "public"."geography", "use_spheroid" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_length"("geog" "public"."geography", "use_spheroid" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_length"("geog" "public"."geography", "use_spheroid" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_length"("geog" "public"."geography", "use_spheroid" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_length2d"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_length2d"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_length2d"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_length2d"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_length2dspheroid"("public"."geometry", "public"."spheroid") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_length2dspheroid"("public"."geometry", "public"."spheroid") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_length2dspheroid"("public"."geometry", "public"."spheroid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_length2dspheroid"("public"."geometry", "public"."spheroid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_lengthspheroid"("public"."geometry", "public"."spheroid") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_lengthspheroid"("public"."geometry", "public"."spheroid") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_lengthspheroid"("public"."geometry", "public"."spheroid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_lengthspheroid"("public"."geometry", "public"."spheroid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_letters"("letters" "text", "font" json) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_letters"("letters" "text", "font" json) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_letters"("letters" "text", "font" json) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_letters"("letters" "text", "font" json) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linecrossingdirection"("line1" "public"."geometry", "line2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linecrossingdirection"("line1" "public"."geometry", "line2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linecrossingdirection"("line1" "public"."geometry", "line2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linecrossingdirection"("line1" "public"."geometry", "line2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linefromencodedpolyline"("txtin" "text", "nprecision" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linefromencodedpolyline"("txtin" "text", "nprecision" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linefromencodedpolyline"("txtin" "text", "nprecision" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linefromencodedpolyline"("txtin" "text", "nprecision" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linefrommultipoint"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linefrommultipoint"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linefrommultipoint"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linefrommultipoint"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linefromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linefromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linefromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linefromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linefromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linefromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linefromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linefromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linefromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linefromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linefromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linefromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linefromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linefromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linefromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linefromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_lineinterpolatepoint"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_lineinterpolatepoint"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_lineinterpolatepoint"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_lineinterpolatepoint"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_lineinterpolatepoints"("public"."geometry", double precision, "repeat" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_lineinterpolatepoints"("public"."geometry", double precision, "repeat" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_lineinterpolatepoints"("public"."geometry", double precision, "repeat" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_lineinterpolatepoints"("public"."geometry", double precision, "repeat" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linelocatepoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linelocatepoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linelocatepoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linelocatepoint"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linemerge"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linemerge"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linemerge"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linemerge"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linemerge"("public"."geometry", boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linemerge"("public"."geometry", boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linemerge"("public"."geometry", boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linemerge"("public"."geometry", boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linestringfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linestringfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linestringfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linestringfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linestringfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linestringfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linestringfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linestringfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linesubstring"("public"."geometry", double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linesubstring"("public"."geometry", double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linesubstring"("public"."geometry", double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linesubstring"("public"."geometry", double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_linetocurve"("geometry" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_linetocurve"("geometry" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_linetocurve"("geometry" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_linetocurve"("geometry" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_locatealong"("geometry" "public"."geometry", "measure" double precision, "leftrightoffset" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_locatealong"("geometry" "public"."geometry", "measure" double precision, "leftrightoffset" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_locatealong"("geometry" "public"."geometry", "measure" double precision, "leftrightoffset" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_locatealong"("geometry" "public"."geometry", "measure" double precision, "leftrightoffset" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_locatebetween"("geometry" "public"."geometry", "frommeasure" double precision, "tomeasure" double precision, "leftrightoffset" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_locatebetween"("geometry" "public"."geometry", "frommeasure" double precision, "tomeasure" double precision, "leftrightoffset" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_locatebetween"("geometry" "public"."geometry", "frommeasure" double precision, "tomeasure" double precision, "leftrightoffset" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_locatebetween"("geometry" "public"."geometry", "frommeasure" double precision, "tomeasure" double precision, "leftrightoffset" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_locatebetweenelevations"("geometry" "public"."geometry", "fromelevation" double precision, "toelevation" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_locatebetweenelevations"("geometry" "public"."geometry", "fromelevation" double precision, "toelevation" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_locatebetweenelevations"("geometry" "public"."geometry", "fromelevation" double precision, "toelevation" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_locatebetweenelevations"("geometry" "public"."geometry", "fromelevation" double precision, "toelevation" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_longestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_longestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_longestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_longestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_m"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_m"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_m"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_m"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makebox2d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makebox2d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makebox2d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makebox2d"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makeenvelope"(double precision, double precision, double precision, double precision, integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makeenvelope"(double precision, double precision, double precision, double precision, integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makeenvelope"(double precision, double precision, double precision, double precision, integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makeenvelope"(double precision, double precision, double precision, double precision, integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makeline"("public"."geometry"[]) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makeline"("public"."geometry"[]) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makeline"("public"."geometry"[]) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makeline"("public"."geometry"[]) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makeline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makeline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makeline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makeline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makepoint"(double precision, double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makepointm"(double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makepointm"(double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makepointm"(double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makepointm"(double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makepolygon"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makepolygon"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makepolygon"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makepolygon"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makepolygon"("public"."geometry", "public"."geometry"[]) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makepolygon"("public"."geometry", "public"."geometry"[]) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makepolygon"("public"."geometry", "public"."geometry"[]) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makepolygon"("public"."geometry", "public"."geometry"[]) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makevalid"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makevalid"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makevalid"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makevalid"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makevalid"("geom" "public"."geometry", "params" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makevalid"("geom" "public"."geometry", "params" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makevalid"("geom" "public"."geometry", "params" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makevalid"("geom" "public"."geometry", "params" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_maxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_maxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_maxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_maxdistance"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_maximuminscribedcircle"("public"."geometry", OUT "center" "public"."geometry", OUT "nearest" "public"."geometry", OUT "radius" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_maximuminscribedcircle"("public"."geometry", OUT "center" "public"."geometry", OUT "nearest" "public"."geometry", OUT "radius" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_maximuminscribedcircle"("public"."geometry", OUT "center" "public"."geometry", OUT "nearest" "public"."geometry", OUT "radius" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_maximuminscribedcircle"("public"."geometry", OUT "center" "public"."geometry", OUT "nearest" "public"."geometry", OUT "radius" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_memsize"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_memsize"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_memsize"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_memsize"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_minimumboundingcircle"("inputgeom" "public"."geometry", "segs_per_quarter" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_minimumboundingcircle"("inputgeom" "public"."geometry", "segs_per_quarter" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_minimumboundingcircle"("inputgeom" "public"."geometry", "segs_per_quarter" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_minimumboundingcircle"("inputgeom" "public"."geometry", "segs_per_quarter" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_minimumboundingradius"("public"."geometry", OUT "center" "public"."geometry", OUT "radius" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_minimumboundingradius"("public"."geometry", OUT "center" "public"."geometry", OUT "radius" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_minimumboundingradius"("public"."geometry", OUT "center" "public"."geometry", OUT "radius" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_minimumboundingradius"("public"."geometry", OUT "center" "public"."geometry", OUT "radius" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_minimumclearance"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_minimumclearance"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_minimumclearance"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_minimumclearance"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_minimumclearanceline"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_minimumclearanceline"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_minimumclearanceline"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_minimumclearanceline"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mlinefromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mlinefromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mlinefromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mlinefromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mlinefromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mlinefromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mlinefromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mlinefromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mlinefromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mlinefromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mlinefromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mlinefromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mlinefromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mlinefromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mlinefromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mlinefromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mpointfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mpointfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mpointfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mpointfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mpointfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mpointfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mpointfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mpointfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mpointfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mpointfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mpointfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mpointfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mpointfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mpointfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mpointfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mpointfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mpolyfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mpolyfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mpolyfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_mpolyfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_mpolyfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multi"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multi"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multi"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multi"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multilinefromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multilinefromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multilinefromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multilinefromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multilinestringfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multilinestringfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multilinestringfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multilinestringfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multilinestringfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multilinestringfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multilinestringfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multilinestringfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multipointfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multipointfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multipointfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multipointfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multipointfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multipointfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multipointfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multipointfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multipointfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multipointfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multipointfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multipointfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multipolyfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multipolyfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multipolyfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multipolyfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multipolyfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multipolyfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multipolyfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multipolyfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multipolygonfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multipolygonfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multipolygonfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multipolygonfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_multipolygonfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_multipolygonfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_multipolygonfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_multipolygonfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_ndims"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_ndims"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_ndims"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_ndims"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_node"("g" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_node"("g" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_node"("g" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_node"("g" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_normalize"("geom" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_normalize"("geom" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_normalize"("geom" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_normalize"("geom" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_npoints"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_npoints"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_npoints"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_npoints"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_nrings"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_nrings"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_nrings"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_nrings"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_numgeometries"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_numgeometries"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_numgeometries"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_numgeometries"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_numinteriorring"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_numinteriorring"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_numinteriorring"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_numinteriorring"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_numinteriorrings"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_numinteriorrings"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_numinteriorrings"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_numinteriorrings"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_numpatches"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_numpatches"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_numpatches"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_numpatches"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_numpoints"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_numpoints"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_numpoints"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_numpoints"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_offsetcurve"("line" "public"."geometry", "distance" double precision, "params" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_offsetcurve"("line" "public"."geometry", "distance" double precision, "params" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_offsetcurve"("line" "public"."geometry", "distance" double precision, "params" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_offsetcurve"("line" "public"."geometry", "distance" double precision, "params" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_orderingequals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_orderingequals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_orderingequals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_orderingequals"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_orientedenvelope"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_orientedenvelope"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_orientedenvelope"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_orientedenvelope"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_overlaps"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_patchn"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_patchn"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_patchn"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_patchn"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_perimeter"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_perimeter"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_perimeter"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_perimeter"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_perimeter"("geog" "public"."geography", "use_spheroid" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_perimeter"("geog" "public"."geography", "use_spheroid" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_perimeter"("geog" "public"."geography", "use_spheroid" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_perimeter"("geog" "public"."geography", "use_spheroid" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_perimeter2d"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_perimeter2d"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_perimeter2d"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_perimeter2d"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_point"(double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_point"(double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_point"(double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_point"(double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_point"(double precision, double precision, "srid" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_point"(double precision, double precision, "srid" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_point"(double precision, double precision, "srid" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_point"(double precision, double precision, "srid" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointfromgeohash"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointfromgeohash"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointfromgeohash"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointfromgeohash"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointinsidecircle"("public"."geometry", double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointinsidecircle"("public"."geometry", double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointinsidecircle"("public"."geometry", double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointinsidecircle"("public"."geometry", double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointm"("xcoordinate" double precision, "ycoordinate" double precision, "mcoordinate" double precision, "srid" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointm"("xcoordinate" double precision, "ycoordinate" double precision, "mcoordinate" double precision, "srid" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointm"("xcoordinate" double precision, "ycoordinate" double precision, "mcoordinate" double precision, "srid" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointm"("xcoordinate" double precision, "ycoordinate" double precision, "mcoordinate" double precision, "srid" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointn"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointn"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointn"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointn"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointonsurface"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointonsurface"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointonsurface"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointonsurface"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_points"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_points"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_points"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_points"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointz"("xcoordinate" double precision, "ycoordinate" double precision, "zcoordinate" double precision, "srid" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointz"("xcoordinate" double precision, "ycoordinate" double precision, "zcoordinate" double precision, "srid" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointz"("xcoordinate" double precision, "ycoordinate" double precision, "zcoordinate" double precision, "srid" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointz"("xcoordinate" double precision, "ycoordinate" double precision, "zcoordinate" double precision, "srid" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_pointzm"("xcoordinate" double precision, "ycoordinate" double precision, "zcoordinate" double precision, "mcoordinate" double precision, "srid" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_pointzm"("xcoordinate" double precision, "ycoordinate" double precision, "zcoordinate" double precision, "mcoordinate" double precision, "srid" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_pointzm"("xcoordinate" double precision, "ycoordinate" double precision, "zcoordinate" double precision, "mcoordinate" double precision, "srid" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_pointzm"("xcoordinate" double precision, "ycoordinate" double precision, "zcoordinate" double precision, "mcoordinate" double precision, "srid" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polyfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polyfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polyfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polyfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polyfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polyfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polyfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polyfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polyfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polyfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polyfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polyfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polyfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polyfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polyfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polyfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polygon"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polygon"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polygon"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polygon"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polygonfromtext"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polygonfromtext"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polygonfromtext"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polygonfromtext"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polygonfromtext"("text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polygonfromtext"("text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polygonfromtext"("text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polygonfromtext"("text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polygonfromwkb"("bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polygonfromwkb"("bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polygonfromwkb"("bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polygonfromwkb"("bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polygonfromwkb"("bytea", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polygonfromwkb"("bytea", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polygonfromwkb"("bytea", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polygonfromwkb"("bytea", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polygonize"("public"."geometry"[]) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polygonize"("public"."geometry"[]) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polygonize"("public"."geometry"[]) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polygonize"("public"."geometry"[]) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_project"("geog" "public"."geography", "distance" double precision, "azimuth" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_project"("geog" "public"."geography", "distance" double precision, "azimuth" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_project"("geog" "public"."geography", "distance" double precision, "azimuth" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_project"("geog" "public"."geography", "distance" double precision, "azimuth" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_quantizecoordinates"("g" "public"."geometry", "prec_x" integer, "prec_y" integer, "prec_z" integer, "prec_m" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_quantizecoordinates"("g" "public"."geometry", "prec_x" integer, "prec_y" integer, "prec_z" integer, "prec_m" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_quantizecoordinates"("g" "public"."geometry", "prec_x" integer, "prec_y" integer, "prec_z" integer, "prec_m" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_quantizecoordinates"("g" "public"."geometry", "prec_x" integer, "prec_y" integer, "prec_z" integer, "prec_m" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_reduceprecision"("geom" "public"."geometry", "gridsize" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_reduceprecision"("geom" "public"."geometry", "gridsize" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_reduceprecision"("geom" "public"."geometry", "gridsize" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_reduceprecision"("geom" "public"."geometry", "gridsize" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_relate"("geom1" "public"."geometry", "geom2" "public"."geometry", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_relatematch"("text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_relatematch"("text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_relatematch"("text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_relatematch"("text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_removepoint"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_removepoint"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_removepoint"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_removepoint"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_removerepeatedpoints"("geom" "public"."geometry", "tolerance" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_removerepeatedpoints"("geom" "public"."geometry", "tolerance" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_removerepeatedpoints"("geom" "public"."geometry", "tolerance" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_removerepeatedpoints"("geom" "public"."geometry", "tolerance" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_reverse"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_reverse"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_reverse"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_reverse"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision, "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision, "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision, "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision, "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_rotate"("public"."geometry", double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_rotatex"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_rotatex"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_rotatex"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_rotatex"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_rotatey"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_rotatey"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_rotatey"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_rotatey"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_rotatez"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_rotatez"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_rotatez"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_rotatez"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", "public"."geometry", "origin" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", "public"."geometry", "origin" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", "public"."geometry", "origin" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", "public"."geometry", "origin" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_scale"("public"."geometry", double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_scroll"("public"."geometry", "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_scroll"("public"."geometry", "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_scroll"("public"."geometry", "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_scroll"("public"."geometry", "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_segmentize"("geog" "public"."geography", "max_segment_length" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_segmentize"("geog" "public"."geography", "max_segment_length" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_segmentize"("geog" "public"."geography", "max_segment_length" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_segmentize"("geog" "public"."geography", "max_segment_length" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_segmentize"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_segmentize"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_segmentize"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_segmentize"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_seteffectivearea"("public"."geometry", double precision, integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_seteffectivearea"("public"."geometry", double precision, integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_seteffectivearea"("public"."geometry", double precision, integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_seteffectivearea"("public"."geometry", double precision, integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_setpoint"("public"."geometry", integer, "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_setpoint"("public"."geometry", integer, "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_setpoint"("public"."geometry", integer, "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_setpoint"("public"."geometry", integer, "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_setsrid"("geog" "public"."geography", "srid" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_setsrid"("geog" "public"."geography", "srid" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_setsrid"("geog" "public"."geography", "srid" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_setsrid"("geog" "public"."geography", "srid" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_setsrid"("geom" "public"."geometry", "srid" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_setsrid"("geom" "public"."geometry", "srid" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_setsrid"("geom" "public"."geometry", "srid" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_setsrid"("geom" "public"."geometry", "srid" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_sharedpaths"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_sharedpaths"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_sharedpaths"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_sharedpaths"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_shiftlongitude"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_shiftlongitude"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_shiftlongitude"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_shiftlongitude"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_shortestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_shortestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_shortestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_shortestline"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_simplify"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_simplify"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_simplify"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_simplify"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_simplify"("public"."geometry", double precision, boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_simplify"("public"."geometry", double precision, boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_simplify"("public"."geometry", double precision, boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_simplify"("public"."geometry", double precision, boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_simplifypolygonhull"("geom" "public"."geometry", "vertex_fraction" double precision, "is_outer" boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_simplifypolygonhull"("geom" "public"."geometry", "vertex_fraction" double precision, "is_outer" boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_simplifypolygonhull"("geom" "public"."geometry", "vertex_fraction" double precision, "is_outer" boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_simplifypolygonhull"("geom" "public"."geometry", "vertex_fraction" double precision, "is_outer" boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_simplifypreservetopology"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_simplifypreservetopology"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_simplifypreservetopology"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_simplifypreservetopology"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_simplifyvw"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_simplifyvw"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_simplifyvw"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_simplifyvw"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_snap"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_snap"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_snap"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_snap"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision, double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision, double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision, double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("public"."geometry", double precision, double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision, double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision, double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision, double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_snaptogrid"("geom1" "public"."geometry", "geom2" "public"."geometry", double precision, double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_split"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_split"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_split"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_split"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_square"("size" double precision, "cell_i" integer, "cell_j" integer, "origin" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_square"("size" double precision, "cell_i" integer, "cell_j" integer, "origin" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_square"("size" double precision, "cell_i" integer, "cell_j" integer, "origin" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_square"("size" double precision, "cell_i" integer, "cell_j" integer, "origin" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_squaregrid"("size" double precision, "bounds" "public"."geometry", OUT "geom" "public"."geometry", OUT "i" integer, OUT "j" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_squaregrid"("size" double precision, "bounds" "public"."geometry", OUT "geom" "public"."geometry", OUT "i" integer, OUT "j" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_squaregrid"("size" double precision, "bounds" "public"."geometry", OUT "geom" "public"."geometry", OUT "i" integer, OUT "j" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_squaregrid"("size" double precision, "bounds" "public"."geometry", OUT "geom" "public"."geometry", OUT "i" integer, OUT "j" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_srid"("geog" "public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_srid"("geog" "public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_srid"("geog" "public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_srid"("geog" "public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_srid"("geom" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_srid"("geom" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_srid"("geom" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_srid"("geom" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_startpoint"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_startpoint"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_startpoint"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_startpoint"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_subdivide"("geom" "public"."geometry", "maxvertices" integer, "gridsize" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_subdivide"("geom" "public"."geometry", "maxvertices" integer, "gridsize" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_subdivide"("geom" "public"."geometry", "maxvertices" integer, "gridsize" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_subdivide"("geom" "public"."geometry", "maxvertices" integer, "gridsize" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_summary"("public"."geography") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_summary"("public"."geography") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_summary"("public"."geography") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_summary"("public"."geography") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_summary"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_summary"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_summary"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_summary"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_swapordinates"("geom" "public"."geometry", "ords" "cstring") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_swapordinates"("geom" "public"."geometry", "ords" "cstring") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_swapordinates"("geom" "public"."geometry", "ords" "cstring") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_swapordinates"("geom" "public"."geometry", "ords" "cstring") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_symdifference"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_symdifference"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_symdifference"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_symdifference"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_symmetricdifference"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_symmetricdifference"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_symmetricdifference"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_symmetricdifference"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_tileenvelope"("zoom" integer, "x" integer, "y" integer, "bounds" "public"."geometry", "margin" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_tileenvelope"("zoom" integer, "x" integer, "y" integer, "bounds" "public"."geometry", "margin" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_tileenvelope"("zoom" integer, "x" integer, "y" integer, "bounds" "public"."geometry", "margin" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_tileenvelope"("zoom" integer, "x" integer, "y" integer, "bounds" "public"."geometry", "margin" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_touches"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_touches"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_touches"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_touches"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_transform"("public"."geometry", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_transform"("public"."geometry", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_transform"("public"."geometry", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_transform"("public"."geometry", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "to_proj" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "to_proj" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "to_proj" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "to_proj" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "from_proj" "text", "to_srid" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "from_proj" "text", "to_srid" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "from_proj" "text", "to_srid" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "from_proj" "text", "to_srid" integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "from_proj" "text", "to_proj" "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "from_proj" "text", "to_proj" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "from_proj" "text", "to_proj" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_transform"("geom" "public"."geometry", "from_proj" "text", "to_proj" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_translate"("public"."geometry", double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_translate"("public"."geometry", double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_translate"("public"."geometry", double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_translate"("public"."geometry", double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_translate"("public"."geometry", double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_translate"("public"."geometry", double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_translate"("public"."geometry", double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_translate"("public"."geometry", double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_transscale"("public"."geometry", double precision, double precision, double precision, double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_transscale"("public"."geometry", double precision, double precision, double precision, double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_transscale"("public"."geometry", double precision, double precision, double precision, double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_transscale"("public"."geometry", double precision, double precision, double precision, double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_triangulatepolygon"("g1" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_triangulatepolygon"("g1" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_triangulatepolygon"("g1" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_triangulatepolygon"("g1" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_unaryunion"("public"."geometry", "gridsize" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_unaryunion"("public"."geometry", "gridsize" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_unaryunion"("public"."geometry", "gridsize" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_unaryunion"("public"."geometry", "gridsize" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry"[]) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry"[]) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry"[]) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry"[]) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_union"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_union"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_union"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_union"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_union"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_union"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_union"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_union"("geom1" "public"."geometry", "geom2" "public"."geometry", "gridsize" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_voronoilines"("g1" "public"."geometry", "tolerance" double precision, "extend_to" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_voronoilines"("g1" "public"."geometry", "tolerance" double precision, "extend_to" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_voronoilines"("g1" "public"."geometry", "tolerance" double precision, "extend_to" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_voronoilines"("g1" "public"."geometry", "tolerance" double precision, "extend_to" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_voronoipolygons"("g1" "public"."geometry", "tolerance" double precision, "extend_to" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_voronoipolygons"("g1" "public"."geometry", "tolerance" double precision, "extend_to" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_voronoipolygons"("g1" "public"."geometry", "tolerance" double precision, "extend_to" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_voronoipolygons"("g1" "public"."geometry", "tolerance" double precision, "extend_to" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_within"("geom1" "public"."geometry", "geom2" "public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_wkbtosql"("wkb" "bytea") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_wkbtosql"("wkb" "bytea") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_wkbtosql"("wkb" "bytea") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_wkbtosql"("wkb" "bytea") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_wkttosql"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_wkttosql"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_wkttosql"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_wkttosql"("text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_wrapx"("geom" "public"."geometry", "wrap" double precision, "move" double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_wrapx"("geom" "public"."geometry", "wrap" double precision, "move" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_wrapx"("geom" "public"."geometry", "wrap" double precision, "move" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_wrapx"("geom" "public"."geometry", "wrap" double precision, "move" double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_x"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_x"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_x"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_x"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_xmax"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_xmax"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_xmax"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_xmax"("public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_xmin"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_xmin"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_xmin"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_xmin"("public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_y"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_y"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_y"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_y"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_ymax"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_ymax"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_ymax"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_ymax"("public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_ymin"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_ymin"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_ymin"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_ymin"("public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_z"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_z"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_z"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_z"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_zmax"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_zmax"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_zmax"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_zmax"("public"."box3d") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_zmflag"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_zmflag"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_zmflag"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_zmflag"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_zmin"("public"."box3d") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_zmin"("public"."box3d") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_zmin"("public"."box3d") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_zmin"("public"."box3d") TO "service_role";
 
 
 
@@ -27728,16 +24495,105 @@ GRANT ALL ON FUNCTION "public"."track_treatment_view"("p_treatment_id" "uuid", "
 
 
 
+GRANT ALL ON FUNCTION "public"."trigger_application_milestone"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_application_milestone"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_application_milestone"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_application_status_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_application_status_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_application_status_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_application_withdrawn_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_application_withdrawn_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_application_withdrawn_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_applications_closed_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_applications_closed_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_applications_closed_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_credits_low_warning"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_credits_low_warning"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_credits_low_warning"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_gig_cancelled_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_gig_cancelled_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_gig_cancelled_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_gig_completed_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_gig_completed_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_gig_completed_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_gig_published_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_gig_published_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_gig_published_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_message_received_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_message_received_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_message_received_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_new_application_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_new_application_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_new_application_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_preset_listing_status_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_preset_listing_status_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_preset_listing_status_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_preset_purchase_confirmation_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_preset_purchase_confirmation_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_preset_purchase_confirmation_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_preset_review_received_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_preset_review_received_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_preset_review_received_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_preset_sold_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_preset_sold_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_preset_sold_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_subscription_change_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_subscription_change_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_subscription_change_email"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."trigger_welcome_email"() TO "anon";
+GRANT ALL ON FUNCTION "public"."trigger_welcome_email"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."trigger_welcome_email"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."unblock_user"("blocked_profile_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."unblock_user"("blocked_profile_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."unblock_user"("blocked_profile_id" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."unlockrows"("text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."unlockrows"("text") TO "anon";
-GRANT ALL ON FUNCTION "public"."unlockrows"("text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."unlockrows"("text") TO "service_role";
 
 
 
@@ -27816,6 +24672,12 @@ GRANT ALL ON FUNCTION "public"."update_predefined_updated_at_column"() TO "servi
 GRANT ALL ON FUNCTION "public"."update_preset_images_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_preset_images_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_preset_images_updated_at"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."update_preset_latest_promoted_image"() TO "anon";
+GRANT ALL ON FUNCTION "public"."update_preset_latest_promoted_image"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_preset_latest_promoted_image"() TO "service_role";
 
 
 
@@ -27933,27 +24795,6 @@ GRANT ALL ON FUNCTION "public"."update_verification_updated_at"() TO "service_ro
 
 
 
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"(character varying, character varying, integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"(character varying, character varying, integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"(character varying, character varying, integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"(character varying, character varying, integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"(character varying, character varying, character varying, integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"(character varying, character varying, character varying, integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"(character varying, character varying, character varying, integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"(character varying, character varying, character varying, integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"("catalogn_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid_in" integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"("catalogn_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid_in" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"("catalogn_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid_in" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."updategeometrysrid"("catalogn_name" character varying, "schema_name" character varying, "table_name" character varying, "column_name" character varying, "new_srid_in" integer) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."upsert_user_settings"("user_uuid" "uuid", "settings_data" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."upsert_user_settings"("user_uuid" "uuid", "settings_data" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."upsert_user_settings"("user_uuid" "uuid", "settings_data" "jsonb") TO "service_role";
@@ -28020,6 +24861,12 @@ GRANT ALL ON FUNCTION "public"."validate_message_before_insert"() TO "service_ro
 
 
 
+GRANT ALL ON FUNCTION "public"."validate_message_permission"("sender_user_id" "uuid", "recipient_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."validate_message_permission"("sender_user_id" "uuid", "recipient_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."validate_message_permission"("sender_user_id" "uuid", "recipient_user_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."validate_preset_style"("style_name" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."validate_preset_style"("style_name" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."validate_preset_style"("style_name" "text") TO "service_role";
@@ -28059,168 +24906,6 @@ GRANT ALL ON FUNCTION "public"."verify_preset_image"("image_id" "uuid", "verific
 GRANT ALL ON FUNCTION "public"."verify_user_age"("p_user_id" "uuid", "p_date_of_birth" "date", "p_method" "text", "p_verified_by" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."verify_user_age"("p_user_id" "uuid", "p_date_of_birth" "date", "p_method" "text", "p_verified_by" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."verify_user_age"("p_user_id" "uuid", "p_date_of_birth" "date", "p_method" "text", "p_verified_by" "uuid") TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-GRANT ALL ON FUNCTION "public"."st_3dextent"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_3dextent"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_3dextent"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_3dextent"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement", boolean) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement", boolean) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement", boolean) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement", boolean) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement", boolean, "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement", boolean, "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement", boolean, "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asflatgeobuf"("anyelement", boolean, "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgeobuf"("anyelement") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgeobuf"("anyelement") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgeobuf"("anyelement") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgeobuf"("anyelement") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asgeobuf"("anyelement", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asgeobuf"("anyelement", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asgeobuf"("anyelement", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asgeobuf"("anyelement", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer, "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer, "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer, "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer, "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer, "text", "text") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer, "text", "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer, "text", "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_asmvt"("anyelement", "text", integer, "text", "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_clusterintersecting"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_clusterintersecting"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_clusterintersecting"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_clusterintersecting"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_clusterwithin"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_clusterwithin"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_clusterwithin"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_clusterwithin"("public"."geometry", double precision) TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_collect"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_collect"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_collect"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_collect"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_extent"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_extent"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_extent"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_extent"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_makeline"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_makeline"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_makeline"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_makeline"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_memcollect"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_memcollect"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_memcollect"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_memcollect"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_memunion"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_memunion"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_memunion"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_memunion"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_polygonize"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_polygonize"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_polygonize"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_polygonize"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry") TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry") TO "anon";
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry", double precision) TO "postgres";
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry", double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry", double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."st_union"("public"."geometry", double precision) TO "service_role";
-
-
-
-
-
-
 
 
 
@@ -28500,6 +25185,12 @@ GRANT ALL ON TABLE "public"."domain_events" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."email_logs" TO "anon";
+GRANT ALL ON TABLE "public"."email_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."email_logs" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."enhancement_tasks" TO "anon";
 GRANT ALL ON TABLE "public"."enhancement_tasks" TO "authenticated";
 GRANT ALL ON TABLE "public"."enhancement_tasks" TO "service_role";
@@ -28575,6 +25266,12 @@ GRANT ALL ON TABLE "public"."featured_preset_requests" TO "service_role";
 GRANT ALL ON TABLE "public"."foreground_elements" TO "anon";
 GRANT ALL ON TABLE "public"."foreground_elements" TO "authenticated";
 GRANT ALL ON TABLE "public"."foreground_elements" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."gig_invitations" TO "anon";
+GRANT ALL ON TABLE "public"."gig_invitations" TO "authenticated";
+GRANT ALL ON TABLE "public"."gig_invitations" TO "service_role";
 
 
 
@@ -29316,12 +26013,6 @@ GRANT ALL ON TABLE "public"."working_time_preferences" TO "service_role";
 
 
 
-
-
-
-
-
-
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
@@ -29346,30 +26037,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

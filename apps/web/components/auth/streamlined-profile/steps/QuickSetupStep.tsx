@@ -36,7 +36,7 @@ export function QuickSetupStep() {
           Availability Status
         </Label>
         <Select
-          value={profileData.availabilityStatus || 'available'}
+          value={profileData.availabilityStatus || 'Available'}
           onValueChange={(value) => setProfileData(prev => ({ ...prev, availabilityStatus: value }))}
           disabled={optionsLoading}
         >

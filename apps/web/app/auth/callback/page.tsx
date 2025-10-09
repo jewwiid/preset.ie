@@ -180,7 +180,7 @@ function AuthCallbackContent() {
         // Check for existing profile - no artificial timeout
         const { data: profile, error: profileError } = await supabase!
           .from('users_profile')
-          .select('*')
+          .select('id, display_name, handle, account_status')
           .eq('user_id', user.id)
           .maybeSingle() // Use maybeSingle instead of single to avoid error on no rows
   

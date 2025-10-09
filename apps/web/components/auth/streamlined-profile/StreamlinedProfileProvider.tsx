@@ -198,9 +198,9 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
     try {
       const { data: profile, error } = await supabase
         .from('users_profile')
-        .select('*')
+        .select('id')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
       
       if (error && error.code !== 'PGRST116') {
         if (error.code === 'PGRST301' || error.message?.includes('JWT')) {
@@ -341,6 +341,8 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
 
       let profileError = null
 
+      console.log('📝 Profile data to save:', profileDataToSave)
+
       if (existingProfile) {
         const { error } = await supabase
           .from('users_profile')
@@ -348,7 +350,7 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
           .eq('user_id', user.id)
         profileError = error
       } else {
-        const { error } = await supabase
+        const { error, data } = await supabase
           .from('users_profile')
           .insert({
             user_id: user.id,
@@ -357,12 +359,22 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
             subscription_status: 'ACTIVE',
             created_at: new Date().toISOString()
           })
+          .select()
         profileError = error
+        console.log('📝 Insert result:', { error, data })
       }
 
       if (profileError) {
-        console.error('Profile save error:', profileError)
-        setError('Failed to save profile. Please try again.')
+        console.error('❌ Profile save error (object):', profileError)
+        console.error('❌ Profile save error (JSON):', JSON.stringify(profileError, null, 2))
+        console.error('❌ Error message:', profileError.message)
+        console.error('❌ Error details:', profileError.details)
+        console.error('❌ Error hint:', profileError.hint)
+        console.error('❌ Error code:', profileError.code)
+
+        // Try to extract meaningful error info
+        const errorMsg = profileError.message || profileError.details || profileError.hint || 'Unknown error'
+        setError(`Failed to save profile: ${errorMsg}`)
         setLoading(false)
         return
       }

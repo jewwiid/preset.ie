@@ -73,12 +73,12 @@ const MatchmakingFilters: React.FC<MatchmakingFiltersProps> = ({
   ]
 
   const availabilityStatuses = [
-    'available',
-    'busy',
-    'unavailable',
-    'limited',
-    'weekends_only',
-    'weekdays_only'
+    'Available',
+    'Busy',
+    'Unavailable',
+    'Limited',
+    'Weekends Only',
+    'Weekdays Only'
   ]
 
   const handleFilterChange = (key: keyof MatchmakingFiltersType, value: any) => {

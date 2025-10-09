@@ -42,7 +42,8 @@ export default function EmailPreferencesPage() {
   }, [user]);
 
   const fetchPreferences = async () => {
-    if (!user || !supabase) return;
+    if (!user) return;
+    if (!supabase) return;
 
     try {
       const { data, error } = await supabase
@@ -74,7 +75,15 @@ export default function EmailPreferencesPage() {
   };
 
   const savePreferences = async () => {
-    if (!user || !supabase) return;
+    if (!user) return;
+    if (!supabase) {
+      showFeedback({
+        type: 'error',
+        title: 'Error',
+        message: 'Database connection not available'
+      });
+      return;
+    }
 
     setSaving(true);
     try {

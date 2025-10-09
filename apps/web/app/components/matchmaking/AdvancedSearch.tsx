@@ -114,12 +114,12 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   ]
 
   const availabilityStatuses = [
-    'available',
-    'busy',
-    'unavailable',
-    'limited',
-    'weekends_only',
-    'weekdays_only'
+    'Available',
+    'Busy',
+    'Unavailable',
+    'Limited',
+    'Weekends Only',
+    'Weekdays Only'
   ]
 
   useEffect(() => {

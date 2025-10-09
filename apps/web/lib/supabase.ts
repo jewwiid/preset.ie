@@ -16,6 +16,11 @@ export const supabase = supabaseUrl && supabaseAnonKey
         flowType: 'pkce',
         debug: process.env.NODE_ENV === 'development' // Enable debug only in development
       },
+      global: {
+        headers: {
+          'Prefer': 'return=representation'
+        }
+      },
       realtime: {
         params: {
           eventsPerSecond: 10
