@@ -74,7 +74,7 @@ export default function EmailPreferencesPage() {
   };
 
   const savePreferences = async () => {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     setSaving(true);
     try {
