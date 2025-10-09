@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,7 +10,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/verification-error?reason=missing-token', request.url));
     }
 
-    const supabase = await createClient();
+    // Create Supabase admin client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase configuration');
+      return NextResponse.redirect(new URL('/auth/verification-error?reason=server-error', request.url));
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
     // Verify the token format (userId:timestamp:randomString)
     const [userId, timestamp, signature] = token.split(':');
@@ -64,7 +77,7 @@ export async function GET(request: NextRequest) {
       const metadata = user.user_metadata;
       const role = metadata.role || 'TALENT';
       
-      await supabase
+      const { error: insertError } = await supabase
         .from('users_profile')
         .insert({
           user_id: userId,
@@ -78,16 +91,21 @@ export async function GET(request: NextRequest) {
           email_verified: true,
           email_verified_at: new Date().toISOString(),
         });
+
+      if (insertError) {
+        console.error('Error creating profile:', insertError);
+        return NextResponse.redirect(new URL('/auth/verification-error?reason=server-error', request.url));
+      }
     }
 
     // Welcome email will be automatically sent by the database trigger
     // when profile is created with email_verified = true
 
-    return NextResponse.redirect(new URL('/auth/verification-success', request.url));
+    // Redirect to profile completion to add more details
+    return NextResponse.redirect(new URL('/onboarding/complete-profile', request.url));
 
   } catch (error) {
     console.error('Verification error:', error);
     return NextResponse.redirect(new URL('/auth/verification-error?reason=server-error', request.url));
   }
 }
-
