@@ -183,19 +183,16 @@ export async function PATCH(
 ) {
   const { id } = await params
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    // First verify admin with route handler client
+    const authSupabase = createRouteHandlerClient({ cookies })
 
-    // Check if user is admin
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Verify admin role
-    const { data: profile } = await supabase
+    const { data: profile } = await authSupabase
       .from('users_profile')
       .select('role_flags')
       .eq('user_id', user.id)
@@ -204,6 +201,12 @@ export async function PATCH(
     if (!profile?.role_flags?.includes('ADMIN')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
+
+    // Now use service role client for admin operations
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
     const body = await request.json()
     const { role_flags, subscription_tier, notes } = body

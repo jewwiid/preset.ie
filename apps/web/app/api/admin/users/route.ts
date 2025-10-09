@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 // GET /api/admin/users - Search/filter users
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    // First verify admin with route handler client
+    const authSupabase = createRouteHandlerClient({ cookies })
 
-    // Check if user is admin
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await authSupabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Verify admin role
-    const { data: profile } = await supabase
+    const { data: profile } = await authSupabase
       .from('users_profile')
       .select('role_flags')
       .eq('user_id', user.id)
@@ -25,6 +24,12 @@ export async function GET(request: NextRequest) {
     if (!profile?.role_flags?.includes('ADMIN')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
+
+    // Now use service role client for admin operations
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
 
     // Parse query parameters
     const searchParams = request.nextUrl.searchParams

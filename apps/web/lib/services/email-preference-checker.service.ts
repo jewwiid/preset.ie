@@ -4,7 +4,7 @@
  * Integrates notification_preferences table with Plunk email system
  */
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { getPlunkService } from '@/../../packages/adapters/src/external/PlunkService';
 
 export type EmailCategory = 
@@ -96,9 +96,10 @@ export class EmailPreferenceChecker {
   }> {
     try {
       const supabase = await createClient();
+      const adminClient = createAdminClient();
 
-      // Get user email from auth
-      const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(userId);
+      // Get user email from auth using admin client
+      const { data: { user }, error: userError } = await adminClient.auth.admin.getUserById(userId);
       
       if (userError || !user?.email) {
         return { email: null, canSend: false, preferences: null };
@@ -129,6 +130,7 @@ export class EmailPreferenceChecker {
    */
   async unsubscribeFromCategory(userId: string, category: EmailCategory): Promise<void> {
     const supabase = await createClient();
+    const adminClient = createAdminClient();
 
     const categoryMap: Record<EmailCategory, string> = {
       gig: 'gig_notifications',
@@ -151,7 +153,7 @@ export class EmailPreferenceChecker {
       .eq('user_id', userId);
 
     // Also unsubscribe in Plunk
-    const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+    const { data: { user } } = await adminClient.auth.admin.getUserById(userId);
     if (user?.email) {
       const plunk = getPlunkService();
       await plunk.trackEvent({
@@ -167,6 +169,7 @@ export class EmailPreferenceChecker {
    */
   async unsubscribeFromAllEmails(userId: string): Promise<void> {
     const supabase = await createClient();
+    const adminClient = createAdminClient();
 
     // Disable all emails in database
     await supabase
@@ -175,7 +178,7 @@ export class EmailPreferenceChecker {
       .eq('user_id', userId);
 
     // Unsubscribe in Plunk
-    const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+    const { data: { user } } = await adminClient.auth.admin.getUserById(userId);
     if (user?.email) {
       const plunk = getPlunkService();
       await plunk.unsubscribeContact(user.email);
@@ -187,6 +190,7 @@ export class EmailPreferenceChecker {
    */
   async resubscribeToEmails(userId: string): Promise<void> {
     const supabase = await createClient();
+    const adminClient = createAdminClient();
 
     await supabase
       .from('notification_preferences')
@@ -194,7 +198,7 @@ export class EmailPreferenceChecker {
       .eq('user_id', userId);
 
     // Re-subscribe in Plunk
-    const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+    const { data: { user } } = await adminClient.auth.admin.getUserById(userId);
     if (user?.email) {
       const plunk = getPlunkService();
       await plunk.subscribeContact(user.email, {
