@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Users, MapPin, Star, ExternalLink } from 'lucide-react'
+import { Users, MapPin, Star, ExternalLink, CheckCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
 
@@ -31,10 +31,30 @@ export default function SimilarTalentSlim({ gigId, className = "" }: SimilarTale
   const router = useRouter()
   const [talent, setTalent] = useState<TalentProfile[]>([])
   const [loading, setLoading] = useState(true)
+  const [applicantIds, setApplicantIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetchSimilarTalent()
+    fetchApplicants()
   }, [gigId])
+
+  const fetchApplicants = async () => {
+    try {
+      if (!supabase) return
+
+      // Fetch all applicants for this gig
+      const { data, error } = await supabase
+        .from('applications')
+        .select('applicant_user_id')
+        .eq('gig_id', gigId)
+
+      if (!error && data) {
+        setApplicantIds(new Set(data.map(app => app.applicant_user_id)))
+      }
+    } catch (error) {
+      console.error('Error fetching applicants:', error)
+    }
+  }
 
   const fetchSimilarTalent = async () => {
     try {
@@ -167,9 +187,20 @@ export default function SimilarTalentSlim({ gigId, className = "" }: SimilarTale
                   </AvatarFallback>
                 </Avatar>
 
+                {/* Applied Indicator - Top Right */}
+                {applicantIds.has(profile.id) && (
+                  <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1 shadow-lg ring-2 ring-background">
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  </div>
+                )}
+
                 {/* Compatibility Badge - Overlay on bottom */}
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-                  <Badge className="text-xs font-bold px-2 py-1 shadow-lg bg-primary text-primary-foreground">
+                  <Badge className={`text-xs font-bold px-2 py-1 shadow-lg ${
+                    applicantIds.has(profile.id) 
+                      ? 'bg-green-500 text-white' 
+                      : 'bg-primary text-primary-foreground'
+                  }`}>
                     {profile.compatibility_score}%
                   </Badge>
                 </div>

@@ -67,8 +67,8 @@ export function VerificationQueue() {
   }
 
   const updateVerificationStatus = async (
-    verificationId: string, 
-    newStatus: 'approved' | 'rejected', 
+    verificationId: string,
+    newStatus: 'approved' | 'rejected',
     rejectionReason?: string
   ) => {
     try {
@@ -86,6 +86,20 @@ export function VerificationQueue() {
         return
       }
 
+      const verification = verifications.find(v => v.id === verificationId)
+      if (!verification) {
+        console.error('Verification not found')
+        return
+      }
+
+      // Get current admin user
+      const { data: { user: admin } } = await supabase.auth.getUser()
+      if (!admin) {
+        console.error('Admin user not authenticated')
+        return
+      }
+
+      // Update verification request status
       const { error } = await supabase
         .from('verification_requests')
         .update(updateData)
@@ -93,21 +107,77 @@ export function VerificationQueue() {
 
       if (error) throw error
 
-      // Update user profile if approved
+      // If approved, issue the appropriate verification badge
       if (newStatus === 'approved') {
-        const verification = verifications.find(v => v.id === verificationId)
-        if (verification) {
-          const { error: profileError } = await supabase
-            .from('users_profile')
-            .update({ 
-              role_flags: supabase.rpc('array_append_if_not_exists', { 
-                arr: 'role_flags', 
-                elem: 'VERIFIED_ID' 
-              })
-            })
-            .eq('user_id', verification.user_id)
+        // Determine badge type from verification type
+        const badgeTypeMap: Record<string, string> = {
+          'age': 'verified_identity',
+          'identity': 'verified_identity',
+          'professional': 'verified_professional',
+          'business': 'verified_business'
+        }
 
-          if (profileError) console.error('Error updating profile:', profileError)
+        const badgeType = badgeTypeMap[verification.verification_type] || 'verified_identity'
+
+        // First, revoke any existing badge of the same type
+        await supabase
+          .from('verification_badges')
+          .update({
+            revoked_at: new Date().toISOString(),
+            revoked_by: admin.id,
+            revoke_reason: 'Superseded by new verification'
+          })
+          .eq('user_id', verification.user_id)
+          .eq('badge_type', badgeType)
+          .is('revoked_at', null)
+
+        // Issue new badge
+        const { error: badgeError } = await supabase
+          .from('verification_badges')
+          .insert({
+            user_id: verification.user_id,
+            badge_type: badgeType,
+            verification_request_id: verificationId,
+            issued_by: admin.id,
+            issued_at: new Date().toISOString()
+          })
+
+        if (badgeError) {
+          console.error('Error issuing badge:', badgeError)
+        }
+
+        // Update users_profile.verified_id for backward compatibility
+        const { error: profileError } = await supabase
+          .from('users_profile')
+          .update({ verified_id: true })
+          .eq('user_id', verification.user_id)
+
+        if (profileError) console.error('Error updating profile:', profileError)
+      }
+
+      // GDPR Compliance: Delete verification documents after review
+      if (verification.document_urls && verification.document_urls.length > 0) {
+        console.log('Deleting verification documents for GDPR compliance...')
+
+        for (const documentPath of verification.document_urls) {
+          try {
+            // Extract the path from the full URL if needed
+            const path = documentPath.includes('verification-documents/')
+              ? documentPath.split('verification-documents/')[1]
+              : documentPath
+
+            const { error: deleteError } = await supabase.storage
+              .from('verification-documents')
+              .remove([path])
+
+            if (deleteError) {
+              console.error('Error deleting document:', deleteError)
+            } else {
+              console.log('Successfully deleted document:', path)
+            }
+          } catch (deleteErr) {
+            console.error('Error in document deletion:', deleteErr)
+          }
         }
       }
 

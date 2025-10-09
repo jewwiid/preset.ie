@@ -25,8 +25,36 @@ export async function GET(request: NextRequest) {
     }
 
     if (!images || images.length === 0) {
-      console.log('No images found, returning empty array');
-      return NextResponse.json([]);
+      console.log('No playground_gallery images found, falling back to platform_images');
+
+      // Fallback to platform_images if no user-generated content
+      const { data: platformImages, error: platformError } = await supabase
+        .from('platform_images')
+        .select('id, image_url, title, alt_text, category')
+        .not('image_url', 'is', null)
+        .limit(parseInt(limit));
+
+      if (platformError) {
+        console.error('Error fetching platform images:', platformError);
+        return NextResponse.json([]);
+      }
+
+      const fallbackData = (platformImages || []).map(image => ({
+        id: image.id,
+        result_image_url: image.image_url,
+        title: image.title || 'Creative Work',
+        description: image.alt_text || '',
+        tags: [image.category].filter(Boolean),
+        created_at: new Date().toISOString(),
+        user_id: null,
+        users_profile: {
+          display_name: 'Preset Platform',
+          handle: 'preset',
+          verified_id: true
+        }
+      }));
+
+      return NextResponse.json(fallbackData);
     }
 
     // Get unique user IDs
@@ -35,7 +63,7 @@ export async function GET(request: NextRequest) {
     // Fetch user profiles
     const { data: profiles, error: profilesError } = await supabase
       .from('users_profile')
-      .select('user_id, display_name, handle')
+      .select('user_id, display_name, handle, verified_id')
       .in('user_id', userIds);
 
     if (profilesError) {

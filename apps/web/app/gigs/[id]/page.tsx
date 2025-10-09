@@ -157,6 +157,7 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
     if (!supabase) return
 
     try {
+      // Fetch both ACCEPTED and PENDING applications (invitation acceptances)
       const { data, error, count } = await supabase
         .from('applications')
         .select(`
@@ -169,7 +170,7 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
           )
         `, { count: 'exact' })
         .eq('gig_id', gigId)
-        .eq('status', 'ACCEPTED')
+        .in('status', ['ACCEPTED', 'PENDING'])
         .order('updated_at', { ascending: false })
 
       if (error) throw error

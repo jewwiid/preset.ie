@@ -194,28 +194,28 @@ export function ProfileContentEnhanced() {
   // Overview Cards Data (excluding Profile Completion which is now a full-width card)
   const overviewCards = [
     {
-      title: 'Total Gigs',
-      value: stats.totalGigs.toString(),
-      icon: Briefcase,
-      color: 'bg-primary',
-      bgColor: 'bg-primary/10',
-      description: 'Gigs you\'ve posted or applied to'
-    },
-    {
       title: 'Showcases',
       value: stats.totalShowcases.toString(),
       icon: Camera,
       color: 'bg-primary',
-      bgColor: 'bg-primary/10',
-      description: 'Portfolio showcases created'
+      bgColor: 'bg-card',
+      description: 'Portfolio showcases'
     },
     {
-      title: 'Rating',
-      value: userRating ? userRating.average.toFixed(1) : '0',
-      icon: Star,
+      title: 'Gigs Created',
+      value: stats.totalGigs.toString(),
+      icon: Briefcase,
       color: 'bg-primary',
-      bgColor: 'bg-primary/10',
-      description: userRating ? `Based on ${userRating.total} review${userRating.total !== 1 ? 's' : ''}` : 'No ratings yet'
+      bgColor: 'bg-card',
+      description: 'Gigs you\'ve posted'
+    },
+    {
+      title: 'Years Experience',
+      value: profile?.years_experience?.toString() || '0',
+      icon: Award,
+      color: 'bg-primary',
+      bgColor: 'bg-card',
+      description: 'Professional experience'
     }
   ]
 
@@ -531,18 +531,12 @@ export function ProfileContentEnhanced() {
       case 'professional':
         return (
           <div className="space-y-6">
-            {/* Overview Cards */}
+            {/* Overview Cards - Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {overviewCards.map((card, index) => (
-                <div key={index} className={`${card.bgColor} rounded-xl p-6 border border-border hover:shadow-lg transition-all duration-200`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center`}>
-                      <card.icon className="w-6 h-6 text-primary-foreground" />
-                    </div>
-                    <span className="text-2xl font-bold text-foreground">{card.value}</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-1">{card.title}</h3>
-                  <p className="text-sm text-muted-foreground">{card.description}</p>
+                <div key={index} className="bg-card rounded-lg border p-6 text-center hover:shadow-md transition-shadow">
+                  <div className="text-3xl font-bold text-foreground mb-1">{card.value}</div>
+                  <div className="text-muted-foreground text-sm">{card.title}</div>
                 </div>
               ))}
             </div>
@@ -819,18 +813,12 @@ export function ProfileContentEnhanced() {
             {/* Profile Completion Card - Full Width */}
             <ProfileCompletionCard />
 
-            {/* Overview Cards */}
+            {/* Overview Cards - Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {overviewCards.map((card, index) => (
-                <div key={index} className={`${card.bgColor} rounded-xl p-6 border border-border hover:shadow-lg transition-all duration-200`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center`}>
-                      <card.icon className="w-6 h-6 text-primary-foreground" />
-                    </div>
-                    <span className="text-2xl font-bold text-foreground">{card.value}</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-1">{card.title}</h3>
-                  <p className="text-sm text-muted-foreground">{card.description}</p>
+                <div key={index} className="bg-card rounded-lg border p-6 text-center hover:shadow-md transition-shadow">
+                  <div className="text-3xl font-bold text-foreground mb-1">{card.value}</div>
+                  <div className="text-muted-foreground text-sm">{card.title}</div>
                 </div>
               ))}
             </div>

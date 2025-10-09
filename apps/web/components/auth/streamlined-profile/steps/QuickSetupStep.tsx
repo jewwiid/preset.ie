@@ -141,11 +141,10 @@ export function QuickSetupStep() {
       {/* Optional Fields Notice */}
       <div className="bg-muted/50 border border-border rounded-lg p-4">
         <h4 className="text-sm font-medium text-foreground mb-2">
-          ✨ Complete Your Profile Later
+          ✨ Enhance Your Profile Anytime
         </h4>
         <p className="text-xs text-muted-foreground">
-          You can add more details like equipment, physical attributes, style preferences, 
-          and privacy settings anytime in your profile settings. For now, let's get you started!
+          Complete your basic profile now to start connecting with opportunities. You can always add advanced details like equipment lists, physical attributes, and style preferences later to improve your match quality and stand out to clients.
         </p>
       </div>
 

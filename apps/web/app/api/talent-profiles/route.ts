@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
         years_experience,
         account_status,
         profile_completion_percentage,
+        verified_id,
         created_at
       `)
       .in('account_status', ['active', 'pending_verification']) // Active or pending verification accounts

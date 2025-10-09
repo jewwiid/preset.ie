@@ -5,6 +5,16 @@ import { ArrowLeft, MapPin, Calendar, ExternalLink, Instagram, Globe, Lock } fro
 import { createClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { Button } from '../../../components/ui/button'
+import { VerificationBadges } from '../../../components/VerificationBadges'
+import { parseVerificationBadges } from '../../../lib/utils/verification-badges'
+import { UserProfileActionButtons } from '../../../components/profile/UserProfileActionButtons'
+
+interface VerificationBadge {
+  badge_type: 'verified_age' | 'verified_email' | 'verified_identity' | 'verified_professional' | 'verified_business'
+  issued_at: string
+  expires_at: string | null
+  revoked_at: string | null
+}
 
 interface UserProfile {
   id: string
@@ -23,6 +33,7 @@ interface UserProfile {
   created_at: string
   updated_at: string
   years_experience?: number
+  primary_skill?: string
   specializations?: string[]
   equipment_list?: string[]
   editing_software?: string[]
@@ -38,6 +49,7 @@ interface UserProfile {
   studio_name?: string
   availability_status?: string
   account_status?: string
+  verification_badges?: VerificationBadge[]
 }
 
 interface Showcase {
@@ -135,6 +147,7 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
         created_at,
         updated_at,
         years_experience,
+        primary_skill,
         specializations,
         equipment_list,
         editing_software,
@@ -153,6 +166,18 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
       `)
       .eq('handle', currentHandle)
       .single();
+
+    // Fetch verification badges separately (since it's a separate table)
+    let verificationBadgesData: VerificationBadge[] = [];
+    if (!profileError && profile) {
+      const { data: badges } = await supabase
+        .from('verification_badges')
+        .select('badge_type, issued_at, expires_at, revoked_at')
+        .eq('user_id', profile.user_id)
+        .is('revoked_at', null); // Only get active badges
+      
+      verificationBadgesData = badges || [];
+    }
 
     if (profileError) {
       console.error('Error fetching profile:', JSON.stringify(profileError, null, 2));
@@ -270,8 +295,14 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
       member_since: profile.created_at
     };
 
+    // Attach verification badges to profile
+    const profileWithBadges = {
+      ...profile,
+      verification_badges: verificationBadgesData
+    };
+
     return {
-      profile,
+      profile: profileWithBadges,
       showcases: (showcases || []).map((s: any) => ({
         ...s,
         gig: Array.isArray(s.gig) ? s.gig[0] : s.gig
@@ -327,6 +358,9 @@ export default async function UserProfilePage({ params }: PageProps) {
     day: 'numeric',
   });
 
+  // Parse verification badges
+  const verificationBadges = parseVerificationBadges(profile.verification_badges || [])
+
   // Parse banner position if available
   let bannerStyle: React.CSSProperties = {};
   if (profile.header_banner_position) {
@@ -371,14 +405,24 @@ export default async function UserProfilePage({ params }: PageProps) {
 
         {/* Profile Content */}
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-between py-6">
-          {/* Back Button - Inside banner at top */}
-          <div>
+          {/* Top Bar - Back Button and Action Buttons */}
+          <div className="flex justify-between items-center flex-wrap gap-2">
             <Button variant="ghost" size="sm" asChild className="text-white hover:text-white hover:bg-white/10">
               <Link href="/">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
+                <span className="hidden sm:inline">Back to Home</span>
+                <span className="sm:hidden">Back</span>
               </Link>
             </Button>
+            
+            {/* Action Buttons - Top Right */}
+            <UserProfileActionButtons 
+              profileId={profile.id}
+              profileUserId={profile.user_id}
+              profileHandle={profile.handle}
+              profileDisplayName={profile.display_name}
+              profileRoleFlags={profile.role_flags}
+            />
           </div>
 
           {/* Profile Info - At bottom */}
@@ -402,9 +446,17 @@ export default async function UserProfilePage({ params }: PageProps) {
 
             {/* Name and Info */}
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-white mb-1">
-                {profile.display_name}
-              </h1>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-4xl font-bold text-white">
+                  {profile.display_name}
+                </h1>
+                <VerificationBadges
+                  verifiedIdentity={verificationBadges.identity}
+                  verifiedProfessional={verificationBadges.professional}
+                  verifiedBusiness={verificationBadges.business}
+                  size="lg"
+                />
+              </div>
               <p className="text-base text-white/90 mb-3">
                 @{profile.handle}
               </p>
@@ -423,11 +475,25 @@ export default async function UserProfilePage({ params }: PageProps) {
                   <span>Member since {memberSinceDate}</span>
                 </div>
 
-                {/* Specializations - primary badge */}
-                {!isPrivate && profile.specializations && profile.specializations.length > 0 && (
+                {/* Primary Skill Badge */}
+                {!isPrivate && profile.primary_skill && (
                   <span className="px-3 py-1 text-sm font-medium rounded-lg bg-primary text-primary-foreground">
-                    {profile.specializations[0]}
+                    {profile.primary_skill}
                   </span>
+                )}
+
+                {/* Additional Specializations */}
+                {!isPrivate && profile.specializations && profile.specializations.length > 0 && (
+                  <>
+                    {profile.specializations.slice(0, 2).map((spec: string, index: number) => (
+                      <span
+                        key={`spec-${index}`}
+                        className="px-3 py-1 text-sm font-medium rounded-lg bg-primary/10 text-primary border border-primary/20"
+                      >
+                        {spec}
+                      </span>
+                    ))}
+                  </>
                 )}
               </div>
 

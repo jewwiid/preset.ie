@@ -554,11 +554,20 @@ export default function SignUpPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setPasswordFocused(true)}
                       onBlur={() => setPasswordFocused(false)}
-                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-muted-foreground-900 ${
+                      className={`pl-10 pr-20 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-muted-foreground-900 ${
                         password && !isPasswordValid ? 'border-destructive-300' : 'border-border-300'
                       }`}
                       placeholder="Create a strong password"
                     />
+                    {password && (
+                      <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                        {isPasswordValid ? (
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                        ) : (
+                          <X className="w-5 h-5 text-destructive-500" />
+                        )}
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
@@ -571,15 +580,6 @@ export default function SignUpPage() {
                         <Eye className="w-5 h-5" />
                       )}
                     </button>
-                    {password && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        {isPasswordValid ? (
-                          <CheckCircle2 className="w-5 h-5 text-primary" />
-                        ) : (
-                          <X className="w-5 h-5 text-destructive-500" />
-                        )}
-                      </div>
-                    )}
                   </div>
                   
                   {/* Password strength indicator */}
@@ -671,11 +671,20 @@ export default function SignUpPage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       onFocus={() => setConfirmPasswordFocused(true)}
                       onBlur={() => setConfirmPasswordFocused(false)}
-                      className={`pl-10 pr-12 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-muted-foreground-900 ${
+                      className={`pl-10 pr-20 w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-muted-foreground-900 ${
                         confirmPassword && !passwordsMatch ? 'border-destructive-300' : 'border-border-300'
                       }`}
                       placeholder="Re-enter your password"
                     />
+                    {confirmPassword && (
+                      <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                        {passwordsMatch ? (
+                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                        ) : (
+                          <X className="w-5 h-5 text-destructive-500" />
+                        )}
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -688,15 +697,6 @@ export default function SignUpPage() {
                         <Eye className="w-5 h-5" />
                       )}
                     </button>
-                    {confirmPassword && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        {passwordsMatch ? (
-                          <CheckCircle2 className="w-5 h-5 text-primary" />
-                        ) : (
-                          <X className="w-5 h-5 text-destructive-500" />
-                        )}
-                      </div>
-                    )}
                   </div>
                   {confirmPassword && !passwordsMatch && (
                     <p className="mt-1 text-xs text-destructive-600">Passwords do not match</p>

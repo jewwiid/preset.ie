@@ -290,14 +290,18 @@ function CollaboratePageContent() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="for_you">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="for_you" className="flex items-center justify-center">
               <Sparkles className="h-4 w-4 mr-2" />
               For You
             </TabsTrigger>
-            <TabsTrigger value="all">All Projects</TabsTrigger>
-            <TabsTrigger value="my_projects">My Projects</TabsTrigger>
-            <TabsTrigger value="invited">
+            <TabsTrigger value="all" className="flex items-center justify-center">
+              All Projects
+            </TabsTrigger>
+            <TabsTrigger value="my_projects" className="flex items-center justify-center">
+              My Projects
+            </TabsTrigger>
+            <TabsTrigger value="invited" className="flex items-center justify-center">
               <Mail className="h-4 w-4 mr-2" />
               Invitations
             </TabsTrigger>

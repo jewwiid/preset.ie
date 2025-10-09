@@ -57,6 +57,13 @@ function CreateProjectPageContent() {
   const [currentStep, setCurrentStep] = useState<ProjectStep>('basics');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Check if we have invitation parameters
+  const inviteUserId = searchParams?.get('invite');
+  const inviteUserName = searchParams?.get('name');
+  
+  // Invitation message state
+  const [invitationMessage, setInvitationMessage] = useState('');
 
   // Form data
   const [projectData, setProjectData] = useState<ProjectFormData>({
@@ -241,13 +248,20 @@ function CreateProjectPageContent() {
       }
       
       // Create project
+      // Fix: Convert empty strings to null for date fields to satisfy DB constraint
+      const projectPayload = {
+        ...projectData,
+        start_date: projectData.start_date || null,
+        end_date: projectData.end_date || null
+      };
+      
       const projectResponse = await fetch('/api/collab/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify(projectData)
+        body: JSON.stringify(projectPayload)
       });
 
       console.log('Project response status:', projectResponse.status);
@@ -261,8 +275,9 @@ function CreateProjectPageContent() {
       const { project } = await projectResponse.json();
       console.log('Project created successfully:', project);
 
-      // Create roles
+      // Create roles and store created role IDs
       console.log('Creating roles:', roles);
+      const createdRoles = [];
       for (const role of roles) {
         const roleResponse = await fetch(`/api/collab/projects/${project.id}/roles`, {
           method: 'POST',
@@ -278,6 +293,9 @@ function CreateProjectPageContent() {
           console.error('Role creation failed:', errorData);
           throw new Error(`Failed to create role: ${errorData.error || 'Unknown error'}`);
         }
+        
+        const { role: createdRole } = await roleResponse.json();
+        createdRoles.push(createdRole);
       }
 
       // Create gear requests
@@ -296,6 +314,38 @@ function CreateProjectPageContent() {
           const errorData = await gearResponse.json();
           console.error('Gear request creation failed:', errorData);
           throw new Error(`Failed to create gear request: ${errorData.error || 'Unknown error'}`);
+        }
+      }
+
+      // Send invitation if user was pre-selected
+      if (inviteUserId && project.id) {
+        console.log(`Sending invitation to user ${inviteUserName} (${inviteUserId}) for project ${project.id}`);
+        try {
+          const inviteResponse = await fetch(`/api/collab/projects/${project.id}/invitations`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+              invitee_id: inviteUserId,
+              message: invitationMessage.trim() || `You've been invited to join the project: ${projectData.title}`,
+              // Assign to the first role if available (use role ID, not name)
+              role_id: createdRoles.length > 0 ? createdRoles[0].id : undefined
+            })
+          });
+          
+          if (inviteResponse.ok) {
+            const { invitation } = await inviteResponse.json();
+            console.log('Invitation sent successfully:', invitation);
+          } else {
+            const inviteError = await inviteResponse.json();
+            console.error('Failed to send invitation:', inviteError);
+            // Don't throw error - project was created successfully
+          }
+        } catch (inviteError) {
+          console.error('Error sending invitation:', inviteError);
+          // Don't throw error - project was created successfully
         }
       }
 
@@ -432,6 +482,33 @@ function CreateProjectPageContent() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Show invitation message field if inviting someone */}
+            {inviteUserId && inviteUserName && (
+              <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg space-y-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span className="font-medium text-primary">
+                    {inviteUserName} will be invited to this project
+                  </span>
+                </div>
+                <div>
+                  <Label htmlFor="invitationMessage">Invitation Message (Optional)</Label>
+                  <Textarea
+                    id="invitationMessage"
+                    placeholder={`Hi ${inviteUserName.split(' ')[0]}, I'd love to collaborate with you on this project!`}
+                    value={invitationMessage}
+                    onChange={(e) => setInvitationMessage(e.target.value)}
+                    rows={3}
+                    maxLength={1000}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {invitationMessage.length}/1000 characters
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         );
 

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, MapPin, Users, Camera, MessageCircle, Star, CheckCircle, XCircle, Clock, UserPlus, Mail, X } from 'lucide-react';
@@ -387,8 +388,11 @@ export default function ProjectDetailPage() {
             </Button>
 
             <div className="flex items-center gap-2">
-              <Badge className={`${getStatusColor(project.status)} backdrop-blur-sm`}>
-                {project.status.replace('_', ' ')}
+              <Badge variant={project.status === 'active' ? 'default' : 'secondary'} className="backdrop-blur-sm">
+                {project.status.toUpperCase()}
+              </Badge>
+              <Badge variant="outline" className="backdrop-blur-sm bg-background/80">
+                {project.visibility === 'public' ? 'Public' : 'Private'}
               </Badge>
               {project.creator.verified_id && (
                 <Badge variant="secondary" className="backdrop-blur-sm bg-background/80">
@@ -451,43 +455,174 @@ export default function ProjectDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Project Info */}
+            {/* Project Details */}
             <Card>
               <CardHeader>
-                <CardTitle>Project Details</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-primary" />
+                  Project Details
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</p>
+                      <Badge variant="outline" className="mt-1">
+                        {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Visibility</p>
+                      <Badge variant="outline" className="mt-1">
+                        {project.visibility.charAt(0).toUpperCase() + project.visibility.slice(1)}
+                      </Badge>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Project Type</p>
+                      <p className="text-sm text-foreground mt-1">Collaboration</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Created</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Clock className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">
+                          {format(new Date(project.created_at), "MMM d, yyyy")}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Roles</p>
+                      <p className="text-2xl font-bold text-foreground mt-1">{project.collab_roles.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Team Size</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Users className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">{project.collab_participants.length} members</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                {/* Actions Section */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">Actions</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {isCreator ? (
+                      <>
+                        <Button
+                          onClick={() => setInviteDialogOpen(true)}
+                          className="w-full"
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Invite People
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setActiveTab('applications')}
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Manage Applications
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => router.push(`/collaborate/projects/${projectId}/edit`)}
+                        >
+                          Edit Project
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setShareDialogOpen(true)}
+                        >
+                          Share Project
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          onClick={() => handleApply()}
+                          disabled={applying || project.status !== 'published'}
+                          className="w-full"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Apply to Project
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setShareDialogOpen(true)}
+                        >
+                          Share Project
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* About Project */}
+            <Card>
+              <CardHeader>
+                <CardTitle>About this Project</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 {project.description && (
-                  <div>
-                    <h4 className="font-medium mb-2">Description</h4>
-                    <p className="text-muted-foreground-600 whitespace-pre-wrap">{project.description}</p>
+                  <div className="prose prose-sm max-w-none text-foreground">
+                    <p className="whitespace-pre-wrap leading-relaxed">{project.description}</p>
                   </div>
                 )}
                 
                 {project.synopsis && (
-                  <div>
-                    <h4 className="font-medium mb-2">Synopsis</h4>
-                    <p className="text-muted-foreground-600">{project.synopsis}</p>
-                  </div>
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Synopsis</h4>
+                      <p className="text-sm text-foreground leading-relaxed">{project.synopsis}</p>
+                    </div>
+                  </>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(project.city || project.country) && (
-                    <div className="flex items-center text-muted-foreground-600">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      {[project.city, project.country].filter(Boolean).join(', ')}
+                {(project.start_date || project.end_date) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Timeline</h4>
+                      <div className="flex items-center gap-2 text-sm text-foreground">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        {project.start_date && format(new Date(project.start_date), "MMM d, yyyy")}
+                        {project.start_date && project.end_date && ' → '}
+                        {project.end_date && format(new Date(project.end_date), "MMM d, yyyy")}
+                      </div>
                     </div>
-                  )}
-                  
-                  {(project.start_date || project.end_date) && (
-                    <div className="flex items-center text-muted-foreground-600">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      {project.start_date && format(new Date(project.start_date), "MMM d, yyyy")}
-                      {project.start_date && project.end_date && ' - '}
-                      {project.end_date && format(new Date(project.end_date), "MMM d, yyyy")}
+                  </>
+                )}
+
+                {(project.city || project.country) && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Project Location</h4>
+                      <div className="flex items-center gap-2 text-sm text-foreground">
+                        <MapPin className="h-4 w-4 text-primary" />
+                        {[project.city, project.country].filter(Boolean).join(', ')}
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -509,7 +644,7 @@ export default function ProjectDetailPage() {
                 )}
               </TabsList>
 
-              <TabsContent value="roles" className="space-y-4">
+              <TabsContent value="roles" className="space-y-6">
                 {project.collab_roles.length === 0 ? (
                   <Card>
                     <CardContent className="text-center py-8">
@@ -518,80 +653,128 @@ export default function ProjectDetailPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  project.collab_roles.map((role) => (
-                    <Card key={role.id}>
+                  <>
+                    {/* Role Overview */}
+                    <Card>
                       <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-lg">{role.role_name}</CardTitle>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <Badge className={getRoleStatusColor(role.status)}>
-                                {role.status}
-                              </Badge>
-                              {role.is_paid && (
-                                <Badge variant="secondary">Paid</Badge>
+                        <CardTitle className="flex items-center gap-2">
+                          <Users className="w-5 h-5 text-primary" />
+                          Available Roles
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-primary">{project.collab_roles.length}</p>
+                            <p className="text-sm text-muted-foreground">Total Roles</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-green-600">
+                              {project.collab_roles.filter(r => r.status === 'open').length}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Open Positions</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-blue-600">
+                              {project.collab_roles.reduce((sum, role) => sum + role.headcount, 0)}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Total Positions</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Individual Roles */}
+                    {project.collab_roles.map((role) => (
+                      <Card key={role.id} className="relative">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <CardTitle className="text-xl flex items-center gap-3">
+                                {role.role_name}
+                                <Badge className={getRoleStatusColor(role.status)}>
+                                  {role.status}
+                                </Badge>
+                                {role.is_paid && (
+                                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                    Paid Role
+                                  </Badge>
+                                )}
+                              </CardTitle>
+                            </div>
+                            {!isCreator && role.status === 'open' && (
+                              hasAppliedToRole(role.id) ? (
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    disabled
+                                    size="sm"
+                                    variant="outline"
+                                    className="flex-1"
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-1" />
+                                    Applied
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleWithdrawApplication(role.id, role.role_name)}
+                                    className="text-destructive-600 hover:text-destructive-700 hover:bg-destructive-50"
+                                  >
+                                    <X className="h-4 w-4 mr-1" />
+                                    Withdraw
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button
+                                  onClick={() => handleApply(role.id)}
+                                  disabled={applying}
+                                  size="sm"
+                                  className="bg-primary hover:bg-primary/90"
+                                >
+                                  Apply to Role
+                                </Button>
+                              )
+                            )}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-3">
+                              <div>
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Headcount</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Users className="w-4 h-4 text-primary" />
+                                  <span className="text-lg font-semibold">{role.headcount} position{role.headcount !== 1 ? 's' : ''}</span>
+                                </div>
+                              </div>
+                              
+                              {role.compensation_details && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Compensation</p>
+                                  <p className="text-sm text-foreground mt-1">{role.compensation_details}</p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="space-y-3">
+                              {role.skills_required.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Required Skills</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {role.skills_required.map((skill) => (
+                                      <Badge key={skill} variant="outline" className="text-xs">
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
                               )}
                             </div>
                           </div>
-                          {!isCreator && role.status === 'open' && (
-                            hasAppliedToRole(role.id) ? (
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  disabled
-                                  size="sm"
-                                  variant="outline"
-                                  className="flex-1"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-1" />
-                                  Applied
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleWithdrawApplication(role.id, role.role_name)}
-                                  className="text-destructive-600 hover:text-destructive-700 hover:bg-destructive-50"
-                                >
-                                  <X className="h-4 w-4 mr-1" />
-                                  Withdraw
-                                </Button>
-                              </div>
-                            ) : (
-                              <Button
-                                onClick={() => handleApply(role.id)}
-                                disabled={applying}
-                                size="sm"
-                              >
-                                Apply
-                              </Button>
-                            )
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div>
-                          <span className="font-medium">Headcount:</span> {role.headcount} position{role.headcount !== 1 ? 's' : ''}
-                        </div>
-                        
-                        {role.skills_required.length > 0 && (
-                          <div>
-                            <span className="font-medium">Required Skills:</span>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {role.skills_required.map((skill) => (
-                                <Badge key={skill} variant="outline">{skill}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {role.compensation_details && (
-                          <div>
-                            <span className="font-medium">Compensation:</span>
-                            <p className="text-muted-foreground-600 mt-1">{role.compensation_details}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </>
                 )}
               </TabsContent>
 
@@ -778,75 +961,60 @@ export default function ProjectDetailPage() {
                     </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {isCreator ? (
-                  <>
-                    <Button
-                      onClick={() => setInviteDialogOpen(true)}
-                      className="w-full"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Invite People
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setActiveTab('applications')}
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Manage Applications
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => router.push(`/collaborate/projects/${projectId}/edit`)}
-                    >
-                      Edit Project
-                    </Button>
-                  </>
-                ) : !isCreator ? (
-                  <>
-                    <Button
-                      onClick={() => handleApply()}
-                      disabled={applying || project.status !== 'published'}
-                      className="w-full"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Apply to Project
-                    </Button>
-
+                
+                {/* Message Creator Button */}
+                {!isCreator && (
+                  <div className="mt-4">
                     <Button variant="outline" className="w-full">
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Message Creator
                     </Button>
-                  </>
-                ) : null}
-
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShareDialogOpen(true)}
-                >
-                  Share Project
-                </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Team Members */}
+            {project.collab_participants.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    Team Members
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {project.collab_participants.map((participant) => (
+                      <div key={participant.id} className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={participant.user.avatar_url} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                            {participant.user.display_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{participant.user.display_name}</p>
+                          <p className="text-xs text-muted-foreground">{participant.role_type}</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {participant.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Invitation Stats (for creators) */}
             {isCreator && invitationStats && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Invitations</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-primary" />
+                    Invitations
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
@@ -868,33 +1036,6 @@ export default function ProjectDetailPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Project Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Project Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground-500">Created</span>
-                  <span className="text-sm font-medium">
-                    {format(new Date(project.created_at), "MMM d, yyyy")}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground-500">Roles</span>
-                  <span className="text-sm font-medium">{project.collab_roles.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground-500">Equipment Requests</span>
-                  <span className="text-sm font-medium">{project.collab_gear_requests.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground-500">Team Members</span>
-                  <span className="text-sm font-medium">{project.collab_participants.length}</span>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </main>

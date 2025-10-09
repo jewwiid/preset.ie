@@ -71,7 +71,13 @@ export default function MyGigsPage() {
 
       // Apply filter
       if (filter !== 'all') {
-        query = query.eq('status', filter.toUpperCase())
+        // Map UI filter values to database enum values
+        const statusMap: Record<string, string> = {
+          'draft': 'DRAFT',
+          'published': 'PUBLISHED', 
+          'closed': 'APPLICATIONS_CLOSED'  // Map 'closed' to 'APPLICATIONS_CLOSED'
+        }
+        query = query.eq('status', statusMap[filter])
       }
 
       const { data: gigsData, error } = await query
@@ -122,7 +128,8 @@ export default function MyGigsPage() {
         return 'bg-primary-100 text-primary-800'
       case 'draft':
         return 'bg-muted text-muted-foreground'
-      case 'closed':
+      case 'applications_closed':
+      case 'closed':  // Keep for backward compatibility
         return 'bg-destructive-100 text-destructive-800'
       case 'completed':
         return 'bg-primary-100 text-primary-800'
@@ -139,6 +146,23 @@ export default function MyGigsPage() {
       'OTHER': 'Other'
     }
     return types[type] || type
+  }
+
+  const formatStatus = (status: string) => {
+    switch (status) {
+      case 'APPLICATIONS_CLOSED':
+        return 'Closed'
+      case 'PUBLISHED':
+        return 'Published'
+      case 'DRAFT':
+        return 'Draft'
+      case 'COMPLETED':
+        return 'Completed'
+      case 'CANCELLED':
+        return 'Cancelled'
+      default:
+        return status
+    }
   }
 
   const getLookingForLabel = (type: string) => {
@@ -298,7 +322,7 @@ export default function MyGigsPage() {
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-xl font-semibold text-foreground">{gig.title}</h3>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(gig.status)}`}>
-                            {gig.status}
+                            {formatStatus(gig.status)}
                           </span>
                         </div>
                         

@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { UserProfile, CreditsData } from '../../lib/types/dashboard'
 import { calculateCreditValue, calculateProfileCompletion } from '../../lib/utils/dashboard'
+import { VerificationBadges } from '../VerificationBadges'
+import { parseVerificationBadges } from '../../lib/utils/verification-badges'
 
 interface ProfileCardProps {
   profile: UserProfile
@@ -14,6 +16,9 @@ interface ProfileCardProps {
 export function ProfileCard({ profile, credits, isTalent, isContributor }: ProfileCardProps) {
   const router = useRouter()
   const { percentage: profileCompletion } = calculateProfileCompletion(profile)
+
+  // Parse verification badges
+  const verificationBadges = parseVerificationBadges(profile.verification_badges || null)
 
   return (
     <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
@@ -42,8 +47,14 @@ export function ProfileCard({ profile, credits, isTalent, isContributor }: Profi
 
           {/* User Info & Role */}
           <div>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-2 mb-2">
               <h3 className="text-xl font-bold text-foreground">{profile.display_name}</h3>
+              <VerificationBadges
+                verifiedIdentity={verificationBadges.identity}
+                verifiedProfessional={verificationBadges.professional}
+                verifiedBusiness={verificationBadges.business}
+                size="md"
+              />
               <span className="px-3 py-1 bg-primary text-primary-foreground text-sm font-bold rounded-full uppercase tracking-wide">
                 {profile.subscription_tier}
               </span>
@@ -61,16 +72,6 @@ export function ProfileCard({ profile, credits, isTalent, isContributor }: Profi
             </div>
           </div>
         </div>
-
-        {/* Verification Badge */}
-        {(profile.verification_status === 'id_verified' || profile.verification_status === 'fully_verified') && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary rounded-lg border border-primary/20">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span className="text-sm font-semibold">Verified</span>
-          </div>
-        )}
       </div>
 
       {/* Credits & Balance Row - Enhanced Mobile Layout */}
@@ -139,6 +140,29 @@ export function ProfileCard({ profile, credits, isTalent, isContributor }: Profi
           </button>
         )}
       </div>
+
+      {/* Get Verified CTA - Only show if no verifications */}
+      {!verificationBadges.identity && !verificationBadges.professional && !verificationBadges.business && (
+        <button
+          onClick={() => router.push('/verify')}
+          className="mt-4 w-full p-4 bg-primary/5 hover:bg-primary/10 rounded-xl border border-primary/20 transition-all duration-200 hover:shadow-md hover:scale-[1.02] group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200 flex-shrink-0">
+              <svg className="w-5 h-5 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-semibold text-foreground">Get Verified</p>
+              <p className="text-xs text-muted-foreground">Build trust and stand out with a verified badge</p>
+            </div>
+            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </button>
+      )}
     </div>
   )
 }

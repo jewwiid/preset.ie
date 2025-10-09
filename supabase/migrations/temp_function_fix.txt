@@ -1,0 +1,6 @@
+    -- Determine badge type - map 'age' to 'identity'
+    IF v_verification_type = 'age' THEN
+        v_badge_type := 'verified_identity';
+    ELSE
+        v_badge_type := 'verified_' || v_verification_type;
+    END IF;

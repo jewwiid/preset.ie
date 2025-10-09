@@ -224,7 +224,7 @@ export default function TalentDirectoryClient({
                     📍 {profile.city}
                   </span>
                 )}
-                <span>
+                <span suppressHydrationWarning>
                   {new Date(profile.created_at).toLocaleDateString()}
                 </span>
               </div>

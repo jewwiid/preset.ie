@@ -13,7 +13,7 @@ export {
 
 // Layout Components
 export { ProfileLayout } from './layout/ProfileLayout'
-export { ProfileHeader } from './layout/ProfileHeader'
+export { ProfileHeaderEnhanced } from './layout/ProfileHeaderEnhanced'
 export { ProfileTabs, ProfileSubTabs } from './layout/ProfileTabs'
 
 // Section Components

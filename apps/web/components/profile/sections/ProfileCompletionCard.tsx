@@ -23,7 +23,8 @@ import {
   Edit3,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  User
 } from 'lucide-react'
 
 interface ProfileField {
@@ -38,34 +39,55 @@ interface ProfileField {
 }
 
 const PROFILE_FIELDS: ProfileField[] = [
-  // Basic Information (High Priority) - Applies to ALL roles
+  // ============ CRITICAL FIELDS - Visual Identity ============
+  { key: 'avatar_url', label: 'Profile Photo', weight: 15, icon: User, category: 'basic', description: 'Upload your profile photo', actionText: 'Add Photo' },
+  { key: 'primary_skill', label: 'Primary Skill', weight: 15, icon: Star, category: 'professional', description: 'Your main profession', actionText: 'Set Primary Skill' },
+  
+  // ============ UNIVERSAL FIELDS - Basic Information ============
   { key: 'bio', label: 'Bio', weight: 10, icon: Edit3, category: 'basic', description: 'Tell others about yourself', actionText: 'Add Bio' },
   { key: 'city', label: 'Location', weight: 8, icon: MapPin, category: 'basic', description: 'Where are you based?', actionText: 'Set Location' },
   { key: 'country', label: 'Country', weight: 5, icon: MapPin, category: 'basic', description: 'Your country', actionText: 'Set Country' },
   
-  // Professional Information (High Priority) - Applies to ALL roles
-  { key: 'years_experience', label: 'Experience', weight: 12, icon: Award, category: 'professional', description: 'Years of experience', actionText: 'Add Experience' },
-  { key: 'specializations', label: 'Specializations', weight: 15, icon: Star, category: 'professional', description: 'What do you specialize in?', actionText: 'Add Specializations' },
+  // ============ UNIVERSAL FIELDS - Skills & Experience ============
+  { key: 'specializations', label: 'Specializations', weight: 12, icon: Star, category: 'professional', description: 'What do you specialize in?', actionText: 'Add Specializations' },
+  { key: 'years_experience', label: 'Years Experience', weight: 10, icon: Award, category: 'professional', description: 'Years of experience', actionText: 'Add Experience' },
+  { key: 'experience_level', label: 'Experience Level', weight: 8, icon: Award, category: 'professional', description: 'Beginner to Expert', actionText: 'Set Level' },
+  
+  // ============ UNIVERSAL FIELDS - Rates & Availability ============
   { key: 'hourly_rate_min', label: 'Rate Range', weight: 10, icon: DollarSign, category: 'professional', description: 'Your hourly rate', actionText: 'Set Rates' },
   { key: 'typical_turnaround_days', label: 'Turnaround Time', weight: 6, icon: Clock, category: 'professional', description: 'How fast do you work?', actionText: 'Set Turnaround' },
+  { key: 'availability_status', label: 'Availability', weight: 5, icon: Clock, category: 'professional', description: 'Your current availability', actionText: 'Set Status' },
   
-  // Equipment & Software (Medium Priority) - ONLY for CONTRIBUTORS
-  { key: 'equipment_list', label: 'Equipment', weight: 8, icon: Camera, category: 'equipment', description: 'What gear do you use?', actionText: 'Add Equipment', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
-  { key: 'editing_software', label: 'Software', weight: 6, icon: Settings, category: 'equipment', description: 'Editing software you use', actionText: 'Add Software', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
-  
-  // Contact Information (Medium Priority) - Applies to ALL roles
+  // ============ UNIVERSAL FIELDS - Contact & Portfolio ============
   { key: 'phone_number', label: 'Phone', weight: 5, icon: Phone, category: 'contact', description: 'Contact number', actionText: 'Add Phone' },
-  
-  // Social & Portfolio (Lower Priority) - Applies to ALL roles
   { key: 'portfolio_url', label: 'Portfolio', weight: 8, icon: Briefcase, category: 'social', description: 'Showcase your work', actionText: 'Add Portfolio' },
   { key: 'website_url', label: 'Website', weight: 5, icon: Globe, category: 'social', description: 'Your website', actionText: 'Add Website' },
   { key: 'instagram_handle', label: 'Instagram', weight: 3, icon: ExternalLink, category: 'social', description: 'Instagram profile', actionText: 'Add Instagram' },
   { key: 'tiktok_handle', label: 'TikTok', weight: 2, icon: ExternalLink, category: 'social', description: 'TikTok profile', actionText: 'Add TikTok' },
   
-  // Additional Info (Lower Priority)
+  // ============ UNIVERSAL FIELDS - Additional Info ============
   { key: 'available_for_travel', label: 'Travel Availability', weight: 4, icon: Globe, category: 'professional', description: 'Can you travel for work?', actionText: 'Set Travel Info' },
-  { key: 'studio_name', label: 'Studio Info', weight: 4, icon: Camera, category: 'professional', description: 'Do you have a studio?', actionText: 'Add Studio Info', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
-  { key: 'languages', label: 'Languages', weight: 4, icon: Users, category: 'contact', description: 'Languages you speak', actionText: 'Add Languages' }
+  { key: 'languages', label: 'Languages', weight: 4, icon: Users, category: 'contact', description: 'Languages you speak', actionText: 'Add Languages' },
+  
+  // ============ CONTRIBUTOR-SPECIFIC FIELDS ============
+  { key: 'equipment_list', label: 'Equipment', weight: 8, icon: Camera, category: 'equipment', description: 'What gear do you use?', actionText: 'Add Equipment', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  { key: 'editing_software', label: 'Software', weight: 6, icon: Settings, category: 'equipment', description: 'Editing software you use', actionText: 'Add Software', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  { key: 'studio_name', label: 'Studio Info', weight: 4, icon: Camera, category: 'equipment', description: 'Do you have a studio?', actionText: 'Add Studio Info', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  { key: 'has_studio', label: 'Has Studio', weight: 3, icon: Camera, category: 'equipment', description: 'Studio availability', actionText: 'Set Studio', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  
+  // ============ TALENT-SPECIFIC FIELDS ============
+  { key: 'talent_categories', label: 'Talent Categories', weight: 10, icon: Star, category: 'professional', description: 'Types of talent work', actionText: 'Add Categories', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'height_cm', label: 'Height', weight: 6, icon: Users, category: 'professional', description: 'Your height', actionText: 'Add Height', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'weight_kg', label: 'Weight', weight: 4, icon: Users, category: 'professional', description: 'Your weight', actionText: 'Add Weight', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'body_type', label: 'Body Type', weight: 4, icon: Users, category: 'professional', description: 'Your body type', actionText: 'Set Body Type', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'eye_color', label: 'Eye Color', weight: 3, icon: Users, category: 'professional', description: 'Your eye color', actionText: 'Add Eye Color', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'hair_color', label: 'Hair Color', weight: 3, icon: Users, category: 'professional', description: 'Your hair color', actionText: 'Add Hair Color', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'hair_length', label: 'Hair Length', weight: 2, icon: Users, category: 'professional', description: 'Your hair length', actionText: 'Set Hair Length', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'skin_tone', label: 'Skin Tone', weight: 2, icon: Users, category: 'professional', description: 'Your skin tone', actionText: 'Set Skin Tone', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'gender_identity', label: 'Gender Identity', weight: 4, icon: Users, category: 'basic', description: 'Your gender identity', actionText: 'Set Gender', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'ethnicity', label: 'Ethnicity', weight: 3, icon: Users, category: 'basic', description: 'Your ethnicity', actionText: 'Set Ethnicity', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'nationality', label: 'Nationality', weight: 3, icon: Globe, category: 'basic', description: 'Your nationality', actionText: 'Set Nationality', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'tattoos', label: 'Tattoos/Piercings', weight: 2, icon: Users, category: 'professional', description: 'Body modifications', actionText: 'Add Info', applicableRoles: ['TALENT', 'BOTH'] }
 ]
 
 // Helper function to get applicable fields for a user's role
@@ -127,7 +149,10 @@ const calculateProfileCompletion = (profile: UserProfile): {
   // Calculate category percentages
   Object.keys(categoryProgress).forEach(cat => {
     const progress = categoryProgress[cat]
-    progress.percentage = Math.round((progress.completed / progress.total) * 100)
+    // Prevent NaN by checking if total is 0 (no fields in this category for this role)
+    progress.percentage = progress.total > 0 
+      ? Math.round((progress.completed / progress.total) * 100) 
+      : 0
   })
 
   return {
@@ -278,7 +303,9 @@ export function ProfileCompletionCard() {
         {/* Category Progress */}
         <div className="p-6">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            {Object.entries(completion.categoryProgress).map(([category, progress]) => {
+            {Object.entries(completion.categoryProgress)
+              .filter(([_, progress]) => progress.total > 0) // Only show categories applicable to user's role
+              .map(([category, progress]) => {
               const Icon = getCategoryIcon(category)
               const colorClass = getCategoryColor(category)
               

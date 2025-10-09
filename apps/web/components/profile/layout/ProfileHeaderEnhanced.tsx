@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useProfile, useProfileUI, useProfileEditing, useProfileForm } from '../context/ProfileContext'
 import { 
   Edit3, 
@@ -72,20 +72,31 @@ const calculateProfileCompletion = (profile: any): number => {
 
 export function ProfileHeaderEnhanced() {
   const { profile } = useProfile()
-  const { showLocation } = useProfileUI()
+  const { showLocation, isDraggingHeader, headerPosition, setDraggingHeader, setHeaderPosition } = useProfileUI()
   const { isEditing, setEditing } = useProfileEditing()
-  const { handleSave, handleCancel, saving, updateField } = useProfileForm()
+  const { formData, handleSave, handleCancel, saving, updateField } = useProfileForm()
   const { user } = useAuth()
   
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [isUploadingBanner, setIsUploadingBanner] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [activeTab, setActiveTab] = useState('professional')
+  const [dragStart, setDragStart] = useState({ y: 0, initialY: 0 })
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef = useRef<HTMLInputElement>(null)
 
   const profileCompletion = profile ? calculateProfileCompletion(profile) : 0
   const isProfileComplete = profileCompletion === 100
+
+  // Cleanup event listeners on unmount
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleHeaderDragMove)
+      document.removeEventListener('mouseup', handleHeaderDragEnd)
+      document.removeEventListener('touchmove', handleHeaderDragMove)
+      document.removeEventListener('touchend', handleHeaderDragEnd)
+    }
+  }, [])
 
   // Tab configuration - role-aware
   const hasContributor = profile?.role_flags?.includes('CONTRIBUTOR') || false
@@ -213,7 +224,9 @@ export function ProfileHeaderEnhanced() {
       case 'professional':
         return (
           <div className="space-y-4">
-            {professionalInfo.map((item, index) => (
+            {professionalInfo
+              .filter(item => item.value !== 'Not specified')
+              .map((item, index) => (
               <div key={index} className="flex items-start gap-3">
                 <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
@@ -229,7 +242,9 @@ export function ProfileHeaderEnhanced() {
       case 'contact':
         return (
           <div className="space-y-4">
-            {contactInfo.map((item, index) => (
+            {contactInfo
+              .filter(item => item.value !== 'Not specified' && item.value !== 'Not provided')
+              .map((item, index) => (
               <div key={index} className="flex items-start gap-3">
                 <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
@@ -245,7 +260,9 @@ export function ProfileHeaderEnhanced() {
       case 'equipment':
         return (
           <div className="space-y-4">
-            {equipmentInfo.map((item, index) => (
+            {equipmentInfo
+              .filter(item => item.value !== 'Not specified')
+              .map((item, index) => (
               <div key={index} className="flex items-start gap-3">
                 <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
@@ -262,7 +279,9 @@ export function ProfileHeaderEnhanced() {
         return (
           <div className="space-y-4">
             {physicalInfo.length > 0 ? (
-              physicalInfo.map((item, index) => (
+              physicalInfo
+                .filter(item => item.value !== 'Not specified')
+                .map((item, index) => (
                 <div key={index} className="flex items-start gap-3">
                   <item.icon className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
@@ -292,6 +311,48 @@ export function ProfileHeaderEnhanced() {
     } else {
       setEditing(true)
     }
+  }
+
+  // Header banner drag functionality
+  const handleHeaderDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isEditing) return
+    
+    e.preventDefault()
+    setDraggingHeader(true)
+    
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    setDragStart({ y: clientY, initialY: headerPosition.y })
+    
+    // Add event listeners for drag
+    document.addEventListener('mousemove', handleHeaderDragMove)
+    document.addEventListener('mouseup', handleHeaderDragEnd)
+    document.addEventListener('touchmove', handleHeaderDragMove)
+    document.addEventListener('touchend', handleHeaderDragEnd)
+  }
+
+  const handleHeaderDragMove = (e: MouseEvent | TouchEvent) => {
+    if (!isDraggingHeader) return
+    
+    e.preventDefault()
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    const deltaY = clientY - dragStart.y
+    const newY = Math.max(-100, Math.min(100, dragStart.initialY + deltaY)) // Limit drag range
+    
+    setHeaderPosition({ ...headerPosition, y: newY })
+  }
+
+  const handleHeaderDragEnd = () => {
+    setDraggingHeader(false)
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', handleHeaderDragMove)
+    document.removeEventListener('mouseup', handleHeaderDragEnd)
+    document.removeEventListener('touchmove', handleHeaderDragMove)
+    document.removeEventListener('touchend', handleHeaderDragEnd)
+    
+    // Save position to form data
+    const positionString = `${headerPosition.y > 0 ? 'top' : 'bottom'} ${Math.abs(headerPosition.y)}px`
+    updateField('header_banner_position', positionString)
   }
 
   const handleAvatarUpload = async (file: File) => {
@@ -458,63 +519,164 @@ export function ProfileHeaderEnhanced() {
 
   return (
     <div className="relative bg-card rounded-xl shadow-lg overflow-hidden mb-6">
-      {/* Header Banner */}
-      <div className="relative h-48 bg-primary">
-        {profile?.header_banner_url ? (
-          <img
-            src={profile.header_banner_url}
-            alt="Header banner"
-            className="w-full h-full object-cover"
-            style={{
-              objectPosition: profile.header_banner_position || 'center'
-            }}
-          />
+      {/* Hero Banner - Unified Design */}
+      <div className="relative h-80 bg-primary overflow-hidden">
+        {(isEditing ? formData?.header_banner_url : profile?.header_banner_url) ? (
+          <>
+            <img
+              src={isEditing ? formData?.header_banner_url : profile?.header_banner_url}
+              alt="Header banner"
+              className={`w-full h-full object-cover select-none ${isEditing ? 'cursor-move' : ''}`}
+              style={{
+                objectPosition: (isEditing ? formData?.header_banner_position : profile?.header_banner_position) || 'center',
+                transform: isEditing ? `translateY(${headerPosition.y}px) scale(${headerPosition.scale})` : undefined,
+                transition: isDraggingHeader ? 'none' : 'transform 0.3s ease'
+              }}
+              onMouseDown={isEditing ? handleHeaderDragStart : undefined}
+              onTouchStart={isEditing ? handleHeaderDragStart : undefined}
+              draggable={false}
+            />
+            {/* Dark overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
+          </>
         ) : (
-          <div className="w-full h-full bg-primary" />
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-background" />
+          </>
         )}
-        <div className="absolute inset-0 bg-black bg-opacity-20" />
         
-        {/* Banner action buttons */}
-        <div className="absolute top-4 right-4 flex gap-2">
-          {isEditing ? (
-            <>
-              <button
-                onClick={() => bannerInputRef.current?.click()}
-                disabled={isUploadingBanner}
-                className="p-2 bg-background/90 hover:bg-background text-foreground border border-border rounded-lg transition-all duration-200 disabled:opacity-50 shadow-sm"
-              >
-                {isUploadingBanner ? (
-                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        {/* Drag indicator when editing */}
+        {isEditing && (formData?.header_banner_url || profile?.header_banner_url) && (
+          <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs">
+            Drag to reposition
+          </div>
+        )}
+        
+        {/* Profile Content - Inside Banner */}
+        <div className="absolute inset-0 h-full flex flex-col justify-between py-6 px-4 sm:px-6 lg:px-8">
+          {/* Top: Back/Edit Buttons */}
+          <div className="flex justify-between items-start">
+            <div className="opacity-0"></div> {/* Spacer */}
+            <div className="flex gap-2">
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={() => bannerInputRef.current?.click()}
+                    disabled={isUploadingBanner}
+                    className="p-2 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-lg transition-all duration-200 disabled:opacity-50 backdrop-blur-sm"
+                  >
+                    {isUploadingBanner ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Camera className="w-4 h-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white border border-white/30 rounded-lg text-sm font-medium transition-all backdrop-blur-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-3 py-2 bg-white text-primary hover:bg-white/90 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </>
+              ) : (
+                <button 
+                  onClick={handleEditToggle}
+                  className="px-4 py-2 bg-white text-primary hover:bg-white/90 rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Edit Profile
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom: Profile Info */}
+          <div className="flex items-center gap-6">
+            {/* Avatar */}
+            <div className="relative group">
+              <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl overflow-hidden flex-shrink-0">
+                {(isEditing ? formData?.avatar_url : profile?.avatar_url) ? (
+                  <img
+                    src={isEditing ? formData?.avatar_url : profile?.avatar_url}
+                    alt="Profile picture"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <Camera className="w-4 h-4" />
+                  <div className="w-full h-full bg-background flex items-center justify-center">
+                    <User className="w-12 h-12 sm:w-16 sm:h-16 text-muted-foreground" />
+                  </div>
                 )}
-              </button>
-              <button
-                onClick={handleCancel}
-                className="px-3 py-2 bg-background/90 hover:bg-background text-foreground border border-border rounded-lg text-sm font-medium transition-all shadow-sm"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSave}
-                disabled={saving}
-                className="px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-all disabled:opacity-50"
-              >
-                {saving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </>
-          ) : (
-            <button 
-              onClick={handleEditToggle}
-              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
-            >
-              <Edit3 className="w-4 h-4" />
-              Edit Profile
-            </button>
-          )}
+              </div>
+              
+              {/* Avatar upload button */}
+              {isEditing && (
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute -bottom-2 -right-2 bg-white text-primary hover:bg-white/90 p-2 rounded-full transition-colors shadow-lg disabled:opacity-50"
+                >
+                  {isUploadingAvatar ? (
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Name and Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <h1 className="text-3xl sm:text-4xl font-bold text-white">
+                  {profile?.display_name || 'Display Name'}
+                </h1>
+                {profile?.verification_status === 'fully_verified' && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-white/20 text-white rounded-full text-xs font-medium backdrop-blur-sm">
+                    <Award className="w-3 h-3" />
+                    Verified
+                  </div>
+                )}
+              </div>
+
+              <p className="text-base text-white/90 mb-3">
+                @{profile?.handle || 'handle'}
+              </p>
+
+              {/* Info Pills */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {profile?.city && profile?.country && (
+                  <div className="flex items-center gap-1.5 text-sm text-white bg-white/10 backdrop-blur-sm px-3 py-1 rounded-lg">
+                    <MapPin className="h-4 w-4" />
+                    <span className="hidden sm:inline">{profile.city}, {profile.country}</span>
+                    <span className="sm:hidden">{profile.city}</span>
+                  </div>
+                )}
+
+                {profile?.created_at && (
+                  <div className="flex items-center gap-1.5 text-sm text-white bg-white/10 backdrop-blur-sm px-3 py-1 rounded-lg">
+                    <Calendar className="h-4 w-4" />
+                    <span>Member since {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+                )}
+
+                {profile?.primary_skill && (
+                  <span className="px-3 py-1 text-sm font-medium rounded-lg bg-primary text-primary-foreground">
+                    {profile.primary_skill}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
         
-        {/* Hidden file input for banner */}
+        {/* Hidden file inputs */}
         <input
           ref={bannerInputRef}
           type="file"
@@ -527,142 +689,37 @@ export function ProfileHeaderEnhanced() {
             }
           }}
         />
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) {
+              handleAvatarUpload(file)
+            }
+          }}
+        />
       </div>
 
-      {/* Profile Info */}
-      <div className="relative px-6 pb-6">
-        {/* Avatar */}
-        <div className="flex items-start gap-4 -mt-16 relative z-10">
-          <div className="relative group">
-            <div className="w-32 h-32 rounded-full border-4 border-border overflow-hidden">
-              {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt="Profile picture"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <User className="w-16 h-16 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-            
-            {/* Avatar upload button */}
-            {isEditing && (
-              <button
-                onClick={() => avatarInputRef.current?.click()}
-                disabled={isUploadingAvatar}
-                className="absolute -bottom-2 -right-2 bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded-full transition-colors shadow-lg disabled:opacity-50"
-              >
-                {isUploadingAvatar ? (
-                  <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Camera className="w-4 h-4" />
-                )}
-              </button>
-            )}
-            
-            {/* Hidden file input for avatar */}
-            <input
-              ref={avatarInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) {
-                  handleAvatarUpload(file)
-                }
-              }}
-            />
+      {/* Bio and Additional Info - Below Banner */}
+      <div className="relative px-6 pb-6 pt-4">
+        {profile?.bio && (
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-foreground mb-2">About</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {profile.bio}
+            </p>
           </div>
+        )}
 
-          {/* Profile Details */}
-          <div className="flex-1 pt-16 min-w-0">
-            <div className="flex items-start justify-between">
-              <div className="flex-1 min-w-0 pr-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl font-bold text-foreground">
-                    {profile?.display_name || 'Display Name'}
-                  </h1>
-                  {profile?.verification_status === 'fully_verified' && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 rounded-full text-xs font-medium">
-                      <Award className="w-3 h-3" />
-                      Verified
-                    </div>
-                  )}
-                  {isProfileComplete && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                      <CheckCircle className="w-3 h-3" />
-                      Complete Profile
-                    </div>
-                  )}
-                </div>
-
-                {/* Primary Skill Badge */}
-                {profile?.primary_skill && (
-                  <div className="mb-2">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-primary/90 to-primary text-primary-foreground rounded-full text-sm font-semibold shadow-sm">
-                      <Briefcase className="w-3.5 h-3.5" />
-                      {profile.primary_skill}
-                    </div>
-                  </div>
-                )}
-
-                <div className="text-sm text-muted-foreground mb-1">
-                  @{profile?.handle || 'handle'}
-                </div>
-                
-                <p className="text-sm text-foreground leading-relaxed mb-4 max-w-md">
-                  {profile?.bio || 'No bio provided'}
-                </p>
-
-                {/* Social Links */}
-                {socialLinks.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 mb-4">
-                    {socialLinks.map((link, index) => (
-                      <a
-                        key={index}
-                        href={link.url || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg hover:shadow-md transition-all duration-200 group flex-shrink-0"
-                      >
-                        <div className={`w-6 h-6 ${link.color} rounded-full flex items-center justify-center flex-shrink-0`}>
-                          <link.icon className="w-3 h-3 text-primary-foreground" />
-                        </div>
-                        <span className="text-sm font-medium text-foreground whitespace-nowrap">
-                          {link.name}
-                        </span>
-                      </a>
-                    ))}
-                  </div>
-                )}
-
-                {/* Professional Info */}
-                {professionalInfo.length > 0 && (
-                  <div className="flex flex-col gap-2 mb-4">
-                    {professionalInfo.map((info, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
-                        <info.icon className="w-4 h-4 flex-shrink-0" />
-                        <span className="truncate">{info.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* User Rating */}
-                {profile && (
-                  <div className="mb-4">
-                    <UserRatingDisplay userId={profile.id} compact={true} />
-                  </div>
-                )}
-              </div>
-
-            </div>
+        {/* User Rating */}
+        {profile && (
+          <div className="mb-4">
+            <UserRatingDisplay userId={profile.id} compact={true} />
           </div>
-        </div>
+        )}
 
         {/* Expandable Additional Information */}
         <div className="mt-6 pt-6 border-t border-border">

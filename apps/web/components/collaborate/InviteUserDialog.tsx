@@ -79,12 +79,12 @@ export function InviteUserDialog({
       try {
         const [skillsRes, talentRes] = await Promise.all([
           supabase?.from('predefined_skills').select('name').eq('is_active', true).order('sort_order'),
-          supabase?.from('predefined_talent_categories').select('category_name as name').eq('is_active', true).order('sort_order')
+          supabase?.from('predefined_talent_categories').select('category_name').eq('is_active', true).order('sort_order')
         ]);
 
         const allSkills = [
           ...(skillsRes?.data?.map((s: any) => s.name) || []),
-          ...(talentRes?.data?.map((t: any) => t.name) || [])
+          ...(talentRes?.data?.map((t: any) => t.category_name) || [])
         ];
 
         setAvailableSkills(allSkills);

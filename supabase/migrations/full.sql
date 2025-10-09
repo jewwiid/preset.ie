@@ -784,8 +784,12 @@ BEGIN
         RAISE EXCEPTION 'Verification request not found or not pending';
     END IF;
     
-    -- Determine badge type
-    v_badge_type := 'verified_' || v_verification_type;
+    -- Determine badge type - map 'age' to 'identity'
+    IF v_verification_type = 'age' THEN
+        v_badge_type := 'verified_identity';
+    ELSE
+        v_badge_type := 'verified_' || v_verification_type;
+    END IF;
     
     -- Calculate expiration
     IF p_badge_expires_in_days IS NOT NULL THEN
@@ -807,7 +811,7 @@ BEGIN
         revoke_reason = 'Superseded by new verification'
     WHERE user_id = v_user_id
     AND badge_type = v_badge_type
-    AND is_active = true;
+    AND revoked_at IS NULL;
     
     -- Issue new badge
     INSERT INTO verification_badges (
@@ -825,19 +829,17 @@ BEGIN
     ) RETURNING id INTO v_badge_id;
     
     -- Update user profile with verification flag
-    IF v_verification_type = 'identity' THEN
+    IF v_verification_type = 'identity' OR v_verification_type = 'age' THEN
         UPDATE users_profile
-        SET role_flags = array_append(
-            array_remove(role_flags, 'VERIFIED_ID'),
-            'VERIFIED_ID'
-        )
+        SET verified_id = true
         WHERE user_id = v_user_id;
     ELSIF v_verification_type = 'professional' THEN
         UPDATE users_profile
-        SET role_flags = array_append(
-            array_remove(role_flags, 'VERIFIED_PRO'),
-            'VERIFIED_PRO'
-        )
+        SET verified_id = true
+        WHERE user_id = v_user_id;
+    ELSIF v_verification_type = 'business' THEN
+        UPDATE users_profile
+        SET verified_id = true
         WHERE user_id = v_user_id;
     END IF;
     
@@ -10305,7 +10307,7 @@ CREATE TABLE IF NOT EXISTS "public"."verification_requests" (
     "updated_at" timestamp with time zone DEFAULT "now"(),
     CONSTRAINT "document_arrays_match" CHECK (("array_length"("document_urls", 1) = "array_length"("document_types", 1))),
     CONSTRAINT "verification_requests_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'reviewing'::"text", 'approved'::"text", 'rejected'::"text", 'expired'::"text", 'additional_info_required'::"text"]))),
-    CONSTRAINT "verification_requests_verification_type_check" CHECK (("verification_type" = ANY (ARRAY['identity'::"text", 'professional'::"text", 'business'::"text"])))
+    CONSTRAINT "verification_requests_verification_type_check" CHECK (("verification_type" = ANY (ARRAY['age'::"text", 'identity'::"text", 'professional'::"text", 'business'::"text"])))
 );
 
 

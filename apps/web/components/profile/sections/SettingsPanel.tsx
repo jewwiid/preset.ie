@@ -3,26 +3,38 @@
 import React, { useState, useEffect } from 'react'
 import { useProfileSettings, useProfile } from '../context/ProfileContext'
 import { ValidationMessage } from '../common/ValidationMessage'
-import { Settings, Shield } from 'lucide-react'
+import { Settings, Shield, CheckCircle, ArrowRight } from 'lucide-react'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../lib/auth-context'
+import { useRouter } from 'next/navigation'
 import { Switch } from '../../ui/switch'
 import { Label } from '../../ui/label'
+import { Button } from '../../ui/button'
+import { VerificationBadges } from '../../VerificationBadges'
+import { parseVerificationBadges } from '../../../lib/utils/verification-badges'
 
 export function SettingsPanel() {
   const { user } = useAuth()
   const { profile } = useProfile()
   const { settings, setSettings } = useProfileSettings()
+  const router = useRouter()
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  // Parse verification badges
+  const verificationBadges = parseVerificationBadges(
+    (profile as any)?.verification_badges || null
+  )
+  const hasAnyVerification = verificationBadges.identity || verificationBadges.professional || verificationBadges.business
+
   // Local state for form data (using profile fields, not settings)
   const [formSettings, setFormSettings] = useState({
     show_location: true,
     show_age: true,
-    show_physical_attributes: true
+    show_physical_attributes: true,
+    allow_collaboration_invites: true
   })
 
   // Load settings from profile when component mounts
@@ -31,7 +43,8 @@ export function SettingsPanel() {
       setFormSettings({
         show_location: profile.show_location ?? true,
         show_age: profile.show_age ?? true,
-        show_physical_attributes: profile.show_physical_attributes ?? true
+        show_physical_attributes: profile.show_physical_attributes ?? true,
+        allow_collaboration_invites: (profile as any).allow_collaboration_invites ?? true
       })
     }
   }, [profile])
@@ -62,6 +75,7 @@ export function SettingsPanel() {
           show_location: formSettings.show_location,
           show_age: formSettings.show_age,
           show_physical_attributes: formSettings.show_physical_attributes,
+          allow_collaboration_invites: formSettings.allow_collaboration_invites,
           updated_at: new Date().toISOString()
         })
         .eq('id', profile.id)
@@ -95,6 +109,94 @@ export function SettingsPanel() {
       {error && (
         <ValidationMessage type="error" message={error} />
       )}
+
+      {/* Verification Section */}
+      <div className="bg-card rounded-lg p-6 border border-border">
+        <h3 className="text-lg font-medium text-foreground mb-2 flex items-center gap-2">
+          <Shield className="w-5 h-5 text-primary" />
+          Verification
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          Build trust and stand out with verified badges
+        </p>
+
+        {hasAnyVerification ? (
+          <>
+            {/* Current Verifications */}
+            <div className="space-y-3 mb-4">
+              {verificationBadges.identity && (
+                <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <CheckCircle className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">Identity Verified</p>
+                    <p className="text-xs text-muted-foreground">Your identity has been confirmed</p>
+                  </div>
+                </div>
+              )}
+
+              {verificationBadges.professional && (
+                <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <CheckCircle className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">Professional Verified</p>
+                    <p className="text-xs text-muted-foreground">Your credentials have been confirmed</p>
+                  </div>
+                </div>
+              )}
+
+              {verificationBadges.business && (
+                <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                  <CheckCircle className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">Business Verified</p>
+                    <p className="text-xs text-muted-foreground">Your business has been confirmed</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Add More Verifications */}
+            {(!verificationBadges.identity || !verificationBadges.professional || !verificationBadges.business) && (
+              <Button
+                variant="outline"
+                onClick={() => router.push('/verify')}
+                className="w-full"
+              >
+                <Shield className="w-4 h-4 mr-2" />
+                Add More Verifications
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Get Verified CTA */}
+            <div className="space-y-3 mb-4">
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                <span>Increase trust with clients and collaborators</span>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                <span>Stand out in search results and listings</span>
+              </div>
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <CheckCircle className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                <span>Show your professionalism with badges</span>
+              </div>
+            </div>
+
+            <Button
+              onClick={() => router.push('/verify')}
+              className="w-full"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Get Verified
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </>
+        )}
+      </div>
 
       {/* Privacy Settings */}
       <div className="bg-muted rounded-lg p-4">
@@ -149,6 +251,22 @@ export function SettingsPanel() {
               id="show-physical"
               checked={formSettings.show_physical_attributes}
               onCheckedChange={(checked) => handleSettingsChange('show_physical_attributes', checked)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-3 border-t border-border mt-2 pt-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="allow-collaboration" className="text-sm font-medium">
+                Allow Collaboration Invites
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Let others invite you to collaborate on projects
+              </p>
+            </div>
+            <Switch
+              id="allow-collaboration"
+              checked={formSettings.allow_collaboration_invites}
+              onCheckedChange={(checked) => handleSettingsChange('allow_collaboration_invites', checked)}
             />
           </div>
         </div>

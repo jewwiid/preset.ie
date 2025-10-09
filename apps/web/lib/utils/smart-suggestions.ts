@@ -10,35 +10,59 @@ interface ProfileField {
 }
 
 const PROFILE_FIELDS: ProfileField[] = [
-  // High Impact Fields (High Priority)
-  { key: 'bio', label: 'Bio', weight: 10, category: 'high' },
-  { key: 'specializations', label: 'Specializations', weight: 15, category: 'high' },
-  { key: 'years_experience', label: 'Experience', weight: 12, category: 'high' },
-  { key: 'hourly_rate_min', label: 'Hourly Rate', weight: 10, category: 'high' },
+  // ============ UNIVERSAL FIELDS (Apply to ALL roles) ============
+  // CRITICAL - Visual Identity
+  { key: 'avatar_url', label: 'Profile Photo', weight: 15, category: 'high' },
   
-  // Medium Impact Fields
+  // High Impact - Basic Profile
+  { key: 'bio', label: 'Bio', weight: 10, category: 'high' },
+  { key: 'city', label: 'Location', weight: 8, category: 'high' },
+  { key: 'country', label: 'Country', weight: 5, category: 'high' },
+  
+  // High Impact - Skills & Experience
+  { key: 'specializations', label: 'Specializations', weight: 12, category: 'high' },
+  { key: 'years_experience', label: 'Experience (Years)', weight: 10, category: 'high' },
+  { key: 'experience_level', label: 'Experience Level', weight: 8, category: 'high' },
+  
+  // High Impact - Rates & Availability
+  { key: 'hourly_rate_min', label: 'Hourly Rate', weight: 10, category: 'high' },
+  { key: 'typical_turnaround_days', label: 'Turnaround Time', weight: 6, category: 'high' },
+  { key: 'availability_status', label: 'Availability Status', weight: 5, category: 'high' },
+  
+  // Medium Impact - Contact & Portfolio
+  { key: 'phone_number', label: 'Phone', weight: 5, category: 'medium' },
   { key: 'portfolio_url', label: 'Portfolio', weight: 8, category: 'medium' },
   { key: 'website_url', label: 'Website', weight: 5, category: 'medium' },
-  { key: 'equipment_list', label: 'Equipment', weight: 8, category: 'medium', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
-  { key: 'editing_software', label: 'Software', weight: 6, category: 'medium', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
-  { key: 'typical_turnaround_days', label: 'Turnaround Time', weight: 6, category: 'medium' },
-  { key: 'city', label: 'Location', weight: 8, category: 'medium' },
-  { key: 'country', label: 'Country', weight: 5, category: 'medium' },
+  { key: 'instagram_handle', label: 'Instagram', weight: 3, category: 'medium' },
+  { key: 'tiktok_handle', label: 'TikTok', weight: 2, category: 'medium' },
   
-  // Low Impact Fields
-  { key: 'phone_number', label: 'Phone', weight: 5, category: 'low' },
-  { key: 'instagram_handle', label: 'Instagram', weight: 3, category: 'low' },
-  { key: 'tiktok_handle', label: 'TikTok', weight: 2, category: 'low' },
-  { key: 'languages', label: 'Languages', weight: 4, category: 'low' },
+  // Low Impact - Additional Info
   { key: 'available_for_travel', label: 'Travel Availability', weight: 4, category: 'low' },
-  { key: 'studio_name', label: 'Studio Info', weight: 4, category: 'low', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  { key: 'languages', label: 'Languages', weight: 4, category: 'low' },
   
-  // Talent-specific fields
+  // ============ CONTRIBUTOR-SPECIFIC FIELDS ============
+  { key: 'equipment_list', label: 'Equipment', weight: 8, category: 'high', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  { key: 'editing_software', label: 'Software', weight: 6, category: 'medium', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  { key: 'studio_name', label: 'Studio Info', weight: 4, category: 'low', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  { key: 'has_studio', label: 'Has Studio', weight: 3, category: 'low', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  
+  // ============ TALENT-SPECIFIC FIELDS ============
+  { key: 'talent_categories', label: 'Talent Categories', weight: 10, category: 'high', applicableRoles: ['TALENT', 'BOTH'] },
+  
+  // Physical Attributes
   { key: 'height_cm', label: 'Height', weight: 6, category: 'medium', applicableRoles: ['TALENT', 'BOTH'] },
   { key: 'weight_kg', label: 'Weight', weight: 4, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
   { key: 'body_type', label: 'Body Type', weight: 4, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
-  { key: 'hair_length', label: 'Hair Length', weight: 3, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
-  { key: 'skin_tone', label: 'Skin Tone', weight: 3, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'eye_color', label: 'Eye Color', weight: 3, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'hair_color', label: 'Hair Color', weight: 3, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'hair_length', label: 'Hair Length', weight: 2, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'skin_tone', label: 'Skin Tone', weight: 2, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
+  
+  // Demographics (for talent)
+  { key: 'gender_identity', label: 'Gender Identity', weight: 4, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'ethnicity', label: 'Ethnicity', weight: 3, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'nationality', label: 'Nationality', weight: 3, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'tattoos', label: 'Tattoos/Piercings', weight: 2, category: 'low', applicableRoles: ['TALENT', 'BOTH'] },
 ]
 
 /**

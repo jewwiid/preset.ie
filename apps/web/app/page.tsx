@@ -7,6 +7,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useHomepageImages, usePreloadCriticalImages } from './hooks/usePlatformImages';
 import { usePlatformGeneratedImages } from './hooks/usePlatformGeneratedImages';
+import { VerificationBadges } from '../components/VerificationBadges';
+import { parseVerificationBadges } from '../lib/utils/verification-badges';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -147,6 +149,7 @@ export default function Home() {
                       src={currentImage.image_url}
                       alt={currentImage.alt_text}
                 fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
                       className="object-cover transition-opacity duration-1000"
                 priority
                       style={{ opacity: 1 }}
@@ -726,9 +729,20 @@ export default function Home() {
                       
                       {/* Talent Info */}
                       <div className="text-center">
-                        <h3 className="text-foreground font-medium text-lg">
-                          {displayName} <span className="text-muted-foreground font-normal">@{talent.handle}</span>
-                        </h3>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <h3 className="text-foreground font-medium text-lg">
+                            {displayName}
+                          </h3>
+                          <VerificationBadges
+                            verifiedIdentity={parseVerificationBadges(talent.verification_badges || null).identity}
+                            verifiedProfessional={parseVerificationBadges(talent.verification_badges || null).professional}
+                            verifiedBusiness={parseVerificationBadges(talent.verification_badges || null).business}
+                            size="sm"
+                          />
+                        </div>
+                        <p className="text-muted-foreground text-sm">
+                          @{talent.handle}
+                        </p>
                         <p className="text-muted-foreground text-sm mt-1">
                           {(talent as any).primary_skill ||
                             (talent.talent_categories && talent.talent_categories.length > 0 ? talent.talent_categories[0] : null) ||
@@ -897,7 +911,7 @@ export default function Home() {
       </section>
 
       {/* User Generated Images Masonry Section */}
-      <section className="py-20 bg-background">
+      <section className="py-20 bg-background overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-foreground mb-4">FEATURED WORK</h2>
@@ -905,27 +919,36 @@ export default function Home() {
               Discover amazing creative work from our community of talented professionals
             </p>
           </div>
-          
+
           <div className="relative">
-            <div className="overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              <div className="flex gap-4 pb-4" style={{ width: 'max-content' }}>
+            <div className="overflow-hidden">
+              <div className="flex gap-4 animate-scroll-left">
                 {(() => {
                   const featuredImages = getFeaturedWorkImages();
                   const heights = ['h-64', 'h-48', 'h-80', 'h-64', 'h-72', 'h-56', 'h-80', 'h-64', 'h-72', 'h-80'];
-                  
+
                   if (featuredImages.length === 0) {
                     // Fallback placeholder images if no platform images available
-                    return Array.from({ length: 10 }, (_, index) => (
-                      <div key={index} className={`relative ${heights[index]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                    const placeholders = Array.from({ length: 10 }, (_, index) => (
+                      <div key={`placeholder-${index}`} className={`relative ${heights[index]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
                         <div className="w-full h-full bg-muted flex items-center justify-center">
                           <span className="text-muted-foreground text-sm">Coming Soon</span>
                         </div>
                       </div>
                     ));
+                    // Duplicate for seamless loop with unique keys
+                    const duplicatePlaceholders = Array.from({ length: 10 }, (_, index) => (
+                      <div key={`placeholder-duplicate-${index}`} className={`relative ${heights[index]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                          <span className="text-muted-foreground text-sm">Coming Soon</span>
+                        </div>
+                      </div>
+                    ));
+                    return [...placeholders, ...duplicatePlaceholders];
                   }
-                  
-                  return featuredImages.map((image, index) => (
-                    <div key={image.id} className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+
+                  const images = featuredImages.map((image, index) => (
+                    <div key={`${image.id}-${index}`} className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
                       <Image
                         src={image.result_image_url}
                         alt={image.title || `Featured work ${index + 1}`}
@@ -949,16 +972,37 @@ export default function Home() {
                       </div>
                     </div>
                   ));
+
+                  // Duplicate images for seamless loop with unique keys
+                  const duplicateImages = featuredImages.map((image, index) => (
+                    <div key={`duplicate-${image.id}-${index}`} className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                      <Image
+                        src={image.result_image_url}
+                        alt={image.title || `Featured work ${index + 1}`}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
+                          if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                            (e.target as HTMLImageElement).src = fallbackUrl;
+                          }
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="text-background">
+                          <p className="text-sm font-medium">{image.title || 'Creative Project'}</p>
+                          <p className="text-xs text-background/70">
+                            by {image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ));
+
+                  return [...images, ...duplicateImages];
                 })()}
               </div>
-            </div>
-
-            {/* Scroll indicators */}
-            <div className="flex justify-center mt-8 space-x-2">
-              <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-              <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
-              <div className="w-2 h-2 bg-muted-foreground/30 rounded-full"></div>
             </div>
           </div>
         </div>

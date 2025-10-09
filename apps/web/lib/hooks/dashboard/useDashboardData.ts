@@ -236,22 +236,37 @@ export const useDashboardData = () => {
     if (!user || !supabase) return
 
     try {
-      const { data, error } = await (supabase as any)
+      // Fetch profile
+      const { data: profileData, error: profileError } = await (supabase as any)
         .from('users_profile')
         .select('*')
         .eq('user_id', user.id)
         .single()
 
-      if (error) {
-        if (error.code === 'PGRST116') {
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
           // No profile exists
           return
         }
-        console.error('Error fetching profile:', error)
-      } else {
-        setProfile(data as any)
-        await loadDashboardData(data as any)
+        console.error('Error fetching profile:', profileError)
+        return
       }
+
+      // Fetch verification badges separately
+      const { data: badgesData } = await (supabase as any)
+        .from('verification_badges')
+        .select('badge_type, issued_at, expires_at, revoked_at')
+        .eq('user_id', user.id)
+        .is('revoked_at', null)
+
+      // Combine the data
+      const combinedData = {
+        ...profileData,
+        verification_badges: badgesData || []
+      }
+
+      setProfile(combinedData as any)
+      await loadDashboardData(combinedData as any)
     } catch (err) {
       console.error('Error in fetchProfile:', err)
     } finally {

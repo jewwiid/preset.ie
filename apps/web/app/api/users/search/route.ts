@@ -55,8 +55,8 @@ export async function GET(request: NextRequest) {
       dbQuery = dbQuery.eq('available_for_travel', true);
     }
 
-    // Exclude admin profiles
-    dbQuery = dbQuery.not('role_flags', 'cs', '["ADMIN"]');
+    // Exclude admin profiles (using PostgreSQL array contains operator)
+    dbQuery = dbQuery.not('role_flags', 'cs', '{"ADMIN"}');
 
     // Order by profile completion and limit
     dbQuery = dbQuery

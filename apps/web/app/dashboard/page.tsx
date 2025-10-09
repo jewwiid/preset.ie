@@ -4,11 +4,14 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/auth-context'
 import { useDashboardData } from '../../lib/hooks/dashboard/useDashboardData'
 import { usePendingInvitations } from '../../lib/hooks/dashboard/usePendingInvitations'
+import { useGigInvitations } from '../../lib/hooks/dashboard/useGigInvitations'
 import { ProfileCard } from '../../components/dashboard/ProfileCard'
 import { RecentGigsCard } from '../../components/dashboard/RecentGigsCard'
 import { RecentMessagesCard } from '../../components/dashboard/RecentMessagesCard'
 import { SmartSuggestionsCard } from '../../components/dashboard/SmartSuggestionsCard'
 import { PendingInvitationsCard } from '../../components/dashboard/PendingInvitationsCard'
+import { PendingGigInvitationsCard } from '../../components/dashboard/PendingGigInvitationsCard'
+import { AllInvitationsCard } from '../../components/dashboard/AllInvitationsCard'
 import { DashboardMatchmakingCard } from '../../components/dashboard/DashboardMatchmakingCard'
 import SavedMediaGallery from '../components/playground/SavedImagesGallery'
 import { BannerPosition } from '../../lib/types/dashboard'
@@ -36,6 +39,13 @@ export default function Dashboard() {
     acceptInvitation,
     declineInvitation
   } = usePendingInvitations()
+
+  const {
+    invitations: gigInvitations,
+    loading: gigInvitationsLoading,
+    acceptInvitation: acceptGigInvitation,
+    declineInvitation: declineGigInvitation
+  } = useGigInvitations()
 
   const handleSignOut = async () => {
     await signOut()
@@ -159,6 +169,15 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* All Invitations Quick Access Card */}
+          <div className="mb-6 max-w-7xl mx-auto">
+            <AllInvitationsCard
+              gigInvitationsCount={gigInvitations.length}
+              collabInvitationsCount={invitations.length}
+              loading={invitationsLoading || gigInvitationsLoading}
+            />
+          </div>
+
           {/* Pending Invitations Section */}
           <PendingInvitationsCard
             invitations={invitations}
@@ -166,6 +185,16 @@ export default function Dashboard() {
             onAccept={acceptInvitation}
             onDecline={declineInvitation}
           />
+
+          {/* Pending Gig Invitations Section - For Talent Users */}
+          {isTalent && (
+            <PendingGigInvitationsCard
+              invitations={gigInvitations}
+              loading={gigInvitationsLoading}
+              onAccept={acceptGigInvitation}
+              onDecline={declineGigInvitation}
+            />
+          )}
 
           {/* Smart Matchmaking Section - For Talent Users */}
           {isTalent && (

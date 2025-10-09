@@ -42,9 +42,18 @@ export interface UserProfile {
   style_tags: string[]
   subscription_tier: string
   verification_status: string
+  verified_id?: boolean // Legacy: Simple boolean for any verification
   avatar_url?: string
   header_banner_url?: string
   header_banner_position?: string // JSON string of BannerPosition
+
+  // Multi-badge verification support
+  verification_badges?: Array<{
+    badge_type: 'verified_identity' | 'verified_professional' | 'verified_business'
+    issued_at: string
+    expires_at: string | null
+    revoked_at: string | null
+  }>
 
   // New demographic fields from migration
   gender_identity?: 'male' | 'female' | 'non_binary' | 'genderfluid' | 'agender' | 'transgender_male' | 'transgender_female' | 'prefer_not_to_say' | 'other'

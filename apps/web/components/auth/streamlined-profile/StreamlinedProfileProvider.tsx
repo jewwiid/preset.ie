@@ -291,6 +291,10 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
         // Essential fields only (matching database schema)
         availability_status: profileData.availabilityStatus || 'Available',
         
+        // Primary skill - save to both fields for compatibility
+        primary_skill: profileData.primarySkill || null,
+        talent_categories: profileData.primarySkill ? [profileData.primarySkill] : [],
+        
         // Optional fields (can be filled later) - using correct field names
         instagram_handle: profileData.instagramHandle || null,
         website_url: profileData.websiteUrl || null,
@@ -310,6 +314,13 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
         height_cm: profileData.height ? parseInt(profileData.height.replace(/\D/g, '')) : null,
         weight_kg: profileData.weight ? parseInt(profileData.weight.replace(/\D/g, '')) : null,
         body_type: profileData.bodyType || null,
+        
+        // Work preferences
+        accepts_tfp: profileData.acceptsTfp ?? false,
+        prefers_studio: profileData.prefersStudio ?? false,
+        prefers_outdoor: profileData.prefersOutdoor ?? false,
+        available_weekdays: profileData.availableWeekdays ?? false,
+        available_weekends: profileData.availableWeekends ?? false,
         
         // Default privacy settings
         show_age: true,

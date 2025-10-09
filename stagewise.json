@@ -1,0 +1,9 @@
+{
+  "port": 3000,
+  "framework": "nextjs",
+  "typescript": true,
+  "tailwind": true,
+  "appDirectory": "apps/web/app",
+  "componentsDirectory": "apps/web/components",
+  "publicDirectory": "apps/web/public"
+}

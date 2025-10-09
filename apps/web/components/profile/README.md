@@ -139,11 +139,11 @@ Main layout wrapper that provides the overall structure.
 </ProfileLayout>
 ```
 
-#### `ProfileHeader`
-Header section with avatar, banner, and profile info.
+#### `ProfileHeaderEnhanced`
+Enhanced header section with avatar, banner, drag positioning, and full profile info.
 
 ```tsx
-<ProfileHeader />
+<ProfileHeaderEnhanced />
 ```
 
 #### `ProfileTabs`
@@ -395,7 +395,7 @@ test('Edit functionality works', async () => {
 - [x] Extract types and interfaces
 - [x] Set up ProfileContext with reducer pattern
 - [x] Create common components (FormField, TagInput, ToggleSwitch, etc.)
-- [x] Create layout components (ProfileLayout, ProfileHeader, ProfileTabs)
+- [x] Create layout components (ProfileLayout, ProfileHeaderEnhanced, ProfileTabs)
 
 ### Phase 2: Section Components ✅
 - [x] Extract PersonalInfoSection

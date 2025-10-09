@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { parseVerificationBadges } from '../../lib/utils/verification-badges'
 
 interface PresetImage {
   id: string;
@@ -13,6 +14,13 @@ interface PresetImage {
   users_profile?: {
     display_name: string;
     handle: string;
+    verified_id: boolean;
+    verification_badges?: Array<{
+      badge_type: 'verified_identity' | 'verified_professional' | 'verified_business'
+      issued_at: string
+      expires_at: string | null
+      revoked_at: string | null
+    }>
   };
 }
 
@@ -44,7 +52,14 @@ interface TalentProfile {
   years_experience: number;
   account_status: string;
   profile_completion_percentage: number;
+  verified_id: boolean;
   created_at: string;
+  verification_badges?: Array<{
+    badge_type: 'verified_identity' | 'verified_professional' | 'verified_business'
+    issued_at: string
+    expires_at: string | null
+    revoked_at: string | null
+  }>
 }
 
 export function usePlatformGeneratedImages() {
