@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if token is expired (24 hours)
-    const tokenTime = parseInt(timestamp);
+    const tokenTime = parseInt(timestamp) * 1000; // Convert seconds to milliseconds
     const now = Date.now();
     const twentyFourHours = 24 * 60 * 60 * 1000;
 

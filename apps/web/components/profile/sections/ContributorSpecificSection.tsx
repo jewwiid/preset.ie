@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { X, Plus } from 'lucide-react'
+import { normalizeUrl } from '@/lib/utils/url-formatter'
 
 interface ContributorSpecificSectionProps {
   profile?: any
@@ -322,12 +323,25 @@ export function ContributorSpecificSection({
             <Label htmlFor="website-url">Website URL</Label>
             <Input
               id="website-url"
-              type="url"
-              placeholder="https://your-website.com"
+              type="text"
+              placeholder="example.com"
               value={isEditing ? (formData.website_url || '') : (profile?.website_url || '')}
               onChange={(e) => onFieldChange?.('website_url', e.target.value)}
+              onBlur={(e) => {
+                if (isEditing) {
+                  const normalized = normalizeUrl(e.target.value);
+                  if (normalized !== e.target.value) {
+                    onFieldChange?.('website_url', normalized);
+                  }
+                }
+              }}
               disabled={!isEditing}
             />
+            {isEditing && (
+              <p className="text-xs text-muted-foreground mt-1">
+                We'll add https:// automatically
+              </p>
+            )}
           </div>
           
           <div>

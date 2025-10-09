@@ -8,12 +8,13 @@ import { Textarea } from '../../../../components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../components/ui/select'
 import { Label } from '../../../../components/ui/label'
 import { Badge } from '../../../../components/ui/badge'
-import { 
-  User, 
-  MapPin, 
-  Globe, 
-  Instagram, 
-  Link, 
+import { normalizeUrl } from '../../../../lib/utils/url-formatter'
+import {
+  User,
+  MapPin,
+  Globe,
+  Instagram,
+  Link,
   Check,
   Upload,
   Image as ImageIcon,
@@ -397,13 +398,23 @@ export function EssentialProfileStep() {
               <Link className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 id="websiteUrl"
-                type="url"
+                type="text"
                 value={profileData.websiteUrl || ''}
                 onChange={(e) => setProfileData(prev => ({ ...prev, websiteUrl: e.target.value }))}
+                onBlur={(e) => {
+                  // Auto-format URL on blur
+                  const normalized = normalizeUrl(e.target.value);
+                  if (normalized !== e.target.value) {
+                    setProfileData(prev => ({ ...prev, websiteUrl: normalized }));
+                  }
+                }}
                 className="pl-10"
-                placeholder="https://..."
+                placeholder="example.com"
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              Enter your website (we'll add https:// automatically)
+            </p>
           </div>
         </div>
       </div>

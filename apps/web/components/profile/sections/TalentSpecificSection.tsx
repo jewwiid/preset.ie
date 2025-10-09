@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { normalizeUrl } from '@/lib/utils/url-formatter'
 
 // Types for clothing size system
 interface ClothingSizeSystem {
@@ -939,14 +940,26 @@ export function TalentSpecificSection() {
         </div>
         
         <div>
-          <TextField
-            label="Website URL"
+          <Label htmlFor="website-url">Website URL</Label>
+          <Input
+            id="website-url"
+            type="text"
             value={formData?.website_url || ''}
-            onChange={(value) => updateField('website_url', value)}
-            placeholder="https://your-website.com"
+            onChange={(e) => updateField('website_url', e.target.value)}
+            onBlur={(e) => {
+              if (isEditing) {
+                const normalized = normalizeUrl(e.target.value);
+                if (normalized !== e.target.value) {
+                  updateField('website_url', normalized);
+                }
+              }
+            }}
+            placeholder="example.com"
             disabled={!isEditing}
           />
-          <p className="text-xs text-muted-foreground mt-1">Your personal website or professional page</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {isEditing ? "We'll add https:// automatically" : "Your personal website or professional page"}
+          </p>
         </div>
       </div>
 
