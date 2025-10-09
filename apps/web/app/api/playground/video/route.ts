@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       console.log('🎬 Enhanced prompt with cinematic parameters:', enhancedPrompt)
     }
 
-    let videoResult: { videoUrl: string; taskId: string }
+    let videoResult: { videoUrl: string; taskId: string; styledImageUrl?: string | null }
     let processedImageUrl: string | null = null // Fixed scope issue
 
     // Choose provider and generation method
@@ -159,10 +159,43 @@ export async function POST(request: NextRequest) {
     } else {
       // Seedream (existing implementation)
       console.log('🚀 Using Seedream for image-to-video generation...')
-      processedImageUrl = await processImageForAspectRatio(imageUrl, aspectRatio, resolution, yPosition)
+
+      // If a style prompt is provided, apply it to the image first
+      let finalImageUrl = imageUrl
+      const shouldApplyStyle = enhancedPrompt && (
+        enhancedPrompt.toLowerCase().includes('anime') ||
+        enhancedPrompt.toLowerCase().includes('transform') ||
+        enhancedPrompt.toLowerCase().includes('apply') ||
+        enhancedPrompt.toLowerCase().includes('style') ||
+        enhancedPrompt.toLowerCase().includes('cinematic') ||
+        enhancedPrompt.toLowerCase().includes('dreamy') ||
+        enhancedPrompt.toLowerCase().includes('dramatic') ||
+        enhancedPrompt.toLowerCase().includes('vintage') ||
+        enhancedPrompt.toLowerCase().includes('glitch')
+      )
+
+      if (shouldApplyStyle) {
+        // This looks like a style prompt, not a motion prompt
+        // Apply the style to the image first
+        console.log('🎨 Style prompt detected - applying style to image before video generation...')
+        console.log('🎨 Style prompt:', enhancedPrompt)
+        try {
+          finalImageUrl = await applyStyleToImage(imageUrl, enhancedPrompt, aspectRatio, resolution)
+          console.log('✅ Style applied to image successfully:', finalImageUrl)
+        } catch (error) {
+          console.error('❌ Failed to apply style to image:', error)
+          // Continue with original image if style application fails
+          console.log('⚠️ Continuing with original image...')
+        }
+      } else {
+        console.log('💨 Motion prompt detected - skipping style application, using original image')
+      }
+
+      processedImageUrl = await processImageForAspectRatio(finalImageUrl, aspectRatio, resolution, yPosition)
 
       console.log('🖼️ Image processing completed:', {
         originalImageUrl: imageUrl,
+        styledImageUrl: finalImageUrl,
         processedImageUrl: processedImageUrl,
         aspectRatio: aspectRatio,
         resolution: resolution,
@@ -171,6 +204,10 @@ export async function POST(request: NextRequest) {
       })
 
       videoResult = await generateVideoWithWaveSpeed(processedImageUrl, duration, resolution, motionType, enhancedPrompt)
+
+      // Store the styled image URL if style was applied (for Seedream only)
+      const styledImageUrl = finalImageUrl !== imageUrl ? finalImageUrl : null
+      videoResult.styledImageUrl = styledImageUrl
     }
 
     console.log('✅ Video generation API response:', videoResult)
@@ -189,6 +226,7 @@ export async function POST(request: NextRequest) {
           prompt: prompt,
           enhanced_prompt: enhancedPrompt,
           image_url: imageUrl,
+          styled_image_url: videoResult.styledImageUrl || null,
           processed_image_url: processedImageUrl,
           y_position: yPosition || 0,
           custom_dimensions: getTargetDimensions(aspectRatio, resolution),
@@ -251,6 +289,7 @@ export async function POST(request: NextRequest) {
       taskId: videoResult.taskId,
       creditsUsed: creditsRequired,
       processedImageUrl,
+      styledImageUrl: videoResult.styledImageUrl || null,
       aspectRatio,
       resolution,
       duration,
@@ -504,7 +543,7 @@ async function generateVideoWithWan(
         prompt: prompt || 'Add natural motion to the scene',
         resolution: resolution || '720p', // 480p, 720p, or 1080p
         duration,
-        enable_prompt_expansion: false,
+        enable_prompt_expansion: true, // Enable for better style interpretation
         seed: -1
       }
     } else {
@@ -525,7 +564,7 @@ async function generateVideoWithWan(
         prompt: prompt || 'Create a video',
         size,
         duration,
-        enable_prompt_expansion: false,
+        enable_prompt_expansion: true, // Enable for better style interpretation
         seed: -1
       }
     }
@@ -570,6 +609,119 @@ async function generateVideoWithWan(
 
   } catch (error) {
     console.error('Wan video generation error:', error)
+    throw error
+  }
+}
+
+// Apply style to image using image-to-image transformation
+async function applyStyleToImage(
+  imageUrl: string,
+  stylePrompt: string,
+  aspectRatio: string,
+  resolution: string
+): Promise<string> {
+  console.log('🎨 Applying style to image:', {
+    imageUrl: imageUrl.substring(0, 50) + '...',
+    stylePrompt: stylePrompt.substring(0, 100) + '...',
+    aspectRatio,
+    resolution
+  })
+
+  try {
+    // Map video resolution to image generation size
+    const sizeMap: { [key: string]: string } = {
+      '480p-16:9': '832x480',
+      '480p-9:16': '480x832',
+      '480p-1:1': '480x480',
+      '720p-16:9': '1280x720',
+      '720p-9:16': '720x1280',
+      '720p-1:1': '720x720',
+      '1080p-16:9': '1920x1080',
+      '1080p-9:16': '1080x1920',
+      '1080p-1:1': '1080x1080'
+    }
+
+    const size = sizeMap[`${resolution}-${aspectRatio}`] || '832x480'
+
+    // Use NanoBanana image-to-image for style transformation
+    const response = await fetch('https://api.wavespeed.ai/api/v3/google/nano-banana/edit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${wavespeedApiKey}`
+      },
+      body: JSON.stringify({
+        prompt: stylePrompt,
+        images: [imageUrl],
+        size: size,
+        enable_base64_output: false,
+        enable_sync_mode: false // Use async for better reliability
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('❌ Style application API error:', errorText)
+      throw new Error(`Failed to apply style: ${response.status}`)
+    }
+
+    const result = await response.json()
+    console.log('📡 Style application response:', result)
+
+    // If sync mode, return URL directly
+    if (result.outputs && result.outputs.length > 0) {
+      const styledImageUrl = typeof result.outputs[0] === 'string'
+        ? result.outputs[0]
+        : result.outputs[0].url || result.outputs[0].image_url
+
+      if (styledImageUrl) {
+        return styledImageUrl
+      }
+    }
+
+    // Otherwise, poll for result
+    if (result.id) {
+      const taskId = result.id
+      console.log('🔄 Polling for styled image result, taskId:', taskId)
+
+      const maxAttempts = 30
+      const pollInterval = 2000 // 2 seconds
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval))
+
+        const statusResponse = await fetch(`https://api.wavespeed.ai/api/v3/google/nano-banana/fetch/${taskId}`, {
+          headers: {
+            'Authorization': `Bearer ${wavespeedApiKey}`
+          }
+        })
+
+        if (!statusResponse.ok) {
+          console.error('❌ Failed to check style task status:', await statusResponse.text())
+          continue
+        }
+
+        const statusData = await statusResponse.json()
+        console.log(`🔄 Style task status (attempt ${attempt + 1}):`, statusData.status)
+
+        if (statusData.status === 'completed' && statusData.outputs && statusData.outputs.length > 0) {
+          const styledImageUrl = typeof statusData.outputs[0] === 'string'
+            ? statusData.outputs[0]
+            : statusData.outputs[0].url || statusData.outputs[0].image_url
+
+          console.log('✅ Style applied successfully:', styledImageUrl)
+          return styledImageUrl
+        } else if (statusData.status === 'failed') {
+          throw new Error(`Style application failed: ${statusData.error || 'Unknown error'}`)
+        }
+      }
+
+      throw new Error('Style application timeout')
+    }
+
+    throw new Error('No task ID or output URL received from style application')
+  } catch (error) {
+    console.error('❌ Style application error:', error)
     throw error
   }
 }

@@ -80,6 +80,30 @@ export default function VideoGenerationPanel({
   const [videoStyle, setVideoStyle] = useState('')
   const [isEnhancing, setIsEnhancing] = useState(false)
   const [videoSubject, setVideoSubject] = useState('')
+  const [availableStyles, setAvailableStyles] = useState<Array<{ style_name: string; display_name: string }>>([])
+  const [loadingStyles, setLoadingStyles] = useState(true)
+
+  // Fetch available styles from database
+  useEffect(() => {
+    const fetchStyles = async () => {
+      try {
+        setLoadingStyles(true)
+        const response = await fetch('/api/style-prompts')
+        if (response.ok) {
+          const data = await response.json()
+          setAvailableStyles(data.stylePrompts || [])
+        } else {
+          console.error('Failed to fetch styles')
+        }
+      } catch (error) {
+        console.error('Error fetching styles:', error)
+      } finally {
+        setLoadingStyles(false)
+      }
+    }
+
+    fetchStyles()
+  }, [])
 
   // Auto-correct duration when switching to Wan (only allows 5 or 10)
   useEffect(() => {
@@ -845,22 +869,17 @@ export default function VideoGenerationPanel({
           <Label htmlFor="videoStyle" className="text-sm">
             Video Style (Optional)
           </Label>
-          <Select value={videoStyle || undefined} onValueChange={(value) => setVideoStyle(value)}>
+          <Select value={videoStyle || undefined} onValueChange={(value) => setVideoStyle(value)} disabled={loadingStyles}>
             <SelectTrigger>
-              <SelectValue placeholder="Select a style for your video" />
+              <SelectValue placeholder={loadingStyles ? "Loading styles..." : "Select a style for your video"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No Style</SelectItem>
-              <SelectItem value="cinematic">Cinematic</SelectItem>
-              <SelectItem value="dreamy">Dreamy</SelectItem>
-              <SelectItem value="dramatic">Dramatic</SelectItem>
-              <SelectItem value="smooth">Smooth Motion</SelectItem>
-              <SelectItem value="fast-paced">Fast-Paced</SelectItem>
-              <SelectItem value="slow-motion">Slow Motion</SelectItem>
-              <SelectItem value="time-lapse">Time-Lapse</SelectItem>
-              <SelectItem value="anime">Anime Style</SelectItem>
-              <SelectItem value="vintage">Vintage Film</SelectItem>
-              <SelectItem value="glitch">Glitch Effect</SelectItem>
+              {availableStyles.map((style) => (
+                <SelectItem key={style.style_name} value={style.style_name}>
+                  {style.display_name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

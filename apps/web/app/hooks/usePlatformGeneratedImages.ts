@@ -6,6 +6,8 @@ import { parseVerificationBadges } from '../../lib/utils/verification-badges'
 interface PresetImage {
   id: string;
   result_image_url: string;
+  video_url?: string;
+  media_type?: 'image' | 'video';
   title: string;
   description: string;
   tags: string[];

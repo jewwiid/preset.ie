@@ -82,6 +82,30 @@ export default function DynamicPreviewArea({
   const [showBaseImage, setShowBaseImage] = useState(false) // Default to showing generated images
   const [showGridOverlay, setShowGridOverlay] = useState(true)
   const [gridType, setGridType] = useState<'horizontal' | 'rule-of-thirds'>('horizontal')
+  const [availableStyles, setAvailableStyles] = useState<Array<{ style_name: string; display_name: string }>>([])
+  const [loadingStyles, setLoadingStyles] = useState(true)
+
+  // Fetch available styles from database
+  useEffect(() => {
+    const fetchStyles = async () => {
+      try {
+        setLoadingStyles(true)
+        const response = await fetch('/api/style-prompts')
+        if (response.ok) {
+          const data = await response.json()
+          setAvailableStyles(data.stylePrompts || [])
+        } else {
+          console.error('Failed to fetch styles')
+        }
+      } catch (error) {
+        console.error('Error fetching styles:', error)
+      } finally {
+        setLoadingStyles(false)
+      }
+    }
+
+    fetchStyles()
+  }, [])
   
   // Use the aspect ratio from parent instead of local state
   const displayAspectRatio = aspectRatio || '1:1'
@@ -249,70 +273,16 @@ export default function DynamicPreviewArea({
               {onStyleChange && (
                 <div className="flex items-center gap-2">
                   <Label htmlFor="style-selector" className="text-sm font-medium">Style:</Label>
-                  <Select value={currentStyle || ''} onValueChange={onStyleChange}>
+                  <Select value={currentStyle || ''} onValueChange={onStyleChange} disabled={loadingStyles}>
                     <SelectTrigger className="w-[160px] h-8 text-sm">
-                      <SelectValue placeholder="Select style" />
+                      <SelectValue placeholder={loadingStyles ? "Loading..." : "Select style"} />
                     </SelectTrigger>
                   <SelectContent>
-                    {/* Original Styles */}
-                    <SelectItem value="photorealistic">Photorealistic</SelectItem>
-                    <SelectItem value="artistic">Artistic</SelectItem>
-                    <SelectItem value="cartoon">Cartoon</SelectItem>
-                    <SelectItem value="vintage">Vintage</SelectItem>
-                    <SelectItem value="cyberpunk">Cyberpunk</SelectItem>
-                    <SelectItem value="watercolor">Watercolor</SelectItem>
-                    <SelectItem value="impressionist">Impressionist</SelectItem>
-                    <SelectItem value="renaissance">Renaissance</SelectItem>
-                    <SelectItem value="baroque">Baroque</SelectItem>
-                    <SelectItem value="art_deco">Art Deco</SelectItem>
-                    <SelectItem value="pop_art">Pop Art</SelectItem>
-                    <SelectItem value="digital_art">Digital Art</SelectItem>
-                    <SelectItem value="concept_art">Concept Art</SelectItem>
-                    <SelectItem value="fantasy">Fantasy</SelectItem>
-                    <SelectItem value="sci_fi">Sci-Fi</SelectItem>
-                    <SelectItem value="maximalist">Maximalist</SelectItem>
-                    <SelectItem value="surreal">Surreal</SelectItem>
-                    <SelectItem value="minimalist">Minimalist</SelectItem>
-                    <SelectItem value="abstract">Abstract</SelectItem>
-                    <SelectItem value="sketch">Sketch</SelectItem>
-                    <SelectItem value="oil_painting">Oil Painting</SelectItem>
-                    
-                    {/* Photography Styles */}
-                    <SelectItem value="portrait">Portrait</SelectItem>
-                    <SelectItem value="fashion">Fashion</SelectItem>
-                    <SelectItem value="editorial">Editorial</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
-                    <SelectItem value="lifestyle">Lifestyle</SelectItem>
-                    <SelectItem value="street">Street</SelectItem>
-                    <SelectItem value="architecture">Architecture</SelectItem>
-                    <SelectItem value="nature">Nature</SelectItem>
-                    
-                    {/* Additional Artistic Styles */}
-                    <SelectItem value="abstract">Abstract</SelectItem>
-                    <SelectItem value="minimalist">Minimalist</SelectItem>
-                    
-                    {/* Creative Styles */}
-                    <SelectItem value="pop_art">Pop Art</SelectItem>
-                    <SelectItem value="graffiti">Graffiti</SelectItem>
-                    <SelectItem value="digital_art">Digital Art</SelectItem>
-                    <SelectItem value="concept_art">Concept Art</SelectItem>
-                    <SelectItem value="fantasy">Fantasy</SelectItem>
-                    <SelectItem value="sci_fi">Sci-Fi</SelectItem>
-                    <SelectItem value="steampunk">Steampunk</SelectItem>
-                    <SelectItem value="gothic">Gothic</SelectItem>
-                    
-                    {/* Cinematic Styles */}
-                    <SelectItem value="cinematic">Cinematic</SelectItem>
-                    <SelectItem value="film_noir">Film Noir</SelectItem>
-                    <SelectItem value="dramatic">Dramatic</SelectItem>
-                    <SelectItem value="moody">Moody</SelectItem>
-                    <SelectItem value="bright">Bright</SelectItem>
-                    <SelectItem value="monochrome">Monochrome</SelectItem>
-                    <SelectItem value="sepia">Sepia</SelectItem>
-                    <SelectItem value="hdr">HDR</SelectItem>
-                    
-                    {/* Technical Styles */}
-                    <SelectItem value="technical">Technical</SelectItem>
+                    {availableStyles.map((style) => (
+                      <SelectItem key={style.style_name} value={style.style_name}>
+                        {style.display_name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

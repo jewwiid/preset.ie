@@ -93,7 +93,7 @@ export default function ProgressiveVideo({
     <div ref={ref as React.RefObject<HTMLDivElement>} className={`relative overflow-hidden ${className}`}>
       {/* Loading placeholder */}
       {!videoLoaded && !videoError && (
-        <div className="absolute inset-0 bg-muted-200 animate-pulse flex items-center justify-center">
+        <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
           {poster ? (
             <img
               src={poster}
@@ -102,7 +102,12 @@ export default function ProgressiveVideo({
               aria-hidden="true"
             />
           ) : (
-            <div className="w-8 h-8 border-2 border-border-300 border-t-primary-primary rounded-full animate-spin"></div>
+            <div className="flex flex-col items-center justify-center gap-2">
+              <svg className="w-12 h-12 text-muted-foreground/50" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              <div className="w-6 h-6 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin"></div>
+            </div>
           )}
         </div>
       )}

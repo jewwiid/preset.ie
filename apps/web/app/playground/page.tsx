@@ -93,6 +93,7 @@ function PlaygroundContent() {
     duration: number
     prompt: string
     motionType: string
+    styledImageUrl?: string | null
   } | null>(null)
   const [fullScreenImage, setFullScreenImage] = useState<{
     url: string
@@ -715,7 +716,7 @@ function PlaygroundContent() {
 
       const responseData = await response.json()
       console.log('Video generation API response:', responseData)
-      const { taskId, creditsUsed } = responseData
+      const { taskId, creditsUsed, styledImageUrl } = responseData
       
       // Deduct credits immediately
       setUserCredits(prev => prev - creditsUsed)
@@ -740,7 +741,8 @@ function PlaygroundContent() {
           resolution: params.resolution,
           duration: params.duration,
           prompt: params.prompt,
-          motionType: params.motionType
+          motionType: params.motionType,
+          styledImageUrl: styledImageUrl || null
         })
         console.log('✅ Video URL ready for preview (not saved):', finalVideoUrl)
       }
@@ -879,9 +881,16 @@ function PlaygroundContent() {
         const projectMetadata = currentProject?.metadata || {}
         const videoMetadata = currentProject?.generated_images?.find(img => getImageUrl(img.url) === actualImageUrl) || {}
         
+        // Generate meaningful title from prompt
+        const promptTitle = currentProject?.prompt
+          ? currentProject.prompt.length > 50
+            ? currentProject.prompt.substring(0, 50) + '...'
+            : currentProject.prompt
+          : 'AI-generated video'
+
         const videoData = {
           videoUrl: actualImageUrl,
-          title: 'Generated Video',
+          title: promptTitle,
           description: `AI-generated video: ${currentProject?.prompt || 'AI-generated video'}`,
           tags: ['ai-generated', 'video'],
           duration: (videoMetadata as any)?.duration || 5,
@@ -930,6 +939,17 @@ function PlaygroundContent() {
           })
         } else {
           const errorData = await response.json()
+
+          // Handle duplicate videos gracefully
+          if (response.status === 409 && errorData.error === 'duplicate') {
+            showFeedback({
+              type: 'info',
+              title: 'Already Saved',
+              message: errorData.message || 'This video is already saved in your gallery.'
+            })
+            return // Don't throw error for duplicates
+          }
+
           console.error('Video save API error:', {
             status: response.status,
             statusText: response.statusText,

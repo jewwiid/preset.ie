@@ -17,7 +17,7 @@ import {
   Eye,
   UserPlus
 } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { useAuth } from '@/lib/auth-context'
 
 interface SentCollabInvitation {
   id: string
@@ -53,6 +53,7 @@ export function SentCollabInvitationsCard({
   projectId, 
   className = "" 
 }: SentCollabInvitationsCardProps) {
+  const { user } = useAuth()
   const [invitations, setInvitations] = useState<SentCollabInvitation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -62,15 +63,13 @@ export function SentCollabInvitationsCard({
       setLoading(true)
       setError(null)
 
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      if (!user) {
         setError('Not authenticated')
         return
       }
 
       const response = await fetch(`/api/collab/projects/${projectId}/invitations`, {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
       })

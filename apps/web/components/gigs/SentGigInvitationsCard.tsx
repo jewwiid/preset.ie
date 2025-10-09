@@ -16,7 +16,7 @@ import {
   MessageSquare,
   Eye
 } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { useAuth } from '@/lib/auth-context'
 
 interface SentInvitation {
   id: string
@@ -47,6 +47,7 @@ export function SentGigInvitationsCard({
   gigId, 
   className = "" 
 }: SentGigInvitationsCardProps) {
+  const { user } = useAuth()
   const [invitations, setInvitations] = useState<SentInvitation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -56,15 +57,13 @@ export function SentGigInvitationsCard({
       setLoading(true)
       setError(null)
 
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      if (!user) {
         setError('Not authenticated')
         return
       }
 
       const response = await fetch(`/api/gigs/${gigId}/invitations`, {
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
       })

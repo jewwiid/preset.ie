@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
       media_type: 'video',
       image_url: supabaseVideoUrl, // Use Supabase video URL
       video_url: supabaseVideoUrl, // Permanent URL in our storage
-      thumbnail_url: supabaseVideoUrl, // Use video URL as thumbnail for now
+      thumbnail_url: null, // Let video element generate first frame automatically
       title: title || 'Untitled Video',
       description,
       tags: tags || [],

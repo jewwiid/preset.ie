@@ -128,6 +128,7 @@ interface TabbedPlaygroundLayoutProps {
     duration: number
     prompt: string
     motionType: string
+    styledImageUrl?: string | null
   } | null
   onExpandMedia?: (media: any) => void
   onVideoGenerated?: () => void // Callback when video generation completes
@@ -1027,6 +1028,7 @@ export default function TabbedPlaygroundLayout({
             <div ref={videoPreviewRef} className="w-full" data-preview-area>
               <VideoPreviewArea
                 sourceImage={videoSourceImage || selectedImage}
+                styledImageUrl={generatedVideoMetadata?.styledImageUrl || null}
                 aspectRatio={videoAspectRatio}
                 resolution={videoResolution}
                 prompt={videoPrompt}

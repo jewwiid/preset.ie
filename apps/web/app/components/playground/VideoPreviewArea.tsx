@@ -1,6 +1,7 @@
 'use client'
 
-import { Video as VideoIcon, Download, Heart, X, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { Video as VideoIcon, Download, Heart, X, Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +10,7 @@ import DraggableImagePreview from './DraggableImagePreview'
 interface VideoPreviewAreaProps {
   // Source image props
   sourceImage: string | null
+  styledImageUrl?: string | null
   aspectRatio: string
   resolution: string
   onPositionChange?: (yPosition: number) => void
@@ -40,6 +42,7 @@ interface VideoPreviewAreaProps {
 
 export default function VideoPreviewArea({
   sourceImage,
+  styledImageUrl,
   aspectRatio,
   resolution,
   onPositionChange,
@@ -54,8 +57,13 @@ export default function VideoPreviewArea({
   loading = false,
   fullWidth = false
 }: VideoPreviewAreaProps) {
+  const [showStyledImage, setShowStyledImage] = useState(false)
   const previewAspectRatio = aspectRatio.replace(':', '/')
   const selectedVideoData = videos.find(v => v.url === selectedVideo)
+
+  // Determine which image to show
+  const displayImage = (showStyledImage && styledImageUrl) ? styledImageUrl : sourceImage
+  const hasStyledImage = !!(styledImageUrl && sourceImage)
 
   return (
     <Card className={fullWidth ? 'w-full' : ''}>
@@ -77,22 +85,40 @@ export default function VideoPreviewArea({
               {/* Source Image or Prompt Preview */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{sourceImage ? 'Source Image' : 'Current Prompt'}</p>
-                  {sourceImage && (
-                    <Badge variant="secondary" className="text-xs">
-                      {aspectRatio}
-                    </Badge>
-                  )}
+                  <p className="text-sm font-medium">
+                    {sourceImage ? (showStyledImage && hasStyledImage ? 'Styled Image' : 'Source Image') : 'Current Prompt'}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {sourceImage && (
+                      <Badge variant="secondary" className="text-xs">
+                        {aspectRatio}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 {sourceImage ? (
-                  <DraggableImagePreview
-                    imageUrl={sourceImage}
-                    aspectRatio={aspectRatio}
-                    resolution={resolution}
-                    onPositionChange={onPositionChange || (() => {})}
-                    onSaveFraming={() => {}}
-                    className="w-full"
-                  />
+                  <div className="relative">
+                    <DraggableImagePreview
+                      imageUrl={displayImage || sourceImage}
+                      aspectRatio={aspectRatio}
+                      resolution={resolution}
+                      onPositionChange={onPositionChange || (() => {})}
+                      onSaveFraming={() => {}}
+                      className="w-full"
+                    />
+                    {/* Toggle button for styled image */}
+                    {hasStyledImage && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="absolute top-2 right-2 h-8 px-3 text-xs bg-background/90 backdrop-blur-sm hover:bg-background"
+                        onClick={() => setShowStyledImage(!showStyledImage)}
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1.5" />
+                        {showStyledImage ? 'Show Original' : 'Show Styled'}
+                      </Button>
+                    )}
+                  </div>
                 ) : (
                   <div
                     className="w-full rounded-lg border-2 border-dashed border-border bg-muted flex items-center justify-center text-muted-foreground"

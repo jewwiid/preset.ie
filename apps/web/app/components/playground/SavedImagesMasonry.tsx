@@ -573,7 +573,7 @@ export default function SavedMediaMasonry({
               {image.media_type === 'video' ? (
                 <ProgressiveVideo
                   src={image.video_url || ''}
-                  poster={image.thumbnail_url}
+                  poster={image.thumbnail_url && image.thumbnail_url !== image.video_url ? image.thumbnail_url : undefined}
                   className="w-full h-full"
                   onLoad={() => handleImageLoad(image.id)}
                   onError={() => handleImageLoad(image.id)}
@@ -792,7 +792,7 @@ export default function SavedMediaMasonry({
                     {selectedImageForInfo.media_type === 'video' ? (
                       <video
                         src={selectedImageForInfo.video_url}
-                        poster={selectedImageForInfo.thumbnail_url}
+                        poster={selectedImageForInfo.thumbnail_url && selectedImageForInfo.thumbnail_url !== selectedImageForInfo.video_url ? selectedImageForInfo.thumbnail_url : undefined}
                         className="w-full h-full object-cover"
                         controls
                         preload="metadata"

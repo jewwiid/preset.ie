@@ -947,58 +947,98 @@ export default function Home() {
                     return [...placeholders, ...duplicatePlaceholders];
                   }
 
-                  const images = featuredImages.map((image, index) => (
-                    <div key={`${image.id}-${index}`} className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
-                      <Image
-                        src={image.result_image_url}
-                        alt={image.title || `Featured work ${index + 1}`}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
-                          if ((e.target as HTMLImageElement).src !== fallbackUrl) {
-                            (e.target as HTMLImageElement).src = fallbackUrl;
-                          }
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="text-background">
-                          <p className="text-sm font-medium">{image.title || 'Creative Project'}</p>
-                          <p className="text-xs text-background/70">
-                            by {image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ));
+                  const images = featuredImages.map((image, index) => {
+                    const isVideo = image.media_type === 'video' && image.video_url;
+                    const mediaUrl = isVideo ? image.video_url : image.result_image_url;
 
-                  // Duplicate images for seamless loop with unique keys
-                  const duplicateImages = featuredImages.map((image, index) => (
-                    <div key={`duplicate-${image.id}-${index}`} className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
-                      <Image
-                        src={image.result_image_url}
-                        alt={image.title || `Featured work ${index + 1}`}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => {
-                          const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
-                          if ((e.target as HTMLImageElement).src !== fallbackUrl) {
-                            (e.target as HTMLImageElement).src = fallbackUrl;
-                          }
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="text-background">
-                          <p className="text-sm font-medium">{image.title || 'Creative Project'}</p>
-                          <p className="text-xs text-background/70">
-                            by {image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'}
-                          </p>
+                    return (
+                      <div key={`${image.id}-${index}`} className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                        {isVideo ? (
+                          <video
+                            src={mediaUrl}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            onError={(e) => {
+                              console.error('Video failed to load:', mediaUrl);
+                            }}
+                          />
+                        ) : (
+                          <Image
+                            src={mediaUrl || ''}
+                            alt={image.title || `Featured work ${index + 1}`}
+                            fill
+                            sizes="256px"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
+                              if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                                (e.target as HTMLImageElement).src = fallbackUrl;
+                              }
+                            }}
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="text-background">
+                            <p className="text-sm font-medium">{image.title || 'Creative Project'}</p>
+                            <p className="text-xs text-background/70">
+                              by {image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ));
+                    );
+                  });
+
+                  // Duplicate images/videos for seamless loop with unique keys
+                  const duplicateImages = featuredImages.map((image, index) => {
+                    const isVideo = image.media_type === 'video' && image.video_url;
+                    const mediaUrl = isVideo ? image.video_url : image.result_image_url;
+
+                    return (
+                      <div key={`duplicate-${image.id}-${index}`} className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                        {isVideo ? (
+                          <video
+                            src={mediaUrl}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            onError={(e) => {
+                              console.error('Video failed to load:', mediaUrl);
+                            }}
+                          />
+                        ) : (
+                          <Image
+                            src={mediaUrl || ''}
+                            alt={image.title || `Featured work ${index + 1}`}
+                            fill
+                            sizes="256px"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
+                              if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                                (e.target as HTMLImageElement).src = fallbackUrl;
+                              }
+                            }}
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="text-background">
+                            <p className="text-sm font-medium">{image.title || 'Creative Project'}</p>
+                            <p className="text-xs text-background/70">
+                              by {image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  });
 
                   return [...images, ...duplicateImages];
                 })()}

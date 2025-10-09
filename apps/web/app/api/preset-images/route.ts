@@ -11,11 +11,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') || '20';
 
-    // Fetch recent images from playground_gallery
+    // Fetch recent images and videos from playground_gallery
     const { data: images, error: imagesError } = await supabase
       .from('playground_gallery')
-      .select('id, image_url, thumbnail_url, title, description, tags, user_id, created_at')
-      .not('image_url', 'is', null)
+      .select('id, image_url, thumbnail_url, video_url, media_type, title, description, tags, user_id, created_at')
       .order('created_at', { ascending: false })
       .limit(parseInt(limit));
 
@@ -70,13 +69,15 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching user profiles:', profilesError);
     }
 
-    // Combine images with user profiles
+    // Combine images/videos with user profiles
     const data = images.map(image => {
       const profile = profiles?.find(p => p.user_id === image.user_id);
 
       return {
         id: image.id,
         result_image_url: image.image_url,
+        video_url: image.video_url,
+        media_type: image.media_type || 'image',
         title: image.title || 'Creative Project',
         description: image.description || '',
         tags: image.tags || [],
