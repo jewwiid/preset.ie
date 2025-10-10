@@ -197,37 +197,31 @@ export function useNotifications(): UseNotificationsResult {
           vibration_enabled: true
         }
 
-        console.log('Attempting to insert default preferences:', defaultPrefs)
-
+        // Use upsert to handle both insert and update cases gracefully
+        // This prevents duplicate key errors if called multiple times
         const { data: newPrefs, error: createError } = await supabase
           .from('notification_preferences')
-          .insert(defaultPrefs)
+          .upsert(defaultPrefs, {
+            onConflict: 'user_id',
+            ignoreDuplicates: false
+          })
           .select()
-          .single()
-
-        console.log('Insert result:', { data: newPrefs, error: createError })
+          .maybeSingle() // Use maybeSingle instead of single to handle 0 or 1 rows
 
         if (createError) {
-          console.error('Failed to create default preferences (raw error):', createError)
-          console.error('Error type:', typeof createError)
-          console.error('Error keys:', Object.keys(createError))
-          console.error('Error stringified:', JSON.stringify(createError, null, 2))
-          console.error('Error details:', {
-            message: createError.message || 'No message',
-            code: createError.code || 'No code',
-            details: createError.details || 'No details',
-            hint: createError.hint || 'No hint'
-          })
-          
-          // If table doesn't exist, set default preferences in memory
-          if (createError.code === 'PGRST205' || createError.message.includes('Could not find the table')) {
-            console.log('Notification preferences table not found, using defaults in memory')
-            data = defaultPrefs
-          } else {
-            return
-          }
-        } else {
+          console.error('Failed to upsert notification preferences:', createError)
+          // Set defaults in memory if database operation fails
+          data = defaultPrefs
+        } else if (newPrefs) {
           data = newPrefs
+        } else {
+          // Upsert succeeded but didn't return data, fetch it
+          const { data: fetchedPrefs } = await supabase
+            .from('notification_preferences')
+            .select('*')
+            .eq('user_id', user.id)
+            .single()
+          data = fetchedPrefs || defaultPrefs
         }
       } else if (error) {
         // Handle table not found gracefully
