@@ -82,3 +82,40 @@ export function getPromotionalOfferTemplate(title: string, discount: number, exp
   return getEmailTemplate(`<h1>${title}</h1><p>${discount}% off until ${expiry}</p>`);
 }
 
+// Engagement & Digest templates (placeholders - to be expanded)
+export function getUnreadDigestTemplate(unreadCount: number, conversations: any[]): string {
+  const { getEmailTemplate } = require('./shared.templates');
+  return getEmailTemplate(`<h1>You have ${unreadCount} unread messages</h1><p>Check your conversations</p>`);
+}
+
+export function getInactiveUserTemplate(name: string, daysInactive: number): string {
+  const { getEmailTemplate } = require('./shared.templates');
+  return getEmailTemplate(`<h1>We miss you, ${name}!</h1><p>It's been ${daysInactive} days since your last visit</p>`);
+}
+
+export function getMilestoneTemplate(name: string, milestone: string, count: number): string {
+  const { getEmailTemplate } = require('./shared.templates');
+  return getEmailTemplate(`<h1>Congratulations, ${name}! 🎉</h1><p>You've reached ${milestone}: ${count}</p>`);
+}
+
+export function getWeeklyReportTemplate(role: string, stats: any): string {
+  const { getEmailTemplate } = require('./shared.templates');
+  return getEmailTemplate(`<h1>Your Weekly Report</h1><p>Here's what happened this week</p>`);
+}
+
+export function getMonthlyReportTemplate(stats: any): string {
+  const { getEmailTemplate } = require('./shared.templates');
+  return getEmailTemplate(`<h1>Your Monthly Report</h1><p>Here's your monthly summary</p>`);
+}
+
+// Marketplace templates (placeholders - to be expanded)
+export function getRentalRequestTemplate(itemName: string, requestUrl: string): string {
+  const { getEmailTemplate } = require('./shared.templates');
+  return getEmailTemplate(`<h1>Rental Request for ${itemName}</h1><p><a href="${requestUrl}">View Request</a></p>`);
+}
+
+export function getRentalAcceptedTemplate(itemName: string, pickupDetails: any): string {
+  const { getEmailTemplate } = require('./shared.templates');
+  return getEmailTemplate(`<h1>Rental Request Accepted</h1><p>Your request for ${itemName} was accepted</p>`);
+}
+
