@@ -377,7 +377,7 @@ export function ProfileHeaderEnhanced() {
 
       console.log('Uploading to path:', filePath)
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('profile-images')
+        .from('avatars')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -391,7 +391,7 @@ export function ProfileHeaderEnhanced() {
       console.log('Upload successful:', uploadData)
 
       const { data } = supabase.storage
-        .from('profile-images')
+        .from('avatars')
         .getPublicUrl(filePath)
 
       console.log('Public URL:', data.publicUrl)
