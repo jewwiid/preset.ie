@@ -331,11 +331,41 @@ export class PlunkService {
   async sendWelcomeEmail(to: string, name?: string): Promise<{ success: boolean; emails: any[] }> {
     return this.sendTransactionalEmail({
       to,
-      subject: 'Welcome to Preset! 🎨',
+      subject: 'Welcome to Preset! 🎬 Let\'s get you started',
       body: `
-        <h1>Welcome ${name ? name : 'to Preset'}!</h1>
-        <p>We're excited to have you on board. Start creating amazing presets today!</p>
-        <p>Need help getting started? Check out our guides and tutorials.</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, sans-serif; color: #0f172a; background: #fafdfc; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; }
+            .header { background: #00876f; padding: 40px; text-align: center; }
+            .logo { color: #ffffff; font-size: 32px; font-weight: 600; }
+            .content { padding: 40px 30px; }
+            .button { display: inline-block; padding: 14px 28px; background: #00876f; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+            .footer { background: #fafdfc; padding: 30px; text-align: center; color: #475569; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo">Preset</div>
+              <p style="color: #ccfbef; margin: 5px 0 0 0;">Creative Collaboration Platform</p>
+            </div>
+            <div class="content">
+              <h1>Welcome to Preset, ${name || 'Creative'}! 🎬</h1>
+              <p>We're thrilled to have you join our creative community.</p>
+              <p>Start connecting with amazing creatives and build your portfolio today!</p>
+              <a href="https://presetie.com/dashboard" class="button">Get Started</a>
+              <p>Need help? Check out our <a href="https://presetie.com/help" style="color: #00876f;">guides and tutorials</a>.</p>
+            </div>
+            <div class="footer">
+              <p><strong>Presetie.com</strong> - Where Creatives Connect</p>
+              <p>© 2025 Presetie.com. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
       `,
       name,
     });
@@ -352,11 +382,45 @@ export class PlunkService {
   ): Promise<{ success: boolean; emails: any[] }> {
     return this.sendTransactionalEmail({
       to,
-      subject: 'Credit Purchase Confirmation',
+      subject: 'Credit Purchase Confirmed! 💳',
       body: `
-        <h1>Thank you for your purchase!</h1>
-        <p>You've successfully purchased ${credits} credits for $${(amount / 100).toFixed(2)}.</p>
-        <p>Your credits are now available in your account.</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, sans-serif; color: #0f172a; background: #fafdfc; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; }
+            .header { background: #00876f; padding: 40px; text-align: center; }
+            .logo { color: #ffffff; font-size: 32px; font-weight: 600; }
+            .content { padding: 40px 30px; }
+            .credits-banner { background: #00876f; padding: 40px; border-radius: 12px; color: #ffffff; text-align: center; margin: 30px 0; }
+            .credits-banner h2 { color: #ffffff; font-size: 48px; margin: 0; }
+            .button { display: inline-block; padding: 14px 28px; background: #00876f; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; }
+            .footer { background: #fafdfc; padding: 30px; text-align: center; color: #475569; font-size: 14px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo">Preset</div>
+            </div>
+            <div class="content">
+              <h1>Credit Purchase Confirmed! 💳</h1>
+              <p>Your credits have been added to your account.</p>
+              <div class="credits-banner">
+                <h2>${credits}</h2>
+                <p style="color: #ccfbef; margin: 10px 0 0 0;">Credits Added</p>
+              </div>
+              <p>Amount paid: <strong>$${(amount / 100).toFixed(2)}</strong></p>
+              <a href="https://presetie.com/playground" class="button">Start Creating</a>
+            </div>
+            <div class="footer">
+              <p><strong>Presetie.com</strong> - Where Creatives Connect</p>
+              <p>© 2025 Presetie.com. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
       `,
       name,
     });

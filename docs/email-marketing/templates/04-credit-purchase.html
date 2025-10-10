@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit Purchase Confirmed! 💳</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Inter', sans-serif; line-height: 1.6; color: #0f172a; background-color: #fafdfc; }
+    .email-wrapper { width: 100%; background-color: #fafdfc; padding: 40px 20px; }
+    .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 135, 111, 0.08); }
+    .header { background: #00876f; padding: 40px 30px; text-align: center; }
+    .logo { color: #ffffff; font-size: 32px; font-weight: 600; text-decoration: none; }
+    .content { padding: 40px 30px; }
+    .content h1 { font-size: 28px; color: #0f172a; margin: 0 0 20px 0; }
+    .content p { font-size: 16px; color: #475569; margin: 0 0 15px 0; }
+    .button { display: inline-block; padding: 14px 28px; background: #00876f; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+    .credits-banner { background: #00876f; padding: 40px; border-radius: 12px; color: #ffffff; margin: 30px 0; text-align: center; }
+    .credits-banner h2 { color: #ffffff; font-size: 48px; margin: 0; }
+    .credits-banner p { color: #ccfbef; font-size: 18px; margin: 10px 0 0 0; }
+    .balance-box { background: #f5fbf9; padding: 25px; border-radius: 8px; margin: 20px 0; text-align: center; }
+    .balance-box h3 { color: #0f172a; margin: 0 0 10px 0; }
+    .balance-box .amount { font-size: 36px; color: #00876f; font-weight: 700; margin: 10px 0; }
+    .receipt-box { background: #fafdfc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin: 30px 0; }
+    .receipt-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0; }
+    .receipt-row:last-child { border-bottom: none; }
+    .footer { background: #fafdfc; padding: 30px; text-align: center; color: #475569; font-size: 14px; border-top: 1px solid #e2e8f0; }
+    .footer a { color: #00876f; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-container">
+      
+      <div class="header">
+        <a href="https://presetie.com" class="logo">Preset</a>
+      </div>
+      
+      <div class="content">
+        <h1>Credit Purchase Confirmed! 💳</h1>
+        
+        <p>Your credits have been added to your account and are ready to use.</p>
+        
+        <div class="credits-banner">
+          <h2>{{credits}}</h2>
+          <p>Credits Added</p>
+        </div>
+        
+        <div class="balance-box">
+          <h3>📊 Your Balance</h3>
+          <div class="amount">{{totalBalance}}</div>
+          <p style="color: #475569; margin: 0;">Total available credits</p>
+        </div>
+        
+        <h3 style="color: #0f172a;">💡 What You Can Do:</h3>
+        <ul style="color: #475569;">
+          <li>Enhance images with AI</li>
+          <li>Generate moodboard variations</li>
+          <li>Access premium presets</li>
+          <li>Unlock advanced features</li>
+        </ul>
+        
+        <div style="text-align: center;">
+          <a href="https://presetie.com/playground" class="button">Start Creating</a>
+        </div>
+        
+        <div class="receipt-box">
+          <h3 style="margin-top: 0; color: #0f172a;">🧾 Receipt</h3>
+          <div class="receipt-row">
+            <span style="color: #475569;">Transaction ID</span>
+            <span style="color: #0f172a; font-weight: 600;">{{transactionId}}</span>
+          </div>
+          <div class="receipt-row">
+            <span style="color: #475569;">Amount</span>
+            <span style="color: #0f172a; font-weight: 600;">${{amount}}</span>
+          </div>
+          <div class="receipt-row">
+            <span style="color: #475569;">Credits</span>
+            <span style="color: #0f172a; font-weight: 600;">{{credits}}</span>
+          </div>
+          <div class="receipt-row">
+            <span style="color: #475569;">Date</span>
+            <span style="color: #0f172a; font-weight: 600;">{{date}}</span>
+          </div>
+          <div style="margin-top: 15px; text-align: center;">
+            <a href="https://presetie.com/invoices/{{invoiceId}}" style="color: #00876f; text-decoration: none; font-weight: 600;">Download Invoice →</a>
+          </div>
+        </div>
+        
+        <p style="font-size: 14px; color: #64748b; margin-top: 30px;">
+          Questions about your purchase? <a href="mailto:support@presetie.com" style="color: #00876f;">Contact support</a>
+        </p>
+      </div>
+      
+      <div class="footer">
+        <p><strong>Presetie.com</strong> - Where Creatives Connect</p>
+        <p>
+          <a href="https://presetie.com/preferences">Email Preferences</a> | 
+          <a href="https://presetie.com/unsubscribe">Unsubscribe</a>
+        </p>
+        <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
+          © 2025 Presetie.com. All rights reserved.
+        </p>
+      </div>
+      
+    </div>
+  </div>
+</body>
+</html>
+

@@ -1,21 +1,32 @@
 # 📧 Email Templates Library
 
-Professional email templates for all Presetie.com email events.
+Professional email templates for all Preset.ie email events.
 
 ---
 
 ## 🎨 Design System
 
-### Brand Colors
+### Brand Colors (Preset Theme)
 ```css
---primary: #00876f;
---secondary: #0d7d72;
---success: #10b981;
---warning: #f59e0b;
---danger: #ef4444;
---text: #1f2937;
---text-light: #6b7280;
---bg: #f9fafb;
+/* Primary Brand Colors */
+--primary: #00876f;           /* Preset teal/green */
+--primary-light: #ccfbef;     /* Light teal */
+--primary-dark: #0d7d72;      /* Dark teal */
+
+/* Accent Colors */
+--accent: #f59e0b;            /* Amber/orange */
+--success: #00876f;           /* Preset green */
+--warning: #f59e0b;           /* Amber */
+--danger: #ef4444;            /* Red */
+
+/* Neutral Colors */
+--text: #0f172a;              /* Dark slate */
+--text-light: #475569;        /* Light slate */
+--text-muted: #64748b;        /* Muted slate */
+--bg: #ffffff;                /* White */
+--bg-secondary: #fafdfc;      /* Very light teal tint */
+--bg-tertiary: #f5fbf9;       /* Light teal tint */
+--border: #e2e8f0;            /* Light border */
 ```
 
 ### Base Template Structure
@@ -29,12 +40,12 @@ Professional email templates for all Presetie.com email events.
   <title>{{title}}</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Inter', sans-serif;
       line-height: 1.6;
-      color: #1f2937;
+      color: #0f172a;
       margin: 0;
       padding: 0;
-      background-color: #f9fafb;
+      background-color: #fafdfc;
     }
     .container {
       max-width: 600px;
@@ -42,15 +53,16 @@ Professional email templates for all Presetie.com email events.
       background-color: #ffffff;
     }
     .header {
-      background: linear-gradient(135deg, #00876f 0%, #0d7d72 100%);
+      background: #00876f;
       padding: 40px 30px;
       text-align: center;
     }
     .logo {
       color: #ffffff;
-      font-size: 28px;
-      font-weight: bold;
+      font-size: 32px;
+      font-weight: 600;
       text-decoration: none;
+      letter-spacing: -0.025em;
     }
     .content {
       padding: 40px 30px;
@@ -58,24 +70,32 @@ Professional email templates for all Presetie.com email events.
     .button {
       display: inline-block;
       padding: 14px 28px;
-      background: linear-gradient(135deg, #00876f 0%, #0d7d72 100%);
+      background: #00876f;
       color: #ffffff;
       text-decoration: none;
       border-radius: 8px;
       font-weight: 600;
       margin: 20px 0;
+      transition: background 0.2s ease;
+    }
+    .button:hover {
+      background: #0d7d72;
     }
     .footer {
-      background-color: #f9fafb;
+      background-color: #fafdfc;
       padding: 30px;
       text-align: center;
-      color: #6b7280;
+      color: #475569;
       font-size: 14px;
+    }
+    .footer a {
+      color: #00876f;
+      text-decoration: none;
     }
     .badge {
       display: inline-block;
       padding: 6px 12px;
-      background-color: #10b981;
+      background-color: #00876f;
       color: white;
       border-radius: 12px;
       font-size: 12px;
@@ -92,7 +112,7 @@ Professional email templates for all Presetie.com email events.
       <!-- CONTENT GOES HERE -->
     </div>
     <div class="footer">
-      <p>© 2025 Presetie.com - Creative Collaboration Platform</p>
+      <p>© 2025 <strong>Presetie.com</strong> - Creative Collaboration Platform</p>
       <p>
         <a href="{{preferencesUrl}}">Email Preferences</a> | 
         <a href="{{unsubscribeUrl}}">Unsubscribe</a>
@@ -110,41 +130,36 @@ Professional email templates for all Presetie.com email events.
 ### 1. Welcome Email (user.signup)
 
 ```html
-<h1 style="color: #1f2937; margin-bottom: 10px;">Welcome to Preset, {{name}}</h1>
-<p style="color: #667eea; font-size: 18px; margin-top: 0;">Your creative collaboration starts here</p>
+<h1>Welcome to Preset, {{name}}! 🎬</h1>
 
-<p style="color: #4b5563; line-height: 1.6;">We're excited to have you join our community of photographers, videographers, and creative talent.</p>
+<p>We're thrilled to have you join our creative community!</p>
 
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 12px; color: white; margin: 30px 0;">
-  <h3 style="margin: 0 0 10px 0; color: white;">You're signed up as a {{role}}</h3>
-  <p style="margin: 0; opacity: 0.95;">{{roleDescription}}</p>
+<div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+  <h3 style="margin-top: 0;">You're signed up as a {{role}}</h3>
+  <p style="margin-bottom: 0;">{{roleDescription}}</p>
 </div>
 
-<h3 style="color: #1f2937; border-left: 4px solid #667eea; padding-left: 15px; margin: 30px 0 20px 0;">Get Started in 3 Steps</h3>
-<ol style="color: #4b5563; line-height: 1.8;">
-  <li><strong style="color: #1f2937;">Complete your profile</strong> - Add photos, bio, and skills</li>
-  <li><strong style="color: #1f2937;">{{primaryAction}}</strong> - {{primaryActionDescription}}</li>
-  <li><strong style="color: #1f2937;">Connect & create</strong> - Start collaborating!</li>
+<h3>🚀 Get Started in 3 Steps:</h3>
+<ol>
+  <li><strong>Complete your profile</strong> - Add photos, bio, and skills</li>
+  <li><strong>{{primaryAction}}</strong> - {{primaryActionDescription}}</li>
+  <li><strong>Connect & create</strong> - Start collaborating!</li>
 </ol>
 
-<div style="text-align: center; margin: 35px 0;">
-  <a href="{{profileUrl}}" class="button" style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">Complete Your Profile</a>
-</div>
+<a href="{{profileUrl}}" class="button">Complete Your Profile</a>
 
-<div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 30px 0;">
-  <h4 style="margin-top: 0; color: #1f2937;">Pro Tips for Success</h4>
-  <ul style="color: #4b5563; line-height: 1.8; margin-bottom: 0;">
-    <li>{{tip1}}</li>
-    <li>{{tip2}}</li>
-    <li>{{tip3}}</li>
-  </ul>
-</div>
+<h3>💡 Pro Tips:</h3>
+<ul>
+  <li>{{tip1}}</li>
+  <li>{{tip2}}</li>
+  <li>{{tip3}}</li>
+</ul>
 
-<p style="color: #6b7280; border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 40px;">Need help? Reply to this email or visit our <a href="{{helpUrl}}" style="color: #667eea; text-decoration: none;">Help Center</a>.</p>
+<p>Need help? Reply to this email or visit our <a href="{{helpUrl}}">Help Center</a>.</p>
 
-<p style="color: #4b5563;">
-  Best regards,<br>
-  <strong style="color: #1f2937;">The Preset Team</strong>
+<p>
+  Happy creating!<br>
+  The Preset Team
 </p>
 ```
 
@@ -166,7 +181,7 @@ Professional email templates for all Presetie.com email events.
 
 <p>Great news! Your gig "<strong>{{gigTitle}}</strong>" is now published and visible to talent.</p>
 
-<div style="background: linear-gradient(135deg, #00876f 0%, #0d7d72 100%); padding: 30px; border-radius: 12px; color: white; margin: 30px 0;">
+<div style="background: #00876f; padding: 30px; border-radius: 12px; color: white; margin: 30px 0;">
   <h2 style="margin: 0 0 15px 0; color: white;">{{gigTitle}}</h2>
   <p style="margin: 0; font-size: 16px;">
     📍 {{location}}<br>
@@ -239,8 +254,8 @@ Professional email templates for all Presetie.com email events.
 </div>
 
 <div style="text-align: center; margin: 30px 0;">
-  <a href="{{profileUrl}}" class="button" style="background: linear-gradient(135deg, #00876f 0%, #0d7d72 100%);">View Full Profile</a>
-  <a href="{{shortlistUrl}}" style="display: inline-block; padding: 14px 28px; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-left: 10px;">Shortlist</a>
+  <a href="{{profileUrl}}" class="button" style="background: #00876f;">View Full Profile</a>
+  <a href="{{shortlistUrl}}" style="display: inline-block; padding: 14px 28px; background: #f59e0b; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-left: 10px;">Shortlist</a>
 </div>
 
 <p style="color: #6b7280; font-size: 14px;">
@@ -395,7 +410,7 @@ Professional email templates for all Presetie.com email events.
 
 <p>Your upgrade is complete! Here's what you've unlocked:</p>
 
-<div style="background: linear-gradient(135deg, #00876f 0%, #0d7d72 100%); padding: 30px; border-radius: 12px; color: white; margin: 30px 0;">
+<div style="background: #00876f; padding: 30px; border-radius: 12px; color: white; margin: 30px 0;">
   <h2 style="margin: 0 0 20px 0; color: white;">✨ Your New Features</h2>
   
   {{#each features}}
@@ -445,7 +460,7 @@ Professional email templates for all Presetie.com email events.
 
 <p>Your credits have been added to your account.</p>
 
-<div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; border-radius: 12px; color: white; margin: 30px 0; text-align: center;">
+<div style="background: #00876f; padding: 30px; border-radius: 12px; color: white; margin: 30px 0; text-align: center;">
   <h2 style="margin: 0 0 10px 0; color: white;">{{credits}} Credits</h2>
   <p style="margin: 0; font-size: 18px;">Added to your account</p>
 </div>
@@ -557,7 +572,7 @@ Professional email templates for all Presetie.com email events.
   <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px;">
     <h4 style="margin: 0 0 10px 0;">{{title}}</h4>
     <p style="margin: 0 0 10px 0; color: #6b7280;">{{description}}</p>
-    <a href="{{url}}" style="color: #00876f; text-decoration: none;">View →</a>
+    <a href="{{url}}" style="color: #667eea; text-decoration: none;">View →</a>
   </div>
   {{/each}}
 </div>

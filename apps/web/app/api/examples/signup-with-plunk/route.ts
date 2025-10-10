@@ -13,7 +13,7 @@ import { getEmailService } from '@/lib/services/email-service';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, name, password } = await request.json();
+    const { email, name, password, subscribeToNewsletter } = await request.json();
 
     // 1. Create user in your database
     // const user = await createUser({ email, name, password });
@@ -21,9 +21,25 @@ export async function POST(request: NextRequest) {
     // 2. Initialize email service
     const emailService = getEmailService();
 
-    // 3. Send welcome email (role would come from your user creation logic)
-    const userRole = 'talent'; // or 'contributor' based on your signup flow
-    await emailService.sendWelcomeEmail(email, name, userRole);
+    // 3. Track signup event in Plunk
+    await emailService.trackUserSignup(email, {
+      name,
+      plan: 'free',
+      signupDate: new Date().toISOString(),
+      referrer: request.headers.get('referer'),
+      userAgent: request.headers.get('user-agent'),
+    });
+
+    // 4. Send welcome email
+    await emailService.sendWelcomeEmail(email, name);
+
+    // 5. Optionally subscribe to newsletter
+    if (subscribeToNewsletter) {
+      await emailService.subscribeToNewsletter(email, {
+        source: 'signup-form',
+        interests: ['preset-updates', 'tutorials']
+      });
+    }
 
     return NextResponse.json({
       success: true,

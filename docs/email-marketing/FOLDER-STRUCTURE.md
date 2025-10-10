@@ -30,12 +30,6 @@ docs/email-marketing/
 ├── 🗺️ 05-implementation-roadmap.md
 │   └── 8-week implementation plan
 │
-├── 🎨 EMAIL-DESIGN-GUIDE.md
-│   └── NO-EMOJI design standards (brand colors, buttons, layouts)
-│
-├── 🔧 REMOVE-EMOJIS-GUIDE.md
-│   └── Migration guide to remove emojis from templates
-│
 ├── 📚 getting-started/
 │   ├── quick-start.md          → 5-minute quick start
 │   ├── setup-complete.md       → Setup checklist

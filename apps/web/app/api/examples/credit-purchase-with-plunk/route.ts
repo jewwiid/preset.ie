@@ -25,14 +25,25 @@ export async function POST(request: NextRequest) {
     const emailService = getEmailService();
 
     // 1. Send purchase confirmation email
-    await emailService.sendCreditsPurchased(
+    await emailService.sendCreditPurchaseConfirmation(
       email,
       credits,
       amount,
-      transactionId
+      name
     );
 
-    // The trackPurchase is already called inside sendCreditsPurchased
+    // The trackPurchase is already called inside sendCreditPurchaseConfirmation,
+    // but you can also track additional events:
+    
+    // 2. Track milestone purchases (optional)
+    if (credits >= 100) {
+      await emailService.trackUserSignup(email, {
+        milestone: 'first-large-purchase',
+        credits,
+        amount,
+        transactionId
+      });
+    }
 
     return NextResponse.json({
       success: true,

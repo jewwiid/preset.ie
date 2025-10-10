@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>{{emailTitle}}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    /* Presetie.com Professional Email Template */
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Inter', 'Helvetica', 'Arial', sans-serif;
+      line-height: 1.6;
+      color: #0f172a;
+      background-color: #fafdfc;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Container */
+    .email-wrapper {
+      width: 100%;
+      background-color: #fafdfc;
+      padding: 40px 20px;
+    }
+    
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0, 135, 111, 0.08);
+    }
+    
+    /* Header */
+    .email-header {
+      background: #00876f;
+      padding: 40px 30px;
+      text-align: center;
+    }
+    
+    .logo-container {
+      margin-bottom: 0;
+    }
+    
+    .logo-image {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+    }
+    
+    .logo-text {
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: -0.025em;
+      display: block;
+      margin-top: 12px;
+    }
+    
+    .tagline {
+      color: #ccfbef;
+      font-size: 14px;
+      margin-top: 8px;
+      font-weight: 400;
+    }
+    
+    /* Content */
+    .email-content {
+      padding: 40px 30px;
+      color: #0f172a;
+    }
+    
+    .email-content h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 0 0 20px 0;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+    }
+    
+    .email-content h2 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 30px 0 15px 0;
+      line-height: 1.3;
+    }
+    
+    .email-content h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
+      margin: 25px 0 12px 0;
+    }
+    
+    .email-content p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #475569;
+      margin: 0 0 15px 0;
+    }
+    
+    /* Buttons */
+    .button-primary {
+      display: inline-block;
+      padding: 14px 28px;
+      background: #00876f;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 20px 0;
+      transition: background 0.2s ease;
+    }
+    
+    .button-primary:hover {
+      background: #0d7d72;
+    }
+    
+    .button-secondary {
+      display: inline-block;
+      padding: 14px 28px;
+      background: #ffffff;
+      color: #00876f !important;
+      text-decoration: none;
+      border-radius: 8px;
+      border: 2px solid #00876f;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 20px 10px 20px 0;
+    }
+    
+    .button-accent {
+      display: inline-block;
+      padding: 14px 28px;
+      background: #f59e0b;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 20px 0;
+    }
+    
+    /* Cards & Sections */
+    .card {
+      background: #f5fbf9;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    
+    .card-highlight {
+      background: #00876f;
+      color: #ffffff;
+      padding: 30px;
+      border-radius: 12px;
+      margin: 30px 0;
+    }
+    
+    .card-highlight h2,
+    .card-highlight h3 {
+      color: #ffffff !important;
+      margin-top: 0;
+    }
+    
+    .card-highlight p {
+      color: #ccfbef !important;
+    }
+    
+    /* Info Boxes */
+    .info-box {
+      background: #f5fbf9;
+      border-left: 4px solid #00876f;
+      padding: 20px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    .info-box-success {
+      background: #ccfbef;
+      border-left: 4px solid #00876f;
+      padding: 20px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    .info-box-warning {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 20px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    .info-box-danger {
+      background: #fee2e2;
+      border-left: 4px solid #ef4444;
+      padding: 20px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    
+    /* Badge */
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      background-color: #00876f;
+      color: #ffffff;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 5px;
+    }
+    
+    .badge-secondary {
+      background-color: #ccfbef;
+      color: #00876f;
+    }
+    
+    .badge-accent {
+      background-color: #f59e0b;
+      color: #ffffff;
+    }
+    
+    /* Footer */
+    .email-footer {
+      background-color: #fafdfc;
+      padding: 30px;
+      text-align: center;
+      color: #475569;
+      font-size: 14px;
+      border-top: 1px solid #e2e8f0;
+    }
+    
+    .email-footer p {
+      margin: 10px 0;
+      color: #475569;
+    }
+    
+    .email-footer a {
+      color: #00876f;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .email-footer a:hover {
+      text-decoration: underline;
+    }
+    
+    .social-links {
+      margin: 20px 0;
+    }
+    
+    .social-links a {
+      display: inline-block;
+      margin: 0 10px;
+      color: #00876f;
+      text-decoration: none;
+    }
+    
+    /* Lists */
+    ul, ol {
+      padding-left: 20px;
+      margin: 15px 0;
+    }
+    
+    li {
+      margin: 8px 0;
+      color: #475569;
+    }
+    
+    li strong {
+      color: #0f172a;
+    }
+    
+    /* Links */
+    a {
+      color: #00876f;
+      text-decoration: none;
+    }
+    
+    /* Responsive */
+    @media only screen and (max-width: 600px) {
+      .email-wrapper {
+        padding: 20px 10px !important;
+      }
+      
+      .email-content {
+        padding: 30px 20px !important;
+      }
+      
+      .email-content h1 {
+        font-size: 24px !important;
+      }
+      
+      .button-primary,
+      .button-secondary {
+        display: block !important;
+        width: 100% !important;
+        text-align: center !important;
+        margin: 10px 0 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-container">
+      
+      <!-- Header with Logo -->
+      <div class="email-header">
+        <div class="logo-container">
+          <!-- Inline SVG Logo -->
+          <svg width="48" height="48" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto;">
+            <!-- Your logo SVG content here -->
+            <circle cx="20" cy="20" r="18" fill="#ffffff" opacity="0.1"/>
+            <path d="M20 8 L20 32 M12 20 L28 20" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          
+          <a href="https://presetie.com" class="logo-text">Preset</a>
+        </div>
+        <p class="tagline">Creative Collaboration Platform</p>
+      </div>
+      
+      <!-- Content -->
+      <div class="email-content">
+        {{content}}
+      </div>
+      
+      <!-- Footer -->
+      <div class="email-footer">
+        <p style="font-weight: 600; color: #0f172a;">Presetie.com</p>
+        <p>Where Creatives Connect</p>
+        
+        <div class="social-links">
+          <a href="https://instagram.com/presetie">Instagram</a>
+          <span style="color: #cbd5e1;">•</span>
+          <a href="https://twitter.com/presetie">Twitter</a>
+          <span style="color: #cbd5e1;">•</span>
+          <a href="https://presetie.com/help">Help Center</a>
+        </div>
+        
+        <p>
+          <a href="{{preferencesUrl}}">Email Preferences</a>
+          <span style="color: #cbd5e1;">|</span>
+          <a href="{{unsubscribeUrl}}">Unsubscribe</a>
+        </p>
+        
+        <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
+          © 2025 Presetie.com. All rights reserved.<br>
+          Dublin, Ireland
+        </p>
+      </div>
+      
+    </div>
+  </div>
+</body>
+</html>
+

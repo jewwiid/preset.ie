@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're Booked! 🎉</title>
+  <style>
+    body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Inter', sans-serif; line-height: 1.6; color: #0f172a; background-color: #fafdfc; }
+    .email-wrapper { width: 100%; background-color: #fafdfc; padding: 40px 20px; }
+    .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0, 135, 111, 0.08); }
+    .header { background: #00876f; padding: 40px 30px; text-align: center; }
+    .logo { color: #ffffff; font-size: 32px; font-weight: 600; text-decoration: none; }
+    .content { padding: 40px 30px; }
+    .content h1 { font-size: 28px; color: #0f172a; margin: 0 0 20px 0; }
+    .content p { font-size: 16px; color: #475569; margin: 0 0 15px 0; }
+    .button { display: inline-block; padding: 14px 28px; background: #00876f; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+    .shoot-details { background: #00876f; padding: 30px; border-radius: 12px; color: #ffffff; margin: 30px 0; }
+    .shoot-details h2 { color: #ffffff; margin: 0 0 20px 0; }
+    .detail-box { background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .detail-box h3 { color: #ccfbef; margin: 0 0 5px 0; font-size: 14px; font-weight: 600; }
+    .detail-box p { color: #ffffff; margin: 0; font-size: 18px; font-weight: 600; }
+    .detail-box a { color: #ccfbef; text-decoration: underline; }
+    .info-box-warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 4px; margin: 20px 0; color: #92400e; }
+    .footer { background: #fafdfc; padding: 30px; text-align: center; color: #475569; font-size: 14px; border-top: 1px solid #e2e8f0; }
+    .footer a { color: #00876f; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="email-container">
+      
+      <div class="header">
+        <a href="https://presetie.com" class="logo">Preset</a>
+      </div>
+      
+      <div class="content">
+        <h1>Congratulations! You're booked! 🎉</h1>
+        
+        <p>Great news, {{talentName}}! You've been selected for "<strong>{{gigTitle}}</strong>".</p>
+        
+        <div class="shoot-details">
+          <h2>🎬 Shoot Details</h2>
+          
+          <div class="detail-box">
+            <h3>📅 DATE & TIME</h3>
+            <p>{{shootDateTime}}</p>
+          </div>
+          
+          <div class="detail-box">
+            <h3>📍 LOCATION</h3>
+            <p>{{location}}</p>
+            <a href="{{mapUrl}}">Get Directions →</a>
+          </div>
+          
+          <div class="detail-box">
+            <h3>💰 COMPENSATION</h3>
+            <p>{{compensation}}</p>
+          </div>
+        </div>
+        
+        <h3 style="color: #0f172a;">📋 Pre-Shoot Checklist:</h3>
+        <ul style="color: #475569;">
+          <li>✅ Confirm your availability</li>
+          <li>✅ Review the shot list and moodboard</li>
+          <li>✅ Prepare outfits/props (if needed)</li>
+          <li>✅ Check weather forecast (for outdoor shoots)</li>
+          <li>✅ Message {{contributorName}} with any questions</li>
+        </ul>
+        
+        <div style="text-align: center;">
+          <a href="https://presetie.com/messages/{{gigId}}" class="button">Message {{contributorName}}</a>
+        </div>
+        
+        {{#if goldenHour}}
+        <div class="info-box-warning">
+          <strong>⚡ Golden Hour Times:</strong> {{goldenHour}}
+        </div>
+        {{/if}}
+        
+        <h3 style="color: #0f172a;">🛡️ Safety Reminders:</h3>
+        <ul style="color: #475569;">
+          <li>Meet in a public place</li>
+          <li>Bring a friend or notify someone of your location</li>
+          <li>Keep communication within the app</li>
+          <li>Report any concerns immediately</li>
+        </ul>
+        
+        <p style="margin-top: 30px; color: #0f172a; font-weight: 600;">
+          Have an amazing shoot! Can't wait to see what you create! 📸
+        </p>
+      </div>
+      
+      <div class="footer">
+        <p><strong>Presetie.com</strong> - Where Creatives Connect</p>
+        <p>
+          <a href="https://presetie.com/preferences">Email Preferences</a> | 
+          <a href="https://presetie.com/unsubscribe">Unsubscribe</a>
+        </p>
+        <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
+          © 2025 Presetie.com. All rights reserved.
+        </p>
+      </div>
+      
+    </div>
+  </div>
+</body>
+</html>
+
