@@ -180,23 +180,19 @@ export function useNotifications(): UseNotificationsResult {
         // Handle table not found gracefully
         if (error.code === 'PGRST205' || error.message.includes('Could not find the table')) {
           console.log('Notification preferences table not found, using defaults')
-          // Set default preferences in memory
-          const defaultPrefs = {
-            user_id: user.id,
+          // Set default preferences in memory matching the interface
+          const defaultPrefs: NotificationPreferences = {
             email_enabled: true,
             push_enabled: true,
-            in_app_enabled: true,
-            gig_notifications: true,
-            application_notifications: true,
-            message_notifications: true,
-            booking_notifications: true,
-            system_notifications: true,
-            marketing_notifications: false,
-            digest_frequency: 'real-time' as const,
-            timezone: 'UTC',
-            badge_count_enabled: true,
-            sound_enabled: true,
-            vibration_enabled: true
+            digest_frequency: 'immediate',
+            categories: {
+              gig: true,
+              application: true,
+              message: true,
+              booking: true,
+              system: true,
+              marketing: false
+            }
           }
           setPreferences(defaultPrefs)
         } else {
@@ -211,7 +207,23 @@ export function useNotifications(): UseNotificationsResult {
         return
       }
 
-      setPreferences(data)
+      // Transform database format to interface format
+      const transformedPrefs: NotificationPreferences = {
+        email_enabled: data.email_enabled ?? true,
+        push_enabled: data.push_enabled ?? true,
+        digest_frequency: (data.digest_frequency === 'real-time' ? 'immediate' : data.digest_frequency) as 'immediate' | 'daily' | 'weekly' | 'never',
+        categories: {
+          gig: data.gig_notifications ?? true,
+          application: data.application_notifications ?? true,
+          message: data.message_notifications ?? true,
+          booking: data.booking_notifications ?? true,
+          system: data.system_notifications ?? true,
+          marketing: data.marketing_notifications ?? false,
+          collaboration: data.collaboration_notifications ?? true,
+          marketplace: data.marketplace_notifications ?? true
+        }
+      }
+      setPreferences(transformedPrefs)
 
     } catch (err) {
       console.error('Error fetching notification preferences:', err)
