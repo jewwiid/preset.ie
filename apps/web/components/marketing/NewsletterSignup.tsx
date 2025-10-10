@@ -40,8 +40,8 @@ export function NewsletterSignup() {
 
   if (subscribed) {
     return (
-      <div className="rounded-lg bg-green-50 dark:bg-green-950 p-4 text-center">
-        <p className="text-green-800 dark:text-green-200 font-medium">
+      <div className="rounded-lg bg-primary/10 p-4 text-center">
+        <p className="text-primary font-medium">
           🎉 Thanks for subscribing! Check your email for confirmation.
         </p>
       </div>

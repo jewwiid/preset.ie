@@ -800,8 +800,110 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Contributors Section - Photographers, Videographers, etc. */}
+      {/* Creative Roles Section */}
       <section className="py-20 bg-muted">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold text-foreground mb-4">CREATIVE ROLES</h2>
+            <p className="text-xl text-muted-foreground">
+              Explore our community by creative profession and find the perfect talent for your project
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {(() => {
+              // Get representative images from actual profiles
+              const allTalents = [...getTalentProfiles(), ...getContributorProfiles()];
+              
+              const creativeRoles = [
+                {
+                  name: 'Freelancers',
+                  slug: 'freelancers',
+                  description: 'Independent creative professionals',
+                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('freelance')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+                },
+                {
+                  name: 'Photographers',
+                  slug: 'photographers', 
+                  description: 'Portrait, fashion, and commercial photography',
+                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.includes('Photography')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+                },
+                {
+                  name: 'Videographers',
+                  slug: 'videographers',
+                  description: 'Wedding, commercial, and event videography',
+                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.includes('Videographer')) || t.bio?.toLowerCase().includes('videographer'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+                },
+                {
+                  name: 'Models',
+                  slug: 'models',
+                  description: 'Fashion, commercial, and editorial modeling',
+                  imageUrl: allTalents.find(t => t.talent_categories?.includes('Model'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+                },
+                {
+                  name: 'Makeup Artists',
+                  slug: 'makeup-artists',
+                  description: 'Beauty, fashion, and special effects makeup',
+                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('makeup')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+                },
+                {
+                  name: 'Hair Stylists',
+                  slug: 'hair-stylists',
+                  description: 'Fashion, editorial, and commercial styling',
+                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('hair') || s.toLowerCase().includes('stylist')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+                },
+                {
+                  name: 'Directors',
+                  slug: 'directors',
+                  description: 'Film, commercial, and creative direction',
+                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('director')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+                },
+                {
+                  name: 'Producers',
+                  slug: 'producers',
+                  description: 'Film, commercial, and event production',
+                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('producer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+                }
+              ];
+
+              return creativeRoles.map((role) => (
+                <Link key={role.slug} href={`/${role.slug}`} className="group cursor-pointer block">
+                  {/* Role Image */}
+                  <div className="relative aspect-[4/5] mb-4 rounded-lg overflow-hidden">
+                    <Image
+                      src={role.imageUrl}
+                      alt={`${role.name} professionals`}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
+                        if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                          (e.target as HTMLImageElement).src = fallbackUrl;
+                        }
+                      }}
+                    />
+                    {/* Overlay gradient for better text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+
+                  {/* Role Info */}
+                  <div className="text-center">
+                    <h3 className="text-foreground font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                      {role.name}
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      {role.description}
+                    </p>
+                  </div>
+                </Link>
+              ));
+            })()}
+          </div>
+        </div>
+      </section>
+
+      {/* Contributors Section - Photographers, Videographers, etc. */}
+      <section className="py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-16">
             <h2 className="text-4xl font-bold text-foreground mb-4">CONTRIBUTORS</h2>

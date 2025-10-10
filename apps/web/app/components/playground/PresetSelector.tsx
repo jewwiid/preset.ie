@@ -508,7 +508,7 @@ export default function PresetSelector({
 
     if (mode === 'text-to-image') {
       return (
-        <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50">
+        <Badge variant="outline" className="border-primary text-primary bg-primary/10">
           📝 Text → Image
         </Badge>
       )
@@ -516,7 +516,7 @@ export default function PresetSelector({
 
     if (mode === 'image-to-image') {
       return (
-        <Badge variant="outline" className="border-purple-500 text-purple-600 bg-purple-50">
+        <Badge variant="outline" className="border-primary text-primary bg-primary/10">
           🖼️ Image → Image
         </Badge>
       )
@@ -535,7 +535,7 @@ export default function PresetSelector({
     if (!hasVideoSettings) return null
 
     return (
-      <Badge variant="outline" className="border-green-500 text-green-600 bg-green-50">
+      <Badge variant="outline" className="border-primary text-primary bg-primary/10">
         <PlayCircle className="h-3 w-3 mr-1" />
         Video Ready
       </Badge>
@@ -1339,24 +1339,24 @@ export default function PresetSelector({
                 </p>
                 {/* Contextual Hint based on generation mode */}
                 {selectedPreset.technical_settings?.generation_mode === 'text-to-image' && (
-                  <div className="mt-2 flex items-start gap-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                  <div className="mt-2 flex items-start gap-2 text-xs text-primary bg-primary/10 p-2 rounded">
                     <Lightbulb className="h-3 w-3 mt-0.5 flex-shrink-0" />
                     <span>This preset works best with text prompts only</span>
                   </div>
                 )}
                 {selectedPreset.technical_settings?.generation_mode === 'image-to-image' && (
-                  <div className="mt-2 flex items-start gap-2 text-xs text-purple-600 bg-purple-50 p-2 rounded">
+                  <div className="mt-2 flex items-start gap-2 text-xs text-primary bg-primary/10 p-2 rounded">
                     <Lightbulb className="h-3 w-3 mt-0.5 flex-shrink-0" />
                     <span>This preset works best with a base image. Upload or select one for optimal results.</span>
                   </div>
                 )}
                 {/* Video Settings Info */}
                 {selectedPreset.cinematic_settings?.video && (
-                  <div className="mt-2 flex items-start gap-2 text-xs text-green-600 bg-green-50 p-2 rounded">
+                  <div className="mt-2 flex items-start gap-2 text-xs text-primary bg-primary/10 p-2 rounded">
                     <PlayCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       <div className="font-medium mb-1">Video Settings Configured</div>
-                      <div className="space-y-0.5 text-green-700">
+                      <div className="space-y-0.5 text-muted-foreground">
                         {selectedPreset.cinematic_settings.video.cameraMovement && (
                           <div>Camera: {selectedPreset.cinematic_settings.video.cameraMovement}</div>
                         )}

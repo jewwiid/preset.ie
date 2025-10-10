@@ -15,6 +15,7 @@ interface DirectoryProfile {
   primary_skill?: string;
   created_at: string;
   role_flags?: string[];
+  verified_id?: boolean;
 }
 
 interface PageProps {
@@ -86,6 +87,7 @@ async function getTalentProfiles(skillSlug: string) {
         years_experience,
         account_status,
         profile_completion_percentage,
+        verified_id,
         created_at,
         availability_status
       `)
@@ -100,13 +102,11 @@ async function getTalentProfiles(skillSlug: string) {
       return [];
     }
 
-    // Filter profiles by skill category
+    // Filter profiles by skill category - only use explicit role fields
     const filteredData = (data || []).filter((profile: any) => {
       const profileSkills = [
         ...(profile.specializations || []),
-        ...(profile.talent_categories || []),
-        ...(profile.style_tags || []),
-        ...(profile.bio ? [profile.bio] : [])
+        ...(profile.talent_categories || [])
       ].map(s => s.toLowerCase());
       
       const searchSkill = normalizedSkill.toLowerCase();

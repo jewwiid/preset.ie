@@ -70,6 +70,33 @@ export class PlunkCampaignsService {
   }
 
   /**
+   * Filter users by marketing email preferences
+   * Only returns emails of users who opted into marketing
+   */
+  private async filterByMarketingPreferences(userIds: string[]): Promise<string[]> {
+    const supabase = this.getSupabaseAdmin();
+    
+    // Get users who opted into marketing emails
+    const { data: preferences, error } = await supabase
+      .from('notification_preferences')
+      .select('user_id')
+      .in('user_id', userIds)
+      .eq('email_enabled', true)
+      .eq('marketing_notifications', true);
+
+    if (error) {
+      console.warn('Error checking marketing preferences:', error);
+      return []; // Return empty array if error (safe default)
+    }
+
+    const optedInUserIds = preferences?.map(p => p.user_id) || [];
+    
+    console.log(`📧 Marketing filter: ${userIds.length} users → ${optedInUserIds.length} opted-in`);
+    
+    return optedInUserIds;
+  }
+
+  /**
    * Fetch users matching targeting criteria
    */
   async getTargetedUsers(targeting: CampaignTargeting): Promise<string[]> {
@@ -159,6 +186,15 @@ export class PlunkCampaignsService {
 
     // Get emails from auth.users
     const userIds = filteredProfiles.map(p => p.user_id);
+    
+    // ✅ CRITICAL: Filter by marketing preferences (GDPR compliance)
+    const optedInUserIds = await this.filterByMarketingPreferences(userIds);
+    
+    if (optedInUserIds.length === 0) {
+      console.log('⚠️  No users opted into marketing emails in this segment');
+      return [];
+    }
+    
     const { data: { users }, error: authError } = await supabase.auth.admin.listUsers();
 
     if (authError) {
@@ -167,8 +203,10 @@ export class PlunkCampaignsService {
     }
 
     const emails = users
-      .filter(u => userIds.includes(u.id) && u.email)
+      .filter(u => optedInUserIds.includes(u.id) && u.email)
       .map(u => u.email!);
+
+    console.log(`✅ Final recipients: ${emails.length} users (opted into marketing)`);
 
     return emails;
   }

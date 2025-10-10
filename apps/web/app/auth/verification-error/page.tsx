@@ -39,31 +39,31 @@ function VerificationErrorContent() {
   const error = errorMessages[reason] || errorMessages.unknown;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="max-w-md w-full bg-card rounded-lg shadow-lg p-8 text-center border border-border">
         <div className="mb-6">
-          <XCircle className="w-16 h-16 text-red-600 mx-auto" />
+          <XCircle className="w-16 h-16 text-destructive mx-auto" />
         </div>
         
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+        <h1 className="text-2xl font-bold text-foreground mb-4">
           {error.title}
         </h1>
         
-        <p className="text-gray-600 mb-8">
+        <p className="text-muted-foreground mb-8">
           {error.description}
         </p>
         
         <div className="space-y-3">
           <Link
             href="/auth/signup"
-            className="block bg-[#00876f] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#006b59] transition-colors"
+            className="block bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
             Sign Up Again
           </Link>
           
           <Link
             href="/auth/signin"
-            className="block text-[#00876f] px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            className="block text-primary px-6 py-3 rounded-lg font-medium hover:bg-accent transition-colors"
           >
             Sign In
           </Link>

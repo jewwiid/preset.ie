@@ -501,14 +501,14 @@ export default function PresetsPage() {
   const getPresetTypeBadge = (preset: Preset) => {
     if (preset.preset_type === 'cinematic') {
       return (
-        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-300">
+        <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
           <Camera className="h-3 w-3 mr-1" />
           Cinematic
         </Badge>
       )
     }
     return (
-      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+      <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
         <Wand2 className="h-3 w-3 mr-1" />
         Style
       </Badge>
@@ -525,7 +525,7 @@ export default function PresetsPage() {
     if (!hasVideoSettings) return null
 
     return (
-      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+      <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
         <PlayCircle className="h-3 w-3 mr-1" />
         Video Ready
       </Badge>

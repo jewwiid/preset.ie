@@ -23,57 +23,57 @@ const badgeConfig = {
   verified_age: {
     icon: CheckCircle,
     label: 'Age Verified',
-    color: 'text-primary-600',
-    bgColor: 'bg-primary-100',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
     borderColor: 'border-primary/20',
     tooltip: 'This user has verified they are 18 or older'
   },
   verified_email: {
     icon: CheckCircle,
     label: 'Email Verified',
-    color: 'text-primary-600',
-    bgColor: 'bg-primary-100',
-    borderColor: 'border-primary-200',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
     tooltip: 'Email address has been verified'
   },
   verified_identity: {
     icon: Shield,
     label: 'ID Verified',
-    color: 'text-primary-600',
-    bgColor: 'bg-primary-100',
-    borderColor: 'border-primary-200',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
     tooltip: 'Identity verified with government ID'
   },
   verified_professional: {
     icon: Briefcase,
     label: 'Pro Verified',
-    color: 'text-primary-600',
-    bgColor: 'bg-primary-100',
-    borderColor: 'border-primary-200',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
     tooltip: 'Professional credentials verified'
   },
   verified_business: {
     icon: Building,
     label: 'Business Verified',
-    color: 'text-secondary-600',
-    bgColor: 'bg-secondary-100',
-    borderColor: 'border-secondary-200',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
     tooltip: 'Business registration verified'
   },
   pending_verification: {
     icon: Clock,
     label: 'Pending Verification',
-    color: 'text-primary-600',
-    bgColor: 'bg-primary-100',
-    borderColor: 'border-primary-200',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
     tooltip: 'Verification in progress'
   },
   unverified: {
     icon: AlertCircle,
     label: 'Not Verified',
-    color: 'text-muted-foreground-500',
-    bgColor: 'bg-muted-100',
-    borderColor: 'border-border-200',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
+    borderColor: 'border-border',
     tooltip: 'User has not completed verification'
   }
 }
@@ -171,7 +171,7 @@ export function VerificationStatus({
         />
       ))}
       {remainingCount > 0 && (
-        <span className="text-sm text-muted-foreground-500 ml-1">
+        <span className="text-sm text-muted-foreground ml-1">
           +{remainingCount}
         </span>
       )}

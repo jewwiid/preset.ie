@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Briefcase } from 'lucide-react';
+import { VerificationBadge } from '@/components/VerificationBadge';
 
 interface DirectoryProfile {
   id: string;
@@ -16,6 +17,7 @@ interface DirectoryProfile {
   created_at: string;
   role_flags?: string[];
   availability_status?: string;
+  verified_id?: boolean;
 }
 
 interface TalentDirectoryClientProps {
@@ -164,134 +166,92 @@ export default function TalentDirectoryClient({
 
       {/* Profiles Grid */}
       {filteredProfiles.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {filteredProfiles.map((profile) => (
             <div
               key={profile.id}
-              className="bg-card hover:bg-muted/50 transition-colors rounded-lg border p-6 group"
+              className="group cursor-pointer"
             >
-              {/* Profile Header */}
-              <div className="flex items-center mb-4">
-                <div 
-                  id={`avatar-${profile.id}`}
-                  className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mr-3 overflow-hidden relative"
-                >
-                  {profile.avatar_url ? (
-                    <Image
-                      src={profile.avatar_url}
-                      alt={profile.display_name}
-                      width={48}
-                      height={48}
-                      className="w-full h-full object-cover"
-                      onError={() => {
-                        // Image failed to load, show fallback
-                        const container = document.getElementById(`avatar-${profile.id}`);
-                        if (container) {
-                          const img = container.querySelector('img') as HTMLImageElement;
-                          const fallback = container.querySelector('.avatar-fallback') as HTMLElement;
-                          if (img) img.style.display = 'none';
-                          if (fallback) fallback.style.display = 'flex';
-                        }
-                      }}
-                    />
-                  ) : null}
-                  <div 
-                    className="avatar-fallback w-full h-full flex items-center justify-center text-lg font-semibold"
-                    style={{ display: profile.avatar_url ? 'none' : 'flex' }}
-                  >
-                    {profile.display_name.charAt(0).toUpperCase()}
+              {/* Profile Image Container */}
+              <div className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden bg-muted">
+                {profile.avatar_url ? (
+                  <Image
+                    src={profile.avatar_url}
+                    alt={profile.display_name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      const fallbackUrl = '/placeholder-avatar.jpg';
+                      if ((e.target as HTMLImageElement).src !== fallbackUrl) {
+                        (e.target as HTMLImageElement).src = fallbackUrl;
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
+                    <span className="text-2xl font-bold text-primary/60">
+                      {profile.display_name.charAt(0).toUpperCase()}
+                    </span>
                   </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {profile.display_name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    @{profile.handle}
-                  </p>
-                </div>
-              </div>
-              
-              {profile.bio && (
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                  {profile.bio}
-                </p>
-              )}
-              
-              <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                {profile.city && (
-                  <span className="flex items-center">
-                    📍 {profile.city}
-                  </span>
-                )}
-                <span suppressHydrationWarning>
-                  {new Date(profile.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              
-              {/* Role Badge */}
-              {/* Role and Availability Badges */}
-              <div className="flex gap-1 mb-2 flex-wrap">
-                {/* Role Badges */}
-                {profile.role_flags && profile.role_flags.length > 0 && (
-                  <>
-                    {profile.role_flags.map((role, index) => (
-                      <span
-                        key={`role-${index}`}
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          role === 'TALENT' 
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                            : role === 'CONTRIBUTOR'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                            : role === 'BOTH'
-                            ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                        }`}
-                      >
-                        {role === 'BOTH' ? 'Both' : role}
-                      </span>
-                    ))}
-                  </>
                 )}
                 
-                {/* Availability Status Badge */}
-                {profile.availability_status && (
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      profile.availability_status === 'available'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        : profile.availability_status === 'limited'
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        : profile.availability_status === 'busy'
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                    }`}
-                  >
-                    {profile.availability_status === 'available' && 'Available'}
-                    {profile.availability_status === 'limited' && 'Limited'}
-                    {profile.availability_status === 'busy' && 'Busy'}
-                    {profile.availability_status === 'unavailable' && 'Unavailable'}
-                  </span>
+                {/* Overlay gradient for better text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                {/* Verification Badge - Top Right (only show if verified) */}
+                {profile.verified_id && (
+                  <div className="absolute top-2 right-2">
+                    <VerificationBadge 
+                      type="verified_identity"
+                      size="sm"
+                      showLabel={false}
+                    />
+                  </div>
                 )}
+
               </div>
-              
-              {/* Action Buttons */}
-              <div className="flex gap-2 mt-4">
-                       <Link
-                         href={`/users/${profile.handle}`}
-                         className="flex-1 px-3 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-center"
-                       >
-                         View Profile
-                       </Link>
-                <button
-                  onClick={() => {
-                    // TODO: Implement invitation functionality
-                    console.log('Invite clicked for:', profile.handle);
-                  }}
-                  className="px-3 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors"
-                >
-                  ✉️ Invite
-                </button>
+
+              {/* Profile Info */}
+              <div className="text-center">
+                <h3 className="text-foreground font-bold text-lg mb-1 group-hover:text-primary transition-colors">
+                  {profile.display_name.toUpperCase()}
+                </h3>
+                
+                {/* Primary Role/Specialization */}
+                {profile.primary_skill && (
+                  <p className="text-muted-foreground text-sm mb-2">
+                    {profile.primary_skill}
+                  </p>
+                )}
+
+                {/* Location */}
+                {profile.city && (
+                  <p className="text-xs text-muted-foreground mb-3">
+                    📍 {profile.city}
+                  </p>
+                )}
+
+                {/* Action Button */}
+                <div className="flex gap-2">
+                  <Link
+                    href={`/users/${profile.handle}`}
+                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium text-center"
+                  >
+                    BOOK
+                  </Link>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // TODO: Implement invitation functionality
+                      console.log('Invite clicked for:', profile.handle);
+                    }}
+                    className="px-3 py-2 border border-border rounded-md hover:bg-accent transition-colors text-sm"
+                    title="Send Invitation"
+                  >
+                    ✉️
+                  </button>
+                </div>
               </div>
             </div>
           ))}

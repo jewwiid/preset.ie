@@ -78,37 +78,49 @@ export function usePlatformGeneratedImages() {
         setLoading(true);
         setError(null);
 
-        // Fetch preset images (user-generated content)
-        const presetResponse = await fetch('/api/preset-images?limit=20');
-        if (!presetResponse.ok) {
-          throw new Error('Failed to fetch preset images');
-        }
-        const presetData = await presetResponse.json();
-        setPresetImages(presetData || []);
+        // Make all API calls in parallel for better performance
+        const [presetResponse, platformResponse, talentResponse, contributorResponse] = await Promise.allSettled([
+          fetch('/api/preset-images?limit=20'),
+          fetch('/api/platform-images?limit=10'),
+          fetch('/api/talent-profiles?limit=8&role=TALENT'),
+          fetch('/api/talent-profiles?limit=8&role=CONTRIBUTOR')
+        ]);
 
-        // Fetch platform images (official platform content)
-        const platformResponse = await fetch('/api/platform-images?limit=10');
-        if (!platformResponse.ok) {
-          throw new Error('Failed to fetch platform images');
+        // Handle preset images
+        if (presetResponse.status === 'fulfilled' && presetResponse.value.ok) {
+          const presetData = await presetResponse.value.json();
+          setPresetImages(presetData || []);
+        } else {
+          console.warn('Failed to fetch preset images:', presetResponse.status === 'rejected' ? presetResponse.reason : 'HTTP error');
+          setPresetImages([]);
         }
-        const platformData = await platformResponse.json();
-        setPlatformImages(platformData || []);
 
-        // Fetch talent profiles (models, actors, makeup artists, etc.)
-        const talentResponse = await fetch('/api/talent-profiles?limit=8&role=TALENT');
-        if (!talentResponse.ok) {
-          throw new Error('Failed to fetch talent profiles');
+        // Handle platform images
+        if (platformResponse.status === 'fulfilled' && platformResponse.value.ok) {
+          const platformData = await platformResponse.value.json();
+          setPlatformImages(platformData || []);
+        } else {
+          console.warn('Failed to fetch platform images:', platformResponse.status === 'rejected' ? platformResponse.reason : 'HTTP error');
+          setPlatformImages([]);
         }
-        const talentData = await talentResponse.json();
-        setTalentProfiles(talentData || []);
 
-        // Fetch contributor profiles (photographers, videographers, etc.)
-        const contributorResponse = await fetch('/api/talent-profiles?limit=8&role=CONTRIBUTOR');
-        if (!contributorResponse.ok) {
-          throw new Error('Failed to fetch contributor profiles');
+        // Handle talent profiles
+        if (talentResponse.status === 'fulfilled' && talentResponse.value.ok) {
+          const talentData = await talentResponse.value.json();
+          setTalentProfiles(talentData || []);
+        } else {
+          console.warn('Failed to fetch talent profiles:', talentResponse.status === 'rejected' ? talentResponse.reason : 'HTTP error');
+          setTalentProfiles([]);
         }
-        const contributorData = await contributorResponse.json();
-        setContributorProfiles(contributorData || []);
+
+        // Handle contributor profiles
+        if (contributorResponse.status === 'fulfilled' && contributorResponse.value.ok) {
+          const contributorData = await contributorResponse.value.json();
+          setContributorProfiles(contributorData || []);
+        } else {
+          console.warn('Failed to fetch contributor profiles:', contributorResponse.status === 'rejected' ? contributorResponse.reason : 'HTTP error');
+          setContributorProfiles([]);
+        }
 
       } catch (err) {
         console.error('Error fetching platform images:', err);

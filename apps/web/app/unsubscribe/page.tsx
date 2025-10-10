@@ -96,7 +96,7 @@ function UnsubscribeContent() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <div className="flex items-center gap-2 text-success">
-              <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <CheckCircle2 className="h-6 w-6 text-primary" />
               <CardTitle>Preferences Updated</CardTitle>
             </div>
             <CardDescription>

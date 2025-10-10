@@ -882,7 +882,7 @@ export default function VideoGenerationPanel({
 
                 if (mode === 'text-to-image') {
                   return (
-                    <Badge variant="outline" className="border-blue-500 text-blue-600 bg-blue-50">
+                    <Badge variant="outline" className="border-primary text-primary bg-primary/10">
                       📝 Best for: Text-to-Video
                     </Badge>
                   )
@@ -890,7 +890,7 @@ export default function VideoGenerationPanel({
 
                 if (mode === 'image-to-image') {
                   return (
-                    <Badge variant="outline" className="border-purple-500 text-purple-600 bg-purple-50">
+                    <Badge variant="outline" className="border-primary text-primary bg-primary/10">
                       🎬 Best for: Image-to-Video
                     </Badge>
                   )
@@ -899,7 +899,7 @@ export default function VideoGenerationPanel({
                 // Flexible mode
                 return (
                   <>
-                    <Badge variant="outline" className="border-green-500 text-green-600 bg-green-50">
+                    <Badge variant="outline" className="border-primary text-primary bg-primary/10">
                       ✨ Works with Both
                     </Badge>
                     <span className="text-xs text-muted-foreground">
@@ -987,13 +987,13 @@ export default function VideoGenerationPanel({
           // Seedream + text-to-image preset + no image
           if (selectedProvider === 'seedream' && mode === 'text-to-image' && !hasImage) {
             return (
-              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <Sparkles className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-2 p-3 bg-primary/10 border border-primary rounded-lg">
+                <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-xs font-medium text-blue-700">
+                  <p className="text-xs font-medium text-primary">
                     💡 Preset Recommendation
                   </p>
-                  <p className="text-xs text-blue-600/80 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     This preset works best with text prompts, but Seedream requires an image. Switch to <strong>Wan provider</strong> for text-to-video or upload an image below.
                   </p>
                 </div>
@@ -1004,13 +1004,13 @@ export default function VideoGenerationPanel({
           // Wan + image-to-image preset + no image
           if (selectedProvider === 'wan' && mode === 'image-to-image' && !hasImage) {
             return (
-              <div className="flex items-start gap-2 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                <Sparkles className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-2 p-3 bg-primary/10 border border-primary rounded-lg">
+                <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-xs font-medium text-purple-700">
+                  <p className="text-xs font-medium text-primary">
                     💡 Preset Recommendation
                   </p>
-                  <p className="text-xs text-purple-600/80 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     This preset is optimized for <strong>image-to-video</strong>. Upload or select an image from the "Image Source" section below for best results.
                   </p>
                 </div>
@@ -1021,13 +1021,13 @@ export default function VideoGenerationPanel({
           // Any provider + text-to-image preset + has image
           if (mode === 'text-to-image' && hasImage) {
             return (
-              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <Sparkles className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-2 p-3 bg-primary/10 border border-primary rounded-lg">
+                <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-xs font-medium text-blue-700">
+                  <p className="text-xs font-medium text-primary">
                     💡 Preset Recommendation
                   </p>
-                  <p className="text-xs text-blue-600/80 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     This preset works best with <strong>text prompts only</strong>. Consider removing the image or switching to a different preset for image-to-video.
                   </p>
                 </div>
@@ -1038,13 +1038,13 @@ export default function VideoGenerationPanel({
           // Seedream + flexible preset + no image
           if (selectedProvider === 'seedream' && mode === 'flexible' && !hasImage) {
             return (
-              <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <Sparkles className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-2 p-3 bg-primary/10 border border-primary rounded-lg">
+                <Sparkles className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-xs font-medium text-green-700">
+                  <p className="text-xs font-medium text-primary">
                     💡 Preset Recommendation
                   </p>
-                  <p className="text-xs text-green-600/80 mt-0.5">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     This flexible preset works with both modes, but Seedream requires an image. Upload an image below or switch to <strong>Wan provider</strong> for text-to-video.
                   </p>
                 </div>
