@@ -15,7 +15,9 @@ export default function Home() {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [currentHeroImageIndex, setCurrentHeroImageIndex] = useState(0);
-  
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: 'image' | 'video'; title: string; creator: string } | null>(null);
+
   // Check if user is logged in
   const isLoggedIn = !!user;
   
@@ -952,7 +954,19 @@ export default function Home() {
                     const mediaUrl = isVideo ? image.video_url : image.result_image_url;
 
                     return (
-                      <div key={`${image.id}-${index}`} className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                      <div
+                        key={`${image.id}-${index}`}
+                        className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}
+                        onClick={() => {
+                          setLightboxMedia({
+                            url: mediaUrl || '',
+                            type: isVideo ? 'video' : 'image',
+                            title: image.title || 'Creative Project',
+                            creator: image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'
+                          });
+                          setLightboxOpen(true);
+                        }}
+                      >
                         {isVideo ? (
                           <video
                             src={mediaUrl}
@@ -999,7 +1013,19 @@ export default function Home() {
                     const mediaUrl = isVideo ? image.video_url : image.result_image_url;
 
                     return (
-                      <div key={`duplicate-${image.id}-${index}`} className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                      <div
+                        key={`duplicate-${image.id}-${index}`}
+                        className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}
+                        onClick={() => {
+                          setLightboxMedia({
+                            url: mediaUrl || '',
+                            type: isVideo ? 'video' : 'image',
+                            title: image.title || 'Creative Project',
+                            creator: image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'
+                          });
+                          setLightboxOpen(true);
+                        }}
+                      >
                         {isVideo ? (
                           <video
                             src={mediaUrl}
@@ -1189,6 +1215,53 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Lightbox Modal */}
+      {lightboxOpen && lightboxMedia && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
+            {/* Close button */}
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Media content */}
+            <div className="relative w-full h-full flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+              {lightboxMedia.type === 'video' ? (
+                <video
+                  src={lightboxMedia.url}
+                  className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                  controls
+                  autoPlay
+                  loop
+                />
+              ) : (
+                <Image
+                  src={lightboxMedia.url}
+                  alt={lightboxMedia.title}
+                  width={1920}
+                  height={1080}
+                  className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                />
+              )}
+
+              {/* Media info */}
+              <div className="mt-6 text-center text-white">
+                <h3 className="text-xl font-semibold mb-1">{lightboxMedia.title}</h3>
+                <p className="text-sm text-white/70">by {lightboxMedia.creator}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -231,9 +231,9 @@ export default function CinematicGenerationPanel({
       
       <CardContent className="space-y-6">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="basic">Basic</TabsTrigger>
-            <TabsTrigger value="cinematic">Cinematic</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 gap-1">
+            <TabsTrigger value="basic" className="text-sm">Basic</TabsTrigger>
+            <TabsTrigger value="cinematic" className="text-sm">Cinematic</TabsTrigger>
           </TabsList>
 
           <TabsContent value="basic" className="space-y-4">

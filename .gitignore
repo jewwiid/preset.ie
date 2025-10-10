@@ -48,6 +48,7 @@ out/
 build
 dist
 
+.py
 
 # Debug
 npm-debug.log*

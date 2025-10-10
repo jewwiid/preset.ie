@@ -307,7 +307,7 @@ export default function DynamicPreviewArea({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             {/* Left Column - Base Image Preview */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -516,7 +516,7 @@ export default function DynamicPreviewArea({
               
               {/* Resolution and Consistency - Side by Side */}
               {(onResolutionChange || onConsistencyChange) && (
-                <div className="mt-3 grid grid-cols-2 gap-4">
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {/* Resolution Dropdown */}
                   {onResolutionChange && (
                     <div>
@@ -997,7 +997,7 @@ export default function DynamicPreviewArea({
               )
             ) : (
               // Multiple images - grid layout
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {imagesToDisplay.map((image, index) => (
                   <div
                     key={index}

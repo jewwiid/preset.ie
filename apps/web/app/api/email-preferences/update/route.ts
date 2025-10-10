@@ -65,25 +65,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Update Plunk contact data
-    const plunk = getPlunkService();
-    await plunk.upsertContact({
-      email: userEmail,
-      subscribed: Object.values(preferences).some(v => v === true), // Subscribed if ANY preference is true
-      data: {
-        preferences,
-        updatedAt: new Date().toISOString()
-      }
-    });
+    try {
+      const plunk = getPlunkService();
+      await plunk.upsertContact({
+        email: userEmail,
+        subscribed: Object.values(preferences).some(v => v === true), // Subscribed if ANY preference is true
+        data: {
+          preferences,
+          updatedAt: new Date().toISOString()
+        }
+      });
 
-    // Track preference update
-    await plunk.trackEvent({
-      event: 'email.preferences.updated',
-      email: userEmail,
-      data: {
-        preferences,
-        updatedAt: new Date().toISOString()
-      }
-    });
+      // Track preference update
+      await plunk.trackEvent({
+        event: 'email.preferences.updated',
+        email: userEmail,
+        data: {
+          preferences,
+          updatedAt: new Date().toISOString()
+        }
+      });
+    } catch (plunkError) {
+      console.warn('Plunk update failed:', plunkError);
+      // Continue without failing the whole request
+    }
 
     return NextResponse.json({
       success: true,

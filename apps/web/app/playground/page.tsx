@@ -1124,7 +1124,7 @@ function PlaygroundContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Enhanced Header */}
         <EnhancedPlaygroundHeader
           userCredits={userCredits}

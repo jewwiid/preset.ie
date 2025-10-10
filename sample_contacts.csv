@@ -1,0 +1,6 @@
+email,first_name,last_name,subscribed
+test1@example.com,John,Doe,true
+test2@example.com,Jane,Smith,true
+test3@example.com,Bob,Johnson,false
+demo@presetie.com,Demo,User,true
+sample@test.com,Sample,Contact,true

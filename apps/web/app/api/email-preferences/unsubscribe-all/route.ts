@@ -61,18 +61,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Unsubscribe in Plunk
-    const plunk = getPlunkService();
-    await plunk.unsubscribeContact(userEmail);
+    try {
+      const plunk = getPlunkService();
+      await plunk.unsubscribeContact(userEmail);
 
-    // Track the unsubscribe event
-    await plunk.trackEvent({
-      event: 'user.unsubscribed.all',
-      email: userEmail,
-      data: {
-        unsubscribedAt: new Date().toISOString(),
-        method: 'unsubscribe_page'
-      }
-    });
+      // Track the unsubscribe event
+      await plunk.trackEvent({
+        event: 'user.unsubscribed.all',
+        email: userEmail,
+        data: {
+          unsubscribedAt: new Date().toISOString(),
+          method: 'unsubscribe_page'
+        }
+      });
+    } catch (plunkError) {
+      console.warn('Plunk unsubscribe failed:', plunkError);
+      // Continue without failing the whole request
+    }
 
     return NextResponse.json({
       success: true,

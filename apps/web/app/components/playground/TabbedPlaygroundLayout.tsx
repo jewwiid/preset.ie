@@ -18,7 +18,9 @@ import ImagePreviewArea from './ImagePreviewArea'
 import VideoViewer from './VideoViewer'
 import VideoPreviewArea from './VideoPreviewArea'
 import PromptManagementPanel from './PromptManagementPanel'
+import { SaveMediaDialog } from './SaveMediaDialog'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
+import { generateImageTitle, generateVideoTitle, generateDefaultTags, generateDefaultDescription } from '../../../lib/media-title-utils'
 
 // Import PlaygroundProject type from the main playground page
 interface PlaygroundProject {
@@ -170,6 +172,11 @@ export default function TabbedPlaygroundLayout({
   const { showFeedback } = useFeedback()
   const [activeTab, setActiveTab] = useState('generate')
   const [selectedPreset, setSelectedPreset] = useState<any>(null)
+
+  // Save dialog state
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [pendingSaveUrl, setPendingSaveUrl] = useState<string | null>(null)
+  const [pendingSaveMetadata, setPendingSaveMetadata] = useState<any>(null)
 
   // Load preset from URL on mount
   useEffect(() => {
@@ -631,37 +638,84 @@ export default function TabbedPlaygroundLayout({
     // Check if this is a video URL by looking in savedVideos
     const videoData = savedVideos.find(video => video.url === url)
 
-    console.log('🎬 Video save check:', {
+    console.log('🎬 Save check:', {
       url,
       isNewlyGenerated: isNewlyGeneratedVideo,
       hasMetadata: !!generatedVideoMetadata,
       videoData: !!videoData
     })
 
+    // Open save dialog with appropriate defaults
     if (isNewlyGeneratedVideo && generatedVideoMetadata) {
+      // Video metadata available
+      setPendingSaveUrl(url)
+      setPendingSaveMetadata({
+        type: 'video',
+        ...generatedVideoMetadata,
+        prompt: generatedVideoMetadata.prompt
+      })
+      setSaveDialogOpen(true)
+      return
+    } else if (videoData) {
+      // Existing video
+      setPendingSaveUrl(url)
+      setPendingSaveMetadata({
+        type: 'video',
+        aspectRatio: videoData.aspectRatio,
+        resolution: videoData.resolution
+      })
+      setSaveDialogOpen(true)
+      return
+    } else {
+      // Image - try to find metadata from current project
+      const imageData = currentProject?.generated_images.find(img => img.url === url)
+      setPendingSaveUrl(url)
+      setPendingSaveMetadata({
+        type: 'image',
+        prompt: currentProject?.prompt,
+        style: currentProject?.style,
+        aspectRatio: currentProject?.aspect_ratio,
+        resolution: currentProject?.resolution
+      })
+      setSaveDialogOpen(true)
+      return
+    }
+  }, [generatedVideoUrl, generatedVideoMetadata, savedVideos, currentProject])
+
+  // Actually perform the save after user confirms in dialog
+  const performSaveToGallery = useCallback(async (data: { title: string; description: string; tags: string[] }) => {
+    if (!pendingSaveUrl) return
+
+    const url = pendingSaveUrl
+    const metadata = pendingSaveMetadata
+
+    // Check if this is a video
+    const isVideo = metadata?.type === 'video'
+
+    if (isVideo) {
       // This is the newly generated video, use the metadata we stored
       console.log('🎬 Saving newly generated video with metadata:', generatedVideoMetadata)
 
       try {
         const requestBody = {
           videoUrl: url,
-          title: `Video - ${new Date().toLocaleDateString()}`,
-          description: generatedVideoMetadata.prompt,
-          tags: ['ai-generated', 'video'],
+          title: data.title,
+          description: data.description,
+          tags: data.tags,
           projectId: null,
-          duration: generatedVideoMetadata.duration,
-          resolution: generatedVideoMetadata.resolution,
-          aspectRatio: generatedVideoMetadata.aspectRatio,
-          motionType: generatedVideoMetadata.cameraMovement,
-          prompt: generatedVideoMetadata.prompt,
+          duration: metadata.duration,
+          resolution: metadata.resolution,
+          aspectRatio: metadata.aspectRatio,
+          motionType: metadata.cameraMovement,
+          prompt: metadata.prompt,
           generationMetadata: {
             generated_at: new Date().toISOString(),
             credits_used: 8,
-            duration: generatedVideoMetadata.duration,
-            resolution: generatedVideoMetadata.resolution,
-            aspect_ratio: generatedVideoMetadata.aspectRatio,
-            motion_type: generatedVideoMetadata.cameraMovement,
-            prompt: generatedVideoMetadata.prompt
+            duration: metadata.duration,
+            resolution: metadata.resolution,
+            aspect_ratio: metadata.aspectRatio,
+            motion_type: metadata.cameraMovement,
+            prompt: metadata.prompt
           }
         }
 
@@ -681,6 +735,14 @@ export default function TabbedPlaygroundLayout({
           // Remove from temp videos since it's now saved
           setTempVideos(prev => prev.filter(v => v.url !== url))
           refreshVideos() // Refresh the video list
+          setSaveDialogOpen(false)
+          setPendingSaveUrl(null)
+          setPendingSaveMetadata(null)
+          showFeedback({
+            type: 'success',
+            title: 'Video Saved!',
+            message: `"${data.title}" has been saved to your gallery`
+          })
         } else {
           let errorData: any = {}
           try {
@@ -710,16 +772,68 @@ export default function TabbedPlaygroundLayout({
         console.error('❌ Video save error:', error)
       }
     } else {
-      // Regular image or video - delegate to parent save handler
-      console.log('💾 Saving via parent onSaveToGallery handler')
-      await onSaveToGallery(url)
+      // Regular image - save with title, description, and tags
+      console.log('💾 Saving image with custom title and description')
+
+      try {
+        const requestBody = {
+          imageUrl: url,
+          title: data.title,
+          description: data.description,
+          tags: data.tags,
+          projectId: currentProject?.id || null,
+          generationMetadata: {
+            prompt: metadata.prompt,
+            style: metadata.style,
+            aspect_ratio: metadata.aspectRatio,
+            resolution: metadata.resolution,
+            generated_at: new Date().toISOString()
+          }
+        }
+
+        const response = await fetch('/api/playground/save-to-gallery', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionToken}`
+          },
+          body: JSON.stringify(requestBody)
+        })
+
+        if (response.ok) {
+          console.log('✅ Image saved with custom title')
+          setSaveDialogOpen(false)
+          setPendingSaveUrl(null)
+          setPendingSaveMetadata(null)
+          showFeedback({
+            type: 'success',
+            title: 'Image Saved!',
+            message: `"${data.title}" has been saved to your gallery`
+          })
+        } else {
+          const errorData = await response.json()
+          console.error('❌ Image save failed:', errorData)
+          showFeedback({
+            type: 'error',
+            title: 'Failed to Save Image',
+            message: errorData.error || errorData.message || 'Could not save image to gallery'
+          })
+        }
+      } catch (error) {
+        console.error('❌ Image save error:', error)
+        showFeedback({
+          type: 'error',
+          title: 'Save Error',
+          message: error instanceof Error ? error.message : 'Failed to save image'
+        })
+      }
     }
-    
+
     // Refresh the saved gallery after saving
     if (savedGalleryRef.current) {
       savedGalleryRef.current.refresh()
     }
-  }, [onSaveToGallery, savedVideos, sessionToken, generatedVideoUrl, generatedVideoMetadata, refreshVideos, showFeedback])
+  }, [sessionToken, generatedVideoMetadata, savedVideos, currentProject, refreshVideos, showFeedback])
 
   const handleDeleteVideo = useCallback(async (videoUrl: string) => {
     if (!sessionToken) return
@@ -785,30 +899,36 @@ export default function TabbedPlaygroundLayout({
         setActiveTab(value)
         onTabChange?.(value)
       }} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="generate" className="flex items-center gap-2">
-            <Wand2 className="h-4 w-4" />
-            Generate
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1">
+          <TabsTrigger value="generate" className="flex items-center gap-2 text-xs md:text-sm">
+            <Wand2 className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Generate</span>
+            <span className="sm:hidden">Gen</span>
           </TabsTrigger>
-          <TabsTrigger value="edit" className="flex items-center gap-2">
-            <Edit3 className="h-4 w-4" />
-            Edit
+          <TabsTrigger value="edit" className="flex items-center gap-2 text-xs md:text-sm">
+            <Edit3 className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Edit</span>
+            <span className="sm:hidden">Edit</span>
           </TabsTrigger>
-          <TabsTrigger value="batch" className="flex items-center gap-2">
-            <Layers className="h-4 w-4" />
-            Batch
+          <TabsTrigger value="batch" className="flex items-center gap-2 text-xs md:text-sm">
+            <Layers className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Batch</span>
+            <span className="sm:hidden">Batch</span>
           </TabsTrigger>
-          <TabsTrigger value="video" className="flex items-center gap-2">
-            <Video className="h-4 w-4" />
-            Video
+          <TabsTrigger value="video" className="flex items-center gap-2 text-xs md:text-sm">
+            <Video className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Video</span>
+            <span className="sm:hidden">Video</span>
           </TabsTrigger>
-          <TabsTrigger value="prompts" className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            Prompts
+          <TabsTrigger value="prompts" className="flex items-center gap-2 text-xs md:text-sm">
+            <BookOpen className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Prompts</span>
+            <span className="sm:hidden">Prompts</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="h-4 w-4" />
-            History
+          <TabsTrigger value="history" className="flex items-center gap-2 text-xs md:text-sm">
+            <History className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">History</span>
+            <span className="sm:hidden">History</span>
           </TabsTrigger>
         </TabsList>
 
@@ -905,7 +1025,7 @@ export default function TabbedPlaygroundLayout({
 
         {/* Edit Tab */}
         <TabsContent value="edit" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <AdvancedEditingPanel
               onEdit={onEdit}
               loading={loading}
@@ -982,7 +1102,7 @@ export default function TabbedPlaygroundLayout({
 
         {/* Batch Tab */}
         <TabsContent value="batch" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <BatchProcessingPanel
               onPerformBatchEdit={onPerformBatchEdit}
               loading={loading}
@@ -1313,6 +1433,25 @@ export default function TabbedPlaygroundLayout({
           />
         </div>
       )}
+
+      {/* Save Media Dialog */}
+      <SaveMediaDialog
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        onSave={performSaveToGallery}
+        defaultTitle={
+          pendingSaveMetadata?.type === 'video'
+            ? generateVideoTitle(pendingSaveMetadata?.prompt, pendingSaveMetadata?.cameraMovement || pendingSaveMetadata?.motionType, pendingSaveMetadata?.aspectRatio)
+            : generateImageTitle(pendingSaveMetadata?.prompt, pendingSaveMetadata?.style)
+        }
+        defaultDescription={generateDefaultDescription(pendingSaveMetadata)}
+        defaultTags={generateDefaultTags({
+          ...pendingSaveMetadata,
+          mediaType: pendingSaveMetadata?.type
+        })}
+        mediaType={pendingSaveMetadata?.type || 'image'}
+        saving={!!savingImage}
+      />
     </div>
   )
 }

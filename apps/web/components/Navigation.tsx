@@ -278,120 +278,134 @@ export default function Navigation({ className = '' }: NavigationProps) {
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu overlay */}
       <Transition
         show={mobileMenuOpen}
-        enter="transition ease-out duration-100 transform"
-        enterFrom="opacity-0 scale-95"
-        enterTo="opacity-100 scale-100"
-        leave="transition ease-in duration-75 transform"
-        leaveFrom="opacity-100 scale-100"
-        leaveTo="opacity-0 scale-95"
+        enter="transition ease-out duration-200"
+        enterFrom="opacity-0"
+        enterTo="opacity-100"
+        leave="transition ease-in duration-150"
+        leaveFrom="opacity-100"
+        leaveTo="opacity-0"
       >
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            {navigationItems
-              .filter(item => item.show)
-              .map((item) => {
-                const Icon = item.icon
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center px-3 py-2 rounded-md text-base font-medium ${
-                      isActive(item.href)
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50'
-                    }`}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Icon className="h-5 w-5 mr-2" />
-                    {item.name}
-                  </Link>
-                )
-              })}
-            
-            {isContributor && (
-              <Link
-                href="/gigs/create"
-                className="flex items-center px-3 py-2 rounded-md text-base font-medium bg-primary-600 text-primary-foreground hover:bg-primary-700"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                Create Gig
-              </Link>
-            )}
-          </div>
-
-          {user ? (
-            <div className="pt-4 pb-3 border-t border-border-200">
-              <div className="px-2 space-y-1">
-                <Link
-                  href="/profile"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50 cursor-pointer"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <User className="h-5 w-5 mr-2" />
-                  Your Profile
-                </Link>
-                <Link
-                  href="/settings"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50 cursor-pointer"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <Settings className="h-5 w-5 mr-2" />
-                  Settings
-                </Link>
-                {isAdmin && (
-                  <Link
-                    href="/admin"
-                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-primary-600 hover:bg-primary-50 cursor-pointer"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <Settings className="h-5 w-5 mr-2" />
-                    Admin Panel
-                  </Link>
-                )}
-                <Link
-                  href="/profile"
-                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-primary-foreground bg-primary-600 hover:bg-primary-700 cursor-pointer"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <User className="h-5 w-5 mr-2" />
-                  Edit Profile
-                </Link>
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          
+          {/* Full-screen sidebar */}
+          <div className="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-background shadow-xl">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <div className="flex items-center">
+                  <div className="bg-primary rounded-lg p-2">
+                    <Camera className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <span className="ml-2 text-xl font-bold text-foreground">Preset</span>
+                </div>
                 <button
-                  onClick={() => {
-                    handleSignOut()
-                    setMobileMenuOpen(false)
-                  }}
-                  className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-md hover:bg-accent transition-colors"
                 >
-                  <LogOut className="h-5 w-5 mr-2" />
-                  Sign out
+                  <X className="h-6 w-6" />
                 </button>
               </div>
-            </div>
-          ) : (
-            <div className="pt-4 pb-3 border-t border-border-200">
-              <div className="px-2 space-y-1">
-                <Link
-                  href="/auth/signin"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-muted-foreground-700 hover:text-primary-600 hover:bg-primary-50"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/auth/signup"
-                  className="block px-3 py-2 rounded-md text-base font-medium bg-primary-600 text-primary-foreground hover:bg-primary-700"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Get Started
-                </Link>
+              
+              {/* Navigation items */}
+              <div className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+                {navigationItems
+                  .filter(item => item.show)
+                  .map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center px-4 py-3 rounded-lg text-base font-medium transition-colors ${
+                          isActive(item.href)
+                            ? 'text-primary bg-primary/10'
+                            : 'text-foreground hover:text-primary hover:bg-accent'
+                        }`}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Icon className="h-5 w-5 mr-3" />
+                        {item.name}
+                      </Link>
+                    )
+                  })}
+                
+                {isContributor && (
+                  <Link
+                    href="/gigs/create"
+                    className="flex items-center px-4 py-3 mt-4 rounded-lg text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Plus className="h-5 w-5 mr-3" />
+                    Create Gig
+                  </Link>
+                )}
               </div>
+
+              {/* Footer */}
+              {user ? (
+                <div className="border-t border-border p-4 space-y-1">
+                  <Link
+                    href="/profile"
+                    className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-foreground hover:text-primary hover:bg-accent transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <User className="h-5 w-5 mr-3" />
+                    Your Profile
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-foreground hover:text-primary hover:bg-accent transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Settings className="h-5 w-5 mr-3" />
+                    Settings
+                  </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-primary hover:bg-accent transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Settings className="h-5 w-5 mr-3" />
+                      Admin Panel
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      handleSignOut()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="flex items-center w-full px-4 py-3 rounded-lg text-base font-medium text-foreground hover:text-primary hover:bg-accent transition-colors text-left"
+                  >
+                    <LogOut className="h-5 w-5 mr-3" />
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <div className="border-t border-border p-4 space-y-1">
+                  <Link
+                    href="/auth/signin"
+                    className="flex items-center px-4 py-3 rounded-lg text-base font-medium text-foreground hover:text-primary hover:bg-accent transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    className="flex items-center px-4 py-3 rounded-lg text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </Transition>
     </nav>

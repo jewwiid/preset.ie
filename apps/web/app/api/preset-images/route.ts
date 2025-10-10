@@ -11,10 +11,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') || '20';
 
-    // Fetch recent images and videos from playground_gallery
+    // Fetch recent AI-generated images and videos from playground_gallery
+    // Filter to only show items with generation_metadata (AI-generated content)
     const { data: images, error: imagesError } = await supabase
       .from('playground_gallery')
-      .select('id, image_url, thumbnail_url, video_url, media_type, title, description, tags, user_id, created_at')
+      .select('id, image_url, thumbnail_url, video_url, media_type, title, description, tags, user_id, created_at, generation_metadata')
+      .not('generation_metadata', 'is', null)
+      .not('generation_metadata', 'eq', '{}')
       .order('created_at', { ascending: false })
       .limit(parseInt(limit));
 

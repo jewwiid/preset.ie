@@ -106,8 +106,95 @@ export async function DELETE(
     })
   } catch (error) {
     console.error('Failed to delete image:', error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: error instanceof Error ? error.message : 'Failed to delete image'
     }, { status: 500 })
+  }
+}
+
+/**
+ * PATCH /api/playground/gallery/[id]
+ * Update media title, description, and tags
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { user } = await getUserFromRequest(request)
+
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
+  }
+
+  if (!supabaseAdmin) {
+    return NextResponse.json(
+      { error: 'Database connection failed' },
+      { status: 500 }
+    )
+  }
+
+  try {
+    const { id: mediaId } = await params
+    const { title, description, tags } = await request.json()
+
+    // Verify ownership
+    const { data: media, error: fetchError } = await supabaseAdmin
+      .from('playground_gallery')
+      .select('user_id')
+      .eq('id', mediaId)
+      .single()
+
+    if (fetchError || !media) {
+      return NextResponse.json(
+        { error: 'Media not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check ownership
+    if (media.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden - You do not own this media' },
+        { status: 403 }
+      )
+    }
+
+    // Update media
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    }
+
+    if (title !== undefined) updateData.title = title
+    if (description !== undefined) updateData.description = description
+    if (tags !== undefined) updateData.tags = tags
+
+    const { data: updatedMedia, error: updateError } = await supabaseAdmin
+      .from('playground_gallery')
+      .update(updateData)
+      .eq('id', mediaId)
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('Error updating media:', updateError)
+      return NextResponse.json(
+        { error: 'Failed to update media' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      media: updatedMedia
+    })
+  } catch (error) {
+    console.error('API Error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 }

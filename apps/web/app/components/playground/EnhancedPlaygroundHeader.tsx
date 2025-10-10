@@ -144,22 +144,22 @@ export default function EnhancedPlaygroundHeader({
           <div className="absolute inset-0 bg-primary animate-pulse"></div>
         </div>
         
-        <div className="relative p-8">
-          <div className="flex items-start justify-between">
+        <div className="relative p-4 lg:p-8">
+          <div className="flex flex-col lg:flex-row items-start lg:justify-between gap-6">
             {/* Left Section - Title and Description */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-6">
-                <div className={`p-3 rounded-xl ${currentTabInfo.gradient} shadow-lg`}>
-                  <IconComponent className="h-6 w-6 text-primary-foreground" />
+            <div className="flex-1 w-full lg:w-auto">
+              <div className="flex items-center gap-3 mb-4 lg:mb-6">
+                <div className={`p-2 lg:p-3 rounded-xl ${currentTabInfo.gradient} shadow-lg`}>
+                  <IconComponent className="h-5 w-5 lg:h-6 lg:w-6 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground mb-2">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-1 lg:mb-2">
                     Preset Playground
                   </h1>
-                  <p className="text-muted-foreground text-lg mb-2">
+                  <p className="text-muted-foreground text-sm sm:text-base lg:text-lg mb-1 lg:mb-2">
                     {currentTabInfo.description}
                   </p>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 lg:mb-4">
                     Professional AI image generation with advanced editing tools, batch processing, and video creation capabilities.
                   </p>
                 </div>
@@ -200,17 +200,17 @@ export default function EnhancedPlaygroundHeader({
             </div>
 
             {/* Right Section - Credits */}
-            <div className="flex flex-col items-end gap-6">
+            <div className="flex flex-col items-start lg:items-end gap-4 lg:gap-6 w-full lg:w-auto">
               {/* Credits Display */}
-              <Card className={`${creditStatus.bgColor} border-0 shadow-sm hover:shadow-md transition-all duration-300`}>
-                <CardContent className="p-4">
+              <Card className={`${creditStatus.bgColor} border-0 shadow-sm hover:shadow-md transition-all duration-300 w-full lg:w-auto`}>
+                <CardContent className="p-3 lg:p-4">
                   {/* Main Credits Display */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`p-3 rounded-lg bg-background/80 ${creditsAnimation ? 'animate-pulse animate-glow' : ''}`}>
-                      <Sparkles className={`h-6 w-6 ${creditStatus.color}`} />
+                  <div className="flex items-center gap-2 lg:gap-3 mb-3 lg:mb-4">
+                    <div className={`p-2 lg:p-3 rounded-lg bg-background/80 ${creditsAnimation ? 'animate-pulse animate-glow' : ''}`}>
+                      <Sparkles className={`h-5 w-5 lg:h-6 lg:w-6 ${creditStatus.color}`} />
                     </div>
                     <div className="text-center">
-                      <div className={`text-3xl font-bold ${creditStatus.color}`}>
+                      <div className={`text-2xl sm:text-3xl font-bold ${creditStatus.color}`}>
                         {userCredits}
                       </div>
                       <div className="text-xs text-muted-foreground">Credits</div>
