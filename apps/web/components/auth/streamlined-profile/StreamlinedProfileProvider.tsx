@@ -256,10 +256,42 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
   }
 
   const handleFinalSubmit = async () => {
-    if (!user || !selectedRole || !supabase) return
+    if (!user || !selectedRole || !supabase) {
+      setError('Missing required information. Please try again.')
+      return
+    }
     
     setLoading(true)
     setError(null)
+
+    // Validate required fields
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('First name and last name are required')
+      setLoading(false)
+      return
+    }
+
+    if (!displayName.trim() || !handle.trim()) {
+      setError('Display name and handle are required')
+      setLoading(false)
+      return
+    }
+
+    if (!profileData.primarySkill) {
+      setError('Primary skill is required')
+      setLoading(false)
+      return
+    }
+
+    console.log('🚀 Starting profile creation with data:', {
+      user: user.id,
+      selectedRole,
+      firstName,
+      lastName,
+      displayName,
+      handle,
+      profileData
+    })
 
     try {
       // Prepare streamlined profile data
@@ -373,7 +405,26 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
         console.error('❌ Error code:', profileError.code)
 
         // Try to extract meaningful error info
-        const errorMsg = profileError.message || profileError.details || profileError.hint || 'Unknown error'
+        let errorMsg = 'Unknown error'
+        if (profileError.message) {
+          errorMsg = profileError.message
+        } else if (profileError.details) {
+          errorMsg = profileError.details
+        } else if (profileError.hint) {
+          errorMsg = profileError.hint
+        }
+
+        // Handle specific error cases
+        if (profileError.code === '23505') {
+          errorMsg = 'A profile with this information already exists. Please check your details.'
+        } else if (profileError.code === '23503') {
+          errorMsg = 'Invalid user reference. Please sign out and sign in again.'
+        } else if (profileError.message?.includes('handle')) {
+          errorMsg = 'Handle is already taken. Please choose a different one.'
+        } else if (profileError.message?.includes('email')) {
+          errorMsg = 'Email address issue. Please check your account.'
+        }
+
         setError(`Failed to save profile: ${errorMsg}`)
         setLoading(false)
         return
@@ -416,10 +467,28 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
       }
 
       // Success! Redirect to dashboard
+      console.log('✅ Profile created successfully! Redirecting to dashboard...')
       router.push('/dashboard')
     } catch (err) {
-      console.error('Profile completion error:', err)
-      setError('An unexpected error occurred. Please try again.')
+      console.error('❌ Profile completion error:', err)
+      console.error('❌ Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        name: err instanceof Error ? err.name : undefined
+      })
+      
+      let errorMessage = 'An unexpected error occurred. Please try again.'
+      if (err instanceof Error) {
+        if (err.message.includes('network') || err.message.includes('fetch')) {
+          errorMessage = 'Network error. Please check your connection and try again.'
+        } else if (err.message.includes('permission') || err.message.includes('unauthorized')) {
+          errorMessage = 'Permission error. Please sign out and sign in again.'
+        } else {
+          errorMessage = `Error: ${err.message}`
+        }
+      }
+      
+      setError(errorMessage)
       setLoading(false)
     }
   }

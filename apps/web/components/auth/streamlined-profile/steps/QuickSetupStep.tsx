@@ -160,7 +160,15 @@ export function QuickSetupStep() {
         </Button>
         <Button
           type="button"
-          onClick={handleFinalSubmit}
+          onClick={() => {
+            console.log('🔘 Complete Setup button clicked')
+            console.log('📊 Current state:', {
+              loading,
+              selectedRole,
+              profileData
+            })
+            handleFinalSubmit()
+          }}
           disabled={loading}
           className="flex-1"
         >

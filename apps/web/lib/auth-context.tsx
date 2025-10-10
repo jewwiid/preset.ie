@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
-import { supabase } from './supabase'
+import { createClient } from './supabase/client'
 import { debugSession } from './session-debug'
 import { getUserRole, UserRole } from './auth-helpers'
 import { migrateAuthStorage } from './auth-migration'
@@ -27,87 +27,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
   const previousUserIdRef = useRef<string | undefined>(undefined)
+  const supabase = createClient()
 
   useEffect(() => {
-    // Check if we have a stored session
-    const initializeAuth = async () => {
-      try {
-        // Migrate auth storage first
-        migrateAuthStorage()
-        
-        // Debug session storage - only in development
-        if (process.env.NODE_ENV === 'development') {
-          debugSession()
-        }
-        
-        // Get initial session
-        if (!supabase) {
-          console.error('Supabase client not available')
-          setLoading(false)
-          return
-        }
-        
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          // Only log in development
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Error getting session:', error)
-          }
-          setSession(null)
-          setUser(null)
-          setUserRole(null)
-        } else {
-          // Only log in development
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Initial session:', session ? 'Found' : 'Not found')
-            if (session) {
-              console.log('Session expires at:', new Date(session.expires_at! * 1000).toLocaleString())
-            }
-          }
-          if (session) {
-            // Fetch user role when session is found with error handling
-            try {
-              const role = await getUserRole(session.user.id)
-              setUserRole(role)
-            } catch (roleError) {
-              // Only log in development
-              if (process.env.NODE_ENV === 'development') {
-                console.error('Error fetching user role during initialization:', roleError)
-              }
-              setUserRole(null)
-            }
-          } else {
-            setUserRole(null)
-          }
-          setSession(session)
-          setUser(session?.user ?? null)
-        }
-      } catch (err) {
-        // Only log in development
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error initializing auth:', err)
-        }
-        // Reset all auth state on error
-        setSession(null)
-        setUser(null)
-        setUserRole(null)
-      } finally {
-        setLoading(false)
-      }
+    // Migrate auth storage first
+    migrateAuthStorage()
+
+    // Debug session storage - only in development
+    if (process.env.NODE_ENV === 'development') {
+      debugSession()
     }
 
-    initializeAuth()
-
-    // Listen for auth changes
-    if (!supabase) {
-      // Only log in development
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Supabase client not available for auth state change listener')
-      }
-      return () => {} // Return empty cleanup function
-    }
-    
+    // Listen for auth changes - no need to call getSession() manually
+    // onAuthStateChange will handle initial session automatically
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         // Only log in development
@@ -152,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserRole(role)
         setLoading(false)
 
-        // Log events
         // Log events - only in development
         if (process.env.NODE_ENV === 'development') {
           if (event === 'SIGNED_IN') {
@@ -172,10 +103,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signUp = async (email: string, password: string, options?: { data?: Record<string, any> }) => {
-    if (!supabase) {
-      return { error: null }
-    }
-
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -191,10 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (emailOrHandle: string, password: string) => {
-    if (!supabase) {
-      return { error: null }
-    }
-
     let email = emailOrHandle
 
     // Check if input is a handle (doesn't contain @) instead of email
@@ -290,25 +213,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setSession(null)
       setUserRole(null)
-      
-      // Check if there's an active session before trying to sign out
-      if (!supabase) {
-        console.error('Supabase client not available for sign out')
-        return { error: null }
-      }
-      
-      const { data: { session: currentSession } } = await supabase.auth.getSession()
-      
-      if (currentSession) {
-        // Only attempt sign out if there's an active session
-        const { error } = await supabase.auth.signOut({ scope: 'local' })
-        
-        if (error) {
-          // Log the error but don't throw - we've already cleared local state
-          // Only log in development
-          if (process.env.NODE_ENV === 'development') {
-            console.warn('Supabase sign out warning:', error.message)
-          }
+
+      // Sign out - this will trigger onAuthStateChange
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
+
+      if (error) {
+        // Log the error but don't throw - we've already cleared local state
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Supabase sign out warning:', error.message)
         }
       }
       
@@ -325,10 +238,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signInWithGoogle = async () => {
-    if (!supabase) {
-      return { error: null }
-    }
-    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -349,10 +258,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const resetPassword = async (email: string) => {
-    if (!supabase) {
-      return { error: null }
-    }
-    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`,
     })

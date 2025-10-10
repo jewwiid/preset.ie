@@ -26,18 +26,18 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session if expired - this will automatically refresh the token
-  // and update cookies which will be sent to the client
-  const { data: { session }, error } = await supabase.auth.getSession()
+  // Validate and refresh user session - this validates the JWT server-side
+  // and automatically refreshes the token if needed
+  const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error) {
-    console.error('Middleware: Error getting session:', error.message)
+    console.error('Middleware: Error validating user:', error.message)
   }
 
-  if (session) {
-    console.log('Middleware: Session is valid, refreshed if needed')
+  if (user) {
+    console.log('Middleware: User authenticated, token refreshed if needed')
   } else {
-    console.log('Middleware: No session found')
+    console.log('Middleware: No authenticated user found')
   }
 
   return response

@@ -353,16 +353,12 @@ export function EssentialProfileStep() {
               <SelectValue placeholder="Select your primary skill..." />
             </SelectTrigger>
             <SelectContent>
-              <optgroup label="Contributor Skills">
-                {getOptionNames(predefinedOptions.skills).map(skill => (
-                  <SelectItem key={skill} value={skill}>{skill}</SelectItem>
-                ))}
-              </optgroup>
-              <optgroup label="Talent Categories">
-                {getOptionNames(predefinedOptions.talentCategories).map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </optgroup>
+              {getOptionNames(predefinedOptions.skills).map(skill => (
+                <SelectItem key={skill} value={skill}>{skill}</SelectItem>
+              ))}
+              {getOptionNames(predefinedOptions.talentCategories).map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         )}
@@ -412,9 +408,6 @@ export function EssentialProfileStep() {
                 placeholder="example.com"
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              Enter your website (we'll add https:// automatically)
-            </p>
           </div>
         </div>
       </div>
