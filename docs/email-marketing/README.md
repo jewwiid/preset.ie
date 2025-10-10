@@ -14,6 +14,12 @@ Welcome to the complete documentation for the Preset.ie Email Marketing System.
    - Code examples
    - Troubleshooting
 
+2. **[CAMPAIGNS-GUIDE.md](./CAMPAIGNS-GUIDE.md)** ✨ NEW
+   - Send targeted campaigns
+   - Segment by skills/specializations
+   - Campaign templates
+   - Bulk email marketing
+
 ### 📖 Complete Guides
 
 2. **[COMPLETE-EMAIL-SYSTEM.md](./COMPLETE-EMAIL-SYSTEM.md)**

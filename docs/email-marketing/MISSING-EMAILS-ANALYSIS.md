@@ -1,4 +1,4 @@
-# Missing Email Types Analysis
+sw# Missing Email Types Analysis
 
 Based on `packages/types/src/notifications.ts`, here's what we have vs. what's missing:
 

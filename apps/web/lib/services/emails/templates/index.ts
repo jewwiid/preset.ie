@@ -42,6 +42,9 @@ export * from './collaborations.templates';
 // Invitation templates
 export * from './invitations.templates';
 
+// Discovery templates
+export * from './discovery.templates';
+
 // Safety & Trust (placeholders - to be expanded)
 export function getIDVerificationSubmittedTemplate(): string {
   const { getEmailTemplate } = require('./shared.templates');
