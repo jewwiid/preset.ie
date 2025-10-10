@@ -197,14 +197,21 @@ export function useNotifications(): UseNotificationsResult {
           vibration_enabled: true
         }
 
+        console.log('Attempting to insert default preferences:', defaultPrefs)
+
         const { data: newPrefs, error: createError } = await supabase
           .from('notification_preferences')
           .insert(defaultPrefs)
           .select()
           .single()
 
+        console.log('Insert result:', { data: newPrefs, error: createError })
+
         if (createError) {
-          console.error('Failed to create default preferences:', createError)
+          console.error('Failed to create default preferences (raw error):', createError)
+          console.error('Error type:', typeof createError)
+          console.error('Error keys:', Object.keys(createError))
+          console.error('Error stringified:', JSON.stringify(createError, null, 2))
           console.error('Error details:', {
             message: createError.message || 'No message',
             code: createError.code || 'No code',
