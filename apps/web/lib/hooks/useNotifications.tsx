@@ -181,7 +181,7 @@ export function useNotifications(): UseNotificationsResult {
         if (error.code === 'PGRST205' || error.message.includes('Could not find the table')) {
           console.log('Notification preferences table not found, using defaults')
           // Set default preferences in memory
-          data = {
+          const defaultPrefs = {
             user_id: user.id,
             email_enabled: true,
             push_enabled: true,
@@ -198,6 +198,7 @@ export function useNotifications(): UseNotificationsResult {
             sound_enabled: true,
             vibration_enabled: true
           }
+          setPreferences(defaultPrefs)
         } else {
           console.error('Failed to fetch preferences:', {
             message: error.message,
@@ -206,8 +207,8 @@ export function useNotifications(): UseNotificationsResult {
             hint: error.hint,
             fullError: error
           })
-          return
         }
+        return
       }
 
       setPreferences(data)
