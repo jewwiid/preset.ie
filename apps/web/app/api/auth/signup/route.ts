@@ -33,6 +33,65 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
+      // Check if user already exists
+      if (authError.message.includes('already registered') || authError.message.includes('User already registered')) {
+        // User exists - check if they're verified
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+        const adminClient = await import('@supabase/supabase-js').then(mod => 
+          mod.createClient(supabaseUrl, supabaseServiceKey, {
+            auth: { autoRefreshToken: false, persistSession: false }
+          })
+        );
+
+        // Find the user
+        const { data: { users }, error: lookupError } = await adminClient.auth.admin.listUsers();
+        const existingUser = users?.find(u => u.email === email);
+
+        if (existingUser) {
+          // Check if user has verified profile
+          const { data: profile } = await adminClient
+            .from('users_profile')
+            .select('email_verified')
+            .eq('user_id', existingUser.id)
+            .single();
+
+          if (!profile || !profile.email_verified) {
+            // User exists but not verified - resend verification email
+            const verificationToken = `${existingUser.id}:${Math.floor(Date.now() / 1000)}:${Math.random().toString(36).substring(2, 18)}`;
+
+            try {
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com';
+              await fetch(`${baseUrl}/api/emails/verify-email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  authUserId: existingUser.id,
+                  email: email,
+                  name: `${firstName} ${lastName}`,
+                  verificationToken,
+                }),
+              });
+
+              return NextResponse.json({
+                success: true,
+                message: 'Account already exists but not verified. We have sent you a new verification email.',
+                requiresVerification: true,
+                isResend: true,
+              });
+            } catch (emailError) {
+              console.error('Error resending verification:', emailError);
+            }
+          } else {
+            // User exists and is verified - tell them to sign in
+            return NextResponse.json({
+              error: 'An account with this email already exists. Please sign in instead.',
+              shouldSignIn: true,
+            }, { status: 400 });
+          }
+        }
+      }
+
       return NextResponse.json(
         { error: authError.message },
         { status: 400 }

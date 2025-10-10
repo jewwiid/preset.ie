@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     // when profile is created with email_verified = true
 
     // Redirect to profile completion to add more details
-    return NextResponse.redirect(new URL('/onboarding/complete-profile', request.url));
+    return NextResponse.redirect(new URL('/auth/complete-profile', request.url));
 
   } catch (error) {
     console.error('Verification error:', error);

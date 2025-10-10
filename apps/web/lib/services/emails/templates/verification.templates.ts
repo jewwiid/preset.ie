@@ -58,24 +58,26 @@ export function getWelcomeAfterVerificationTemplate({
   userEmail,
   authUserId,
 }: WelcomeAfterVerificationTemplateProps): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com';
+  
   const roleSpecific = {
     TALENT: {
       title: 'Your Creative Journey Starts Now',
       description: 'Connect with photographers, filmmakers, and creative professionals for exciting collaborations.',
       cta: 'Complete Your Profile',
-      ctaUrl: 'https://presetie.com/onboarding/complete-profile',
+      ctaUrl: `${baseUrl}/auth/complete-profile`,
     },
     CONTRIBUTOR: {
       title: 'Start Finding Amazing Talent',
       description: 'Discover models, actors, and creative professionals for your next project.',
       cta: 'Browse Talent',
-      ctaUrl: 'https://presetie.com/search/talent',
+      ctaUrl: `${baseUrl}/search/talent`,
     },
     BOTH: {
       title: 'Welcome to the Creative Community',
       description: 'Collaborate as both talent and contributor in our creative network.',
       cta: 'Explore Preset',
-      ctaUrl: 'https://presetie.com/dashboard',
+      ctaUrl: `${baseUrl}/dashboard`,
     },
   };
 
