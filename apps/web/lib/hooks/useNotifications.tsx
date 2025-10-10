@@ -163,6 +163,13 @@ export function useNotifications(): UseNotificationsResult {
     if (!user || !supabase) return
 
     try {
+      // Ensure we have an active session
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session) {
+        console.warn('No active session when fetching notification preferences')
+        return
+      }
+
       let { data, error } = await supabase
         .from('notification_preferences')
         .select('*')
@@ -171,6 +178,7 @@ export function useNotifications(): UseNotificationsResult {
 
       if (error && error.code === 'PGRST116') {
         // Create default preferences if none exist
+        console.log('Creating default notification preferences for user:', user.id)
         const defaultPrefs = {
           user_id: user.id,
           email_enabled: true,
@@ -196,12 +204,12 @@ export function useNotifications(): UseNotificationsResult {
           .single()
 
         if (createError) {
-          console.error('Failed to create default preferences:', {
-            message: createError.message,
-            code: createError.code,
-            details: createError.details,
-            hint: createError.hint,
-            fullError: createError
+          console.error('Failed to create default preferences:', createError)
+          console.error('Error details:', {
+            message: createError.message || 'No message',
+            code: createError.code || 'No code',
+            details: createError.details || 'No details',
+            hint: createError.hint || 'No hint'
           })
           
           // If table doesn't exist, set default preferences in memory
