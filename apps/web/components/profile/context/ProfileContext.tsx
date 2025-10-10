@@ -3,13 +3,13 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../lib/auth-context'
-import { 
-  ProfileState, 
-  ProfileAction, 
-  UserProfile, 
-  UserSettings, 
+import {
+  ProfileState,
+  ProfileAction,
+  UserProfile,
+  UserSettings,
   NotificationPreferences,
-  BannerPosition 
+  BannerPosition
 } from '../types/profile'
 
 // Initial state
@@ -619,7 +619,7 @@ export function useProfileForm() {
       const { data, error } = await (supabase as any)
         .from('users_profile')
         .update(sanitizedFormData as any)
-        .eq('id', state.profile.id)
+        .eq('user_id', user.id)
         .select()
         .single()
         

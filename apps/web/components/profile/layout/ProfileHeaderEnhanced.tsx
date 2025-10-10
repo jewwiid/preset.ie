@@ -362,9 +362,29 @@ export function ProfileHeaderEnhanced() {
       return
     }
 
+    // Prevent users from uploading to profiles that aren't theirs
+    if (profile?.user_id !== user.id) {
+      console.error('Upload blocked: User trying to upload to another user\'s profile')
+      alert('You can only upload avatars to your own profile.')
+      return
+    }
+
     try {
       setIsUploadingAvatar(true)
-      console.log('Starting avatar upload for user:', user.id)
+
+      // Get the actual authenticated user ID from Supabase
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const actualUserId = authUser?.id
+
+      console.log('=== AVATAR UPLOAD DEBUG ===')
+      console.log('Auth context user.id:', user.id)
+      console.log('Actual auth.getUser() ID:', actualUserId)
+      console.log('Profile user_id:', profile?.user_id)
+      console.log('User object:', { id: user.id, email: user.email })
+      console.log('===========================')
+
+      // Use the actual authenticated user ID
+      const uploadUserId = actualUserId || user.id
 
       // 🎯 IMMEDIATE PREVIEW: Create object URL for instant preview
       const previewUrl = URL.createObjectURL(file)
@@ -373,9 +393,10 @@ export function ProfileHeaderEnhanced() {
 
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}.${fileExt}`
-      const filePath = `${user.id}/${fileName}`
+      const filePath = `${uploadUserId}/${fileName}`
 
       console.log('Uploading to path:', filePath)
+      console.log('File path breakdown:', { userId: uploadUserId, fileName, fullPath: filePath })
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, {
@@ -400,7 +421,9 @@ export function ProfileHeaderEnhanced() {
       const { error: updateError } = await supabase
         .from('users_profile')
         .update({ avatar_url: data.publicUrl })
-        .eq('user_id', user.id)
+        .eq('user_id', uploadUserId)
+        .select()
+        .single()
 
       if (updateError) {
         console.error('Database update error:', updateError)
@@ -424,6 +447,13 @@ export function ProfileHeaderEnhanced() {
     if (!user || !supabase) {
       console.error('Upload failed: Missing user or supabase client', { user: !!user, supabase: !!supabase })
       alert('Unable to upload: Please ensure you are logged in.')
+      return
+    }
+
+    // Prevent users from uploading to profiles that aren't theirs
+    if (profile?.user_id !== user.id) {
+      console.error('Upload blocked: User trying to upload to another user\'s profile')
+      alert('You can only upload banners to your own profile.')
       return
     }
 
@@ -466,6 +496,8 @@ export function ProfileHeaderEnhanced() {
         .from('users_profile')
         .update({ header_banner_url: data.publicUrl })
         .eq('user_id', user.id)
+        .select()
+        .single()
 
       if (updateError) {
         console.error('Database update error:', updateError)

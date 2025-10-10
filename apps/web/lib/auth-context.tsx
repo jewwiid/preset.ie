@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
-import { createClient } from './supabase/client'
+import { supabase } from './supabase'
 import { debugSession } from './session-debug'
 import { getUserRole, UserRole } from './auth-helpers'
 import { migrateAuthStorage } from './auth-migration'
@@ -27,7 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
   const previousUserIdRef = useRef<string | undefined>(undefined)
-  const supabase = createClient()
 
   useEffect(() => {
     // Migrate auth storage first
@@ -48,7 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             hasSession: !!session,
             hasUser: !!session?.user,
             userEmail: session?.user?.email,
-            userId: session?.user?.id
+            userId: session?.user?.id,
+            fullUser: session?.user
           })
         }
 
