@@ -170,60 +170,13 @@ export function useNotifications(): UseNotificationsResult {
         return
       }
 
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('notification_preferences')
         .select('*')
         .eq('user_id', user.id)
         .single()
 
-      if (error && error.code === 'PGRST116') {
-        // Create default preferences if none exist
-        console.log('Creating default notification preferences for user:', user.id)
-        const defaultPrefs = {
-          user_id: user.id,
-          email_enabled: true,
-          push_enabled: true,
-          in_app_enabled: true,
-          gig_notifications: true,
-          application_notifications: true,
-          message_notifications: true,
-          booking_notifications: true,
-          system_notifications: true,
-          marketing_notifications: false,
-          digest_frequency: 'real-time' as const,
-          timezone: 'UTC',
-          badge_count_enabled: true,
-          sound_enabled: true,
-          vibration_enabled: true
-        }
-
-        // Use upsert to handle both insert and update cases gracefully
-        // This prevents duplicate key errors if called multiple times
-        const { data: newPrefs, error: createError } = await supabase
-          .from('notification_preferences')
-          .upsert(defaultPrefs, {
-            onConflict: 'user_id',
-            ignoreDuplicates: false
-          })
-          .select()
-          .maybeSingle() // Use maybeSingle instead of single to handle 0 or 1 rows
-
-        if (createError) {
-          console.error('Failed to upsert notification preferences:', createError)
-          // Set defaults in memory if database operation fails
-          data = defaultPrefs
-        } else if (newPrefs) {
-          data = newPrefs
-        } else {
-          // Upsert succeeded but didn't return data, fetch it
-          const { data: fetchedPrefs } = await supabase
-            .from('notification_preferences')
-            .select('*')
-            .eq('user_id', user.id)
-            .single()
-          data = fetchedPrefs || defaultPrefs
-        }
-      } else if (error) {
+      if (error) {
         // Handle table not found gracefully
         if (error.code === 'PGRST205' || error.message.includes('Could not find the table')) {
           console.log('Notification preferences table not found, using defaults')
