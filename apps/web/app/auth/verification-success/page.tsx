@@ -24,11 +24,15 @@ export default function VerificationSuccessPage() {
         </p>
         
         <Link
-          href="/dashboard"
+          href="/auth/complete-profile"
           className="inline-block bg-[#00876f] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#006b59] transition-colors"
         >
-          Go to Dashboard
+          Complete Your Profile
         </Link>
+        
+        <p className="mt-4 text-sm text-gray-500">
+          You will be able to access the platform after completing your profile
+        </p>
       </div>
     </div>
   );

@@ -101,8 +101,8 @@ export async function GET(request: NextRequest) {
     // Welcome email will be automatically sent by the database trigger
     // when profile is created with email_verified = true
 
-    // Redirect to profile completion to add more details
-    return NextResponse.redirect(new URL('/auth/complete-profile', request.url));
+    // Redirect to success page, which will then redirect to complete profile
+    return NextResponse.redirect(new URL('/auth/verification-success', request.url));
 
   } catch (error) {
     console.error('Verification error:', error);
