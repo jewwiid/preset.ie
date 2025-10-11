@@ -63,7 +63,8 @@ function profileReducer(state: ProfileState, action: ProfileAction): ProfileStat
           ...state.profile,
           // Ensure array fields are properly initialized when entering edit mode
           clothing_sizes: state.profile.clothing_sizes || null, // TEXT field, not array
-          talent_categories: state.profile.talent_categories || [],
+          performance_roles: state.profile.performance_roles || [],
+          professional_skills: state.profile.professional_skills || [],
           style_tags: state.profile.style_tags || [],
           vibe_tags: state.profile.vibe_tags || []
         } : state.formData // Initialize form data when entering edit mode
@@ -157,7 +158,8 @@ function profileReducer(state: ProfileState, action: ProfileAction): ProfileStat
           ...state.profile,
           // Ensure array fields are properly initialized
           clothing_sizes: state.profile.clothing_sizes || null, // TEXT field, not array
-          talent_categories: state.profile.talent_categories || [],
+          performance_roles: state.profile.performance_roles || [],
+          professional_skills: state.profile.professional_skills || [],
           style_tags: state.profile.style_tags || [],
           vibe_tags: state.profile.vibe_tags || []
         } : {},
@@ -548,7 +550,7 @@ export function useProfileForm() {
         website_url: state.formData.website_url?.trim() || null,
         portfolio_url: state.formData.portfolio_url?.trim() || null,
         years_experience: state.formData.years_experience || null,
-        specializations: state.formData.specializations || [],
+        professional_skills: state.formData.professional_skills || [],
         equipment_list: state.formData.equipment_list || [],
         editing_software: state.formData.editing_software || [],
         languages: state.formData.languages || [],
@@ -571,7 +573,7 @@ export function useProfileForm() {
         clothing_sizes: state.formData.clothing_sizes?.trim() || null, // TEXT field, not array
         tattoos: state.formData.tattoos || false,
         piercings: state.formData.piercings || false,
-        talent_categories: state.formData.talent_categories || [],
+        performance_roles: state.formData.performance_roles || [],
         style_tags: state.formData.style_tags || [],
         vibe_tags: state.formData.vibe_tags || [],
         avatar_url: state.formData.avatar_url || null,

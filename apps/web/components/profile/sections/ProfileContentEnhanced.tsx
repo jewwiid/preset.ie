@@ -135,7 +135,7 @@ export function ProfileContentEnhanced() {
       setMatchmakingLoading(true)
       
       // Only fetch for talent users - check if user has talent-related fields
-      const isTalent = profile.talent_categories && profile.talent_categories.length > 0
+      const isTalent = profile.performance_roles && profile.performance_roles.length > 0
       if (!isTalent) return
 
       const { data: compatibleGigs, error } = await supabase
@@ -228,8 +228,8 @@ export function ProfileContentEnhanced() {
       editable: true
     },
     {
-      label: 'Specializations',
-      value: profile?.specializations && profile.specializations.length > 0 ? profile.specializations.join(', ') : 'Not specified',
+      label: 'Professional Skills',
+      value: profile?.professional_skills && profile.professional_skills.length > 0 ? profile.professional_skills.join(', ') : 'Not specified',
       icon: Award,
       editable: true
     },
@@ -304,7 +304,7 @@ export function ProfileContentEnhanced() {
   ]
 
   // Physical Attributes (for talent)
-  const physicalInfo = profile?.talent_categories && profile.talent_categories.length > 0 ? [
+  const physicalInfo = profile?.performance_roles && profile.performance_roles.length > 0 ? [
     {
       label: 'Height',
       value: profile?.height_cm ? `${profile.height_cm}cm` : 'Not specified',
@@ -606,7 +606,7 @@ export function ProfileContentEnhanced() {
             )}
 
             {/* Compatible Gigs Section - Only for Talent Users */}
-            {profile?.talent_categories && profile.talent_categories.length > 0 && (
+            {profile?.performance_roles && profile.performance_roles.length > 0 && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-3">
@@ -962,7 +962,7 @@ export function ProfileContentEnhanced() {
             </Card>
 
             {/* Compatible Gigs Section - Only for Talent Users */}
-            {profile?.talent_categories && profile.talent_categories.length > 0 && (
+            {profile?.performance_roles && profile.performance_roles.length > 0 && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-3">

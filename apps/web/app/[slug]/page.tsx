@@ -82,8 +82,9 @@ async function getTalentProfiles(skillSlug: string) {
         role_flags,
         style_tags,
         vibe_tags,
-        specializations,
-        talent_categories,
+        professional_skills,
+        performance_roles,
+        contributor_roles,
         years_experience,
         account_status,
         profile_completion_percentage,
@@ -105,8 +106,9 @@ async function getTalentProfiles(skillSlug: string) {
     // Filter profiles by skill category - only use explicit role fields
     const filteredData = (data || []).filter((profile: any) => {
       const profileSkills = [
-        ...(profile.specializations || []),
-        ...(profile.talent_categories || [])
+        ...(profile.professional_skills || []),
+        ...(profile.performance_roles || []),
+        ...(profile.contributor_roles || [])
       ].map(s => s.toLowerCase());
       
       const searchSkill = normalizedSkill.toLowerCase();

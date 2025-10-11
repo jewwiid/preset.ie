@@ -74,6 +74,10 @@ export function TalentSpecificSection() {
   const { formData, updateField } = useProfileForm()
   const { user } = useAuth()
   
+  // Check if user has TALENT role
+  const userRoleFlags = profile?.role_flags || []
+  const canEditTalentCategories = userRoleFlags.includes('TALENT') || userRoleFlags.includes('BOTH')
+  
   // Predefined data state
   const [predefinedTalentCategories, setPredefinedTalentCategories] = useState<string[]>([])
   const [predefinedEyeColors, setPredefinedEyeColors] = useState<string[]>([])
@@ -122,7 +126,7 @@ export function TalentSpecificSection() {
         const data = await response.json()
         
         // Extract the data we need
-        setPredefinedTalentCategories(data.talent_categories?.map((c: any) => c.category_name) || [])
+        setPredefinedTalentCategories(data.performance_roles?.map((r: any) => r.role_name) || [])
         setPredefinedEyeColors(data.eye_colors?.map((c: any) => c.color_name) || [])
         setPredefinedHairColors(data.hair_colors?.map((c: any) => c.color_name) || [])
         
@@ -198,15 +202,15 @@ export function TalentSpecificSection() {
   }
 
   const addTalentCategory = (category: string) => {
-    const currentCategories = formData.talent_categories || []
+    const currentCategories = formData.performance_roles || []
     if (!currentCategories.includes(category)) {
-      handleFieldChange('talent_categories', [...currentCategories, category])
+      handleFieldChange('performance_roles', [...currentCategories, category])
     }
   }
 
   const removeTalentCategory = (category: string) => {
-    const currentCategories = formData.talent_categories || []
-    handleFieldChange('talent_categories', currentCategories.filter(c => c !== category))
+    const currentCategories = formData.performance_roles || []
+    handleFieldChange('performance_roles', currentCategories.filter(c => c !== category))
   }
 
   // Clothing size management functions
@@ -860,27 +864,35 @@ export function TalentSpecificSection() {
         </div>
       </div>
 
-      {/* Talent Categories */}
+      {/* Performance Roles */}
       <div className="bg-muted rounded-lg p-4">
-        <h3 className="text-lg font-medium text-foreground mb-4">Talent Categories</h3>
+        <h3 className="text-lg font-medium text-foreground mb-4">Performance Roles</h3>
+        
+        {!canEditTalentCategories && (
+          <div className="mb-4 p-3 bg-muted-foreground/10 border border-muted-foreground/20 rounded-md">
+            <p className="text-sm text-muted-foreground">
+              <strong>Note:</strong> You signed up as a <strong>CONTRIBUTOR</strong>. Performance roles are only available for users with the TALENT role. You can manage your professional skills in the Professional section instead.
+            </p>
+          </div>
+        )}
         
         <div className="space-y-3">
           <div>
-            <Label htmlFor="talent-category">Add Talent Category</Label>
+            <Label htmlFor="talent-category">Add Performance Role</Label>
             <Select
               onValueChange={(value) => {
-                if (value && !(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).includes(value)) {
+                if (value && !(isEditing ? (formData.performance_roles || []) : (profile?.performance_roles || [])).includes(value)) {
                   addTalentCategory(value)
                 }
               }}
-              disabled={!isEditing}
+              disabled={!isEditing || !canEditTalentCategories}
             >
               <SelectTrigger id="talent-category">
-                <SelectValue placeholder="Select a talent category..." />
+                <SelectValue placeholder={canEditTalentCategories ? "Select a performance role..." : "Not available for your role"} />
               </SelectTrigger>
               <SelectContent>
                 {predefinedTalentCategories
-                  .filter(category => !(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).includes(category))
+                  .filter(category => !(isEditing ? (formData.performance_roles || []) : (profile?.performance_roles || [])).includes(category))
                   .map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -891,17 +903,17 @@ export function TalentSpecificSection() {
           </div>
           
           {/* Display Selected Categories */}
-          {(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).length > 0 && (
+          {(isEditing ? (formData.performance_roles || []) : (profile?.performance_roles || [])).length > 0 && (
             <div>
-              <Label className="text-sm font-medium text-foreground mb-2">Selected Categories</Label>
+              <Label className="text-sm font-medium text-foreground mb-2">Selected Performance Roles</Label>
               <div className="flex flex-wrap gap-2">
-                {(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).map((category, index) => (
+                {(isEditing ? (formData.performance_roles || []) : (profile?.performance_roles || [])).map((category, index) => (
                   <span
                     key={index}
                     className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
                   >
                     {category}
-                    {isEditing && (
+                    {isEditing && canEditTalentCategories && (
                       <button
                         onClick={() => removeTalentCategory(category)}
                         className="ml-1 text-primary/70 hover:text-primary transition-colors"
@@ -917,7 +929,9 @@ export function TalentSpecificSection() {
         </div>
         
         <p className="text-sm text-muted-foreground mt-2">
-          Select the types of talent work you're interested in (e.g., Model, Actor, Dancer)
+          {canEditTalentCategories 
+            ? "Select what you perform as (e.g., Model, Actor, Dancer)" 
+            : "Your role was set during signup and determines which fields you can edit."}
         </p>
       </div>
 

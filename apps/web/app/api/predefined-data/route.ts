@@ -66,7 +66,7 @@ export async function GET() {
         .order('sort_order', { ascending: true }),
       
       supabase
-        .from('predefined_talent_categories')
+        .from('predefined_performance_roles')  // RENAMED from predefined_talent_categories
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
@@ -78,7 +78,7 @@ export async function GET() {
         .order('sort_order', { ascending: true }),
       
       supabase
-        .from('predefined_professional_skills')
+        .from('predefined_professional_skills')  // Already updated
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
@@ -90,7 +90,7 @@ export async function GET() {
         .order('sort_order', { ascending: true }),
       
       supabase
-        .from('specializations')
+        .from('predefined_professional_skills')  // RENAMED from specializations (duplicate query - we'll handle this)
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
@@ -175,11 +175,14 @@ export async function GET() {
       clothing_sizes: clothingSizesResult.data || [],
       shoe_size_systems: shoeSizeSystemsResult.data || [],
       shoe_sizes: shoeSizesResult.data || [],
-      talent_categories: talentCategoriesResult.data || [],
+      
+      // Role categorization (clear names!)
+      performance_roles: talentCategoriesResult.data || [],      // What users perform AS (Model, Actor, Dancer)
+      professional_skills: professionalSkillsResult.data || [],  // Services users PROVIDE (Photography, Video Editing)
+      
+      // Other predefined data
       predefined_roles: predefinedRolesResult.data || [],
-      professional_skills: professionalSkillsResult.data || [],
       languages: languagesResult.data || [],
-      specializations: specializationsResult.data || [],
       equipment_types: equipmentTypesResult.data || [],
       equipment_brands: equipmentBrandsResult.data || [],
       gender_identities: genderIdentitiesResult.data || [],

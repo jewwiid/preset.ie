@@ -15,6 +15,10 @@ export function ProfessionalSection() {
   const { isEditing } = useProfileEditing()
   const { formData, updateField } = useProfileForm()
 
+  // Check if user has CONTRIBUTOR role
+  const userRoleFlags = profile?.role_flags || []
+  const canEditSpecializations = userRoleFlags.includes('CONTRIBUTOR') || userRoleFlags.includes('BOTH')
+
   // Guard against SSR issues
   const [isMounted, setIsMounted] = useState(false)
   
@@ -48,16 +52,15 @@ export function ProfessionalSection() {
           console.log('API data received:', {
             roles: data.predefined_roles?.length || 0,
             skills: data.professional_skills?.length || 0,
-            specializations: data.specializations?.length || 0,
             languages: data.languages?.length || 0
           })
           
           setPredefinedRoles(data.predefined_roles || [])
           setPredefinedSkills(data.professional_skills || [])
           
-          // Use specializations table for specializations
+          // Use professional_skills table for specializations
           setPredefinedSpecializations(
-            data.specializations?.map((spec: any) => spec.name) || []
+            data.professional_skills?.map((skill: any) => skill.skill_name) || []
           )
           
           // Use languages_master table for languages

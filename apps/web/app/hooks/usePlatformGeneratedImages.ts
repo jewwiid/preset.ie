@@ -49,8 +49,8 @@ interface TalentProfile {
   role_flags: string[];
   style_tags: string[];
   vibe_tags: string[];
-  specializations: string[];
-  talent_categories: string[];
+  professional_skills: string[];    // NEW: Services they provide
+  performance_roles: string[];      // NEW: What they perform as
   years_experience: number;
   account_status: string;
   profile_completion_percentage: number;

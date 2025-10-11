@@ -136,7 +136,7 @@ export function VideoImageUploader({
                 <img
                   src={uploadedImage}
                   alt="Uploaded"
-                  className="w-full h-auto object-contain rounded-lg border"
+                  className="w-full h-auto max-h-48 object-contain rounded-lg border"
                 />
                 <Button
                   type="button"

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { moveImageToPermanentStorage } from '../lib/storage-helpers'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -67,7 +68,10 @@ export async function POST(request: NextRequest) {
       style: generationMetadata?.style
     })
     let finalImageUrl = imageUrl
-    
+
+    // First, move image from temporary to permanent storage if applicable
+    finalImageUrl = await moveImageToPermanentStorage(finalImageUrl, user.id)
+
     // Handle data URLs and external URLs by uploading to Supabase Storage
     if (imageUrl.startsWith('data:image/')) {
       console.log('Processing data URL image')

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Video as VideoIcon, Download, Heart, X, Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react'
+import { Video as VideoIcon, Download, Heart, X, Image as ImageIcon, Loader2, RefreshCw, Move } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -58,6 +58,7 @@ export default function VideoPreviewArea({
   fullWidth = false
 }: VideoPreviewAreaProps) {
   const [showStyledImage, setShowStyledImage] = useState(false)
+  const [showGridOverlay, setShowGridOverlay] = useState(false)
   const previewAspectRatio = aspectRatio.replace(':', '/')
   const selectedVideoData = videos.find(v => v.url === selectedVideo)
 
@@ -105,19 +106,33 @@ export default function VideoPreviewArea({
                       onPositionChange={onPositionChange || (() => {})}
                       onSaveFraming={() => {}}
                       className="w-full"
+                      showGridOverlay={showGridOverlay}
                     />
-                    {/* Toggle button for styled image */}
-                    {hasStyledImage && (
+                    {/* Toggle buttons */}
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      {/* Grid overlay toggle */}
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="absolute top-2 right-2 h-8 px-3 text-xs bg-background/90 backdrop-blur-sm hover:bg-background"
-                        onClick={() => setShowStyledImage(!showStyledImage)}
+                        className="h-8 px-3 text-xs bg-background/90 backdrop-blur-sm hover:bg-background"
+                        onClick={() => setShowGridOverlay(!showGridOverlay)}
                       >
-                        <RefreshCw className="h-3 w-3 mr-1.5" />
-                        {showStyledImage ? 'Show Original' : 'Show Styled'}
+                        <Move className="h-3 w-3 mr-1.5" />
+                        {showGridOverlay ? 'Hide Grid' : 'Show Grid'}
                       </Button>
-                    )}
+                      {/* Toggle button for styled image */}
+                      {hasStyledImage && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 px-3 text-xs bg-background/90 backdrop-blur-sm hover:bg-background"
+                          onClick={() => setShowStyledImage(!showStyledImage)}
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1.5" />
+                          {showStyledImage ? 'Show Original' : 'Show Styled'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div

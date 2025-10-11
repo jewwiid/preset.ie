@@ -1190,6 +1190,7 @@ export default function TabbedPlaygroundLayout({
                 selectedProvider={videoProvider}
                 onProviderChange={setVideoProvider}
                 selectedPreset={selectedPreset}
+                onPresetChange={(preset) => setSelectedPreset(preset)}
               />
             </div>
           </div>

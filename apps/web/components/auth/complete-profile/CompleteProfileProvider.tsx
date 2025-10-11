@@ -35,7 +35,8 @@ interface ProfileData {
   
   // Contributor fields
   yearsExperience?: number
-  specializations?: string[]
+  professionalSkills?: string[]      // NEW: Services they provide
+  contributorRoles?: string[]
   equipment?: string
   software?: string
   studio?: string
@@ -63,7 +64,7 @@ interface ProfileData {
   piercings?: boolean
   tfpAcceptance?: string
   preferredWorkTypes?: string[]
-  talentCategories?: string[]
+  performanceRoles?: string[]        // NEW: What they perform as
   
   // Work preferences
   availabilityStatus?: string
@@ -377,7 +378,8 @@ export function CompleteProfileProvider({ children }: { children: ReactNode }) {
         state_province: profileData.stateProvince || null,
         timezone: profileData.timezone || null,
         years_experience: profileData.yearsExperience || 0,
-        specializations: profileData.specializations || [],
+        professional_skills: profileData.professionalSkills || [],
+        contributor_roles: profileData.contributorRoles || [],
         equipment_list: profileData.equipment || null,
         software_list: profileData.software || null,
         studio_name: profileData.studio || null,
@@ -402,7 +404,7 @@ export function CompleteProfileProvider({ children }: { children: ReactNode }) {
         piercings: profileData.piercings || false,
         tfp_acceptance: profileData.tfpAcceptance || null,
         preferred_work_types: profileData.preferredWorkTypes || [],
-        talent_categories: profileData.talentCategories || [],
+        performance_roles: profileData.performanceRoles || [],
         availability_status: profileData.availabilityStatus || null,
         preferred_working_hours: profileData.preferredWorkingHours || null,
         accepts_tfp: profileData.acceptsTfp || false,

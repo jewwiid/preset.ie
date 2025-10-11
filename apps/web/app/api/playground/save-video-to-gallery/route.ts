@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '../../../../lib/supabase'
 import { getUserFromRequest } from '../../../../lib/auth-utils'
+import { moveImageToPermanentStorage, moveVideoToPermanentStorage } from '../lib/storage-helpers'
 
 export async function POST(request: NextRequest) {
   console.log('🎬 Save-video-to-gallery API called')
@@ -190,6 +191,20 @@ export async function POST(request: NextRequest) {
     const supabaseVideoUrl = publicUrlData.publicUrl
     console.log('✅ Video uploaded to Supabase Storage:', supabaseVideoUrl)
 
+    // Move base images from temporary to permanent storage if they exist in generationMetadata
+    let permanentImageUrl = generationMetadata?.image_url
+    let permanentStyledImageUrl = generationMetadata?.styled_image_url
+
+    if (permanentImageUrl) {
+      console.log('📸 Moving base image to permanent storage...')
+      permanentImageUrl = await moveImageToPermanentStorage(permanentImageUrl, user.id)
+    }
+
+    if (permanentStyledImageUrl) {
+      console.log('📸 Moving styled image to permanent storage...')
+      permanentStyledImageUrl = await moveImageToPermanentStorage(permanentStyledImageUrl, user.id)
+    }
+
     // Extract actual video dimensions from the video URL
     let actualWidth = resolution === '720p' ? 1280 : 854
     let actualHeight = resolution === '720p' ? 720 : 480
@@ -236,7 +251,10 @@ export async function POST(request: NextRequest) {
         ...generationMetadata,
         original_cloudfront_url: videoUrl, // Keep reference to original URL
         saved_to_storage: true,
-        storage_path: fileName
+        storage_path: fileName,
+        // Update with permanent image URLs
+        image_url: permanentImageUrl || generationMetadata?.image_url,
+        styled_image_url: permanentStyledImageUrl || generationMetadata?.styled_image_url
       }
     }
 

@@ -19,7 +19,9 @@ export interface UserProfile {
   website_url?: string
   portfolio_url?: string
   years_experience?: number
-  specializations?: string[]
+  professional_skills?: string[]    // NEW: Services user provides (Photography, Video Editing, etc.)
+  performance_roles?: string[]      // NEW: What user performs as (Model, Actor, Dancer, etc.)
+  contributor_roles?: string[]
   equipment_list?: string[]
   editing_software?: string[]
   languages?: string[]
@@ -42,9 +44,6 @@ export interface UserProfile {
   clothing_sizes?: string | null
   tattoos?: boolean
   piercings?: boolean
-  talent_categories?: string[]
-  contributor_roles?: string[]
-  professional_skills?: string[]
   behance_url?: string
   dribbble_url?: string
   style_tags?: string[]

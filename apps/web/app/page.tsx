@@ -747,8 +747,8 @@ export default function Home() {
                         </p>
                         <p className="text-muted-foreground text-sm mt-1">
                           {(talent as any).primary_skill ||
-                            (talent.talent_categories && talent.talent_categories.length > 0 ? talent.talent_categories[0] : null) ||
-                            (talent.specializations && talent.specializations.length > 0 ? talent.specializations[0] : null) ||
+                            (talent.performance_roles && talent.performance_roles.length > 0 ? talent.performance_roles[0] : null) ||
+                            (talent.professional_skills && talent.professional_skills.length > 0 ? talent.professional_skills[0] : null) ||
                             'Creative Professional'}
                         </p>
                       </div>
@@ -816,54 +816,54 @@ export default function Home() {
               const allTalents = [...getTalentProfiles(), ...getContributorProfiles()];
               
               const creativeRoles = [
-                {
-                  name: 'Freelancers',
-                  slug: 'freelancers',
-                  description: 'Independent creative professionals',
-                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('freelance')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
-                },
-                {
-                  name: 'Photographers',
-                  slug: 'photographers', 
-                  description: 'Portrait, fashion, and commercial photography',
-                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.includes('Photography')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
-                },
-                {
-                  name: 'Videographers',
-                  slug: 'videographers',
-                  description: 'Wedding, commercial, and event videography',
-                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.includes('Videographer')) || t.bio?.toLowerCase().includes('videographer'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
-                },
-                {
-                  name: 'Models',
-                  slug: 'models',
-                  description: 'Fashion, commercial, and editorial modeling',
-                  imageUrl: allTalents.find(t => t.talent_categories?.includes('Model'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
-                },
-                {
-                  name: 'Makeup Artists',
-                  slug: 'makeup-artists',
-                  description: 'Beauty, fashion, and special effects makeup',
-                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('makeup')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
-                },
-                {
-                  name: 'Hair Stylists',
-                  slug: 'hair-stylists',
-                  description: 'Fashion, editorial, and commercial styling',
-                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('hair') || s.toLowerCase().includes('stylist')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
-                },
-                {
-                  name: 'Directors',
-                  slug: 'directors',
-                  description: 'Film, commercial, and creative direction',
-                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('director')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
-                },
-                {
-                  name: 'Producers',
-                  slug: 'producers',
-                  description: 'Film, commercial, and event production',
-                  imageUrl: allTalents.find(t => t.specializations?.some(s => s.toLowerCase().includes('producer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
-                }
+              {
+                name: 'Freelancers',
+                slug: 'freelancers',
+                description: 'Independent creative professionals',
+                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('freelance')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+              },
+              {
+                name: 'Photographers',
+                slug: 'photographers', 
+                description: 'Portrait, fashion, and commercial photography',
+                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.includes('Photography')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+              },
+              {
+                name: 'Videographers',
+                slug: 'videographers',
+                description: 'Wedding, commercial, and event videography',
+                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.includes('Videographer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+              },
+              {
+                name: 'Models',
+                slug: 'models',
+                description: 'Fashion, commercial, and editorial modeling',
+                imageUrl: allTalents.find(t => t.performance_roles?.includes('Model'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+              },
+              {
+                name: 'Makeup Artists',
+                slug: 'makeup-artists',
+                description: 'Beauty, fashion, and special effects makeup',
+                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('makeup')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+              },
+              {
+                name: 'Hair Stylists',
+                slug: 'hair-stylists',
+                description: 'Fashion, editorial, and commercial styling',
+                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('hair') || s.toLowerCase().includes('stylist')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+              },
+              {
+                name: 'Directors',
+                slug: 'directors',
+                description: 'Film, commercial, and creative direction',
+                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('director')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+              },
+              {
+                name: 'Producers',
+                slug: 'producers',
+                description: 'Film, commercial, and event production',
+                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('producer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+              }
               ];
 
               return creativeRoles.map((role) => (
@@ -931,8 +931,8 @@ export default function Home() {
                 return realContributors.map((contributor) => {
                   const imageSrc = contributor.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
                   const displayName = contributor.display_name || contributor.handle || 'Creative Professional';
-                  const primarySkill = contributor.specializations && contributor.specializations.length > 0
-                    ? contributor.specializations[0]
+                  const primarySkill = contributor.professional_skills && contributor.professional_skills.length > 0
+                    ? contributor.professional_skills[0]
                     : 'Creative Professional';
 
                   return (

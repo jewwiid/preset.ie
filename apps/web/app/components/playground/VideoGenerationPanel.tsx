@@ -54,6 +54,7 @@ interface VideoGenerationPanelProps {
   onActiveImageChange?: (imageUrl: string | null) => void
   onStyledImageChange?: (styledImageUrl: string | null) => void
   selectedPreset?: any
+  onPresetChange?: (preset: any) => void
 }
 
 export default function VideoGenerationPanel({
@@ -69,6 +70,7 @@ export default function VideoGenerationPanel({
   onProviderChange,
   onPromptChange,
   selectedPreset,
+  onPresetChange,
   onAspectRatioChange,
   onResolutionChange,
   onActiveImageChange,
@@ -125,6 +127,15 @@ export default function VideoGenerationPanel({
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [activeImageSource, setActiveImageSource] = useState<'selected' | 'uploaded' | 'saved' | 'pexels'>('selected')
 
+  // Debug: Log image state changes
+  useEffect(() => {
+    console.log('🎬 Image state:', {
+      uploadedImage: uploadedImage ? 'exists' : 'null',
+      activeImageSource,
+      selectedImage: selectedImage ? 'exists' : 'null'
+    })
+  }, [uploadedImage, activeImageSource, selectedImage])
+
   // Pexels search state
   const pexelsSearch = usePexelsSearch()
 
@@ -150,10 +161,31 @@ export default function VideoGenerationPanel({
         console.log('🎬 Set video prompt from preset:', promptToUse)
       }
 
-      // Set aspect ratio from preset
-      if (selectedPreset.technical_settings?.aspect_ratio) {
-        setSelectedAspectRatio(selectedPreset.technical_settings.aspect_ratio)
-        onAspectRatioChange?.(selectedPreset.technical_settings.aspect_ratio)
+      // Set aspect ratio from preset (check both cinematic_settings and technical_settings)
+      const presetAspectRatio = selectedPreset.cinematic_settings?.cinematicParameters?.aspectRatio
+        || selectedPreset.technical_settings?.aspect_ratio
+        || selectedPreset.technical_settings?.aspectRatio
+
+      if (presetAspectRatio) {
+        console.log('🎬 Setting aspect ratio from preset:', presetAspectRatio)
+        setSelectedAspectRatio(presetAspectRatio)
+        onAspectRatioChange?.(presetAspectRatio)
+      }
+
+      // Set resolution from preset (check both cinematic_settings.video and technical_settings)
+      let presetResolution = selectedPreset.cinematic_settings?.video?.resolution
+        || selectedPreset.technical_settings?.resolution
+
+      // Normalize resolution format - convert numeric values to "480p" or "720p" format
+      if (presetResolution) {
+        // If resolution is numeric (like "1024"), convert to appropriate format
+        if (!presetResolution.includes('p')) {
+          const resNum = parseInt(presetResolution)
+          presetResolution = resNum >= 720 ? '720p' : '480p'
+        }
+        console.log('🎬 Setting resolution from preset:', presetResolution)
+        setVideoResolution(presetResolution)
+        onResolutionChange?.(presetResolution)
       }
 
       // Set cinematic parameters if available
@@ -163,19 +195,18 @@ export default function VideoGenerationPanel({
 
         // Load video-specific settings from cinematic_settings.video
         if (selectedPreset.cinematic_settings.video) {
-          const { cameraMovement: presetCamera, videoStyle: presetStyle, duration: presetDuration, provider: presetProvider, resolution: presetResolution } = selectedPreset.cinematic_settings.video
+          const { cameraMovement: presetCamera, videoStyle: presetStyle, duration: presetDuration, provider: presetProvider } = selectedPreset.cinematic_settings.video
 
           if (presetCamera) setMotionType(presetCamera)
           if (presetStyle) setVideoStyle(presetStyle)
           if (presetDuration) setVideoDuration(presetDuration)
           if (presetProvider) onProviderChange?.(presetProvider)
-          if (presetResolution) setVideoResolution(presetResolution)
 
           console.log('🎬 Loaded video settings from preset:', selectedPreset.cinematic_settings.video)
         }
       }
     }
-  }, [selectedPreset, onProviderChange])
+  }, [selectedPreset, onProviderChange, onAspectRatioChange, onResolutionChange])
 
   // Auto-enable cinematic mode when parameters are selected
   useEffect(() => {
@@ -248,10 +279,11 @@ export default function VideoGenerationPanel({
       return
     }
 
-    // Allow prompt regeneration even with preset selected
-    // This ensures prompt updates when user changes style, motion, or subject
+    // Don't auto-generate if a preset is currently selected
+    // This prevents overwriting the preset's prompt
     if (selectedPreset) {
-      console.log('🎬 Regenerating prompt with preset selected (user modified settings)')
+      console.log('🎬 Preset selected - skipping auto-generation to preserve preset prompt')
+      return
     }
 
     // Get current image based on active source
@@ -542,19 +574,69 @@ export default function VideoGenerationPanel({
     applyStyle()
   }, [videoStyle, getCurrentImage, selectedAspectRatio, videoResolution, videoPrompt, videoSubject, applyingStyle, loading, styledImageUrl, showFeedback])
 
+  // Store the file object instead of uploading immediately
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file && file.type.startsWith('image/')) {
-      const url = URL.createObjectURL(file)
-      setUploadedImage(url)
+      console.log('🎬 File selected:', { filename: file.name, size: file.size })
+
+      // Store the file object and create a local preview URL
+      setUploadedFile(file)
+      const previewUrl = URL.createObjectURL(file)
+      setUploadedImage(previewUrl)
+
+      // Auto-switch to uploaded tab
       setActiveImageSource('uploaded')
+      console.log('🎬 File ready for upload - will upload during video generation')
     }
+  }
+
+  // Upload file to Supabase when actually generating video
+  const uploadFileToStorage = async (file: File): Promise<string> => {
+    console.log('🎬 Uploading file to storage:', { filename: file.name, size: file.size })
+
+    // Get auth token
+    const { supabase } = await import('../../../lib/supabase')
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      throw new Error('User not authenticated')
+    }
+
+    // Upload via API endpoint (uses service role to bypass RLS)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const uploadResponse = await fetch('/api/playground/upload-image', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: formData
+    })
+
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json()
+      throw new Error(errorData.error || 'Upload failed')
+    }
+
+    const result = await uploadResponse.json()
+    console.log('🎬 File uploaded to storage:', {
+      filename: file.name,
+      publicUrl: result.url
+    })
+
+    return result.url
   }
 
   const removeUploadedImage = () => {
     if (uploadedImage) {
+      // Revoke the blob URL to free memory
       URL.revokeObjectURL(uploadedImage)
       setUploadedImage(null)
+      setUploadedFile(null)
       setActiveImageSource('selected')
     }
   }
@@ -739,8 +821,42 @@ export default function VideoGenerationPanel({
   }
 
   const handleGenerateVideo = async () => {
-    // Use styled image if available (from auto-apply), otherwise use current image
-    const imageToUse = styledImageUrl || getCurrentImage()
+    // Upload file to storage if user uploaded a file
+    let actualImageUrl = getCurrentImage()
+
+    if (uploadedFile && activeImageSource === 'uploaded') {
+      try {
+        console.log('🎬 Uploading file before video generation...')
+        actualImageUrl = await uploadFileToStorage(uploadedFile)
+        // Update the uploadedImage state with the permanent URL
+        setUploadedImage(actualImageUrl)
+        // Clear the file object as it's no longer needed
+        setUploadedFile(null)
+      } catch (error) {
+        console.error('❌ Failed to upload file:', error)
+        showFeedback({
+          type: 'error',
+          title: 'Upload Failed',
+          message: 'Failed to upload image. Please try again.'
+        })
+        return // Don't proceed with video generation
+      }
+    }
+
+    // Use styled image if available (from auto-apply), otherwise use uploaded/selected image
+    const imageToUse = styledImageUrl || actualImageUrl
+
+    console.log('🎬 Image URL Debug:', {
+      actualImageUrl,
+      styledImageUrl,
+      imageToUse,
+      uploadedFile: uploadedFile?.name,
+      uploadedImage,
+      selectedImage,
+      activeImageSource,
+      imageToUseLength: imageToUse?.length,
+      imageToUseStartsWith: imageToUse?.substring(0, 50)
+    })
 
     // Use enhanced prompt if cinematic mode is on, otherwise use video prompt (which includes style)
     // Only fall back to videoSubject if neither are available
@@ -847,7 +963,20 @@ export default function VideoGenerationPanel({
 
         {/* Preset Selector */}
         <PresetSelector
-          onPresetSelect={handlePresetSelect}
+          onPresetSelect={(preset) => {
+            if (preset) {
+              handlePresetSelect(preset)
+              onPresetChange?.(preset)
+            } else {
+              // Clear preset
+              setVideoPrompt('')
+              setEnhancedPrompt('')
+              setVideoStyle('')
+              setCinematicParameters({})
+              setEnableCinematicMode(false)
+              onPresetChange?.(null)
+            }
+          }}
           selectedPreset={selectedPreset}
           currentSettings={{
             prompt: videoPrompt,
@@ -1084,7 +1213,10 @@ export default function VideoGenerationPanel({
           selectedImage={selectedImage}
           aspectRatio={selectedAspectRatio}
           resolution={videoResolution}
-          onSourceChange={handleImageSourceChange}
+          onSourceChange={(source) => {
+            console.log('🎬 Image source changed to:', source)
+            handleImageSourceChange(source)
+          }}
           onFileUpload={handleFileUpload}
           onRemoveUpload={removeUploadedImage}
           onSelectSaved={selectSavedImage}
@@ -1174,8 +1306,16 @@ export default function VideoGenerationPanel({
           userCredits={userCredits}
           totalCredits={totalCredits}
           onDurationChange={setVideoDuration}
-          onResolutionChange={setVideoResolution}
-          onAspectRatioChange={setSelectedAspectRatio}
+          onResolutionChange={(resolution) => {
+            console.log('🎬 Resolution changed to:', resolution)
+            setVideoResolution(resolution)
+            onResolutionChange?.(resolution)
+          }}
+          onAspectRatioChange={(ratio) => {
+            console.log('🎬 Aspect ratio changed to:', ratio)
+            setSelectedAspectRatio(ratio)
+            onAspectRatioChange?.(ratio)
+          }}
           onMotionTypeChange={setMotionType}
           onGenerate={handleGenerateVideo}
           hasImage={canGenerate}
