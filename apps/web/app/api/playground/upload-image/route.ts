@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     // Get the uploaded file
     const formData = await request.formData()
-    const file = formData.get('file')
+    const file = (formData as any).get('file') as File | null
 
     if (!file || typeof file === 'string') {
       return NextResponse.json(
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type?.startsWith('image/')) {
       return NextResponse.json(
         { success: false, error: 'File must be an image' },
         { status: 400 }
@@ -58,14 +58,14 @@ export async function POST(request: NextRequest) {
     // Upload to Supabase storage using service role (bypasses RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Use playground-gallery bucket with temporary folder structure
-    // Structure: {user_id}/temporary/images/{filename}
-    // These will be auto-deleted after 7 days if not moved to /saved/
-    const fileName = `${user.id}/temporary/images/upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${file.name.split('.').pop()}`
+    // Upload to playground-uploads bucket for base images
+    // Structure: {user_id}/base-images/{filename}
+    // These are PERMANENT - never deleted (show source for generations)
+    const fileName = `${user.id}/base-images/upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${file.name.split('.').pop()}`
 
     const fileBuffer = await file.arrayBuffer()
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('playground-gallery')
+      .from('playground-uploads')
       .upload(fileName, fileBuffer, {
         contentType: file.type,
         cacheControl: '3600'
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('playground-gallery')
+      .from('playground-uploads')
       .getPublicUrl(fileName)
 
     return NextResponse.json({

@@ -1,209 +1,203 @@
-# Playground Storage Architecture
+# Playground Storage Architecture (Corrected)
 
 ## Overview
 
-The playground storage system uses a single `playground-gallery` bucket with a folder-based structure to organize temporary and permanent content.
+The playground uses a **hybrid storage approach**:
+- **Temporary generations**: External CDN URLs (expire in ~7 days)
+- **Permanent saves**: Downloaded and stored in our Supabase buckets
 
-## Bucket Structure
+## Database Tables
+
+### playground_video_generations
+**Purpose**: Track temporary video generations (not yet saved by user)
+- Stores external CDN URLs from WaveSpeed/Seedream
+- URLs expire after ~7 days (CDN side)
+- When user saves → download video → upload to our storage → insert into `playground_gallery`
+
+### playground_gallery
+**Purpose**: Permanently saved images and videos
+- Both images AND videos in one table
+- `media_type` field: 'image' or 'video'
+- References files in our permanent storage buckets
+- Never expires
+
+## Storage Buckets
+
+### playground-uploads
+```
+playground-uploads/
+  {user-id}/
+    base-images/          # User-uploaded source images for generation
+                          # ✅ PERMANENT - NEVER auto-delete
+                          # Purpose: Show what the generation was based on
+```
+
+**Why permanent?**
+- Users need to see the original source image
+- Saved videos/images reference these in metadata
+- Deleting would break "show source" functionality
+
+### playground-videos
+```
+playground-videos/
+  {user-id}/
+    saved/                # Saved videos from playground_gallery table
+                          # ✅ PERMANENT - NEVER auto-delete
+```
+
+**Current issue**: Videos saved to `{user-id}/video-*.mp4` instead of `{user-id}/saved/`
+
+### playground-images
+```
+playground-images/
+  {user-id}/
+    saved/                # Saved generated images from playground_gallery
+                          # ✅ PERMANENT - NEVER auto-delete
+```
+
+### playground-gallery (bucket)
+**Status**: ❌ **SHOULD BE REMOVED**
+- Not needed - we have `playground_gallery` database table
+- Causes confusion with similarly named table
+- Actual files should be in `playground-images` and `playground-videos`
+
+## Complete Flow
+
+### 1. Image Generation
 
 ```
-playground-gallery/
-├── {user-id}/
-│   ├── temporary/
-│   │   ├── images/          # User-uploaded base images (7-day cleanup)
-│   │   └── videos/          # Generated videos not yet saved (7-day cleanup)
-│   └── saved/
-│       ├── images/          # Permanently saved images
-│       └── videos/          # Permanently saved videos
-```
-
-## Lifecycle Flow
-
-### 1. Image Upload (Video Generation)
-
-```
-User uploads image
-    ↓
-API: /api/playground/upload-image
-    ↓
-Storage: playground-gallery/{user-id}/temporary/images/upload-{timestamp}-{random}.{ext}
-    ↓
-Returns public URL for video generation
+┌─────────────────────────────────────────────────────────┐
+│ User generates image                                    │
+│   ↓                                                      │
+│ Seedream API returns CloudFront URL                     │
+│   ↓                                                      │
+│ Store URL in: playground_video_generations (temp)       │
+│ Storage: EXTERNAL CDN (expires ~7 days)                 │
+│   ↓                                                      │
+│ User clicks "Save"                                       │
+│   ↓                                                      │
+│ Download from CDN → Upload to:                          │
+│   playground-images/{user-id}/saved/image-*.jpg         │
+│   ↓                                                      │
+│ Insert into playground_gallery table                    │
+│   media_type: 'image'                                   │
+│   image_url: permanent Supabase URL                     │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ### 2. Video Generation
 
 ```
-User generates video with uploaded image
-    ↓
-Video API stores reference to temporary image URL
-    ↓
-Video stored in playground-videos bucket (existing behavior)
-    ↓
-Video URL + metadata (including temp image URL) returned to client
+┌─────────────────────────────────────────────────────────┐
+│ User uploads base image                                 │
+│   ↓                                                      │
+│ Upload to: playground-uploads/{user-id}/base-images/    │
+│   ↓                                                      │
+│ User generates video                                    │
+│   ↓                                                      │
+│ WaveSpeed/Seedream returns CloudFront URL               │
+│   ↓                                                      │
+│ Store in: playground_video_generations                  │
+│   video_url: external CDN URL                           │
+│   generation_metadata: {                                │
+│     image_url: base image URL (in playground-uploads)   │
+│     styled_image_url: styled version (if applied)       │
+│   }                                                      │
+│ Storage: EXTERNAL CDN (expires ~7 days)                 │
+│   ↓                                                      │
+│ User clicks "Save"                                       │
+│   ↓                                                      │
+│ Download video from CDN → Upload to:                    │
+│   playground-videos/{user-id}/saved/video-*.mp4         │
+│   ↓                                                      │
+│ Insert into playground_gallery table                    │
+│   media_type: 'video'                                   │
+│   video_url: permanent Supabase URL                     │
+│   generation_metadata: {                                │
+│     image_url: base image URL (still in uploads)        │
+│     styled_image_url: styled version                    │
+│   }                                                      │
+│   ↓                                                      │
+│ Base image stays in playground-uploads/base-images/     │
+│ (never deleted - shows source for saved video)          │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### 3. Save to Gallery
+## Cleanup Strategy
 
-```
-User saves video to gallery
-    ↓
-API: /api/playground/save-video-to-gallery
-    ↓
-Move base images from temporary to saved:
-  - playground-gallery/{user-id}/temporary/images/*
-    → playground-gallery/{user-id}/saved/images/*
-    ↓
-Update generation_metadata with new permanent URLs
-    ↓
-Store in playground_gallery table with permanent URLs
-```
+### ✅ What Should Be Cleaned Up
 
-For image saves:
-```
-User saves image to gallery
-    ↓
-API: /api/playground/save-to-gallery
-    ↓
-Move image from temporary to saved (if applicable)
-    ↓
-Store in playground_gallery table with permanent URL
-```
+**External CDN URLs** (automatic by CDN)
+- Videos/images in `playground_video_generations` table
+- URLs expire after ~7 days on CDN side
+- Could optionally clean up old database rows
 
-## Automatic Cleanup
+**Nothing in our buckets should be auto-deleted**
 
-### Function: `cleanup_playground_temporary_content()`
+### ❌ What Should NEVER Be Cleaned Up
 
-**Purpose**: Delete temporary content older than 7 days
+**playground-uploads/{user-id}/base-images/**
+- Source images for generations
+- Referenced in saved videos/images metadata
+- Needed to show "what was this generated from?"
 
-**Logic**:
-```sql
-DELETE FROM storage.objects
-WHERE bucket_id = 'playground-gallery'
-  AND name LIKE '%/temporary/%'
-  AND created_at < NOW() - INTERVAL '7 days';
-```
+**playground-videos/{user-id}/saved/**
+- Saved videos from `playground_gallery` table
+- User explicitly saved these
 
-**Safe because**:
-- Only deletes from `/temporary/` folders
-- Saved content is moved to `/saved/` folders before being stored in database
-- `/saved/` content is never touched by cleanup
+**playground-images/{user-id}/saved/**
+- Saved images from `playground_gallery` table
+- User explicitly saved these
 
-### Legacy Function: `cleanup_old_playground_uploads()`
+## Current Issues to Fix
 
-**Purpose**: Backward compatibility for old `playground-uploads` bucket
+### 1. ❌ Incorrect Cleanup Function
+**File**: `supabase/migrations/105_update_playground_cleanup_exclude_saved.sql`
 
-**Status**: Can be removed once all content migrated to new structure
+**Problem**: Tries to delete base-images after 7 days with exclusion logic
 
-## Benefits
+**Fix**: Remove this cleanup entirely - base-images are permanent
 
-### 1. **Clear Separation**
-- Temporary vs permanent content separated by folder structure
-- Easy to identify lifecycle stage of any file
+### 2. ❌ Wrong Bucket Usage
+**Files**:
+- `apps/web/app/api/playground/upload-image/route.ts`
+- `apps/web/app/api/playground/save-to-gallery/route.ts`
+- `apps/web/app/api/playground/save-video-to-gallery/route.ts`
 
-### 2. **No Complex Exclusion Logic**
-- Cleanup function simply deletes everything in `/temporary/` older than 7 days
-- No need to cross-reference database tables
+**Problem**: Using `playground-gallery` bucket
 
-### 3. **Atomic Saves**
-- When user saves content, it's moved from temporary to permanent
-- Database only references permanent URLs
-- No risk of cleanup deleting referenced content
+**Fix**:
+- Upload base images → `playground-uploads/{user-id}/base-images/`
+- Save images → `playground-images/{user-id}/saved/`
+- Save videos → `playground-videos/{user-id}/saved/`
 
-### 4. **Efficient Storage**
-- Unsaved experiments automatically cleaned up
-- Saved content preserved indefinitely
-- Users only "pay" for what they keep
+### 3. ❌ Missing /saved/ Folder Structure
+**File**: `apps/web/app/api/playground/save-video-to-gallery/route.ts`
 
-### 5. **Single Bucket Management**
-- All playground content in one bucket
-- Easier to manage policies and permissions
-- Consistent URL structure
+**Problem**: Uploads to `playground-videos/{user-id}/video-*.mp4`
 
-## Migration Path
+**Fix**: Upload to `playground-videos/{user-id}/saved/video-*.mp4`
 
-### Phase 1: Current State
-- Images uploaded to `playground-gallery/{user-id}/temporary/images/`
-- Videos stored in `playground-videos/{user-id}/`
-- New cleanup function handles temporary content
+### 4. ❌ playground-gallery Bucket Exists
+**Status**: Should be removed/deprecated
 
-### Phase 2: Video Migration (Optional)
-Could move videos to playground-gallery as well:
-- `playground-gallery/{user-id}/temporary/videos/` for unsaved videos
-- `playground-gallery/{user-id}/saved/videos/` for saved videos
-- Single bucket for all playground content
+**Fix**: Remove bucket, use `playground_gallery` table only
 
-### Phase 3: Legacy Cleanup
-- Remove `cleanup_old_playground_uploads()` function
-- Archive or migrate old `playground-uploads` bucket content
+## Summary
 
-## Implementation Files
+| Bucket | Path | Purpose | Lifetime | Cleanup |
+|--------|------|---------|----------|---------|
+| playground-uploads | `{user-id}/base-images/` | User-uploaded source images | Permanent | Never |
+| playground-images | `{user-id}/saved/` | Saved generated images | Permanent | Never |
+| playground-videos | `{user-id}/saved/` | Saved generated videos | Permanent | Never |
+| ~~playground-gallery~~ | - | ❌ Remove (use table instead) | - | - |
 
-### Storage Helpers
-- **File**: `apps/web/app/api/playground/lib/storage-helpers.ts`
-- **Functions**:
-  - `moveImageToPermanentStorage()` - Moves image from temporary to saved
-  - `moveVideoToPermanentStorage()` - Moves video from temporary to saved
+| Storage Location | Content | Lifetime |
+|------------------|---------|----------|
+| External CDN (Seedream/WaveSpeed) | Temporary generations | ~7 days |
+| Our Supabase buckets | Saved generations + base images | Permanent |
 
-### API Endpoints
-- **Upload**: `apps/web/app/api/playground/upload-image/route.ts`
-  - Uploads to `playground-gallery/{user-id}/temporary/images/`
-
-- **Save Image**: `apps/web/app/api/playground/save-to-gallery/route.ts`
-  - Moves image to permanent storage before saving metadata
-
-- **Save Video**: `apps/web/app/api/playground/save-video-to-gallery/route.ts`
-  - Moves video and associated images to permanent storage
-
-### Database Migration
-- **File**: `supabase/migrations/106_refactor_playground_storage_structure.sql`
-- **Changes**:
-  - Updates `playground-gallery` bucket to allow videos (100MB limit)
-  - Creates `cleanup_playground_temporary_content()` function
-  - Updates `cleanup_old_playground_uploads()` for backward compatibility
-
-## Bucket Configuration
-
-```sql
--- Bucket: playground-gallery
-file_size_limit: 104857600 (100MB)
-allowed_mime_types: [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'video/mp4',
-  'video/webm',
-  'video/quicktime'
-]
-public: true
-```
-
-## RLS Policies
-
-All policies enforce user isolation via folder structure:
-
-```sql
--- Users can only access their own folders
-WHERE auth.uid()::text = (storage.foldername(name))[1]
-```
-
-This ensures:
-- Users can only upload to their own folders
-- Users can only view their own files
-- Users can only delete their own files
-- Admin operations use service role key to bypass RLS
-
-## Troubleshooting
-
-### Issue: Images deleted even though video is saved
-**Cause**: Image wasn't moved from temporary to permanent during save
-**Fix**: Check that `moveImageToPermanentStorage()` is being called in save routes
-
-### Issue: Cleanup not running
-**Cause**: Cleanup function needs to be scheduled (cron job or pg_cron)
-**Fix**: Set up scheduled task to call cleanup functions daily
-
-### Issue: Upload fails with RLS error
-**Cause**: Client trying to upload directly without using service role API
-**Fix**: Ensure all uploads go through `/api/playground/upload-image` endpoint
+| Database Table | Purpose | Cleanup |
+|----------------|---------|---------|
+| playground_video_generations | Temporary generation metadata | Optional (30 days) |
+| playground_gallery | Permanent saved items | Never |
