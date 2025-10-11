@@ -44,7 +44,7 @@ const calculateProfileCompletion = (profile: any): number => {
     { key: 'website_url', weight: 3 },
     { key: 'portfolio_url', weight: 5 },
     { key: 'years_experience', weight: 8 },
-    { key: 'specializations', weight: 10 },
+    { key: 'professional_skills', weight: 10 },
     { key: 'equipment_list', weight: 5 },
     { key: 'editing_software', weight: 5 },
     { key: 'languages', weight: 3 },
@@ -131,8 +131,8 @@ export function ProfileHeaderEnhanced() {
       icon: Calendar
     },
     {
-      label: 'Specializations',
-      value: profile?.specializations && profile.specializations.length > 0 ? profile.specializations.join(', ') : 'Not specified',
+      label: 'Professional Skills',
+      value: profile?.professional_skills && profile.professional_skills.length > 0 ? profile.professional_skills.join(', ') : 'Not specified',
       icon: Award
     },
     {
@@ -196,7 +196,7 @@ export function ProfileHeaderEnhanced() {
   ]
 
   // Physical Attributes (for talent)
-  const physicalInfo = profile?.talent_categories && profile.talent_categories.length > 0 ? [
+  const physicalInfo = profile?.performance_roles && profile.performance_roles.length > 0 ? [
     {
       label: 'Height',
       value: profile?.height_cm ? `${profile.height_cm}cm` : 'Not specified',
