@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
     const insertData: any = {
       user_id: user.id,
       project_id: projectId,
-      media_type: 'video',
+      media_type: 'video', // lowercase to match database constraint
       image_url: supabaseVideoUrl, // Use Supabase video URL
       video_url: supabaseVideoUrl, // Permanent URL in our storage
       thumbnail_url: null, // Let video element generate first frame automatically

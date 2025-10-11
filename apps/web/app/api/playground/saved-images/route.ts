@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         generation_metadata
       `)
       .eq('user_id', user.id)
-      .eq('media_type', 'image')
+      .eq('media_type', 'IMAGE') // Uppercase IMAGE to match database
       .order('created_at', { ascending: false })
       .limit(50) // Limit to 50 most recent images for moodboard selection
 

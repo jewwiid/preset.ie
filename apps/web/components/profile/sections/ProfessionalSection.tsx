@@ -94,15 +94,15 @@ export function ProfessionalSection() {
   }
 
   const addSpecialization = (specialization: string) => {
-    const currentSpecializations = formData.specializations || []
+    const currentSpecializations = formData.professional_skills || []
     if (!currentSpecializations.includes(specialization)) {
-      handleFieldChange('specializations', [...currentSpecializations, specialization])
+      handleFieldChange('professional_skills', [...currentSpecializations, specialization])
     }
   }
 
   const removeSpecialization = (specialization: string) => {
-    const currentSpecializations = formData.specializations || []
-    handleFieldChange('specializations', currentSpecializations.filter(s => s !== specialization))
+    const currentSpecializations = formData.professional_skills || []
+    handleFieldChange('professional_skills', currentSpecializations.filter(s => s !== specialization))
   }
 
   const addLanguage = (language: string) => {

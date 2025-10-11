@@ -332,15 +332,15 @@ export function UserSkillsSection() {
         </Alert>
       )}
 
-      {/* Migration Notice for existing specializations */}
-      {profile?.specializations && profile.specializations.length > 0 && skills.length === 0 && (
+      {/* Migration Notice for existing professional skills */}
+      {profile?.professional_skills && profile.professional_skills.length > 0 && skills.length === 0 && (
         <Alert>
           <AlertDescription>
             <div className="flex items-start gap-3">
               <Clock className="h-4 w-4 text-blue-600 mt-0.5" />
               <div>
                 <p className="text-sm">
-                  <strong>Migration Available:</strong> You have {profile.specializations.length} specialization(s) in your profile. 
+                  <strong>Migration Available:</strong> You have {profile.professional_skills.length} professional skill(s) in your profile. 
                   Would you like to migrate them to the new Skills & Experience system for better tracking?
                 </p>
                 {isEditing && (
@@ -352,7 +352,7 @@ export function UserSkillsSection() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ 
                             profile_id: profile.id,
-                            specializations: profile.specializations 
+                            professional_skills: profile.professional_skills 
                           })
                         })
                         if (response.ok) {
@@ -366,7 +366,7 @@ export function UserSkillsSection() {
                     size="sm"
                     className="mt-2"
                   >
-                    Migrate Specializations
+                    Migrate Professional Skills
                   </Button>
                 )}
               </div>
