@@ -7,6 +7,7 @@ import { Badge } from '../../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Textarea } from '../../../components/ui/textarea'
 import { Label } from '../../../components/ui/label'
+import { supabase } from '../../../lib/supabase'
 
 interface FeaturedPresetRequest {
   id: string
@@ -50,7 +51,20 @@ export function FeaturedPresetsQueue() {
 
   const fetchFeaturedRequests = async () => {
     try {
-      const response = await fetch('/api/admin/featured-requests')
+      // Get the session token
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        console.error('No active session')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/admin/featured-requests', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      })
+      
       if (response.ok) {
         const data = await response.json()
         setRequests(data.requests || [])
@@ -67,16 +81,26 @@ export function FeaturedPresetsQueue() {
   const handleApproval = async (requestId: string, status: 'approved' | 'rejected') => {
     setProcessing(requestId)
     try {
+      // Get the session and current admin user ID
+      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!session || !user) {
+        alert('You must be logged in to perform this action')
+        return
+      }
+
       const response = await fetch('/api/admin/featured-requests', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           request_id: requestId,
           status,
           admin_notes: adminNotes[requestId] || '',
-          reviewed_by: 'admin' // In a real app, this would be the actual admin user ID
+          reviewed_by: user.id
         })
       })
 

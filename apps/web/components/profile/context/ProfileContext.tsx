@@ -338,7 +338,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
               clothing_sizes: null, // TEXT field, not array
               tattoos: false,
               piercings: false,
-              talent_categories: [],
+              performance_roles: [],
               vibe_tags: []
             }
             const { data: newProfile, error: createError } = await (supabase as any)
@@ -371,7 +371,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             clothing_sizes: (profile as any).clothing_sizes || null, // TEXT field, not array
             tattoos: (profile as any).tattoos || false,
             piercings: (profile as any).piercings || false,
-            talent_categories: (profile as any).talent_categories || [],
+            performance_roles: (profile as any).performance_roles || [],
             style_tags: (profile as any).style_tags || [],
             vibe_tags: (profile as any).vibe_tags || []
           }

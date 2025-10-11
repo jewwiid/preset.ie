@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
       .from('credit_packages')
       .select('*')
       .eq('is_active', true)
-      .order('user_credits');
+      .order('credits');
     
     if (!platformCredit || !packages) {
       return NextResponse.json({ error: 'Configuration error' }, { status: 500 });

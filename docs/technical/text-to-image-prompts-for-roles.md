@@ -302,6 +302,252 @@ Transportation coordinator with schedule, diverse ethnicity, vehicle logistics v
 
 ---
 
+## 🏠 HOMEPAGE IMAGE ASSIGNMENTS
+
+### TALENT FOR HIRE Section (4 images displayed randomly)
+These images will be used for the homepage "TALENT FOR HIRE" section. Upload these to the `platform-images` bucket with specific keys:
+
+1. **Model** → `homepage_talent_model.jpg`
+   - Use: Fashion Model or Commercial Model variant
+   - Category: `talent`
+   - Image Type: `homepage`
+   - Display on homepage as: "Model"
+
+2. **Actor/Actress** → `homepage_talent_actor.jpg`
+   - Use: Actor or Actress headshot variant
+   - Category: `talent`
+   - Image Type: `homepage`
+   - Display on homepage as: "Actor"
+
+3. **Dancer** → `homepage_talent_dancer.jpg`
+   - Use: Dancer in motion variant
+   - Category: `talent`
+   - Image Type: `homepage`
+   - Display on homepage as: "Dancer"
+
+4. **Musician** → `homepage_talent_musician.jpg`
+   - Use: Musician with instrument variant
+   - Category: `talent`
+   - Image Type: `homepage`
+   - Display on homepage as: "Musician"
+
+5. **Influencer** → `homepage_talent_influencer.jpg`
+   - Use: Content Creator or Influencer variant
+   - Category: `talent`
+   - Image Type: `homepage`
+   - Display on homepage as: "Influencer"
+
+6. **Fitness Model** → `homepage_talent_fitness.jpg`
+   - Use: Fitness Model variant
+   - Category: `talent`
+   - Image Type: `homepage`
+   - Display on homepage as: "Fitness Model"
+
+7. **Fashion Model** → `homepage_talent_fashion.jpg`
+   - Use: High Fashion Model variant
+   - Category: `talent`
+   - Image Type: `homepage`
+   - Display on homepage as: "Fashion Model"
+
+8. **Voice Actor** → `homepage_talent_voice.jpg`
+   - Use: Voice Actor in booth variant
+   - Category: `talent`
+   - Image Type: `homepage`
+   - Display on homepage as: "Voice Actor"
+
+### CONTRIBUTORS Section (4 images displayed randomly)
+These images will be used for the homepage "CONTRIBUTORS" section. Upload these to the `platform-images` bucket with specific keys:
+
+1. **Photographer** → `homepage_contributor_photographer.jpg`
+   - Use: Photographer with camera variant
+   - Category: `contributor`
+   - Image Type: `homepage`
+   - Display on homepage as: "Photographer"
+
+2. **Videographer** → `homepage_contributor_videographer.jpg`
+   - Use: Videographer with cinema camera variant
+   - Category: `contributor`
+   - Image Type: `homepage`
+   - Display on homepage as: "Videographer"
+
+3. **Director** → `homepage_contributor_director.jpg`
+   - Use: Film Director with clapperboard variant
+   - Category: `contributor`
+   - Image Type: `homepage`
+   - Display on homepage as: "Director"
+
+4. **Makeup Artist** → `homepage_contributor_makeup.jpg`
+   - Use: Makeup Artist working variant
+   - Category: `contributor`
+   - Image Type: `homepage`
+   - Display on homepage as: "Makeup Artist"
+
+5. **Hair Stylist** → `homepage_contributor_hairstylist.jpg`
+   - Use: Hair Stylist working variant
+   - Category: `contributor`
+   - Image Type: `homepage`
+   - Display on homepage as: "Hair Stylist"
+
+6. **Producer** → `homepage_contributor_producer.jpg`
+   - Use: Producer with tablet/script variant
+   - Category: `contributor`
+   - Image Type: `homepage`
+   - Display on homepage as: "Producer"
+
+7. **Editor** → `homepage_contributor_editor.jpg`
+   - Use: Video/Photo Editor at workstation variant
+   - Category: `contributor`
+   - Image Type: `homepage`
+   - Display on homepage as: "Editor"
+
+8. **Cinematographer** → `homepage_contributor_cinematographer.jpg`
+   - Use: Cinematographer with cinema camera variant
+   - Category: `contributor`
+   - Image Type: `homepage`
+   - Display on homepage as: "Cinematographer"
+
+9. **Lighting Technician** → `homepage_contributor_lighting.jpg`
+   - Use: Lighting Tech adjusting lights variant
+   - Category: `contributor`
+   - Image Type: `homepage`
+   - Display on homepage as: "Lighting Tech"
+
+10. **Sound Engineer** → `homepage_contributor_sound.jpg`
+    - Use: Sound Engineer at console variant
+    - Category: `contributor`
+    - Image Type: `homepage`
+    - Display on homepage as: "Sound Engineer"
+
+### CREATIVE ROLES Section (8 images displayed randomly)
+These images are used for the "CREATIVE ROLES" section fallbacks. Upload these to the `platform-images` bucket with specific keys:
+
+1. **Freelancers** → `homepage_role_freelancers.jpg`
+   - Use: Content Creator or general creative professional
+   - Category: `creative_role`
+   - Image Type: `homepage`
+
+2. **Photographers** → `homepage_role_photographers.jpg`
+   - Use: Photographer variant
+   - Category: `creative_role`
+   - Image Type: `homepage`
+
+3. **Videographers** → `homepage_role_videographers.jpg`
+   - Use: Videographer variant
+   - Category: `creative_role`
+   - Image Type: `homepage`
+
+4. **Models** → `homepage_role_models.jpg`
+   - Use: Fashion Model or Commercial Model
+   - Category: `creative_role`
+   - Image Type: `homepage`
+
+5. **Makeup Artists** → `homepage_role_makeup_artists.jpg`
+   - Use: Makeup Artist variant
+   - Category: `creative_role`
+   - Image Type: `homepage`
+
+6. **Hair Stylists** → `homepage_role_hair_stylists.jpg`
+   - Use: Hair Stylist variant
+   - Category: `creative_role`
+   - Image Type: `homepage`
+
+7. **Directors** → `homepage_role_directors.jpg`
+   - Use: Director variant
+   - Category: `creative_role`
+   - Image Type: `homepage`
+
+8. **Producers** → `homepage_role_producers.jpg`
+   - Use: Producer variant
+   - Category: `creative_role`
+   - Image Type: `homepage`
+
+9. **Creative Directors** → `homepage_role_creative_directors.jpg`
+   - Use: Art Director or Brand Manager variant
+   - Category: `creative_role`
+   - Image Type: `homepage`
+
+10. **Content Creators** → `homepage_role_content_creators.jpg`
+    - Use: Content Creator variant
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+11. **Art Directors** → `homepage_role_art_directors.jpg`
+    - Use: Art Director variant
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+12. **Designers** → `homepage_role_designers.jpg`
+    - Use: Motion Graphics Designer or Visual Effects Artist
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+13. **Editors** → `homepage_role_editors.jpg`
+    - Use: Editor variant
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+14. **Writers** → `homepage_role_writers.jpg`
+    - Use: Writer or Copywriter variant
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+15. **Cinematographers** → `homepage_role_cinematographers.jpg`
+    - Use: Cinematographer variant
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+16. **Actors** → `homepage_role_actors.jpg`
+    - Use: Actor/Actress variant
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+17. **Musicians** → `homepage_role_musicians.jpg`
+    - Use: Musician or Singer variant
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+18. **Studios** → `homepage_role_studios.jpg`
+    - Use: Professional studio setting (can use existing studio.jpg)
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+19. **Fashion Stylists** → `homepage_role_fashion_stylists.jpg`
+    - Use: Fashion Stylist or Wardrobe Stylist variant
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+20. **Brand Managers** → `homepage_role_brand_managers.jpg`
+    - Use: Brand Manager or Marketing Coordinator variant
+    - Category: `creative_role`
+    - Image Type: `homepage`
+
+---
+
+### 📤 Upload Instructions
+
+**After generating images:**
+
+1. **Go to** `/admin/platform-images`
+
+2. **Click** "Sync Bucket" to load existing images (if you uploaded directly to bucket)
+
+   OR
+
+3. **Click** "Add Image" to upload each image with:
+   - **Image Key**: Use the exact key from above (e.g., `homepage_talent_model`)
+   - **Image Type**: `homepage`
+   - **Category**: `talent`, `contributor`, or `creative_role`
+   - **Title**: Display name (e.g., "Model", "Photographer")
+   - **Alt Text**: Descriptive text for accessibility
+   - **Is Active**: ✅ Checked
+
+4. **The homepage will automatically**:
+   - Fetch 4 random TALENT images from `talent` category
+   - Fetch 4 random CONTRIBUTOR images from `contributor` category
+   - Use images as fallbacks for the CREATIVE ROLES section
+
+---
+
 ## 🎨 GENERAL PROMPT TEMPLATE
 
 For any role not listed above, use this template:

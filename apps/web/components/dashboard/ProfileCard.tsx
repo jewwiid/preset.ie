@@ -1,10 +1,12 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { UserProfile, CreditsData } from '../../lib/types/dashboard'
 import { calculateCreditValue, calculateProfileCompletion } from '../../lib/utils/dashboard'
 import { VerificationBadges } from '../VerificationBadges'
 import { parseVerificationBadges } from '../../lib/utils/verification-badges'
+import { supabase } from '../../lib/supabase'
 
 interface ProfileCardProps {
   profile: UserProfile
@@ -16,9 +18,40 @@ interface ProfileCardProps {
 export function ProfileCard({ profile, credits, isTalent, isContributor }: ProfileCardProps) {
   const router = useRouter()
   const { percentage: profileCompletion } = calculateProfileCompletion(profile)
+  const [pendingVerifications, setPendingVerifications] = useState<string[]>([])
+  const [loadingVerificationStatus, setLoadingVerificationStatus] = useState(true)
 
   // Parse verification badges
   const verificationBadges = parseVerificationBadges(profile.verification_badges || null)
+
+  // Check for pending verification requests
+  useEffect(() => {
+    const checkPendingVerifications = async () => {
+      if (!supabase) return
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // Fetch pending verification requests
+        const { data: requests } = await supabase
+          .from('verification_requests')
+          .select('verification_type')
+          .eq('user_id', user.id)
+          .in('status', ['pending', 'reviewing'])
+
+        if (requests) {
+          setPendingVerifications(requests.map(r => r.verification_type))
+        }
+      } catch (error) {
+        console.error('Error checking verification status:', error)
+      } finally {
+        setLoadingVerificationStatus(false)
+      }
+    }
+
+    checkPendingVerifications()
+  }, [])
 
   return (
     <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
@@ -141,27 +174,53 @@ export function ProfileCard({ profile, credits, isTalent, isContributor }: Profi
         )}
       </div>
 
-      {/* Get Verified CTA - Only show if no verifications */}
-      {!verificationBadges.identity && !verificationBadges.professional && !verificationBadges.business && (
-        <button
-          onClick={() => router.push('/verify')}
-          className="mt-4 w-full p-4 bg-primary/5 hover:bg-primary/10 rounded-xl border border-primary/20 transition-all duration-200 hover:shadow-md hover:scale-[1.02] group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200 flex-shrink-0">
-              <svg className="w-5 h-5 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
+      {/* Verification Status - Show appropriate status */}
+      {!loadingVerificationStatus && (
+        <>
+          {/* Show pending verification status */}
+          {pendingVerifications.length > 0 ? (
+            <div className="mt-4 w-full p-4 bg-amber-500/5 rounded-xl border border-amber-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <svg className="w-5 h-5 text-amber-50" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-500">
+                    Verification Under Review
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Your {pendingVerifications.join(', ')} verification is being reviewed. You'll be notified once processed.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-semibold text-foreground">Get Verified</p>
-              <p className="text-xs text-muted-foreground">Build trust and stand out with a verified badge</p>
-            </div>
-            <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </button>
+          ) : (
+            /* Show Get Verified CTA only if no verifications and no pending requests */
+            !verificationBadges.identity && !verificationBadges.professional && !verificationBadges.business && (
+              <button
+                onClick={() => router.push('/verify')}
+                className="mt-4 w-full p-4 bg-primary/5 hover:bg-primary/10 rounded-xl border border-primary/20 transition-all duration-200 hover:shadow-md hover:scale-[1.02] group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200 flex-shrink-0">
+                    <svg className="w-5 h-5 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-semibold text-foreground">Get Verified</p>
+                    <p className="text-xs text-muted-foreground">Build trust and stand out with a verified badge</p>
+                  </div>
+                  <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </button>
+            )
+          )}
+        </>
       )}
     </div>
   )

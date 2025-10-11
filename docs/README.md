@@ -181,3 +181,7 @@ To run from source:
 # Go >= 1.22
 go run . help
 ```
+# Trigger deployment with secrets configured
+# Test deployment with Production environment secrets
+# Test deployment with corrected secrets
+# Final deployment test with all correct secrets

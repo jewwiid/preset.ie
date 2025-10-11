@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     // Build the query
     let dbQuery = supabase
       .from('users_profile')
-      .select('id, handle, display_name, avatar_url, primary_skill, role_flags, specializations, talent_categories, city, country, years_experience, available_for_travel')
+      .select('id, handle, display_name, avatar_url, primary_skill, role_flags, specializations, performance_roles, city, country, years_experience, available_for_travel')
       .in('account_status', ['active', 'pending_verification'])
       .not('avatar_url', 'is', null)
       .eq('allow_collaboration_invites', true);

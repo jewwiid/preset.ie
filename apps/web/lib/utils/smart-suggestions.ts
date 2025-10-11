@@ -47,7 +47,7 @@ const PROFILE_FIELDS: ProfileField[] = [
   { key: 'has_studio', label: 'Has Studio', weight: 3, category: 'low', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
   
   // ============ TALENT-SPECIFIC FIELDS ============
-  { key: 'talent_categories', label: 'Talent Categories', weight: 10, category: 'high', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'performance_roles', label: 'Performance Roles', weight: 10, category: 'high', applicableRoles: ['TALENT', 'BOTH'] },
   
   // Physical Attributes
   { key: 'height_cm', label: 'Height', weight: 6, category: 'medium', applicableRoles: ['TALENT', 'BOTH'] },

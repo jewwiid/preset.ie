@@ -28,13 +28,23 @@ interface PresetImage {
 
 interface PlatformImage {
   id: string;
+  image_key: string;
+  image_type: string;
+  category?: string;
   image_url: string;
-  alt_text: string;
-  title: string;
-  category: string;
-  usage_context?: {
-    section?: string;
-  };
+  thumbnail_url?: string;
+  alt_text?: string;
+  title?: string;
+  description?: string;
+  width: number;
+  height: number;
+  file_size: number;
+  format: string;
+  usage_context?: any;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface TalentProfile {
@@ -86,41 +96,48 @@ export function usePlatformGeneratedImages() {
           fetch('/api/talent-profiles?limit=4&role=CONTRIBUTOR')
         ]);
 
+        // Process all responses first, before updating state
+        let presetData: PresetImage[] = [];
+        let platformData: PlatformImage[] = [];
+        let talentData: TalentProfile[] = [];
+        let contributorData: TalentProfile[] = [];
+
         // Handle preset images
         if (presetResponse.status === 'fulfilled' && presetResponse.value.ok) {
-          const presetData = await presetResponse.value.json();
-          setPresetImages(presetData || []);
+          presetData = await presetResponse.value.json();
         } else {
           console.warn('Failed to fetch preset images:', presetResponse.status === 'rejected' ? presetResponse.reason : 'HTTP error');
-          setPresetImages([]);
         }
 
         // Handle platform images
         if (platformResponse.status === 'fulfilled' && platformResponse.value.ok) {
-          const platformData = await platformResponse.value.json();
-          setPlatformImages(platformData || []);
+          platformData = await platformResponse.value.json();
         } else {
           console.warn('Failed to fetch platform images:', platformResponse.status === 'rejected' ? platformResponse.reason : 'HTTP error');
-          setPlatformImages([]);
         }
 
         // Handle talent profiles
         if (talentResponse.status === 'fulfilled' && talentResponse.value.ok) {
-          const talentData = await talentResponse.value.json();
-          setTalentProfiles(talentData || []);
+          talentData = await talentResponse.value.json();
+          console.log('Talent profiles loaded:', talentData.length);
         } else {
           console.warn('Failed to fetch talent profiles:', talentResponse.status === 'rejected' ? talentResponse.reason : 'HTTP error');
-          setTalentProfiles([]);
         }
 
         // Handle contributor profiles
         if (contributorResponse.status === 'fulfilled' && contributorResponse.value.ok) {
-          const contributorData = await contributorResponse.value.json();
-          setContributorProfiles(contributorData || []);
+          contributorData = await contributorResponse.value.json();
+          console.log('Contributor profiles loaded:', contributorData.length);
         } else {
           console.warn('Failed to fetch contributor profiles:', contributorResponse.status === 'rejected' ? contributorResponse.reason : 'HTTP error');
-          setContributorProfiles([]);
         }
+
+        // Batch all state updates together to prevent multiple re-renders
+        // React 18 will automatically batch these, but being explicit helps
+        setPresetImages(presetData || []);
+        setPlatformImages(platformData || []);
+        setTalentProfiles(talentData || []);
+        setContributorProfiles(contributorData || []);
 
       } catch (err) {
         console.error('Error fetching platform images:', err);
@@ -147,11 +164,20 @@ export function usePlatformGeneratedImages() {
     loading,
     error,
     // Helper functions
-    getHeroImage: () => platformImages.find(img => img.usage_context?.section === 'hero'),
-    getTalentCategoryImages: () => presetImages.slice(0, 8), // Get first 8 for talent categories
-    getFeaturedWorkImages: () => presetImages, // All images for featured work carousel
-    getWhyPresetImage: () => platformImages.find(img => img.category === 'about') || platformImages[0],
-    getTalentProfiles: () => talentProfiles, // Real talent profiles for hire (models, actors, etc.)
-    getContributorProfiles: () => contributorProfiles, // Real contributor profiles (photographers, videographers, etc.)
+    getHeroImage: () => Array.isArray(platformImages) ? platformImages.find(img => img.usage_context?.section === 'hero') : undefined,
+    getTalentCategoryImages: () => Array.isArray(presetImages) ? presetImages.slice(0, 8) : [], // Get first 8 for talent categories
+    getFeaturedWorkImages: () => Array.isArray(presetImages) ? presetImages : [], // All images for featured work carousel
+    getWhyPresetImage: () => Array.isArray(platformImages) ? (platformImages.find(img => img.category === 'about') || platformImages[0]) : undefined,
+    getTalentProfiles: () => Array.isArray(talentProfiles) ? talentProfiles : [], // Real talent profiles for hire (models, actors, etc.)
+    getContributorProfiles: () => Array.isArray(contributorProfiles) ? contributorProfiles : [], // Real contributor profiles (photographers, videographers, etc.)
+    // Section-specific cover images
+    getTalentForHireCoverImage: () => Array.isArray(platformImages) ? platformImages.find(img => img.category === 'talent-for-hire') : undefined,
+    getCreativeRolesCoverImage: () => Array.isArray(platformImages) ? platformImages.find(img => img.category === 'creative-roles') : undefined,
+    getContributorsCoverImage: () => Array.isArray(platformImages) ? platformImages.find(img => img.category === 'contributors') : undefined,
+    // Role-specific images for individual role cards
+    getRoleImage: (roleSlug: string) => {
+      if (!Array.isArray(platformImages)) return undefined;
+      return platformImages.find(img => img.category === `role-${roleSlug}`);
+    },
   };
 }

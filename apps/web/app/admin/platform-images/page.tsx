@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth-context';
+import { createClient } from '../../../lib/supabase/client';
 import { Button } from '../../../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
-import { Textarea } from '../../../components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
-import { Badge } from '../../../components/ui/badge';
-import { Upload, Image as ImageIcon, Trash2, Edit, Eye, Plus, X } from 'lucide-react';
+import { Card, CardContent } from '../../../components/ui/card';
+import { Upload, ImageIcon, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import Image from 'next/image';
 import Link from 'next/link';
+import ImageUploadModal from './components/ImageUploadModal';
+import ImageSectionManager from './components/ImageSectionManager';
+import ImageLibrary from './components/ImageLibrary';
+import VisualAidsManager from './components/VisualAidsManager';
 
 interface PlatformImage {
   id: string;
@@ -47,19 +46,54 @@ interface PresetVisualAid {
   platform_image: PlatformImage;
 }
 
+const HOMEPAGE_SECTIONS = [
+  { name: 'Hero Background', imageType: 'homepage', category: undefined, description: 'Main hero rotating images - Set Image Type to "Homepage"' },
+  { name: 'About Section', imageType: undefined, category: 'about', description: 'Why Preset section image' },
+  { name: 'Talent For Hire Banner', imageType: undefined, category: 'talent-for-hire', description: 'Cover banner for Talent For Hire section' },
+  { name: 'Creative Roles Banner', imageType: undefined, category: 'creative-roles', description: 'Cover banner for Creative Roles section' },
+  { name: 'Contributors Banner', imageType: undefined, category: 'contributors', description: 'Cover banner for Contributors section' },
+  { name: 'For Contributors Image', imageType: undefined, category: 'how-it-works-contributors', description: '"What You Can Do" - For Contributors section' },
+  { name: 'For Talents Image', imageType: undefined, category: 'how-it-works-talents', description: '"What You Can Do" - For Talents section' },
+];
+
+const ROLES = [
+  { name: 'Actors', slug: 'actors' },
+  { name: 'Models', slug: 'models' },
+  { name: 'Singers', slug: 'singers' },
+  { name: 'Dancers', slug: 'dancers' },
+  { name: 'Musicians', slug: 'musicians' },
+  { name: 'Photographers', slug: 'photographers' },
+  { name: 'Videographers', slug: 'videographers' },
+  { name: 'Cinematographers', slug: 'cinematographers' },
+  { name: 'Makeup Artists', slug: 'makeup-artists' },
+  { name: 'Hair Stylists', slug: 'hair-stylists' },
+  { name: 'Fashion Stylists', slug: 'fashion-stylists' },
+  { name: 'Directors', slug: 'directors' },
+  { name: 'Creative Directors', slug: 'creative-directors' },
+  { name: 'Art Directors', slug: 'art-directors' },
+  { name: 'Producers', slug: 'producers' },
+  { name: 'Editors', slug: 'editors' },
+  { name: 'Designers', slug: 'designers' },
+  { name: 'Writers', slug: 'writers' },
+  { name: 'Freelancers', slug: 'freelancers' },
+  { name: 'Brand Managers', slug: 'brand-managers' },
+  { name: 'Content Creators', slug: 'content-creators' },
+  { name: 'Studios', slug: 'studios' },
+];
+
 export default function PlatformImagesAdmin() {
   const { user, loading } = useAuth();
   const [platformImages, setPlatformImages] = useState<PlatformImage[]>([]);
   const [presetVisualAids, setPresetVisualAids] = useState<PresetVisualAid[]>([]);
+  const [presets, setPresets] = useState<any[]>([]);
   const [loadingImages, setLoadingImages] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [editingImage, setEditingImage] = useState<PlatformImage | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showImageBrowser, setShowImageBrowser] = useState(false);
-  const [bucketImages, setBucketImages] = useState<any[]>([]);
-  const [loadingBucketImages, setLoadingBucketImages] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
-  // Form state for new/editing image
+  // Form state
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingImage, setEditingImage] = useState<PlatformImage | null>(null);
+  const [quickUploadMode, setQuickUploadMode] = useState<{category?: string, imageType?: string, name: string} | null>(null);
   const [formData, setFormData] = useState({
     image_key: '',
     image_type: 'homepage',
@@ -78,12 +112,13 @@ export default function PlatformImagesAdmin() {
     if (user) {
       fetchPlatformImages();
       fetchPresetVisualAids();
+      fetchPresets();
     }
   }, [user]);
 
   const fetchPlatformImages = async () => {
     try {
-      const response = await fetch('/api/platform-images');
+      const response = await fetch('/api/platform-images?includeInactive=true');
       if (response.ok) {
         const data = await response.json();
         setPlatformImages(data.images || []);
@@ -102,38 +137,32 @@ export default function PlatformImagesAdmin() {
       const response = await fetch('/api/preset-visual-aids');
       if (response.ok) {
         const data = await response.json();
-        setPresetVisualAids(data.visualAids || []);
+        setPresetVisualAids(data.visual_aids || []);
       }
     } catch (error) {
       console.error('Error fetching preset visual aids:', error);
     }
   };
 
-  const fetchBucketImages = async () => {
-    setLoadingBucketImages(true);
+  const fetchPresets = async () => {
     try {
-      // Fetch images from the platform-images bucket
-      const response = await fetch('/api/bucket-images');
+      const response = await fetch('/api/presets');
       if (response.ok) {
         const data = await response.json();
-        setBucketImages(data.images || []);
-      } else {
-        console.error('Failed to fetch bucket images');
+        setPresets(data.presets || []);
       }
     } catch (error) {
-      console.error('Error fetching bucket images:', error);
-    } finally {
-      setLoadingBucketImages(false);
+      console.error('Error fetching presets:', error);
     }
   };
 
   const handleFileUpload = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
+    const formDataObj = new FormData();
+    formDataObj.append('file', file);
+
     const response = await fetch('/api/upload/platform-image', {
       method: 'POST',
-      body: formData,
+      body: formDataObj,
     });
 
     if (!response.ok) {
@@ -150,13 +179,10 @@ export default function PlatformImagesAdmin() {
 
     try {
       let imageUrl = '';
-      
-      // If we have a selected image URL from bucket, use it
+
       if (formData.selected_image_url) {
         imageUrl = formData.selected_image_url;
-      }
-      // Otherwise, if we have a file to upload, upload it first
-      else if (formData.image_file) {
+      } else if (formData.image_file) {
         imageUrl = await handleFileUpload(formData.image_file);
       }
 
@@ -170,10 +196,10 @@ export default function PlatformImagesAdmin() {
         format: formData.image_file?.type?.split('/')[1] || 'jpg'
       };
 
-      const url = editingImage 
+      const url = editingImage
         ? `/api/platform-images/${editingImage.id}`
         : '/api/platform-images';
-      
+
       const method = editingImage ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -186,9 +212,7 @@ export default function PlatformImagesAdmin() {
 
       if (response.ok) {
         toast.success(editingImage ? 'Image updated successfully' : 'Image created successfully');
-        setShowAddForm(false);
-        setEditingImage(null);
-        resetForm();
+        handleCloseModal();
         fetchPlatformImages();
       } else {
         const error = await response.json();
@@ -201,19 +225,64 @@ export default function PlatformImagesAdmin() {
     }
   };
 
-  const handleDelete = async (imageId: string) => {
-    if (!confirm('Are you sure you want to delete this image?')) return;
+  const handleDeactivate = async (imageId: string) => {
+    if (!confirm('Remove this image from display? (It will be hidden but not deleted)')) return;
 
     try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error('You must be logged in to perform this action');
+        return;
+      }
+
       const response = await fetch(`/api/platform-images/${imageId}`, {
-        method: 'DELETE',
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ is_active: false }),
       });
 
       if (response.ok) {
-        toast.success('Image deleted successfully');
+        toast.success('Image removed from display');
         fetchPlatformImages();
       } else {
-        toast.error('Failed to delete image');
+        const error = await response.json();
+        toast.error(error.error || 'Failed to deactivate image');
+      }
+    } catch (error) {
+      toast.error('Error deactivating image');
+    }
+  };
+
+  const handleDelete = async (imageId: string) => {
+    if (!confirm('⚠️ PERMANENTLY DELETE this image from the database and storage? This cannot be undone!')) return;
+
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error('You must be logged in to perform this action');
+        return;
+      }
+
+      const response = await fetch(`/api/platform-images/${imageId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        toast.success('Image permanently deleted');
+        fetchPlatformImages();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to delete image');
       }
     } catch (error) {
       toast.error('Error deleting image');
@@ -252,6 +321,75 @@ export default function PlatformImagesAdmin() {
       image_file: null,
       selected_image_url: ''
     });
+    setQuickUploadMode(null);
+  };
+
+  const handleCloseModal = () => {
+    setShowAddForm(false);
+    setEditingImage(null);
+    resetForm();
+  };
+
+  const handleQuickUpload = (section: {name: string, category?: string, imageType?: string}) => {
+    setFormData({
+      image_key: `${section.category || section.imageType}_${Date.now()}`,
+      image_type: section.imageType || 'homepage',
+      category: section.category || '',
+      alt_text: `${section.name} image`,
+      title: section.name,
+      description: '',
+      usage_context: '{}',
+      is_active: true,
+      display_order: 0,
+      image_file: null,
+      selected_image_url: ''
+    });
+    setQuickUploadMode(section);
+    setShowAddForm(true);
+  };
+
+  const handleSyncBucket = async () => {
+    if (!confirm('This will create database records for all images in the platform-images bucket that don\'t already have records. Continue?')) {
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const response = await fetch('/api/platform-images/sync-bucket', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(`Successfully synced ${result.synced} images from bucket`);
+        fetchPlatformImages();
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to sync bucket images');
+      }
+    } catch (error) {
+      toast.error('Error syncing bucket images');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({...formData, image_file: e.target.files?.[0] || null, selected_image_url: ''});
+  };
+
+  const handleSelectExisting = (imageUrl: string) => {
+    setFormData({...formData, selected_image_url: imageUrl, image_file: null});
+  };
+
+  const handleAddVisualAid = (preset: any) => {
+    toast.success(`Coming soon: Add visual aid for ${preset.name}`);
+  };
+
+  const getImagesBySection = (section: typeof HOMEPAGE_SECTIONS[0]) => {
+    return section.imageType
+      ? platformImages.filter(img => img.image_type === section.imageType && img.is_active)
+      : platformImages.filter(img => img.category === section.category && img.is_active);
   };
 
   if (loading) {
@@ -275,432 +413,128 @@ export default function PlatformImagesAdmin() {
               <div className="h-6 w-px bg-border"></div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Platform Images</h1>
             </div>
-            <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Add Image
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleSyncBucket}
+                variant="outline"
+                disabled={syncing}
+                className="flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                {syncing ? 'Syncing...' : 'Sync Bucket'}
+              </Button>
+              <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Add Image
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Images</p>
-                <p className="text-2xl font-bold">{platformImages.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Active Images</p>
-                <p className="text-2xl font-bold">
-                  {platformImages.filter(img => img.is_active).length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Visual Aids</p>
-                <p className="text-2xl font-bold">{presetVisualAids.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Add/Edit Form */}
-      {showAddForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingImage ? 'Edit Image' : 'Add New Image'}</CardTitle>
-            <CardDescription>
-              {editingImage ? 'Update image details' : 'Upload and configure a new platform image'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="image_key">Image Key</Label>
-                  <Input
-                    id="image_key"
-                    value={formData.image_key}
-                    onChange={(e) => setFormData({...formData, image_key: e.target.value})}
-                    placeholder="e.g., homepage_hero, cinematic_portrait_example"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="image_type">Image Type</Label>
-                  <Select value={formData.image_type} onValueChange={(value) => setFormData({...formData, image_type: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="homepage">Homepage</SelectItem>
-                      <SelectItem value="preset_visual_aid">Preset Visual Aid</SelectItem>
-                      <SelectItem value="category_icon">Category Icon</SelectItem>
-                      <SelectItem value="marketing">Marketing</SelectItem>
-                      <SelectItem value="feature_showcase">Feature Showcase</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    placeholder="e.g., cinematic_parameters, hero"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="display_order">Display Order</Label>
-                  <Input
-                    id="display_order"
-                    type="number"
-                    value={formData.display_order}
-                    onChange={(e) => setFormData({...formData, display_order: parseInt(e.target.value) || 0})}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  placeholder="Image title"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="alt_text">Alt Text</Label>
-                <Input
-                  id="alt_text"
-                  value={formData.alt_text}
-                  onChange={(e) => setFormData({...formData, alt_text: e.target.value})}
-                  placeholder="Alternative text for accessibility"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Image description"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="usage_context">Usage Context (JSON)</Label>
-                <Textarea
-                  id="usage_context"
-                  value={formData.usage_context}
-                  onChange={(e) => setFormData({...formData, usage_context: e.target.value})}
-                  placeholder='{"section": "hero", "responsive": true}'
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="image_file">Image File {!editingImage && !formData.selected_image_url && '(Required)'}</Label>
-                <Input
-                  id="image_file"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setFormData({...formData, image_file: e.target.files?.[0] || null, selected_image_url: ''})}
-                  required={!editingImage && !formData.selected_image_url}
-                  disabled={!!formData.selected_image_url}
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label>Or Select from Existing Images</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setShowImageBrowser(true);
-                      fetchBucketImages();
-                    }}
-                  >
-                    Browse Bucket
-                  </Button>
-                </div>
-                
-                {formData.selected_image_url && (
-                  <div className="border rounded-lg p-3 bg-primary/10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ImageIcon className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Selected Image</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setFormData({...formData, selected_image_url: '', image_file: null})}
-                        className="ml-auto text-destructive hover:text-destructive/90"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={formData.selected_image_url}
-                        alt="Selected"
-                        className="w-16 h-16 object-cover rounded border"
-                      />
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground truncate">
-                          {formData.selected_image_url.split('/').pop()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                <ImageIcon className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Images</p>
+                  <p className="text-2xl font-bold">{platformImages.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Images</p>
+                  <p className="text-2xl font-bold">
+                    {platformImages.filter(img => img.is_active).length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-primary" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Visual Aids</p>
+                  <p className="text-2xl font-bold">{presetVisualAids.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Image Upload Modal */}
+        <ImageUploadModal
+          showAddForm={showAddForm}
+          editingImage={editingImage}
+          quickUploadMode={quickUploadMode}
+          formData={formData}
+          onClose={handleCloseModal}
+          onFormDataChange={setFormData}
+          onSubmit={handleSubmit}
+          onImageFileChange={handleImageFileChange}
+          onSelectExisting={handleSelectExisting}
+        />
+
+        {/* Homepage Sections */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold">Homepage Section Images</h2>
+          {HOMEPAGE_SECTIONS.map((section) => (
+            <ImageSectionManager
+              key={section.name}
+              section={section}
+              images={getImagesBySection(section)}
+              onQuickUpload={handleQuickUpload}
+              onEdit={handleEdit}
+              onDeactivate={handleDeactivate}
+            />
+          ))}
+        </div>
+
+        {/* Role Images */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold">Role Images</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {ROLES.map((role) => {
+              const roleImage = platformImages.find(img => img.category === `role-${role.slug}`);
+              return (
+                <ImageSectionManager
+                  key={role.slug}
+                  section={{ name: role.name, category: `role-${role.slug}`, description: `Role card for ${role.name}` }}
+                  images={roleImage ? [roleImage] : []}
+                  onQuickUpload={handleQuickUpload}
+                  onEdit={handleEdit}
+                  onDeactivate={handleDeactivate}
                 />
-                <Label htmlFor="is_active">Active</Label>
-              </div>
-
-              <div className="flex gap-2">
-                <Button type="submit" disabled={uploading}>
-                  {uploading ? 'Saving...' : (editingImage ? 'Update' : 'Create')}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowAddForm(false);
-                    setEditingImage(null);
-                    resetForm();
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Image Browser Modal */}
-      {showImageBrowser && (
-        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
-          <div className="bg-popover rounded-lg p-6 max-w-4xl max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Select Image from Bucket</h2>
-              <Button
-                variant="ghost"
-                onClick={() => setShowImageBrowser(false)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {loadingBucketImages ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-muted-foreground">Loading images...</div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
-                {bucketImages.map((image: any, index: number) => (
-                  <div
-                    key={index}
-                    className="border rounded-lg p-2 cursor-pointer hover:border-primary transition-colors"
-                    onClick={() => {
-                      setFormData({...formData, selected_image_url: image.publicUrl, image_file: null});
-                      setShowImageBrowser(false);
-                    }}
-                  >
-                    <img
-                      src={image.publicUrl}
-                      alt={image.name}
-                      className="w-full h-24 object-cover rounded mb-2"
-                    />
-                    <p className="text-xs text-muted-foreground truncate">{image.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {Math.round(image.metadata?.size / 1024)}KB
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {bucketImages.length === 0 && !loadingBucketImages && (
-              <div className="text-center py-8 text-muted-foreground">
-                No images found in the bucket.
-              </div>
-            )}
+              );
+            })}
           </div>
         </div>
-      )}
 
-      {/* Images Grid */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Platform Images</CardTitle>
-          <CardDescription>Manage all platform images</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loadingImages ? (
-            <div className="flex items-center justify-center py-8">Loading images...</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {platformImages.map((image) => (
-                <Card key={image.id} className="overflow-hidden">
-                  <div className="aspect-video relative bg-muted">
-                    {image.image_url ? (
-                      <Image
-                        src={image.image_url}
-                        alt={image.alt_text || image.title || 'Platform image'}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <ImageIcon className="w-12 h-12 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <Badge variant={image.is_active ? 'default' : 'secondary'}>
-                        {image.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold truncate">{image.title || image.image_key}</h3>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {image.description || image.alt_text}
-                    </p>
-                    
-                    <div className="flex items-center gap-1 mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        {image.image_type}
-                      </Badge>
-                      {image.category && (
-                        <Badge variant="outline" className="text-xs">
-                          {image.category}
-                        </Badge>
-                      )}
-                    </div>
+        {/* Image Library */}
+        <ImageLibrary
+          images={platformImages}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
 
-                    <div className="flex gap-2 mt-4">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(image)}
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => window.open(image.image_url, '_blank')}
-                        disabled={!image.image_url}
-                      >
-                        <Eye className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(image.id)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Preset Visual Aids */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Preset Visual Aids</CardTitle>
-          <CardDescription>Images linked to specific presets</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {presetVisualAids.map((aid) => (
-              <div key={aid.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                <div className="w-16 h-16 relative bg-muted rounded">
-                  {aid.platform_image.image_url ? (
-                    <Image
-                      src={aid.platform_image.image_url}
-                      alt={aid.display_title || aid.preset_key}
-                      fill
-                      className="object-cover rounded"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex-1">
-                  <h4 className="font-semibold">{aid.display_title || aid.preset_key}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {aid.display_description}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className="text-xs">
-                      {aid.preset_key}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {aid.visual_aid_type}
-                    </Badge>
-                    {aid.is_primary && (
-                      <Badge variant="default" className="text-xs">
-                        Primary
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+        {/* Visual Aids Manager */}
+        <VisualAidsManager
+          presets={presets}
+          presetVisualAids={presetVisualAids}
+          onAddVisualAid={handleAddVisualAid}
+        />
       </div>
     </div>
   );

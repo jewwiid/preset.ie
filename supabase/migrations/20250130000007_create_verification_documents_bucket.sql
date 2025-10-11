@@ -1,0 +1,14 @@
+-- Migration: Create verification documents storage bucket
+-- This migration documents the verification documents storage setup
+-- 
+-- The verification-documents bucket should be created with these settings:
+-- - Name: verification-documents
+-- - Public: true (so admins can view documents)
+-- - File size limit: 5MB
+-- - Allowed MIME types: image/jpeg, image/png, image/webp, application/pdf
+--
+-- Storage policies are managed via the Supabase dashboard or through
+-- the API endpoint: POST /api/admin/create-verification-bucket
+--
+-- This migration serves as a placeholder and documentation.
+-- No SQL operations are performed here to avoid permission issues.

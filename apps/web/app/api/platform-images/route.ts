@@ -9,22 +9,34 @@ const supabase = createClient(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') || '10';
+    const limit = searchParams.get('limit');
+    const includeInactive = searchParams.get('includeInactive') === 'true';
 
     // Fetch platform images from the database
-    const { data, error } = await supabase
+    let query = supabase
       .from('platform_images')
       .select('*')
-      .eq('is_active', true)
-      .order('display_order', { ascending: true })
-      .limit(parseInt(limit));
+      .order('display_order', { ascending: true });
+
+    // Only filter by is_active if includeInactive is false (default behavior)
+    if (!includeInactive) {
+      query = query.eq('is_active', true);
+    }
+
+    // Apply limit if provided
+    if (limit) {
+      query = query.limit(parseInt(limit));
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching platform images:', error);
       return NextResponse.json({ error: 'Failed to fetch platform images' }, { status: 500 });
     }
 
-    return NextResponse.json(data || []);
+    // Return in format expected by admin page
+    return NextResponse.json({ images: data || [] });
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

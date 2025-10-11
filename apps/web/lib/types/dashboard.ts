@@ -33,7 +33,7 @@ export interface UserProfile {
   clothing_sizes?: string
   tattoos?: boolean
   piercings?: boolean
-  talent_categories?: string[]
+  performance_roles?: string[]
   contributor_roles?: string[]
   professional_skills?: string[]
   behance_url?: string

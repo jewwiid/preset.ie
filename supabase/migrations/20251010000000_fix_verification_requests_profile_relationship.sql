@@ -40,7 +40,8 @@ GRANT SELECT ON verification_requests TO anon;
 ALTER TABLE verification_requests ENABLE ROW LEVEL SECURITY;
 
 -- Allow admins to see all verification requests
-CREATE POLICY IF NOT EXISTS "Admins can view all verification requests"
+DROP POLICY IF EXISTS "Admins can view all verification requests" ON verification_requests;
+CREATE POLICY "Admins can view all verification requests"
 ON verification_requests
 FOR SELECT
 TO authenticated
@@ -48,12 +49,13 @@ USING (
   EXISTS (
     SELECT 1 FROM users_profile
     WHERE users_profile.user_id = auth.uid()
-    AND users_profile.role_flags @> ARRAY['ADMIN']::text[]
+    AND users_profile.role_flags @> ARRAY['ADMIN']::user_role[]
   )
 );
 
 -- Allow users to view their own verification requests
-CREATE POLICY IF NOT EXISTS "Users can view their own verification requests"
+DROP POLICY IF EXISTS "Users can view their own verification requests" ON verification_requests;
+CREATE POLICY "Users can view their own verification requests"
 ON verification_requests
 FOR SELECT
 TO authenticated

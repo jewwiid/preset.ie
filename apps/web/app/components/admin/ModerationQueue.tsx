@@ -207,7 +207,9 @@ export function ModerationQueue() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground-500">Avg Severity</p>
-                <p className="text-2xl font-bold text-muted-foreground-900">{stats.average_severity.toFixed(1)}</p>
+                <p className="text-2xl font-bold text-muted-foreground-900">
+                  {stats.average_severity != null ? stats.average_severity.toFixed(1) : '0.0'}
+                </p>
               </div>
               <AlertTriangle className="w-8 h-8 text-primary-500" />
             </div>
@@ -216,7 +218,9 @@ export function ModerationQueue() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground-500">Avg Resolution</p>
-                <p className="text-2xl font-bold text-muted-foreground-900">{stats.resolution_time_hours.toFixed(1)}h</p>
+                <p className="text-2xl font-bold text-muted-foreground-900">
+                  {stats.resolution_time_hours != null ? stats.resolution_time_hours.toFixed(1) : '0.0'}h
+                </p>
               </div>
               <Clock className="w-8 h-8 text-primary-500" />
             </div>

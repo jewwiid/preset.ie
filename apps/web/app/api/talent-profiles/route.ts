@@ -67,7 +67,6 @@ export async function GET(request: NextRequest) {
         account_status,
         profile_completion_percentage,
         verified_id,
-        verification_badges,
         created_at
       `)
       .in('user_id', eligibleUserIds)
@@ -100,10 +99,20 @@ export async function GET(request: NextRequest) {
     // Limit results after filtering and shuffling
     const selectedProfiles = shuffled.slice(0, parseInt(limit));
 
-    // Add fallback avatar for users without one
-    const profilesWithAvatars = selectedProfiles.map(profile => ({
-      ...profile,
-      avatar_url: profile.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/presetie_logo.png'
+    // Add fallback avatar and fetch verification badges for each profile
+    const profilesWithAvatars = await Promise.all(selectedProfiles.map(async (profile) => {
+      // Fetch verification badges for this user
+      const { data: badges } = await supabase
+        .from('verification_badges')
+        .select('*')
+        .eq('user_id', profile.user_id)
+        .is('revoked_at', null);
+
+      return {
+        ...profile,
+        avatar_url: profile.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/presetie_logo.png',
+        verification_badges: badges || []
+      };
     }));
 
     return NextResponse.json(profilesWithAvatars);

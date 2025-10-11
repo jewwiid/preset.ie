@@ -71,24 +71,6 @@ This creates a test user with credits and a sample gig.
 
 ## Common Commands
 
-### CLI Tools (Recommended)
-```bash
-# Full build and deploy pipeline
-./build-deploy.sh --all
-
-# Monitor project health continuously
-./monitor.sh --continuous
-
-# Check deployment status
-./build-deploy.sh --status
-
-# Clean and rebuild
-./build-deploy.sh --clean --build
-
-# Monitor git status
-./build-deploy.sh --monitor
-```
-
 ### Admin Management
 ```bash
 # Make any user an admin
@@ -184,8 +166,6 @@ npm run typecheck    # Check TypeScript
 - Admin Guide: [ADMIN_DASHBOARD.md](./ADMIN_DASHBOARD.md)
 - Credit System: [CREDIT_MARKETPLACE.md](./CREDIT_MARKETPLACE.md)
 - Architecture: [CLAUDE.md](./CLAUDE.md)
-- CLI Tools: [CLI_TOOLS_README.md](./CLI_TOOLS_README.md)
-- Build & Deploy: [BUILD_DEPLOY_SUMMARY.md](./BUILD_DEPLOY_SUMMARY.md)
 
 ## Support Channels
 

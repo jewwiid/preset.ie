@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { sendAPIFailureAlert, analyzeAPIError } from '../../../../lib/api-failure-alerts'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -98,6 +99,13 @@ export async function POST(request: NextRequest) {
         msg
       })
       
+      // Get task details to find user_id and enhancement_type
+      const { data: task } = await supabaseAdmin
+        .from('enhancement_tasks')
+        .select('user_id, enhancement_type')
+        .eq('id', taskId)
+        .single()
+      
       // Update task status to failed
       const { error: updateError } = await supabaseAdmin
         .from('enhancement_tasks')
@@ -110,6 +118,48 @@ export async function POST(request: NextRequest) {
       
       if (updateError) {
         console.error('Error updating failed task status:', updateError)
+      }
+      
+      // ✅ REFUND CREDITS TO USER
+      if (task) {
+        console.log(`💰 Refunding 1 credit to user ${task.user_id} for failed task ${taskId}`)
+        
+        const { error: refundError } = await supabaseAdmin.rpc('refund_user_credits', {
+          p_user_id: task.user_id,
+          p_credits: 1,
+          p_enhancement_type: task.enhancement_type
+        })
+        
+        if (refundError) {
+          console.error('❌ Failed to refund credits:', refundError)
+          // Log alert for manual review
+          await supabaseAdmin
+            .from('system_alerts')
+            .insert({
+              type: 'refund_failed',
+              level: 'error',
+              message: `Failed to refund credits for task ${taskId}`,
+              metadata: { 
+                taskId, 
+                userId: task.user_id, 
+                error: refundError.message,
+                reason: msg || 'Unknown error'
+              }
+            })
+        } else {
+          console.log('✅ Credits refunded successfully')
+        }
+
+        // 🚨 SEND ALERT - Task failed via callback
+        const errorAnalysis = analyzeAPIError(msg || 'Unknown error');
+        await sendAPIFailureAlert({
+          type: errorAnalysis.type,
+          provider: 'nanobanana',
+          errorMessage: `Task failed via callback: ${msg || 'Unknown error'}`,
+          timestamp: new Date().toISOString(),
+          userId: task.user_id,
+          severity: errorAnalysis.severity
+        });
       }
       
       // Check if this is a playground project task (find by taskId in metadata)

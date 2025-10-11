@@ -21,7 +21,6 @@ import {
 import { ReportsQueue } from '../components/admin/ReportsQueue'
 import { UserManagement } from '../components/admin/UserManagement'
 import { VerificationQueue } from '../components/admin/VerificationQueue'
-import { AgeVerificationQueue } from '../components/admin/AgeVerificationQueue'
 import { ModerationQueue } from '../components/admin/ModerationQueue'
 import { ModerationAnalytics } from '../components/admin/ModerationAnalytics'
 import { FeaturedPresetsQueue } from '../components/admin/FeaturedPresetsQueue'
@@ -54,8 +53,8 @@ interface PlatformCredits {
 interface CreditPackage {
   id: string
   name: string
-  description: string
-  user_credits: number
+  description?: string
+  credits: number
   price_usd: number
   is_active: boolean
 }
@@ -218,7 +217,7 @@ export default function AdminDashboard() {
       const { data } = await supabase
         .from('credit_packages')
         .select('*')
-        .order('user_credits', { ascending: true })
+        .order('credits', { ascending: true })
 
       if (data) {
         setCreditPackages(data)
@@ -264,7 +263,7 @@ export default function AdminDashboard() {
 
       // Get total enhancements for refund rate
       const { count: totalEnhancements } = await supabase
-        .from('credit_consumption')
+        .from('platform_credit_consumption')
         .select('*', { count: 'exact', head: true })
 
       const refundRate = totalEnhancements ? (totalRefunds / totalEnhancements) * 100 : 0
@@ -331,8 +330,7 @@ export default function AdminDashboard() {
     { id: 'moderation', label: 'Moderation', icon: Shield },
     { id: 'reports', label: 'Reports', icon: AlertTriangle },
     { id: 'users', label: 'Users', icon: Users },
-    { id: 'age-verification', label: 'Age Verification', icon: Shield },
-    { id: 'verification', label: 'ID Verification', icon: CheckCircle },
+    { id: 'verification', label: 'Verifications', icon: CheckCircle },
     { id: 'featured-presets', label: 'Featured Presets', icon: Star },
     { id: 'platform-images', label: 'Platform Images', icon: ImageIcon },
     { id: 'credits', label: 'Credits', icon: CreditCard },
@@ -388,21 +386,33 @@ export default function AdminDashboard() {
           <nav className="flex overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <div className="flex space-x-2 sm:space-x-8 min-w-max">
               {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    flex items-center gap-1 sm:gap-2 py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap
-                    ${activeTab === tab.id
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-primary/50'
-                    }
-                  `}
-                >
-                  <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
-                </button>
+                tab.id === 'platform-images' ? (
+                  <Link
+                    key={tab.id}
+                    href="/admin/platform-images"
+                    className="flex items-center gap-1 sm:gap-2 py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap border-transparent text-muted-foreground hover:text-foreground hover:border-primary/50"
+                  >
+                    <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                  </Link>
+                ) : (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      flex items-center gap-1 sm:gap-2 py-4 px-2 sm:px-1 border-b-2 font-medium text-xs sm:text-sm transition-all whitespace-nowrap
+                      ${activeTab === tab.id
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:border-primary/50'
+                      }
+                    `}
+                  >
+                    <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                  </button>
+                )
               ))}
             </div>
           </nav>
@@ -485,11 +495,18 @@ export default function AdminDashboard() {
         {/* Users Tab */}
         {activeTab === 'users' && <UserManagement />}
 
-        {/* Age Verification Tab */}
-        {activeTab === 'age-verification' && <AgeVerificationQueue />}
-
-        {/* ID Verification Tab */}
-        {activeTab === 'verification' && <VerificationQueue />}
+        {/* Verification Tab (unified for all verification types) */}
+        {activeTab === 'verification' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">User Verifications</h2>
+                <p className="text-muted-foreground">Review and approve identity, professional, and business verification requests</p>
+              </div>
+            </div>
+            <VerificationQueue />
+          </div>
+        )}
 
         {/* Featured Presets Tab */}
         {activeTab === 'featured-presets' && (
@@ -498,67 +515,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Platform Images Tab */}
-        {activeTab === 'platform-images' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">Platform Images</h2>
-                <p className="text-muted-foreground">Manage platform-wide images and preset visual aids</p>
-              </div>
-              <Link
-                href="/admin/platform-images"
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Open Image Manager
-              </Link>
-            </div>
-
-            <div className="bg-card rounded-lg shadow p-6 border border-border">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link
-                  href="/admin/platform-images"
-                  className="p-4 border border-border rounded-lg hover:border-primary transition-colors bg-card"
-                >
-                  <div className="flex items-center gap-3">
-                    <ImageIcon className="h-8 w-8 text-primary" />
-                    <div>
-                      <h4 className="font-semibold text-foreground">Manage Images</h4>
-                      <p className="text-sm text-muted-foreground">Upload and configure platform images</p>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/admin/platform-images#visual-aids"
-                  className="p-4 border border-border rounded-lg hover:border-primary transition-colors bg-card"
-                >
-                  <div className="flex items-center gap-3">
-                    <Star className="h-8 w-8 text-primary" />
-                    <div>
-                      <h4 className="font-semibold text-foreground">Visual Aids</h4>
-                      <p className="text-sm text-muted-foreground">Manage preset visual examples</p>
-                    </div>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/admin/platform-images#cache-config"
-                  className="p-4 border border-border rounded-lg hover:border-primary transition-colors bg-card"
-                >
-                  <div className="flex items-center gap-3">
-                    <BarChart3 className="h-8 w-8 text-primary" />
-                    <div>
-                      <h4 className="font-semibold text-foreground">Cache Settings</h4>
-                      <p className="text-sm text-muted-foreground">Configure browser caching</p>
-                    </div>
-                  </div>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Credits Tab */}
         {activeTab === 'credits' && (
@@ -621,10 +577,14 @@ export default function AdminDashboard() {
                 {creditPackages.map((pkg) => (
                   <div key={pkg.id} className={`p-4 border rounded-lg bg-card ${pkg.is_active ? 'border-primary' : 'border-border opacity-50'}`}>
                     <h3 className="font-semibold text-foreground">{pkg.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{pkg.description}</p>
-                    <p className="text-2xl font-bold text-foreground">{pkg.user_credits} credits</p>
+                    {pkg.description && (
+                      <p className="text-sm text-muted-foreground mb-2">{pkg.description}</p>
+                    )}
+                    <p className="text-2xl font-bold text-foreground">{pkg.credits} credits</p>
                     <p className="text-lg text-primary">${pkg.price_usd}</p>
-                    <p className="text-xs text-muted-foreground">${(pkg.price_usd / pkg.user_credits).toFixed(2)} per credit</p>
+                    <p className="text-xs text-muted-foreground">
+                      ${pkg.credits > 0 ? (pkg.price_usd / pkg.credits).toFixed(2) : '0.00'} per credit
+                    </p>
                     {!pkg.is_active && (
                       <span className="inline-block mt-2 px-2 py-1 text-xs bg-muted text-muted-foreground rounded">Inactive</span>
                     )}

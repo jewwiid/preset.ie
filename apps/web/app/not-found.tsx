@@ -2,12 +2,12 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted-50">
-      <div className="max-w-md w-full bg-background shadow-lg rounded-lg p-8 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="max-w-md w-full bg-card shadow-lg rounded-lg p-8 text-center border border-border">
         <div className="mb-6">
-          <h1 className="text-6xl font-bold text-muted-foreground-300">404</h1>
-          <h2 className="text-2xl font-semibold text-muted-foreground-800 mt-4">Page Not Found</h2>
-          <p className="text-muted-foreground-600 mt-2">
+          <h1 className="text-6xl font-bold text-muted-foreground">404</h1>
+          <h2 className="text-2xl font-semibold text-foreground mt-4">Page Not Found</h2>
+          <p className="text-muted-foreground mt-2">
             Sorry, we couldn't find the page you're looking for.
           </p>
         </div>
@@ -15,21 +15,21 @@ export default function NotFound() {
         <div className="space-y-4">
           <Link 
             href="/"
-            className="inline-block bg-primary-600 text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
+            className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors font-medium"
           >
             Go Home
           </Link>
           
-          <div className="text-sm text-muted-foreground-500">
-            <Link href="/dashboard" className="text-primary-600 hover:underline">
+          <div className="text-sm text-muted-foreground">
+            <Link href="/dashboard" className="text-primary hover:underline">
               Dashboard
             </Link>
             {' • '}
-            <Link href="/playground" className="text-primary-600 hover:underline">
+            <Link href="/playground" className="text-primary hover:underline">
               Playground
             </Link>
             {' • '}
-            <Link href="/gigs" className="text-primary-600 hover:underline">
+            <Link href="/gigs" className="text-primary hover:underline">
               Gigs
             </Link>
           </div>

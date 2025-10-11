@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Upload, Shield, CheckCircle, AlertCircle, Camera, ExternalLink, User, Briefcase, Building } from 'lucide-react'
+import { Upload, Shield, CheckCircle, AlertCircle, Camera, ExternalLink, User, Briefcase, Building, XCircle } from 'lucide-react'
+import { COUNTRY_CODES, type CountryCode } from '../../lib/social-utils'
 
 interface VerificationFormData {
-  request_type: 'age' | 'identity' | 'professional' | 'business'
+  request_type: 'identity' | 'professional' | 'business'
   document_file: File | null
   additional_info: string
   
@@ -34,9 +35,31 @@ interface VerificationFormData {
   alternative_email?: string
 }
 
+// Helper function to format social media URLs
+const formatSocialUrl = (url: string | null, platform: 'instagram' | 'linkedin' | 'tiktok'): string => {
+  if (!url) return ''
+  
+  // If it's already a full URL, return as is
+  if (url.startsWith('http')) return url
+  
+  // If it's just a username, format it properly
+  const username = url.replace('@', '').trim()
+  
+  switch (platform) {
+    case 'instagram':
+      return `https://instagram.com/${username}`
+    case 'linkedin':
+      return `https://linkedin.com/in/${username}`
+    case 'tiktok':
+      return `https://tiktok.com/@${username}`
+    default:
+      return url
+  }
+}
+
 export default function VerificationPage() {
   const [formData, setFormData] = useState<VerificationFormData>({
-    request_type: 'age',
+    request_type: 'identity',
     document_file: null,
     additional_info: '',
     instagram_url: '',
@@ -65,7 +88,9 @@ export default function VerificationPage() {
   const [verificationStatus, setVerificationStatus] = useState<{
     approved: string[]
     pending: string[]
-  }>({ approved: [], pending: [] })
+    rejected: any[]
+  }>({ approved: [], pending: [], rejected: [] })
+  const [selectedCountryCode, setSelectedCountryCode] = useState('+353')
 
   // Fetch user role and profile data on mount
   useEffect(() => {
@@ -90,9 +115,9 @@ export default function VerificationPage() {
             .is('revoked_at', null),
           supabase
             .from('verification_requests')
-            .select('verification_type, status')
+            .select('verification_type, status, rejection_reason, review_notes, submitted_at')
             .eq('user_id', user.id)
-            .in('status', ['pending', 'reviewing'])
+            .in('status', ['pending', 'reviewing', 'rejected'])
         ])
 
         const { data: profile, error: profileError } = profileResult
@@ -102,21 +127,32 @@ export default function VerificationPage() {
             setUserRoles(profile.role_flags)
           }
 
-          // Pre-populate form with existing profile data
+          // Pre-populate form with existing profile data and format URLs
+          const phoneNumber = profile.phone_number || ''
+          
+          // Extract country code from phone number if it exists
+          if (phoneNumber) {
+            const countryCodeMatch = phoneNumber.match(/^\+\d{1,4}/)
+            if (countryCodeMatch) {
+              setSelectedCountryCode(countryCodeMatch[0])
+            }
+          }
+          
           setFormData(prev => ({
             ...prev,
-            instagram_url: profile.instagram_url || '',
-            linkedin_url: profile.linkedin_url || '',
-            tiktok_url: profile.tiktok_url || '',
+            instagram_url: formatSocialUrl(profile.instagram_url, 'instagram') || '',
+            linkedin_url: formatSocialUrl(profile.linkedin_url, 'linkedin') || '',
+            tiktok_url: formatSocialUrl(profile.tiktok_url, 'tiktok') || '',
             portfolio_url: profile.portfolio_url || '',
             years_experience: profile.years_experience || undefined,
-            phone_number: profile.phone_number || ''
+            phone_number: phoneNumber
           }))
         }
 
         // Process verification status
         const approvedTypes: string[] = []
         const pendingTypes: string[] = []
+        const rejectedTypes: any[] = []
 
         // Map badge types to verification types
         if (badgesResult.data) {
@@ -134,12 +170,20 @@ export default function VerificationPage() {
         if (requestsResult.data) {
           requestsResult.data.forEach(request => {
             if (!approvedTypes.includes(request.verification_type)) {
-              pendingTypes.push(request.verification_type)
+              if (request.status === 'rejected') {
+                rejectedTypes.push(request)
+              } else {
+                pendingTypes.push(request.verification_type)
+              }
             }
           })
         }
 
-        setVerificationStatus({ approved: approvedTypes, pending: pendingTypes })
+        setVerificationStatus({ 
+          approved: approvedTypes, 
+          pending: pendingTypes,
+          rejected: rejectedTypes 
+        })
       } catch (err) {
         console.error('Error fetching user profile:', err)
       } finally {
@@ -169,6 +213,20 @@ export default function VerificationPage() {
     setError(null)
   }
 
+  const handleReplaceFile = () => {
+    const fileInput = document.getElementById('document-file-input') as HTMLInputElement
+    if (fileInput) fileInput.click()
+  }
+
+  // Handle social media input with auto-formatting
+  const handleSocialInput = (platform: 'instagram' | 'linkedin' | 'tiktok', value: string) => {
+    const formattedUrl = formatSocialUrl(value, platform)
+    setFormData(prev => ({
+      ...prev,
+      [`${platform}_url`]: formattedUrl
+    }))
+  }
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
@@ -195,10 +253,17 @@ export default function VerificationPage() {
       return
     }
 
+    // Allow resubmission if previous request was rejected
+    const rejectedRequest = verificationStatus.rejected.find(r => r.verification_type === formData.request_type)
+    if (rejectedRequest) {
+      console.log('Previous request was rejected, allowing resubmission:', rejectedRequest)
+      // User can resubmit - no error needed
+    }
+
     // Validate required fields based on verification type
     if (formData.request_type === 'identity') {
       if (!formData.instagram_url && !formData.linkedin_url && !formData.tiktok_url) {
-        setError('Please provide at least one social media profile for identity verification')
+        setError('Please provide at least one social media profile for identity & age verification')
         return
       }
     }
@@ -240,7 +305,7 @@ export default function VerificationPage() {
         throw new Error('Please log in to submit a verification request')
       }
 
-      // 2. Get user profile
+      // 2. Get user profile (for validation)
       const { data: profile } = await supabase!
         .from('users_profile')
         .select('id')
@@ -272,7 +337,7 @@ export default function VerificationPage() {
         if (error.message?.includes('bucket') || error.message?.includes('not found')) {
           try {
             await supabase!.storage.createBucket('verification-documents', { 
-              public: false,
+              public: true, // Make public so admins can view documents
               fileSizeLimit: 5242880, // 5MB
               allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
             })
@@ -332,27 +397,23 @@ export default function VerificationPage() {
         file_size: formData.document_file.size
       }
 
-      // 5. Create verification request with corrected schema
+      // 5. Create verification request with correct schema
       const { error: insertError } = await supabase!
         .from('verification_requests')
         .insert({
-          user_id: profile.id,
-          verification_type: formData.request_type, // Use verification_type (existing column)
-          request_type: formData.request_type, // Also add request_type for new functionality
-          document_url: uploadData.path, // Single document URL
-          document_type: formData.document_file.type, // Single document type
-          document_urls: [uploadData.path], // Array for backwards compatibility
-          document_types: [formData.document_file.type], // Array for backwards compatibility
-          verification_data: verificationData,
-          social_links: socialLinks,
-          professional_info: professionalInfo,
-          business_info: businessInfo,
-          contact_info: contactInfo,
-          // Keep legacy field for backwards compatibility
-          additional_data: {
+          user_id: user.id, // Use auth user ID, not profile ID
+          verification_type: formData.request_type,
+          document_urls: [uploadData.path],
+          document_types: [formData.document_file.type],
+          metadata: {
+            // Store all additional data in metadata JSONB field
             file_name: formData.document_file.name,
             file_size: formData.document_file.size,
-            additional_info: formData.additional_info
+            additional_info: formData.additional_info,
+            social_links: socialLinks,
+            professional_info: professionalInfo,
+            business_info: businessInfo,
+            contact_info: contactInfo
           }
         })
 
@@ -371,10 +432,10 @@ export default function VerificationPage() {
     <div className="space-y-4">
       <h3 className="font-medium text-foreground flex items-center">
         <User className="w-4 h-4 mr-2" />
-        Identity Verification Details
+        Identity & Age Verification Details
       </h3>
       <p className="text-sm text-muted-foreground">
-        Provide social media profiles to help verify your identity. At least one is required.
+        Provide social media profiles to help verify your identity. At least one is required. Your government ID will verify both your identity and age (18+).
       </p>
       {(formData.instagram_url || formData.linkedin_url || formData.tiktok_url) && (
         <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-start gap-2">
@@ -393,8 +454,8 @@ export default function VerificationPage() {
           <input
             type="url"
             value={formData.instagram_url || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, instagram_url: e.target.value }))}
-            placeholder="https://instagram.com/yourusername"
+            onChange={(e) => handleSocialInput('instagram', e.target.value)}
+            placeholder="https://instagram.com/yourusername or just yourusername"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
           />
         </div>
@@ -406,8 +467,8 @@ export default function VerificationPage() {
           <input
             type="url"
             value={formData.linkedin_url || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
-            placeholder="https://linkedin.com/in/yourname"
+            onChange={(e) => handleSocialInput('linkedin', e.target.value)}
+            placeholder="https://linkedin.com/in/yourname or just yourname"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
           />
         </div>
@@ -419,8 +480,8 @@ export default function VerificationPage() {
           <input
             type="url"
             value={formData.tiktok_url || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, tiktok_url: e.target.value }))}
-            placeholder="https://tiktok.com/@yourusername"
+            onChange={(e) => handleSocialInput('tiktok', e.target.value)}
+            placeholder="https://tiktok.com/@yourusername or just yourusername"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
           />
         </div>
@@ -429,13 +490,29 @@ export default function VerificationPage() {
           <label className="block text-sm font-medium text-foreground mb-1">
             Phone Number (Optional)
           </label>
-          <input
-            type="tel"
-            value={formData.phone_number || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-            placeholder="+1 (555) 123-4567"
-            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
-          />
+          <div className="flex gap-2">
+            <select
+              value={selectedCountryCode}
+              onChange={(e) => setSelectedCountryCode(e.target.value)}
+              className="border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring min-w-[120px]"
+            >
+              {COUNTRY_CODES.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.flag} {country.code}
+                </option>
+              ))}
+            </select>
+            <input
+              type="tel"
+              value={formData.phone_number?.replace(selectedCountryCode, '') || ''}
+              onChange={(e) => {
+                const phoneValue = `${selectedCountryCode}${e.target.value.replace(/[\s\-()]/g, '')}`
+                setFormData(prev => ({ ...prev, phone_number: phoneValue }))
+              }}
+              placeholder={COUNTRY_CODES.find(c => c.code === selectedCountryCode)?.placeholder || "Phone number"}
+              className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -480,8 +557,8 @@ export default function VerificationPage() {
           <input
             type="url"
             value={formData.linkedin_url || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, linkedin_url: e.target.value }))}
-            placeholder="https://linkedin.com/in/yourname"
+            onChange={(e) => handleSocialInput('linkedin', e.target.value)}
+            placeholder="https://linkedin.com/in/yourname or just yourname"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:border-ring"
           />
         </div>
@@ -521,8 +598,8 @@ export default function VerificationPage() {
           <input
             type="url"
             value={formData.instagram_url || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, instagram_url: e.target.value }))}
-            placeholder="https://instagram.com/yourwork"
+            onChange={(e) => handleSocialInput('instagram', e.target.value)}
+            placeholder="https://instagram.com/yourwork or just yourwork"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:border-ring"
           />
         </div>
@@ -646,8 +723,8 @@ export default function VerificationPage() {
           <input
             type="url"
             value={formData.instagram_url || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, instagram_url: e.target.value }))}
-            placeholder="https://instagram.com/yourbusiness"
+            onChange={(e) => handleSocialInput('instagram', e.target.value)}
+            placeholder="https://instagram.com/yourbusiness or just yourbusiness"
             className="w-full border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:border-ring"
           />
         </div>
@@ -762,7 +839,7 @@ export default function VerificationPage() {
           </div>
 
           {/* Verification Status Section */}
-          {(verificationStatus.approved.length > 0 || verificationStatus.pending.length > 0) && (
+          {(verificationStatus.approved.length > 0 || verificationStatus.pending.length > 0 || verificationStatus.rejected.length > 0) && (
             <div className="bg-background p-6 border-b border-border">
               <h2 className="text-lg font-semibold text-foreground mb-4">Your Verification Status</h2>
 
@@ -776,7 +853,7 @@ export default function VerificationPage() {
                     {verificationStatus.approved.map(type => (
                       <div key={type} className="bg-primary/10 border border-primary/20 rounded-full px-3 py-1 text-xs font-medium text-primary flex items-center gap-1.5">
                         <CheckCircle className="w-3 h-3" />
-                        {type === 'identity' ? 'Identity Verified' : type === 'professional' ? 'Professional Verified' : 'Business Verified'}
+                        {type === 'identity' ? 'Identity & Age Verified' : type === 'professional' ? 'Professional Verified' : 'Business Verified'}
                       </div>
                     ))}
                   </div>
@@ -793,7 +870,50 @@ export default function VerificationPage() {
                     {verificationStatus.pending.map(type => (
                       <div key={type} className="bg-amber-500/10 border border-amber-500/20 rounded-full px-3 py-1 text-xs font-medium text-amber-600 dark:text-amber-500 flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                        {type === 'identity' ? 'Identity' : type === 'professional' ? 'Professional' : 'Business'} - Under Review
+                        {type === 'identity' ? 'Identity & Age' : type === 'professional' ? 'Professional' : 'Business'} - Under Review
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {verificationStatus.rejected.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-500" />
+                    Rejected Requests
+                  </h3>
+                  <div className="space-y-3">
+                    {verificationStatus.rejected.map((request, index) => (
+                      <div key={index} className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="bg-red-500 rounded-full px-2 py-1 text-xs font-medium text-white">
+                                {request.verification_type === 'identity' ? 'Identity & Age' : 
+                                 request.verification_type === 'professional' ? 'Professional' : 'Business'}
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                Rejected on {new Date(request.submitted_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {request.rejection_reason && (
+                              <div className="mb-2">
+                                <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">Reason:</p>
+                                <p className="text-sm text-foreground">{request.rejection_reason}</p>
+                              </div>
+                            )}
+                            {request.review_notes && (
+                              <div className="mb-2">
+                                <p className="text-sm font-medium text-foreground mb-1">Admin Notes:</p>
+                                <p className="text-sm text-muted-foreground">{request.review_notes}</p>
+                              </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              💡 You can resubmit with corrected information. Make sure to upload clear, readable documents.
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -817,12 +937,12 @@ export default function VerificationPage() {
               <div className="bg-background rounded-lg p-4 border border-border">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle className="w-6 h-6 text-primary fill-primary/20" />
-                  <h3 className="font-medium text-foreground">Identity Verified</h3>
+                  <h3 className="font-medium text-foreground">Identity & Age Verified</h3>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Basic identity confirmation with government ID
+                  Identity and age confirmation with government ID + social profiles
                 </p>
-                <div className="text-xs text-primary font-medium">Age or Identity Verification</div>
+                <div className="text-xs text-primary font-medium">Identity & Age Verification</div>
               </div>
 
               {/* Professional Badge */}
@@ -860,15 +980,9 @@ export default function VerificationPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
                   {
-                    type: 'age',
-                    label: 'Age Verification (18+)',
-                    desc: 'Verify you are 18 or older',
-                    icon: User
-                  },
-                  {
                     type: 'identity',
-                    label: 'Identity Verification',
-                    desc: 'Verify your real identity with social profiles',
+                    label: 'Identity & Age Verification (18+)',
+                    desc: 'Verify your identity and age with government ID + social profiles',
                     icon: Shield
                   },
                   {
@@ -933,12 +1047,12 @@ export default function VerificationPage() {
                             {label}
                             {isApproved && (
                               <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <CheckCircle className="w-3 h-3" /> Verified
+                                <CheckCircle className="w-3 h-3" /> {type === 'identity' ? 'Identity & Age Verified' : type === 'professional' ? 'Professional Verified' : 'Business Verified'}
                               </span>
                             )}
                             {isPending && (
                               <span className="text-xs text-amber-600 dark:text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div> Pending
+                                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div> {type === 'identity' ? 'Identity & Age' : type === 'professional' ? 'Professional' : 'Business'} - Under Review
                               </span>
                             )}
                           </div>
@@ -955,22 +1069,20 @@ export default function VerificationPage() {
             {formData.request_type === 'identity' && renderIdentityFields()}
             {formData.request_type === 'professional' && renderProfessionalFields()}
             {formData.request_type === 'business' && renderBusinessFields()}
-            
-            {/* Age verification has no additional fields */}
-            {formData.request_type === 'age' && (
-              <div className="bg-primary/10 p-4 rounded-lg mb-6">
-                <p className="text-sm text-primary">
-                  <Shield className="w-4 h-4 inline mr-1" />
-                  For age verification, please upload a government-issued ID showing your birth date.
-                </p>
-              </div>
-            )}
 
             {/* Document Upload */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-foreground mb-3">
                 Verification Document <span className="text-destructive">*</span>
               </label>
+              {formData.request_type === 'identity' && (
+                <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-primary">
+                    <Shield className="w-4 h-4 inline mr-1" />
+                    For identity & age verification, please upload a government-issued ID (passport, driver's license, or national ID) showing your birth date. This single document will verify both your identity and that you are 18 or older.
+                  </p>
+                </div>
+              )}
               <div
                 className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                   dragOver
@@ -992,14 +1104,62 @@ export default function VerificationPage() {
                 }}
               >
                 {formData.document_file ? (
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="w-8 h-8 text-primary mr-3" />
-                    <div className="text-left">
-                      <p className="font-medium text-foreground">{formData.document_file.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {(formData.document_file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
+                  <div className="space-y-4">
+                    {/* File info */}
+                    <div className="flex items-center justify-center">
+                      <CheckCircle className="w-8 h-8 text-primary mr-3" />
+                      <div className="text-left">
+                        <p className="font-medium text-foreground">{formData.document_file.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(formData.document_file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
                     </div>
+                    
+                    {/* Image preview for image files */}
+                    {formData.document_file.type.startsWith('image/') && (
+                      <div className="flex justify-center">
+                        <div 
+                          className="relative max-w-xs max-h-48 bg-background rounded-lg border border-border overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
+                          onClick={handleReplaceFile}
+                        >
+                          <img
+                            src={URL.createObjectURL(formData.document_file)}
+                            alt="Document preview"
+                            className="w-full h-full object-contain"
+                            onLoad={(e) => {
+                              // Clean up the object URL after image loads to prevent memory leaks
+                              URL.revokeObjectURL((e.target as HTMLImageElement).src)
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <div className="bg-background/90 px-2 py-1 rounded text-xs text-foreground">
+                              Click to replace
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* PDF preview */}
+                    {formData.document_file.type === 'application/pdf' && (
+                      <div className="flex justify-center">
+                        <div 
+                          className="bg-background border border-border rounded-lg p-4 flex items-center gap-3 cursor-pointer hover:border-primary/50 transition-colors"
+                          onClick={handleReplaceFile}
+                        >
+                          <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center">
+                            <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="text-left">
+                            <p className="font-medium text-foreground">PDF Document</p>
+                            <p className="text-sm text-muted-foreground">Click to replace</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div>

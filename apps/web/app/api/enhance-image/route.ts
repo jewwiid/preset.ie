@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { 
+  sendAPIFailureAlert, 
+  analyzeAPIError, 
+  alertCreditsExhausted,
+  alertAPIError,
+  alertTimeout 
+} from '../../../lib/api-failure-alerts';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -14,6 +21,45 @@ if (!supabaseUrl || !supabaseServiceKey || !nanoBananaApiKey) {
     hasServiceKey: !!supabaseServiceKey,
     hasNanoBananaKey: !!nanoBananaApiKey
   });
+}
+
+// Helper function to refund credits on failures
+async function refundUserCredits(
+  supabaseAdmin: any,
+  userId: string,
+  credits: number,
+  enhancementType: string,
+  reason: string
+) {
+  console.log(`💰 Refunding ${credits} credit(s) to user ${userId}. Reason: ${reason}`);
+  
+  try {
+    const { error } = await supabaseAdmin.rpc('refund_user_credits', {
+      p_user_id: userId,
+      p_credits: credits,
+      p_enhancement_type: enhancementType
+    });
+
+    if (error) {
+      console.error('❌ Failed to refund credits:', error);
+      // Log alert for manual review
+      await supabaseAdmin
+        .from('system_alerts')
+        .insert({
+          type: 'refund_failed',
+          level: 'error',
+          message: `Failed to refund ${credits} credits to user ${userId}`,
+          metadata: { userId, credits, reason, error: error.message }
+        });
+      return false;
+    } else {
+      console.log('✅ Credits refunded successfully');
+      return true;
+    }
+  } catch (err) {
+    console.error('Exception during refund:', err);
+    return false;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -342,6 +388,27 @@ export async function POST(request: NextRequest) {
     } catch (fetchError: any) {
       console.error(`Failed to call ${selectedProvider} API:`, fetchError);
       
+      // ✅ REFUND CREDITS - API call failed
+      await refundUserCredits(
+        supabaseAdmin,
+        user.id,
+        USER_CREDITS_PER_ENHANCEMENT,
+        enhancementType,
+        `Network error: ${fetchError.message}`
+      );
+
+      // 🚨 SEND ALERT - API failure occurred
+      const errorAnalysis = analyzeAPIError(fetchError.message || 'Unknown error');
+      await sendAPIFailureAlert({
+        type: errorAnalysis.type,
+        provider: selectedProvider,
+        errorMessage: `API call failed: ${fetchError.message || 'Unknown error'}`,
+        timestamp: new Date().toISOString(),
+        userId: user.id,
+        userEmail: user.email,
+        severity: errorAnalysis.severity
+      });
+      
       // Check if it's a network error
       if (fetchError.message?.includes('fetch')) {
         return NextResponse.json(
@@ -349,7 +416,8 @@ export async function POST(request: NextRequest) {
             success: false, 
             error: 'Failed to connect to enhancement service',
             details: 'Network error or service temporarily unavailable',
-            code: 'NETWORK_ERROR'
+            code: 'NETWORK_ERROR',
+            refunded: true
           },
           { status: 503 }
         );
@@ -360,7 +428,8 @@ export async function POST(request: NextRequest) {
           success: false, 
           error: 'Enhancement service error',
           details: fetchError.message || 'Unknown error occurred',
-          code: 'API_CALL_FAILED'
+          code: 'API_CALL_FAILED',
+          refunded: true
         },
         { status: 500 }
       );
@@ -373,6 +442,28 @@ export async function POST(request: NextRequest) {
     if (!response.ok || responseData.code !== 200) {
       console.error(`${providerUsed} API error:`, responseData);
       
+      // ✅ REFUND CREDITS - API returned error
+      await refundUserCredits(
+        supabaseAdmin,
+        user.id,
+        USER_CREDITS_PER_ENHANCEMENT,
+        enhancementType,
+        `API error: ${responseData.msg || responseData.code}`
+      );
+
+      // 🚨 SEND ALERT - API returned error response
+      const errorMessage = responseData.msg || responseData.message || `HTTP ${response.status}`;
+      const errorAnalysis = analyzeAPIError(errorMessage);
+      await sendAPIFailureAlert({
+        type: errorAnalysis.type,
+        provider: providerUsed,
+        errorMessage: `API error response: ${errorMessage}`,
+        timestamp: new Date().toISOString(),
+        userId: user.id,
+        userEmail: user.email,
+        severity: errorAnalysis.severity
+      });
+      
       // Handle specific error cases
       if (responseData.code === 402) {
         return NextResponse.json(
@@ -380,7 +471,8 @@ export async function POST(request: NextRequest) {
             success: false, 
             error: 'Insufficient credits in enhancement service',
             details: responseData.msg || 'Please contact support to add credits to your enhancement service account',
-            code: 'ENHANCEMENT_SERVICE_CREDITS'
+            code: 'ENHANCEMENT_SERVICE_CREDITS',
+            refunded: true
           },
           { status: 402 }
         );
@@ -393,7 +485,8 @@ export async function POST(request: NextRequest) {
             success: false, 
             error: 'Enhancement service temporarily unavailable',
             details: 'The enhancement service is currently experiencing high demand. Please try again later or use the Seedream provider.',
-            code: 'PLATFORM_CREDITS_LOW'
+            code: 'PLATFORM_CREDITS_LOW',
+            refunded: true
           },
           { status: 503 }
         );
@@ -410,7 +503,8 @@ export async function POST(request: NextRequest) {
             error: 'Image URL not accessible',
             details: 'The enhancement service could not access the image. Please ensure the URL is publicly accessible and not behind authentication.',
             originalUrl: inputImageUrl,
-            code: 'IMAGE_URL_INACCESSIBLE'
+            code: 'IMAGE_URL_INACCESSIBLE',
+            refunded: true
           },
           { status: 400 }
         );
@@ -424,7 +518,8 @@ export async function POST(request: NextRequest) {
             success: false, 
             error: 'Invalid image format',
             details: 'Please use JPEG, PNG, or WebP images',
-            code: 'INVALID_IMAGE_FORMAT'
+            code: 'INVALID_IMAGE_FORMAT',
+            refunded: true
           },
           { status: 400 }
         );
@@ -435,7 +530,8 @@ export async function POST(request: NextRequest) {
           success: false, 
           error: 'Enhancement service error',
           details: responseData.msg || 'Failed to submit enhancement task',
-          code: responseData.code || 'ENHANCEMENT_ERROR'
+          code: responseData.code || 'ENHANCEMENT_ERROR',
+          refunded: true
         },
         { status: response.status }
       );
@@ -444,12 +540,23 @@ export async function POST(request: NextRequest) {
     // Validate response structure for successful responses
     if (!responseData || !responseData.data || (!responseData.data.taskId && !responseData.data.generated_url)) {
       console.error(`Invalid ${providerUsed} response structure:`, responseData);
+      
+      // ✅ REFUND CREDITS - Invalid response
+      await refundUserCredits(
+        supabaseAdmin,
+        user.id,
+        USER_CREDITS_PER_ENHANCEMENT,
+        enhancementType,
+        'Invalid response structure from provider'
+      );
+      
       return NextResponse.json(
         { 
           success: false, 
           error: 'Invalid response from enhancement service',
           details: 'Missing taskId in response',
-          response: responseData
+          response: responseData,
+          refunded: true
         },
         { status: 500 }
       );
@@ -495,11 +602,22 @@ export async function POST(request: NextRequest) {
 
     if (taskError) {
       console.error('Failed to store task:', taskError);
+      
+      // ✅ REFUND CREDITS - Task creation failed
+      await refundUserCredits(
+        supabaseAdmin,
+        user.id,
+        USER_CREDITS_PER_ENHANCEMENT,
+        enhancementType,
+        `Task creation failed: ${taskError.message}`
+      );
+      
       return NextResponse.json(
         { 
           success: false, 
           error: 'Failed to store enhancement task',
-          details: taskError.message
+          details: taskError.message,
+          refunded: true
         },
         { status: 500 }
       );
@@ -514,16 +632,6 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString()
       })
       .eq('user_id', user.id);
-    
-    // Consume platform credits (handles the provider-specific ratio internally)
-    await supabaseAdmin.rpc('consume_platform_credits', {
-      p_provider: providerUsed,
-      p_user_id: user.id,
-      p_user_credits: USER_CREDITS_PER_ENHANCEMENT,
-      p_operation_type: enhancementType,
-      p_task_id: taskId,
-      p_moodboard_id: moodboardId
-    });
 
     // Log transaction (user sees 1 credit, but we track the actual provider cost)
     // Provider ratios: NanoBanana 1:4, Seedream 1:2

@@ -13,8 +13,51 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
 
+// Helper function to check admin authorization
+async function checkAdminAuth(request: NextRequest): Promise<{ authorized: boolean; userId?: string; error?: NextResponse }> {
+  const authHeader = request.headers.get('Authorization')
+  if (!authHeader) {
+    return {
+      authorized: false,
+      error: NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 })
+    }
+  }
+
+  const token = authHeader.replace('Bearer ', '')
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+  if (authError || !user) {
+    return {
+      authorized: false,
+      error: NextResponse.json({ error: 'Unauthorized - Invalid token' }, { status: 401 })
+    }
+  }
+
+  // Check if user has admin role in their profile
+  const { data: profile } = await supabase
+    .from('users_profile')
+    .select('role_flags')
+    .eq('user_id', user.id)
+    .maybeSingle() // Use maybeSingle to handle case where profile doesn't exist
+
+  if (!profile?.role_flags?.includes('ADMIN')) {
+    return {
+      authorized: false,
+      error: NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })
+    }
+  }
+
+  return { authorized: true, userId: user.id }
+}
+
 export async function GET(request: NextRequest) {
   try {
+    // Check admin authorization
+    const authCheck = await checkAdminAuth(request)
+    if (!authCheck.authorized) {
+      return authCheck.error!
+    }
+
     // Get all pending featured requests with preset details
     const { data: requests, error } = await supabase
       .from('featured_preset_requests')
@@ -74,6 +117,12 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
+    // Check admin authorization
+    const authCheck = await checkAdminAuth(request)
+    if (!authCheck.authorized) {
+      return authCheck.error!
+    }
+
     const { request_id, status, admin_notes, reviewed_by } = await request.json()
 
     if (!request_id || !status || !reviewed_by) {
@@ -90,6 +139,30 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
+    // Validate UUID format for reviewed_by
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(reviewed_by)) {
+      return NextResponse.json(
+        { error: 'Invalid reviewed_by UUID format' },
+        { status: 400 }
+      )
+    }
+
+    // First, get the request to find the preset_id
+    const { data: existingRequest, error: fetchError } = await supabase
+      .from('featured_preset_requests')
+      .select('preset_id, status')
+      .eq('id', request_id)
+      .single()
+
+    if (fetchError || !existingRequest) {
+      console.error('Error fetching featured request:', fetchError)
+      return NextResponse.json(
+        { error: 'Featured request not found' },
+        { status: 404 }
+      )
+    }
+
     // Update the featured request
     const { data: updatedRequest, error: updateError } = await supabase
       .from('featured_preset_requests')
@@ -100,20 +173,13 @@ export async function PATCH(request: NextRequest) {
         admin_notes
       })
       .eq('id', request_id)
-      .select(`
-        *,
-        presets (
-          id,
-          name,
-          is_featured
-        )
-      `)
+      .select()
       .single()
 
     if (updateError) {
       console.error('Error updating featured request:', updateError)
       return NextResponse.json(
-        { error: 'Failed to update featured request' },
+        { error: `Failed to update featured request: ${updateError.message}` },
         { status: 500 }
       )
     }
@@ -123,12 +189,12 @@ export async function PATCH(request: NextRequest) {
     const { error: presetUpdateError } = await supabase
       .from('presets')
       .update({ is_featured: newFeaturedStatus })
-      .eq('id', updatedRequest.presets.id)
+      .eq('id', existingRequest.preset_id)
 
     if (presetUpdateError) {
       console.error('Error updating preset featured status:', presetUpdateError)
       return NextResponse.json(
-        { error: 'Failed to update preset featured status' },
+        { error: `Failed to update preset featured status: ${presetUpdateError.message}` },
         { status: 500 }
       )
     }
