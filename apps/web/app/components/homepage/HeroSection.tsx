@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface HeroImage {
   id: string;
@@ -29,12 +30,15 @@ export default function HeroSection({ currentImageIndex, heroImages, isLoggedIn 
             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-muted">
               <Image
                 key={currentImage.id}
-                src={currentImage.image_url}
+                src={optimizeSupabaseImage(currentImage.image_url, IMAGE_SIZES.hero)}
                 alt={currentImage.alt_text}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover transition-opacity duration-1000"
                 priority
+                quality={90}
+                placeholder="blur"
+                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iIzIwMjAyMCIvPjwvc3ZnPg=="
                 style={{ opacity: 1 }}
               />
             </div>

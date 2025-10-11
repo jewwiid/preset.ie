@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface ContributorProfile {
   id: string;
@@ -36,10 +37,14 @@ export default function ContributorSection({
           {coverImage ? (
             <div className="relative h-[300px] rounded-2xl overflow-hidden mb-8">
               <Image
-                src={coverImage.image_url}
+                src={optimizeSupabaseImage(coverImage.image_url, IMAGE_SIZES.coverBanner)}
                 alt={coverImage.alt_text || 'Contributors'}
                 fill
                 className="object-cover"
+                loading="lazy"
+                quality={90}
+                placeholder="blur"
+                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iIzIwMjAyMCIvPjwvc3ZnPg=="
               />
               {/* Dark overlay for better text readability */}
               <div className="absolute inset-0 bg-black/40"></div>
@@ -93,10 +98,15 @@ export default function ContributorSection({
                     {/* Contributor Image */}
                     <div className="relative w-[200px] h-[200px] mx-auto mb-4">
                       <Image
-                        src={imageSrc}
+                        src={optimizeSupabaseImage(imageSrc, IMAGE_SIZES.avatar)}
                         alt={contributor.bio || displayName}
                         fill
+                        sizes="200px"
                         className="object-cover rounded-full group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                        quality={85}
+                        placeholder="blur"
+                        blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iIzIwMjAyMCIvPjwvc3ZnPg=="
                         onError={(e) => {
                           const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/presetie_logo.png';
                           if ((e.target as HTMLImageElement).src !== fallbackUrl) {
@@ -138,10 +148,15 @@ export default function ContributorSection({
                   {/* Category Image */}
                   <div className="relative aspect-[4/5] mb-4">
                     <Image
-                      src={imageSrc}
+                      src={optimizeSupabaseImage(imageSrc, IMAGE_SIZES.roleCard)}
                       alt={imageAlt}
                       fill
+                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                      quality={85}
+                      placeholder="blur"
+                      blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iIzIwMjAyMCIvPjwvc3ZnPg=="
                       onError={(e) => {
                         const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/presetie_logo.png';
                         if ((e.target as HTMLImageElement).src !== fallbackUrl) {

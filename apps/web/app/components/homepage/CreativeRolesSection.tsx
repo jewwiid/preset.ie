@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface CreativeRole {
   slug: string;
@@ -59,42 +60,41 @@ export default function CreativeRolesSection({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {randomizedRoles.map((role) => {
-            // Try to get admin-uploaded image first, fallback to the predefined image
-            const roleImage = getRoleImage(role.slug);
-            const imageUrl = roleImage?.image_url || role.imageUrl;
+              // Get admin-uploaded image
+              const roleImage = getRoleImage(role.slug);
+              const imageUrl = roleImage?.image_url || role.imageUrl;
 
-            return (
-              <Link key={role.slug} href={`/${role.slug}`} className="group cursor-pointer block">
-                {/* Role Image */}
-                <div className="relative aspect-[4/5] mb-4 rounded-lg overflow-hidden">
-                  <Image
-                    src={imageUrl}
-                    alt={roleImage?.alt_text || `${role.name} professionals`}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
-                      if ((e.target as HTMLImageElement).src !== fallbackUrl) {
-                        (e.target as HTMLImageElement).src = fallbackUrl;
-                      }
-                    }}
-                  />
-                  {/* Overlay gradient for better text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </div>
+              return (
+                <Link key={role.slug} href={`/${role.slug}`} className="group cursor-pointer block">
+                  {/* Role Image */}
+                  <div className="relative aspect-[4/5] mb-4 rounded-lg overflow-hidden">
+                    <Image
+                      src={optimizeSupabaseImage(imageUrl, IMAGE_SIZES.roleCard)}
+                      alt={roleImage?.alt_text || `${role.name} professionals`}
+                      fill
+                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                      quality={85}
+                      placeholder="blur"
+                      blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iIzIwMjAyMCIvPjwvc3ZnPg=="
+                    />
+                    {/* Overlay gradient for better text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
 
-                {/* Role Info */}
-                <div className="text-center">
-                  <h3 className="text-foreground font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
-                    {role.name}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {role.description}
-                  </p>
-                </div>
-              </Link>
-            );
-          })}
+                  {/* Role Info */}
+                  <div className="text-center">
+                    <h3 className="text-foreground font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
+                      {role.name}
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      {role.description}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
         </div>
       </div>
     </section>

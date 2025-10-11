@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../../lib/auth-context';
 import { createClient } from '../../../lib/supabase/client';
 import { Button } from '../../../components/ui/button';
-import { Card, CardContent } from '../../../components/ui/card';
-import { Upload, ImageIcon, Plus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
+import { Upload, ImageIcon, Plus, Edit, Trash2 } from 'lucide-react';
+import Image from 'next/image';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import ImageUploadModal from './components/ImageUploadModal';
@@ -46,8 +47,14 @@ interface PresetVisualAid {
   platform_image: PlatformImage;
 }
 
+const HERO_SECTION = {
+  name: 'Hero Background',
+  imageType: 'hero',
+  category: undefined,
+  description: 'Main hero rotating images - Set Image Type to "Hero"'
+};
+
 const HOMEPAGE_SECTIONS = [
-  { name: 'Hero Background', imageType: 'homepage', category: undefined, description: 'Main hero rotating images - Set Image Type to "Homepage"' },
   { name: 'About Section', imageType: undefined, category: 'about', description: 'Why Preset section image' },
   { name: 'Talent For Hire Banner', imageType: undefined, category: 'talent-for-hire', description: 'Cover banner for Talent For Hire section' },
   { name: 'Creative Roles Banner', imageType: undefined, category: 'creative-roles', description: 'Cover banner for Creative Roles section' },
@@ -57,11 +64,26 @@ const HOMEPAGE_SECTIONS = [
 ];
 
 const ROLES = [
+  // Talent/Performance Roles
   { name: 'Actors', slug: 'actors' },
+  { name: 'Actresses', slug: 'actresses' },
   { name: 'Models', slug: 'models' },
+  { name: 'Hand Models', slug: 'hand-models' },
+  { name: 'Fitness Models', slug: 'fitness-models' },
+  { name: 'Commercial Models', slug: 'commercial-models' },
+  { name: 'Fashion Models', slug: 'fashion-models' },
+  { name: 'Plus-Size Models', slug: 'plus-size-models' },
   { name: 'Singers', slug: 'singers' },
   { name: 'Dancers', slug: 'dancers' },
   { name: 'Musicians', slug: 'musicians' },
+  { name: 'Voice Actors', slug: 'voice-actors' },
+  { name: 'Influencers', slug: 'influencers' },
+  { name: 'Content Creators', slug: 'content-creators' },
+  { name: 'Performers', slug: 'performers' },
+  { name: 'Stunt Performers', slug: 'stunt-performers' },
+  { name: 'Extras/Background Actors', slug: 'extras-background-actors' },
+
+  // Contributor/Professional Roles
   { name: 'Photographers', slug: 'photographers' },
   { name: 'Videographers', slug: 'videographers' },
   { name: 'Cinematographers', slug: 'cinematographers' },
@@ -77,7 +99,6 @@ const ROLES = [
   { name: 'Writers', slug: 'writers' },
   { name: 'Freelancers', slug: 'freelancers' },
   { name: 'Brand Managers', slug: 'brand-managers' },
-  { name: 'Content Creators', slug: 'content-creators' },
   { name: 'Studios', slug: 'studios' },
 ];
 
@@ -89,6 +110,8 @@ export default function PlatformImagesAdmin() {
   const [loadingImages, setLoadingImages] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [auditing, setAuditing] = useState(false);
+  const [auditResults, setAuditResults] = useState<any>(null);
 
   // Form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -178,6 +201,15 @@ export default function PlatformImagesAdmin() {
     setUploading(true);
 
     try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error('You must be logged in to perform this action');
+        setUploading(false);
+        return;
+      }
+
       let imageUrl = '';
 
       if (formData.selected_image_url) {
@@ -186,14 +218,40 @@ export default function PlatformImagesAdmin() {
         imageUrl = await handleFileUpload(formData.image_file);
       }
 
+      if (!imageUrl && !editingImage) {
+        toast.error('Please select or upload an image');
+        setUploading(false);
+        return;
+      }
+
+      // Parse usage_context safely
+      let usageContext = {};
+      try {
+        usageContext = JSON.parse(formData.usage_context || '{}');
+      } catch (e) {
+        usageContext = {};
+      }
+
+      // Determine format from file or URL
+      let format = 'jpg';
+      if (formData.image_file) {
+        format = formData.image_file.type?.split('/')[1] || 'jpg';
+      } else if (imageUrl) {
+        const urlFormat = imageUrl.split('.').pop()?.split('?')[0];
+        format = urlFormat || 'jpg';
+      }
+
+      // Remove fields that shouldn't be sent to API
+      const { image_file, selected_image_url, ...cleanFormData } = formData;
+
       const imageData = {
-        ...formData,
+        ...cleanFormData,
         image_url: imageUrl || (editingImage?.image_url || ''),
-        usage_context: JSON.parse(formData.usage_context),
+        usage_context: usageContext,
         width: 1024,
         height: 1024,
         file_size: formData.image_file?.size || 0,
-        format: formData.image_file?.type?.split('/')[1] || 'jpg'
+        format: format
       };
 
       const url = editingImage
@@ -206,6 +264,7 @@ export default function PlatformImagesAdmin() {
         method,
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(imageData),
       });
@@ -330,10 +389,18 @@ export default function PlatformImagesAdmin() {
     resetForm();
   };
 
-  const handleQuickUpload = (section: {name: string, category?: string, imageType?: string}) => {
+  const handleQuickUpload = (section: {name: string, category?: string, imageType?: string, description?: string}) => {
+    // Determine the correct image_type based on the section
+    let imageType = section.imageType || 'general';
+
+    // If category starts with 'role-', set image_type to 'role'
+    if (section.category?.startsWith('role-')) {
+      imageType = 'role';
+    }
+
     setFormData({
       image_key: `${section.category || section.imageType}_${Date.now()}`,
-      image_type: section.imageType || 'homepage',
+      image_type: imageType,
       category: section.category || '',
       alt_text: `${section.name} image`,
       title: section.name,
@@ -371,6 +438,41 @@ export default function PlatformImagesAdmin() {
       toast.error('Error syncing bucket images');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleAuditImages = async (autoDelete = false) => {
+    if (autoDelete && !confirm('This will automatically delete all broken image records. Continue?')) {
+      return;
+    }
+
+    setAuditing(true);
+    setAuditResults(null);
+    try {
+      const response = await fetch(`/api/platform-images/audit?autoDelete=${autoDelete}`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setAuditResults(result);
+
+        if (result.summary.autoDeleted > 0) {
+          toast.success(`✅ Deleted ${result.summary.autoDeleted} broken image records`);
+          fetchPlatformImages(); // Refresh the list
+        } else if (result.brokenLinks.length === 0) {
+          toast.success('✅ All images are valid! No broken links found.');
+        } else {
+          toast.error(`Found ${result.brokenLinks.length} broken image links`);
+        }
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to audit images');
+      }
+    } catch (error) {
+      toast.error('Error auditing images');
+    } finally {
+      setAuditing(false);
     }
   };
 
@@ -414,6 +516,24 @@ export default function PlatformImagesAdmin() {
               <h1 className="text-xl sm:text-2xl font-bold text-foreground">Platform Images</h1>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                onClick={() => handleAuditImages(false)}
+                variant="outline"
+                disabled={auditing}
+                className="flex items-center gap-2"
+              >
+                <ImageIcon className="w-4 h-4" />
+                {auditing ? 'Auditing...' : 'Audit Images'}
+              </Button>
+              <Button
+                onClick={() => handleAuditImages(true)}
+                variant="destructive"
+                disabled={auditing}
+                className="flex items-center gap-2"
+              >
+                <ImageIcon className="w-4 h-4" />
+                Auto-Cleanup
+              </Button>
               <Button
                 onClick={handleSyncBucket}
                 variant="outline"
@@ -474,6 +594,64 @@ export default function PlatformImagesAdmin() {
           </Card>
         </div>
 
+        {/* Audit Results */}
+        {auditResults && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Audit Results</span>
+                <Button variant="ghost" size="sm" onClick={() => setAuditResults(null)}>
+                  Close
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-xs text-muted-foreground">Total in Database</p>
+                  <p className="text-2xl font-bold">{auditResults.summary.totalInDatabase}</p>
+                </div>
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-xs text-muted-foreground">Total in Bucket</p>
+                  <p className="text-2xl font-bold">{auditResults.summary.totalInBucket}</p>
+                </div>
+                <div className="p-3 bg-green-500/10 rounded-md">
+                  <p className="text-xs text-muted-foreground">Valid Images</p>
+                  <p className="text-2xl font-bold text-green-600">{auditResults.summary.validImages}</p>
+                </div>
+                <div className="p-3 bg-red-500/10 rounded-md">
+                  <p className="text-xs text-muted-foreground">Broken Links</p>
+                  <p className="text-2xl font-bold text-red-600">{auditResults.summary.brokenLinks}</p>
+                </div>
+              </div>
+
+              {auditResults.brokenLinks.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="font-semibold mb-2">Broken Images (Click to Delete)</h3>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {auditResults.brokenLinks.map((img: any) => (
+                      <div key={img.id} className="flex items-center justify-between p-2 border rounded-md hover:bg-muted">
+                        <div className="flex-1">
+                          <p className="font-medium">{img.title || 'Untitled'}</p>
+                          <p className="text-xs text-muted-foreground">Category: {img.category || 'None'}</p>
+                          <p className="text-xs text-red-500">{img.reason}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(img.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Image Upload Modal */}
         <ImageUploadModal
           showAddForm={showAddForm}
@@ -487,19 +665,92 @@ export default function PlatformImagesAdmin() {
           onSelectExisting={handleSelectExisting}
         />
 
+        {/* Hero Background - Multiple Images for Carousel */}
+        <ImageSectionManager
+          section={HERO_SECTION}
+          images={platformImages.filter(img => img.image_type === 'hero' && img.is_active)}
+          onEdit={handleEdit}
+          onDeactivate={handleDeactivate}
+          onQuickUpload={handleQuickUpload}
+        />
+
         {/* Homepage Sections */}
         <div className="space-y-6">
           <h2 className="text-2xl font-bold">Homepage Section Images</h2>
-          {HOMEPAGE_SECTIONS.map((section) => (
-            <ImageSectionManager
-              key={section.name}
-              section={section}
-              images={getImagesBySection(section)}
-              onQuickUpload={handleQuickUpload}
-              onEdit={handleEdit}
-              onDeactivate={handleDeactivate}
-            />
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {HOMEPAGE_SECTIONS.map((section) => {
+              const sectionImages = getImagesBySection(section);
+              const hasImage = sectionImages.length > 0;
+              const image = sectionImages[0]; // These sections typically have one image
+
+              return (
+                <div
+                  key={section.name}
+                  className="relative border rounded-lg overflow-hidden bg-card hover:border-primary transition-colors group aspect-square min-h-[200px]"
+                >
+                  {hasImage ? (
+                    <>
+                      {/* Full background image */}
+                      <Image
+                        src={image.image_url}
+                        alt={image.alt_text || section.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                      />
+
+                      {/* Title overlay at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4">
+                        <p className="text-base font-semibold text-white truncate">{section.name}</p>
+                        <p className="text-xs text-white/80 truncate">{section.description}</p>
+                      </div>
+
+                      {/* Hover controls */}
+                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
+                        <Button
+                          size="sm"
+                          onClick={() => handleEdit(image)}
+                          className="w-full max-w-[150px]"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeactivate(image.id)}
+                          className="w-full max-w-[150px] bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/50 text-yellow-600"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Empty state */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-muted/50">
+                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-3" />
+                        <p className="text-base font-semibold text-center mb-1">{section.name}</p>
+                        <p className="text-xs text-muted-foreground text-center">{section.description}</p>
+                      </div>
+
+                      {/* Add button on hover */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">
+                        <Button
+                          onClick={() => handleQuickUpload(section)}
+                          size="sm"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Role Images */}
@@ -508,15 +759,72 @@ export default function PlatformImagesAdmin() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {ROLES.map((role) => {
               const roleImage = platformImages.find(img => img.category === `role-${role.slug}`);
+              const hasImage = !!roleImage;
+
               return (
-                <ImageSectionManager
+                <div
                   key={role.slug}
-                  section={{ name: role.name, category: `role-${role.slug}`, description: `Role card for ${role.name}` }}
-                  images={roleImage ? [roleImage] : []}
-                  onQuickUpload={handleQuickUpload}
-                  onEdit={handleEdit}
-                  onDeactivate={handleDeactivate}
-                />
+                  className="relative border rounded-lg overflow-hidden bg-card hover:border-primary transition-colors group aspect-square min-h-[200px]"
+                >
+                  {hasImage ? (
+                    <>
+                      {/* Full background image */}
+                      <Image
+                        src={roleImage.image_url}
+                        alt={roleImage.alt_text || role.name}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                      />
+
+                      {/* Title overlay at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4">
+                        <p className="text-base font-semibold text-white truncate">{role.name}</p>
+                      </div>
+
+                      {/* Hover controls */}
+                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
+                        <Button
+                          size="sm"
+                          onClick={() => handleEdit(roleImage)}
+                          className="w-full max-w-[150px]"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeactivate(roleImage.id)}
+                          className="w-full max-w-[150px] bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/50 text-yellow-600"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Empty state with preset logo as placeholder */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-muted/50">
+                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-3" />
+                        <p className="text-base font-semibold text-center mb-1">{role.name}</p>
+                        <p className="text-xs text-muted-foreground text-center">Role card for {role.name}</p>
+                      </div>
+
+                      {/* Add button on hover */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">
+                        <Button
+                          onClick={() => handleQuickUpload({ name: role.name, category: `role-${role.slug}`, description: `Role card for ${role.name}` })}
+                          size="sm"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
               );
             })}
           </div>

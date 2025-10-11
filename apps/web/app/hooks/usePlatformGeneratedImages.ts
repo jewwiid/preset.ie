@@ -91,7 +91,7 @@ export function usePlatformGeneratedImages() {
         // Make all API calls in parallel for better performance
         const [presetResponse, platformResponse, talentResponse, contributorResponse] = await Promise.allSettled([
           fetch('/api/preset-images?limit=20'),
-          fetch('/api/platform-images?limit=10'),
+          fetch('/api/platform-images?limit=100'), // Increased limit to fetch all role images
           fetch('/api/talent-profiles?limit=4&role=TALENT'),
           fetch('/api/talent-profiles?limit=4&role=CONTRIBUTOR')
         ]);
@@ -111,7 +111,9 @@ export function usePlatformGeneratedImages() {
 
         // Handle platform images
         if (platformResponse.status === 'fulfilled' && platformResponse.value.ok) {
-          platformData = await platformResponse.value.json();
+          const response = await platformResponse.value.json();
+          platformData = response.images || response || [];
+          console.log('Platform images loaded:', platformData.length);
         } else {
           console.warn('Failed to fetch platform images:', platformResponse.status === 'rejected' ? platformResponse.reason : 'HTTP error');
         }
@@ -177,7 +179,7 @@ export function usePlatformGeneratedImages() {
     // Role-specific images for individual role cards
     getRoleImage: (roleSlug: string) => {
       if (!Array.isArray(platformImages)) return undefined;
-      return platformImages.find(img => img.category === `role-${roleSlug}`);
+      return platformImages.find(img => img.category === `role-${roleSlug}` && img.is_active);
     },
   };
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image';
+import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface AboutSectionProps {
   whyPresetImage?: {
@@ -21,10 +22,15 @@ export default function AboutSection({ whyPresetImage }: AboutSectionProps) {
           <div className="relative order-2 lg:order-1">
             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-muted">
               <Image
-                src={imageSrc}
+                src={optimizeSupabaseImage(imageSrc, IMAGE_SIZES.sectionImage)}
                 alt={imageAlt}
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
+                loading="lazy"
+                quality={85}
+                placeholder="blur"
+                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iIzIwMjAyMCIvPjwvc3ZnPg=="
                 onError={(e) => {
                   const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/logo.png';
                   if ((e.target as HTMLImageElement).src !== fallbackUrl) {

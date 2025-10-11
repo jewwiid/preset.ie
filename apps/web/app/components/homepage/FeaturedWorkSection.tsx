@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface FeaturedImage {
   id: string;
@@ -92,11 +93,15 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                           />
                         ) : (
                           <Image
-                            src={mediaUrl || ''}
+                            src={optimizeSupabaseImage(mediaUrl || '', IMAGE_SIZES.thumbnail)}
                             alt={image.title || `Featured work ${index + 1}`}
                             fill
                             sizes="256px"
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                            quality={80}
+                            placeholder="blur"
+                            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iIzIwMjAyMCIvPjwvc3ZnPg=="
                             onError={(e) => {
                               const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/presetie_logo.png';
                               if ((e.target as HTMLImageElement).src !== fallbackUrl) {
@@ -151,11 +156,15 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                           />
                         ) : (
                           <Image
-                            src={mediaUrl || ''}
+                            src={optimizeSupabaseImage(mediaUrl || '', IMAGE_SIZES.thumbnail)}
                             alt={image.title || `Featured work ${index + 1}`}
                             fill
                             sizes="256px"
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                            quality={80}
+                            placeholder="blur"
+                            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iIzIwMjAyMCIvPjwvc3ZnPg=="
                             onError={(e) => {
                               const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/presetie_logo.png';
                               if ((e.target as HTMLImageElement).src !== fallbackUrl) {
@@ -214,11 +223,12 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                 />
               ) : (
                 <Image
-                  src={lightboxMedia.url}
+                  src={optimizeSupabaseImage(lightboxMedia.url, { width: 1920, height: 1080, quality: 90 })}
                   alt={lightboxMedia.title}
                   width={1920}
                   height={1080}
                   className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                  quality={90}
                 />
               )}
 

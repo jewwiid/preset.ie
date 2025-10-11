@@ -128,128 +128,213 @@ export default function Home() {
         name: 'Freelancers',
         slug: 'freelancers',
         description: 'Independent creative professionals',
-        imageUrl: contributors.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('freelance')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+        imageUrl: getRoleImage('freelancers')?.image_url
       },
       {
         name: 'Photographers',
         slug: 'photographers',
         description: 'Portrait, fashion, and commercial photography',
-        imageUrl: contributors.find(t => t.professional_skills?.some(s => s.includes('Photography')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+        imageUrl: getRoleImage('photographers')?.image_url
       },
       {
         name: 'Videographers',
         slug: 'videographers',
         description: 'Wedding, commercial, and event videography',
-        imageUrl: contributors.find(t => t.professional_skills?.some(s => s.includes('Videographer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+        imageUrl: getRoleImage('videographers')?.image_url
       },
       {
         name: 'Models',
         slug: 'models',
         description: 'Fashion, commercial, and editorial modeling',
-        imageUrl: talents.find(t => t.performance_roles?.includes('Model'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+        imageUrl: getRoleImage('models')?.image_url
       },
       {
         name: 'Makeup Artists',
         slug: 'makeup-artists',
         description: 'Beauty, fashion, and special effects makeup',
-        imageUrl: contributors.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('makeup')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+        imageUrl: getRoleImage('makeup-artists')?.image_url
       },
       {
         name: 'Hair Stylists',
         slug: 'hair-stylists',
         description: 'Fashion, editorial, and commercial styling',
-        imageUrl: contributors.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('hair') || s.toLowerCase().includes('stylist')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+        imageUrl: getRoleImage('hair-stylists')?.image_url
       },
       {
         name: 'Directors',
         slug: 'directors',
         description: 'Film, commercial, and creative direction',
-        imageUrl: contributors.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('director')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+        imageUrl: getRoleImage('directors')?.image_url
       },
       {
         name: 'Producers',
         slug: 'producers',
         description: 'Film, commercial, and event production',
-        imageUrl: contributors.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('producer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+        imageUrl: getRoleImage('producers')?.image_url
       },
       {
         name: 'Creative Directors',
         slug: 'creative-directors',
         description: 'Vision and creative strategy leadership',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+        imageUrl: getRoleImage('creative-directors')?.image_url
       },
       {
         name: 'Brand Managers',
         slug: 'brand-managers',
         description: 'Brand strategy and marketing leadership',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+        imageUrl: getRoleImage('brand-managers')?.image_url
       },
       {
         name: 'Content Creators',
         slug: 'content-creators',
         description: 'Digital content and social media creators',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+        imageUrl: getRoleImage('content-creators')?.image_url
       },
       {
         name: 'Art Directors',
         slug: 'art-directors',
         description: 'Visual design and art direction',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+        imageUrl: getRoleImage('art-directors')?.image_url
       },
       {
         name: 'Studios',
         slug: 'studios',
         description: 'Professional production studios',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+        imageUrl: getRoleImage('studios')?.image_url
       },
       {
         name: 'Fashion Stylists',
         slug: 'fashion-stylists',
         description: 'Fashion styling and wardrobe',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+        imageUrl: getRoleImage('fashion-stylists')?.image_url
       },
       {
         name: 'Designers',
         slug: 'designers',
         description: 'Graphic and visual designers',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+        imageUrl: getRoleImage('designers')?.image_url
       },
       {
         name: 'Editors',
         slug: 'editors',
         description: 'Video and photo editing professionals',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+        imageUrl: getRoleImage('editors')?.image_url
       },
       {
         name: 'Writers',
         slug: 'writers',
         description: 'Content writers and copywriters',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+        imageUrl: getRoleImage('writers')?.image_url
       },
       {
         name: 'Cinematographers',
         slug: 'cinematographers',
         description: 'Film and video cinematography',
-        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+        imageUrl: getRoleImage('cinematographers')?.image_url
       },
       {
         name: 'Actors',
         slug: 'actors',
         description: 'Professional actors and performers',
-        imageUrl: talents.find(t => t.performance_roles?.includes('Actor'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+        imageUrl: getRoleImage('actors')?.image_url
       },
       {
         name: 'Musicians',
         slug: 'musicians',
         description: 'Music composers and performers',
-        imageUrl: talents.find(t => t.performance_roles?.includes('Musician'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+        imageUrl: getRoleImage('musicians')?.image_url
+      },
+      {
+        name: 'Singers',
+        slug: 'singers',
+        description: 'Vocal performers and artists',
+        imageUrl: getRoleImage('singers')?.image_url
+      },
+      {
+        name: 'Dancers',
+        slug: 'dancers',
+        description: 'Dance performers and choreographers',
+        imageUrl: getRoleImage('dancers')?.image_url
+      },
+      {
+        name: 'Actresses',
+        slug: 'actresses',
+        description: 'Female actors and performers',
+        imageUrl: getRoleImage('actresses')?.image_url
+      },
+      {
+        name: 'Hand Models',
+        slug: 'hand-models',
+        description: 'Specialized hand modeling',
+        imageUrl: getRoleImage('hand-models')?.image_url
+      },
+      {
+        name: 'Fitness Models',
+        slug: 'fitness-models',
+        description: 'Fitness and athletic modeling',
+        imageUrl: getRoleImage('fitness-models')?.image_url
+      },
+      {
+        name: 'Commercial Models',
+        slug: 'commercial-models',
+        description: 'Commercial and advertising modeling',
+        imageUrl: getRoleImage('commercial-models')?.image_url
+      },
+      {
+        name: 'Fashion Models',
+        slug: 'fashion-models',
+        description: 'Runway and fashion modeling',
+        imageUrl: getRoleImage('fashion-models')?.image_url
+      },
+      {
+        name: 'Plus-Size Models',
+        slug: 'plus-size-models',
+        description: 'Plus-size fashion and commercial modeling',
+        imageUrl: getRoleImage('plus-size-models')?.image_url
+      },
+      {
+        name: 'Voice Actors',
+        slug: 'voice-actors',
+        description: 'Voice-over artists and narrators',
+        imageUrl: getRoleImage('voice-actors')?.image_url
+      },
+      {
+        name: 'Influencers',
+        slug: 'influencers',
+        description: 'Social media influencers and creators',
+        imageUrl: getRoleImage('influencers')?.image_url
+      },
+      {
+        name: 'Performers',
+        slug: 'performers',
+        description: 'General performance artists',
+        imageUrl: getRoleImage('performers')?.image_url
+      },
+      {
+        name: 'Stunt Performers',
+        slug: 'stunt-performers',
+        description: 'Professional stunt artists',
+        imageUrl: getRoleImage('stunt-performers')?.image_url
+      },
+      {
+        name: 'Extras/Background Actors',
+        slug: 'extras-background-actors',
+        description: 'Background performers for productions',
+        imageUrl: getRoleImage('extras-background-actors')?.image_url
       }
     ];
 
-    // Shuffle and pick random 8 roles once on mount
-    const shuffled = [...allCreativeRoles].sort(() => Math.random() - 0.5);
-    setRandomizedRoles(shuffled.slice(0, 8));
-  }, [platformImagesLoading, talentProfiles, contributorProfiles]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Filter roles that have images uploaded, then shuffle and pick random 8
+    const rolesWithImages = allCreativeRoles.filter(role => role.imageUrl);
+    console.log('🔍 Debug - Roles with images:', rolesWithImages.length, 'out of', allCreativeRoles.length);
+    console.log('🔍 Debug - Platform images loaded:', platformImages?.length || 0);
+    if (rolesWithImages.length > 0) {
+      console.log('🔍 Debug - Sample role:', rolesWithImages[0].name, rolesWithImages[0].imageUrl);
+    }
+
+    const shuffled = [...rolesWithImages].sort(() => Math.random() - 0.5);
+    setRandomizedRoles(shuffled.slice(0, Math.min(8, shuffled.length)));
+  }, [platformImagesLoading, platformImages, talentProfiles, contributorProfiles]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
