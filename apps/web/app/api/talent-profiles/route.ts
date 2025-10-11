@@ -9,10 +9,44 @@ const supabase = createClient(
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = searchParams.get('limit') || '8';
+    const limit = searchParams.get('limit') || '4'; // Changed default to 4
     const role = searchParams.get('role'); // 'TALENT' or 'CONTRIBUTOR'
 
-    // Fetch public talent profiles from the database
+    // Fetch verified and paid member profiles from the database
+    // First, get verification badges to find verified users
+    const { data: verifiedUsers, error: badgeError } = await supabase
+      .from('verification_badges')
+      .select('user_id')
+      .is('revoked_at', null); // Only active verifications
+
+    if (badgeError) {
+      console.error('Error fetching verification badges:', badgeError);
+      return NextResponse.json({ error: 'Failed to fetch verification badges' }, { status: 500 });
+    }
+
+    const verifiedUserIds = verifiedUsers?.map(v => v.user_id) || [];
+
+    // Get paid members (non-free tier)
+    const { data: paidUsers, error: creditError } = await supabase
+      .from('user_credits')
+      .select('user_id, subscription_tier')
+      .neq('subscription_tier', 'free');
+
+    if (creditError) {
+      console.error('Error fetching paid users:', creditError);
+      return NextResponse.json({ error: 'Failed to fetch paid users' }, { status: 500 });
+    }
+
+    const paidUserIds = paidUsers?.map(u => u.user_id) || [];
+
+    // Combine verified and paid user IDs (users who are either verified OR paid OR both)
+    const eligibleUserIds = [...new Set([...verifiedUserIds, ...paidUserIds])];
+
+    if (eligibleUserIds.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    // Fetch profiles for eligible users (verified or paid)
     const { data, error } = await supabase
       .from('users_profile')
       .select(`
@@ -33,13 +67,12 @@ export async function GET(request: NextRequest) {
         account_status,
         profile_completion_percentage,
         verified_id,
+        verification_badges,
         created_at
       `)
-      .in('account_status', ['active', 'pending_verification']) // Active or pending verification accounts
-      .gte('profile_completion_percentage', 0) // Any profile completion level
-      .order('profile_completion_percentage', { ascending: false }) // Show most complete profiles first
-      .order('created_at', { ascending: false })
-      .limit(parseInt(limit) * 2); // Get more to filter by role
+      .in('user_id', eligibleUserIds)
+      .eq('account_status', 'active') // Only active accounts
+      .gte('profile_completion_percentage', 50) // At least 50% complete profile
 
     if (error) {
       console.error('Error fetching talent profiles:', error);
@@ -61,11 +94,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Limit results after filtering
-    publicProfiles = publicProfiles.slice(0, parseInt(limit));
+    // Randomize the profiles for variety on each page load
+    const shuffled = publicProfiles.sort(() => Math.random() - 0.5);
+
+    // Limit results after filtering and shuffling
+    const selectedProfiles = shuffled.slice(0, parseInt(limit));
 
     // Add fallback avatar for users without one
-    const profilesWithAvatars = publicProfiles.map(profile => ({
+    const profilesWithAvatars = selectedProfiles.map(profile => ({
       ...profile,
       avatar_url: profile.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/presetie_logo.png'
     }));

@@ -17,6 +17,7 @@ export default function Home() {
   const [currentHeroImageIndex, setCurrentHeroImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: 'image' | 'video'; title: string; creator: string } | null>(null);
+  const [randomizedRoles, setRandomizedRoles] = useState<any[]>([]);
 
   // Check if user is logged in
   const isLoggedIn = !!user;
@@ -109,13 +110,145 @@ export default function Home() {
   useEffect(() => {
     const heroImages = getHeroImages();
     const interval = setInterval(() => {
-      setCurrentHeroImageIndex((prevIndex) => 
+      setCurrentHeroImageIndex((prevIndex) =>
         (prevIndex + 1) % heroImages.length
       );
     }, 4000); // Change image every 4 seconds
 
     return () => clearInterval(interval);
   }, []);
+
+  // Initialize randomized creative roles once on mount
+  useEffect(() => {
+    const allTalents = [...getTalentProfiles(), ...getContributorProfiles()];
+
+    const allCreativeRoles = [
+      {
+        name: 'Freelancers',
+        slug: 'freelancers',
+        description: 'Independent creative professionals',
+        imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('freelance')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+      },
+      {
+        name: 'Photographers',
+        slug: 'photographers',
+        description: 'Portrait, fashion, and commercial photography',
+        imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.includes('Photography')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+      },
+      {
+        name: 'Videographers',
+        slug: 'videographers',
+        description: 'Wedding, commercial, and event videography',
+        imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.includes('Videographer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+      },
+      {
+        name: 'Models',
+        slug: 'models',
+        description: 'Fashion, commercial, and editorial modeling',
+        imageUrl: allTalents.find(t => t.performance_roles?.includes('Model'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+      },
+      {
+        name: 'Makeup Artists',
+        slug: 'makeup-artists',
+        description: 'Beauty, fashion, and special effects makeup',
+        imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('makeup')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+      },
+      {
+        name: 'Hair Stylists',
+        slug: 'hair-stylists',
+        description: 'Fashion, editorial, and commercial styling',
+        imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('hair') || s.toLowerCase().includes('stylist')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+      },
+      {
+        name: 'Directors',
+        slug: 'directors',
+        description: 'Film, commercial, and creative direction',
+        imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('director')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+      },
+      {
+        name: 'Producers',
+        slug: 'producers',
+        description: 'Film, commercial, and event production',
+        imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('producer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+      },
+      {
+        name: 'Creative Directors',
+        slug: 'creative-directors',
+        description: 'Vision and creative strategy leadership',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+      },
+      {
+        name: 'Brand Managers',
+        slug: 'brand-managers',
+        description: 'Brand strategy and marketing leadership',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+      },
+      {
+        name: 'Content Creators',
+        slug: 'content-creators',
+        description: 'Digital content and social media creators',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+      },
+      {
+        name: 'Art Directors',
+        slug: 'art-directors',
+        description: 'Visual design and art direction',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+      },
+      {
+        name: 'Studios',
+        slug: 'studios',
+        description: 'Professional production studios',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+      },
+      {
+        name: 'Fashion Stylists',
+        slug: 'fashion-stylists',
+        description: 'Fashion styling and wardrobe',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
+      },
+      {
+        name: 'Designers',
+        slug: 'designers',
+        description: 'Graphic and visual designers',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+      },
+      {
+        name: 'Editors',
+        slug: 'editors',
+        description: 'Video and photo editing professionals',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+      },
+      {
+        name: 'Writers',
+        slug: 'writers',
+        description: 'Content writers and copywriters',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+      },
+      {
+        name: 'Cinematographers',
+        slug: 'cinematographers',
+        description: 'Film and video cinematography',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
+      },
+      {
+        name: 'Actors',
+        slug: 'actors',
+        description: 'Professional actors and performers',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
+      },
+      {
+        name: 'Musicians',
+        slug: 'musicians',
+        description: 'Music composers and performers',
+        imageUrl: 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
+      }
+    ];
+
+    // Shuffle and pick random 8 roles once on mount
+    const shuffled = [...allCreativeRoles].sort(() => Math.random() - 0.5);
+    setRandomizedRoles(shuffled.slice(0, 8));
+  }, []); // Empty dependency array means this runs once on mount
 
   if (loading) {
     return (
@@ -689,10 +822,10 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {(() => {
               const realTalents = getTalentProfiles();
-              
+
               // Show loading state if still loading
               if (platformImagesLoading) {
-                return Array.from({ length: 8 }, (_, index) => (
+                return Array.from({ length: 4 }, (_, index) => (
                   <div key={index} className="animate-pulse">
                     <div className="rounded-lg overflow-hidden bg-gray-200 aspect-[4/5] mb-4"></div>
                     <div className="h-4 bg-gray-200 rounded w-24 mx-auto"></div>
@@ -811,62 +944,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {(() => {
-              // Get representative images from actual profiles
-              const allTalents = [...getTalentProfiles(), ...getContributorProfiles()];
-              
-              const creativeRoles = [
-              {
-                name: 'Freelancers',
-                slug: 'freelancers',
-                description: 'Independent creative professionals',
-                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('freelance')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
-              },
-              {
-                name: 'Photographers',
-                slug: 'photographers', 
-                description: 'Portrait, fashion, and commercial photography',
-                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.includes('Photography')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
-              },
-              {
-                name: 'Videographers',
-                slug: 'videographers',
-                description: 'Wedding, commercial, and event videography',
-                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.includes('Videographer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
-              },
-              {
-                name: 'Models',
-                slug: 'models',
-                description: 'Fashion, commercial, and editorial modeling',
-                imageUrl: allTalents.find(t => t.performance_roles?.includes('Model'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
-              },
-              {
-                name: 'Makeup Artists',
-                slug: 'makeup-artists',
-                description: 'Beauty, fashion, and special effects makeup',
-                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('makeup')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
-              },
-              {
-                name: 'Hair Stylists',
-                slug: 'hair-stylists',
-                description: 'Fashion, editorial, and commercial styling',
-                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('hair') || s.toLowerCase().includes('stylist')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/femalemodelinforest.jpg'
-              },
-              {
-                name: 'Directors',
-                slug: 'directors',
-                description: 'Film, commercial, and creative direction',
-                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('director')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/studio.jpg'
-              },
-              {
-                name: 'Producers',
-                slug: 'producers',
-                description: 'Film, commercial, and event production',
-                imageUrl: allTalents.find(t => t.professional_skills?.some(s => s.toLowerCase().includes('producer')))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
-              }
-              ];
-
-              return creativeRoles.map((role) => (
+            {randomizedRoles.map((role) => (
                 <Link key={role.slug} href={`/${role.slug}`} className="group cursor-pointer block">
                   {/* Role Image */}
                   <div className="relative aspect-[4/5] mb-4 rounded-lg overflow-hidden">
@@ -896,8 +974,7 @@ export default function Home() {
                     </p>
                   </div>
                 </Link>
-              ));
-            })()}
+            ))}
           </div>
         </div>
       </section>
@@ -918,7 +995,7 @@ export default function Home() {
 
               // Show loading state if still loading
               if (platformImagesLoading) {
-                return Array.from({ length: 8 }, (_, index) => (
+                return Array.from({ length: 4 }, (_, index) => (
                   <div key={index} className="animate-pulse">
                     <div className="w-[200px] h-[200px] mx-auto rounded-full bg-gray-200 mb-4"></div>
                     <div className="h-4 bg-gray-200 rounded w-24 mx-auto"></div>

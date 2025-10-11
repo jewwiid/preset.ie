@@ -82,8 +82,8 @@ export function usePlatformGeneratedImages() {
         const [presetResponse, platformResponse, talentResponse, contributorResponse] = await Promise.allSettled([
           fetch('/api/preset-images?limit=20'),
           fetch('/api/platform-images?limit=10'),
-          fetch('/api/talent-profiles?limit=8&role=TALENT'),
-          fetch('/api/talent-profiles?limit=8&role=CONTRIBUTOR')
+          fetch('/api/talent-profiles?limit=4&role=TALENT'),
+          fetch('/api/talent-profiles?limit=4&role=CONTRIBUTOR')
         ]);
 
         // Handle preset images
