@@ -596,17 +596,21 @@ export default function SavedMediaMasonry({
               
               {/* Playing indicator */}
               {image.media_type === 'video' && playingVideos.has(image.id) && (
-                <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
-                  <div className="w-2 h-2 bg-foreground rounded-full animate-pulse"></div>
+                <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1 shadow-sm">
+                  <div className="w-2 h-2 bg-primary-foreground rounded-full animate-pulse"></div>
                   <span>Playing</span>
                 </div>
               )}
               
-              {/* Aspect ratio badge */}
-              <div className="absolute top-2 right-2 bg-backdrop text-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
-                <span>{getAspectRatioLabel(image.width, image.height)}</span>
+              {/* Aspect ratio and media type badges */}
+              <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                <Badge variant="secondary" className="text-xs bg-primary/90 backdrop-blur-sm text-primary-foreground border-0 shadow-sm">
+                  {getAspectRatioLabel(image.width, image.height)}
+                </Badge>
                 {image.media_type === 'video' && (
-                  <span className="text-primary">🎬</span>
+                  <Badge className="text-xs bg-primary/80 backdrop-blur-sm text-primary-foreground border-0 shadow-sm">
+                    Video
+                  </Badge>
                 )}
               </div>
               
@@ -618,7 +622,7 @@ export default function SavedMediaMasonry({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-10 w-10 p-0 bg-background/90 hover:bg-background"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:shadow-md hover:text-primary"
                       onClick={(e) => {
                         e.stopPropagation()
                         // Play video in place
@@ -636,9 +640,9 @@ export default function SavedMediaMasonry({
                       title={playingVideos.has(image.id) ? "Pause video" : "Play video"}
                     >
                       {playingVideos.has(image.id) ? (
-                        <Pause className="h-5 w-5 fill-current" />
+                        <Pause className="h-4 w-4" />
                       ) : (
-                        <Play className="h-5 w-5 fill-current" />
+                        <Play className="h-4 w-4" />
                       )}
                     </Button>
                   )}
@@ -676,7 +680,7 @@ export default function SavedMediaMasonry({
                   <Button
                     size="sm"
                     variant="secondary"
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:shadow-md hover:text-primary"
                     onClick={(e) => {
                       e.stopPropagation()
                       setSelectedImageForInfo(image)
@@ -689,7 +693,7 @@ export default function SavedMediaMasonry({
                     <Button
                       size="sm"
                       variant="secondary"
-                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-primary-500/10 hover:shadow-md hover:text-primary-600"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-primary/10 hover:shadow-md hover:text-primary"
                       onClick={(e) => {
                         e.stopPropagation()
                         onDownload(image.image_url || image.video_url || '', image.title)
@@ -722,7 +726,7 @@ export default function SavedMediaMasonry({
                     <Button
                       size="sm"
                       variant="default"
-                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-primary-600 hover:shadow-md bg-primary-500"
+                      className="h-8 w-8 p-0 transition-all duration-200 hover:scale-110 hover:bg-primary/90 hover:shadow-md bg-primary"
                       onClick={(e) => {
                         e.stopPropagation()
                         onPromote(image.id)
@@ -742,21 +746,11 @@ export default function SavedMediaMasonry({
             </div>
             
             {/* Media info overlay */}
-            <div className="absolute bottom-0 left-0 right-0 bg-backdrop p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="flex items-center justify-between">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent backdrop-blur-sm p-3 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-primary-foreground text-sm font-medium truncate">{image.title}</h4>
-                  <p className="text-primary-foreground/80 text-xs truncate">{image.description}</p>
-                </div>
-                <div className="flex items-center gap-1 ml-2">
-                  <Badge variant="secondary" className="text-xs bg-background/20 text-foreground border-border/30">
-                    {getAspectRatioLabel(image.width, image.height)}
-                  </Badge>
-                  {image.media_type === 'video' && (
-                    <Badge variant="secondary" className="text-xs bg-primary/20 text-primary border-primary/30">
-                      Video
-                    </Badge>
-                  )}
+                  <h4 className="text-white text-sm font-medium truncate">{image.title}</h4>
+                  <p className="text-white/80 text-xs truncate">{image.description}</p>
                 </div>
               </div>
             </div>

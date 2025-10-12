@@ -29,22 +29,22 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
   return (
     <>
       <section className="py-20 bg-background overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16 max-w-7xl mx-auto">
             <h2 className="text-4xl font-bold text-foreground mb-4">FEATURED WORK</h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Discover amazing creative work from our community of talented professionals
             </p>
           </div>
 
-          <div className="relative">
+          <div className="relative w-full">
             <div className="overflow-hidden">
               <div className="flex gap-4 animate-scroll-left">
                 {(() => {
                   if (featuredImages.length === 0) {
                     // Fallback placeholder images if no platform images available
                     const placeholders = Array.from({ length: 10 }, (_, index) => (
-                      <div key={`placeholder-${index}`} className={`relative ${heights[index]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                      <div key={`placeholder-${index}`} className={`relative ${heights[index]} w-80 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
                         <div className="w-full h-full bg-muted flex items-center justify-center">
                           <span className="text-muted-foreground text-sm">Coming Soon</span>
                         </div>
@@ -52,7 +52,7 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                     ));
                     // Duplicate for seamless loop with unique keys
                     const duplicatePlaceholders = Array.from({ length: 10 }, (_, index) => (
-                      <div key={`placeholder-duplicate-${index}`} className={`relative ${heights[index]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                      <div key={`placeholder-duplicate-${index}`} className={`relative ${heights[index]} w-80 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
                         <div className="w-full h-full bg-muted flex items-center justify-center">
                           <span className="text-muted-foreground text-sm">Coming Soon</span>
                         </div>
@@ -68,7 +68,7 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                     return (
                       <div
                         key={`${image.id}-${index}`}
-                        className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}
+                        className={`relative ${heights[index % heights.length]} w-80 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}
                         onClick={() => {
                           setLightboxMedia({
                             url: mediaUrl || '',
@@ -96,7 +96,7 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                             src={optimizeSupabaseImage(mediaUrl || '', IMAGE_SIZES.thumbnail)}
                             alt={image.title || `Featured work ${index + 1}`}
                             fill
-                            sizes="256px"
+                            sizes="320px"
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                             loading="lazy"
                             quality={80}
@@ -131,7 +131,7 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                     return (
                       <div
                         key={`duplicate-${image.id}-${index}`}
-                        className={`relative ${heights[index % heights.length]} w-64 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}
+                        className={`relative ${heights[index % heights.length]} w-80 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}
                         onClick={() => {
                           setLightboxMedia({
                             url: mediaUrl || '',
@@ -159,7 +159,7 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                             src={optimizeSupabaseImage(mediaUrl || '', IMAGE_SIZES.thumbnail)}
                             alt={image.title || `Featured work ${index + 1}`}
                             fill
-                            sizes="256px"
+                            sizes="320px"
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                             loading="lazy"
                             quality={80}

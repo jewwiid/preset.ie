@@ -203,8 +203,8 @@ export const useDashboardData = () => {
       // Load stats
       const [gigsCount, applicationsCount, showcasesCount, messagesCount, userCredits] = await Promise.all([
         (supabase as any).from('gigs').select('*', { count: 'exact', head: true }).eq(isContributor ? 'owner_user_id' : 'status', isContributor ? currentProfile.id : 'PUBLISHED'),
-        (supabase as any).from('gig_applications').select('*', { count: 'exact', head: true }).eq('applicant_user_id', currentProfile.id),
-        (supabase as any).from('showcases').select('*', { count: 'exact', head: true }).eq('user_id', currentProfile.id),
+        (supabase as any).from('applications').select('*', { count: 'exact', head: true }).eq('applicant_user_id', currentProfile.id),
+        (supabase as any).from('showcases').select('*', { count: 'exact', head: true }).or(`creator_user_id.eq.${currentProfile.id},talent_user_id.eq.${currentProfile.id}`),
         (supabase as any).from('messages').select('*', { count: 'exact', head: true }).or(`from_user_id.eq.${currentProfile.id},to_user_id.eq.${currentProfile.id}`),
         (supabase as any).from('user_credits').select('*').eq('user_id', user.id).single()
       ])

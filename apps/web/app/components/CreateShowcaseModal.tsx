@@ -119,10 +119,10 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
             <div key={`playground-${item.id}`} className="relative group">
               <button
                 type="button"
-                className={`relative rounded-lg overflow-hidden border-2 transition-all w-full ${
+                className={`relative rounded-2xl overflow-hidden border-2 transition-all w-full shadow-lg hover:shadow-xl ${
                   selectedMedia.some(media => media.id === `playground-${item.id}`)
-                    ? 'border-primary ring-2 ring-primary/20'
-                    : 'border-border hover:border-border'
+                    ? 'border-primary ring-4 ring-primary/20 scale-105'
+                    : 'border-border/30 hover:border-primary/60'
                 }`}
                 style={{
                   aspectRatio: item.width && item.height ? `${item.width}/${item.height}` : '1/1'
@@ -142,7 +142,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 {item.media_type === 'video' ? (
                   <video
                     src={item.video_url || item.image_url}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform group-hover:scale-110"
                     muted
                     preload="metadata"
                     poster={item.thumbnail_url || item.image_url}
@@ -153,28 +153,56 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   <img
                     src={item.image_url}
                     alt={item.title || 'Playground image'}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform group-hover:scale-110"
                   />
                 )}
-                {item.is_promoted && (
-                  <div className="absolute top-1 right-1 bg-primary-500 text-primary-foreground text-xs px-1 py-0.5 rounded">
-                    ✓
+                
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                {/* Selection overlay */}
+                {selectedMedia.some(media => media.id === `playground-${item.id}`) && (
+                  <div className="absolute inset-0 bg-primary/30 flex items-center justify-center backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                      <Check className="h-5 w-5 text-primary-foreground" />
+                    </div>
                   </div>
                 )}
+                
+                {/* Content overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-3 text-white transform translate-y-full group-hover:translate-y-0 transition-transform">
+                  <div className="space-y-1">
+                    {item.generation_metadata?.preset && (
+                      <div className="text-xs font-medium bg-black/50 px-2 py-1 rounded-full inline-block">
+                        🎨 {item.generation_metadata.preset}
+                      </div>
+                    )}
+                    <div className="text-xs opacity-90">Playground Gallery</div>
+                  </div>
+                </div>
+                
+                {/* Promoted badge */}
+                {item.is_promoted && (
+                  <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
+                    ✓ Promoted
+                  </div>
+                )}
+                
+                {/* Promote button */}
+                {item.can_promote && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      promoteToMedia(item.id);
+                    }}
+                    disabled={promotingImage === item.id || loading}
+                    className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity font-medium shadow-lg"
+                  >
+                    {promotingImage === item.id ? '...' : 'Promote'}
+                  </button>
+                )}
               </button>
-              {item.can_promote && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    promoteToMedia(item.id);
-                  }}
-                  disabled={promotingImage === item.id || loading}
-                  className="absolute bottom-1 left-1 bg-primary-500 text-primary-foreground text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  {promotingImage === item.id ? '...' : 'Promote'}
-                </button>
-              )}
             </div>
           ))}
         </>
@@ -189,42 +217,67 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
             📁 Media Library ({filtered.media.length})
           </div>
           {filtered.media.map((media) => (
-            <button
-              key={media.id}
-              type="button"
-              onClick={() => handleMediaSelect(media)}
-              className={`relative rounded-lg overflow-hidden border-2 transition-all ${
-                selectedMedia.some(item => item.id === media.id)
-                  ? 'border-primary ring-2 ring-primary/20'
-                  : 'border-border hover:border-border'
-              }`}
-              style={{
-                aspectRatio: media.width && media.height ? `${media.width}/${media.height}` : '1/1'
-              }}
-              disabled={loading || !canCreateShowcase() || 
-                (selectedMedia.length >= 6 && !selectedMedia.some(item => item.id === media.id))}
-            >
-              {media.type === 'video' ? (
-                <video 
-                  src={media.url}
-                  className="w-full h-full object-cover"
-                  muted
-                  preload="metadata"
-                  poster={media.thumbnail_url}
-                />
-              ) : (
-                <img
-                  src={media.thumbnail_url || media.url}
-                  alt="Media"
-                  className="w-full h-full object-cover"
-                />
-              )}
-              {selectedMedia.some(item => item.id === media.id) && (
-                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                  <Check className="h-6 w-6 text-primary" />
+            <div key={media.id} className="relative group">
+              <button
+                type="button"
+                onClick={() => handleMediaSelect(media)}
+                className={`relative rounded-2xl overflow-hidden border-2 transition-all w-full shadow-lg hover:shadow-xl ${
+                  selectedMedia.some(item => item.id === media.id)
+                    ? 'border-primary ring-4 ring-primary/20 scale-105'
+                    : 'border-border/30 hover:border-primary/60'
+                }`}
+                style={{
+                  aspectRatio: media.width && media.height ? `${media.width}/${media.height}` : '1/1'
+                }}
+                disabled={loading || !canCreateShowcase() || 
+                  (selectedMedia.length >= 6 && !selectedMedia.some(item => item.id === media.id))}
+              >
+                {media.type === 'video' ? (
+                  <video 
+                    src={media.url}
+                    className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                    muted
+                    preload="metadata"
+                    poster={media.thumbnail_url}
+                  />
+                ) : (
+                  <img
+                    src={media.thumbnail_url || media.url}
+                    alt="Media"
+                    className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                  />
+                )}
+                
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                {/* Selection overlay */}
+                {selectedMedia.some(item => item.id === media.id) && (
+                  <div className="absolute inset-0 bg-primary/30 flex items-center justify-center backdrop-blur-sm">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                      <Check className="h-5 w-5 text-primary-foreground" />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Content overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-3 text-white transform translate-y-full group-hover:translate-y-0 transition-transform">
+                  <div className="space-y-1">
+                    {media.preset && (
+                      <div className="text-xs font-medium bg-black/50 px-2 py-1 rounded-full inline-block">
+                        🎨 {media.preset}
+                      </div>
+                    )}
+                    <div className="text-xs opacity-90">Media Library</div>
+                  </div>
                 </div>
-              )}
-            </button>
+                
+                {/* Media type indicator */}
+                <div className="absolute top-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
+                  {media.type === 'video' ? '🎥 Video' : '🖼️ Image'}
+                </div>
+              </button>
+            </div>
           ))}
         </>
       );
@@ -243,19 +296,21 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
     
     // Empty state
     return (
-      <div className="col-span-4 flex flex-col items-center justify-center py-8 text-center">
-        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground mb-2">
+      <div className="col-span-4 flex flex-col items-center justify-center py-12 text-center px-6">
+        <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+          <Upload className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h4 className="text-lg font-semibold mb-2">
           {type === 'treatment' ? 'No treatments available' : 
            type === 'video' ? 'No videos available' : 
            'No media available'}
-        </p>
-        <p className="text-xs text-muted-foreground mb-4">
+        </h4>
+        <p className="text-sm text-muted-foreground mb-6 max-w-sm">
           {type === 'treatment' ? 'Generate treatments to create showcases' :
            type === 'video' ? 'Upload videos to create showcases' :
            'Upload media to create showcases'}
         </p>
-        <div className="space-y-2">
+        <div className="space-y-3 w-full max-w-xs">
           <div className="relative">
             <input
               type="file"
@@ -266,9 +321,10 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
             />
             <Button 
               type="button" 
-              variant="outline" 
-              size="sm"
+              variant="default" 
+              size="lg"
               disabled={uploadingMedia || loading || !canCreateShowcase()}
+              className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
             >
               {uploadingMedia ? (
                 <>
@@ -283,7 +339,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
               )}
             </Button>
           </div>
-          <div className="space-y-1">
+          <div className="flex gap-2">
             <Button 
               type="button" 
               variant="outline" 
@@ -293,9 +349,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 fetchPlaygroundGallery();
               }}
               disabled={loadingMedia || loadingPlayground}
-              className="text-xs"
+              className="flex-1 text-xs"
             >
-              Refresh Media
+              Refresh
             </Button>
             <Button 
               type="button" 
@@ -313,31 +369,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   console.error('Debug error:', err);
                 }
               }}
-              className="text-xs"
+              className="flex-1 text-xs"
             >
-              Debug Media
-            </Button>
-            <Button 
-              type="button" 
-              variant="ghost" 
-              size="sm"
-              onClick={async () => {
-                try {
-                  const response = await fetch('/api/debug/fix-media-ownership', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${session?.access_token}` }
-                  });
-                  const data = await response.json();
-                  console.log('Fix media ownership result:', data);
-                  alert(`Fixed ${data.updatedRecords || 0} media records. Refreshing media list...`);
-                  fetchAvailableMedia();
-                } catch (err) {
-                  console.error('Fix media ownership error:', err);
-                }
-              }}
-              className="text-xs"
-            >
-              Fix Media Ownership
+              Debug
             </Button>
           </div>
         </div>
@@ -453,6 +487,10 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
 
   // Filter media based on showcase type
   const getFilteredMedia = () => {
+    console.log('Filtering media for type:', type);
+    console.log('Available media:', availableMedia);
+    console.log('Playground gallery:', playgroundGallery);
+    
     switch (type) {
       case 'moodboard':
         // Moodboards should show multiple images, prefer playground gallery
@@ -461,10 +499,13 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
           media: availableMedia.filter(item => item.type === 'image')
         };
       case 'individual_image':
-        // Individual images can be any single image
+        // Individual images can be any single image - be more permissive
         return {
           playground: playgroundGallery.filter(item => item.media_type === 'image'),
-          media: availableMedia.filter(item => item.type === 'image')
+          media: availableMedia.filter(item => 
+            item.type === 'image' || 
+            !item.type // Include items without type specified
+          )
         };
       case 'treatment':
         // Treatments should show available treatments
@@ -480,6 +521,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
           media: availableMedia.filter(item => item.type === 'video')
         };
       default:
+        // Show all media when no specific type is selected
         return {
           playground: playgroundGallery,
           media: availableMedia
@@ -683,27 +725,31 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[1400px] h-[95vh] max-h-[95vh] overflow-hidden flex flex-col p-4 sm:p-6">
+      <DialogContent className="w-[95vw] max-w-[1200px] h-[95vh] max-h-[95vh] overflow-hidden flex flex-col p-0">
         {/* Header */}
-        <DialogHeader className="flex-shrink-0 pb-3 sm:pb-4">
-          <DialogTitle className="text-lg sm:text-xl">Create Showcase</DialogTitle>
-          <p className="text-xs sm:text-sm text-muted-foreground">
+        <DialogHeader className="flex-shrink-0 p-6 pb-4 border-b bg-gradient-to-r from-primary/5 to-transparent">
+          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            Create Showcase
+          </DialogTitle>
+          <p className="text-sm text-muted-foreground mt-1">
             Share your creative work with the community
           </p>
         </DialogHeader>
 
         {/* Monthly Limit Reached Banner */}
         {!canCreateShowcase() && (
-          <div className="flex-shrink-0 mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <EyeOff className="h-4 w-4 text-destructive" />
+          <div className="flex-shrink-0 mx-6 mb-4 p-4 bg-gradient-to-r from-destructive/10 to-destructive/5 border border-destructive/20 rounded-xl">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0 w-8 h-8 bg-destructive/20 rounded-full flex items-center justify-center">
+                <EyeOff className="h-4 w-4 text-destructive" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-destructive">
+                <p className="text-sm font-semibold text-destructive">
                   Monthly Limit Reached
                 </p>
-                <p className="text-xs text-destructive/80">
+                <p className="text-xs text-destructive/80 mt-1">
                   You've used {monthlyShowcaseCount} of {getMaxShowcases()} showcases this month. 
-                  Upgrade your plan to create more showcases.
+                  <span className="underline ml-1 cursor-pointer hover:text-destructive">Upgrade your plan</span> to create more showcases.
                 </p>
               </div>
             </div>
@@ -711,39 +757,88 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
         )}
 
         {/* Error Message */}
-          {error && (
-          <div className="flex-shrink-0 mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+        {error && (
+          <div className="flex-shrink-0 mx-6 mb-4 p-4 bg-gradient-to-r from-destructive/10 to-destructive/5 border border-destructive/20 rounded-xl">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-destructive rounded-full flex-shrink-0"></div>
               <p className="text-sm text-destructive">{error}</p>
             </div>
-          )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:gap-6 flex-1 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 flex-1 min-h-0">
             {/* Left Column - Media Selection & Preview */}
-            <div className="xl:col-span-2 space-y-3 xl:space-y-4 overflow-hidden flex flex-col">
+            <div className="border-r bg-muted/20 flex flex-col">
               {/* Media Selection Header */}
-              <div className="flex items-center justify-between">
-                <Label className="text-sm sm:text-base font-medium">Select Media (Max 6)</Label>
-                <Badge variant="secondary" className="text-xs">
-                  {selectedMedia.length}/6 selected
-                </Badge>
+              <div className="p-6 pb-4 border-b bg-background/50">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">Select Media</h3>
+                    <p className="text-sm text-muted-foreground">Choose up to 6 items for your showcase</p>
+                  </div>
+                  <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
+                    {selectedMedia.length}/6 selected
+                  </Badge>
+                </div>
+                
+                {/* Showcase Type Quick Selector */}
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { value: 'individual_image', label: 'Image', icon: ImageIcon, color: 'bg-blue-500' },
+                    { value: 'moodboard', label: 'Moodboard', icon: Palette, color: 'bg-purple-500' },
+                    { value: 'video', label: 'Video', icon: Video, color: 'bg-green-500' },
+                    { value: 'treatment', label: 'Treatment', icon: FileText, color: 'bg-orange-500' }
+                  ].map((option) => {
+                    const Icon = option.icon
+                    return (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant={type === option.value ? "default" : "outline"}
+                        onClick={() => setType(option.value as any)}
+                        disabled={loading || !canCreateShowcase()}
+                        className={`flex items-center space-x-2 h-9 px-3 transition-all ${
+                          type === option.value ? 'shadow-md scale-105' : 'hover:shadow-sm hover:scale-102'
+                        }`}
+                        size="sm"
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span className="text-sm font-medium">{option.label}</span>
+                      </Button>
+                    )
+                  })}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      // Show all media without filtering
+                      console.log('Showing all media');
+                    }}
+                    disabled={loading || !canCreateShowcase()}
+                    className="flex items-center space-x-2 h-9 px-3 text-xs text-muted-foreground hover:text-foreground"
+                    size="sm"
+                  >
+                    <span>Show All</span>
+                  </Button>
+                </div>
               </div>
               
               {/* Main Preview */}
               {selectedMedia.length > 0 && (
-                <div className="bg-muted/30 rounded-lg p-3 sm:p-4 border">
-                  <div className="flex items-center justify-between mb-3">
-                    <Label className="text-sm font-medium text-muted-foreground">Preview</Label>
+                <div className="p-6 border-b bg-gradient-to-b from-primary/5 to-transparent">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Preview</h4>
                     {selectedMedia.length > 1 && (
-                      <div className="flex gap-1">
+                      <div className="flex gap-2">
                         {selectedMedia.map((_, index) => (
                           <button
                             key={index}
                             type="button"
                             onClick={() => setPreviewIndex(index)}
-                            className={`w-2 h-2 rounded-full transition-colors ${
-                              previewIndex === index ? 'bg-primary' : 'bg-muted-foreground/30'
+                            className={`w-3 h-3 rounded-full transition-all ${
+                              previewIndex === index ? 'bg-primary scale-110' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
                             }`}
                           />
                         ))}
@@ -751,8 +846,8 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     )}
                   </div>
                   
-                  <div className="relative">
-                    <div className="aspect-video bg-muted rounded-lg overflow-hidden">
+                  <div className="relative group">
+                    <div className="aspect-video bg-muted/50 rounded-xl overflow-hidden shadow-lg ring-1 ring-border/50">
                       {selectedMedia[previewIndex].type === 'video' ? (
                         <video
                           src={selectedMedia[previewIndex].url}
@@ -767,77 +862,69 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                         <img
                           src={selectedMedia[previewIndex].thumbnail_url || selectedMedia[previewIndex].url}
                           alt="Preview"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         />
                       )}
                     </div>
-                  </div>
-                  
-                  {/* Clean Media Info */}
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 xl:gap-4">
-                    {selectedMedia[previewIndex].preset && (
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Style</Label>
-                        <Badge variant="outline" className="text-xs">
-                          {selectedMedia[previewIndex].preset}
-                        </Badge>
-                      </div>
-                    )}
                     
-                    {selectedMedia[previewIndex].metadata?.generation_metadata?.aspect_ratio && (
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Aspect Ratio</Label>
-                        <div className="text-xs font-medium">
-                          {selectedMedia[previewIndex].metadata.generation_metadata.aspect_ratio}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {selectedMedia[previewIndex].metadata?.generation_metadata?.resolution && (
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Resolution</Label>
-                        <div className="text-xs font-medium">
-                          {selectedMedia[previewIndex].metadata.generation_metadata.resolution}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {selectedMedia[previewIndex].metadata?.generation_metadata?.provider && (
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">Provider</Label>
-                        <div className="text-xs font-medium">
-                          {selectedMedia[previewIndex].metadata.generation_metadata.provider}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Prompt Preview */}
-                  {selectedMedia[previewIndex].metadata?.generation_metadata?.prompt && (
-                    <div className="mt-4 space-y-2">
-                      <Label className="text-xs text-muted-foreground">Prompt</Label>
-                      <div className="text-xs bg-background/50 p-3 rounded border max-h-20 overflow-y-auto">
-                        {selectedMedia[previewIndex].metadata.generation_metadata.prompt}
+                    {/* Preview Overlay Info */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-xl">
+                      <div className="text-white">
+                        <p className="text-sm font-medium">{selectedMedia[previewIndex].preset || 'Custom'}</p>
+                        {selectedMedia[previewIndex].metadata?.generation_metadata?.resolution && (
+                          <p className="text-xs opacity-80">{selectedMedia[previewIndex].metadata.generation_metadata.resolution}</p>
+                        )}
                       </div>
                     </div>
-                  )}
+                  </div>
+                  
+                  {/* Media Details */}
+                  <div className="mt-4 space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      {selectedMedia[previewIndex].preset && (
+                        <Badge variant="secondary" className="px-2 py-1 text-xs">
+                          🎨 {selectedMedia[previewIndex].preset}
+                        </Badge>
+                      )}
+                      {selectedMedia[previewIndex].metadata?.generation_metadata?.aspect_ratio && (
+                        <Badge variant="outline" className="px-2 py-1 text-xs">
+                          📐 {selectedMedia[previewIndex].metadata.generation_metadata.aspect_ratio}
+                        </Badge>
+                      )}
+                      {selectedMedia[previewIndex].metadata?.generation_metadata?.provider && (
+                        <Badge variant="outline" className="px-2 py-1 text-xs">
+                          ⚡ {selectedMedia[previewIndex].metadata.generation_metadata.provider}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* Prompt Preview */}
+                    {selectedMedia[previewIndex].metadata?.generation_metadata?.prompt && (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground font-medium">Generation Prompt</Label>
+                        <div className="text-xs bg-background/70 p-3 rounded-lg border max-h-16 overflow-y-auto leading-relaxed">
+                          {selectedMedia[previewIndex].metadata.generation_metadata.prompt}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               
               {/* Selected Media Thumbnails */}
               {selectedMedia.length > 1 && (
-                <div className="bg-muted/30 rounded-lg p-3 sm:p-4 border">
-                  <Label className="text-sm font-medium text-muted-foreground mb-3 block">
+                <div className="p-6 border-b bg-background/30">
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-4">
                     Selected Media ({selectedMedia.length}/6)
-                  </Label>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                  </h4>
+                  <div className="grid grid-cols-4 gap-3">
                     {selectedMedia.map((media, index) => (
                       <button
                         key={media.id}
                         type="button"
                         onClick={() => setPreviewIndex(index)}
-                        className={`relative aspect-square rounded-lg overflow-hidden border transition-all ${
-                          previewIndex === index ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:border-border'
+                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all group ${
+                          previewIndex === index ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'
                         }`}
                       >
                         {media.type === 'video' ? (
@@ -852,23 +939,30 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                           <img
                             src={media.thumbnail_url || media.url}
                             alt="Media thumbnail"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform group-hover:scale-110"
                           />
                         )}
-                        <div className="absolute top-1 right-1">
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedMedia(prev => prev.filter(item => item.id !== media.id))
-                            }}
-                            className="h-5 w-5 p-0"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedMedia(prev => prev.filter(item => item.id !== media.id))
+                              }}
+                              className="h-6 w-6 p-0 rounded-full"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
+                        {previewIndex === index && (
+                          <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full font-medium">
+                            {index + 1}
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -876,181 +970,201 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
               )}
               
               {/* Available Media Grid */}
-              <div className="flex-1 min-h-0">
-                <Label className="text-sm font-medium text-muted-foreground mb-3 block">
-                  Available Media
-                </Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 xl:gap-3 h-full overflow-y-auto border rounded-lg p-3 xl:p-4">
-                  {renderFilteredMedia()}
+              <div className="flex-1 min-h-0 p-6">
+                <div className="h-full overflow-y-auto">
+                  {/* Media Stats */}
+                  {(() => {
+                    const filtered = getFilteredMedia();
+                    const totalMedia = filtered.media.length + filtered.playground.length;
+                    return totalMedia > 0 && (
+                      <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-muted-foreground">Available Media</span>
+                          <div className="flex gap-4 text-xs">
+                            {filtered.media.length > 0 && (
+                              <span className="text-blue-600">📁 {filtered.media.length} from library</span>
+                            )}
+                            {filtered.playground.length > 0 && (
+                              <span className="text-purple-600">🎨 {filtered.playground.length} from playground</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {renderFilteredMedia()}
+                  </div>
                 </div>
               </div>
             </div>
 
 
             {/* Right Column - Form Fields */}
-            <div className="space-y-4 xl:space-y-6 overflow-y-auto">
-              {/* Title and Description */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title" className="text-sm font-medium">Title *</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter a compelling title"
-                    disabled={loading || !canCreateShowcase()}
-                    className="text-sm"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe your showcase..."
-                    rows={3}
-                    disabled={loading || !canCreateShowcase()}
-                    className="text-sm resize-none"
-                  />
-                </div>
+            <div className="bg-background flex flex-col">
+              {/* Form Header */}
+              <div className="p-6 pb-4 border-b bg-gradient-to-r from-primary/5 to-transparent">
+                <h3 className="text-lg font-semibold">Showcase Details</h3>
+                <p className="text-sm text-muted-foreground mt-1">Fill in the details for your showcase</p>
               </div>
+              
+              {/* Form Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Title and Description */}
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Label htmlFor="title" className="text-sm font-semibold">Title *</Label>
+                    <Input
+                      id="title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Enter a compelling title..."
+                      disabled={loading || !canCreateShowcase()}
+                      className="text-sm h-11 border-border/50 focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Label htmlFor="description" className="text-sm font-semibold">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Describe your showcase, the process, or any interesting details..."
+                      rows={4}
+                      disabled={loading || !canCreateShowcase()}
+                      className="text-sm resize-none border-border/50 focus:border-primary/50 transition-colors"
+                    />
+                  </div>
+                </div>
 
-              {/* Showcase Type */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Showcase Type</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    { value: 'individual_image', label: 'Image', icon: ImageIcon },
-                    { value: 'moodboard', label: 'Moodboard', icon: Palette },
-                    { value: 'video', label: 'Video', icon: Video },
-                    { value: 'treatment', label: 'Treatment', icon: FileText }
-                  ].map((option) => {
-                    const Icon = option.icon
-                    return (
+                {/* Visibility */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-semibold mb-3 block">Visibility</Label>
+                    <div className="grid grid-cols-2 gap-3">
                       <Button
-                        key={option.value}
                         type="button"
-                        variant={type === option.value ? "default" : "outline"}
-                        onClick={() => setType(option.value as any)}
+                        variant={visibility === 'public' ? "default" : "outline"}
+                        onClick={() => setVisibility('public')}
                         disabled={loading || !canCreateShowcase()}
-                        className="flex items-center justify-center space-x-2 h-10"
+                        className="flex items-center justify-center space-x-2 h-12 border-border/50 hover:border-primary/50 transition-colors"
                         size="sm"
                       >
-                        <Icon className="h-4 w-4" />
-                        <span className="text-sm">{option.label}</span>
+                        <Globe className="h-4 w-4" />
+                        <span className="text-sm font-medium">Public</span>
                       </Button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Visibility */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Visibility</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={visibility === 'public' ? "default" : "outline"}
-                    onClick={() => setVisibility('public')}
-                    disabled={loading || !canCreateShowcase()}
-                    className="flex items-center space-x-2 flex-1"
-                    size="sm"
-                  >
-                    <Globe className="h-4 w-4" />
-                    <span className="text-sm">Public</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={visibility === 'private' ? "default" : "outline"}
-                    onClick={() => setVisibility('private')}
-                    disabled={loading || !canCreateShowcase()}
-                    className="flex items-center space-x-2 flex-1"
-                    size="sm"
-                  >
-                    <Lock className="h-4 w-4" />
-                    <span className="text-sm">Private</span>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Tags */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Tags (Optional)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Add tag"
-                    disabled={loading || !canCreateShowcase()}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        if (newTag.trim() && !tags.includes(newTag.trim())) {
-                          setTags([...tags, newTag.trim()])
-                          setNewTag('')
-                        }
-                      }
-                    }}
-                    className="text-sm"
-                  />
-                  <Button 
-                    type="button" 
-                    onClick={() => {
-                      if (newTag.trim() && !tags.includes(newTag.trim())) {
-                        setTags([...tags, newTag.trim()])
-                        setNewTag('')
-                      }
-                    }}
-                    disabled={loading || !canCreateShowcase() || !newTag.trim()}
-                    size="sm"
-                    className="px-3"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1 text-xs">
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => setTags(tags.filter((_, i) => i !== index))}
-                          className="ml-1 hover:text-destructive"
-                          disabled={loading || !canCreateShowcase()}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
+                      <Button
+                        type="button"
+                        variant={visibility === 'private' ? "default" : "outline"}
+                        onClick={() => setVisibility('private')}
+                        disabled={loading || !canCreateShowcase()}
+                        className="flex items-center justify-center space-x-2 h-12 border-border/50 hover:border-primary/50 transition-colors"
+                        size="sm"
+                      >
+                        <Lock className="h-4 w-4" />
+                        <span className="text-sm font-medium">Private</span>
+                      </Button>
+                    </div>
                   </div>
-                )}
+                </div>
+
+                {/* Tags */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-semibold mb-3 block">Tags (Optional)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        placeholder="Add a tag..."
+                        disabled={loading || !canCreateShowcase()}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            if (newTag.trim() && !tags.includes(newTag.trim())) {
+                              setTags([...tags, newTag.trim()])
+                              setNewTag('')
+                            }
+                          }
+                        }}
+                        className="text-sm h-11 border-border/50 focus:border-primary/50 transition-colors"
+                      />
+                      <Button 
+                        type="button" 
+                        onClick={() => {
+                          if (newTag.trim() && !tags.includes(newTag.trim())) {
+                            setTags([...tags, newTag.trim()])
+                            setNewTag('')
+                          }
+                        }}
+                        disabled={loading || !canCreateShowcase() || !newTag.trim()}
+                        size="sm"
+                        className="px-4 h-11"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {tags.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground font-medium">Added Tags</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.map((tag, index) => (
+                          <Badge key={index} variant="secondary" className="flex items-center gap-1 text-xs px-3 py-1">
+                            {tag}
+                            <button
+                              type="button"
+                              onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                              className="ml-1 hover:text-destructive transition-colors"
+                              disabled={loading || !canCreateShowcase()}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </form>
 
         {/* Footer */}
-        <DialogFooter className="flex-shrink-0 pt-4">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            disabled={loading || !canCreateShowcase()}
-            onClick={handleSubmit}
-          >
-            {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                Creating...
-              </>
-            ) : (
-              'Create Showcase'
-            )}
-          </Button>
+        <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t bg-muted/20">
+          <div className="flex items-center justify-between w-full">
+            <div className="text-xs text-muted-foreground">
+              {canCreateShowcase() ? (
+                <span>You have {getMaxShowcases() === -1 ? 'unlimited' : `${getMaxShowcases() - monthlyShowcaseCount} remaining`} showcases this month</span>
+              ) : (
+                <span className="text-destructive">Monthly limit reached - upgrade to create more</span>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={onClose} disabled={loading} className="px-6">
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={loading || !canCreateShowcase()}
+                onClick={handleSubmit}
+                className="px-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Showcase'
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
