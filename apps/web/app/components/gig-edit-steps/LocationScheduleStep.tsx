@@ -13,10 +13,14 @@ import { useState, useEffect } from 'react'
 
 interface LocationScheduleStepProps {
   location: string
+  city?: string
+  country?: string
   startDate: string
   endDate: string
   applicationDeadline: string
   onLocationChange: (value: string) => void
+  onCityChange?: (value: string) => void
+  onCountryChange?: (value: string) => void
   onStartDateChange: (value: string) => void
   onEndDateChange: (value: string) => void
   onApplicationDeadlineChange: (value: string) => void
@@ -26,12 +30,50 @@ interface LocationScheduleStepProps {
   validationErrors?: string[]
 }
 
+// Countries list
+const COUNTRIES = [
+  'Ireland',
+  'United Kingdom',
+  'United States',
+  'Canada',
+  'Australia',
+  'New Zealand',
+  'France',
+  'Germany',
+  'Spain',
+  'Italy',
+  'Netherlands',
+  'Belgium',
+  'Switzerland',
+  'Austria',
+  'Portugal',
+  'Denmark',
+  'Sweden',
+  'Norway',
+  'Finland',
+  'Poland',
+  'Czech Republic',
+  'Greece',
+  'Japan',
+  'South Korea',
+  'Singapore',
+  'United Arab Emirates',
+  'India',
+  'Mexico',
+  'Brazil',
+  'Argentina'
+].sort()
+
 export default function LocationScheduleStep({
   location,
+  city,
+  country,
   startDate,
   endDate,
   applicationDeadline,
   onLocationChange,
+  onCityChange,
+  onCountryChange,
   onStartDateChange,
   onEndDateChange,
   onApplicationDeadlineChange,
@@ -163,24 +205,70 @@ export default function LocationScheduleStep({
 
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
 
-        {/* Location */}
+        {/* Location - City and Country */}
         <div>
-          <label htmlFor="location" className="block text-sm font-medium text-foreground mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4" />
               Shoot Location <span className="text-destructive">*</span>
             </div>
           </label>
-          <Input
-            type="text"
-            id="location"
-            required
-            value={location}
-            onChange={(e) => onLocationChange(e.target.value)}
-            placeholder="e.g., Manchester, United Kingdom  •  Dublin, Ireland  •  Paris, France"
-          />
-          <p className="mt-1 text-xs text-muted-foreground">
-            💡 Use format: <strong>City, Country</strong> (e.g., "London, United Kingdom") to help talent find and filter gigs
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* City Input */}
+            <div>
+              <Label htmlFor="city" className="text-xs text-muted-foreground mb-1">
+                City
+              </Label>
+              <Input
+                type="text"
+                id="city"
+                required
+                value={city || ''}
+                onChange={(e) => {
+                  if (onCityChange) {
+                    onCityChange(e.target.value)
+                  }
+                  // Also update combined location for backward compatibility
+                  if (country) {
+                    onLocationChange(`${e.target.value}, ${country}`)
+                  }
+                }}
+                placeholder="e.g., Galway, Dublin, London..."
+                className="w-full"
+              />
+            </div>
+            
+            {/* Country Select */}
+            <div>
+              <Label htmlFor="country" className="text-xs text-muted-foreground mb-1">
+                Country
+              </Label>
+              <select
+                id="country"
+                required
+                value={country || ''}
+                onChange={(e) => {
+                  if (onCountryChange) {
+                    onCountryChange(e.target.value)
+                  }
+                  // Also update combined location for backward compatibility
+                  if (city) {
+                    onLocationChange(`${city}, ${e.target.value}`)
+                  }
+                }}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Select country...</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            💡 Specify the city and country to help talent find and filter gigs in their area
           </p>
         </div>
 

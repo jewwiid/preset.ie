@@ -40,6 +40,67 @@ export async function middleware(request: NextRequest) {
     console.log('Middleware: No authenticated user found')
   }
 
+  // Protected routes that require authentication
+  const protectedRoutes = [
+    // Dashboard & Profile
+    '/dashboard',
+    '/profile/settings',
+
+    // Admin
+    '/admin',
+
+    // Gigs
+    '/gigs/create',
+    '/gigs/my-gigs',
+    '/gigs/saved',
+    '/applications',
+
+    // Playground & Creative Tools
+    '/playground',
+    '/treatments/create',
+
+    // Collaboration
+    '/collaborate/create',
+
+    // Presets & Marketplace
+    '/presets/create',
+    '/presets/marketplace/my-listings',
+    '/presets/marketplace/purchases',
+    '/presets/marketplace/analytics',
+    '/marketplace/my-listings',
+    '/marketplace/purchases',
+    '/marketplace/analytics',
+
+    // Gear (Equipment Rental)
+    '/gear/create',
+    '/gear/my-listings',
+    '/gear/my-requests',
+    '/gear/offers',
+    '/gear/orders',
+    '/gear/reviews',
+    '/gear/requests',
+
+    // Communication
+    '/messages',
+
+    // Settings & Account
+    '/settings',
+    '/credits/purchase',
+    '/subscription'
+  ]
+
+  // Check if the current path is a protected route
+  const isProtectedRoute = protectedRoutes.some(route =>
+    request.nextUrl.pathname.startsWith(route)
+  )
+
+  // Redirect unauthenticated users to login
+  if (isProtectedRoute && !user) {
+    const redirectUrl = new URL('/auth/login', request.url)
+    redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
+  }
+
   return response
 }
 

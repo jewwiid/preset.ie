@@ -113,6 +113,8 @@ export interface GigFormData {
   compDetails?: string
   usageRights: string
   location: string
+  city?: string
+  country?: string
   startDate: string
   endDate: string
   applicationDeadline: string

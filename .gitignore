@@ -87,3 +87,5 @@ sync_*.js
 *.key
 *.pem
 credentials.json
+
+*.sql

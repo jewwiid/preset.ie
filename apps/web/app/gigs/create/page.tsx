@@ -252,23 +252,9 @@ export default function CreateGigPage() {
       let gigId = null
       
       // Parse location into city and country if formatted correctly
-      const parseLocation = (locationText: string): { city: string | null; country: string | null } => {
-        if (!locationText) return { city: null, country: null }
-        
-        // Check if location is in "City, Country" format
-        const parts = locationText.split(',').map(p => p.trim())
-        if (parts.length >= 2) {
-          return {
-            city: parts[0],
-            country: parts.slice(1).join(', ') // In case country has commas (e.g., "Bosnia and Herzegovina")
-          }
-        }
-        
-        // If not formatted correctly, just save to location_text
-        return { city: null, country: null }
-      }
-      
-      const { city, country } = parseLocation(formData.location)
+      // Use separate city and country fields if available, otherwise parse from location_text
+      const city = formData.city || formData.location.split(',')[0]?.trim() || null
+      const country = formData.country || formData.location.split(',')[1]?.trim() || null
       
       // Create new gig
       const gigData = {
@@ -283,9 +269,9 @@ export default function CreateGigPage() {
         start_time: formData.startDate,
         end_time: formData.endDate,
         status: formData.status,
-        location_text: formData.location,
-        city: city,  // Parse city from location
-        country: country,  // Parse country from location
+        location_text: formData.location,  // Keep for backward compatibility
+        city: city,
+        country: country,
         application_deadline: formData.applicationDeadline,
         max_applicants: formData.maxApplicants,
         safety_notes: formData.safetyNotes,
@@ -391,10 +377,14 @@ export default function CreateGigPage() {
         return (
           <LocationScheduleStep
             location={formData.location}
+            city={formData.city}
+            country={formData.country}
             startDate={formData.startDate}
             endDate={formData.endDate}
             applicationDeadline={formData.applicationDeadline}
             onLocationChange={(value) => saveFormData({ location: value })}
+            onCityChange={(value) => saveFormData({ city: value })}
+            onCountryChange={(value) => saveFormData({ country: value })}
             onStartDateChange={(value) => saveFormData({ startDate: value })}
             onEndDateChange={(value) => saveFormData({ endDate: value })}
             onApplicationDeadlineChange={(value) => saveFormData({ applicationDeadline: value })}
