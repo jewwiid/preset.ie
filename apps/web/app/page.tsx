@@ -64,7 +64,7 @@ export default function Home() {
         image_url: img.image_url,
         alt_text: img.alt_text || 'Hero image',
         title: img.title || 'Hero',
-        attribution: img.description || 'Creative Professional\nPreset Platform'
+        attribution: `${img.title || 'CREATIVE'}\n${img.description || 'Preset Platform'}`
       }));
     }
 
@@ -79,7 +79,7 @@ export default function Home() {
         image_url: img.image_url,
         alt_text: img.alt_text || 'Hero image',
         title: img.title || 'Hero',
-        attribution: img.description || 'Creative Professional\nPreset Platform'
+        attribution: `${img.title || 'CREATIVE'}\n${img.description || 'Preset Platform'}`
       }));
     }
 

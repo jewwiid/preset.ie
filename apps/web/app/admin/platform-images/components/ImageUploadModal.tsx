@@ -128,52 +128,50 @@ export default function ImageUploadModal({
                 {/* Left Column - Form Fields */}
                 <div className="space-y-4 overflow-y-auto pr-2" style={{ maxHeight: 'calc(90vh - 180px)' }}>
               {!quickUploadMode && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="image_type">Image Type</Label>
-                    <select
-                      id="image_type"
-                      value={formData.image_type}
-                      onChange={(e) => onFormDataChange({ ...formData, image_type: e.target.value })}
-                      className="w-full p-2 border rounded-md bg-background"
-                    >
-                      <option value="homepage">Homepage</option>
-                      <option value="about">About</option>
-                      <option value="hero">Hero</option>
-                      <option value="section">Section</option>
-                      <option value="role">Role</option>
-                    </select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="image_type">Image Type</Label>
+                  <select
+                    id="image_type"
+                    value={formData.image_type}
+                    onChange={(e) => onFormDataChange({ ...formData, image_type: e.target.value })}
+                    className="w-full p-2 border rounded-md bg-background"
+                  >
+                    <option value="homepage">Homepage</option>
+                    <option value="about">About</option>
+                    <option value="hero">Hero</option>
+                    <option value="section">Section</option>
+                    <option value="role">Role</option>
+                  </select>
+                </div>
+              )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category (Optional)</Label>
-                    <Input
-                      id="category"
-                      value={formData.category}
-                      onChange={(e) => onFormDataChange({ ...formData, category: e.target.value })}
-                      placeholder="e.g., role-actors, for-talents, hero-background"
-                    />
+              {quickUploadMode && formData.category && (
+                <div className="space-y-2">
+                  <Label>Section</Label>
+                  <div className="p-2 border rounded-md bg-muted text-sm">
+                    {quickUploadMode.name} ({formData.category})
                   </div>
-                </>
+                </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">Title (Capitalized text - e.g., FASHION, EDITORIAL)</Label>
                 <Input
                   id="title"
                   value={formData.title}
                   onChange={(e) => onFormDataChange({ ...formData, title: e.target.value })}
+                  placeholder="FASHION"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description / Attribution</Label>
+                <Label htmlFor="description">Description / Attribution (Sentence format)</Label>
                 <Input
                   id="description"
-                  value={formData.description}
+                  value={formData.description || ''}
                   onChange={(e) => onFormDataChange({ ...formData, description: e.target.value })}
-                  placeholder='e.g., "Photo by John Doe" or "Professional studio shot"'
+                  placeholder="Playground Generated"
                 />
               </div>
 

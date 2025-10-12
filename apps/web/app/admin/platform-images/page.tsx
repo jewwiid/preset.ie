@@ -50,7 +50,7 @@ interface PresetVisualAid {
 const HERO_SECTION = {
   name: 'Hero Background',
   imageType: 'hero',
-  category: undefined,
+  category: 'hero',
   description: 'Main hero rotating images - Set Image Type to "Hero"'
 };
 
