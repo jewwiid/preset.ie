@@ -85,10 +85,10 @@ export default function WhatYouCanDoSection({ isLoggedIn }: WhatYouCanDoSectionP
               </div>
 
               <Link
-                href="/browse"
+                href="/gigs/create"
                 className="inline-flex items-center justify-center px-6 py-3 mt-6 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
               >
-                Browse Talent
+                Create Gig
               </Link>
             </div>
           </div>
