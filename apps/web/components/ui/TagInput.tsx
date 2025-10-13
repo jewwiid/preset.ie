@@ -12,15 +12,17 @@ interface TagInputProps {
   maxTags?: number
   className?: string
   disabled?: boolean
+  predefinedOptions?: string[]
 }
 
-export function TagInput({ 
-  value = [], 
-  onChange, 
-  placeholder = "Add item...", 
+export function TagInput({
+  value = [],
+  onChange,
+  placeholder = "Add item...",
   maxTags = 20,
   className = "",
-  disabled = false
+  disabled = false,
+  predefinedOptions = []
 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('')
 

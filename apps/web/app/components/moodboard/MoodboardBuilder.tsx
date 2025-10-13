@@ -363,8 +363,8 @@ export default function MoodboardBuilder({
             onRemove={itemsManager.removeItem}
             onSetFeatured={itemsManager.setFeaturedImage}
             featuredImageId={itemsManager.featuredImageId}
-            {/* @ts-ignore */}
-            onEnhance={(itemId, type, prompt, provider) => {
+            // @ts-expect-error - Type mismatch between onEnhance callback signature
+            onEnhance={(itemId: any, type: any, prompt: any, provider: any) => {
               handleEnhanceImage(itemId, type, prompt, provider)
             }}
             enhancingItems={enhancement.enhancingItems}

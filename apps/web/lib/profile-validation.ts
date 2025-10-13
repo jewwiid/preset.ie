@@ -10,7 +10,8 @@ export interface ProfileFormData {
   bio?: string
   city?: string
   country?: string
-  
+  email?: string  // Read-only field from auth
+
   // Professional fields
   years_experience?: number
   languages?: string[]

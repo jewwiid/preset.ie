@@ -459,8 +459,8 @@ function CreatePresetPageContent() {
                   <Label>Intensity: {presetData.style_settings.intensity}</Label>
                   <Slider
                     value={[presetData.style_settings.intensity]}
-                    onValueChange={([value]) =>
-                      updateNestedField('style_settings', 'intensity', value)
+                    onValueChange={(values: number[]) =>
+                      updateNestedField('style_settings', 'intensity', values[0])
                     }
                     min={0}
                     max={2}

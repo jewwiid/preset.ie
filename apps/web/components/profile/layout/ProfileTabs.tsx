@@ -91,7 +91,7 @@ export function ProfileSubTabs({ activeSubTab, onSubTabChange }: ProfileSubTabsP
   
   // Filter tabs based on user role
   const getVisibleTabs = () => {
-    const profileData = profile as UserProfile | null
+    const profileData = profile as any
     const hasTalentRole = profileData?.role_flags?.includes('TALENT')
     const hasContributorRole = profileData?.role_flags?.includes('CONTRIBUTOR')
     

@@ -202,9 +202,9 @@ export class PlunkCampaignsService {
       throw new Error(`Failed to fetch user emails: ${authError.message}`);
     }
 
-    const emails = users
-      .filter(u => optedInUserIds.includes(u.id) && u.email)
-      .map(u => u.email!);
+    const emails = (users as any[])
+      .filter((u: any) => optedInUserIds.includes(u.id) && u.email)
+      .map((u: any) => u.email!);
 
     console.log(`✅ Final recipients: ${emails.length} users (opted into marketing)`);
 
