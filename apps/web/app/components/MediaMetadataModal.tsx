@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { X, Copy, ExternalLink, Calendar, CreditCard, Image as ImageIcon, Film, Palette, Camera, Lightbulb, Save, Loader2, ToggleLeft, ToggleRight, Eye } from 'lucide-react'
+import React, { useState } from 'react'
+import { X, Copy, ExternalLink, Calendar, CreditCard, Image as ImageIcon, Film, Palette, Camera, Lightbulb, Save, Loader2, ToggleLeft, ToggleRight, Eye, Edit, Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -34,7 +34,9 @@ interface MediaMetadataModalProps {
     creator: {
       display_name: string
       handle: string
+      user_id?: string
     }
+    creator_user_id?: string
   }
 }
 
@@ -51,6 +53,24 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
   })
   const [isCreatingPreset, setIsCreatingPreset] = useState(false)
   const [showOriginalImage, setShowOriginalImage] = useState(false)
+
+  // Image metadata editing states
+  const [isEditingMetadata, setIsEditingMetadata] = useState(false)
+  const [editedTitle, setEditedTitle] = useState('')
+  const [editedDescription, setEditedDescription] = useState('')
+  const [isSavingMetadata, setIsSavingMetadata] = useState(false)
+
+  // Initialize edited values when modal opens or media changes
+  React.useEffect(() => {
+    if (isOpen && media) {
+      setEditedTitle((media as any).title || showcase?.caption || '')
+      setEditedDescription((media as any).description || '')
+      setIsEditingMetadata(false)
+    }
+  }, [isOpen, media, showcase])
+
+  // Check if user can edit (owns the showcase)
+  const canEdit = user && (showcase?.creator?.user_id === user.id || showcase?.creator_user_id === (user as any).profile_id)
 
   if (!isOpen) return null
 
@@ -470,8 +490,65 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
     }
   }
 
+  const handleSaveMetadata = async () => {
+    if (!media.id) {
+      showError('Cannot update: Media ID not found')
+      return
+    }
+
+    setIsSavingMetadata(true)
+
+    try {
+      console.log('💾 Saving metadata:', { mediaId: media.id, title: editedTitle, description: editedDescription })
+
+      const response = await fetch(`/api/showcase-media/${media.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          title: editedTitle.trim(),
+          description: editedDescription.trim()
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update metadata')
+      }
+
+      const result = await response.json()
+      console.log('✅ Metadata saved successfully:', result)
+
+      showSuccess('Image metadata updated successfully!')
+      setIsEditingMetadata(false)
+
+      // Update the media object to reflect changes immediately
+      if ((media as any).title !== undefined) {
+        (media as any).title = editedTitle.trim()
+      }
+      if ((media as any).description !== undefined) {
+        (media as any).description = editedDescription.trim()
+      }
+
+    } catch (error: any) {
+      console.error('❌ Error saving metadata:', error)
+      showError('Failed to save changes', error.message)
+    } finally {
+      setIsSavingMetadata(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    // Reset to original values
+    setEditedTitle((media as any).title || showcase?.caption || '')
+    setEditedDescription((media as any).description || '')
+    setIsEditingMetadata(false)
+  }
+
   const formatLabel = (value: string) => {
-    return value.split('-').map(word => 
+    return value.split('-').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ')
   }
@@ -586,27 +663,103 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
                 </div>
               </div>
               
-              {/* Showcase Information */}
-              {showcase && (
-                <div className="p-3 bg-muted/50 rounded-lg border border-border">
-                  <div className="flex items-start gap-2 mb-2">
-                    <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Title:</span>
-                    <span className="text-sm font-semibold text-foreground">
-                      "{(media as any).title || showcase.caption || 'Untitled'}"
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Creator:</span>
-                    <span className="text-sm text-foreground">@{showcase.creator.handle}</span>
-                  </div>
-                  {showcase.caption && showcase.caption !== ((media as any).title || 'Untitled') && (
-                    <div className="flex items-start gap-2 mt-2">
-                      <span className="text-sm font-medium text-muted-foreground min-w-[60px]">Description:</span>
-                      <span className="text-sm text-muted-foreground">{showcase.caption}</span>
-                    </div>
+              {/* Image Metadata - Editable */}
+              <div className="p-4 bg-muted/50 rounded-lg border border-border space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-foreground">Image Details</span>
+                  {canEdit && !isEditingMetadata && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingMetadata(true)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
                   )}
                 </div>
-              )}
+
+                {isEditingMetadata ? (
+                  // Edit mode
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="image-title" className="text-xs font-medium mb-1.5">Title</Label>
+                      <Input
+                        id="image-title"
+                        value={editedTitle}
+                        onChange={(e) => setEditedTitle(e.target.value)}
+                        placeholder="Enter image title..."
+                        maxLength={200}
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="image-description" className="text-xs font-medium mb-1.5">Description</Label>
+                      <Textarea
+                        id="image-description"
+                        value={editedDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        placeholder="Enter image description..."
+                        rows={3}
+                        maxLength={1000}
+                        className="text-sm resize-none"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        onClick={handleSaveMetadata}
+                        disabled={isSavingMetadata}
+                        size="sm"
+                        className="h-8 px-3"
+                      >
+                        {isSavingMetadata ? (
+                          <>
+                            <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-3 w-3 mr-1.5" />
+                            Save
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleCancelEdit}
+                        size="sm"
+                        className="h-8 px-3"
+                      >
+                        <X className="h-3 w-3 mr-1.5" />
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // View mode
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <span className="text-xs font-medium text-muted-foreground min-w-[70px]">Title:</span>
+                      <span className="text-sm font-semibold text-foreground flex-1">
+                        {editedTitle || 'Untitled'}
+                      </span>
+                    </div>
+                    {editedDescription && (
+                      <div className="flex items-start gap-2">
+                        <span className="text-xs font-medium text-muted-foreground min-w-[70px]">Description:</span>
+                        <span className="text-sm text-muted-foreground flex-1">{editedDescription}</span>
+                      </div>
+                    )}
+                    {showcase && (
+                      <div className="flex items-center gap-2 pt-1 border-t border-border/50 mt-2">
+                        <span className="text-xs font-medium text-muted-foreground min-w-[70px]">Creator:</span>
+                        <span className="text-sm text-foreground">@{showcase.creator.handle}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               
               {/* Tabs */}
               <div className="flex border-b border-border">

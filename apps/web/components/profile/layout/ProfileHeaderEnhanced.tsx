@@ -306,11 +306,8 @@ export function ProfileHeaderEnhanced() {
   }
 
   const handleEditToggle = () => {
-    if (isEditing) {
-      return
-    } else {
-      setEditing(true)
-    }
+    // Redirect to the comprehensive profile edit page instead of inline editing
+    window.location.href = '/dashboard/profile/edit'
   }
 
   // Header banner drag functionality

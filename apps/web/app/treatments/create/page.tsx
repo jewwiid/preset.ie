@@ -117,7 +117,7 @@ interface TreatmentData {
 function CreateTreatmentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   
   const [treatmentData, setTreatmentData] = useState<TreatmentData>({
     title: '',
@@ -336,11 +336,19 @@ function CreateTreatmentPageContent() {
   };
 
   const saveTreatment = async () => {
+    if (!session?.access_token) {
+      alert('You must be signed in to save a treatment.');
+      return;
+    }
+
     setSaving(true);
     try {
       const response = await fetch('/api/treatments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify(treatmentData)
       });
 
@@ -348,7 +356,8 @@ function CreateTreatmentPageContent() {
         const { id } = await response.json();
         router.push(`/treatments/${id}/edit`);
       } else {
-        throw new Error('Failed to save treatment');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to save treatment');
       }
     } catch (error) {
       console.error('Error saving treatment:', error);

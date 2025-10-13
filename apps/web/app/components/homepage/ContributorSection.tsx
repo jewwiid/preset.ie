@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface ContributorProfile {
   id: string;
@@ -37,7 +36,7 @@ export default function ContributorSection({
           {coverImage ? (
             <div className="relative h-[300px] rounded-2xl overflow-hidden mb-8">
               <Image
-                src={optimizeSupabaseImage(coverImage.image_url, IMAGE_SIZES.coverBanner)}
+                src={coverImage.image_url}
                 alt={coverImage.alt_text || 'Contributors'}
                 fill
                 className="object-cover"
@@ -85,7 +84,8 @@ export default function ContributorSection({
               return realContributors.map((contributor) => {
                 const imageSrc = contributor.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/hero-bg.jpeg';
                 const displayName = contributor.display_name || contributor.handle || 'Creative Professional';
-                const primarySkill = contributor.professional_skills && contributor.professional_skills.length > 0
+                // Use professional_skills as primary role for now (until contributor_roles are populated)
+                const primaryRole = contributor.professional_skills && contributor.professional_skills.length > 0
                   ? contributor.professional_skills[0]
                   : 'Creative Professional';
 
@@ -98,7 +98,7 @@ export default function ContributorSection({
                     {/* Contributor Image */}
                     <div className="relative w-[200px] h-[200px] mx-auto mb-4">
                       <Image
-                        src={optimizeSupabaseImage(imageSrc, IMAGE_SIZES.avatar)}
+                        src={imageSrc}
                         alt={contributor.bio || displayName}
                         fill
                         sizes="200px"
@@ -122,7 +122,7 @@ export default function ContributorSection({
                         {displayName} <span className="text-muted-foreground font-normal">@{contributor.handle}</span>
                       </h3>
                       <p className="text-muted-foreground text-sm mt-1">
-                        {primarySkill}
+                        {primaryRole}
                       </p>
                     </div>
                   </Link>
@@ -148,7 +148,7 @@ export default function ContributorSection({
                   {/* Category Image */}
                   <div className="relative aspect-[4/5] mb-4">
                     <Image
-                      src={optimizeSupabaseImage(imageSrc, IMAGE_SIZES.roleCard)}
+                      src={imageSrc}
                       alt={imageAlt}
                       fill
                       sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

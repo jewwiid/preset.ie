@@ -1,12 +1,38 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 export async function GET() {
   try {
+    console.log('[predefined-data API] Starting request')
+    console.log('[predefined-data API] Supabase URL:', supabaseUrl ? 'Set' : 'Missing')
+    console.log('[predefined-data API] Service Key:', supabaseServiceKey ? 'Set' : 'Missing')
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[predefined-data API] Missing environment variables')
+      return NextResponse.json(
+        { error: 'Server configuration error - missing environment variables' },
+        { status: 500 }
+      )
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Helper function to safely query tables
+    const safeQuery = async (tableName: string) => {
+      try {
+        return await supabase
+          .from(tableName)
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+      } catch (error) {
+        console.warn(`Table ${tableName} not found or error:`, error)
+        return { data: [], error: null }
+      }
+    }
 
     // Fetch all predefined data in parallel
     const [
@@ -16,17 +42,12 @@ export async function GET() {
       clothingSizesResult,
       shoeSizeSystemsResult,
       shoeSizesResult,
-      talentCategoriesResult,
       predefinedRolesResult,
       professionalSkillsResult,
-      languagesResult,
-      specializationsResult,
-      equipmentTypesResult,
-      equipmentBrandsResult,
+      talentCategoriesResult,
       genderIdentitiesResult,
       ethnicitiesResult,
       experienceLevelsResult,
-      availabilityStatusesResult,
       nationalitiesResult
     ] = await Promise.all([
       supabase
@@ -66,43 +87,19 @@ export async function GET() {
         .order('sort_order', { ascending: true }),
       
       supabase
-        .from('predefined_performance_roles')  // RENAMED from predefined_talent_categories
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true }),
-      
-      supabase
         .from('predefined_roles')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
       
       supabase
-        .from('predefined_professional_skills')  // Already updated
+        .from('predefined_professional_skills')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
       
       supabase
-        .from('languages_master')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true }),
-      
-      supabase
-        .from('predefined_professional_skills')  // RENAMED from specializations (duplicate query - we'll handle this)
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true }),
-      
-      supabase
-        .from('equipment_types')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true }),
-      
-      supabase
-        .from('equipment_brands')
+        .from('predefined_talent_categories')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
@@ -126,12 +123,6 @@ export async function GET() {
         .order('sort_order', { ascending: true }),
       
       supabase
-        .from('predefined_availability_statuses')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true }),
-      
-      supabase
         .from('predefined_nationalities')
         .select('*')
         .eq('is_active', true)
@@ -146,24 +137,19 @@ export async function GET() {
       clothingSizesResult.error,
       shoeSizeSystemsResult.error,
       shoeSizesResult.error,
-      talentCategoriesResult.error,
       predefinedRolesResult.error,
       professionalSkillsResult.error,
-      languagesResult.error,
-      specializationsResult.error,
-      equipmentTypesResult.error,
-      equipmentBrandsResult.error,
+      talentCategoriesResult.error,
       genderIdentitiesResult.error,
       ethnicitiesResult.error,
       experienceLevelsResult.error,
-      availabilityStatusesResult.error,
       nationalitiesResult.error
     ].filter(Boolean)
 
     if (errors.length > 0) {
       console.error('Errors fetching predefined data:', errors)
       return NextResponse.json(
-        { error: 'Failed to fetch some predefined data' },
+        { error: 'Failed to fetch some predefined data', details: errors },
         { status: 500 }
       )
     }
@@ -176,26 +162,37 @@ export async function GET() {
       shoe_size_systems: shoeSizeSystemsResult.data || [],
       shoe_sizes: shoeSizesResult.data || [],
       
-      // Role categorization (clear names!)
-      performance_roles: talentCategoriesResult.data || [],      // What users perform AS (Model, Actor, Dancer)
-      professional_skills: professionalSkillsResult.data || [],  // Services users PROVIDE (Photography, Video Editing)
+      // Professional data (CLEAR SEPARATION)
+      predefined_roles: predefinedRolesResult.data || [],           // For CONTRIBUTORS (Photographer, Editor, Producer, etc.)
+      professional_skills: professionalSkillsResult.data || [],     // Skills/certifications (Color Grading, Adobe Suite, etc.)
+      talent_categories: talentCategoriesResult.data || [],         // For TALENT (Actor, Model, Dancer, etc.)
       
       // Other predefined data
-      predefined_roles: predefinedRolesResult.data || [],
-      languages: languagesResult.data || [],
-      equipment_types: equipmentTypesResult.data || [],
-      equipment_brands: equipmentBrandsResult.data || [],
       gender_identities: genderIdentitiesResult.data || [],
       ethnicities: ethnicitiesResult.data || [],
       experience_levels: experienceLevelsResult.data || [],
-      availability_statuses: availabilityStatusesResult.data || [],
-      nationalities: nationalitiesResult.data || []
+      nationalities: nationalitiesResult.data || [],
+      
+      // Legacy aliases for backward compatibility
+      performance_roles: talentCategoriesResult.data || [],  // Alias for talent_categories
+      languages: [],
+      equipment_types: [],
+      equipment_brands: [],
+      availability_statuses: []
     })
 
   } catch (error) {
-    console.error('API error:', error)
+    console.error('[predefined-data API] Unexpected error:', error)
+    console.error('[predefined-data API] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown'
+    })
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

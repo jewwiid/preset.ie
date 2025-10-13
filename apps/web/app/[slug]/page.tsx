@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import TalentDirectoryClient from './TalentDirectoryClient';
 
+interface VerificationBadge {
+  id: string;
+  badge_type: 'verified_identity' | 'verified_professional' | 'verified_business';
+  issued_at: string;
+  expires_at: string | null;
+  revoked_at: string | null;
+}
+
 interface DirectoryProfile {
   id: string;
   display_name: string;
@@ -16,6 +24,7 @@ interface DirectoryProfile {
   created_at: string;
   role_flags?: string[];
   verified_id?: boolean;
+  verification_badges?: VerificationBadge[];
 }
 
 interface PageProps {
@@ -27,20 +36,31 @@ async function getTalentCategories() {
   try {
     if (!supabase) return [];
     
-    const { data, error } = await supabase
-      .from('predefined_roles')
-      .select('name')
-      .eq('is_active', true)
-      .order('sort_order');
+    // Fetch from both contributor roles and talent categories
+    const [contributorResult, talentResult] = await Promise.all([
+      supabase
+        .from('predefined_roles')
+        .select('name')
+        .eq('is_active', true)
+        .order('sort_order'),
+      supabase
+        .from('predefined_talent_categories')
+        .select('category_name')
+        .eq('is_active', true)
+        .order('sort_order')
+    ]);
 
-    if (error) {
-      console.error('Error fetching talent categories:', error);
-      return [];
-    }
+    const contributorRoles = contributorResult.data || [];
+    const talentCategories = talentResult.data || [];
 
-    // Convert role names to URL-friendly slugs (pluralized)
-    return (data || []).map(role => {
-      const baseName = role.name.toLowerCase()
+    // Combine all roles and convert to URL-friendly slugs
+    const allRoles = [
+      ...contributorRoles.map(role => role.name),
+      ...talentCategories.map(category => category.category_name)
+    ];
+
+    return allRoles.map(roleName => {
+      const baseName = roleName.toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^a-z0-9-]/g, '');
       
@@ -101,6 +121,23 @@ async function getTalentProfiles(skillSlug: string) {
     if (error) {
       console.error('Error fetching profiles:', error);
       return [];
+    }
+    
+    // Fetch verification badges separately
+    if (data && data.length > 0) {
+      const userIds = data.map(p => p.user_id);
+      const { data: badges } = await supabase
+        .from('verification_badges')
+        .select('*')
+        .in('user_id', userIds)
+        .is('revoked_at', null); // Only active badges
+      
+      // Attach badges to profiles
+      if (badges) {
+        data.forEach((profile: any) => {
+          profile.verification_badges = badges.filter(b => b.user_id === profile.user_id);
+        });
+      }
     }
 
     // Filter profiles by skill category - only use explicit role fields

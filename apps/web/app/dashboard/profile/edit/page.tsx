@@ -1,108 +1,295 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ArrowLeft, Save, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-interface ProfileData {
-  handle: string
-  display_name: string
-  bio?: string
-  city?: string
+// Step components
+import StepIndicator, { ProfileEditStep } from '@/app/components/profile-edit-steps/StepIndicator'
+import BasicDetailsStep from '@/app/components/profile-edit-steps/BasicDetailsStep'
+import ProfessionalStep from '@/app/components/profile-edit-steps/ProfessionalStep'
+import ContactStep from '@/app/components/profile-edit-steps/ContactStep'
+import AvailabilityStep from '@/app/components/profile-edit-steps/AvailabilityStep'
+import ReviewStep from '@/app/components/profile-edit-steps/ReviewStep'
+import { ProfileCompletionBar } from '@/app/components/profile-edit-steps/ProfileCompletionBar'
+import { ProfilePreview } from '@/app/components/profile-edit-steps/ProfilePreview'
+
+// Hooks and utilities
+import { ProfileFormData } from '@/lib/profile-validation'
+
+// Simple profile completion calculation (simplified version)
+const calculateCompletion = (data: ProfileFormData) => {
+  const fields = [
+    'display_name', 'handle', 'bio', 'city', 'country',
+    'years_experience', 'specializations', 'professional_skills',
+    'instagram_handle', 'portfolio_url', 'website_url',
+    'availability_status', 'hourly_rate_min', 'hourly_rate_max'
+  ]
+  
+  const completed = fields.filter(field => {
+    const value = data[field as keyof ProfileFormData]
+    return value !== undefined && value !== null && value !== '' && 
+      (!Array.isArray(value) || value.length > 0)
+  }).length
+  
+  return {
+    percentage: Math.round((completed / fields.length) * 100),
+    missingCount: fields.length - completed
+  }
 }
 
 export default function EditProfilePage() {
-  const { user } = useAuth()
+  const { user, userRole, loading: authLoading } = useAuth()
   const router = useRouter()
+  
+  // Form state
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
-  const [profile, setProfile] = useState<ProfileData>({
-    handle: '',
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false)
+  
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState<ProfileEditStep>('basic')
+  const [completedSteps, setCompletedSteps] = useState<ProfileEditStep[]>([])
+  
+  // Image state
+  const [avatarUrl, setAvatarUrl] = useState<string>('')
+  const [headerBannerUrl, setHeaderBannerUrl] = useState<string>('')
+  
+  // Form data
+  const [formData, setFormData] = useState<ProfileFormData>({
     display_name: '',
+    handle: '',
     bio: '',
-    city: ''
+    city: '',
+    country: '',
+    years_experience: undefined,
+    languages: [],
+    specializations: [],
+    equipment_list: [],
+    editing_software: [],
+    professional_skills: [],
+    contributor_roles: [],
+    performance_roles: [],
+    experience_level: 'beginner',
+    instagram_handle: '',
+    tiktok_handle: '',
+    website_url: '',
+    portfolio_url: '',
+    behance_url: '',
+    dribbble_url: '',
+    phone_number: '',
+    availability_status: 'available',
+    hourly_rate_min: undefined,
+    hourly_rate_max: undefined,
+    available_for_travel: false,
+    travel_radius_km: 50,
+    has_studio: false,
+    studio_name: '',
+    available_weekdays: true,
+    available_weekends: false,
+    available_evenings: false,
+    available_overnight: false,
+    accepts_tfp: false,
+    accepts_expenses_only: false,
+    allow_direct_booking: true,
+    show_experience: true,
+    show_specializations: true,
+    show_equipment: true,
+    show_social_links: true,
+    show_website: true,
+    show_phone: false,
+    phone_public: false,
+    email_public: false,
+    show_rates: false,
+    show_availability: true
   })
-  const [newHandle, setNewHandle] = useState('')
-  const [handleAvailable, setHandleAvailable] = useState<boolean | null>(null)
-  const [checkingHandle, setCheckingHandle] = useState(false)
 
+  // Form persistence state (simplified for now)
+  const [hasUnsavedData, setHasUnsavedData] = useState(false)
+
+  // Initialize form data
   useEffect(() => {
-    if (user?.user_metadata?.handle) {
-      setProfile({
-        handle: user.user_metadata.handle,
-        display_name: user.user_metadata.display_name || '',
-        bio: user.user_metadata.bio || '',
-        city: user.user_metadata.city || ''
-      })
-      setNewHandle(user.user_metadata.handle)
-      setLoading(false)
-    }
-  }, [user])
+    const initializeForm = async () => {
+      if (!user) return
 
-  const checkHandleAvailability = async (handle: string) => {
-    if (!handle || handle === profile.handle) {
-      setHandleAvailable(null)
+      try {
+        // For now, skip saved form data restoration
+
+        // Fetch current profile data
+        const { data: profile, error: profileError } = await supabase
+          .from('users_profile')
+          .select(`
+            id, display_name, handle, bio, city, country,
+            years_experience, languages, specializations,
+            equipment_list, editing_software, professional_skills,
+            contributor_roles, performance_roles, experience_level,
+            instagram_handle, tiktok_handle, website_url,
+            portfolio_url, behance_url, dribbble_url,
+            phone_number, availability_status,
+            hourly_rate_min, hourly_rate_max, available_for_travel,
+            travel_radius_km, has_studio, studio_name,
+            available_weekdays, available_weekends, available_evenings,
+            available_overnight, accepts_tfp, accepts_expenses_only,
+            allow_direct_booking, show_experience, show_specializations,
+            show_equipment, show_social_links, show_website,
+            show_phone, phone_public, email_public, show_rates,
+            show_availability, avatar_url, header_banner_url, header_banner_position
+          `)
+          .eq('user_id', user.id)
+          .single()
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError)
+          setError('Failed to load profile data')
       return
     }
 
-    setCheckingHandle(true)
-    try {
-      const response = await fetch(`/api/users/${handle}/redirect`, {
-        method: 'GET'
-      })
+        console.log('Fetched profile data:', {
+          display_name: profile?.display_name,
+          avatar_url: profile?.avatar_url,
+          header_banner_url: profile?.header_banner_url
+        })
 
-      if (response.ok) {
-        const data = await response.json()
-        setHandleAvailable(!data.redirect && data.current_handle === handle)
-      } else {
-        setHandleAvailable(false)
-      }
+        // Initialize form data from profile
+        const initialData = {
+          display_name: profile.display_name || '',
+          handle: profile.handle || '',
+          bio: profile.bio || '',
+          city: profile.city || '',
+          country: profile.country || '',
+          years_experience: profile.years_experience,
+          languages: profile.languages || [],
+          specializations: profile.specializations || [],
+          equipment_list: profile.equipment_list || [],
+          editing_software: profile.editing_software || [],
+          professional_skills: profile.professional_skills || [],
+          contributor_roles: profile.contributor_roles || [],
+          performance_roles: profile.performance_roles || [],
+          experience_level: profile.experience_level || 'beginner',
+          instagram_handle: profile.instagram_handle || '',
+          tiktok_handle: profile.tiktok_handle || '',
+          website_url: profile.website_url || '',
+          portfolio_url: profile.portfolio_url || '',
+          behance_url: profile.behance_url || '',
+          dribbble_url: profile.dribbble_url || '',
+          phone_number: profile.phone_number || '',
+          availability_status: profile.availability_status || 'available',
+          hourly_rate_min: profile.hourly_rate_min,
+          hourly_rate_max: profile.hourly_rate_max,
+          available_for_travel: profile.available_for_travel || false,
+          travel_radius_km: profile.travel_radius_km || 50,
+          has_studio: profile.has_studio || false,
+          studio_name: profile.studio_name || '',
+          available_weekdays: profile.available_weekdays ?? true,
+          available_weekends: profile.available_weekends || false,
+          available_evenings: profile.available_evenings || false,
+          available_overnight: profile.available_overnight || false,
+          accepts_tfp: profile.accepts_tfp || false,
+          accepts_expenses_only: profile.accepts_expenses_only || false,
+          allow_direct_booking: profile.allow_direct_booking ?? true,
+          show_experience: profile.show_experience ?? true,
+          show_specializations: profile.show_specializations ?? true,
+          show_equipment: profile.show_equipment ?? true,
+          show_social_links: profile.show_social_links ?? true,
+          show_website: profile.show_website ?? true,
+          show_phone: profile.show_phone || false,
+          phone_public: profile.phone_public || false,
+          email_public: profile.email_public || false,
+          show_rates: profile.show_rates || false,
+          show_availability: profile.show_availability ?? true,
+          avatar_url: profile.avatar_url || '',
+          header_banner_url: profile.header_banner_url || '',
+          header_banner_position: profile.header_banner_position || ''
+        }
+
+        setFormData(initialData)
+
+        // Initialize image URLs
+        setAvatarUrl(profile.avatar_url || '')
+        setHeaderBannerUrl(profile.header_banner_url || '')
+
     } catch (error) {
-      console.error('Error checking handle availability:', error)
-      setHandleAvailable(false)
+        console.error('Error initializing form:', error)
+        setError('Failed to initialize form')
     } finally {
-      setCheckingHandle(false)
+        setLoading(false)
+      }
+    }
+
+    if (!authLoading && user) {
+      initializeForm()
+    }
+  }, [user, authLoading])
+
+  // Track unsaved changes
+  useEffect(() => {
+    setHasUnsavedData(true)
+  }, [formData])
+
+  // Handle form data changes
+  const handleFormDataChange = (newData: Partial<ProfileFormData>) => {
+    setFormData(prev => ({ ...prev, ...newData }))
+  }
+
+  // Handle step navigation
+  const handleStepClick = (step: ProfileEditStep) => {
+    if (completedSteps.includes(step) || step === 'basic') {
+      setCurrentStep(step)
     }
   }
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (newHandle) {
-        checkHandleAvailability(newHandle)
+  // Handle next step
+  const handleNext = () => {
+    const steps: ProfileEditStep[] = ['basic', 'professional', 'contact', 'availability', 'review']
+    const currentIndex = steps.indexOf(currentStep)
+    
+    if (currentIndex < steps.length - 1) {
+      const nextStep = steps[currentIndex + 1]
+      setCurrentStep(nextStep)
+      
+      // Mark current step as completed
+      if (!completedSteps.includes(currentStep)) {
+        setCompletedSteps(prev => [...prev, currentStep])
       }
-    }, 500)
+    }
+  }
 
-    return () => clearTimeout(timeoutId)
-  }, [newHandle])
+  // Handle previous step
+  const handlePrevious = () => {
+    const steps: ProfileEditStep[] = ['basic', 'professional', 'contact', 'availability', 'review']
+    const currentIndex = steps.indexOf(currentStep)
+    
+    if (currentIndex > 0) {
+      const prevStep = steps[currentIndex - 1]
+      setCurrentStep(prevStep)
+    }
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!formData.handle) {
+      setError('Handle is required')
+      return
+    }
+
+    setSaving(true)
     setError(null)
     setSuccess(null)
-    setSaving(true)
 
     try {
-      const response = await fetch(`/api/users/${profile.handle}/update`, {
+      const response = await fetch(`/api/users/${formData.handle}/update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          new_handle: newHandle !== profile.handle ? newHandle : undefined,
-          display_name: profile.display_name,
-          bio: profile.bio,
-          city: profile.city
-        })
+        body: JSON.stringify(formData)
       })
 
       const data = await response.json()
@@ -110,34 +297,45 @@ export default function EditProfilePage() {
       if (response.ok) {
         setSuccess('Profile updated successfully!')
         
-        // If handle changed, redirect to new profile URL
-        if (data.redirect_needed && data.profile?.handle) {
+        // Redirect to profile page after a short delay
           setTimeout(() => {
-            router.push(`/users/${data.profile.handle}`)
+          router.push(`/users/${data.profile?.handle || formData.handle}`)
           }, 2000)
-        }
       } else {
         setError(data.error || 'Failed to update profile')
       }
     } catch (error) {
-      setError('An unexpected error occurred')
       console.error('Profile update error:', error)
+      setError('An unexpected error occurred')
     } finally {
       setSaving(false)
     }
   }
 
-  if (loading) {
+  // Note: Restore functionality removed for now to fix navigation issues
+
+  const steps: ProfileEditStep[] = ['basic', 'professional', 'contact', 'availability', 'review']
+  const currentStepIndex = steps.indexOf(currentStep)
+  const isLastStep = currentStepIndex === steps.length - 1
+
+  if (authLoading || loading || !formData.handle) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-muted"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent absolute top-0"></div>
+        </div>
       </div>
     )
   }
 
+  if (!user) {
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <Link 
@@ -149,9 +347,11 @@ export default function EditProfilePage() {
           </Link>
           <h1 className="text-3xl font-bold text-foreground">Edit Profile</h1>
           <p className="text-muted-foreground mt-2">
-            Update your profile information and handle
+            Complete your profile to increase visibility and attract more opportunities
           </p>
         </div>
+
+        {/* Restore prompt removed for now */}
 
         {/* Alerts */}
         {error && (
@@ -168,128 +368,112 @@ export default function EditProfilePage() {
           </Alert>
         )}
 
-        {/* Edit Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-            <CardDescription>
-              Update your public profile information
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Display Name */}
-              <div>
-                <Label htmlFor="display_name">Display Name</Label>
-                <Input
-                  id="display_name"
-                  value={profile.display_name}
-                  onChange={(e) => setProfile({ ...profile, display_name: e.target.value })}
-                  placeholder="Your display name"
-                  required
-                />
-              </div>
+        {/* Profile Preview */}
+        <ProfilePreview
+          formData={formData}
+          avatarUrl={avatarUrl}
+          headerBannerUrl={headerBannerUrl}
+          userId={user?.id}
+          onAvatarChange={(newUrl: string) => {
+            setAvatarUrl(newUrl)
+          }}
+          onHeaderChange={(newUrl: string) => {
+            setHeaderBannerUrl(newUrl)
+          }}
+        />
 
-              {/* Handle */}
-              <div>
-                <Label htmlFor="handle">Handle (Username)</Label>
-                <div className="relative">
-                  <Input
-                    id="handle"
-                    value={newHandle}
-                    onChange={(e) => setNewHandle(e.target.value.toLowerCase())}
-                    placeholder="your_handle"
-                    pattern="[a-z0-9_]{3,30}"
-                    required
-                  />
-                  {checkingHandle && (
-                    <div className="absolute right-3 top-3">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                    </div>
-                  )}
-                  {newHandle && !checkingHandle && handleAvailable !== null && (
-                    <div className="absolute right-3 top-3">
-                      {handleAvailable ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <AlertCircle className="h-4 w-4 text-red-500" />
-                      )}
-                    </div>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  3-30 characters, lowercase letters, numbers, and underscores only
-                </p>
-                {newHandle && !checkingHandle && handleAvailable === false && (
-                  <p className="text-sm text-red-500 mt-1">
-                    This handle is already taken
-                  </p>
+        {/* Profile Completion Progress */}
+        <ProfileCompletionBar
+          completionPercentage={calculateCompletion(formData).percentage}
+          missingFieldsCount={calculateCompletion(formData).missingCount}
+        />
+
+        {/* Step Indicator */}
+        <StepIndicator
+          currentStep={currentStep}
+          completedSteps={completedSteps}
+          onStepClick={handleStepClick}
+        />
+
+        {/* Step Content */}
+        <div className="space-y-6">
+          {currentStep === 'basic' && (
+            <BasicDetailsStep
+              formData={formData}
+              setFormData={setFormData}
+            />
+          )}
+
+          {currentStep === 'professional' && (
+            <ProfessionalStep
+              formData={formData}
+              setFormData={setFormData}
+              userRole={userRole}
+            />
+          )}
+
+          {currentStep === 'contact' && (
+            <ContactStep
+              data={formData}
+              onChange={handleFormDataChange}
+              onNext={handleNext}
+              onPrevious={handlePrevious}
+            />
+          )}
+
+          {currentStep === 'availability' && (
+            <AvailabilityStep
+              data={formData}
+              onChange={handleFormDataChange}
+              onNext={handleNext}
+              onPrevious={handlePrevious}
+            />
+          )}
+
+          {currentStep === 'review' && (
+            <ReviewStep
+              data={formData}
+              onSave={handleSubmit}
+              onPrevious={handlePrevious}
+              saving={saving}
+              isLastStep={true}
+            />
                 )}
               </div>
 
-              {/* Bio */}
-              <div>
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={profile.bio}
-                  onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                  placeholder="Tell us about yourself..."
-                  rows={4}
-                />
-              </div>
-
-              {/* City */}
-              <div>
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  value={profile.city}
-                  onChange={(e) => setProfile({ ...profile, city: e.target.value })}
-                  placeholder="Your city"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex gap-4">
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-8">
                 <Button
-                  type="submit"
-                  disabled={saving || checkingHandle || handleAvailable === false}
-                  className="flex items-center gap-2"
-                >
-                  <Save className="h-4 w-4" />
-                  {saving ? 'Saving...' : 'Save Changes'}
+            onClick={handlePrevious}
+            disabled={currentStepIndex === 0 || saving}
+            variant="outline"
+          >
+            Previous
                 </Button>
                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.back()}
-                >
-                  Cancel
+            onClick={isLastStep ? handleSubmit : handleNext}
+            disabled={saving}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : isLastStep ? (
+              'Save Profile'
+            ) : (
+              'Next'
+            )}
                 </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
 
-        {/* Handle Change Notice */}
-        {newHandle !== profile.handle && (
-          <Card className="mt-6 border-amber-200 bg-amber-50">
-            <CardHeader>
-              <CardTitle className="text-amber-800">Handle Change Notice</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-amber-700 text-sm">
-                Changing your handle from <code className="bg-amber-100 px-1 rounded">@{profile.handle}</code> to <code className="bg-amber-100 px-1 rounded">@{newHandle}</code> will:
-              </p>
-              <ul className="text-amber-700 text-sm mt-2 list-disc list-inside space-y-1">
-                <li>Create a permanent redirect from your old handle to the new one</li>
-                <li>Update your profile URL to the new handle</li>
-                <li>Preserve all existing links and bookmarks (they will redirect automatically)</li>
-                <li>Maintain your SEO rankings and search engine visibility</li>
-              </ul>
-            </CardContent>
-          </Card>
+        {/* Unsaved Changes Warning */}
+        {hasUnsavedData && (
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-background border border-border rounded-lg p-3 shadow-lg z-50">
+            <p className="text-sm text-muted-foreground">
+              You have unsaved changes
+            </p>
+          </div>
         )}
       </div>
     </div>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { parseVerificationBadges } from '../../lib/utils/verification-badges'
 
 interface PresetImage {
   id: string;
@@ -59,8 +58,7 @@ interface TalentProfile {
   role_flags: string[];
   style_tags: string[];
   vibe_tags: string[];
-  professional_skills: string[];    // NEW: Services they provide
-  performance_roles: string[];      // NEW: What they perform as
+  professional_skills: string[];    // Services they provide
   years_experience: number;
   account_status: string;
   profile_completion_percentage: number;

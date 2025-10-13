@@ -10,7 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RefreshCw, Grid, List, Plus, Store, Search, Star, Users, PlayCircle, ShoppingCart, DollarSign, TrendingUp, Eye, Heart, Settings } from 'lucide-react';
+import { RefreshCw, Grid, List, Plus, Store, Search, Star, Users, PlayCircle, ShoppingCart, DollarSign, TrendingUp, Eye, Heart, Settings, Palette } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { usePageHeaderImage } from '@/hooks/usePageHeaderImage';
 
 interface MarketplacePreset {
   preset_id: string;
@@ -60,6 +62,7 @@ interface UserStats {
 
 function PresetMarketplaceContent() {
   const { user, session, userRole } = useAuth();
+  const { headerImage } = usePageHeaderImage('presets-header');
   const searchParams = useSearchParams();
   const [presets, setPresets] = useState<MarketplacePreset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -238,41 +241,41 @@ function PresetMarketplaceContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Store className="h-8 w-8 text-primary" />
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">Preset Marketplace</h1>
-                  <p className="text-muted-foreground">Buy and sell AI generation presets</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              {user && (
-                <div className="flex items-center space-x-4 text-sm">
-                  <div className="flex items-center space-x-1">
-                    <DollarSign className="h-4 w-4 text-primary-600" />
-                    <span className="font-medium">{userStats?.credits.current_balance || 0} credits</span>
-                  </div>
-                </div>
-              )}
-              <Button asChild variant="outline">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <PageHeader
+          title="Preset Marketplace"
+          subtitle="Buy and sell AI generation presets"
+          icon={Palette}
+          stats={
+            user && userStats ? [
+              { icon: DollarSign, label: `${userStats.credits.current_balance} Credits` },
+              { icon: Store, label: `${pagination.totalItems} Available Presets` }
+            ] : [
+              { icon: Store, label: `${pagination.totalItems} Available Presets` }
+            ]
+          }
+          actions={
+            <div className="flex items-center gap-3">
+              <Button asChild variant="outline" size="lg">
                 <Link href="/presets/marketplace/my-listings">
                   My Listings
                 </Link>
               </Button>
-              <Button asChild>
+              <Button asChild size="lg" className="px-8 py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-shadow">
                 <Link href="/presets/create">
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="w-5 h-5 mr-2" />
                   Sell Preset
                 </Link>
               </Button>
             </div>
-          </div>
+          }
+          backgroundImage={headerImage}
+        />
+      </div>
+
+      {/* Navigation and Content */}
+      <div className="bg-background border-t border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Navigation Tabs */}
           <Tabs defaultValue="browse" className="w-full">

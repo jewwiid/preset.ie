@@ -63,44 +63,18 @@ const HOMEPAGE_SECTIONS = [
   { name: 'For Talents Image', imageType: undefined, category: 'how-it-works-talents', description: '"What You Can Do" - For Talents section' },
 ];
 
-const ROLES = [
-  // Talent/Performance Roles
-  { name: 'Actors', slug: 'actors' },
-  { name: 'Actresses', slug: 'actresses' },
-  { name: 'Models', slug: 'models' },
-  { name: 'Hand Models', slug: 'hand-models' },
-  { name: 'Fitness Models', slug: 'fitness-models' },
-  { name: 'Commercial Models', slug: 'commercial-models' },
-  { name: 'Fashion Models', slug: 'fashion-models' },
-  { name: 'Plus-Size Models', slug: 'plus-size-models' },
-  { name: 'Singers', slug: 'singers' },
-  { name: 'Dancers', slug: 'dancers' },
-  { name: 'Musicians', slug: 'musicians' },
-  { name: 'Voice Actors', slug: 'voice-actors' },
-  { name: 'Influencers', slug: 'influencers' },
-  { name: 'Content Creators', slug: 'content-creators' },
-  { name: 'Performers', slug: 'performers' },
-  { name: 'Stunt Performers', slug: 'stunt-performers' },
-  { name: 'Extras/Background Actors', slug: 'extras-background-actors' },
-
-  // Contributor/Professional Roles
-  { name: 'Photographers', slug: 'photographers' },
-  { name: 'Videographers', slug: 'videographers' },
-  { name: 'Cinematographers', slug: 'cinematographers' },
-  { name: 'Makeup Artists', slug: 'makeup-artists' },
-  { name: 'Hair Stylists', slug: 'hair-stylists' },
-  { name: 'Fashion Stylists', slug: 'fashion-stylists' },
-  { name: 'Directors', slug: 'directors' },
-  { name: 'Creative Directors', slug: 'creative-directors' },
-  { name: 'Art Directors', slug: 'art-directors' },
-  { name: 'Producers', slug: 'producers' },
-  { name: 'Editors', slug: 'editors' },
-  { name: 'Designers', slug: 'designers' },
-  { name: 'Writers', slug: 'writers' },
-  { name: 'Freelancers', slug: 'freelancers' },
-  { name: 'Brand Managers', slug: 'brand-managers' },
-  { name: 'Studios', slug: 'studios' },
+const PAGE_HEADER_SECTIONS = [
+  { name: 'Gigs Header Background', imageType: undefined, category: 'gigs-header', description: 'Background image for Gigs page header' },
+  { name: 'Collaborate Header Background', imageType: undefined, category: 'collaborate-header', description: 'Background image for Collaborate page header' },
+  { name: 'Marketplace Header Background', imageType: undefined, category: 'marketplace-header', description: 'Background image for Marketplace page header' },
+  { name: 'Playground Header Background', imageType: undefined, category: 'playground-header', description: 'Background image for Playground page header' },
+  { name: 'Presets Header Background', imageType: undefined, category: 'presets-header', description: 'Background image for Presets page header' },
+  { name: 'Showcases Header Background', imageType: undefined, category: 'showcases-header', description: 'Background image for Showcases page header' },
+  { name: 'Treatments Header Background', imageType: undefined, category: 'treatments-header', description: 'Background image for Treatments page header' },
+  { name: 'Moodboards Header Background', imageType: undefined, category: 'moodboards-header', description: 'Background image for Moodboards page header' },
 ];
+
+// Roles will be fetched from database dynamically
 
 export default function PlatformImagesAdmin() {
   const { user, loading } = useAuth();
@@ -112,6 +86,13 @@ export default function PlatformImagesAdmin() {
   const [syncing, setSyncing] = useState(false);
   const [auditing, setAuditing] = useState(false);
   const [auditResults, setAuditResults] = useState<any>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [fixingDuplicates, setFixingDuplicates] = useState(false);
+  
+  // Database-driven roles
+  const [contributorRoles, setContributorRoles] = useState<any[]>([]);
+  const [talentCategories, setTalentCategories] = useState<any[]>([]);
+  const [allRoles, setAllRoles] = useState<any[]>([]);
 
   // Form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -136,14 +117,16 @@ export default function PlatformImagesAdmin() {
       fetchPlatformImages();
       fetchPresetVisualAids();
       fetchPresets();
+      fetchRoles();
     }
   }, [user]);
 
   const fetchPlatformImages = async () => {
     try {
-      const response = await fetch('/api/platform-images?includeInactive=true');
+      const response = await fetch(`/api/platform-images?includeInactive=true&t=${Date.now()}`);
       if (response.ok) {
         const data = await response.json();
+        console.log(`📥 Fetched ${data.images?.length || 0} platform images`);
         setPlatformImages(data.images || []);
       } else {
         toast.error('Failed to fetch platform images');
@@ -179,9 +162,52 @@ export default function PlatformImagesAdmin() {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const response = await fetch('/api/predefined-data');
+      if (response.ok) {
+        const data = await response.json();
+        setContributorRoles(data.predefined_roles || []);
+        setTalentCategories(data.talent_categories || []);
+        
+        // Combine all roles for display - clean approach without duplicates
+        const generateSlug = (name: string) => {
+          return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        };
+        
+        const combinedRoles = [
+          ...(data.predefined_roles || []).map((role: any) => ({
+            name: role.name,
+            slug: generateSlug(role.name),
+            type: 'contributor'
+          })),
+          ...(data.talent_categories || []).map((category: any) => ({
+            name: category.category_name,
+            slug: generateSlug(category.category_name),
+            type: 'talent'
+          }))
+        ];
+        
+        setAllRoles(combinedRoles);
+        console.log(`📋 Loaded ${combinedRoles.length} roles (${data.predefined_roles?.length || 0} contributors + ${data.talent_categories?.length || 0} talent categories)`);
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+    }
+  };
+
   const handleFileUpload = async (file: File): Promise<string> => {
     const formDataObj = new FormData();
     formDataObj.append('file', file);
+    // Pass image_type and category for proper folder organization
+    formDataObj.append('image_type', formData.image_type || 'general');
+    formDataObj.append('category', formData.category || '');
+
+    console.log('📤 Uploading with metadata:', {
+      image_type: formData.image_type,
+      category: formData.category,
+      file_name: file.name
+    });
 
     const response = await fetch('/api/upload/platform-image', {
       method: 'POST',
@@ -189,11 +215,12 @@ export default function PlatformImagesAdmin() {
     });
 
     if (!response.ok) {
-      throw new Error('Upload failed');
+      const error = await response.json();
+      throw new Error(error.error || 'Upload failed');
     }
 
     const result = await response.json();
-    return result.url;
+    return result.publicUrl || result.url;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -307,7 +334,10 @@ export default function PlatformImagesAdmin() {
 
       if (response.ok) {
         toast.success('Image removed from display');
-        fetchPlatformImages();
+        console.log('🔄 Refreshing images after deactivation...');
+        await fetchPlatformImages();
+        setRefreshKey(prev => prev + 1); // Force component re-render
+        console.log('✅ Images refreshed and component re-rendered');
       } else {
         const error = await response.json();
         toast.error(error.error || 'Failed to deactivate image');
@@ -488,10 +518,53 @@ export default function PlatformImagesAdmin() {
     toast.success(`Coming soon: Add visual aid for ${preset.name}`);
   };
 
+  const handleFixRoleDuplicates = async () => {
+    if (!confirm('This will remove duplicate roles from contributor roles table (Musician, Content Creator, Influencer). These roles belong in talent categories. Continue?')) {
+      return;
+    }
+
+    setFixingDuplicates(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        toast.error('You must be logged in to perform this action');
+        setFixingDuplicates(false);
+        return;
+      }
+
+      const response = await fetch('/api/admin/fix-role-duplicates', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(`✅ Removed ${result.deletedRoles.length} duplicate roles: ${result.deletedRoles.join(', ')}`);
+        console.log('📊 Role counts after cleanup:', result.counts);
+        fetchRoles(); // Refresh the roles
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to fix role duplicates');
+      }
+    } catch (error) {
+      toast.error('Error fixing role duplicates');
+    } finally {
+      setFixingDuplicates(false);
+    }
+  };
+
   const getImagesBySection = (section: typeof HOMEPAGE_SECTIONS[0]) => {
-    return section.imageType
+    const filtered = section.imageType
       ? platformImages.filter(img => img.image_type === section.imageType && img.is_active)
       : platformImages.filter(img => img.category === section.category && img.is_active);
+    
+    console.log(`🔍 Section "${section.name}": Found ${filtered.length} active images out of ${platformImages.filter(img => section.imageType ? img.image_type === section.imageType : img.category === section.category).length} total`);
+    
+    return filtered;
   };
 
   if (loading) {
@@ -503,7 +576,7 @@ export default function PlatformImagesAdmin() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div key={refreshKey} className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -542,6 +615,15 @@ export default function PlatformImagesAdmin() {
               >
                 <Upload className="w-4 h-4" />
                 {syncing ? 'Syncing...' : 'Sync Bucket'}
+              </Button>
+              <Button
+                onClick={handleFixRoleDuplicates}
+                variant="outline"
+                disabled={fixingDuplicates}
+                className="flex items-center gap-2"
+              >
+                <ImageIcon className="w-4 h-4" />
+                {fixingDuplicates ? 'Fixing...' : 'Fix Role Duplicates'}
               </Button>
               <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
                 <Plus className="w-4 h-4" />
@@ -615,9 +697,9 @@ export default function PlatformImagesAdmin() {
                   <p className="text-xs text-muted-foreground">Total in Bucket</p>
                   <p className="text-2xl font-bold">{auditResults.summary.totalInBucket}</p>
                 </div>
-                <div className="p-3 bg-green-500/10 rounded-md">
+                <div className="p-3 bg-red-500/10 rounded-md">
                   <p className="text-xs text-muted-foreground">Valid Images</p>
-                  <p className="text-2xl font-bold text-green-600">{auditResults.summary.validImages}</p>
+                  <p className="text-2xl font-bold text-red-600">{auditResults.summary.validImages}</p>
                 </div>
                 <div className="p-3 bg-red-500/10 rounded-md">
                   <p className="text-xs text-muted-foreground">Broken Links</p>
@@ -719,7 +801,81 @@ export default function PlatformImagesAdmin() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleDeactivate(image.id)}
-                          className="w-full max-w-[150px] bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/50 text-yellow-600"
+                          className="w-full max-w-[150px] bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/50 text-orange-600"
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Empty state */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-muted/50">
+                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-3" />
+                        <p className="text-base font-semibold text-center mb-1">{section.name}</p>
+                        <p className="text-xs text-muted-foreground text-center">{section.description}</p>
+                      </div>
+
+                      {/* Add button on hover */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">
+                        <Button
+                          onClick={() => handleQuickUpload(section)}
+                          size="sm"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Page Header Sections */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold">Page Header Backgrounds</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {PAGE_HEADER_SECTIONS.map((section) => {
+              const sectionImages = getImagesBySection(section);
+              const hasImage = sectionImages.length > 0;
+              const image = sectionImages[0];
+
+              return (
+                <div
+                  key={section.category}
+                  className="relative border rounded-lg overflow-hidden bg-card hover:border-primary transition-colors group aspect-video min-h-[150px]"
+                >
+                  {hasImage ? (
+                    <>
+                      <img
+                        src={image.image_url}
+                        alt={section.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                        <p className="text-sm font-medium text-white">{section.name}</p>
+                        <p className="text-xs text-white/80">{section.description}</p>
+                      </div>
+
+                      {/* Hover controls */}
+                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4">
+                        <Button
+                          size="sm"
+                          onClick={() => handleEdit(image)}
+                          className="w-full max-w-[150px]"
+                        >
+                          <Edit className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeactivate(image.id)}
+                          className="w-full max-w-[150px] bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/50 text-orange-600"
                         >
                           <Trash2 className="h-3 w-3 mr-1" />
                           Remove
@@ -755,9 +911,9 @@ export default function PlatformImagesAdmin() {
 
         {/* Role Images */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold">Role Images</h2>
+          <h2 className="text-2xl font-bold">Role Images ({allRoles.length} total)</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {ROLES.map((role) => {
+            {allRoles.map((role) => {
               const roleImage = platformImages.find(img => img.category === `role-${role.slug}`);
               const hasImage = !!roleImage;
 
@@ -780,6 +936,7 @@ export default function PlatformImagesAdmin() {
                       {/* Title overlay at bottom */}
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4">
                         <p className="text-base font-semibold text-white truncate">{role.name}</p>
+                        <p className="text-xs text-white/70 truncate capitalize">{role.type}</p>
                       </div>
 
                       {/* Hover controls */}
@@ -796,7 +953,7 @@ export default function PlatformImagesAdmin() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleDeactivate(roleImage.id)}
-                          className="w-full max-w-[150px] bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/50 text-yellow-600"
+                          className="w-full max-w-[150px] bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/50 text-orange-600"
                         >
                           <Trash2 className="h-3 w-3 mr-1" />
                           Remove
@@ -809,13 +966,13 @@ export default function PlatformImagesAdmin() {
                       <div className="absolute inset-0 flex flex-col items-center justify-center p-4 bg-muted/50">
                         <ImageIcon className="w-16 h-16 text-muted-foreground mb-3" />
                         <p className="text-base font-semibold text-center mb-1">{role.name}</p>
-                        <p className="text-xs text-muted-foreground text-center">Role card for {role.name}</p>
+                        <p className="text-xs text-muted-foreground text-center capitalize">{role.type} card</p>
                       </div>
 
                       {/* Add button on hover */}
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">
                         <Button
-                          onClick={() => handleQuickUpload({ name: role.name, category: `role-${role.slug}`, description: `Role card for ${role.name}` })}
+                          onClick={() => handleQuickUpload({ name: role.name, category: `role-${role.slug}`, description: `${role.type} card for ${role.name}` })}
                           size="sm"
                         >
                           <Plus className="h-4 w-4 mr-2" />

@@ -288,62 +288,62 @@ export function NavBar() {
     <>
       <nav className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between items-center h-16 gap-2 md:gap-3 lg:gap-6">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
               <div className="flex items-center justify-center w-10 h-10 mr-3">
-                <img 
-                  src="/logo.svg" 
-                  alt="Preset" 
+                <img
+                  src="/logo.svg"
+                  alt="Preset"
                   className="w-10 h-10"
                 />
               </div>
-              <span className="text-xl font-bold text-foreground">Preset</span>
+              <span className="text-xl font-bold text-foreground preset-branding">Preset</span>
             </Link>
           </div>
 
-          {/* Desktop Navigation - Right aligned */}
-          <div className="hidden md:flex md:items-center md:space-x-1">
+          {/* Desktop Navigation - Right aligned - Single unified container */}
+          <div className="hidden md:flex md:items-center md:gap-2 lg:gap-3 xl:gap-4 flex-1">
               {/* Dashboard Dropdown */}
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       className={`
-                        inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                        inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                         ${(isActive('/dashboard') || isActive('/profile') || isActive('/matchmaking'))
                           ? 'text-primary bg-primary/10'
-                          : 'nav-item'
+                          : 'text-foreground hover:bg-accent/50'
                         }
                       `}
                     >
-                      <Home className="w-4 h-4 mr-2" />
-                      Dashboard
-                      <ChevronDown className="w-4 h-4 ml-1" />
+                      <Home className="w-4 h-4 md:mr-2" />
+                      <span className="hidden md:inline">Dashboard</span>
+                      <ChevronDown className="w-3 h-3 md:w-4 md:h-4 md:ml-1" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-48" align="start">
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="flex items-center">
+                      <Link href="/dashboard" className="flex items-center nav-submenu-item">
                         <Home className="mr-2 h-4 w-4" />
                         Dashboard
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/profile" className="flex items-center">
+                      <Link href="/profile" className="flex items-center nav-submenu-item">
                         <User className="mr-2 h-4 w-4" />
                         Profile
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/matchmaking" className="flex items-center">
+                      <Link href="/matchmaking" className="flex items-center nav-submenu-item">
                         <Target className="mr-2 h-4 w-4" />
                         Matchmaking
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/applications" className="flex items-center">
+                      <Link href="/applications" className="flex items-center nav-submenu-item">
                         <Briefcase className="mr-2 h-4 w-4" />
                         My Applications
                       </Link>
@@ -358,34 +358,34 @@ export function NavBar() {
                   <DropdownMenuTrigger asChild>
                     <button
                       className={`
-                        inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                        inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                         ${(isActive('/gigs'))
                           ? 'text-primary bg-primary/10'
-                          : 'nav-item'
+                          : 'text-foreground hover:bg-accent/50'
                         }
                       `}
                     >
-                      <Search className="w-4 h-4 mr-2" />
-                      Gigs
-                      <ChevronDown className="w-4 h-4 ml-1" />
+                      <Search className="w-4 h-4 md:mr-2" />
+                      <span className="hidden md:inline">Gigs</span>
+                      <ChevronDown className="w-3 h-3 md:w-4 md:h-4 md:ml-1" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-48" align="start">
                     <DropdownMenuItem asChild>
-                      <Link href="/gigs" className="flex items-center">
+                      <Link href="/gigs" className="flex items-center nav-submenu-item">
                         <Search className="mr-2 h-4 w-4" />
                         Browse Gigs
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/gigs/saved" className="flex items-center">
+                      <Link href="/gigs/saved" className="flex items-center nav-submenu-item">
                         <Heart className="mr-2 h-4 w-4" />
                         Saved Gigs
                       </Link>
                     </DropdownMenuItem>
                     {isContributor && (
                       <DropdownMenuItem asChild>
-                        <Link href="/gigs/my-gigs" className="flex items-center">
+                        <Link href="/gigs/my-gigs" className="flex items-center nav-submenu-item">
                           <Briefcase className="mr-2 h-4 w-4" />
                           My Gigs
                         </Link>
@@ -401,92 +401,92 @@ export function NavBar() {
                   <DropdownMenuTrigger asChild>
                     <button
                       className={`
-                        inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                        inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                         ${(isActive('/gear') || isActive('/presets/marketplace'))
                           ? 'text-primary bg-primary/10'
-                          : 'nav-item'
+                          : 'text-foreground hover:bg-accent/50'
                         }
                       `}
                     >
-                      <Store className="w-4 h-4 mr-2" />
-                      Marketplace
-                      <ChevronDown className="w-4 h-4 ml-1" />
+                      <Store className="w-4 h-4 md:mr-2" />
+                      <span className="hidden md:inline">Marketplace</span>
+                      <ChevronDown className="w-3 h-3 md:w-4 md:h-4 md:ml-1" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-48" align="start">
-                    <DropdownMenuLabel>Preset Marketplace</DropdownMenuLabel>
+                    <DropdownMenuLabel className="nav-submenu-title">Preset Marketplace</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                      <Link href="/presets/marketplace" className="flex items-center">
+                      <Link href="/presets/marketplace" className="flex items-center nav-submenu-item">
                         <Palette className="mr-2 h-4 w-4" />
                         Browse Presets
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/presets/marketplace/my-listings" className="flex items-center">
+                      <Link href="/presets/marketplace/my-listings" className="flex items-center nav-submenu-item">
                         <ShoppingBag className="mr-2 h-4 w-4" />
                         My Preset Listings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/presets/marketplace/purchases" className="flex items-center">
+                      <Link href="/presets/marketplace/purchases" className="flex items-center nav-submenu-item">
                         <ShoppingCart className="mr-2 h-4 w-4" />
                         Purchase History
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/presets/marketplace/analytics" className="flex items-center">
+                      <Link href="/presets/marketplace/analytics" className="flex items-center nav-submenu-item">
                         <TrendingUp className="mr-2 h-4 w-4" />
                         Analytics
                       </Link>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel>Equipment Marketplace</DropdownMenuLabel>
+                    <DropdownMenuLabel className="nav-submenu-title">Equipment Marketplace</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
-                      <Link href="/gear" className="flex items-center">
+                      <Link href="/gear" className="flex items-center nav-submenu-item">
                         <Camera className="mr-2 h-4 w-4" />
                         Browse Equipment
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/gear/create" className="flex items-center">
+                      <Link href="/gear/create" className="flex items-center nav-submenu-item">
                         <Plus className="mr-2 h-4 w-4" />
                         Create Listing
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/gear/my-listings" className="flex items-center">
+                      <Link href="/gear/my-listings" className="flex items-center nav-submenu-item">
                         <Package className="mr-2 h-4 w-4" />
                         My Equipment Listings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/gear/orders" className="flex items-center">
+                      <Link href="/gear/orders" className="flex items-center nav-submenu-item">
                         <Briefcase className="mr-2 h-4 w-4" />
                         My Orders
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
+                      <DropdownMenuSubTrigger className="nav-submenu-title">
                         <MessageSquare className="mr-2 h-4 w-4" />
-                        Equipment Requests
+                        Requests
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="w-48">
                         <DropdownMenuItem asChild>
-                          <Link href="/gear/requests?create=true" className="flex items-center">
+                          <Link href="/gear/requests?create=true" className="flex items-center nav-submenu-item">
                             <Plus className="mr-2 h-4 w-4" />
                             Create Request
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href="/gear/requests" className="flex items-center">
+                          <Link href="/gear/requests" className="flex items-center nav-submenu-item">
                             <MessageSquare className="mr-2 h-4 w-4" />
                             Browse Requests
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href="/gear/my-requests" className="flex items-center">
+                          <Link href="/gear/my-requests" className="flex items-center nav-submenu-item">
                             <Clock className="mr-2 h-4 w-4" />
                             My Requests
                           </Link>
@@ -503,42 +503,49 @@ export function NavBar() {
                   <DropdownMenuTrigger asChild>
                     <button
                       className={`
-                        inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
-                        ${(isActive('/presets') || isActive('/presets/create') || isActive('/showcases') || isActive('/showcases/create') || isActive('/treatments') || isActive('/treatments/create') || isActive('/playground'))
+                        inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
+                        ${(isActive('/presets') || isActive('/presets/create') || isActive('/showcases') || isActive('/showcases/create') || isActive('/treatments') || isActive('/treatments/create') || isActive('/playground') || isActive('/moodboards'))
                           ? 'text-primary bg-primary/10'
-                          : 'nav-item'
+                          : 'text-foreground hover:bg-accent/50'
                         }
                       `}
                     >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create
-                      <ChevronDown className="w-4 h-4 ml-1" />
+                      <Plus className="w-4 h-4 md:mr-2" />
+                      <span className="hidden md:inline">Create</span>
+                      <ChevronDown className="w-3 h-3 md:w-4 md:h-4 md:ml-1" />
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="start">
                     <DropdownMenuItem asChild>
-                      <Link href="/playground" className="flex items-center">
+                      <Link href="/playground" className="flex items-center nav-submenu-item">
                         <Camera className="mr-2 h-4 w-4" />
                         Media (Playground)
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/presets" className="flex items-center">
+                      <Link href="/moodboards" className="flex items-center nav-submenu-item">
+                        <Image className="mr-2 h-4 w-4" />
+                        Moodboards
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/presets" className="flex items-center nav-submenu-item">
                         <Palette className="mr-2 h-4 w-4" />
                         Presets
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/showcases" className="flex items-center">
-                        <Image className="mr-2 h-4 w-4" />
+                      <Link href="/showcases" className="flex items-center nav-submenu-item">
+                        <Sparkles className="mr-2 h-4 w-4" />
                         Showcases
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/treatments" className="flex items-center">
+                      <Link href="/treatments" className="flex items-center nav-submenu-item">
                         <Wand2 className="mr-2 h-4 w-4" />
                         Treatments
                       </Link>
@@ -555,23 +562,20 @@ export function NavBar() {
                     key={item.href}
                     href={item.href}
                     className={`
-                      inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors
+                      inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                       ${isActive(item.href)
                         ? 'text-primary bg-primary/10'
-                        : 'nav-item'
+                        : 'text-foreground hover:bg-accent/50'
                       }
                     `}
                   >
-                    <Icon className="w-4 h-4 mr-2" />
-                    {item.label}
+                    <Icon className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">{item.label}</span>
                   </Link>
                 )
               })}
 
-          </div>
-
-          {/* Right side */}
-          <div className="flex items-center space-x-3">
+              {/* Right side items - now in same container - Desktop only */}
             {loading ? (
               // Show loading state
               <div className="animate-pulse flex space-x-3">
@@ -580,50 +584,45 @@ export function NavBar() {
               </div>
             ) : user ? (
               <>
-                {/* Create Gig Button */}
+                {/* Create Gig Button - Desktop */}
                 {profile?.role_flags?.includes('CONTRIBUTOR') && (
-                  <>
-                    {/* Desktop - Full button */}
-                    <Button asChild className="hidden md:inline-flex">
-                      <Link href="/gigs/create">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Gig
-                      </Link>
-                    </Button>
-                    {/* Mobile - Just green [+] button */}
-                    <Button asChild size="icon" className="md:hidden">
-                      <Link href="/gigs/create">
-                        <Plus className="w-4 h-4" />
-                      </Link>
-                    </Button>
-                  </>
+                  <Button asChild className="hidden md:inline-flex h-10 px-2 md:px-3 lg:px-4 rounded-lg nav-menu-item text-sm md:text-base">
+                    <Link href="/gigs/create">
+                      <Plus className="w-4 h-4 md:mr-2" />
+                      <span className="hidden md:inline">Gig</span>
+                    </Link>
+                  </Button>
                 )}
 
-                {/* Theme Toggle */}
-                <ThemeToggle />
+                {/* Theme Toggle - Desktop */}
+                <div className="hidden md:block">
+                  <ThemeToggle />
+                </div>
 
-                {/* Notifications - Only show if user exists */}
-                {user && <NotificationBell />}
+                {/* Notifications - Desktop */}
+                <div className="hidden md:block">
+                  <NotificationBell />
+                </div>
 
-                {/* Profile Dropdown - Only show if user exists */}
-                {user && (
+                {/* Profile Dropdown - Desktop */}
+                <div className="hidden md:block">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
+                      <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:ring-2 hover:ring-primary/20 transition-all">
                         {(() => {
                           if (profileLoading) {
                             return (
-                              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
+                              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-background"></div>
                               </div>
                             )
                           } else if (profile?.avatar_url) {
                             return (
-                              <div className="relative w-8 h-8">
+                              <div className="relative w-10 h-10">
                                 <img
                                   src={profile.avatar_url}
                                   alt={profile.display_name || 'User'}
-                                  className="w-8 h-8 rounded-full object-cover"
+                                  className="w-10 h-10 rounded-full object-cover border-2 border-border"
                                   onLoad={() => console.log('✅ NavBar: Avatar image loaded successfully')}
                                   onError={(e) => {
                                     console.error('❌ NavBar: Avatar image failed to load:', profile.avatar_url)
@@ -636,109 +635,267 @@ export function NavBar() {
                                     }
                                   }}
                                 />
-                                <div className="fallback-avatar absolute inset-0 w-8 h-8 bg-primary rounded-full items-center justify-center hidden">
-                                  <User className="w-4 h-4 text-primary-foreground" />
+                                <div className="fallback-avatar absolute inset-0 w-10 h-10 bg-primary rounded-full items-center justify-center hidden border-2 border-border">
+                                  <User className="w-5 h-5 text-primary-foreground" />
                                 </div>
                               </div>
                             )
                           } else {
                             return (
-                              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                                <User className="w-4 h-4 text-primary-foreground" />
+                              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center border-2 border-border">
+                                <User className="w-5 h-5 text-primary-foreground" />
                               </div>
                             )
                           }
                         })()}
                       </Button>
                     </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        {profileLoading ? (
-                          <div className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                            <span className="text-sm text-muted-foreground-500">Loading...</span>
+                  <DropdownMenuContent className="w-72 p-4" align="end" forceMount>
+                    {/* Profile Header */}
+                    <div className="flex flex-col space-y-2 pb-3">
+                      {profileLoading ? (
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
                           </div>
-                        ) : profile ? (
-                          <>
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium leading-none">
-                                {profile.display_name || 'User'}
-                              </p>
-                              <p className="text-xs leading-none text-muted-foreground ml-2">
-                                @{profile.handle || 'handle'}
-                              </p>
-                            </div>
-                            <div className="flex gap-1 mt-2">
-                              {profile?.role_flags?.includes('CONTRIBUTOR') && (
-                                <Badge variant="secondary" className="text-xs bg-primary-100 text-primary-800">
-                                  Contributor
-                                </Badge>
-                              )}
-                              {!profile?.role_flags?.includes('CONTRIBUTOR') && (
-                                <Badge variant="secondary" className="text-xs bg-primary-100 text-primary-800">
-                                  Talent
-                                </Badge>
-                              )}
-                              {isAdmin && (
-                                <Badge variant="secondary" className="text-xs bg-destructive-100 text-destructive-800">
-                                  Admin
-                                </Badge>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-sm font-medium leading-none">User</p>
-                            <p className="text-xs leading-none text-muted-foreground">
+                          <div className="flex-1">
+                            <div className="h-4 bg-muted rounded w-24 mb-2"></div>
+                            <div className="h-3 bg-muted rounded w-32"></div>
+                          </div>
+                        </div>
+                      ) : profile ? (
+                        <>
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-lg font-bold leading-tight">
+                              {profile.display_name || 'User'}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              @{profile.handle || 'handle'}
+                            </p>
+                          </div>
+                          <div className="inline-flex">
+                            {profile?.role_flags?.includes('CONTRIBUTOR') ? (
+                              <Badge className="text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+                                Contributor
+                              </Badge>
+                            ) : (
+                              <Badge className="text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+                                Talent
+                              </Badge>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-lg font-bold leading-tight">User</h3>
+                            <p className="text-sm text-muted-foreground">
                               @{user?.email?.split('@')[0] || 'user'}
                             </p>
-                          </>
-                        )}
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard">
-                        <Home className="mr-2 h-4 w-4" />
-                        Dashboard
-                      </Link>
-                    </DropdownMenuItem>
-                    {isAdmin && (
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin">
-                          <Shield className="mr-2 h-4 w-4" />
-                          Dashboard - Admin View
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <DropdownMenuSeparator className="my-2" />
+
+                    {/* Menu Items */}
+                    <div className="space-y-0">
+                      <DropdownMenuItem asChild className="py-2 cursor-pointer">
+                        <Link href="/dashboard" className="flex items-center nav-submenu-item">
+                          <Home className="mr-3 h-4 w-4" />
+                          Dashboard
                         </Link>
                       </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile">
-                        <User className="mr-2 h-4 w-4" />
-                        Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Settings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive-600">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="py-2 cursor-pointer">
+                        <Link href="/profile" className="flex items-center nav-submenu-item">
+                          <User className="mr-3 h-4 w-4" />
+                          Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="py-2 cursor-pointer">
+                        <Link href="/settings" className="flex items-center nav-submenu-item">
+                          <Settings className="mr-3 h-4 w-4" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
+                      {isAdmin && (
+                        <DropdownMenuItem asChild className="py-2 cursor-pointer">
+                          <Link href="/admin" className="flex items-center nav-submenu-item">
+                            <Shield className="mr-3 h-4 w-4" />
+                            Admin Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+
+                      {/* Sign Out */}
+                      <DropdownMenuItem
+                        onClick={handleSignOut}
+                        className="py-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 nav-submenu-item"
+                      >
+                        <LogOut className="mr-3 h-4 w-4" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </div>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                )}
+                </div>
               </>
             ) : (
-              <div className="flex items-center space-x-3">
+              <div className="hidden md:flex items-center space-x-3">
                 <Button variant="ghost" asChild>
                   <Link href="/auth/signin">Sign In</Link>
                 </Button>
                 <Button asChild>
+                  <Link href="/auth/signup">Sign Up</Link>
+                </Button>
+              </div>
+            )}
+          </div>
+          {/* End of unified navigation container */}
+
+          {/* Mobile Right Side Icons */}
+          <div className="flex md:hidden items-center gap-3">
+            {user && (
+              <>
+                {/* Create Gig Button - Mobile */}
+                {profile?.role_flags?.includes('CONTRIBUTOR') && (
+                  <Button asChild size="icon" className="h-10 w-10 rounded-lg">
+                    <Link href="/gigs/create">
+                      <Plus className="w-5 h-5" />
+                    </Link>
+                  </Button>
+                )}
+
+                {/* Theme Toggle - Mobile */}
+                <ThemeToggle />
+
+                {/* Notifications - Mobile */}
+                <NotificationBell />
+
+                {/* Profile Avatar - Mobile */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+                      {(() => {
+                        if (profileLoading) {
+                          return (
+                            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-background"></div>
+                            </div>
+                          )
+                        } else if (profile?.avatar_url) {
+                          return (
+                            <img
+                              src={profile.avatar_url}
+                              alt={profile.display_name || 'User'}
+                              className="w-10 h-10 rounded-full object-cover border-2 border-border"
+                            />
+                          )
+                        } else {
+                          return (
+                            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center border-2 border-border">
+                              <User className="w-5 h-5 text-primary-foreground" />
+                            </div>
+                          )
+                        }
+                      })()}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-72 p-4" align="end" forceMount>
+                    {/* Same dropdown content as desktop */}
+                    <div className="flex flex-col space-y-2 pb-3">
+                      {profileLoading ? (
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-muted rounded w-24 mb-2"></div>
+                            <div className="h-3 bg-muted rounded w-32"></div>
+                          </div>
+                        </div>
+                      ) : profile ? (
+                        <>
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-lg font-bold leading-tight">
+                              {profile.display_name || 'User'}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              @{profile.handle || 'handle'}
+                            </p>
+                          </div>
+                          <div className="inline-flex pt-1">
+                            {profile?.role_flags?.includes('CONTRIBUTOR') ? (
+                              <Badge className="text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+                                Contributor
+                              </Badge>
+                            ) : (
+                              <Badge className="text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+                                Talent
+                              </Badge>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-lg font-bold leading-tight">User</h3>
+                          <p className="text-sm text-muted-foreground">
+                            @{user?.email?.split('@')[0] || 'user'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <DropdownMenuSeparator className="my-2" />
+
+                    <div className="space-y-0">
+                      <DropdownMenuItem asChild className="py-2 cursor-pointer">
+                        <Link href="/dashboard" className="flex items-center nav-submenu-item">
+                          <Home className="mr-3 h-4 w-4" />
+                          Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="py-2 cursor-pointer">
+                        <Link href="/profile" className="flex items-center nav-submenu-item">
+                          <User className="mr-3 h-4 w-4" />
+                          Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="py-2 cursor-pointer">
+                        <Link href="/settings" className="flex items-center nav-submenu-item">
+                          <Settings className="mr-3 h-4 w-4" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
+                      {isAdmin && (
+                        <DropdownMenuItem asChild className="py-2 cursor-pointer">
+                          <Link href="/admin" className="flex items-center nav-submenu-item">
+                            <Shield className="mr-3 h-4 w-4" />
+                            Admin Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+
+                      <DropdownMenuItem
+                        onClick={handleSignOut}
+                        className="py-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 nav-submenu-item"
+                      >
+                        <LogOut className="mr-3 h-4 w-4" />
+                        Sign Out
+                      </DropdownMenuItem>
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+
+            {!user && (
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/auth/signin">Sign In</Link>
+                </Button>
+                <Button size="sm" asChild>
                   <Link href="/auth/signup">Sign Up</Link>
                 </Button>
               </div>
@@ -750,7 +907,7 @@ export function NavBar() {
                 e.stopPropagation()
                 setMobileMenuOpen(!mobileMenuOpen)
               }}
-              className="md:hidden p-2 rounded-md nav-item relative z-50"
+              className="p-2 rounded-md nav-item relative z-50"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -1013,6 +1170,20 @@ export function NavBar() {
                   Media (Playground)
                 </Link>
                 <Link
+                  href="/moodboards"
+                  className={`
+                    block px-3 py-2 text-base font-medium rounded-md
+                    ${isActive('/moodboards')
+                      ? 'text-primary bg-primary/10'
+                      : 'nav-item'
+                    }
+                  `}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Image className="w-5 h-5 inline mr-3" />
+                  Moodboards
+                </Link>
+                <Link
                   href="/presets"
                   className={`
                     block px-3 py-2 text-base font-medium rounded-md
@@ -1037,7 +1208,7 @@ export function NavBar() {
                   `}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <Image className="w-5 h-5 inline mr-3" />
+                  <Sparkles className="w-5 h-5 inline mr-3" />
                   Showcases
                 </Link>
                 <Link

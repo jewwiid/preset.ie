@@ -4,7 +4,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { VerificationBadges } from '../../../components/VerificationBadges';
 import { parseVerificationBadges } from '../../../lib/utils/verification-badges';
-import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface TalentProfile {
   id: string;
@@ -41,7 +40,7 @@ export default function TalentForHireSection({
           {coverImage ? (
             <div className="relative h-[300px] rounded-2xl overflow-hidden mb-8">
               <Image
-                src={optimizeSupabaseImage(coverImage.image_url, IMAGE_SIZES.coverBanner)}
+                src={coverImage.image_url}
                 alt={coverImage.alt_text || 'Talent for hire'}
                 fill
                 className="object-cover"
@@ -92,7 +91,7 @@ export default function TalentForHireSection({
                     {/* Talent Image */}
                     <div className="relative aspect-[4/5] mb-4">
                       <Image
-                        src={optimizeSupabaseImage(imageSrc, IMAGE_SIZES.roleCard)}
+                        src={imageSrc}
                         alt={talent.bio || displayName}
                         fill
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -128,7 +127,6 @@ export default function TalentForHireSection({
                       </p>
                       <p className="text-muted-foreground text-sm mt-1">
                         {(talent as any).primary_skill ||
-                          (talent.performance_roles && talent.performance_roles.length > 0 ? talent.performance_roles[0] : null) ||
                           (talent.professional_skills && talent.professional_skills.length > 0 ? talent.professional_skills[0] : null) ||
                           'Creative Professional'}
                       </p>
@@ -156,7 +154,7 @@ export default function TalentForHireSection({
                   {/* Category Image */}
                   <div className="relative aspect-[4/5] mb-4">
                     <Image
-                      src={optimizeSupabaseImage(imageSrc, IMAGE_SIZES.roleCard)}
+                      src={imageSrc}
                       alt={imageAlt}
                       fill
                       sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

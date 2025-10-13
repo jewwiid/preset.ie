@@ -75,7 +75,7 @@ export default function ImageSectionManager({
                   size="sm"
                   variant="outline"
                   onClick={() => onDeactivate(img.id)}
-                  className="w-full max-w-[150px] bg-yellow-500/10 hover:bg-yellow-500/20 border-yellow-500/50 text-yellow-600"
+                  className="w-full max-w-[150px] bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/50 text-orange-600"
                 >
                   <Trash2 className="h-3 w-3 mr-1" />
                   Remove

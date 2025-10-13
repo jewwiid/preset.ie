@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button'
 export default function CreateGigPage() {
   const router = useRouter()
   const { user } = useAuth()
-  
+
   // Step management
   const [currentStep, setCurrentStep] = useState<GigEditStep>('basic')
   const [completedSteps, setCompletedSteps] = useState<GigEditStep[]>([])
@@ -382,9 +382,23 @@ export default function CreateGigPage() {
             startDate={formData.startDate}
             endDate={formData.endDate}
             applicationDeadline={formData.applicationDeadline}
-            onLocationChange={(value) => saveFormData({ location: value })}
-            onCityChange={(value) => saveFormData({ city: value })}
-            onCountryChange={(value) => saveFormData({ country: value })}
+            onLocationChange={(value) => {
+              // Parse and save city, country, and location together
+              const parts = value.split(',').map(p => p.trim())
+              saveFormData({ 
+                location: value,
+                city: parts[0] || formData.city,
+                country: parts[1] || formData.country
+              })
+            }}
+            onCityChange={(value) => {
+              const location = formData.country ? `${value}, ${formData.country}` : value
+              saveFormData({ city: value, location })
+            }}
+            onCountryChange={(value) => {
+              const location = formData.city ? `${formData.city}, ${value}` : value
+              saveFormData({ country: value, location })
+            }}
             onStartDateChange={(value) => saveFormData({ startDate: value })}
             onEndDateChange={(value) => saveFormData({ endDate: value })}
             onApplicationDeadlineChange={(value) => saveFormData({ applicationDeadline: value })}
@@ -499,19 +513,19 @@ export default function CreateGigPage() {
   
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Hero Section */}
-        <div className="mb-8 rounded-2xl p-8 border border-border">
-          <div className="flex justify-between items-center">
+        <div className="mb-6 sm:mb-8 rounded-2xl p-4 sm:p-8 border border-border">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-primary mr-3" />
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-primary mr-3" />
               <div>
-                <h1 className="text-5xl font-bold text-primary mb-2">Create a New Gig</h1>
-                <p className="text-xl text-muted-foreground">Follow the steps below to create your gig and attract the right talent</p>
+                <h1 className="text-3xl sm:text-5xl font-bold text-primary mb-2">Create a New Gig</h1>
+                <p className="text-lg sm:text-xl text-muted-foreground">Follow the steps below to create your gig and attract the right talent</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="outline" onClick={() => router.back()}>
+              <Button variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
                 Cancel
               </Button>
             </div>

@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     // Check user credits
     const { data: userCredits, error: creditsError } = await supabaseAdmin
       .from('user_credits')
-      .select('current_balance')
+      .select('current_balance, consumed_this_month')
       .eq('user_id', user.id)
       .single()
 
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
       .from('user_credits')
       .update({
         current_balance: userCredits.current_balance - STYLE_APPLICATION_COST,
-        consumed_this_month: userCredits.current_balance - STYLE_APPLICATION_COST,
+        consumed_this_month: userCredits.consumed_this_month + STYLE_APPLICATION_COST,
         last_consumed_at: new Date().toISOString()
       })
       .eq('user_id', user.id)

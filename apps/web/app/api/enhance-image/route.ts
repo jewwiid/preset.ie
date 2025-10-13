@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { 
-  sendAPIFailureAlert, 
-  analyzeAPIError, 
+import {
+  sendAPIFailureAlert,
+  analyzeAPIError,
   alertCreditsExhausted,
   alertAPIError,
-  alertTimeout 
+  alertTimeout
 } from '../../../lib/api-failure-alerts';
+import { CREDIT_COSTS, OPERATION_COSTS, ProviderType } from '@/lib/credits';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const nanoBananaApiKey = process.env.NANOBANANA_API_KEY || process.env.NANOBANAN_API_KEY!;
-const PROVIDER = 'nanobanana';
-const USER_CREDITS_PER_ENHANCEMENT = 1; // Users always see 1 credit
+const PROVIDER: ProviderType = 'nanobanana';
+const USER_CREDITS_PER_ENHANCEMENT = OPERATION_COSTS.enhancement(PROVIDER);
 
 // Debug: Check if env vars are loaded
 if (!supabaseUrl || !supabaseServiceKey || !nanoBananaApiKey) {
@@ -21,6 +22,68 @@ if (!supabaseUrl || !supabaseServiceKey || !nanoBananaApiKey) {
     hasServiceKey: !!supabaseServiceKey,
     hasNanoBananaKey: !!nanoBananaApiKey
   });
+}
+
+// Helper function to get image dimensions from URL
+async function getImageDimensions(imageUrl: string): Promise<{ width: number; height: number }> {
+  try {
+    // For browser environment, we'd use Image object, but in Node/Edge we need to fetch and decode
+    // For now, try to extract from URL parameters if available (e.g., Unsplash)
+    const url = new URL(imageUrl)
+
+    // Try to get dimensions from URL params (common for CDN services)
+    const width = url.searchParams.get('w') || url.searchParams.get('width')
+    const height = url.searchParams.get('h') || url.searchParams.get('height')
+
+    if (width && height) {
+      return { width: parseInt(width), height: parseInt(height) }
+    }
+
+    // If not in URL, fetch the image and check headers
+    const response = await fetch(imageUrl, { method: 'HEAD' })
+    const contentType = response.headers.get('content-type')
+
+    if (!contentType?.startsWith('image/')) {
+      throw new Error('Not an image')
+    }
+
+    // If we can't get dimensions easily, return a default that maintains common ratios
+    // We'll fetch actual pixels by downloading the image
+    const imgResponse = await fetch(imageUrl)
+    const buffer = await imgResponse.arrayBuffer()
+
+    // Simple dimension detection for common formats
+    const view = new DataView(buffer)
+
+    // JPEG
+    if (view.getUint16(0) === 0xFFD8) {
+      let offset = 2
+      while (offset < view.byteLength) {
+        if (view.getUint8(offset) !== 0xFF) break
+        const marker = view.getUint8(offset + 1)
+        if (marker === 0xC0 || marker === 0xC2) {
+          return {
+            height: view.getUint16(offset + 5),
+            width: view.getUint16(offset + 7)
+          }
+        }
+        offset += 2 + view.getUint16(offset + 2)
+      }
+    }
+
+    // PNG
+    if (view.getUint32(0) === 0x89504E47) {
+      return {
+        width: view.getUint32(16),
+        height: view.getUint32(20)
+      }
+    }
+
+    throw new Error('Could not determine image dimensions')
+  } catch (error) {
+    console.error('Error getting image dimensions:', error)
+    throw error
+  }
 }
 
 // Helper function to refund credits on failures
@@ -42,15 +105,26 @@ async function refundUserCredits(
 
     if (error) {
       console.error('❌ Failed to refund credits:', error);
-      // Log alert for manual review
-      await supabaseAdmin
-        .from('system_alerts')
-        .insert({
-          type: 'refund_failed',
-          level: 'error',
-          message: `Failed to refund ${credits} credits to user ${userId}`,
-          metadata: { userId, credits, reason, error: error.message }
-        });
+      
+      // Handle missing function gracefully
+      if (error.message?.includes('Could not find the function')) {
+        console.log('⚠️  refund_user_credits function not found in database - continuing without refund');
+        return true; // Don't treat this as a failure
+      }
+      
+      // Log alert for manual review for other errors
+      try {
+        await supabaseAdmin
+          .from('system_alerts')
+          .insert({
+            type: 'refund_failed',
+            level: 'error',
+            message: `Failed to refund ${credits} credits to user ${userId}`,
+            metadata: { userId, credits, reason, error: error.message }
+          });
+      } catch (alertError) {
+        console.error('Failed to log refund alert:', alertError);
+      }
       return false;
     } else {
       console.log('✅ Credits refunded successfully');
@@ -64,8 +138,48 @@ async function refundUserCredits(
 
 export async function POST(request: NextRequest) {
   console.log('Enhancement API called');
+  console.log('Request method:', request.method);
+  console.log('Request URL:', request.url);
+  console.log('Request headers:', Object.fromEntries(request.headers.entries()));
   
   try {
+    // Parse request body FIRST to avoid "Body has already been read" error
+    let requestBody;
+    try {
+      console.log('Attempting to parse request body...');
+      
+      // Try to get the body as text first to see if it's readable
+      const bodyText = await request.text();
+      console.log('Body as text length:', bodyText.length);
+      
+      if (!bodyText) {
+        throw new Error('Empty request body');
+      }
+      
+      // Parse the JSON
+      requestBody = JSON.parse(bodyText);
+      console.log('Request body parsed successfully:', Object.keys(requestBody));
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      console.error('Parse error details:', {
+        message: parseError instanceof Error ? parseError.message : 'Unknown error',
+        stack: parseError instanceof Error ? parseError.stack : undefined
+      });
+      return NextResponse.json(
+        { success: false, error: 'Invalid request body', details: parseError instanceof Error ? parseError.message : 'Unknown parse error' },
+        { status: 400 }
+      );
+    }
+
+    const { 
+      inputImageUrl, 
+      enhancementType, 
+      prompt, 
+      strength = 0.8,
+      moodboardId,
+      selectedProvider = 'nanobanana' // Default to nanobanana for backward compatibility
+    } = requestBody;
+
     // Get auth token from header
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) {
@@ -92,16 +206,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
-
-    // Parse request body
-    const { 
-      inputImageUrl, 
-      enhancementType, 
-      prompt, 
-      strength = 0.8,
-      moodboardId,
-      selectedProvider = 'nanobanana' // Default to nanobanana for backward compatibility
-    } = await request.json();
 
     // Validate required fields
     if (!inputImageUrl || !enhancementType || !prompt) {
@@ -306,85 +410,88 @@ export async function POST(request: NextRequest) {
     let providerUsed = selectedProvider;
     
     try {
-      if (selectedProvider === 'seedream') {
-        // Use Seedream for enhancement
-        console.log('Using Seedream for enhancement');
-        response = await fetch('https://api.wavespeed.ai/api/v3/bytedance/seedream-v4/edit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`
-          },
-          body: JSON.stringify({
-            prompt: `${enhancementType}: ${prompt}`,
-            images: [inputImageUrl],
-            size: '1024*1024',
-            enable_base64_output: false,
-            enable_sync_mode: false
-          })
-        });
+      // Use unified Wavespeed API like playground
+      const apiEndpoint = getApiEndpointForProvider(selectedProvider);
+      console.log(`Using ${selectedProvider} via Wavespeed API: ${apiEndpoint}`);
+
+      // Get image dimensions to preserve aspect ratio
+      let imageDimensions: { width: number; height: number } | undefined
+      try {
+        imageDimensions = await getImageDimensions(optimizedImageUrl)
+        console.log('Original image dimensions:', imageDimensions)
+      } catch (dimError) {
+        console.warn('Could not fetch image dimensions, using defaults:', dimError)
+      }
+
+      // Build request body based on provider and enhancement type
+      const requestBody = buildEnhancementRequestBody(
+        selectedProvider,
+        enhancementType,
+        prompt,
+        optimizedImageUrl,
+        imageDimensions
+      );
+      console.log('Request body:', JSON.stringify(requestBody, null, 2));
+
+      // Call unified Wavespeed API
+      response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      console.log(`${selectedProvider} API response status:`, response.status);
+
+      if (response.ok) {
+        responseData = await response.json();
+        console.log(`${selectedProvider} API response:`, responseData);
         
-        if (response.ok) {
-          responseData = await response.json();
+        // Handle different response formats
+        if (selectedProvider === 'seedream' && responseData.data?.id) {
           // Handle Seedream async response pattern
-          if (responseData.data?.id) {
-            // Poll for results
-            let attempts = 0;
-            const maxAttempts = 30;
+          let attempts = 0;
+          const maxAttempts = 30;
+          
+          while (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
-            while (attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              
-              const resultResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${responseData.data.id}/result`, {
-                headers: {
-                  'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`
-                }
-              });
-              
-              if (resultResponse.ok) {
-                const resultData = await resultResponse.json();
-                if (resultData.data?.status === 'completed' && resultData.data?.outputs?.length > 0) {
-                  responseData = {
-                    code: 200,
-                    data: {
-                      generated_url: resultData.data.outputs[0]
-                    }
-                  };
-                  break;
-                }
+            const resultResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${responseData.data.id}/result`, {
+              headers: {
+                'Authorization': `Bearer ${process.env.WAVESPEED_API_KEY}`
               }
-              attempts++;
+            });
+            
+            if (resultResponse.ok) {
+              const resultData = await resultResponse.json();
+              if (resultData.data?.status === 'completed' && resultData.data?.outputs?.length > 0) {
+                responseData = {
+                  code: 200,
+                  data: {
+                    generated_url: resultData.data.outputs[0]
+                  }
+                };
+                break;
+              }
             }
+            attempts++;
           }
         }
       } else {
-        // Use NanoBanana (default) - official API format
-        console.log('Using NanoBanana for enhancement');
-        
-        // Create callback URL for this request
-        const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://preset.ie'}/api/nanobanana/callback`
-        
-        // Build request according to official API spec
-        const nanobananaPayload = {
-          prompt: `${enhancementType}: ${prompt}`,
-          type: 'IMAGETOIAMGE', // Image editing mode
-          callBackUrl: callbackUrl,
-          numImages: 1,
-          watermark: 'Preset',
-          imageUrls: [inputImageUrl]
-        };
-        
-        response = await fetch('https://api.nanobananaapi.ai/api/v1/nanobanana/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${nanoBananaApiKey}`
-          },
-          body: JSON.stringify(nanobananaPayload)
-        });
+        // If response is not ok, try to get error details
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = await response.text();
+          if (errorData) {
+            errorMessage += ` - ${errorData}`;
+          }
+        } catch (e) {
+          // Body already consumed or empty, use status message
+        }
+        throw new Error(errorMessage);
       }
-
-      responseData = await response.json();
     } catch (fetchError: any) {
       console.error(`Failed to call ${selectedProvider} API:`, fetchError);
       
@@ -538,9 +645,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Validate response structure for successful responses
-    if (!responseData || !responseData.data || (!responseData.data.taskId && !responseData.data.generated_url)) {
+    // Both providers return: { code: 200, data: { id, outputs[], status } }
+    if (!responseData || !responseData.data || !responseData.data.id) {
       console.error(`Invalid ${providerUsed} response structure:`, responseData);
-      
+
       // ✅ REFUND CREDITS - Invalid response
       await refundUserCredits(
         supabaseAdmin,
@@ -549,56 +657,62 @@ export async function POST(request: NextRequest) {
         enhancementType,
         'Invalid response structure from provider'
       );
-      
+
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Invalid response from enhancement service',
-          details: 'Missing taskId in response',
+          details: 'Missing task ID in response',
           response: responseData,
           refunded: true
         },
         { status: 500 }
       );
     }
-    
-    // Handle response based on provider
+
+    // Handle response - both providers use sync mode and return immediate results
     let enhancedImageUrl = null;
-    let taskId = null;
-    
-    if (providerUsed === 'seedream') {
-      // Seedream provides immediate results
-      enhancedImageUrl = responseData.data?.generated_url || responseData.data?.outputs?.[0];
-      taskId = responseData.data?.id || `task_${Date.now()}`;
-    } else {
-      // NanoBanana uses callbacks - we get taskId and wait for callback
-      if (responseData.code !== 200) {
-        throw new Error(`NanoBanana API error: ${responseData.msg || 'Unknown error'}`);
-      }
-      taskId = responseData.data?.taskId;
-      if (!taskId) {
-        throw new Error('No taskId received from NanoBanana API');
-      }
-      console.log('NanoBanana task submitted, waiting for callback:', taskId);
+    let taskId = responseData.data.id; // Both providers return 'id'
+
+    // Get the enhanced image URL from outputs array
+    if (responseData.data.outputs && responseData.data.outputs.length > 0) {
+      enhancedImageUrl = responseData.data.outputs[0];
+    } else if (responseData.data.generated_url) {
+      // Fallback for Seedream if it returns generated_url instead
+      enhancedImageUrl = responseData.data.generated_url;
     }
+
+    console.log(`${providerUsed} response:`, {
+      taskId,
+      status: responseData.data.status,
+      enhancedUrl: enhancedImageUrl,
+      executionTime: responseData.data.executionTime
+    });
     
     // Store task in database using admin client
+    // Generate a proper UUID for the database record
+    const { randomUUID } = await import('crypto')
+    const dbTaskId = randomUUID()
+
+    const taskData: any = {
+      id: dbTaskId,
+      api_task_id: taskId, // Store provider's task ID separately
+      user_id: user.id,
+      moodboard_id: moodboardId,
+      input_image_url: inputImageUrl,
+      enhancement_type: enhancementType,
+      prompt,
+      strength,
+      status: enhancedImageUrl ? 'completed' : 'processing',
+      result_url: enhancedImageUrl, // Store the enhanced image URL
+      provider: providerUsed,
+      cost_usd: providerUsed === 'seedream' ? 0.05 : 0.025,
+      created_at: new Date().toISOString()
+    }
+
     const { error: taskError } = await supabaseAdmin
       .from('enhancement_tasks')
-      .insert({
-        id: taskId,
-        user_id: user.id,
-        moodboard_id: moodboardId,
-        input_image_url: inputImageUrl,
-        enhancement_type: enhancementType,
-        prompt,
-        strength,
-        status: enhancedImageUrl ? 'completed' : 'processing',
-        api_task_id: taskId,
-        provider: providerUsed,
-        cost_usd: providerUsed === 'seedream' ? 0.05 : 0.025,
-        created_at: new Date().toISOString()
-      });
+      .insert(taskData);
 
     if (taskError) {
       console.error('Failed to store task:', taskError);
@@ -649,20 +763,21 @@ export async function POST(request: NextRequest) {
         credits_used: USER_CREDITS_PER_ENHANCEMENT, // User perspective: 1 credit
         cost_usd: 0.10, // Actual cost for 4 NanoBanana credits
         provider: providerUsed,
-        api_request_id: taskId,
+        api_request_id: dbTaskId,
         enhancement_type: enhancementType,
         status: enhancedImageUrl ? 'completed' : 'processing',
         metadata: {
           provider_credits_used: providerCost.providerCredits,
           credit_ratio: providerCost.ratio,
-          provider: providerUsed
+          provider: providerUsed,
+          api_task_id: taskId
         },
         created_at: new Date().toISOString()
       });
 
     return NextResponse.json({
       success: true,
-      taskId: taskId,
+      taskId: dbTaskId,
       status: enhancedImageUrl ? 'completed' : 'processing',
       enhancedUrl: enhancedImageUrl,
       provider: providerUsed,
@@ -675,6 +790,20 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Enhancement API error:', error);
+    
+    // Handle specific "Body has already been read" error
+    if (error.message?.includes('Body has already been read') || error.message?.includes('Body is unusable')) {
+      console.error('Request body consumption error - this usually indicates middleware or other code consuming the body');
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Request processing error',
+          details: 'The request body was consumed multiple times. Please try again.',
+          code: 'BODY_READ_ERROR'
+        },
+        { status: 400 }
+      );
+    }
     
     return NextResponse.json(
       { success: false, error: error.message || 'Internal server error' },
@@ -761,5 +890,126 @@ export async function GET(request: NextRequest) {
       { success: false, error: 'Internal server error' },
       { status: 500 }
     );
+  }
+}
+
+// Helper functions for unified Wavespeed API usage
+function getApiEndpointForProvider(provider: 'nanobanana' | 'seedream'): string {
+  switch (provider) {
+    case 'seedream':
+      return 'https://api.wavespeed.ai/api/v3/bytedance/seedream-v4/edit';
+    case 'nanobanana':
+      return 'https://api.wavespeed.ai/api/v3/google/nano-banana/edit';
+    default:
+      return 'https://api.wavespeed.ai/api/v3/bytedance/seedream-v4/edit';
+  }
+}
+
+function buildEnhancementRequestBody(
+  provider: 'nanobanana' | 'seedream',
+  enhancementType: string,
+  prompt: string,
+  imageUrl: string,
+  imageDimensions?: { width: number; height: number }
+) {
+  // Calculate aspect ratio and size based on original dimensions
+  let aspectRatio = '1:1'
+  let size = '1024*1024'
+
+  if (imageDimensions) {
+    const { width, height } = imageDimensions
+    const ratio = width / height
+
+    // For NanoBanana: map to closest supported aspect ratio
+    if (provider === 'nanobanana') {
+      if (Math.abs(ratio - 1) < 0.1) aspectRatio = '1:1'
+      else if (Math.abs(ratio - 1.5) < 0.1) aspectRatio = '3:2'
+      else if (Math.abs(ratio - 0.67) < 0.1) aspectRatio = '2:3'
+      else if (Math.abs(ratio - 0.75) < 0.1) aspectRatio = '3:4'
+      else if (Math.abs(ratio - 1.33) < 0.1) aspectRatio = '4:3'
+      else if (Math.abs(ratio - 0.8) < 0.1) aspectRatio = '4:5'
+      else if (Math.abs(ratio - 1.25) < 0.1) aspectRatio = '5:4'
+      else if (Math.abs(ratio - 0.56) < 0.1) aspectRatio = '9:16'
+      else if (Math.abs(ratio - 1.78) < 0.1) aspectRatio = '16:9'
+      else if (Math.abs(ratio - 2.33) < 0.1) aspectRatio = '21:9'
+      else aspectRatio = ratio > 1 ? '16:9' : '9:16' // Default to common ratios
+    }
+
+    // For Seedream: preserve exact dimensions (max 4096px)
+    if (provider === 'seedream') {
+      const maxDim = 4096
+      let targetWidth = width
+      let targetHeight = height
+
+      // Scale down if either dimension exceeds 4096
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          targetWidth = maxDim
+          targetHeight = Math.round((maxDim / width) * height)
+        } else {
+          targetHeight = maxDim
+          targetWidth = Math.round((maxDim / height) * width)
+        }
+      }
+
+      // Ensure dimensions are at least 1024 (minimum supported)
+      targetWidth = Math.max(1024, targetWidth)
+      targetHeight = Math.max(1024, targetHeight)
+
+      size = `${targetWidth}*${targetHeight}`
+    }
+  }
+
+  const baseBody: any = {
+    images: [imageUrl],
+    enable_base64_output: false,
+    enable_sync_mode: true
+  }
+
+  // Add provider-specific parameters
+  if (provider === 'nanobanana') {
+    baseBody.aspect_ratio = aspectRatio
+  } else if (provider === 'seedream') {
+    baseBody.size = size
+  }
+
+  // Build optimized prompts based on enhancement type and provider
+  let optimizedPrompt = prompt;
+  
+  switch (enhancementType) {
+    case 'lighting':
+      optimizedPrompt = `Improve lighting and exposure: ${prompt}. Focus on natural lighting, proper exposure, and dramatic shadows if requested.`;
+      break;
+    case 'style':
+      optimizedPrompt = `Apply artistic style transformation: ${prompt}. Transform the visual style while preserving the main subject and composition.`;
+      break;
+    case 'background':
+      optimizedPrompt = `Replace or enhance background: ${prompt}. Change the background while maintaining the main subject perfectly.`;
+      break;
+    case 'mood':
+      optimizedPrompt = `Change overall atmosphere and mood: ${prompt}. Modify the emotional tone and visual atmosphere of the image.`;
+      break;
+    case 'custom':
+      optimizedPrompt = prompt;
+      break;
+    default:
+      optimizedPrompt = `${enhancementType}: ${prompt}`;
+  }
+
+  // Provider-specific request body adjustments
+  if (provider === 'nanobanana') {
+    return {
+      ...baseBody,
+      prompt: optimizedPrompt,
+      type: 'IMAGETOIAMGE',
+      numImages: 1,
+      watermark: 'Preset'
+    };
+  } else {
+    // Seedream format
+    return {
+      ...baseBody,
+      prompt: optimizedPrompt
+    };
   }
 }

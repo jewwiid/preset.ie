@@ -899,36 +899,30 @@ export default function TabbedPlaygroundLayout({
         setActiveTab(value)
         onTabChange?.(value)
       }} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 gap-1">
-          <TabsTrigger value="generate" className="flex items-center gap-2 text-xs md:text-sm">
+        <TabsList className="inline-flex w-fit mx-auto gap-2">
+          <TabsTrigger value="generate" className="flex items-center gap-2.5 px-6 py-3">
             <Wand2 className="h-4 w-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Generate</span>
-            <span className="sm:hidden">Gen</span>
+            <span>Generate</span>
           </TabsTrigger>
-          <TabsTrigger value="edit" className="flex items-center gap-2 text-xs md:text-sm">
+          <TabsTrigger value="edit" className="flex items-center gap-2.5 px-6 py-3">
             <Edit3 className="h-4 w-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Edit</span>
-            <span className="sm:hidden">Edit</span>
+            <span>Edit</span>
           </TabsTrigger>
-          <TabsTrigger value="batch" className="flex items-center gap-2 text-xs md:text-sm">
+          <TabsTrigger value="batch" className="flex items-center gap-2.5 px-6 py-3">
             <Layers className="h-4 w-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Batch</span>
-            <span className="sm:hidden">Batch</span>
+            <span>Batch</span>
           </TabsTrigger>
-          <TabsTrigger value="video" className="flex items-center gap-2 text-xs md:text-sm">
+          <TabsTrigger value="video" className="flex items-center gap-2.5 px-6 py-3">
             <Video className="h-4 w-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Video</span>
-            <span className="sm:hidden">Video</span>
+            <span>Video</span>
           </TabsTrigger>
-          <TabsTrigger value="prompts" className="flex items-center gap-2 text-xs md:text-sm">
+          <TabsTrigger value="prompts" className="flex items-center gap-2.5 px-6 py-3">
             <BookOpen className="h-4 w-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Prompts</span>
-            <span className="sm:hidden">Prompts</span>
+            <span>Prompts</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2 text-xs md:text-sm">
+          <TabsTrigger value="history" className="flex items-center gap-2.5 px-6 py-3">
             <History className="h-4 w-4 flex-shrink-0" />
-            <span className="hidden sm:inline">History</span>
-            <span className="sm:hidden">History</span>
+            <span>History</span>
           </TabsTrigger>
         </TabsList>
 

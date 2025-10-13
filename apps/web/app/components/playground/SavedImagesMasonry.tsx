@@ -1139,19 +1139,32 @@ export default function SavedMediaMasonry({
                         })()}
                       {(() => {
                         const metadata = selectedImageForInfo.generation_metadata as any;
+                        // Check for both base_image and original_image_url for backwards compatibility
+                        const sourceImage = metadata.base_image || metadata.original_image_url;
+                        const sourceType = metadata.source_type || 'unknown';
+                        const hasSourceImage = metadata.has_source_image || !!sourceImage;
+                        
                         return (
                           <div>
                             <span className="font-medium">Source Image:</span>
                             <div className="mt-1">
-                              {metadata.base_image ? (
-                                <img 
-                                  src={metadata.base_image} 
-                                  alt="Base image" 
-                                  className="w-16 h-16 object-cover rounded border"
-                                />
+                              {sourceImage ? (
+                                <div className="flex items-center gap-2">
+                                  <img 
+                                    src={sourceImage} 
+                                    alt="Source/Base image" 
+                                    className="w-16 h-16 object-cover rounded border"
+                                  />
+                                  {sourceType === 'moodboard_image' && (
+                                    <div className="text-xs text-muted-foreground">
+                                      <div>📋 From Moodboard</div>
+                                      <div className="text-xs opacity-75">Image-to-Image</div>
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
                                 <div className="w-16 h-16 bg-muted rounded border flex items-center justify-center text-xs text-muted-foreground">
-                                  📝 Text-to-Image
+                                  {hasSourceImage ? '🖼️ Image-to-Image' : '📝 Text-to-Image'}
                                 </div>
                               )}
                             </div>

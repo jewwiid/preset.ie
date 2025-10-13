@@ -82,19 +82,19 @@ export default function RequirementsStep({
 
   return (
     <div className="bg-card rounded-lg border border-border shadow-sm">
-      <div className="p-6 border-b border-border">
+      <div className="p-4 sm:p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-lg">
             <FileText className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Requirements & Rights</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground">Requirements & Rights</h2>
             <p className="text-muted-foreground text-sm">Set usage rights and application limits</p>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
         {/* Usage Rights */}
         <div>
           <Label className="text-sm font-medium text-foreground mb-2">
@@ -153,7 +153,7 @@ export default function RequirementsStep({
           {/* Common Usage Options */}
           <div>
             <p className="text-xs text-muted-foreground mb-2">Common options (click to add):</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {commonUsageOptions.map((option) => (
                 <Button
                   key={option}
@@ -167,7 +167,8 @@ export default function RequirementsStep({
                       addUsageRight(option)
                     }
                   }}
-                  className="text-xs h-8 px-3"
+                  className="text-xs h-8 px-3 justify-start text-left whitespace-normal"
+                  title={option}
                 >
                   {selectedRights.includes(option) ? '✓ ' : ''}{option}
                 </Button>
@@ -283,13 +284,13 @@ export default function RequirementsStep({
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between pt-6 border-t border-border">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-border">
           <Button
             type="button"
             variant="outline"
             onClick={onBack}
             size="lg"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to Schedule
@@ -299,7 +300,7 @@ export default function RequirementsStep({
             type="submit"
             disabled={!isValid}
             size="lg"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             Continue to Moodboard
             <ChevronRight className="w-4 h-4" />

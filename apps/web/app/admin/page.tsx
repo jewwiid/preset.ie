@@ -24,6 +24,7 @@ import { VerificationQueue } from '../components/admin/VerificationQueue'
 import { ModerationQueue } from '../components/admin/ModerationQueue'
 import { ModerationAnalytics } from '../components/admin/ModerationAnalytics'
 import { FeaturedPresetsQueue } from '../components/admin/FeaturedPresetsQueue'
+import { InviteSystemManager } from '../components/admin/InviteSystemManager'
 
 interface PlatformStats {
   totalUsers: number
@@ -327,6 +328,7 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'invites', label: 'Invite System', icon: Users },
     { id: 'moderation', label: 'Moderation', icon: Shield },
     { id: 'reports', label: 'Reports', icon: AlertTriangle },
     { id: 'users', label: 'Users', icon: Users },
@@ -462,6 +464,19 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Invite System Tab */}
+        {activeTab === 'invites' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">Invite System</h2>
+                <p className="text-muted-foreground">Manage invite-only mode and referral system</p>
+              </div>
+            </div>
+            <InviteSystemManager />
           </div>
         )}
 

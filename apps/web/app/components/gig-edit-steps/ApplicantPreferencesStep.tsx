@@ -1455,17 +1455,19 @@ export default function ApplicantPreferencesStep({
       </Card>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6">
         <Button
           variant="outline"
           onClick={onBack}
           disabled={loading}
+          className="w-full sm:w-auto"
         >
           Back
         </Button>
         <Button
           onClick={handleNext}
           disabled={loading}
+          className="w-full sm:w-auto"
         >
           {loading ? 'Saving...' : 'Continue'}
         </Button>

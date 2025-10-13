@@ -33,38 +33,38 @@ export function VerificationBadges({
 
   const badges = []
 
-  // Identity Badge (Blue)
+  // Identity Badge (CheckCircle icon, Primary color)
   if (verifiedIdentity) {
     badges.push({
       key: 'identity',
       icon: CheckCircle,
-      color: 'text-blue-500',
-      fill: 'fill-blue-500/20',
-      tooltip: 'Identity Verified',
+      color: 'text-primary',
+      fill: 'fill-primary/20',
+      tooltip: 'Identity verified with government ID',
       label: 'ID'
     })
   }
 
-  // Professional Badge (Purple)
+  // Professional Badge (Briefcase icon, Primary color)
   if (verifiedProfessional) {
     badges.push({
       key: 'professional',
       icon: Briefcase,
-      color: 'text-purple-500',
-      fill: 'fill-purple-500/20',
-      tooltip: 'Professional Verified',
+      color: 'text-primary',
+      fill: 'fill-primary/20',
+      tooltip: 'Professional credentials verified',
       label: 'Pro'
     })
   }
 
-  // Business Badge (Orange)
+  // Business Badge (Building icon, Primary color)
   if (verifiedBusiness) {
     badges.push({
       key: 'business',
       icon: Building,
-      color: 'text-orange-500',
-      fill: 'fill-orange-500/20',
-      tooltip: 'Business Verified',
+      color: 'text-primary',
+      fill: 'fill-primary/20',
+      tooltip: 'Business registration verified',
       label: 'Business'
     })
   }

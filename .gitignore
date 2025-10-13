@@ -89,3 +89,21 @@ sync_*.js
 credentials.json
 
 *.sql
+# Development logs
+*.log
+dev-debug.log
+dev-output.log
+dev.log
+
+# Temporary files
+temp_*.sql
+temp_*.js
+temp_*.ts
+*-test-results.json
+
+# Archives
+*.tar.gz
+*.zip
+
+# Test images
+*-profile-updated.png

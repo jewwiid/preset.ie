@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, firstName, lastName, role, dateOfBirth } = body;
+    const { email, password, firstName, lastName, role, dateOfBirth, inviteCode } = body;
 
     if (!email || !password || !firstName || !lastName || !role) {
       return NextResponse.json(
@@ -14,6 +14,69 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient();
+
+    // Check if invite-only mode is active
+    const { data: inviteSetting } = await supabase
+      .from('platform_settings')
+      .select('value')
+      .eq('key', 'invite_only_mode')
+      .single();
+
+    const inviteOnlyMode = inviteSetting?.value ?? false;
+
+    // If invite-only mode is active, validate invite code
+    if (inviteOnlyMode) {
+      if (!inviteCode) {
+        return NextResponse.json(
+          {
+            error: 'Invite code required',
+            message: 'An invite code is required to sign up at this time. Please request an invite.'
+          },
+          { status: 400 }
+        );
+      }
+
+      // Validate the invite code
+      const normalizedCode = inviteCode.trim().toUpperCase();
+      const { data: inviteCodeData, error: codeError } = await supabase
+        .from('invite_codes')
+        .select('id, status, used_by_user_id, expires_at')
+        .eq('code', normalizedCode)
+        .single();
+
+      if (codeError || !inviteCodeData) {
+        return NextResponse.json(
+          {
+            error: 'Invalid invite code',
+            message: 'The invite code you entered is not valid.'
+          },
+          { status: 400 }
+        );
+      }
+
+      // Check if code is already used
+      if (inviteCodeData.status === 'used') {
+        return NextResponse.json(
+          {
+            error: 'Invite code already used',
+            message: 'This invite code has already been used.'
+          },
+          { status: 400 }
+        );
+      }
+
+      // Check if code is expired
+      if (inviteCodeData.status === 'expired' ||
+          (inviteCodeData.expires_at && new Date(inviteCodeData.expires_at) < new Date())) {
+        return NextResponse.json(
+          {
+            error: 'Invite code expired',
+            message: 'This invite code has expired.'
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Create auth user with signup data in metadata
     // Profile will be created AFTER email verification
@@ -28,6 +91,7 @@ export async function POST(request: NextRequest) {
           role,
           date_of_birth: dateOfBirth,
           email_verified: false,
+          invited_by_code: inviteCode ? inviteCode.trim().toUpperCase() : null,
         },
       },
     });
@@ -46,7 +110,7 @@ export async function POST(request: NextRequest) {
 
         // Find the user
         const { data: { users }, error: lookupError } = await adminClient.auth.admin.listUsers();
-        const existingUser = users?.find(u => u.email === email);
+        const existingUser = users?.find((u: any) => u.email === email);
 
         if (existingUser) {
           // Check if user has verified profile
@@ -124,6 +188,65 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       console.error('Error sending verification email:', emailError);
       // Continue anyway - user exists, they can request resend
+    }
+
+    // Mark invite code as used and notify referrer (if provided)
+    if (inviteCode) {
+      try {
+        const normalizedCode = inviteCode.trim().toUpperCase();
+
+        // Get the invite code details to find creator
+        const { data: codeData } = await supabase
+          .from('invite_codes')
+          .select('id, created_by_user_id')
+          .eq('code', normalizedCode)
+          .single();
+
+        if (codeData) {
+          // Mark code as used
+          await supabase
+            .from('invite_codes')
+            .update({
+              status: 'used',
+              used_at: new Date().toISOString(),
+              used_by_user_id: authData.user.id
+            })
+            .eq('code', normalizedCode);
+
+          // Send notification email to referrer (if they exist and it's not an admin code)
+          if (codeData.created_by_user_id) {
+            try {
+              // Get referrer's profile
+              const { data: referrerProfile } = await supabase
+                .from('users_profile')
+                .select('user_id, display_name')
+                .eq('id', codeData.created_by_user_id)
+                .single();
+
+              if (referrerProfile) {
+                // Send signup notification email
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com';
+                await fetch(`${baseUrl}/api/emails/new-signup-notification`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    referrerUserId: referrerProfile.user_id,
+                    referrerName: referrerProfile.display_name,
+                    newUserName: `${firstName} ${lastName}`,
+                    inviteCode: normalizedCode
+                  })
+                });
+              }
+            } catch (emailError) {
+              console.error('Error sending signup notification:', emailError);
+              // Continue anyway - don't block signup
+            }
+          }
+        }
+      } catch (inviteError) {
+        console.error('Error marking invite code as used:', inviteError);
+        // Don't block signup on this error
+      }
     }
 
     return NextResponse.json({

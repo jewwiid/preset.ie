@@ -2,17 +2,10 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
-
-interface CreativeRole {
-  slug: string;
-  name: string;
-  description: string;
-  imageUrl: string;
-}
+import { RoleCard } from '@/lib/utils/role-slug-mapper';
 
 interface CreativeRolesSectionProps {
-  randomizedRoles: CreativeRole[];
+  randomizedRoles: RoleCard[];
   coverImage?: {
     image_url: string;
     alt_text?: string;
@@ -60,16 +53,19 @@ export default function CreativeRolesSection({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {randomizedRoles.map((role) => {
-              // Get admin-uploaded image
+              // Get admin-uploaded image, fallback to role image, then to placeholder
               const roleImage = getRoleImage(role.slug);
-              const imageUrl = roleImage?.image_url || role.imageUrl;
+              const imageUrl = roleImage?.image_url || role.imageUrl || '/placeholder-role.jpg';
+
+              // Skip roles without images for now (will be added as admins upload them)
+              if (!role.imageUrl && !roleImage) return null;
 
               return (
                 <Link key={role.slug} href={`/${role.slug}`} className="group cursor-pointer block">
                   {/* Role Image */}
                   <div className="relative aspect-[4/5] mb-4 rounded-lg overflow-hidden">
                     <Image
-                      src={optimizeSupabaseImage(imageUrl, IMAGE_SIZES.roleCard)}
+                      src={imageUrl}
                       alt={roleImage?.alt_text || `${role.name} professionals`}
                       fill
                       sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"

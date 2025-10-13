@@ -37,7 +37,7 @@ const badgeConfig = {
     tooltip: 'Email address has been verified'
   },
   verified_identity: {
-    icon: Shield,
+    icon: CheckCircle,
     label: 'ID Verified',
     color: 'text-primary',
     bgColor: 'bg-primary/10',

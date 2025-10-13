@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface HeroImage {
   id: string;
@@ -30,7 +29,7 @@ export default function HeroSection({ currentImageIndex, heroImages, isLoggedIn 
             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-muted">
               <Image
                 key={currentImage.id}
-                src={optimizeSupabaseImage(currentImage.image_url, IMAGE_SIZES.hero)}
+                src={currentImage.image_url}
                 alt={currentImage.alt_text}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -53,7 +52,7 @@ export default function HeroSection({ currentImageIndex, heroImages, isLoggedIn 
           {/* Right Column - Content */}
           <div className="order-2 lg:order-2 flex flex-col justify-center">
             <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
-              Connect Creatives alike. Ready, set, Preset.
+              Connecting Creatives alike. Ready, set, Preset.
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               The go to platform, allowing creators and creatives to collaborate network and brainstorm together.

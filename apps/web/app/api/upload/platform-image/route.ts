@@ -9,8 +9,12 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    // @ts-ignore - FormData.get() exists but TypeScript definitions are incomplete
+    // @ts-expect-error - FormData.get() exists but TypeScript definitions are incomplete
     const file = formData.get('file') as File | null;
+    // @ts-expect-error - FormData.get() exists but TypeScript definitions are incomplete
+    const imageType = (formData.get('image_type') as string) || 'general';
+    // @ts-expect-error - FormData.get() exists but TypeScript definitions are incomplete
+    const category = (formData.get('category') as string) || '';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -32,13 +36,35 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Determine folder structure based on image_type and category
+    let folderPath = '';
+    
+    if (imageType === 'hero' || category === 'hero') {
+      folderPath = 'page-headers/hero';
+    } else if (imageType === 'role' || category?.startsWith('role-')) {
+      folderPath = 'roles';
+    } else if (imageType === 'talent-for-hire' || category === 'talent-for-hire') {
+      folderPath = 'page-headers/talent-for-hire';
+    } else if (imageType === 'contributors' || category === 'contributors') {
+      folderPath = 'page-headers/contributors';
+    } else if (imageType === 'creative-roles' || category === 'creative-roles') {
+      folderPath = 'page-headers/creative-roles';
+    } else if (category) {
+      folderPath = category.replace(/\s+/g, '-').toLowerCase();
+    } else {
+      folderPath = 'general';
+    }
+
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const fileExtension = file.name.split('.').pop();
-    const fileName = `platform-image-${timestamp}-${randomString}.${fileExtension}`;
+    const fileName = `${folderPath}/platform-image-${timestamp}-${randomString}.${fileExtension}`;
 
-    // Upload to Supabase Storage
+    console.log('📁 Uploading to folder:', folderPath);
+    console.log('📄 Full path:', fileName);
+
+    // Upload to Supabase Storage with folder structure
     const { data, error } = await supabase.storage
       .from('platform-images')
       .upload(fileName, file, {

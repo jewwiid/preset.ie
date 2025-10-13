@@ -19,20 +19,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Database connection error' }, { status: 500 });
     }
 
+    // Note: Left joins with gigs and moodboards may be null since they're optional references
     let query = supabase
       .from('treatments')
-      .select(`
-        *,
-        gigs (
-          id,
-          title,
-          status
-        ),
-        moodboards (
-          id,
-          title
-        )
-      `)
+      .select('*')
       .eq('owner_id', user.id)
       .order('updated_at', { ascending: false });
 

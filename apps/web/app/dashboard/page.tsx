@@ -13,6 +13,7 @@ import { PendingInvitationsCard } from '../../components/dashboard/PendingInvita
 import { PendingGigInvitationsCard } from '../../components/dashboard/PendingGigInvitationsCard'
 import { AllInvitationsCard } from '../../components/dashboard/AllInvitationsCard'
 import { DashboardMatchmakingCard } from '../../components/dashboard/DashboardMatchmakingCard'
+import { UserReferralCard } from '../../components/dashboard/UserReferralCard'
 import SavedMediaGallery from '../components/playground/SavedImagesGallery'
 import { BannerPosition } from '../../lib/types/dashboard'
 
@@ -167,6 +168,18 @@ export default function Dashboard() {
               />
               <SmartSuggestionsCard profile={profile} />
             </div>
+          </div>
+
+          {/* Referral Card - Full Width */}
+          <div className="mb-6 max-w-7xl mx-auto">
+            <UserReferralCard
+              userRole={{
+                isTalent: !!isTalent,
+                isContributor: !!isContributor,
+                isAdmin: !!isAdmin
+              }}
+              userName={profile.display_name}
+            />
           </div>
 
           {/* All Invitations Quick Access Card */}

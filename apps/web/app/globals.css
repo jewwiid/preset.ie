@@ -13,6 +13,42 @@
   font-display: swap;
 }
 
+/* Bloc W01 Regular font - Apply only to headings and branding */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Bloc W01 Regular', sans-serif !important;
+  letter-spacing: 0.01em !important;
+  color: var(--primary) !important;
+}
+
+/* Apply Bloc font to navbar and preset branding */
+.preset-branding {
+  font-family: 'Bloc W01 Regular', sans-serif !important;
+  letter-spacing: 0.01em !important;
+}
+
+/* Main navbar items - Custom font, no color override */
+.nav-menu-item {
+  font-family: 'Bloc W01 Regular', sans-serif !important;
+  letter-spacing: 0.01em !important;
+  font-weight: 600 !important;
+}
+
+/* Dropdown submenu titles - Custom font with green color */
+.nav-submenu-title {
+  font-family: 'Bloc W01 Regular', sans-serif !important;
+  letter-spacing: 0.01em !important;
+  color: var(--primary) !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important; /* 16px - same as text-base */
+}
+
+/* Dropdown submenu items - Custom font, smaller size */
+.nav-submenu-item {
+  font-family: 'Bloc W01 Regular', sans-serif !important;
+  letter-spacing: 0.01em !important;
+  font-size: 0.875rem !important; /* 14px - text-sm */
+}
+
 /* Debug: Theme update 2024-09-19 */
 
 /* Uniform Hover and Active States */

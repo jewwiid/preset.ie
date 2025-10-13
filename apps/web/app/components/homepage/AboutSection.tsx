@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image';
-import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface AboutSectionProps {
   whyPresetImage?: {
@@ -22,7 +21,7 @@ export default function AboutSection({ whyPresetImage }: AboutSectionProps) {
           <div className="relative order-2 lg:order-1">
             <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-muted">
               <Image
-                src={optimizeSupabaseImage(imageSrc, IMAGE_SIZES.sectionImage)}
+                src={imageSrc}
                 alt={imageAlt}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"

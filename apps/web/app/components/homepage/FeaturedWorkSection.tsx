@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
-import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface FeaturedImage {
   id: string;
@@ -23,8 +22,13 @@ interface FeaturedWorkSectionProps {
 export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSectionProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: 'image' | 'video'; title: string; creator: string } | null>(null);
+  const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
 
   const heights = ['h-64', 'h-48', 'h-80', 'h-64', 'h-72', 'h-56', 'h-80', 'h-64', 'h-72', 'h-80'];
+
+  const handleVideoError = (videoUrl: string) => {
+    setFailedVideos(prev => new Set(prev).add(videoUrl));
+  };
 
   return (
     <>
@@ -61,7 +65,15 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                     return [...placeholders, ...duplicatePlaceholders];
                   }
 
-                  const images = featuredImages.map((image, index) => {
+                  const images = featuredImages
+                    .filter(image => {
+                      // Show all images, but only show videos that are saved to Supabase storage
+                      if (image.media_type === 'video') {
+                        return image.video_url && image.video_url.includes('supabase.co/storage');
+                      }
+                      return true;
+                    })
+                    .map((image, index) => {
                     const isVideo = image.media_type === 'video' && image.video_url;
                     const mediaUrl = isVideo ? image.video_url : image.result_image_url;
 
@@ -87,13 +99,10 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                             loop
                             muted
                             playsInline
-                            onError={(e) => {
-                              console.error('Video failed to load:', mediaUrl);
-                            }}
                           />
                         ) : (
                           <Image
-                            src={optimizeSupabaseImage(mediaUrl || '', IMAGE_SIZES.thumbnail)}
+                            src={mediaUrl || ''}
                             alt={image.title || `Featured work ${index + 1}`}
                             fill
                             sizes="320px"
@@ -110,11 +119,11 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                             }}
                           />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="text-background">
+                          <div className="text-primary-foreground">
                             <p className="text-sm font-medium">{image.title || 'Creative Project'}</p>
-                            <p className="text-xs text-background/70">
+                            <p className="text-xs text-primary-foreground/70">
                               by {image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'}
                             </p>
                           </div>
@@ -124,7 +133,15 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                   });
 
                   // Duplicate images/videos for seamless loop with unique keys
-                  const duplicateImages = featuredImages.map((image, index) => {
+                  const duplicateImages = featuredImages
+                    .filter(image => {
+                      // Show all images, but only show videos that are saved to Supabase storage
+                      if (image.media_type === 'video') {
+                        return image.video_url && image.video_url.includes('supabase.co/storage');
+                      }
+                      return true;
+                    })
+                    .map((image, index) => {
                     const isVideo = image.media_type === 'video' && image.video_url;
                     const mediaUrl = isVideo ? image.video_url : image.result_image_url;
 
@@ -150,13 +167,10 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                             loop
                             muted
                             playsInline
-                            onError={(e) => {
-                              console.error('Video failed to load:', mediaUrl);
-                            }}
                           />
                         ) : (
                           <Image
-                            src={optimizeSupabaseImage(mediaUrl || '', IMAGE_SIZES.thumbnail)}
+                            src={mediaUrl || ''}
                             alt={image.title || `Featured work ${index + 1}`}
                             fill
                             sizes="320px"
@@ -173,11 +187,11 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                             }}
                           />
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="text-background">
+                          <div className="text-primary-foreground">
                             <p className="text-sm font-medium">{image.title || 'Creative Project'}</p>
-                            <p className="text-xs text-background/70">
+                            <p className="text-xs text-primary-foreground/70">
                               by {image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'}
                             </p>
                           </div>
@@ -223,7 +237,7 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                 />
               ) : (
                 <Image
-                  src={optimizeSupabaseImage(lightboxMedia.url, { width: 1920, height: 1080, quality: 90 })}
+                  src={lightboxMedia.url}
                   alt={lightboxMedia.title}
                   width={1920}
                   height={1080}

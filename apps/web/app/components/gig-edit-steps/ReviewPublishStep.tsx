@@ -5,6 +5,7 @@ import { ChevronLeft, CheckCircle, AlertTriangle, Save, Eye, MapPin, Calendar, F
 import { Button } from '@/components/ui/button'
 import { StatusType, CompType, PurposeType } from '../../../lib/gig-form-persistence'
 import { supabase } from '../../../lib/supabase'
+import { cn } from '@/lib/utils'
 
 interface MoodboardItem {
   id: string
@@ -523,14 +524,14 @@ export default function ReviewPublishStep({
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between p-6 border-t border-border bg-muted rounded-b-lg">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 p-6 border-t border-border bg-muted rounded-b-lg">
           <Button
             type="button"
             variant="outline"
             onClick={onBack}
             disabled={saving}
             size="lg"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to Moodboard
@@ -541,10 +542,22 @@ export default function ReviewPublishStep({
             onClick={onSave}
             disabled={saving}
             size="lg"
-            className="flex items-center gap-2"
+            className={cn(
+              "flex items-center gap-2 w-full sm:w-auto",
+              status === 'PUBLISHED' && "bg-primary hover:bg-primary/90"
+            )}
           >
-            <Save className="w-4 h-4" />
-            {saving ? 'Saving...' : 'Save Changes'}
+            {status === 'PUBLISHED' ? (
+              <>
+                <Eye className="w-4 h-4" />
+                {saving ? 'Publishing...' : 'Publish Gig'}
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save as Draft'}
+              </>
+            )}
           </Button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Sparkles, X, CheckCircle, Loader2, Move, Maximize2, Camera } from 'lucide-react'
+import { Sparkles, X, CheckCircle, Loader2, Move, Maximize2, Camera, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface MasonryItem {
@@ -28,10 +28,13 @@ interface MasonryItem {
 
 interface MasonryGridProps {
   items: MasonryItem[]
+  featuredImageId?: string | null
+  onSetFeatured?: (itemId: string) => void
   onRemove?: (itemId: string) => void
   onEnhance?: (itemId: string) => void
   onToggleOriginal?: (itemId: string) => void
   onRedoEnhancement?: (itemId: string) => void
+  onDiscardEnhanced?: (itemId: string) => void
   onItemClick?: (item: MasonryItem) => void
   onReorder?: (items: MasonryItem[]) => void
   enhancingItems?: Set<string>
@@ -50,10 +53,13 @@ interface DragState {
 
 export default function DraggableMasonryGrid({
   items,
+  featuredImageId,
+  onSetFeatured,
   onRemove,
   onEnhance,
   onToggleOriginal,
   onRedoEnhancement,
+  onDiscardEnhanced,
   onItemClick,
   onReorder,
   enhancingItems = new Set(),
@@ -90,13 +96,13 @@ export default function DraggableMasonryGrid({
   // Drag handlers
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, item: MasonryItem) => {
     if (!editable) return
-    
-    // Create custom drag image
-    const dragImg = new Image()
-    dragImg.src = item.thumbnail_url || item.url
-    e.dataTransfer.setDragImage(dragImg, e.nativeEvent.offsetX, e.nativeEvent.offsetY)
+
+    // Use the current element as drag image to maintain proper sizing
+    // Set offset to center of the cursor for better UX
+    const rect = e.currentTarget.getBoundingClientRect()
+    e.dataTransfer.setDragImage(e.currentTarget, e.nativeEvent.offsetX, e.nativeEvent.offsetY)
     e.dataTransfer.effectAllowed = 'move'
-    
+
     setDragState(prev => ({
       ...prev,
       isDragging: true,
@@ -361,7 +367,30 @@ export default function DraggableMasonryGrid({
                 {/* Action buttons need pointer events */}
                 <div className="pointer-events-auto">
                   {/* Top actions */}
-                  <div className="absolute top-2 right-2 flex gap-2">
+                  <div className="absolute top-2 left-2 right-2 flex justify-between">
+                    {/* Featured badge or set featured button */}
+                    {onSetFeatured && (
+                      featuredImageId === item.id ? (
+                        <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1.5">
+                          <Star className="w-3.5 h-3.5 fill-current" />
+                          Featured
+                        </div>
+                      ) : (
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onSetFeatured(item.id)
+                          }}
+                          variant="secondary"
+                          size="sm"
+                          className="bg-background/90 backdrop-blur-sm text-xs h-7 px-2"
+                        >
+                          <Star className="w-3.5 h-3.5 mr-1" />
+                          Set as Featured
+                        </Button>
+                      )
+                    )}
+
                     {/* Remove button */}
                     {editable && onRemove && (
                       <Button
@@ -432,6 +461,21 @@ export default function DraggableMasonryGrid({
                           className="text-xs"
                         >
                           Redo
+                        </Button>
+                      )}
+
+                      {/* Discard enhanced version */}
+                      {editable && item.enhancement_status === 'completed' && item.enhanced_url && onDiscardEnhanced && (
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onDiscardEnhanced(item.id)
+                          }}
+                          variant="destructive"
+                          size="sm"
+                          className="text-xs"
+                        >
+                          Discard
                         </Button>
                       )}
                     </div>

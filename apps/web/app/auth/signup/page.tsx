@@ -1,19 +1,20 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '../../../lib/auth-context'
-import { 
-  Check, 
-  ChevronRight, 
-  Mail, 
-  Lock, 
+import {
+  Check,
+  ChevronRight,
+  Mail,
+  Lock,
   AlertCircle,
   X,
   CheckCircle2,
   Eye,
-  EyeOff
+  EyeOff,
+  Ticket
 } from 'lucide-react'
 import { DatePicker } from '../../../components/ui/date-picker'
 import { Button } from '../../../components/ui/button'
@@ -32,13 +33,14 @@ type SignupMethod = 'email' | 'google'
 
 export default function SignUpPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { signUp, signInWithGoogle } = useAuth()
-  
+
   // Multi-step form state
   const [currentStep, setCurrentStep] = useState<SignupStep>('role')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   // Form data
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
   const [selectedSignupMethod, setSelectedSignupMethod] = useState<SignupMethod | null>(null)
@@ -47,14 +49,42 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  
+
+  // Invite code
+  const [inviteCode, setInviteCode] = useState('')
+  const [inviteOnlyMode, setInviteOnlyMode] = useState(false)
+  const [inviteCodeValid, setInviteCodeValid] = useState<boolean | null>(null)
+  const [validatingInvite, setValidatingInvite] = useState(false)
+
   // Age verification
   const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-  
+
   // Password visibility
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // Check if invite code is in URL params
+  useEffect(() => {
+    const inviteParam = searchParams.get('invite')
+    if (inviteParam) {
+      setInviteCode(inviteParam)
+    }
+  }, [searchParams])
+
+  // Check if invite-only mode is active
+  useEffect(() => {
+    const checkInviteMode = async () => {
+      try {
+        const response = await fetch('/api/auth/validate-invite')
+        const data = await response.json()
+        setInviteOnlyMode(data.inviteOnlyMode)
+      } catch (err) {
+        console.error('Error checking invite mode:', err)
+      }
+    }
+    checkInviteMode()
+  }, [])
   
   // Calculate age from date of birth
   const calculateAge = (dob: Date | undefined): number => {
@@ -109,6 +139,38 @@ export default function SignUpPage() {
 
   const passwordStrength = getPasswordStrength()
 
+  // Validate invite code
+  const validateInviteCode = async (code: string) => {
+    if (!code.trim()) {
+      setInviteCodeValid(null)
+      return
+    }
+
+    setValidatingInvite(true)
+    try {
+      const response = await fetch('/api/auth/validate-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.trim() })
+      })
+
+      const data = await response.json()
+      setInviteCodeValid(data.valid)
+
+      if (!data.valid && data.error) {
+        setError(data.message || data.error)
+      } else if (data.valid) {
+        setError(null)
+      }
+    } catch (err) {
+      console.error('Error validating invite code:', err)
+      setInviteCodeValid(false)
+      setError('Failed to validate invite code')
+    } finally {
+      setValidatingInvite(false)
+    }
+  }
+
   const handleRoleSelection = (role: UserRole, method: SignupMethod) => {
     setSelectedRole(role)
     setSelectedSignupMethod(method)
@@ -119,6 +181,18 @@ export default function SignUpPage() {
   const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    // Check invite code if invite-only mode is active
+    if (inviteOnlyMode) {
+      if (!inviteCode.trim()) {
+        setError('An invite code is required to sign up')
+        return
+      }
+      if (inviteCodeValid !== true) {
+        setError('Please enter a valid invite code')
+        return
+      }
+    }
 
     // Handle Google signup
     if (selectedSignupMethod === 'google') {
@@ -212,27 +286,37 @@ export default function SignUpPage() {
       if (lastName) {
         sessionStorage.setItem('preset_signup_lastName', lastName)
       }
+      if (inviteCode) {
+        sessionStorage.setItem('preset_signup_inviteCode', inviteCode.trim().toUpperCase())
+      }
 
-      // Create auth account with user metadata
-      const { error: signUpError, needsEmailConfirmation } = await signUp(email, password, {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          full_name: `${firstName} ${lastName}`.trim()
-        }
+      // Create auth account by calling API directly (to include invite code)
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName,
+          lastName,
+          role: selectedRole,
+          dateOfBirth: dateOfBirth?.toISOString(),
+          inviteCode: inviteCode.trim() || undefined
+        })
       })
 
-      if (signUpError) {
-        setError(signUpError.message)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || data.message || 'Failed to create account')
         setLoading(false)
         return
       }
 
-      if (needsEmailConfirmation) {
-        // Redirect to email confirmation page
+      // Success - redirect to confirmation page
+      if (data.requiresVerification) {
         router.push(`/auth/signup-success?email=${encodeURIComponent(email)}`)
       } else {
-        // User is already confirmed, redirect to profile completion
         router.push('/auth/complete-profile')
       }
     } catch (err) {
@@ -539,6 +623,47 @@ export default function SignUpPage() {
                     />
                   </div>
                 </div>
+
+                {/* Invite Code Field */}
+                {inviteOnlyMode && (
+                  <div>
+                    <Label htmlFor="inviteCode">
+                      Invite Code {inviteOnlyMode && <span className="text-destructive">*</span>}
+                    </Label>
+                    <div className="relative">
+                      <Ticket className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="inviteCode"
+                        type="text"
+                        required={inviteOnlyMode}
+                        value={inviteCode}
+                        onChange={(e) => {
+                          setInviteCode(e.target.value)
+                          setInviteCodeValid(null)
+                        }}
+                        onBlur={(e) => validateInviteCode(e.target.value)}
+                        className={`pl-10 pr-10 ${inviteCodeValid === false ? 'border-destructive' : inviteCodeValid === true ? 'border-green-500' : ''}`}
+                        placeholder="Enter your invite code"
+                      />
+                      {validatingInvite && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                        </div>
+                      )}
+                      {!validatingInvite && inviteCodeValid === true && (
+                        <CheckCircle2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-500" />
+                      )}
+                      {!validatingInvite && inviteCodeValid === false && (
+                        <X className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-destructive" />
+                      )}
+                    </div>
+                    {inviteOnlyMode && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Don't have an invite code? Contact us to request access.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-muted-foreground-700 mb-1">

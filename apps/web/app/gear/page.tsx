@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RefreshCw, Grid, List, Plus, Store, Package } from 'lucide-react';
+import { PageHeader } from '@/components/PageHeader';
+import { usePageHeaderImage } from '@/hooks/usePageHeaderImage';
 
 interface Listing {
   id: string;
@@ -67,6 +69,7 @@ interface ListingsResponse {
 function MarketplacePageContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
+  const { headerImage } = usePageHeaderImage('marketplace-header');
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -172,27 +175,36 @@ function MarketplacePageContent() {
   ];
 
   return (
-    <MarketplaceLayout>
-      {/* Beta Badge */}
-      <div className="mb-4">
-        <Badge variant="secondary" className="text-xs">
-          Beta
-        </Badge>
+    <>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <PageHeader
+          title="Marketplace"
+          subtitle="Discover and rent equipment from the photography community"
+          icon={Store}
+          stats={[
+            { icon: Package, label: `${pagination.total} Listings` }
+          ]}
+          actions={
+            <Link href="/gear/listings/new">
+              <Button size="lg" className="px-8 py-3 text-base font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-shadow">
+                <Plus className="h-5 w-5" />
+                List Equipment
+              </Button>
+            </Link>
+          }
+          backgroundImage={headerImage}
+        />
       </div>
 
-      <div className="space-y-6">
-                {/* Page Header */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Store className="h-5 w-5" />
-                      <span>Marketplace</span>
-                    </CardTitle>
-                    <p className="text-muted-foreground">
-                      Discover and rent equipment from the photography community
-                    </p>
-                  </CardHeader>
-                </Card>
+      <MarketplaceLayout>
+        {/* Beta Badge */}
+        <div className="mb-4">
+          <Badge variant="secondary" className="text-xs">
+            Beta
+          </Badge>
+        </div>
+
+        <div className="space-y-6">
 
                 {/* Safety Notice */}
                 <SafetyDisclaimer type="listing" />
@@ -324,7 +336,8 @@ function MarketplacePageContent() {
                   </Card>
                 )}
               </div>
-    </MarketplaceLayout>
+      </MarketplaceLayout>
+    </>
   );
 }
 

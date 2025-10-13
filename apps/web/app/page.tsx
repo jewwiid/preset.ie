@@ -4,6 +4,7 @@ import { useAuth } from "../lib/auth-context";
 import { useEffect, useState } from 'react';
 import { useHomepageImages, usePreloadCriticalImages } from './hooks/usePlatformImages';
 import { usePlatformGeneratedImages } from './hooks/usePlatformGeneratedImages';
+import { createRoleCard, RoleCard } from '../lib/utils/role-slug-mapper';
 
 // Import homepage section components
 import HeroSection from './components/homepage/HeroSection';
@@ -20,7 +21,8 @@ import Footer from './components/homepage/Footer';
 export default function Home() {
   const { user, loading } = useAuth();
   const [currentHeroImageIndex, setCurrentHeroImageIndex] = useState(0);
-  const [randomizedRoles, setRandomizedRoles] = useState<any[]>([]);
+  const [randomizedRoles, setRandomizedRoles] = useState<RoleCard[]>([]);
+  const [loadingRoles, setLoadingRoles] = useState(true);
 
   // Check if user is logged in
   const isLoggedIn = !!user;
@@ -119,224 +121,58 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [homepageImages, platformImages]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Initialize randomized creative roles once on mount
+  // Initialize randomized creative roles from database
   useEffect(() => {
-    // Separate talent and contributor profiles for correct role matching
-    const talents = getTalentProfiles(); // For performance roles (actors, models, singers, etc.)
-    const contributors = getContributorProfiles(); // For service providers (photographers, videographers, etc.)
+    const fetchRolesFromDatabase = async () => {
+      setLoadingRoles(true);
+      try {
+        const response = await fetch('/api/predefined-data');
+        if (!response.ok) {
+          throw new Error('Failed to fetch roles');
+        }
 
-    const allCreativeRoles = [
-      {
-        name: 'Freelancers',
-        slug: 'freelancers',
-        description: 'Independent creative professionals',
-        imageUrl: getRoleImage('freelancers')?.image_url
-      },
-      {
-        name: 'Photographers',
-        slug: 'photographers',
-        description: 'Portrait, fashion, and commercial photography',
-        imageUrl: getRoleImage('photographers')?.image_url
-      },
-      {
-        name: 'Videographers',
-        slug: 'videographers',
-        description: 'Wedding, commercial, and event videography',
-        imageUrl: getRoleImage('videographers')?.image_url
-      },
-      {
-        name: 'Models',
-        slug: 'models',
-        description: 'Fashion, commercial, and editorial modeling',
-        imageUrl: getRoleImage('models')?.image_url
-      },
-      {
-        name: 'Makeup Artists',
-        slug: 'makeup-artists',
-        description: 'Beauty, fashion, and special effects makeup',
-        imageUrl: getRoleImage('makeup-artists')?.image_url
-      },
-      {
-        name: 'Hair Stylists',
-        slug: 'hair-stylists',
-        description: 'Fashion, editorial, and commercial styling',
-        imageUrl: getRoleImage('hair-stylists')?.image_url
-      },
-      {
-        name: 'Directors',
-        slug: 'directors',
-        description: 'Film, commercial, and creative direction',
-        imageUrl: getRoleImage('directors')?.image_url
-      },
-      {
-        name: 'Producers',
-        slug: 'producers',
-        description: 'Film, commercial, and event production',
-        imageUrl: getRoleImage('producers')?.image_url
-      },
-      {
-        name: 'Creative Directors',
-        slug: 'creative-directors',
-        description: 'Vision and creative strategy leadership',
-        imageUrl: getRoleImage('creative-directors')?.image_url
-      },
-      {
-        name: 'Brand Managers',
-        slug: 'brand-managers',
-        description: 'Brand strategy and marketing leadership',
-        imageUrl: getRoleImage('brand-managers')?.image_url
-      },
-      {
-        name: 'Content Creators',
-        slug: 'content-creators',
-        description: 'Digital content and social media creators',
-        imageUrl: getRoleImage('content-creators')?.image_url
-      },
-      {
-        name: 'Art Directors',
-        slug: 'art-directors',
-        description: 'Visual design and art direction',
-        imageUrl: getRoleImage('art-directors')?.image_url
-      },
-      {
-        name: 'Studios',
-        slug: 'studios',
-        description: 'Professional production studios',
-        imageUrl: getRoleImage('studios')?.image_url
-      },
-      {
-        name: 'Fashion Stylists',
-        slug: 'fashion-stylists',
-        description: 'Fashion styling and wardrobe',
-        imageUrl: getRoleImage('fashion-stylists')?.image_url
-      },
-      {
-        name: 'Designers',
-        slug: 'designers',
-        description: 'Graphic and visual designers',
-        imageUrl: getRoleImage('designers')?.image_url
-      },
-      {
-        name: 'Editors',
-        slug: 'editors',
-        description: 'Video and photo editing professionals',
-        imageUrl: getRoleImage('editors')?.image_url
-      },
-      {
-        name: 'Writers',
-        slug: 'writers',
-        description: 'Content writers and copywriters',
-        imageUrl: getRoleImage('writers')?.image_url
-      },
-      {
-        name: 'Cinematographers',
-        slug: 'cinematographers',
-        description: 'Film and video cinematography',
-        imageUrl: getRoleImage('cinematographers')?.image_url
-      },
-      {
-        name: 'Actors',
-        slug: 'actors',
-        description: 'Professional actors and performers',
-        imageUrl: getRoleImage('actors')?.image_url
-      },
-      {
-        name: 'Musicians',
-        slug: 'musicians',
-        description: 'Music composers and performers',
-        imageUrl: getRoleImage('musicians')?.image_url
-      },
-      {
-        name: 'Singers',
-        slug: 'singers',
-        description: 'Vocal performers and artists',
-        imageUrl: getRoleImage('singers')?.image_url
-      },
-      {
-        name: 'Dancers',
-        slug: 'dancers',
-        description: 'Dance performers and choreographers',
-        imageUrl: getRoleImage('dancers')?.image_url
-      },
-      {
-        name: 'Actresses',
-        slug: 'actresses',
-        description: 'Female actors and performers',
-        imageUrl: getRoleImage('actresses')?.image_url
-      },
-      {
-        name: 'Hand Models',
-        slug: 'hand-models',
-        description: 'Specialized hand modeling',
-        imageUrl: getRoleImage('hand-models')?.image_url
-      },
-      {
-        name: 'Fitness Models',
-        slug: 'fitness-models',
-        description: 'Fitness and athletic modeling',
-        imageUrl: getRoleImage('fitness-models')?.image_url
-      },
-      {
-        name: 'Commercial Models',
-        slug: 'commercial-models',
-        description: 'Commercial and advertising modeling',
-        imageUrl: getRoleImage('commercial-models')?.image_url
-      },
-      {
-        name: 'Fashion Models',
-        slug: 'fashion-models',
-        description: 'Runway and fashion modeling',
-        imageUrl: getRoleImage('fashion-models')?.image_url
-      },
-      {
-        name: 'Plus-Size Models',
-        slug: 'plus-size-models',
-        description: 'Plus-size fashion and commercial modeling',
-        imageUrl: getRoleImage('plus-size-models')?.image_url
-      },
-      {
-        name: 'Voice Actors',
-        slug: 'voice-actors',
-        description: 'Voice-over artists and narrators',
-        imageUrl: getRoleImage('voice-actors')?.image_url
-      },
-      {
-        name: 'Influencers',
-        slug: 'influencers',
-        description: 'Social media influencers and creators',
-        imageUrl: getRoleImage('influencers')?.image_url
-      },
-      {
-        name: 'Performers',
-        slug: 'performers',
-        description: 'General performance artists',
-        imageUrl: getRoleImage('performers')?.image_url
-      },
-      {
-        name: 'Stunt Performers',
-        slug: 'stunt-performers',
-        description: 'Professional stunt artists',
-        imageUrl: getRoleImage('stunt-performers')?.image_url
-      },
-      {
-        name: 'Extras/Background Actors',
-        slug: 'extras-background-actors',
-        description: 'Background performers for productions',
-        imageUrl: getRoleImage('extras-background-actors')?.image_url
+        const data = await response.json();
+        
+        // Combine contributor roles and talent categories
+        const contributorRoleCards: RoleCard[] = (data.predefined_roles || []).map((role: any) => 
+          createRoleCard(role, getRoleImage, 'contributor')
+        );
+        
+        const talentRoleCards: RoleCard[] = (data.talent_categories || []).map((talent: any) => 
+          createRoleCard(talent, getRoleImage, 'talent')
+        );
+
+        // Combine all roles
+        const allRoles = [...contributorRoleCards, ...talentRoleCards];
+        
+        // Filter roles that have images uploaded, then shuffle and pick random 8
+        const rolesWithImages = allRoles.filter(role => role.imageUrl);
+        console.log('🔍 Database Roles - Total:', allRoles.length);
+        console.log('🔍 Database Roles - With images:', rolesWithImages.length);
+        
+        // Always show roles from database (prioritize ones with images)
+        if (rolesWithImages.length > 0) {
+          const shuffled = [...rolesWithImages].sort(() => Math.random() - 0.5);
+          setRandomizedRoles(shuffled.slice(0, Math.min(8, shuffled.length)));
+        } else if (allRoles.length > 0) {
+          // Show roles even without images (they'll be added as admins upload)
+          const shuffled = [...allRoles].sort(() => Math.random() - 0.5);
+          setRandomizedRoles(shuffled.slice(0, Math.min(8, shuffled.length)));
+        } else {
+          console.warn('No roles found in database');
+          setRandomizedRoles([]);
+        }
+      } catch (error) {
+        console.error('Error fetching roles from database:', error);
+        // Don't use fallback - show error state instead
+        setRandomizedRoles([]);
+      } finally {
+        setLoadingRoles(false);
       }
-    ];
+    };
 
-    // Filter roles that have images uploaded, then shuffle and pick random 8
-    const rolesWithImages = allCreativeRoles.filter(role => role.imageUrl);
-    console.log('🔍 Debug - Roles with images:', rolesWithImages.length, 'out of', allCreativeRoles.length);
-    console.log('🔍 Debug - Platform images loaded:', platformImages?.length || 0);
-    if (rolesWithImages.length > 0) {
-      console.log('🔍 Debug - Sample role:', rolesWithImages[0].name, rolesWithImages[0].imageUrl);
-    }
-
-    const shuffled = [...rolesWithImages].sort(() => Math.random() - 0.5);
-    setRandomizedRoles(shuffled.slice(0, Math.min(8, shuffled.length)));
-  }, [platformImagesLoading, platformImages, talentProfiles, contributorProfiles]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchRolesFromDatabase();
+  }, [platformImagesLoading, platformImages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (

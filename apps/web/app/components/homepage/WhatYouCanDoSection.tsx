@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePlatformGeneratedImages } from '@/app/hooks/usePlatformGeneratedImages';
-import { optimizeSupabaseImage, IMAGE_SIZES } from '@/lib/utils/image-optimization';
 
 interface WhatYouCanDoSectionProps {
   isLoggedIn: boolean;
@@ -40,7 +39,7 @@ export default function WhatYouCanDoSection({ isLoggedIn }: WhatYouCanDoSectionP
             {/* Image Section */}
             <div className="relative h-64 lg:h-auto lg:w-1/2">
               <Image
-                src={optimizeSupabaseImage(contributorsImageUrl, IMAGE_SIZES.sectionImage)}
+                src={contributorsImageUrl}
                 alt="For Contributors"
                 fill
                 className="object-cover"
@@ -138,7 +137,7 @@ export default function WhatYouCanDoSection({ isLoggedIn }: WhatYouCanDoSectionP
             {/* Image Section */}
             <div className="relative h-64 lg:h-auto lg:w-1/2 order-1 lg:order-2">
               <Image
-                src={optimizeSupabaseImage(talentsImageUrl, IMAGE_SIZES.sectionImage)}
+                src={talentsImageUrl}
                 alt="For Talents"
                 fill
                 className="object-cover"

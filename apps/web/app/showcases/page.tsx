@@ -10,8 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ShowcaseFeed from '../components/ShowcaseFeed'
 import CreateShowcaseModal from '../components/CreateShowcaseModal'
+import { PageHeader } from '@/components/PageHeader'
+import { usePageHeaderImage } from '@/hooks/usePageHeaderImage'
 
 export default function ShowcasesPage() {
+  const { headerImage } = usePageHeaderImage('showcases-header')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [filterType, setFilterType] = useState<'all' | 'moodboard' | 'individual_image' | 'video' | 'treatment'>('all')
@@ -41,27 +44,22 @@ export default function ShowcasesPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="showcase-hero mb-8 rounded-2xl p-8 border border-border">
-          <div className="text-center">
-            <h1 className="text-5xl font-bold text-primary mb-4">
-              Showcases
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
-              Where creativity meets innovation. Discover amazing work from our creative community.
-            </p>
-
-            {/* Create Button */}
+        <PageHeader
+          title="Showcases"
+          subtitle="Where creativity meets innovation. Discover amazing work from our creative community"
+          icon={Image}
+          actions={
             <Button
               onClick={() => setShowCreateModal(true)}
               size="lg"
-              className="px-8 py-3 text-lg font-semibold"
+              className="px-8 py-3 text-base font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-shadow"
             >
-              <Plus className="h-5 w-5 mr-2" />
+              <Plus className="w-5 h-5" />
               Create Showcase
             </Button>
-          </div>
-        </div>
+          }
+          backgroundImage={headerImage}
+        />
 
         {/* Main Tabs - Positioned like playground */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mb-6">

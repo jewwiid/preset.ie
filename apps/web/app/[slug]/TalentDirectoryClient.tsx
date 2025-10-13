@@ -6,6 +6,14 @@ import Image from 'next/image';
 import { Briefcase } from 'lucide-react';
 import { VerificationBadge } from '@/components/VerificationBadge';
 
+interface VerificationBadgeData {
+  id: string;
+  badge_type: 'verified_identity' | 'verified_professional' | 'verified_business';
+  issued_at: string;
+  expires_at: string | null;
+  revoked_at: string | null;
+}
+
 interface DirectoryProfile {
   id: string;
   display_name: string;
@@ -18,6 +26,7 @@ interface DirectoryProfile {
   role_flags?: string[];
   availability_status?: string;
   verified_id?: boolean;
+  verification_badges?: VerificationBadgeData[];
 }
 
 interface TalentDirectoryClientProps {
@@ -199,15 +208,33 @@ export default function TalentDirectoryClient({
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
                 {/* Verification Badge - Top Right (only show if verified) */}
-                {profile.verified_id && (
-                  <div className="absolute top-2 right-2">
-                    <VerificationBadge 
-                      type="verified_identity"
-                      size="sm"
-                      showLabel={false}
-                    />
-                  </div>
-                )}
+                {(() => {
+                  // Check for active verification badges
+                  const activeBadges = profile.verification_badges?.filter(badge => 
+                    !badge.revoked_at && (!badge.expires_at || new Date(badge.expires_at) > new Date())
+                  ) || [];
+                  
+                  // Show badge if user has any active verification badges OR the old verified_id is true
+                  const hasVerification = activeBadges.length > 0 || profile.verified_id;
+                  
+                  if (!hasVerification) return null;
+                  
+                  // Determine badge type (prioritize identity > professional > business)
+                  const badgeType = activeBadges.find(b => b.badge_type === 'verified_identity')?.badge_type || 
+                                  activeBadges.find(b => b.badge_type === 'verified_professional')?.badge_type ||
+                                  activeBadges.find(b => b.badge_type === 'verified_business')?.badge_type ||
+                                  'verified_identity';
+                  
+                  return (
+                    <div className="absolute top-2 right-2">
+                      <VerificationBadge 
+                        type={badgeType as any}
+                        size="sm"
+                        showLabel={false}
+                      />
+                    </div>
+                  );
+                })()}
 
               </div>
 
@@ -237,20 +264,8 @@ export default function TalentDirectoryClient({
                     href={`/users/${profile.handle}`}
                     className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium text-center"
                   >
-                    BOOK
+                    CONNECT
                   </Link>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // TODO: Implement invitation functionality
-                      console.log('Invite clicked for:', profile.handle);
-                    }}
-                    className="px-3 py-2 border border-border rounded-md hover:bg-accent transition-colors text-sm"
-                    title="Send Invitation"
-                  >
-                    ✉️
-                  </button>
                 </div>
               </div>
             </div>

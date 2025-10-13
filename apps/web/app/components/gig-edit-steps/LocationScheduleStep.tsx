@@ -1,15 +1,15 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, MapPin, Calendar, Clock } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MapPin, Calendar as CalendarIcon, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Calendar as CalendarComponent } from '@/components/ui/calendar'
-import { Switch } from '@/components/ui/switch'
+import { Calendar } from '@/components/ui/calendar'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 interface LocationScheduleStepProps {
   location: string
@@ -82,105 +82,10 @@ export default function LocationScheduleStep({
   isValid,
   validationErrors = []
 }: LocationScheduleStepProps) {
-  // Time format toggle state
-  const [is24Hour, setIs24Hour] = useState(true)
-  
-  // Local display state for 12hr inputs to avoid feedback loops
-  const [startTimeDisplay, setStartTimeDisplay] = useState('')
-  const [endTimeDisplay, setEndTimeDisplay] = useState('')
-  const [deadlineTimeDisplay, setDeadlineTimeDisplay] = useState('')
-
-  // Sync display values when format changes or actual values change
-  useEffect(() => {
-    if (!is24Hour) {
-      setStartTimeDisplay(startDate ? convertTo12Hour(startDate.split('T')[1] || '') : '')
-      setEndTimeDisplay(endDate ? convertTo12Hour(endDate.split('T')[1] || '') : '')
-      setDeadlineTimeDisplay(applicationDeadline ? convertTo12Hour(applicationDeadline.split('T')[1] || '') : '')
-    }
-  }, [is24Hour, startDate, endDate, applicationDeadline])
-
-  // Helper function to convert 24h to 12h format
-  const convertTo12Hour = (time24: string): string => {
-    if (!time24 || !time24.includes(':')) return ''
-    
-    const parts = time24.split(':')
-    if (parts.length < 2) return ''
-    
-    const hours = parts[0]
-    const minutes = parts[1]
-    
-    // Validate hours and minutes
-    const hour24 = parseInt(hours, 10)
-    const min = parseInt(minutes, 10)
-    
-    if (isNaN(hour24) || isNaN(min) || hour24 < 0 || hour24 > 23 || min < 0 || min > 59) {
-      return ''
-    }
-    
-    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24
-    const ampm = hour24 >= 12 ? 'PM' : 'AM'
-    return `${hour12.toString().padStart(2, '0')}:${minutes.padStart(2, '0')} ${ampm}`
-  }
-
-  // Helper function to convert 12h to 24h format
-  const convertTo24Hour = (time12: string): string => {
-    if (!time12) return ''
-    
-    // Clean the input string
-    const cleanInput = time12.trim()
-    const match = cleanInput.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
-    
-    if (!match) {
-      // If it doesn't match the expected format, try to extract just numbers
-      const timeOnly = cleanInput.replace(/[^0-9:]/g, '')
-      if (timeOnly.includes(':')) {
-        const [h, m] = timeOnly.split(':')
-        const hour = parseInt(h, 10)
-        const minute = parseInt(m, 10)
-        if (!isNaN(hour) && !isNaN(minute) && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
-          return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-        }
-      }
-      return ''
-    }
-    
-    let [, hours, minutes, ampm] = match
-    let hour24 = parseInt(hours, 10)
-    const min = parseInt(minutes, 10)
-    
-    // Validate input
-    if (isNaN(hour24) || isNaN(min) || hour24 < 1 || hour24 > 12 || min < 0 || min > 59) {
-      return ''
-    }
-    
-    if (ampm.toUpperCase() === 'PM' && hour24 !== 12) {
-      hour24 += 12
-    } else if (ampm.toUpperCase() === 'AM' && hour24 === 12) {
-      hour24 = 0
-    }
-    
-    return `${hour24.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`
-  }
-
-  // Helper function to safely get max date for application deadline
-  const getMaxDeadlineDate = (): string | undefined => {
-    if (!startDate) return undefined
-    
-    try {
-      // Validate startDate format
-      const startDateObj = new Date(startDate)
-      if (isNaN(startDateObj.getTime())) {
-        return undefined
-      }
-      
-      // Allow deadline up to the start date (same day is OK)
-      // The time validation will handle the 24-hour requirement
-      return startDateObj.toISOString().split('T')[0]
-    } catch (error) {
-      console.error('Error calculating max deadline date:', error)
-      return undefined
-    }
-  }
+  // Date picker open states
+  const [startDateOpen, setStartDateOpen] = useState(false)
+  const [endDateOpen, setEndDateOpen] = useState(false)
+  const [deadlineDateOpen, setDeadlineDateOpen] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -190,20 +95,20 @@ export default function LocationScheduleStep({
   }
 
   return (
-    <div className="bg-card rounded-lg border border-border shadow-sm">
-      <div className="p-6 border-b border-border">
+    <div className="bg-card rounded-lg border border-border shadow-sm relative">
+      <div className="p-4 sm:p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-lg">
             <Calendar className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Schedule & Location</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground">Schedule & Location</h2>
             <p className="text-muted-foreground text-sm">When and where will the shoot take place?</p>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
 
         {/* Location - City and Country */}
         <div>
@@ -243,28 +148,29 @@ export default function LocationScheduleStep({
               <Label htmlFor="country" className="text-xs text-muted-foreground mb-1">
                 Country
               </Label>
-              <select
-                id="country"
-                required
-                value={country || ''}
-                onChange={(e) => {
+              <Select
+                value={country}
+                onValueChange={(value) => {
+                  // Update country value
                   if (onCountryChange) {
-                    onCountryChange(e.target.value)
+                    onCountryChange(value)
                   }
                   // Also update combined location for backward compatibility
-                  if (city) {
-                    onLocationChange(`${city}, ${e.target.value}`)
-                  }
+                  const newLocation = city ? `${city}, ${value}` : `, ${value}`
+                  onLocationChange(newLocation)
                 }}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="">Select country...</option>
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select country..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
@@ -272,283 +178,205 @@ export default function LocationScheduleStep({
           </p>
         </div>
 
-        {/* Schedule Section */}
+        {/* Schedule Section - Simplified with Shadcn Date Pickers */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Shoot Schedule
-            </h3>
-            
-            {/* Time Format Toggle */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">12hr</span>
-              <Switch
-                checked={is24Hour}
-                onCheckedChange={setIs24Hour}
-                className="data-[state=checked]:bg-primary"
-              />
-              <span className="text-xs text-muted-foreground">24hr</span>
-            </div>
-          </div>
+          <h3 className="text-sm font-medium text-foreground flex items-center gap-2 mb-4">
+            <Clock className="w-4 h-4" />
+            Shoot Schedule
+          </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Start Date/Time */}
+          {/* Start Date/Time */}
+          <div className="space-y-4">
             <div>
-              <Label htmlFor="start-date" className="text-sm font-medium text-foreground mb-2">
+              <Label className="text-sm font-medium text-foreground mb-2">
                 Start Date/Time <span className="text-destructive">*</span>
               </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Date
-                  </div>
-                  <Input
-                    type="date"
-                    required
-                    value={startDate ? startDate.split('T')[0] : ''}
-                    onChange={(e) => {
-                      const time = startDate ? startDate.split('T')[1] || '09:00' : '09:00'
-                      onStartDateChange(`${e.target.value}T${time}`)
-                    }}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Time
-                  </div>
-                  <div className="relative">
-                    {is24Hour ? (
-                      <Input
-                        type="time"
-                        required
-                        value={startDate ? startDate.split('T')[1] || '' : ''}
-                        onChange={(e) => {
-                          const date = startDate ? startDate.split('T')[0] : new Date().toISOString().split('T')[0]
-                          onStartDateChange(`${date}T${e.target.value}`)
-                        }}
-                        className="pr-10"
-                        id="start-time"
-                      />
-                    ) : (
-                      <div className="relative">
-                        <Input
-                          type="text"
-                          required
-                          value={startTimeDisplay}
-                          onChange={(e) => {
-                            setStartTimeDisplay(e.target.value)
-                          }}
-                          onBlur={(e) => {
-                            // On blur, try to convert whatever the user typed
-                            const time24 = convertTo24Hour(e.target.value)
-                            if (time24) {
-                              const date = startDate ? startDate.split('T')[0] : new Date().toISOString().split('T')[0]
-                              onStartDateChange(`${date}T${time24}`)
-                            } else {
-                              // Reset to converted value if invalid
-                              setStartTimeDisplay(startDate ? convertTo12Hour(startDate.split('T')[1] || '') : '')
-                            }
-                          }}
-                          placeholder="12:00 PM"
-                          className="pr-10"
-                          id="start-time"
-                        />
-                      </div>
-                    )}
-                    <Clock 
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                      onClick={() => document.getElementById('start-time')?.focus()}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Date Picker */}
+                <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate && !isNaN(new Date(startDate).getTime()) ? format(new Date(startDate), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-50" align="start" side="bottom">
+                    <Calendar
+                      mode="single"
+                      selected={startDate ? new Date(startDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          const time = startDate ? startDate.split('T')[1] || '14:00' : '14:00'
+                          onStartDateChange(`${format(date, 'yyyy-MM-dd')}T${time}`)
+                          setStartDateOpen(false)
+                        }
+                      }}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      initialFocus
                     />
-                  </div>
-                </div>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Time Input - Simple */}
+                <Input
+                  type="time"
+                  value={startDate ? startDate.split('T')[1]?.substring(0, 5) || '' : ''}
+                  onChange={(e) => {
+                    const date = startDate ? startDate.split('T')[0] : format(new Date(), 'yyyy-MM-dd')
+                    onStartDateChange(`${date}T${e.target.value}:00`)
+                  }}
+                  placeholder="14:00"
+                  className="w-full"
+                />
               </div>
             </div>
 
             {/* End Date/Time */}
             <div>
-              <Label htmlFor="end-date" className="text-sm font-medium text-foreground mb-2">
+              <Label className="text-sm font-medium text-foreground mb-2">
                 End Date/Time <span className="text-destructive">*</span>
               </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Date
-                  </div>
-                  <Input
-                    type="date"
-                    required
-                    value={endDate ? endDate.split('T')[0] : ''}
-                    onChange={(e) => {
-                      const time = endDate ? endDate.split('T')[1] || '18:00' : '18:00'
-                      onEndDateChange(`${e.target.value}T${time}`)
-                    }}
-                    min={startDate ? startDate.split('T')[0] : new Date().toISOString().split('T')[0]}
-                  />
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Time
-                  </div>
-                  <div className="relative">
-                    {is24Hour ? (
-                      <Input
-                        type="time"
-                        required
-                        value={endDate ? endDate.split('T')[1] || '' : ''}
-                        onChange={(e) => {
-                          const date = endDate ? endDate.split('T')[0] : (startDate ? startDate.split('T')[0] : new Date().toISOString().split('T')[0])
-                          onEndDateChange(`${date}T${e.target.value}`)
-                        }}
-                        className="pr-10"
-                        id="end-time"
-                      />
-                    ) : (
-                      <div className="relative">
-                        <Input
-                          type="text"
-                          required
-                          value={endTimeDisplay}
-                          onChange={(e) => {
-                            setEndTimeDisplay(e.target.value)
-                          }}
-                          onBlur={(e) => {
-                            // On blur, try to convert whatever the user typed
-                            const time24 = convertTo24Hour(e.target.value)
-                            if (time24) {
-                              const date = endDate ? endDate.split('T')[0] : (startDate ? startDate.split('T')[0] : new Date().toISOString().split('T')[0])
-                              onEndDateChange(`${date}T${time24}`)
-                            } else {
-                              // Reset to converted value if invalid
-                              setEndTimeDisplay(endDate ? convertTo12Hour(endDate.split('T')[1] || '') : '')
-                            }
-                          }}
-                          placeholder="06:00 PM"
-                          className="pr-10"
-                          id="end-time"
-                        />
-                      </div>
-                    )}
-                    <Clock 
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                      onClick={() => document.getElementById('end-time')?.focus()}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Application Deadline */}
-        <div>
-          <Label htmlFor="deadline" className="text-sm font-medium text-foreground mb-2">
-            Application Deadline <span className="text-destructive">*</span>
-          </Label>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">
-                Date
-              </div>
-              <Input
-                type="date"
-                required
-                value={applicationDeadline ? applicationDeadline.split('T')[0] : ''}
-                onChange={(e) => {
-                  const time = applicationDeadline ? applicationDeadline.split('T')[1] || '23:59' : '23:59'
-                  onApplicationDeadlineChange(`${e.target.value}T${time}`)
-                }}
-                min={new Date().toISOString().split('T')[0]}
-                max={getMaxDeadlineDate()}
-              />
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">
-                Time
-              </div>
-              <div className="relative">
-                {is24Hour ? (
-                  <Input
-                    type="time"
-                    required
-                    value={applicationDeadline ? applicationDeadline.split('T')[1] || '' : ''}
-                    onChange={(e) => {
-                      const date = applicationDeadline ? applicationDeadline.split('T')[0] : new Date().toISOString().split('T')[0]
-                      onApplicationDeadlineChange(`${date}T${e.target.value}`)
-                    }}
-                    className="pr-10"
-                    id="deadline-time"
-                  />
-                ) : (
-                  <div className="relative">
-                    <Input
-                      type="text"
-                      required
-                      value={deadlineTimeDisplay}
-                      onChange={(e) => {
-                        setDeadlineTimeDisplay(e.target.value)
-                      }}
-                      onBlur={(e) => {
-                        // On blur, try to convert whatever the user typed
-                        const time24 = convertTo24Hour(e.target.value)
-                        if (time24) {
-                          const date = applicationDeadline ? applicationDeadline.split('T')[0] : new Date().toISOString().split('T')[0]
-                          onApplicationDeadlineChange(`${date}T${time24}`)
-                        } else {
-                          // Reset to converted value if invalid
-                          setDeadlineTimeDisplay(applicationDeadline ? convertTo12Hour(applicationDeadline.split('T')[1] || '') : '')
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Date Picker */}
+                <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate && !isNaN(new Date(endDate).getTime()) ? format(new Date(endDate), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-50" align="start" side="bottom">
+                    <Calendar
+                      mode="single"
+                      selected={endDate ? new Date(endDate) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          const time = endDate ? endDate.split('T')[1] || '18:00' : '18:00'
+                          onEndDateChange(`${format(date, 'yyyy-MM-dd')}T${time}`)
+                          setEndDateOpen(false)
                         }
                       }}
-                      placeholder="11:59 PM"
-                      className="pr-10"
-                      id="deadline-time"
+                      disabled={(date) => {
+                        const minDate = startDate ? new Date(startDate) : new Date()
+                        return date < new Date(minDate.setHours(0, 0, 0, 0))
+                      }}
+                      initialFocus
                     />
-                  </div>
-                )}
-                <Clock 
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors"
-                  onClick={() => document.getElementById('deadline-time')?.focus()}
+                  </PopoverContent>
+                </Popover>
+
+                {/* Time Input - Simple */}
+                <Input
+                  type="time"
+                  value={endDate ? endDate.split('T')[1]?.substring(0, 5) || '' : ''}
+                  onChange={(e) => {
+                    const date = endDate ? endDate.split('T')[0] : (startDate ? startDate.split('T')[0] : format(new Date(), 'yyyy-MM-dd'))
+                    onEndDateChange(`${date}T${e.target.value}:00`)
+                  }}
+                  placeholder="18:00"
+                  className="w-full"
                 />
               </div>
             </div>
-          </div>
-          {/* Conditional warning - only show if deadline is too close to shoot */}
-          {applicationDeadline && startDate && (
-            (() => {
-              try {
-                const deadline = new Date(applicationDeadline)
-                const shootStart = new Date(startDate)
-                
-                // Validate both dates
-                if (isNaN(deadline.getTime()) || isNaN(shootStart.getTime())) {
+
+            {/* Application Deadline */}
+            <div>
+              <Label className="text-sm font-medium text-foreground mb-2">
+                Application Deadline <span className="text-destructive">*</span>
+              </Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Date Picker */}
+                <Popover open={deadlineDateOpen} onOpenChange={setDeadlineDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !applicationDeadline && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {applicationDeadline && !isNaN(new Date(applicationDeadline).getTime()) ? format(new Date(applicationDeadline), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-50" align="start" side="bottom">
+                    <Calendar
+                      mode="single"
+                      selected={applicationDeadline ? new Date(applicationDeadline) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          const time = applicationDeadline ? applicationDeadline.split('T')[1] || '23:59' : '23:59'
+                          onApplicationDeadlineChange(`${format(date, 'yyyy-MM-dd')}T${time}`)
+                          setDeadlineDateOpen(false)
+                        }
+                      }}
+                      disabled={(date) => {
+                        const maxDate = startDate ? new Date(startDate) : new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+                        return date < new Date(new Date().setHours(0, 0, 0, 0)) || date > maxDate
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {/* Time Input - Simple */}
+                <Input
+                  type="time"
+                  value={applicationDeadline ? applicationDeadline.split('T')[1]?.substring(0, 5) || '' : ''}
+                  onChange={(e) => {
+                    const date = applicationDeadline ? applicationDeadline.split('T')[0] : format(new Date(), 'yyyy-MM-dd')
+                    onApplicationDeadlineChange(`${date}T${e.target.value}:00`)
+                  }}
+                  placeholder="23:59"
+                  className="w-full"
+                />
+              </div>
+              {/* Deadline warning */}
+              {applicationDeadline && startDate && (() => {
+                try {
+                  const deadline = new Date(applicationDeadline)
+                  const shootStart = new Date(startDate)
+                  
+                  if (isNaN(deadline.getTime()) || isNaN(shootStart.getTime())) {
+                    return null
+                  }
+                  
+                  const timeDiff = shootStart.getTime() - deadline.getTime()
+                  const hoursDiff = timeDiff / (1000 * 60 * 60)
+                  
+                  if (hoursDiff < 24 && hoursDiff > 0) {
+                    const hoursRounded = Math.round(hoursDiff * 10) / 10
+                    return (
+                      <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                        ⚠️ Only {hoursRounded} hours before shoot - Consider allowing at least 24 hours
+                      </p>
+                    )
+                  } else if (hoursDiff <= 0) {
+                    return (
+                      <p className="mt-2 text-xs text-destructive">
+                        ⚠️ Deadline must be before the shoot starts
+                      </p>
+                    )
+                  }
+                  return null
+                } catch (error) {
                   return null
                 }
-                
-                const timeDiff = shootStart.getTime() - deadline.getTime()
-                const hoursDiff = timeDiff / (1000 * 60 * 60)
-                
-                if (hoursDiff < 24 && hoursDiff > 0) {
-                  const hoursRounded = Math.round(hoursDiff * 10) / 10
-                  return (
-                    <p className="mt-2 text-xs text-destructive">
-                      <strong>Only {hoursRounded} hours before shoot</strong> - Consider allowing at least 24 hours to review applications
-                    </p>
-                  )
-                } else if (hoursDiff <= 0) {
-                  return (
-                    <p className="mt-2 text-xs text-destructive">
-                      <strong>Deadline must be before the shoot starts</strong>
-                    </p>
-                  )
-                }
-                return null
-              } catch (error) {
-                console.error('Error validating deadline warning:', error)
-                return null
-              }
-            })()
-          )}
+              })()}
+            </div>
+          </div>
         </div>
 
         {/* Validation Errors - Above continue button */}
@@ -566,13 +394,13 @@ export default function LocationScheduleStep({
         )}
 
         {/* Navigation */}
-        <div className="flex justify-between pt-6 border-t border-border">
+        <div className="flex flex-col sm:flex-row justify-between gap-3 pt-6 border-t border-border">
           <Button
             type="button"
             variant="outline"
             onClick={onBack}
             size="lg"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to Details
@@ -582,7 +410,7 @@ export default function LocationScheduleStep({
             type="submit"
             disabled={!isValid}
             size="lg"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             Continue to Requirements
             <ChevronRight className="w-4 h-4" />

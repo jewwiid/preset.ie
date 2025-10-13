@@ -362,7 +362,7 @@ export default function BasicDetailsStep({
             type="submit"
             disabled={!isValid}
             size="lg"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             Continue to Schedule
             <ChevronRight className="w-4 h-4" />

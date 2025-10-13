@@ -126,7 +126,7 @@ export function TalentSpecificSection() {
         const data = await response.json()
         
         // Extract the data we need
-        setPredefinedTalentCategories(data.performance_roles?.map((r: any) => r.role_name) || [])
+        setPredefinedTalentCategories(data.talent_categories?.map((r: any) => r.category_name) || data.performance_roles?.map((r: any) => r.category_name) || [])
         setPredefinedEyeColors(data.eye_colors?.map((c: any) => c.color_name) || [])
         setPredefinedHairColors(data.hair_colors?.map((c: any) => c.color_name) || [])
         

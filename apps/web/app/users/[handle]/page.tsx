@@ -50,6 +50,10 @@ interface UserProfile {
   availability_status?: string
   account_status?: string
   verification_badges?: VerificationBadge[]
+  performance_roles?: string[]
+  height_cm?: number
+  eye_color?: string
+  hair_color?: string
 }
 
 interface Showcase {
@@ -89,6 +93,49 @@ interface ProfileData {
   isPrivate: boolean
 }
 
+async function checkAndRedirectIfRole(handle: string): Promise<void> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // Check if this handle matches any role names
+    const [contributorResult, talentResult] = await Promise.all([
+      supabase
+        .from('predefined_roles')
+        .select('name')
+        .eq('is_active', true),
+      supabase
+        .from('predefined_talent_categories')
+        .select('category_name')
+        .eq('is_active', true)
+    ]);
+
+    const allRoleNames = [
+      ...(contributorResult.data || []).map(r => r.name),
+      ...(talentResult.data || []).map(c => c.category_name)
+    ];
+
+    // Check if the handle matches any role (case-insensitive, with pluralization)
+    const normalizedHandle = handle.toLowerCase().replace(/-/g, ' ');
+    const isRole = allRoleNames.some(roleName => {
+      const roleSlug = roleName.toLowerCase().replace(/\s+/g, '-');
+      const pluralSlug = roleSlug.endsWith('s') ? roleSlug : roleSlug + 's';
+      return roleSlug === normalizedHandle || pluralSlug === normalizedHandle || 
+             roleName.toLowerCase() === normalizedHandle;
+    });
+
+    if (isRole) {
+      // Redirect to the role page
+      redirect(`/${handle}`);
+    }
+  } catch (error) {
+    console.error('Error checking if handle is role:', error);
+    // Don't redirect on error, let it proceed as a user handle
+  }
+}
+
 async function resolveHandle(handle: string): Promise<string> {
   try {
     const supabase = createClient(
@@ -118,6 +165,9 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
+
+    // Check if this is a role name instead of a user handle
+    await checkAndRedirectIfRole(handle)
 
     // First resolve the handle to get the current handle
     const currentHandle = await resolveHandle(handle)
@@ -162,7 +212,11 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
         has_studio,
         studio_name,
         availability_status,
-        account_status
+        account_status,
+        performance_roles,
+        height_cm,
+        eye_color,
+        hair_color
       `)
       .eq('handle', currentHandle)
       .single();
@@ -548,7 +602,7 @@ export default async function UserProfilePage({ params }: PageProps) {
               {profile.availability_status && (
                 <div className="mb-4">
                   <span
-                    className={`inline-flex px-3 py-1.5 text-sm rounded-lg font-medium ${
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg font-medium ${
                       profile.availability_status === 'available'
                         ? 'bg-primary/20 text-primary'
                         : profile.availability_status === 'limited'
@@ -558,10 +612,19 @@ export default async function UserProfilePage({ params }: PageProps) {
                         : 'bg-muted text-muted-foreground'
                     }`}
                   >
-                    {profile.availability_status === 'available' && '🟢 Available'}
-                    {profile.availability_status === 'limited' && '🟡 Limited'}
-                    {profile.availability_status === 'busy' && '🔴 Busy'}
-                    {profile.availability_status === 'unavailable' && '⚫ Unavailable'}
+                    <span className={`w-2 h-2 rounded-full ${
+                      profile.availability_status === 'available'
+                        ? 'bg-primary'
+                        : profile.availability_status === 'limited'
+                        ? 'bg-secondary'
+                        : profile.availability_status === 'busy'
+                        ? 'bg-destructive'
+                        : 'bg-muted-foreground'
+                    }`}></span>
+                    {profile.availability_status === 'available' && 'Available'}
+                    {profile.availability_status === 'limited' && 'Limited Availability'}
+                    {profile.availability_status === 'busy' && 'Busy'}
+                    {profile.availability_status === 'unavailable' && 'Unavailable'}
                   </span>
                 </div>
               )}
@@ -602,6 +665,145 @@ export default async function UserProfilePage({ params }: PageProps) {
                   <div className="text-2xl font-bold text-foreground">{profile.years_experience || 0}</div>
                   <div className="text-muted-foreground">Years Experience</div>
                 </div>
+              </div>
+
+              {/* Additional Professional Details */}
+              <div className="space-y-6">
+                {/* Performance Roles */}
+                {profile.role_flags?.includes('TALENT') && (profile as any).performance_roles && (profile as any).performance_roles.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Performance Roles</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {(profile as any).performance_roles.map((role: string, index: number) => (
+                        <span
+                          key={`role-${index}`}
+                          className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary border border-primary/20"
+                        >
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Physical Attributes - For Talent */}
+                {profile.role_flags?.includes('TALENT') && ((profile as any).height_cm || (profile as any).eye_color || (profile as any).hair_color) && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Physical Attributes</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {(profile as any).height_cm && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Height:</span>{' '}
+                          <span className="text-foreground font-medium">{(profile as any).height_cm}cm</span>
+                        </div>
+                      )}
+                      {(profile as any).eye_color && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Eyes:</span>{' '}
+                          <span className="text-foreground font-medium">{(profile as any).eye_color}</span>
+                        </div>
+                      )}
+                      {(profile as any).hair_color && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Hair:</span>{' '}
+                          <span className="text-foreground font-medium">{(profile as any).hair_color}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Languages */}
+                {profile.languages && profile.languages.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Languages</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.languages.map((language: string, index: number) => (
+                        <span
+                          key={`lang-${index}`}
+                          className="px-3 py-1.5 text-sm rounded-lg bg-muted text-foreground"
+                        >
+                          {language}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Travel & Location Preferences */}
+                {(typeof (profile as any).available_for_travel !== 'undefined' || (profile as any).has_studio) && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Work Preferences</h3>
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      {typeof (profile as any).available_for_travel !== 'undefined' && (
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${(profile as any).available_for_travel ? 'bg-primary' : 'bg-muted-foreground'}`}></span>
+                          <span className="text-foreground">
+                            {(profile as any).available_for_travel ? 'Available for travel' : 'Local work only'}
+                          </span>
+                        </div>
+                      )}
+                      {(profile as any).has_studio && (
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-primary"></span>
+                          <span className="text-foreground">
+                            {(profile as any).studio_name ? `Has studio: ${(profile as any).studio_name}` : 'Has studio'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Equipment - For Contributors */}
+                {profile.role_flags?.includes('CONTRIBUTOR') && profile.equipment_list && profile.equipment_list.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Equipment</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.equipment_list.map((equipment: string, index: number) => (
+                        <span
+                          key={`equip-${index}`}
+                          className="px-3 py-1.5 text-sm rounded-lg bg-muted text-foreground"
+                        >
+                          {equipment}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Editing Software - For Contributors */}
+                {profile.role_flags?.includes('CONTRIBUTOR') && profile.editing_software && profile.editing_software.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Editing Software</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.editing_software.map((software: string, index: number) => (
+                        <span
+                          key={`software-${index}`}
+                          className="px-3 py-1.5 text-sm rounded-lg bg-muted text-foreground"
+                        >
+                          {software}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rates */}
+                {((profile as any).hourly_rate_min || (profile as any).hourly_rate_max) && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Rates</h3>
+                    <div className="text-sm">
+                      <span className="text-foreground font-medium">
+                        {(profile as any).hourly_rate_min && (profile as any).hourly_rate_max
+                          ? `€${(profile as any).hourly_rate_min} - €${(profile as any).hourly_rate_max}/hr`
+                          : (profile as any).hourly_rate_min
+                          ? `From €${(profile as any).hourly_rate_min}/hr`
+                          : `Up to €${(profile as any).hourly_rate_max}/hr`}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

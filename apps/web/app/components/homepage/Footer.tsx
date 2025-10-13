@@ -12,14 +12,13 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           {/* Logo and tagline */}
           <div className="flex flex-col items-center md:items-start gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/preset-logo.svg"
-                alt="Preset Logo"
-                width={120}
-                height={32}
-                className="h-8 w-auto"
+            <Link href="/" className="flex items-center gap-3">
+              <img
+                src="/logo.svg"
+                alt="Preset"
+                className="w-10 h-10"
               />
+              <span className="text-xl font-bold text-foreground preset-branding">Preset</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Connecting creatives worldwide

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendAPIFailureAlert, analyzeAPIError } from '../../../../lib/api-failure-alerts'
+import { downloadAndSaveEnhancedImage, isExternalImageUrl } from '../../../../lib/enhanced-image-storage'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -36,12 +37,42 @@ export async function POST(request: NextRequest) {
         resultImageUrl
       })
       
-      // Update the task status in database
+      // Get task details to find user info
+      const { data: task, error: taskFetchError } = await supabaseAdmin
+        .from('enhancement_tasks')
+        .select('user_id, input_image_url, enhancement_type, prompt')
+        .eq('id', taskId)
+        .single()
+      
+      let permanentImageUrl = resultImageUrl
+      
+      // Download and save enhanced image to user's bucket if it's external
+      if (task && isExternalImageUrl(resultImageUrl)) {
+        console.log('🔄 Downloading external enhanced image to user bucket...')
+        
+        const downloadResult = await downloadAndSaveEnhancedImage(
+          resultImageUrl,
+          task.user_id,
+          taskId, // Using taskId as original image identifier
+          task.enhancement_type
+        )
+        
+        if (downloadResult.success && downloadResult.permanentUrl) {
+          permanentImageUrl = downloadResult.permanentUrl
+          console.log('✅ Enhanced image saved to user bucket:', permanentImageUrl)
+        } else {
+          console.error('❌ Failed to download enhanced image:', downloadResult.error)
+          // Continue with external URL but log the issue
+        }
+      }
+
+      // Update the task status in database with permanent URL
       const { error: updateError } = await supabaseAdmin
         .from('enhancement_tasks')
         .update({
           status: 'completed',
-          result_image_url: resultImageUrl,
+          result_image_url: permanentImageUrl,
+          original_external_url: isExternalImageUrl(resultImageUrl) ? resultImageUrl : null,
           completed_at: new Date().toISOString(),
           error_message: null
         })
@@ -50,7 +81,7 @@ export async function POST(request: NextRequest) {
       if (updateError) {
         console.error('Error updating task status:', updateError)
       } else {
-        console.log('Task status updated successfully')
+        console.log('Task status updated successfully with permanent URL')
       }
       
       // Check if this is a playground project task (find by taskId in metadata)

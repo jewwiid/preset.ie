@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { refundUserCredits, OPERATION_COSTS, ProviderType } from '@/lib/credits'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -502,14 +503,17 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  console.log('👤 User authenticated:', { 
-    userId: user?.id, 
+  console.log('👤 User authenticated:', {
+    userId: user?.id,
     hasUser: !!user,
-    userEmail: user?.email 
+    userEmail: user?.email
   })
 
+  let creditsDeducted = false
+  let creditsNeeded = 0
+
   try {
-  
+
   const requestBody = await request.json()
   const { prompt, style, resolution, consistencyLevel, projectId, maxImages, enableSyncMode, enableBase64Output, customStylePreset, baseImage, generationMode, intensity, cinematicParameters, enhancedPrompt, includeTechnicalDetails, includeStyleReferences, selectedProvider, replaceLatestImages = false, userSubject } = requestBody
   
@@ -599,14 +603,12 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-  
+
   try {
-    // Calculate credits needed based on provider
-    // NanoBanana: 1 credit per image
-    // Seedream: 2 credits per image
-    const provider = selectedProvider || 'seedream'
-    const creditsPerImage = provider === 'nanobanana' ? 1 : 2
-    let creditsNeeded = (maxImages || 1) * creditsPerImage
+    // Calculate credits needed based on provider using centralized costs
+    const provider = (selectedProvider || 'seedream') as ProviderType
+    const creditsPerImage = OPERATION_COSTS.generation(provider)
+    creditsNeeded = (maxImages || 1) * creditsPerImage
     console.log('💰 Credits calculation:', {
       provider,
       maxImages: maxImages || 1,
@@ -1377,21 +1379,24 @@ export async function POST(request: NextRequest) {
       newBalance: userCredits.current_balance - creditsNeeded,
       newConsumedThisMonth: userCredits.consumed_this_month + creditsNeeded
     })
-    
+
     const { error: creditError } = await supabaseAdmin
       .from('user_credits')
-      .update({ 
+      .update({
         current_balance: userCredits.current_balance - creditsNeeded,
         consumed_this_month: userCredits.consumed_this_month + creditsNeeded
       })
       .eq('user_id', user.id)
-    
+
     if (creditError) {
       console.error('❌ Credit deduction failed:', creditError)
       throw new Error(`Credit deduction failed: ${creditError.message}`)
     }
     console.log('✅ Credits deducted successfully')
-    
+
+    // Track that credits were deducted for refund purposes
+    creditsDeducted = true
+
     // Prepare new images
     const newImages = seedreamData.data.outputs.map((imgUrl: string, index: number) => ({
       url: imgUrl,
@@ -1643,11 +1648,33 @@ export async function POST(request: NextRequest) {
       name: error instanceof Error ? error.name : undefined,
       timestamp: new Date().toISOString()
     })
-    
+
+    // Refund credits if they were deducted
+    if (typeof creditsDeducted !== 'undefined' && creditsDeducted && typeof user !== 'undefined' && user) {
+      console.log('💰 Attempting to refund credits due to generation failure...')
+      try {
+        const refundSuccess = await refundUserCredits(
+          supabaseAdmin,
+          user.id,
+          creditsNeeded,
+          'playground_generation',
+          `Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+
+        if (refundSuccess) {
+          console.log('✅ Credits refunded successfully')
+        } else {
+          console.error('❌ Failed to refund credits')
+        }
+      } catch (refundError) {
+        console.error('❌ Exception during refund:', refundError)
+      }
+    }
+
     // Provide user-friendly error messages
     let userMessage = 'Failed to generate images'
     let statusCode = 500
-    
+
     if (error instanceof Error) {
       if (error.message.includes('temporarily unavailable')) {
         userMessage = error.message
@@ -1659,9 +1686,10 @@ export async function POST(request: NextRequest) {
         userMessage = error.message
       }
     }
-    
-    return NextResponse.json({ 
-      error: userMessage
+
+    return NextResponse.json({
+      error: userMessage,
+      creditsRefunded: typeof creditsDeducted !== 'undefined' && creditsDeducted
     }, { status: statusCode })
   }
 }

@@ -82,7 +82,7 @@ export default function ImageLibrary({
                         }}
                       />
                       {!img.is_active && (
-                        <Badge className="absolute top-2 left-2 bg-yellow-500">
+                        <Badge className="absolute top-2 left-2 bg-orange-500">
                           Inactive
                         </Badge>
                       )}

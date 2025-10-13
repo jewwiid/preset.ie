@@ -15,6 +15,7 @@ import {
   Calendar,
   Lock
 } from 'lucide-react';
+import { useTreatmentTracking } from '@/lib/hooks/useTreatmentTracking';
 
 interface TreatmentData {
   id: string;
@@ -65,6 +66,12 @@ export default function SharedTreatmentPage() {
   const [treatment, setTreatment] = useState<TreatmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize view tracking (simple - just counts views)
+  useTreatmentTracking({
+    treatmentId: treatment?.id || '',
+    enabled: !!treatment
+  });
 
   useEffect(() => {
     if (token) {

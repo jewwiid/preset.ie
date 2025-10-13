@@ -62,7 +62,6 @@ export async function GET(request: NextRequest) {
         style_tags,
         vibe_tags,
         professional_skills,
-        performance_roles,
         years_experience,
         account_status,
         profile_completion_percentage,

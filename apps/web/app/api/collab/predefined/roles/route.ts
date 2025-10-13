@@ -20,28 +20,60 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
 
-    let query = supabase
-      .from('predefined_roles')
-      .select('id, name, category, description, sort_order')
-      .eq('is_active', true)
-      .order('sort_order')
-      .order('name');
+    // Fetch from both contributor roles and talent categories
+    const [contributorResult, talentResult] = await Promise.all([
+      supabase
+        .from('predefined_roles')
+        .select('id, name, sort_order')
+        .eq('is_active', true)
+        .order('sort_order')
+        .order('name'),
+      supabase
+        .from('predefined_talent_categories')
+        .select('id, category_name, sort_order')
+        .eq('is_active', true)
+        .order('sort_order')
+        .order('category_name')
+    ]);
 
-    if (category) {
-      query = query.eq('category', category);
-    }
-
-    const { data: roles, error } = await query;
-
-    if (error) {
-      console.error('Error fetching predefined roles:', error);
+    if (contributorResult.error) {
+      console.error('Error fetching contributor roles:', contributorResult.error);
       return NextResponse.json(
-        { error: 'Failed to fetch roles' },
+        { error: 'Failed to fetch contributor roles' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ roles });
+    if (talentResult.error) {
+      console.error('Error fetching talent categories:', talentResult.error);
+      return NextResponse.json(
+        { error: 'Failed to fetch talent categories' },
+        { status: 500 }
+      );
+    }
+
+    // Combine both types of roles
+    const allRoles = [
+      ...(contributorResult.data || []).map(role => ({
+        id: role.id,
+        name: role.name,
+        sort_order: role.sort_order,
+        type: 'contributor' as const
+      })),
+      ...(talentResult.data || []).map(role => ({
+        id: role.id,
+        name: role.category_name,
+        sort_order: role.sort_order,
+        type: 'talent' as const
+      }))
+    ];
+
+    // Filter by category if specified
+    const filteredRoles = category 
+      ? allRoles.filter(role => role.type === category)
+      : allRoles;
+
+    return NextResponse.json({ roles: filteredRoles });
   } catch (error) {
     console.error('Error in roles API:', error);
     return NextResponse.json(

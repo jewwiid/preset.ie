@@ -7,10 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  FileText, 
-  Plus, 
-  Search, 
+import {
+  FileText,
+  Plus,
+  Search,
   Filter,
   Eye,
   Download,
@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
 import { supabase } from '../../lib/supabase';
+import { PageHeader } from '@/components/PageHeader';
+import { usePageHeaderImage } from '@/hooks/usePageHeaderImage';
 
 interface Treatment {
   id: string;
@@ -68,6 +70,7 @@ const TREATMENT_STATUSES = {
 
 export default function TreatmentsPage() {
   const { user } = useAuth();
+  const { headerImage } = usePageHeaderImage('treatments-header');
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -182,26 +185,23 @@ export default function TreatmentsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="mb-8 rounded-2xl p-8 border border-border">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <FileText className="h-8 w-8 text-primary mr-3" />
-              <div>
-                <h1 className="text-5xl font-bold text-primary mb-2">Treatments</h1>
-                <p className="text-xl text-muted-foreground">Create and manage professional treatments</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/treatments/create">
-                <Button size="lg" className="px-8 py-3 text-lg font-semibold">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Create Treatment
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Treatments"
+          subtitle="Create and manage professional treatments"
+          icon={FileText}
+          stats={[
+            { icon: FileText, label: `${pagination.total} Treatments` }
+          ]}
+          actions={
+            <Link href="/treatments/create">
+              <Button size="lg" className="px-8 py-3 text-base font-semibold flex items-center gap-2 shadow-lg hover:shadow-xl transition-shadow">
+                <Plus className="w-5 h-5" />
+                Create Treatment
+              </Button>
+            </Link>
+          }
+          backgroundImage={headerImage}
+        />
 
         <main>
         <div className="space-y-6">
