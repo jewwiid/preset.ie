@@ -299,7 +299,7 @@ export function NavBar() {
                   className="w-10 h-10"
                 />
               </div>
-              <span className="text-xl font-bold text-foreground preset-branding">Preset</span>
+              <span className="text-xl font-bold text-primary preset-branding">Preset</span>
             </Link>
           </div>
 
@@ -743,10 +743,10 @@ export function NavBar() {
               </>
             ) : (
               <div className="hidden md:flex items-center space-x-3">
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" asChild className="preset-branding">
                   <Link href="/auth/signin">Sign In</Link>
                 </Button>
-                <Button asChild>
+                <Button asChild className="preset-branding">
                   <Link href="/auth/signup">Sign Up</Link>
                 </Button>
               </div>
@@ -892,10 +892,10 @@ export function NavBar() {
 
             {!user && (
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" asChild>
+                <Button variant="ghost" size="sm" asChild className="preset-branding">
                   <Link href="/auth/signin">Sign In</Link>
                 </Button>
-                <Button size="sm" asChild>
+                <Button size="sm" asChild className="preset-branding">
                   <Link href="/auth/signup">Sign Up</Link>
                 </Button>
               </div>
@@ -1312,14 +1312,14 @@ export function NavBar() {
               <div className="mt-3 border-t border-border-200 pt-3">
                 <Link
                   href="/auth/signin"
-                  className="block px-3 py-2 text-base font-medium text-muted-foreground-600 hover:text-muted-foreground-900"
+                  className="block px-3 py-2 text-base font-medium text-muted-foreground-600 hover:text-muted-foreground-900 preset-branding"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="block px-3 py-2 text-base font-medium nav-item"
+                  className="block px-3 py-2 text-base font-medium nav-item preset-branding"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign Up
