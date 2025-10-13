@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '../../../lib/auth-context'
@@ -31,7 +31,7 @@ type UserRole = 'CONTRIBUTOR' | 'TALENT' | 'BOTH'
 type SignupMethod = 'email' | 'google'
 
 
-export default function SignUpPage() {
+function SignUpPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { signUp, signInWithGoogle } = useAuth()
@@ -919,5 +919,13 @@ export default function SignUpPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <SignUpPageContent />
+    </Suspense>
   )
 }
