@@ -9,12 +9,9 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    // @ts-expect-error - FormData.get() exists but TypeScript definitions are incomplete
-    const file = formData.get('file') as File | null;
-    // @ts-expect-error - FormData.get() exists but TypeScript definitions are incomplete
-    const imageType = (formData.get('image_type') as string) || 'general';
-    // @ts-expect-error - FormData.get() exists but TypeScript definitions are incomplete
-    const category = (formData.get('category') as string) || '';
+    const file = (formData as any).get('file') as File | null;
+    const imageType = ((formData as any).get('image_type') as string) || 'general';
+    const category = ((formData as any).get('category') as string) || '';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
