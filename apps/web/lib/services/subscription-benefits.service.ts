@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 export interface SubscriptionBenefit {
   id: string;
   user_id: string;
-  subscription_tier: 'FREE' | 'PLUS' | 'PRO';
+  subscription_tier: 'FREE' | 'PLUS' | 'PRO' | 'CREATOR';
   benefit_type: 'monthly_bump' | 'priority_support' | 'analytics';
   benefit_value: number;
   used_this_month: number;
@@ -223,7 +223,7 @@ export class SubscriptionBenefitsService {
             last_reset_at: new Date().toISOString()
           }
         ];
-      
+
       case 'PRO':
         return [
           {
@@ -248,7 +248,32 @@ export class SubscriptionBenefitsService {
             last_reset_at: new Date().toISOString()
           }
         ];
-      
+
+      case 'CREATOR':
+        return [
+          {
+            benefit_type: 'monthly_bump',
+            benefit_value: 25,
+            used_this_month: 0,
+            monthly_limit: 25,
+            last_reset_at: new Date().toISOString()
+          },
+          {
+            benefit_type: 'priority_support',
+            benefit_value: 1,
+            used_this_month: 0,
+            monthly_limit: 1,
+            last_reset_at: new Date().toISOString()
+          },
+          {
+            benefit_type: 'analytics',
+            benefit_value: 1,
+            used_this_month: 0,
+            monthly_limit: 1,
+            last_reset_at: new Date().toISOString()
+          }
+        ];
+
       default: // FREE
         return baseBenefits;
     }

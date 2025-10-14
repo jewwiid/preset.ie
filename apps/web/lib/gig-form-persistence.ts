@@ -129,9 +129,14 @@ export interface GigFormData {
 export function useGigFormPersistence(gigId: string) {
   const storageKey = `gig-edit-${gigId}`
   
-  // Save form data to localStorage
+  // Save form data to localStorage with error handling
   const saveGigData = useCallback((data: Partial<GigFormData>) => {
     try {
+      // Check localStorage quota before saving
+      const testKey = 'preset-quota-check'
+      localStorage.setItem(testKey, 'test')
+      localStorage.removeItem(testKey)
+      
       const existing = getGigData()
       const updated = {
         ...existing,
@@ -139,14 +144,21 @@ export function useGigFormPersistence(gigId: string) {
         lastSaved: new Date().toISOString()
       }
       localStorage.setItem(storageKey, JSON.stringify(updated))
+      
+      // Log successful save in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Form data saved successfully:', storageKey)
+      }
     } catch (error) {
-      console.warn('Failed to save gig form data:', error)
+      console.warn('❌ Failed to save gig form data:', error)
+      // Don't crash the app, just skip auto-save
+      // This prevents localStorage issues from affecting auth
     }
   }, [storageKey])
 
-  // Debounced save function
+  // Debounced save function - increased delay to reduce localStorage conflicts
   const debouncedSaveGigData = useMemo(
-    () => debounce(saveGigData, 1000),
+    () => debounce(saveGigData, 3000), // Increased from 1000ms to 3000ms
     [saveGigData]
   )
 

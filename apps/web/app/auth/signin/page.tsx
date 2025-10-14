@@ -119,8 +119,10 @@ function SignInContent() {
       
       setLoading(false)
     } else {
-      // Use the redirect path determined by the auth context
-      router.push(redirectPath || '/dashboard')
+      // Check for redirect parameter from URL first, then use auth context redirect
+      const redirectTo = searchParams?.get('redirectTo')
+      const finalRedirectPath = redirectTo || redirectPath || '/dashboard'
+      router.push(finalRedirectPath)
     }
   }
 

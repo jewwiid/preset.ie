@@ -48,25 +48,21 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: 'system',
-            content: `You are a professional color analyst and fashion expert. Analyze images and extract meaningful color palettes for ${context || 'creative projects'}. Focus on dominant colors that define the mood and aesthetic.`
+            content: `You are a precise color analyst. Extract ONLY the most dominant colors actually present in the image. Do not add colors that aren't there. Do not interpret mood or suggest complementary colors. Focus on accuracy over creativity.`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `Analyze this image and extract a color palette. Please provide:
-                1. A palette of 5 hex color codes that best represent the image
-                2. A brief description of the color scheme
-                3. The overall mood conveyed by these colors
-                4. 2-3 suggestions for complementary colors
-                
+                text: `Analyze this image and extract ONLY the 5 most dominant colors that are actually present in the image. Do not add colors that aren't there. Do not suggest complementary colors. Be precise and accurate.
+
                 Return the response in JSON format:
                 {
                   "palette": ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5"],
-                  "description": "Brief description of the color scheme",
-                  "mood": "One or two words describing the mood",
-                  "suggestions": ["#hex6", "#hex7", "#hex8"]
+                  "description": "Brief description of what colors are actually in the image",
+                  "mood": "Neutral",
+                  "suggestions": []
                 }`
               },
               {

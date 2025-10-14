@@ -274,7 +274,7 @@ export default function BasicDetailsStep({
                       await new Promise(r => setTimeout(r, 8));
                     }
                   }}
-                  disabled={userSubscriptionTier === 'FREE'}
+                  userSubscriptionTier={userSubscriptionTier as 'FREE' | 'PLUS' | 'PRO'}
                   size={32}
                 />
             </div>

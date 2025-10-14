@@ -102,7 +102,7 @@ export function DesktopNav({
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/dashboard') || isActive('/profile') || isActive('/matchmaking'))
                   ? 'text-primary bg-primary/10'
-                  : 'text-foreground hover:bg-accent/50'
+                  : 'text-primary hover:bg-primary/5'
                 }
               `}
             >
@@ -149,7 +149,7 @@ export function DesktopNav({
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/gigs'))
                   ? 'text-primary bg-primary/10'
-                  : 'text-foreground hover:bg-accent/50'
+                  : 'text-primary hover:bg-primary/5'
                 }
               `}
             >
@@ -192,7 +192,7 @@ export function DesktopNav({
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/gear') || isActive('/presets/marketplace'))
                   ? 'text-primary bg-primary/10'
-                  : 'text-foreground hover:bg-accent/50'
+                  : 'text-primary hover:bg-primary/5'
                 }
               `}
             >
@@ -294,7 +294,7 @@ export function DesktopNav({
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/presets') || isActive('/presets/create') || isActive('/showcases') || isActive('/showcases/create') || isActive('/treatments') || isActive('/treatments/create') || isActive('/playground') || isActive('/moodboards'))
                   ? 'text-primary bg-primary/10'
-                  : 'text-foreground hover:bg-accent/50'
+                  : 'text-primary hover:bg-primary/5'
                 }
               `}
             >
@@ -353,7 +353,7 @@ export function DesktopNav({
               inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
               ${isActive(item.href)
                 ? 'text-primary bg-primary/10'
-                : 'text-foreground hover:bg-accent/50'
+                : 'text-primary hover:bg-primary/5'
               }
             `}
           >

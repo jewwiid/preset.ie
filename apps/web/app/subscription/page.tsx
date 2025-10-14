@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
-import { Check, X, Star, Zap, Crown } from 'lucide-react'
+import { Check, X, Star, Zap, Crown, Sparkles } from 'lucide-react'
 
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface SubscriptionPlan {
   id: string
   name: string
-  tier: 'FREE' | 'PLUS' | 'PRO'
+  tier: 'FREE' | 'PLUS' | 'PRO' | 'CREATOR'
   price: number
   period: 'month' | 'year'
   features: string[]
@@ -27,15 +27,16 @@ const plans: SubscriptionPlan[] = [
     tier: 'FREE',
     price: 0,
     period: 'month',
-    credits: 5,
+    credits: 15,
     monthlyBumps: 0,
     prioritySupport: false,
     analytics: false,
     features: [
-      '5 credits per month',
+      '15 credits per month',
       'Basic marketplace access',
       'Community support',
-      'Standard listing visibility'
+      'Standard listing visibility',
+      'Image generation only'
     ]
   },
   {
@@ -44,15 +45,17 @@ const plans: SubscriptionPlan[] = [
     tier: 'PLUS',
     price: 9.99,
     period: 'month',
-    credits: 50,
+    credits: 150,
     monthlyBumps: 3,
     prioritySupport: true,
     analytics: false,
     popular: true,
     features: [
-      '50 credits per month',
+      '150 credits per month',
       '3 monthly listing bumps',
       'Priority support',
+      'Voice-to-text transcription',
+      'Standard video models',
       'Enhanced marketplace features',
       'Advanced search filters',
       'Direct messaging'
@@ -62,21 +65,44 @@ const plans: SubscriptionPlan[] = [
     id: 'pro',
     name: 'Pro',
     tier: 'PRO',
-    price: 29.99,
+    price: 24.99,
     period: 'month',
-    credits: 200,
+    credits: 500,
     monthlyBumps: 10,
     prioritySupport: true,
     analytics: true,
     features: [
-      '200 credits per month',
+      '500 credits per month',
       '10 monthly listing bumps',
       'Priority support',
+      'Premium video models (Sora 2)',
       'Advanced analytics dashboard',
       'All marketplace features',
       'Custom branding options',
-      'API access',
-      'White-label solutions'
+      'API access'
+    ]
+  },
+  {
+    id: 'creator',
+    name: 'Creator',
+    tier: 'CREATOR',
+    price: 49.99,
+    period: 'month',
+    credits: 1500,
+    monthlyBumps: 25,
+    prioritySupport: true,
+    analytics: true,
+    features: [
+      '1,500 credits per month',
+      '25 monthly listing bumps',
+      'Priority support',
+      'Ultra-premium models (Sora 2 Pro)',
+      'Advanced analytics',
+      'All marketplace features',
+      'Custom branding',
+      'White-label solutions',
+      'Dedicated account manager',
+      'API access'
     ]
   }
 ]
@@ -250,35 +276,35 @@ export default function SubscriptionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted-50 py-12">
+    <div className="min-h-screen bg-background py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-muted-foreground-900 mb-4">
+          <h1 className="text-5xl font-bold mb-4">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-muted-foreground-600 max-w-2xl mx-auto">
-            Unlock the full potential of Preset with our subscription plans. 
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Unlock the full potential of Preset with our subscription plans.
             Get more credits, enhanced features, and priority support.
           </p>
         </div>
 
         {/* Current Plan Status */}
         {currentPlan !== 'FREE' && (
-          <div className="mb-8 p-4 bg-primary-50 border border-primary/20 rounded-lg">
+          <div className="mb-8 p-5 bg-card border border-primary/20 rounded-xl">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-primary-800">
+                <h3 className="text-lg font-bold font-bloc">
                   Current Plan: {currentPlan}
                 </h3>
-                <p className="text-primary-600">
+                <p className="text-sm text-muted-foreground">
                   You're currently subscribed to the {currentPlan} plan
                 </p>
               </div>
               <button
                 onClick={handleCancelSubscription}
                 disabled={loading}
-                className="px-4 py-2 bg-destructive-600 text-primary-foreground rounded-md hover:bg-destructive-700 disabled:opacity-50"
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:opacity-90 disabled:opacity-50 font-semibold transition-all"
               >
                 {loading ? 'Canceling...' : 'Cancel Subscription'}
               </button>
@@ -288,122 +314,129 @@ export default function SubscriptionPage() {
 
         {/* Error/Success Messages */}
         {error && (
-          <div className="mb-6 p-4 bg-destructive-50 border border-destructive-200 rounded-md flex items-center gap-2">
-            <X className="w-5 h-5 text-destructive-500" />
-            <p className="text-destructive-700">{error}</p>
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-2">
+            <X className="w-5 h-5 text-destructive" />
+            <p className="text-destructive font-medium">{error}</p>
           </div>
         )}
-        
+
         {success && (
-          <div className="mb-6 p-4 bg-primary-50 border border-primary/20 rounded-md flex items-center gap-2">
-            <Check className="w-5 h-5 text-primary-500" />
-            <p className="text-primary-700">{success}</p>
+          <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-2">
+            <Check className="w-5 h-5 text-primary" />
+            <p className="text-primary font-medium">{success}</p>
           </div>
         )}
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.id}
-              className={`relative bg-background rounded-2xl shadow-lg border-2 p-8 flex flex-col ${
-                plan.popular 
-                  ? 'border-primary-500 transform scale-105' 
-                  : 'border-border-200'
-              } ${currentPlan === plan.tier ? 'ring-2 ring-primary-primary' : ''}`}
+              className={`relative bg-card rounded-xl shadow-sm border flex flex-col transition-all duration-200 hover:shadow-md ${
+                plan.popular
+                  ? 'border-primary scale-[1.02] shadow-md'
+                  : 'border-border'
+              } ${currentPlan === plan.tier ? 'ring-2 ring-primary/20' : ''}`}
             >
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-primary-500 text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold font-bloc uppercase tracking-wider">
                     Most Popular
                   </span>
                 </div>
               )}
 
               {currentPlan === plan.tier && (
-                <div className="absolute -top-4 right-4">
-                  <span className="bg-primary-500 text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">
+                <div className="absolute -top-3 right-4 z-10">
+                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold font-bloc uppercase tracking-wider">
                     Current Plan
                   </span>
                 </div>
               )}
 
               {/* Plan Header */}
-              <div className="text-center mb-8">
-                <div className="flex justify-center mb-4">
-                  {plan.tier === 'FREE' && <Star className="w-8 h-8 text-muted-foreground-400" />}
-                  {plan.tier === 'PLUS' && <Zap className="w-8 h-8 text-primary-500" />}
-                  {plan.tier === 'PRO' && <Crown className="w-8 h-8 text-primary-500" />}
+              <div className="text-center pt-8 pb-6 px-6 border-b border-border">
+                <div className="flex justify-center mb-3">
+                  {plan.tier === 'FREE' && <Star className="w-10 h-10 text-muted-foreground" />}
+                  {plan.tier === 'PLUS' && <Zap className="w-10 h-10 text-primary" />}
+                  {plan.tier === 'PRO' && <Crown className="w-10 h-10 text-primary" />}
+                  {plan.tier === 'CREATOR' && <Sparkles className="w-10 h-10 text-primary" />}
                 </div>
-                <h3 className="text-2xl font-bold text-muted-foreground-900 mb-2">{plan.name}</h3>
-                <div className="text-4xl font-bold text-muted-foreground-900 mb-2">
-                  ${plan.price}
-                  <span className="text-lg text-muted-foreground-500">/{plan.period}</span>
+                <h3 className="text-xl font-bold mb-3">{plan.name}</h3>
+                <div className="mb-2">
+                  <span className="text-4xl font-bold text-foreground">${plan.price}</span>
+                  <span className="text-muted-foreground">/{plan.period}</span>
                 </div>
-                <p className="text-muted-foreground-600">{plan.credits} credits per month</p>
+                <p className="text-sm text-muted-foreground font-semibold">{plan.credits} credits per month</p>
               </div>
 
               {/* Features */}
-              <div className="space-y-4 mb-8 flex-grow">
-                {plan.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-primary-500 flex-shrink-0" />
-                    <span className="text-muted-foreground-700">{feature}</span>
-                  </div>
-                ))}
+              <div className="flex-grow p-6">
+                <ul className="space-y-3">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="text-sm text-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               {/* Action Button */}
-              <button
-                onClick={() => handleUpgrade(plan.id)}
-                disabled={loading || currentPlan === plan.tier}
-                className={`w-full py-3 px-6 rounded-lg font-semibold transition-all duration-200 ${
-                  currentPlan === plan.tier
-                    ? 'bg-muted-100 text-muted-foreground-500 cursor-not-allowed'
-                    : plan.popular
-                    ? 'bg-primary-600 text-primary-foreground hover:bg-primary/90 hover:shadow-lg'
-                    : 'bg-muted-900 text-primary-foreground hover:bg-muted-800 hover:shadow-lg'
-                }`}
-              >
-                {loading ? 'Processing...' : 
-                 currentPlan === plan.tier ? 'Current Plan' :
-                 plan.price === 0 ? 'Stay on Free' : 
-                 !user ? 'Sign In to Upgrade' : `Upgrade to ${plan.name}`}
-              </button>
+              <div className="p-6 pt-0">
+                <button
+                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={loading || currentPlan === plan.tier}
+                  className={`w-full py-3 px-6 rounded-lg font-bold font-bloc transition-all duration-200 ${
+                    currentPlan === plan.tier
+                      ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                      : plan.popular
+                      ? 'bg-primary text-primary-foreground hover:opacity-90 hover:shadow-lg'
+                      : plan.tier === 'FREE'
+                      ? 'bg-secondary text-secondary-foreground hover:bg-accent'
+                      : 'bg-foreground text-background hover:opacity-90 hover:shadow-lg'
+                  }`}
+                >
+                  {loading ? 'Processing...' :
+                   currentPlan === plan.tier ? 'Current Plan' :
+                   plan.price === 0 ? 'Stay on Free' :
+                   !user ? 'Sign In to Upgrade' : `Upgrade to ${plan.name}`}
+                </button>
+              </div>
             </div>
           ))}
         </div>
 
         {/* FAQ Section */}
-        <div className="mt-16 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-muted-foreground-900 mb-8">
+        <div className="mt-20 max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-10">
             Frequently Asked Questions
           </h2>
-          <div className="space-y-6">
-            <div className="bg-background rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">
+          <div className="space-y-4">
+            <div className="bg-card rounded-xl p-6 border border-border">
+              <h3 className="text-lg font-bold mb-2">
                 What are credits used for?
               </h3>
-              <p className="text-muted-foreground-600">
-                Credits are used for AI image enhancements, premium marketplace features, 
+              <p className="text-muted-foreground leading-relaxed">
+                Credits are used for AI image enhancements, premium marketplace features,
                 and advanced tools. Each credit represents one enhancement or premium action.
               </p>
             </div>
-            <div className="bg-background rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">
+            <div className="bg-card rounded-xl p-6 border border-border">
+              <h3 className="text-lg font-bold mb-2">
                 Can I change my plan anytime?
               </h3>
-              <p className="text-muted-foreground-600">
-                Yes! You can upgrade or downgrade your subscription at any time. 
+              <p className="text-muted-foreground leading-relaxed">
+                Yes! You can upgrade or downgrade your subscription at any time.
                 Changes take effect immediately, and you'll be charged or credited accordingly.
               </p>
             </div>
-            <div className="bg-background rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-muted-foreground-900 mb-2">
+            <div className="bg-card rounded-xl p-6 border border-border">
+              <h3 className="text-lg font-bold mb-2">
                 What happens to unused credits?
               </h3>
-              <p className="text-muted-foreground-600">
-                Credits reset monthly and don't roll over. However, you can always 
+              <p className="text-muted-foreground leading-relaxed">
+                Credits reset monthly and don't roll over. However, you can always
                 purchase additional credit packages if you need more.
               </p>
             </div>

@@ -41,6 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // onAuthStateChange will handle initial session automatically
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        // Add error boundary for auth state changes
+        try {
         // Only log in development
         if (process.env.NODE_ENV === 'development') {
           console.log('🔔 Auth state changed:', event, {
@@ -84,6 +86,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserRole(role)
         setLoading(false)
 
+        // If session was lost unexpectedly, try to recover it
+        if (!session && previousUserIdRef.current && event !== 'SIGNED_OUT') {
+          console.log('Session lost unexpectedly, attempting to recover...')
+          // Try to refresh the session manually if it was lost unexpectedly
+          try {
+            const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+            if (refreshError) {
+              console.error('Failed to refresh session:', refreshError.message)
+            } else if (refreshedSession) {
+              console.log('Session recovered successfully')
+            }
+          } catch (refreshError) {
+            console.error('Error refreshing session:', refreshError)
+          }
+        }
+
         // Log events - only in development
         if (process.env.NODE_ENV === 'development') {
           if (event === 'SIGNED_IN') {
@@ -93,6 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else if (event === 'INITIAL_SESSION') {
             console.log('✅ Initial session loaded')
           }
+        }
+        } catch (error) {
+          console.error('Error in auth state change handler:', error)
+          // Don't let auth errors crash the app
         }
       }
     )

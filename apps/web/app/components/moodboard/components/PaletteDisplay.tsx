@@ -125,7 +125,7 @@ export const PaletteDisplay = ({
       {/* Info Text */}
       <div className="text-xs text-muted-foreground">
         {useAI ? (
-          <p>AI-enhanced palette extraction analyzes your moodboard's emotional tone and suggests complementary colors.</p>
+          <p>AI-enhanced palette extraction uses advanced vision analysis to accurately identify the most dominant colors in your images.</p>
         ) : (
           <p>Standard palette extraction pulls dominant colors directly from your images.</p>
         )}

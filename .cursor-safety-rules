@@ -1,0 +1,21 @@
+# Database Safety Rules
+
+## FORBIDDEN COMMANDS (Never run without explicit user permission):
+- `supabase db reset`
+- `supabase db push --include-all`
+- `DROP DATABASE`
+- `TRUNCATE`
+- `DELETE FROM table_name` (without WHERE)
+- Any command with `--force` or `--yes` that could be destructive
+
+## REQUIRED SAFETY CHECKS:
+1. Before running ANY database command, ask: "This command will [explain what it does]. Are you sure you want to proceed?"
+2. Always suggest safer alternatives first
+3. Never assume the user wants to lose data
+4. Always explain the consequences of destructive operations
+
+## SAFE ALTERNATIVES:
+- Use `CREATE OR REPLACE` instead of `DROP` + `CREATE`
+- Run individual SQL files instead of full migrations
+- Use `ALTER TABLE` for schema changes
+- Always backup before major changes

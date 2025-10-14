@@ -78,74 +78,18 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Check if this is a lootbox package or regular credit package
-    let creditPackage: any;
-    let isLootbox = false;
-
-    // Try lootbox first
-    const { data: lootboxPackage } = await supabaseAdmin
-      .from('lootbox_packages')
+    // Get the credit package
+    const { data: creditPackage, error: packageError } = await supabaseAdmin
+      .from('credit_packages')
       .select('*')
       .eq('id', packageId)
       .eq('is_active', true)
       .single();
 
-    if (lootboxPackage) {
-      creditPackage = lootboxPackage;
-      isLootbox = true;
-      
-      // Check if user already purchased a lootbox this event period
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      const dayOfMonth = now.getDate();
-      
-      let eventPeriod = '';
-      
-      // Weekend Flash Sale
-      if ((dayOfWeek === 5 && now.getHours() >= 18) || dayOfWeek === 6 || (dayOfWeek === 0)) {
-        const year = now.getFullYear();
-        const weekNum = Math.ceil((now.getDate() + new Date(year, now.getMonth(), 1).getDay()) / 7);
-        eventPeriod = `${year}-W${weekNum}`;
-      }
-      // Mid-Month Special
-      else if (dayOfMonth >= 15 && dayOfMonth <= 17) {
-        eventPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-15`;
-      }
-      
-      // Check for existing purchase in this event period
-      const { data: existingPurchase } = await supabaseAdmin
-        .from('lootbox_events')
-        .select('id, event_name, purchased_at')
-        .eq('purchased_by', user.id)
-        .eq('event_period', eventPeriod)
-        .single();
-      
-      if (existingPurchase) {
-        console.log('❌ User already purchased lootbox this period:', {
-          userId: user.id,
-          eventPeriod,
-          previousPurchase: existingPurchase
-        });
-        return NextResponse.json({ 
-          error: 'You have already purchased a lootbox during this event period. Only one per event allowed!' 
-        }, { status: 400 });
-      }
-    } else {
-      // Try regular credit package
-      const { data: regularPackage, error: packageError } = await supabaseAdmin
-        .from('credit_packages')
-        .select('*')
-        .eq('id', packageId)
-        .eq('is_active', true)
-        .single();
-
-      if (packageError || !regularPackage) {
-        return NextResponse.json({ 
-          error: 'Invalid credit package' 
-        }, { status: 400 });
-      }
-
-      creditPackage = regularPackage;
+    if (packageError || !creditPackage) {
+      return NextResponse.json({ 
+        error: 'Invalid credit package' 
+      }, { status: 400 });
     }
 
     // Create Stripe checkout session
@@ -175,8 +119,7 @@ export async function POST(request: NextRequest) {
         packageName: creditPackage.name,
         credits: (creditPackage.user_credits || creditPackage.credits).toString(),
         priceUsd: creditPackage.price_usd.toString(),
-        type: isLootbox ? 'lootbox_purchase' : 'credit_purchase', // Identify type
-        isLootbox: isLootbox.toString(),
+        type: 'credit_purchase',
       },
     });
 

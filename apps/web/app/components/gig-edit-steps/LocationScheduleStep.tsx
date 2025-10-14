@@ -1,15 +1,12 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, MapPin, Calendar as CalendarIcon, Clock } from 'lucide-react'
+import { ChevronLeft, ChevronRight, MapPin, Clock, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
 import { useState } from 'react'
+import { format } from 'date-fns'
 
 interface LocationScheduleStepProps {
   location: string
@@ -82,10 +79,7 @@ export default function LocationScheduleStep({
   isValid,
   validationErrors = []
 }: LocationScheduleStepProps) {
-  // Date picker open states
-  const [startDateOpen, setStartDateOpen] = useState(false)
-  const [endDateOpen, setEndDateOpen] = useState(false)
-  const [deadlineDateOpen, setDeadlineDateOpen] = useState(false)
+  // Removed date picker open states since we're using simple HTML date inputs
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -95,7 +89,7 @@ export default function LocationScheduleStep({
   }
 
   return (
-    <div className="bg-card rounded-lg border border-border shadow-sm relative">
+    <div className="bg-card rounded-lg border border-border shadow-sm relative overflow-visible">
       <div className="p-4 sm:p-6 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-lg">
@@ -108,7 +102,7 @@ export default function LocationScheduleStep({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6 overflow-visible">
 
         {/* Location - City and Country */}
         <div>
@@ -192,36 +186,20 @@ export default function LocationScheduleStep({
                 Start Date/Time <span className="text-destructive">*</span>
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Date Picker */}
-                <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !startDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {startDate && !isNaN(new Date(startDate).getTime()) ? format(new Date(startDate), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50" align="start" side="bottom">
-                    <Calendar
-                      mode="single"
-                      selected={startDate ? new Date(startDate) : undefined}
-                      onSelect={(date) => {
-                        if (date) {
-                          const time = startDate ? startDate.split('T')[1] || '14:00' : '14:00'
-                          onStartDateChange(`${format(date, 'yyyy-MM-dd')}T${time}`)
-                          setStartDateOpen(false)
-                        }
-                      }}
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                {/* Date Input - Simple HTML */}
+                <Input
+                  type="date"
+                  value={startDate ? startDate.split('T')[0] : ''}
+                  onChange={(e) => {
+                    const date = e.target.value
+                    if (date) {
+                      const time = startDate ? startDate.split('T')[1] || '14:00' : '14:00'
+                      onStartDateChange(`${date}T${time}`)
+                    }
+                  }}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full"
+                />
 
                 {/* Time Input - Simple */}
                 <Input
@@ -243,39 +221,20 @@ export default function LocationScheduleStep({
                 End Date/Time <span className="text-destructive">*</span>
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Date Picker */}
-                <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !endDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {endDate && !isNaN(new Date(endDate).getTime()) ? format(new Date(endDate), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50" align="start" side="bottom">
-                    <Calendar
-                      mode="single"
-                      selected={endDate ? new Date(endDate) : undefined}
-                      onSelect={(date) => {
-                        if (date) {
-                          const time = endDate ? endDate.split('T')[1] || '18:00' : '18:00'
-                          onEndDateChange(`${format(date, 'yyyy-MM-dd')}T${time}`)
-                          setEndDateOpen(false)
-                        }
-                      }}
-                      disabled={(date) => {
-                        const minDate = startDate ? new Date(startDate) : new Date()
-                        return date < new Date(minDate.setHours(0, 0, 0, 0))
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                {/* Date Input - Simple HTML */}
+                <Input
+                  type="date"
+                  value={endDate ? endDate.split('T')[0] : ''}
+                  onChange={(e) => {
+                    const date = e.target.value
+                    if (date) {
+                      const time = endDate ? endDate.split('T')[1] || '18:00' : '18:00'
+                      onEndDateChange(`${date}T${time}`)
+                    }
+                  }}
+                  min={startDate ? startDate.split('T')[0] : new Date().toISOString().split('T')[0]}
+                  className="w-full"
+                />
 
                 {/* Time Input - Simple */}
                 <Input
@@ -297,39 +256,21 @@ export default function LocationScheduleStep({
                 Application Deadline <span className="text-destructive">*</span>
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Date Picker */}
-                <Popover open={deadlineDateOpen} onOpenChange={setDeadlineDateOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !applicationDeadline && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {applicationDeadline && !isNaN(new Date(applicationDeadline).getTime()) ? format(new Date(applicationDeadline), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-50" align="start" side="bottom">
-                    <Calendar
-                      mode="single"
-                      selected={applicationDeadline ? new Date(applicationDeadline) : undefined}
-                      onSelect={(date) => {
-                        if (date) {
-                          const time = applicationDeadline ? applicationDeadline.split('T')[1] || '23:59' : '23:59'
-                          onApplicationDeadlineChange(`${format(date, 'yyyy-MM-dd')}T${time}`)
-                          setDeadlineDateOpen(false)
-                        }
-                      }}
-                      disabled={(date) => {
-                        const maxDate = startDate ? new Date(startDate) : new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-                        return date < new Date(new Date().setHours(0, 0, 0, 0)) || date > maxDate
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                {/* Date Input - Simple HTML */}
+                <Input
+                  type="date"
+                  value={applicationDeadline ? applicationDeadline.split('T')[0] : ''}
+                  onChange={(e) => {
+                    const date = e.target.value
+                    if (date) {
+                      const time = applicationDeadline ? applicationDeadline.split('T')[1] || '23:59' : '23:59'
+                      onApplicationDeadlineChange(`${date}T${time}`)
+                    }
+                  }}
+                  min={new Date().toISOString().split('T')[0]}
+                  max={startDate ? startDate.split('T')[0] : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
+                  className="w-full"
+                />
 
                 {/* Time Input - Simple */}
                 <Input

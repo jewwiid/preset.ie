@@ -15,34 +15,50 @@ export const CREDIT_PACKAGES = [
     id: 'starter',
     name: 'Starter Pack',
     credits: 10,
-    priceUsd: 5.00,
+    priceUsd: 1.99,
     stripePriceId: 'price_starter_pack', // Replace with actual Stripe price ID
-    description: '10 credits for image enhancements',
+    description: 'Perfect for trying out image enhancements',
   },
   {
-    id: 'creative',
-    name: 'Creative Pack',
+    id: 'basic',
+    name: 'Basic Pack',
+    credits: 25,
+    priceUsd: 4.99,
+    stripePriceId: 'price_basic_pack', // Replace with actual Stripe price ID
+    description: 'Great for regular users',
+  },
+  {
+    id: 'popular',
+    name: 'Popular Pack',
     credits: 50,
-    priceUsd: 20.00,
-    stripePriceId: 'price_creative_pack', // Replace with actual Stripe price ID
-    description: '50 credits for image enhancements',
+    priceUsd: 8.99,
+    stripePriceId: 'price_popular_pack', // Replace with actual Stripe price ID
+    description: 'Most popular choice - best value',
     popular: true,
   },
   {
     id: 'pro',
     name: 'Pro Pack',
     credits: 100,
-    priceUsd: 35.00,
+    priceUsd: 14.99,
     stripePriceId: 'price_pro_pack', // Replace with actual Stripe price ID
-    description: '100 credits for image enhancements',
+    description: 'Perfect for power users',
   },
   {
-    id: 'studio',
-    name: 'Studio Pack',
+    id: 'enterprise',
+    name: 'Enterprise Pack',
+    credits: 250,
+    priceUsd: 29.99,
+    stripePriceId: 'price_enterprise_pack', // Replace with actual Stripe price ID
+    description: 'Maximum credits for heavy usage',
+  },
+  {
+    id: 'creator',
+    name: 'Creator Pack',
     credits: 500,
-    priceUsd: 150.00,
-    stripePriceId: 'price_studio_pack', // Replace with actual Stripe price ID
-    description: '500 credits for image enhancements',
+    priceUsd: 49.99,
+    stripePriceId: 'price_creator_pack', // Replace with actual Stripe price ID
+    description: 'Ultimate pack for professional creators',
   },
 ] as const;
 

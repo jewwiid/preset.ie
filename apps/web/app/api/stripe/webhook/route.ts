@@ -96,11 +96,6 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       return;
     }
 
-    if (metadata.type === 'lootbox_purchase') {
-      console.log('🎁 Processing lootbox purchase');
-      await handleLootboxPurchase(session);
-      return;
-    }
 
     // Otherwise, handle as subscription
     const { userId, profileId, planId, planName, credits, monthlyBumps, prioritySupport, analytics } = metadata;
@@ -262,7 +257,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       .from('user_credits')
       .update({
         subscription_tier: 'FREE',
-        monthly_allowance: 5, // Future monthly resets will give 5 credits
+        monthly_allowance: 15, // Future monthly resets will give 15 credits
         updated_at: new Date().toISOString()
         // Note: NOT resetting current_balance - user keeps their paid credits
       })
@@ -345,113 +340,5 @@ async function handleCreditPurchase(session: Stripe.Checkout.Session) {
     console.log(`✅ Successfully processed credit purchase for user ${userId}: ${credits} credits for $${priceUsd}`);
   } catch (error: any) {
     console.error('Error handling credit purchase:', error);
-  }
-}
-
-async function handleLootboxPurchase(session: Stripe.Checkout.Session) {
-  try {
-    const { metadata } = session;
-    if (!metadata) {
-      console.error('❌ No metadata found in lootbox purchase session');
-      return;
-    }
-
-    const { userId, profileId, packageId, packageName, credits, priceUsd } = metadata;
-
-    console.log('🎁 Allocating lootbox credits:', {
-      userId,
-      packageId,
-      credits: parseInt(credits),
-      priceUsd: parseFloat(priceUsd)
-    });
-
-    // Add purchased credits using the helper function
-    // Lootbox credits are purchased and should roll over forever
-    const { error: creditsError } = await supabaseAdmin
-      .rpc('add_purchased_credits', {
-        p_user_id: userId,
-        p_credits: parseInt(credits)
-      });
-
-    if (creditsError) {
-      console.error('❌ Error adding lootbox credits:', creditsError);
-      return;
-    }
-
-    // Get updated balance for logging
-    const { data: updatedCredits } = await supabaseAdmin
-      .from('user_credits')
-      .select('current_balance, purchased_credits_balance')
-      .eq('user_id', userId)
-      .single();
-
-    console.log('✅ Lootbox credits added successfully:', {
-      creditsAdded: parseInt(credits),
-      newTotalBalance: updatedCredits?.current_balance || 0,
-      newPurchasedBalance: updatedCredits?.purchased_credits_balance || 0
-    });
-
-    // Determine current event period for uniqueness constraint
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const dayOfMonth = now.getDate();
-    
-    let eventName = 'Unknown Event';
-    let eventPeriod = '';
-    
-    // Weekend Flash Sale (unique per weekend)
-    if ((dayOfWeek === 5 && now.getHours() >= 18) || dayOfWeek === 6 || (dayOfWeek === 0)) {
-      eventName = '🎉 Weekend Flash Sale';
-      const year = now.getFullYear();
-      const weekNum = Math.ceil((now.getDate() + new Date(year, now.getMonth(), 1).getDay()) / 7);
-      eventPeriod = `${year}-W${weekNum}`; // e.g., "2025-W40"
-    }
-    // Mid-Month Special (unique per month)
-    else if (dayOfMonth >= 15 && dayOfMonth <= 17) {
-      eventName = '💎 Mid-Month Mega Deal';
-      eventPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-15`; // e.g., "2025-10-15"
-    }
-    
-    // Record the lootbox event with uniqueness constraint
-    const { error: eventError } = await supabaseAdmin
-      .from('lootbox_events')
-      .insert({
-        event_type: 'purchased',
-        event_name: eventName,
-        event_period: eventPeriod,
-        package_id: packageId,
-        user_credits_offered: parseInt(credits),
-        price_usd: parseFloat(priceUsd),
-        margin_percentage: 35.0,
-        purchased_at: new Date().toISOString(),
-        purchased_by: userId
-      });
-
-    if (eventError) {
-      console.error('⚠️ Error recording lootbox event:', eventError);
-    }
-
-    // Log the purchase transaction
-    const { error: transactionError } = await supabaseAdmin
-      .from('user_credit_purchases')
-      .insert({
-        user_id: userId,
-        package_id: packageId,
-        credits_purchased: parseInt(credits),
-        amount_paid_usd: parseFloat(priceUsd),
-        payment_provider: 'stripe',
-        payment_method: 'lootbox',
-        stripe_payment_intent: session.payment_intent,
-        status: 'completed',
-        created_at: new Date().toISOString()
-      });
-
-    if (transactionError) {
-      console.error('⚠️ Error logging lootbox purchase:', transactionError);
-    }
-
-    console.log(`✅ Successfully processed lootbox purchase for user ${userId}: ${credits} credits for $${priceUsd}`);
-  } catch (error: any) {
-    console.error('Error handling lootbox purchase:', error);
   }
 }

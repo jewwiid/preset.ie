@@ -81,51 +81,23 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: 'system',
-            content: `You are a professional creative director, treatment writer, and visual consultant specializing in creative briefs and artistic direction for fashion, photography, and creative projects. Your expertise lies in analyzing visual references to create comprehensive treatments that guide creative execution.`
+            content: `You are a precise color analyst. Extract ONLY the most dominant colors actually present across all images. Do not add colors that aren't there. Do not interpret mood or suggest complementary colors. Focus on accuracy over creativity.`
           },
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `CREATIVE BRIEF ANALYSIS FOR TREATMENT GENERATION
+                text: `Analyze these ${imagesToAnalyze.length} images and extract ONLY the 5 most dominant colors that are actually present across all images. Do not add colors that aren't there. Do not suggest complementary colors. Be precise and accurate.
 
-I'm analyzing a moodboard titled "${context}" with ${imagesToAnalyze.length} reference images for a creative project with the following specifications:
-
-${gigData ? `
-**PROJECT DETAILS:**
-${gigData.title ? `• Project Title: "${gigData.title}"` : ''}
-${gigData.description ? `• Brief Description: ${gigData.description}` : ''}
-${gigData.purpose ? `• Creative Purpose: ${gigData.purpose}` : ''}
-${gigData.comp_type ? `• Project Type: ${gigData.comp_type}` : ''}
-${gigData.location_text ? `• Location: ${gigData.location_text}` : ''}
-${gigData.start_time ? `• Timeline: ${new Date(gigData.start_time).toDateString()}` : ''}
-${gigData.usage_rights ? `• Usage Requirements: ${gigData.usage_rights}` : ''}
-${gigData.safety_notes ? `• Special Notes: ${gigData.safety_notes}` : ''}
-` : ''}
-
-**TASK:** Analyze these ${imagesToAnalyze.length} reference images to create a comprehensive creative treatment that will guide the execution of this project.
-
-**REQUIRED ANALYSIS:**
-
-1. **Visual Narrative & Concept**: What story do these images tell together? What creative concept emerges from the visual references?
-
-2. **Technical Execution Details**: Lighting styles, composition techniques, camera angles, styling approaches, and technical specifications observed.
-
-3. **Aesthetic Direction**: Color theory, mood, atmosphere, and overall visual language that should guide the creative execution.
-
-4. **Style Consistency**: How do these references work together to create a cohesive creative direction? What are the unifying elements?
-
-5. **Color Psychology & Palette**: Professional color palette with strategic reasoning for each color choice and how they serve the creative concept.
-
-Return detailed analysis in JSON format:
+Return the response in JSON format:
 {
   "palette": ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5"],
-  "description": "Comprehensive creative treatment description (3-4 sentences) that synthesizes all visual references into actionable creative direction",
-  "mood": "Primary mood/atmosphere for creative execution",
-  "suggestions": ["#hex6", "#hex7", "#hex8"],
-  "visualAnalysis": "Detailed breakdown of visual elements, technical approaches, and creative techniques observed across all reference images",
-  "treatmentNotes": "Specific guidance for creative execution based on visual analysis"
+  "description": "Brief description of what colors are actually in the images",
+  "mood": "Neutral",
+  "suggestions": [],
+  "visualAnalysis": "Simple description of the dominant colors found",
+  "treatmentNotes": "Colors extracted from actual image content"
 }`
               },
               ...imageContent

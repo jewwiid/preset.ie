@@ -904,7 +904,8 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                           await new Promise(r => setTimeout(r, 8));
                         }
                       }}
-                      disabled={userSubscriptionTier === 'FREE' || form.loading || !subscription.canCreateShowcase()}
+                      userSubscriptionTier={userSubscriptionTier as 'FREE' | 'PLUS' | 'PRO'}
+                      disabled={form.loading || !subscription.canCreateShowcase()}
                       size={32}
                     />
                       </div>

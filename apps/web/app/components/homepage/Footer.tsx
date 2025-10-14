@@ -36,7 +36,7 @@ export default function Footer() {
             <Link href="/showcases" className="text-muted-foreground hover:text-primary transition-colors">
               Showcases
             </Link>
-            <Link href="/pricing" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link href="/subscription" className="text-muted-foreground hover:text-primary transition-colors">
               Pricing
             </Link>
             <Link href="/help" className="text-muted-foreground hover:text-primary transition-colors">

@@ -30,9 +30,10 @@ interface UseMoodboardDataReturn {
   setIsPublic: (isPublic: boolean) => void
   setSaveAsTemplate: (save: boolean) => void
   setTemplateName: (name: string) => void
+  setFeaturedImageId: (id: string | null) => void
 
   // Operations
-  saveMoodboard: (items: MoodboardItem[]) => Promise<string | undefined>
+  saveMoodboard: (items: MoodboardItem[], featuredImageId?: string | null) => Promise<string | undefined>
   fetchMoodboard: () => Promise<void>
   setHasUnsavedChanges: (hasChanges: boolean) => void
   clearError: () => void
@@ -54,6 +55,7 @@ export const useMoodboardData = ({
   const [isPublic, setIsPublic] = useState(false)
   const [saveAsTemplate, setSaveAsTemplate] = useState(false)
   const [templateName, setTemplateName] = useState('')
+  const [featuredImageId, setFeaturedImageId] = useState<string | null>(null)
   const [existingTemplate, setExistingTemplate] = useState<any>(null)
 
   // UI state
@@ -104,6 +106,7 @@ export const useMoodboardData = ({
         setIsPublic(data.is_public || false)
         setSaveAsTemplate(data.is_template || false)
         setTemplateName(data.template_name || '')
+        setFeaturedImageId(data.featured_image_id || null)
 
         // Sort items by position
         const sortedItems = data.items ? sortItemsByPosition(data.items) : []
@@ -150,7 +153,7 @@ export const useMoodboardData = ({
   /**
    * Save moodboard (create or update)
    */
-  const saveMoodboard = async (items: MoodboardItem[]): Promise<string | undefined> => {
+  const saveMoodboard = async (items: MoodboardItem[], featuredImageId?: string | null): Promise<string | undefined> => {
     if (!user) {
       setError('Please sign in to save your moodboard')
       return
@@ -159,6 +162,7 @@ export const useMoodboardData = ({
     console.log('Saving moodboard with items:', items)
     const enhancedItems = items.filter(i => i.enhanced_url)
     console.log('Enhanced items being saved:', enhancedItems)
+    console.log('Item IDs being saved:', items.map(item => ({ id: item.id, type: typeof item.id })))
 
     setLoading(true)
     setError(null)
@@ -180,6 +184,9 @@ export const useMoodboardData = ({
       if (!profile) throw new Error('Profile not found')
 
       if (moodboardId) {
+        // Debug: Log the featuredImageId being saved
+        console.log('Saving featured_image_id:', featuredImageId, 'Type:', typeof featuredImageId)
+        
         // Update existing moodboard
         const { error: updateError } = await supabase
           .from('moodboards')
@@ -189,6 +196,7 @@ export const useMoodboardData = ({
             items,
             palette,
             tags,
+            featured_image_id: featuredImageId,
             is_public: isPublic,
             updated_at: new Date().toISOString()
           })
@@ -211,6 +219,7 @@ export const useMoodboardData = ({
               items,
               palette,
               tags,
+              featured_image_id: featuredImageId,
               template_name: templateName || title || 'Untitled Template',
               template_description: description,
               updated_at: new Date().toISOString()
@@ -231,6 +240,7 @@ export const useMoodboardData = ({
             items,
             palette,
             tags,
+            featured_image_id: featuredImageId,
             is_template: saveAsTemplate,
             template_name: saveAsTemplate ? (templateName || title || 'Untitled Template') : null,
             template_description: saveAsTemplate ? description : null,
@@ -318,6 +328,7 @@ export const useMoodboardData = ({
     setIsPublic,
     setSaveAsTemplate,
     setTemplateName,
+    setFeaturedImageId,
 
     // Operations
     saveMoodboard,

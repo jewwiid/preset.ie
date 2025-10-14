@@ -83,16 +83,24 @@ export async function POST(request: NextRequest) {
       'plus': {
         name: 'Plus',
         price: 9.99,
-        credits: 50,
-        monthlyBumps: 3,
+        credits: 150,
+        monthlyBumps: 5,
         prioritySupport: true,
         analytics: false
       },
       'pro': {
         name: 'Pro',
-        price: 29.99,
-        credits: 200,
-        monthlyBumps: 10,
+        price: 24.99,
+        credits: 500,
+        monthlyBumps: 15,
+        prioritySupport: true,
+        analytics: true
+      },
+      'creator': {
+        name: 'Creator',
+        price: 49.99,
+        credits: 1500,
+        monthlyBumps: 25,
         prioritySupport: true,
         analytics: true
       }

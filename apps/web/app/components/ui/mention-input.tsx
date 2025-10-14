@@ -306,7 +306,8 @@ export function MentionInput({
         {enableVoiceToText && (
           <VoiceToTextButton
             onAppendText={processVoiceText}
-            disabled={userSubscriptionTier === 'FREE' || disabled}
+            disabled={disabled}
+            userSubscriptionTier={userSubscriptionTier as 'FREE' | 'PLUS' | 'PRO'}
             size={32}
           />
         )}

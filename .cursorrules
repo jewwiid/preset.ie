@@ -1,0 +1,54 @@
+# Cursor Rules for Preset Project
+
+## CRITICAL SAFETY RULES
+
+### Database Operations
+- **NEVER** run `supabase db reset` or any database reset commands without explicit user permission
+- **NEVER** run destructive database operations (DROP, TRUNCATE, DELETE without WHERE) without user confirmation
+- **ALWAYS** ask for explicit permission before running any command that could delete or modify production data
+- **ALWAYS** explain what a command will do before running it, especially if it's destructive
+
+### Migration Safety
+- **NEVER** run `npx supabase db push --include-all` without user permission
+- **ALWAYS** suggest safer alternatives first (like running individual SQL files)
+- **ALWAYS** warn about potential data loss before running migration commands
+
+### General Safety
+- **ALWAYS** ask "Are you sure?" before running any command that could affect production data
+- **ALWAYS** provide alternatives to destructive operations
+- **NEVER** assume the user wants to reset or wipe data
+
+### Command Examples to AVOID without permission:
+- `supabase db reset`
+- `supabase db push --include-all`
+- `DROP TABLE`
+- `TRUNCATE TABLE`
+- `DELETE FROM table_name` (without WHERE clause)
+- Any command with `--force` or `--yes` flags that could be destructive
+
+### Safe Alternatives:
+- Run individual SQL files directly
+- Use `CREATE OR REPLACE` instead of `DROP` + `CREATE`
+- Use `ALTER TABLE` instead of dropping and recreating tables
+- Always backup before major changes
+
+## Project Context
+This is a production application with user data. Always prioritize data safety over convenience.
+
+## Architecture & Development Rules
+- Always use the shared domain types from @preset/domain
+- Follow hexagonal architecture patterns with ports and adapters
+- Implement proper error handling and validation in all use cases
+- Use TypeScript strict mode and ensure type safety
+- Follow the subscription tier gating rules defined in the domain layer
+- Always strip EXIF data from uploaded images for privacy
+- Implement proper RLS policies for data access control
+- Use domain events for cross-context communication
+- Keep the domain layer pure (no framework dependencies)
+- Test all use cases with proper mocking of ports
+
+## Project Stack
+- TypeScript, Next.js (Web), Expo/React Native (Mobile)
+- Supabase (Backend), Tamagui (UI), Stripe (Subscriptions)
+- Turborepo (Monorepo)
+- Domain-Driven Design with Hexagonal Architecture

@@ -3,6 +3,10 @@
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { useVoiceToText } from '@/hooks/useVoiceToText';
+import { useAuth } from '@/lib/auth-context';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
+import { Button } from './button';
+import { Crown, Mic } from 'lucide-react';
 
 interface VoiceToTextButtonProps {
   onAppendText: (text: string) => void;
@@ -11,6 +15,7 @@ interface VoiceToTextButtonProps {
   color?: string;
   maxSeconds?: number;
   disabled?: boolean;
+  userSubscriptionTier?: 'FREE' | 'PLUS' | 'PRO';
 }
 
 export default function VoiceToTextButton({
@@ -19,9 +24,15 @@ export default function VoiceToTextButton({
   stroke = 4,
   color = '#0FA678',
   maxSeconds = 30,
-  disabled = false
+  disabled = false,
+  userSubscriptionTier
 }: VoiceToTextButtonProps) {
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  // Determine if voice-to-text is disabled due to subscription
+  const isSubscriptionDisabled = userSubscriptionTier === 'FREE' || (!userSubscriptionTier && user?.user_metadata?.subscription_tier === 'FREE');
+  const isDisabled = disabled || isSubscriptionDisabled;
 
   const { recording, seconds, transcribing, start, stop } = useVoiceToText({
     maxSeconds,
@@ -63,21 +74,24 @@ export default function VoiceToTextButton({
   }, [error]);
 
   return (
-    <div className="relative inline-flex flex-col items-center gap-1">
-      <button
-        type="button"
-        aria-label={recording ? 'Stop recording' : 'Start voice input'}
-        aria-pressed={recording}
-        onClick={recording ? stop : start}
-        disabled={disabled || transcribing}
-        className={`relative inline-flex items-center justify-center rounded-full transition-all
-                    ${recording ? 'preset-pulse' : 'hover:scale-105'}
-                    ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                    ${transcribing ? 'opacity-75' : ''}
-                    ${error ? 'animate-pulse' : ''}`}
-        style={{ width: size, height: size }}
-        title={error || undefined}
-      >
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="relative inline-flex flex-col items-center gap-1">
+            <button
+              type="button"
+              aria-label={recording ? 'Stop recording' : 'Start voice input'}
+              aria-pressed={recording}
+              onClick={recording ? stop : start}
+              disabled={isDisabled || transcribing}
+              className={`relative inline-flex items-center justify-center rounded-full transition-all
+                          ${recording ? 'preset-pulse' : 'hover:scale-105'}
+                          ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                          ${transcribing ? 'opacity-75' : ''}
+                          ${error ? 'animate-pulse' : ''}`}
+              style={{ width: size, height: size }}
+              title={error || undefined}
+            >
         {/* "p" logo - using existing logo.svg */}
         <Image
           src="/logo.svg"
@@ -113,8 +127,60 @@ export default function VoiceToTextButton({
             className="transition-all duration-200"
           />
         </svg>
-      </button>
-
-    </div>
+            </button>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs">
+          {error ? (
+            <div className="text-center">
+              <p className="text-red-600 font-medium">Error</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          ) : isSubscriptionDisabled ? (
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <Crown className="h-4 w-4 text-yellow-500" />
+                <p className="font-medium">Voice-to-Text</p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Voice transcription requires a PLUS or PRO subscription
+              </p>
+              <Button 
+                size="sm" 
+                className="w-full mt-2"
+                onClick={() => window.open('/subscription', '_blank')}
+              >
+                <Crown className="h-3 w-3 mr-1" />
+                Upgrade Now
+              </Button>
+            </div>
+          ) : recording ? (
+            <div className="text-center">
+              <p className="font-medium">Recording...</p>
+              <p className="text-sm text-muted-foreground">
+                {maxSeconds - seconds}s remaining
+              </p>
+            </div>
+          ) : transcribing ? (
+            <div className="text-center">
+              <p className="font-medium">Transcribing...</p>
+              <p className="text-sm text-muted-foreground">
+                Converting speech to text
+              </p>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2">
+                <Mic className="h-4 w-4 text-primary" />
+                <p className="font-medium">Voice-to-Text</p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Click to start recording your prompt
+              </p>
+            </div>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

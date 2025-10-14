@@ -147,10 +147,11 @@ export default function GigsMap({ onGigSelect, className = '' }: GigsMapProps) {
       map.on('click', 'clusters', (e) => {
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
         const clusterId = features[0].properties.cluster_id
-        map.getSource('gigs').getClusterExpansionZoom(clusterId, (err, zoom) => {
-          if (err) return
+        const source = map.getSource('gigs') as maplibregl.GeoJSONSource
+        source.getClusterExpansionZoom(clusterId).then((zoom) => {
+          const geometry = features[0].geometry as GeoJSON.Point
           map.easeTo({
-            center: features[0].geometry.coordinates,
+            center: geometry.coordinates as [number, number],
             zoom: zoom
           })
         })
@@ -334,7 +335,7 @@ function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout
+  let timeout: ReturnType<typeof setTimeout>
   return (...args: Parameters<T>) => {
     clearTimeout(timeout)
     timeout = setTimeout(() => func(...args), wait)

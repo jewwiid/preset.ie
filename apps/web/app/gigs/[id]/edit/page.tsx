@@ -4,7 +4,7 @@ import { useState, useEffect, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../../lib/auth-context'
 import { supabase } from '../../../../lib/supabase'
-import { useGigFormPersistence, CompType, PurposeType, StatusType } from '../../../../lib/gig-form-persistence'
+import { useGigFormPersistence, CompType, PurposeType, StatusType, LookingForType } from '../../../../lib/gig-form-persistence'
 import { CheckCircle2, X } from 'lucide-react'
 
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -39,6 +39,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   const { user } = useAuth()
   const resolvedParams = use(params)
   const gigId = resolvedParams.id
+  const userSubscriptionTier = user?.user_metadata?.subscription_tier || 'FREE'
   
   // Form persistence
   const { 
@@ -69,6 +70,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   // Form fields
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [lookingFor, setLookingFor] = useState<LookingForType[]>([])
   const [purpose, setPurpose] = useState<PurposeType>('PORTFOLIO')
   const [compType, setCompType] = useState<CompType>('TFP')
   const [compDetails, setCompDetails] = useState('')
@@ -112,6 +114,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
     const formData = {
       title,
       description,
+      lookingFor,
       purpose,
       compType,
       usageRights,
@@ -128,7 +131,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
     if (isOwner && (title || description || location || moodboardId)) {
       debouncedSaveGigData(formData)
     }
-  }, [title, description, purpose, compType, usageRights, location, startDate, endDate, 
+  }, [title, description, lookingFor, purpose, compType, usageRights, location, startDate, endDate, 
       applicationDeadline, maxApplicants, status, moodboardId, debouncedSaveGigData, isOwner])
   
   // Auto-save current step
@@ -250,6 +253,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
       setSafetyNotes(gig.safety_notes || '')
       
       // Load applicant preferences and looking_for_types
+      setLookingFor(gig.looking_for_types || [])
       setFormData((prev: any) => ({
         ...prev,
         lookingFor: gig.looking_for_types || [],  // Load looking_for_types from database
@@ -365,7 +369,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
         .update({
           title,
           description,
-          looking_for_types: formData.lookingFor || [],  // Add looking_for_types mapping
+          looking_for_types: lookingFor || [],  // Use lookingFor state
           purpose,
           comp_type: compType,
           usage_rights: usageRights,
@@ -478,6 +482,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
     // Restore form data
     if (savedData.title) setTitle(savedData.title)
     if (savedData.description) setDescription(savedData.description)
+    if (savedData.lookingFor) setLookingFor(savedData.lookingFor)
     if (savedData.purpose) setPurpose(savedData.purpose)
     if (savedData.compType) setCompType(savedData.compType)
     if (savedData.usageRights) setUsageRights(savedData.usageRights)
@@ -507,7 +512,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
 
   // Validation functions
   const isBasicStepValid = (): boolean => {
-    return Boolean(title.trim() !== '' && description.trim() !== '' && purpose && compType)
+    return Boolean(title.trim() !== '' && description.trim() !== '' && lookingFor.length > 0 && purpose && compType)
   }
 
   const isLocationStepValid = (): boolean => {
@@ -571,11 +576,15 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
       <div className="max-w-4xl mx-auto">
         {/* Restore prompt */}
         {showRestorePrompt && (
-          <div className="bg-muted/20 border border-border rounded-lg p-4 mb-6">
+          <div className="bg-muted/50 border border-border rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-primary mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-foreground mb-2">
+                <h3 className="text-sm font-semibold text-foreground mb-2">
                   Unsaved Changes Found
                 </h3>
                 <p className="text-sm text-muted-foreground mb-3">
@@ -585,14 +594,14 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
                   <button
                     type="button"
                     onClick={handleRestoreSavedData}
-                    className="px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:bg-primary/90 transition-colors"
+                    className="px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-md hover:bg-primary/90 transition-colors font-medium"
                   >
                     Restore Changes
                   </button>
                   <button
                     type="button"
                     onClick={handleDiscardSavedData}
-                    className="px-3 py-1 bg-background border border-border text-foreground text-xs rounded hover:bg-muted transition-colors"
+                    className="px-3 py-1.5 bg-background border border-border text-foreground text-sm rounded-md hover:bg-accent transition-colors font-medium"
                   >
                     Discard & Start Fresh
                   </button>
@@ -601,7 +610,7 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
               <button
                 type="button"
                 onClick={() => setShowRestorePrompt(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -659,11 +668,14 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
           <BasicDetailsStep
             title={title}
             description={description}
+            lookingFor={lookingFor}
             purpose={purpose}
             compType={compType}
             compDetails={compDetails}
+            userSubscriptionTier={userSubscriptionTier}
             onTitleChange={setTitle}
             onDescriptionChange={setDescription}
+            onLookingForChange={setLookingFor}
             onPurposeChange={setPurpose}
             onCompTypeChange={setCompType}
             onCompDetailsChange={setCompDetails}

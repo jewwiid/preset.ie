@@ -297,11 +297,13 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
             <button
               onClick={() => window.location.href = '/subscription'}
               className={`group relative inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                credit.creditInfo.subscriptionTier === 'PRO'
-                  ? 'bg-primary text-primary-foreground hover:from-primary/90 hover:to-primary'
-                  : credit.creditInfo.subscriptionTier === 'PLUS'
+                credit.creditInfo.subscriptionTier === 'CREATOR'
+                  ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary'
+                  : credit.creditInfo.subscriptionTier === 'PRO'
                     ? 'bg-primary text-primary-foreground hover:from-primary/90 hover:to-primary'
-                    : 'bg-gradient-to-r from-muted to-muted/80 text-muted-foreground hover:from-muted/80 hover:to-muted'
+                    : credit.creditInfo.subscriptionTier === 'PLUS'
+                      ? 'bg-primary text-primary-foreground hover:from-primary/90 hover:to-primary'
+                      : 'bg-gradient-to-r from-muted to-muted/80 text-muted-foreground hover:from-muted/80 hover:to-muted'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -316,11 +318,13 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
 
               {/* Subtle glow effect */}
               <div className={`absolute inset-0 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-200 ${
-                credit.creditInfo.subscriptionTier === 'PRO'
+                credit.creditInfo.subscriptionTier === 'CREATOR'
                   ? 'bg-primary-400'
-                  : credit.creditInfo.subscriptionTier === 'PLUS'
+                  : credit.creditInfo.subscriptionTier === 'PRO'
                     ? 'bg-primary-400'
-                    : 'bg-muted-400'
+                    : credit.creditInfo.subscriptionTier === 'PLUS'
+                      ? 'bg-primary-400'
+                      : 'bg-muted-400'
               }`}></div>
             </button>
           </div>
@@ -351,8 +355,8 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
           <div className="grid md:grid-cols-3 gap-4">
             {/* Regular Packages */}
             {credit.creditInfo.packages?.map((pkg: any) => {
-              const isPopular = pkg.id === 'creative'
-              const savings = pkg.id === 'creative' ? 20 : pkg.id === 'pro' ? 30 : pkg.id === 'studio' ? 40 : 0
+              const isPopular = pkg.id === 'popular' || pkg.is_popular
+              const savings = pkg.id === 'popular' ? 25 : pkg.id === 'pro' ? 35 : pkg.id === 'enterprise' ? 40 : pkg.id === 'creator' ? 50 : 0
 
               return (
                 <CreditPackageCard
@@ -361,100 +365,12 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   isPopular={isPopular}
                   savings={savings}
                   isPurchasing={credit.purchasing === pkg.id}
-                  onPurchase={(id) => credit.purchasePackage(id, false)}
+                  onPurchase={(id) => credit.purchasePackage(id)}
                   disabled={credit.purchasing !== null}
                 />
               )
             })}
 
-            {/* Lootbox Status Card - Only show when no lootbox packages are available */}
-            {(!credit.creditInfo.lootboxPackages || credit.creditInfo.lootboxPackages.length === 0) && (
-              <div className="relative rounded-lg border-2 p-6 flex flex-col h-full border-border-200 hover:border-border-300">
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold shadow-md bg-primary text-primary-foreground">
-                    🎁 LOOTBOX
-                  </span>
-                </div>
-
-                <div className="text-center flex-grow flex flex-col justify-center">
-                  <h3 className="text-xl font-bold text-muted-foreground-900">Lootbox Status</h3>
-                  <div className="mt-2">
-                    <span className="text-6xl font-bold text-muted-foreground-400">???</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground-500 mt-1">
-                    Special offers available
-                  </div>
-                </div>
-
-                <div
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    credit.checkLootboxAvailability()
-                  }}
-                  className="w-full py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center gap-2 bg-muted-900 text-primary-foreground hover:bg-muted-800 disabled:opacity-50 cursor-pointer"
-                  style={{ pointerEvents: credit.loading ? 'none' : 'auto' }}
-                >
-                  {credit.loading ? (
-                    <>
-                      <LoadingSpinner size="sm" />
-                      Checking...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Check
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Lootbox Packages - Show when available */}
-            {credit.creditInfo.lootboxPackages && credit.creditInfo.lootboxPackages.length > 0 &&
-              credit.creditInfo.lootboxPackages.map((pkg: any) => {
-                // Map lootbox package fields to match CreditPackageCard interface
-                const mappedPackage = {
-                  id: pkg.id,
-                  name: pkg.name,
-                  credits: pkg.user_credits || pkg.credits,
-                  price_usd: pkg.price_usd,
-                  available: pkg.available
-                };
-
-                return (
-                  <div key={pkg.id} className="relative rounded-lg border-2 p-6 flex flex-col h-full border-border-200 hover:border-border-300">
-                    {/* Animated glow effect for available lootbox */}
-                    {pkg.available && (
-                      <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 opacity-50 blur-xl animate-pulse"></div>
-                    )}
-
-                    {/* Flash Sale Badge */}
-                    {pkg.available && (
-                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
-                        <span className="inline-block px-3 py-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 text-white text-xs font-black rounded shadow-lg animate-pulse">
-                          ⚡ FLASH SALE ⚡
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="relative z-10">
-                      <CreditPackageCard
-                        packageData={mappedPackage}
-                        isPurchasing={credit.purchasing === pkg.id}
-                        onPurchase={(id) => credit.purchasePackage(id, true)}
-                        disabled={credit.purchasing !== null || pkg.already_purchased}
-                        badge="LOOTBOX"
-                        badgeEmoji="🎁"
-                        savings={pkg.savings_percentage || 0}
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            }
           </div>
         </div>
       ) : (

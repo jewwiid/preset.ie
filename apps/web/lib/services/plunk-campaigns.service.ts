@@ -22,7 +22,7 @@ export interface CampaignTargeting {
   countries?: string[];
   
   // Subscription tier
-  tiers?: ('FREE' | 'PLUS' | 'PRO')[];
+  tiers?: ('FREE' | 'PLUS' | 'PRO' | 'CREATOR')[];
   
   // Engagement level
   verified?: boolean;

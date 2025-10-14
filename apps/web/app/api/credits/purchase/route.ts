@@ -135,33 +135,11 @@ export async function GET(request: NextRequest) {
       message: null
     }));
 
-    // Check for lootbox availability only if requested
-    const { searchParams } = new URL(request.url);
-    const includeLootbox = searchParams.get('include_lootbox') === 'true';
-    let lootboxPackages = [];
-    
-    if (includeLootbox) {
-      try {
-        const lootboxResponse = await fetch(`${request.nextUrl.origin}/api/lootbox/availability`);
-        if (lootboxResponse.ok) {
-          const lootboxData = await lootboxResponse.json();
-          if (lootboxData.success && lootboxData.lootbox.is_available) {
-            lootboxPackages = lootboxData.lootbox.available_packages;
-          }
-        }
-      } catch (error) {
-        console.error('Error checking lootbox availability:', error);
-        // Continue without lootbox packages
-      }
-    }
-    
     return NextResponse.json({
       packages: packagesWithAvailability,
-      lootboxPackages: lootboxPackages,
       platformCapacity: {
         model: 'wavespeed_pay_per_use',
         allPackagesAvailable: true,
-        lootboxAvailable: lootboxPackages.length > 0,
         note: 'All credit packages always available (pay-per-use billing)'
       }
     });

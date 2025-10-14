@@ -37,6 +37,8 @@ export async function middleware(request: NextRequest) {
 
   if (error) {
     console.error('Middleware: Error validating user:', error.message)
+    // If there's an error validating the user, don't redirect - let the client handle it
+    // This prevents unnecessary redirects when the session is temporarily invalid
   }
 
   if (user) {
@@ -97,11 +99,11 @@ export async function middleware(request: NextRequest) {
   // Check if the current path is a protected route
   const isProtectedRoute = protectedRoutes.some(route =>
     request.nextUrl.pathname.startsWith(route)
-  )
+  ) || request.nextUrl.pathname.match(/^\/gigs\/[^\/]+\/edit/) // Gig edit routes
 
   // Redirect unauthenticated users to login
   if (isProtectedRoute && !user) {
-    const redirectUrl = new URL('/auth/login', request.url)
+    const redirectUrl = new URL('/auth/signin', request.url)
     redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(redirectUrl)
   }

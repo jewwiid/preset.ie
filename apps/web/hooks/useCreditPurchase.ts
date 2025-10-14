@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 
 interface CreditInfo {
   packages: any[];
-  lootboxPackages: any[];
   platformCapacity: any;
   currentBalance: number;
   monthlyAllowance: number;
@@ -53,7 +52,7 @@ export function useCreditPurchase({ userId, onPurchaseComplete }: UseCreditPurch
       if (!session.data.session) throw new Error('No session');
 
       // Get packages and platform capacity with cache busting
-      const packagesResponse = await fetch(`/api/credits/purchase?t=${Date.now()}&include_lootbox=false`, {
+      const packagesResponse = await fetch(`/api/credits/purchase?t=${Date.now()}`, {
         headers: {
           'Authorization': `Bearer ${session.data.session.access_token}`
         }
@@ -85,7 +84,6 @@ export function useCreditPurchase({ userId, onPurchaseComplete }: UseCreditPurch
 
       setCreditInfo({
         packages: packagesData.packages,
-        lootboxPackages: packagesData.lootboxPackages || [],
         platformCapacity: packagesData.platformCapacity,
         currentBalance: userCredits?.current_balance || 0,
         monthlyAllowance: userCredits?.monthly_allowance || 0,
@@ -110,8 +108,8 @@ export function useCreditPurchase({ userId, onPurchaseComplete }: UseCreditPurch
     }
   }, [userId]);
 
-  // Generic purchase function (works for both regular and lootbox)
-  const purchasePackage = useCallback(async (packageId: string, isLootbox: boolean = false) => {
+  // Purchase function for regular credit packages
+  const purchasePackage = useCallback(async (packageId: string) => {
     if (!userId) return;
 
     setPurchasing(packageId);
@@ -128,11 +126,10 @@ export function useCreditPurchase({ userId, onPurchaseComplete }: UseCreditPurch
       if (!session.data.session) throw new Error('No session');
 
       // Find the package
-      const packages = isLootbox ? creditInfo?.lootboxPackages : creditInfo?.packages;
-      const selectedPackage = packages?.find((pkg: any) => pkg.id === packageId);
+      const selectedPackage = creditInfo?.packages?.find((pkg: any) => pkg.id === packageId);
 
       if (!selectedPackage) {
-        setError(`${isLootbox ? 'Lootbox' : 'Package'} not found`);
+        setError('Package not found');
         return;
       }
 
@@ -145,7 +142,7 @@ export function useCreditPurchase({ userId, onPurchaseComplete }: UseCreditPurch
         },
         body: JSON.stringify({
           packageId: selectedPackage.id,
-          successUrl: `${window.location.origin}/credits/purchase?success=true${isLootbox ? '&lootbox=true' : ''}`,
+          successUrl: `${window.location.origin}/credits/purchase?success=true`,
           cancelUrl: `${window.location.origin}/credits/purchase?canceled=true`
         })
       });
@@ -161,56 +158,11 @@ export function useCreditPurchase({ userId, onPurchaseComplete }: UseCreditPurch
       }
     } catch (err: any) {
       console.error('Purchase error:', err);
-      setError(`Failed to complete ${isLootbox ? 'lootbox' : ''} purchase`);
+      setError('Failed to complete purchase');
       setPurchasing(null);
     }
   }, [userId, creditInfo]);
 
-  // Check lootbox availability
-  const checkLootboxAvailability = useCallback(async () => {
-    if (!userId) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      if (!supabase) {
-        setError('Database connection not available. Please try again.');
-        return;
-      }
-
-      const session = await supabase.auth.getSession();
-      if (!session.data.session) throw new Error('No session');
-
-      const response = await fetch(`/api/lootbox/availability?t=${Date.now()}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.data.session.access_token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to check lootbox availability');
-      }
-
-      // Update only the lootbox packages
-      setCreditInfo((prev) => prev ? {
-        ...prev,
-        lootboxPackages: data.lootbox.available_packages || []
-      } : null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to check lootbox availability');
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
 
   // Auto-fetch on mount
   useEffect(() => {
@@ -231,7 +183,6 @@ export function useCreditPurchase({ userId, onPurchaseComplete }: UseCreditPurch
     // Actions
     fetchCreditInfo,
     purchasePackage,
-    checkLootboxAvailability,
     setError,
     setSuccess,
   };

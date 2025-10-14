@@ -2,7 +2,7 @@
 // This ensures type safety across the mobile app
 
 export type UserRole = 'CONTRIBUTOR' | 'TALENT' | 'ADMIN' | 'BOTH'
-export type SubscriptionTier = 'FREE' | 'PLUS' | 'PRO'
+export type SubscriptionTier = 'FREE' | 'PLUS' | 'PRO' | 'CREATOR'
 export type SubscriptionStatus = 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'TRIAL'
 export type GigStatus = 'DRAFT' | 'PUBLISHED' | 'APPLICATIONS_CLOSED' | 'BOOKED' | 'COMPLETED' | 'CANCELLED'
 export type CompensationType = 'TFP' | 'PAID' | 'EXPENSES'

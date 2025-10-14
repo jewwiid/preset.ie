@@ -26,7 +26,7 @@ import {
   SavedImagesPanel,
   PaletteDisplay
 } from './components'
-import { parsePexelsPhoto, getSubscriptionLimits } from './lib/moodboardHelpers'
+import { parsePexelsPhoto, getSubscriptionLimits, generateItemId } from './lib/moodboardHelpers'
 import DraggableMasonryGrid from '../DraggableMasonryGrid'
 
 export default function MoodboardBuilder({
@@ -98,6 +98,30 @@ export default function MoodboardBuilder({
       itemsManager.setItems(moodboardData.moodboard.items)
     }
   }, [moodboardData.moodboard?.items])
+
+  // Sync featured image ID when moodboard loads
+  useEffect(() => {
+    if (moodboardData.moodboard?.featured_image_id) {
+      // Check if the featured_image_id is a valid UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (uuidRegex.test(moodboardData.moodboard.featured_image_id)) {
+        itemsManager.setFeaturedImage(moodboardData.moodboard.featured_image_id)
+      } else {
+        // Clear featured image if it's not a valid UUID (e.g., timestamp)
+        console.log('Clearing invalid featured_image_id:', moodboardData.moodboard.featured_image_id)
+        itemsManager.setFeaturedImage(null)
+        // Also clear it in the database
+        moodboardData.setFeaturedImageId(null)
+      }
+    }
+  }, [moodboardData.moodboard?.featured_image_id])
+
+  // Sync palette when moodboard loads
+  useEffect(() => {
+    if (moodboardData.moodboard?.palette && moodboardData.moodboard.palette.length > 0) {
+      palette.setPalette(moodboardData.moodboard.palette)
+    }
+  }, [moodboardData.moodboard?.palette])
 
   // Sync tags when moodboard loads
   useEffect(() => {
@@ -176,7 +200,7 @@ export default function MoodboardBuilder({
       )
 
       itemsManager.addItem({
-        id: Date.now().toString(),
+        id: generateItemId(),
         type: 'image',
         source: 'upload',
         url: image.image_url,
@@ -227,7 +251,10 @@ export default function MoodboardBuilder({
    * Handle save
    */
   const handleSave = async () => {
-    const savedId = await moodboardData.saveMoodboard(itemsManager.items)
+    // Update the palette in moodboardData before saving
+    moodboardData.setPalette(palette.palette)
+    
+    const savedId = await moodboardData.saveMoodboard(itemsManager.items, itemsManager.featuredImageId)
     if (savedId && onSave) {
       onSave(savedId)
     }
