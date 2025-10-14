@@ -62,11 +62,11 @@ export function NavBar() {
   return (
     <nav className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 gap-2 md:gap-3 lg:gap-6">
-          {/* Logo */}
-          <div className="flex items-center">
+        <div className="flex justify-between items-center h-16">
+          {/* Mobile Logo (only show on mobile, not tablet/desktop) */}
+          <div className="flex md:hidden items-center">
             <Link href="/" className="flex items-center">
-              <div className="flex items-center justify-center w-10 h-10 mr-3">
+              <div className="flex items-center justify-center w-10 h-10 mr-2">
                 <img
                   src="/logo.svg"
                   alt="Preset"
@@ -77,7 +77,7 @@ export function NavBar() {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation (includes logo) */}
           <DesktopNav
             user={user}
             profile={profile}

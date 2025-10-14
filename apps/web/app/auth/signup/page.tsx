@@ -57,6 +57,7 @@ function SignUpPageContent() {
   const [inviteOnlyMode, setInviteOnlyMode] = useState(false)
   const [inviteCodeValid, setInviteCodeValid] = useState<boolean | null>(null)
   const [validatingInvite, setValidatingInvite] = useState(false)
+  const [prefilledEmail, setPrefilledEmail] = useState<string | null>(null)
 
   // Age verification
   const [dateOfBirth, setDateOfBirth] = useState<Date | undefined>(undefined)
@@ -66,11 +67,18 @@ function SignUpPageContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  // Check if invite code is in URL params
+  // Check if invite code or email is in URL params
   useEffect(() => {
     const inviteParam = searchParams.get('invite')
+    const emailParam = searchParams.get('email')
+    
     if (inviteParam) {
       setInviteCode(inviteParam)
+    }
+    
+    if (emailParam) {
+      setEmail(emailParam)
+      setPrefilledEmail(emailParam)
     }
   }, [searchParams])
 
@@ -386,6 +394,16 @@ function SignUpPageContent() {
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Pre-filled Email Notification */}
+        {prefilledEmail && (
+          <Alert className="mb-6">
+            <CheckCircle2 className="h-4 w-4" />
+            <AlertDescription>
+              Email pre-filled from your sign-in attempt. You can modify it if needed.
+            </AlertDescription>
           </Alert>
         )}
 

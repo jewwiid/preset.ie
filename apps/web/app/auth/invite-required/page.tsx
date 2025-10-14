@@ -1,12 +1,15 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Ticket, ArrowRight } from 'lucide-react'
 import { Logo } from '../../../components/Logo'
 
-export default function InviteRequiredPage() {
+function InviteRequiredPageContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const email = searchParams?.get('email')
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -24,6 +27,11 @@ export default function InviteRequiredPage() {
           </h1>
           <p className="mt-4 text-muted-foreground">
             Preset is currently in invite-only mode. You need an invite code to create an account.
+            {email && (
+              <span className="block mt-2 text-sm">
+                We'll pre-fill your email ({email}) when you sign up.
+              </span>
+            )}
           </p>
         </div>
 
@@ -42,7 +50,7 @@ export default function InviteRequiredPage() {
         {/* Actions */}
         <div className="space-y-3">
           <Link
-            href="/auth/signup"
+            href={`/auth/signup${email ? `?email=${encodeURIComponent(email)}` : ''}`}
             className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 transition-colors duration-200"
           >
             I have an invite code
@@ -58,6 +66,23 @@ export default function InviteRequiredPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function InviteRequiredPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center mb-4">
+            <Logo className="w-16 h-16" size={64} />
+          </div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <InviteRequiredPageContent />
+    </Suspense>
   )
 }
 

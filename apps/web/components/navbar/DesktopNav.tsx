@@ -76,9 +76,25 @@ export function DesktopNav({
   isActive,
   onSignOut}: DesktopNavProps) {
   return (
-    <div className="hidden md:flex md:items-center md:gap-2 lg:gap-3 xl:gap-4 flex-1">
-      {/* Dashboard Dropdown */}
-      {user && (
+    <div className="hidden md:flex md:items-center flex-1">
+      {/* Left: Logo */}
+      <div className="flex items-center flex-shrink-0">
+        <Link href="/" className="flex items-center">
+          <div className="flex items-center justify-center w-10 h-10 mr-2">
+            <img
+              src="/logo.svg"
+              alt="Preset"
+              className="w-10 h-10"
+            />
+          </div>
+          <span className="text-xl font-bold text-primary preset-branding">Preset</span>
+        </Link>
+      </div>
+
+      {/* Center: Navigation menus */}
+      <div className="flex items-center justify-center flex-1 gap-1 md:gap-2 lg:gap-3 xl:gap-4 mx-2 lg:mx-4 overflow-x-auto">
+        {/* Dashboard Dropdown */}
+        {user && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -90,9 +106,9 @@ export function DesktopNav({
                 }
               `}
             >
-              <Home className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">Dashboard</span>
-              <ChevronDown className="w-3 h-3 md:w-4 md:h-4 md:ml-1" />
+              <Home className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">Dashboard</span>
+              <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48" align="start">
@@ -137,9 +153,9 @@ export function DesktopNav({
                 }
               `}
             >
-              <Search className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">Gigs</span>
-              <ChevronDown className="w-3 h-3 md:w-4 md:h-4 md:ml-1" />
+              <Search className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">Gigs</span>
+              <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48" align="start">
@@ -180,9 +196,9 @@ export function DesktopNav({
                 }
               `}
             >
-              <Store className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">Marketplace</span>
-              <ChevronDown className="w-3 h-3 md:w-4 md:h-4 md:ml-1" />
+              <Store className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">Marketplace</span>
+              <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48" align="start">
@@ -282,9 +298,9 @@ export function DesktopNav({
                 }
               `}
             >
-              <Plus className="w-4 h-4 md:mr-2" />
-              <span className="hidden md:inline">Create</span>
-              <ChevronDown className="w-3 h-3 md:w-4 md:h-4 md:ml-1" />
+              <Plus className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">Create</span>
+              <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="start">
@@ -341,13 +357,15 @@ export function DesktopNav({
               }
             `}
           >
-            <Icon className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">{item.label}</span>
+            <Icon className="w-4 h-4 lg:mr-2" />
+            <span className="hidden lg:inline">{item.label}</span>
           </Link>
         )
       })}
+      </div>
 
-      {/* Right side items */}
+      {/* Right: Action items */}
+      <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
       {loading ? (
         <div className="animate-pulse flex space-x-3">
           <div className="hidden md:block h-9 w-24 bg-muted-200 rounded-md"></div>
@@ -357,10 +375,10 @@ export function DesktopNav({
         <>
           {/* Create Gig Button */}
           {isContributor && (
-            <Button asChild className="hidden md:inline-flex h-10 px-2 md:px-3 lg:px-4 rounded-lg nav-menu-item text-sm md:text-base">
+            <Button asChild className="hidden md:inline-flex h-10 w-10 xl:w-auto px-2 xl:px-4 rounded-lg nav-menu-item text-sm md:text-base justify-center">
               <Link href="/gigs/create">
-                <Plus className="w-4 h-4 md:mr-2" />
-                <span className="hidden md:inline">Gig</span>
+                <Plus className="w-4 h-4 xl:mr-2 flex-shrink-0" />
+                <span className="hidden xl:inline">Gig</span>
               </Link>
             </Button>
           )}
@@ -387,7 +405,7 @@ export function DesktopNav({
           </div>
         </>
       ) : (
-        <div className="hidden md:flex items-center space-x-3">
+        <div className="flex items-center space-x-3">
           <Button variant="ghost" asChild className="preset-branding">
             <Link href="/auth/signin">Sign In</Link>
           </Button>
@@ -396,6 +414,7 @@ export function DesktopNav({
           </Button>
         </div>
       )}
+      </div>
     </div>
   )
 }

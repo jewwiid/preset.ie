@@ -11,7 +11,9 @@ import {
   CheckCircle2,
   ArrowRight,
   Eye,
-  EyeOff
+  EyeOff,
+  UserPlus,
+  Sparkles
 } from 'lucide-react'
 import { Logo } from '../../../components/Logo'
 import { GoogleSignInButton } from '../../../components/auth/GoogleSignInButton'
@@ -25,6 +27,9 @@ function SignInContent() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [inviteOnlyMode, setInviteOnlyMode] = useState(false)
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false)
+  const [failedEmail, setFailedEmail] = useState<string>('')
+  const [showErrorAnimation, setShowErrorAnimation] = useState(false)
   const { signIn } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -56,11 +61,62 @@ function SignInContent() {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setShowSignupPrompt(false)
+    setShowErrorAnimation(false)
 
     const { error, redirectPath } = await signIn(emailOrHandle, password)
 
     if (error) {
-      setError(error.message)
+      setFailedEmail(emailOrHandle)
+      
+      // Since Supabase returns "Invalid login credentials" for both wrong password and non-existent user,
+      // we need to check if the user exists to determine if we should show the signup prompt
+      const errorMessage = error.message.toLowerCase()
+      if (errorMessage.includes('invalid login credentials') || 
+          errorMessage.includes('invalid email or password')) {
+        
+        // Check if user exists by trying to look them up
+        try {
+          const response = await fetch('/api/auth/check-user-exists', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ emailOrHandle })
+          })
+          
+          if (response.ok) {
+            const { exists } = await response.json()
+            if (!exists) {
+              // User doesn't exist, show signup prompt
+              setShowSignupPrompt(true)
+            } else {
+              // User exists but wrong password, show animation
+              setShowErrorAnimation(true)
+              setTimeout(() => {
+                setShowErrorAnimation(false)
+              }, 1000)
+            }
+          } else {
+            // Fallback: show animation if we can't check
+            setShowErrorAnimation(true)
+            setTimeout(() => {
+              setShowErrorAnimation(false)
+            }, 1000)
+          }
+        } catch (err) {
+          // Fallback: show animation if check fails
+          setShowErrorAnimation(true)
+          setTimeout(() => {
+            setShowErrorAnimation(false)
+          }, 1000)
+        }
+      } else {
+        // For other errors, just show animation
+        setShowErrorAnimation(true)
+        setTimeout(() => {
+          setShowErrorAnimation(false)
+        }, 1000)
+      }
+      
       setLoading(false)
     } else {
       // Use the redirect path determined by the auth context
@@ -84,18 +140,47 @@ function SignInContent() {
           </p>
         </div>
 
-        {/* Alert Messages */}
-        {error && (
-          <div className="mb-6 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg flex items-start">
-            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-            <span className="text-sm">{error}</span>
+        {/* Alert Messages - Only show for non-credential errors */}
+        {error && !showErrorAnimation && (
+          <div className="mb-6 bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg flex items-center justify-center">
+            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+            <span className="text-sm font-medium">{error}</span>
+          </div>
+        )}
+
+        {/* Signup Prompt for Failed Login */}
+        {showSignupPrompt && (
+          <div className="mb-6 bg-accent border border-border rounded-lg p-6">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-4">
+                <Sparkles className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Don't have an account yet?
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto leading-relaxed">
+                It looks like you might not have an account with this email. Join Preset and connect with amazing creative professionals!
+              </p>
+              <div className="flex justify-center">
+                <Link
+                  href={inviteOnlyMode 
+                    ? "/auth/invite-required" 
+                    : `/auth/signup${failedEmail ? `?email=${encodeURIComponent(failedEmail)}` : ''}`
+                  }
+                  className="inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Create Account
+                </Link>
+              </div>
+            </div>
           </div>
         )}
         
         {successMessage && (
-          <div className="mb-6 bg-primary/10 border border-primary/20 text-primary px-4 py-3 rounded-lg flex items-start">
-            <CheckCircle2 className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
-            <span className="text-sm">{successMessage}</span>
+          <div className="mb-6 bg-primary/10 border border-primary/20 text-primary px-4 py-3 rounded-lg flex items-center justify-center">
+            <CheckCircle2 className="w-5 h-5 mr-2 flex-shrink-0" />
+            <span className="text-sm font-medium">{successMessage}</span>
           </div>
         )}
 
@@ -115,7 +200,7 @@ function SignInContent() {
         </div>
 
         {/* Sign In Form */}
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className={`space-y-6 transition-all duration-300 ${showErrorAnimation ? 'animate-shake' : ''}`} onSubmit={handleSubmit}>
           <div>
             <label htmlFor="emailOrHandle" className="block text-sm font-medium text-foreground mb-2">
               Email or Handle
@@ -129,8 +214,18 @@ function SignInContent() {
                 autoComplete="username"
                 required
                 value={emailOrHandle}
-                onChange={(e) => setEmailOrHandle(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground"
+                onChange={(e) => {
+                  setEmailOrHandle(e.target.value)
+                  // Clear animation when user starts typing
+                  if (showErrorAnimation) {
+                    setShowErrorAnimation(false)
+                  }
+                }}
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground transition-all duration-300 ${
+                  showErrorAnimation 
+                    ? 'border-red-500 animate-pulse shadow-lg shadow-red-500/20' 
+                    : 'border-border'
+                }`}
                 placeholder="Enter your email or handle"
               />
             </div>
@@ -149,8 +244,18 @@ function SignInContent() {
                 autoComplete="current-password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-12 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground"
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  // Clear animation when user starts typing
+                  if (showErrorAnimation) {
+                    setShowErrorAnimation(false)
+                  }
+                }}
+                className={`w-full pl-10 pr-12 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground transition-all duration-300 ${
+                  showErrorAnimation 
+                    ? 'border-red-500 animate-pulse shadow-lg shadow-red-500/20' 
+                    : 'border-border'
+                }`}
                 placeholder="Enter your password"
               />
               <button
