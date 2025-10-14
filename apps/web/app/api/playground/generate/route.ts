@@ -937,7 +937,7 @@ export async function POST(request: NextRequest) {
                   aspect_ratio: aspectRatio,
                   resolution: resolutionForGeneration,
                   generated_images: [], // Will be filled by callback
-                  credits_used: 1, // NanoBanana costs 1 credit
+                  credits_used: creditsPerImage, // Credits per image based on provider
                   status: 'processing',
                   last_generated_at: new Date().toISOString(),
                   generation_metadata: {
@@ -946,7 +946,7 @@ export async function POST(request: NextRequest) {
                     enhanced_prompt: enhancedPrompt,
                     provider: 'nanobanana',
                     generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
-                    credits_used: 1, // NanoBanana costs 1 credit
+                    credits_used: creditsPerImage, // Credits per image based on provider
                     resolution: resolutionForGeneration,
                     aspect_ratio: aspectRatio,
                     
@@ -1052,7 +1052,7 @@ export async function POST(request: NextRequest) {
                   generated_at: new Date().toISOString(),
                   type: 'image'
                 }] : [],
-                credits_used: 1, // WaveSpeed NanoBanana costs 1 credit
+                credits_used: creditsPerImage, // Credits per image based on provider
                 status: result.imageUrl ? 'generated' : 'processing',
                 last_generated_at: new Date().toISOString(),
                 metadata: {
@@ -1135,7 +1135,7 @@ export async function POST(request: NextRequest) {
                   height: parseInt(finalResolution.split('*')[1] || '1024'),
                   generated_at: new Date().toISOString()
                 }],
-                credits_used: 1, // NanoBanana costs 1 credit
+                credits_used: creditsPerImage, // Credits per image based on provider
                 status: 'generated',
                 last_generated_at: new Date().toISOString(),
                 generation_metadata: {

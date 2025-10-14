@@ -7,18 +7,22 @@
 
 export const CREDIT_COSTS = {
   nanobanana: {
-    userCredits: 1, // Credits charged to user
-    platformCredits: 4, // Actual API credits consumed
-    costUsd: 0.025, // Cost per platform credit
-    totalCostUsd: 0.10, // Total cost for user (4 * 0.025)
-    ratio: 4, // Platform to user credit ratio
+    userCredits: 2, // Credits charged to user
+    platformCredits: 2, // Actual API credits consumed ($0.038 API cost)
+    costUsd: 0.019, // Actual API cost per image ($0.038 / 2 credits)
+    totalCostUsd: 0.038, // Total API cost ($0.038)
+    chargeUsd: 0.04, // What we charge user (2 * $0.02)
+    ratio: 1, // Platform to user credit ratio
+    margin: 0.05, // Profit margin: 5% ($0.04 - $0.038 = $0.002)
   },
   seedream: {
     userCredits: 2, // Credits charged to user
-    platformCredits: 2, // Actual API credits consumed
-    costUsd: 0.05, // Cost per platform credit
-    totalCostUsd: 0.10, // Total cost for user (2 * 0.05)
+    platformCredits: 2, // Actual API credits consumed ($0.027 API cost)
+    costUsd: 0.0135, // Actual API cost per image ($0.027 / 2 credits)
+    totalCostUsd: 0.027, // Total API cost ($0.027)
+    chargeUsd: 0.04, // What we charge user (2 * $0.02)
     ratio: 1, // Platform to user credit ratio
+    margin: 0.48, // Profit margin: 48% ($0.04 - $0.027 = $0.013)
   },
 } as const;
 
@@ -49,9 +53,15 @@ export const OPERATION_COSTS = {
 
   /**
    * Cost for generating a video
-   * Fixed cost regardless of provider
+   * Based on provider and model tier
    */
-  videoGeneration: 5,
+  videoGeneration: (provider: 'seedance' | 'wan' = 'seedance') => {
+    const VIDEO_COSTS = {
+      seedance: 12, // bytedance/seedance-v1-pro-i2v-720p ($0.15 API cost, 60% margin)
+      wan: 20, // wan-2.5/image-to-video ($0.25 API cost, 60% margin)
+    };
+    return VIDEO_COSTS[provider];
+  },
 
   /**
    * Cost for batch editing
@@ -66,9 +76,10 @@ export const OPERATION_COSTS = {
  * Subscription tier credit allowances
  */
 export const SUBSCRIPTION_ALLOWANCES = {
-  free: 5,
-  plus: 50,
-  pro: 200,
+  free: 15,
+  plus: 150,
+  pro: 500,
+  creator: 1500,
 } as const;
 
 export type SubscriptionTier = keyof typeof SUBSCRIPTION_ALLOWANCES;

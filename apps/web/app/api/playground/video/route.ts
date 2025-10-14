@@ -102,11 +102,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate credits based on provider, duration and resolution
-    const baseCredits = selectedProvider === 'wan' ? 12 : 8
-    const durationMultiplier = duration > 5 ? 1.5 : 1
-    const resolutionMultiplier = resolution === '720p' ? 1.5 : 1
-    const creditsRequired = Math.ceil(baseCredits * durationMultiplier * resolutionMultiplier)
+    // Calculate credits based on provider - fixed pricing per model
+    const VIDEO_COSTS = {
+      seedream: 12, // bytedance/seedance-v1-pro-i2v-720p ($0.15 API cost, 60% margin)
+      wan: 20, // wan-2.5/image-to-video ($0.25 API cost, 60% margin)
+    }
+    const creditsRequired = VIDEO_COSTS[selectedProvider as keyof typeof VIDEO_COSTS] || VIDEO_COSTS.seedream
 
     // Check user credits
     console.log('💰 Checking user credits for user:', user.id)

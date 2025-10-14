@@ -31,6 +31,7 @@ interface CreditOperationResult {
 
 /**
  * Refund user credits with comprehensive error handling and logging
+ * Uses smart refund: restores to subscription credits first, then purchased credits
  *
  * @param supabaseAdmin - Supabase admin client
  * @param userId - User ID to refund
@@ -49,8 +50,8 @@ export async function refundUserCredits(
   console.log(`💰 Refunding ${credits} credit(s) to user ${userId}. Reason: ${reason}`);
 
   try {
-    // Try to use the database function if available
-    const { error: rpcError } = await supabaseAdmin.rpc('refund_user_credits', {
+    // Try to use the smart refund function
+    const { data: refundResult, error: rpcError } = await supabaseAdmin.rpc('refund_user_credits', {
       p_user_id: userId,
       p_credits: credits,
       p_enhancement_type: enhancementType,
@@ -61,7 +62,7 @@ export async function refundUserCredits(
 
       // Handle missing function gracefully
       if (rpcError.message?.includes('Could not find the function')) {
-        console.log('⚠️  refund_user_credits function not found - using direct update');
+        console.log('⚠️ refund_user_credits function not found - using direct update');
 
         // Fallback to direct update
         const { data: userCredits } = await supabaseAdmin
@@ -75,7 +76,7 @@ export async function refundUserCredits(
           return false;
         }
 
-        // Update credits directly
+        // Update credits directly (fallback - no smart refund)
         const { error: updateError } = await supabaseAdmin
           .from('user_credits')
           .update({
@@ -100,7 +101,7 @@ export async function refundUserCredits(
           metadata: { reason },
         });
 
-        console.log('✅ Credits refunded successfully (direct update)');
+        console.log('✅ Credits refunded (fallback)');
         return true;
       }
 
@@ -116,10 +117,26 @@ export async function refundUserCredits(
         console.error('Failed to log refund alert:', alertError);
       }
       return false;
-    } else {
-      console.log('✅ Credits refunded successfully');
-      return true;
     }
+
+    // RPC succeeded - refundResult contains breakdown
+    const breakdown = refundResult as {
+      total_refunded: number;
+      subscription_refunded: number;
+      purchased_refunded: number;
+      new_balance: number;
+      new_purchased_balance: number;
+    };
+
+    console.log(`✅ Credits refunded smartly:`, {
+      total: breakdown.total_refunded,
+      toSubscription: breakdown.subscription_refunded,
+      toPurchased: breakdown.purchased_refunded,
+      newBalance: breakdown.new_balance,
+      newPurchasedBalance: breakdown.new_purchased_balance,
+    });
+
+    return true;
   } catch (err) {
     console.error('Exception during refund:', err);
     return false;
@@ -176,6 +193,7 @@ export async function validateCreditBalance(
 
 /**
  * Deduct credits from user with transaction logging
+ * Uses smart consumption: purchased credits first, then subscription credits
  *
  * @param supabaseAdmin - Supabase admin client
  * @param userId - User ID to deduct from
@@ -194,48 +212,106 @@ export async function deductUserCredits(
   console.log(`💸 Deducting ${credits} credit(s) from user ${userId}`);
 
   try {
-    // Get current balance
-    const { data: userCredits, error: fetchError } = await supabaseAdmin
-      .from('user_credits')
-      .select('current_balance, consumed_this_month')
-      .eq('user_id', userId)
-      .single();
+    // Try to use the consume_user_credits RPC function (smart consumption)
+    const { data: consumeResult, error: rpcError } = await supabaseAdmin.rpc('consume_user_credits', {
+      p_user_id: userId,
+      p_credits: credits,
+    });
 
-    if (fetchError || !userCredits) {
+    if (rpcError) {
+      console.error('❌ consume_user_credits RPC failed:', rpcError);
+
+      // Fallback to direct update if function doesn't exist
+      if (rpcError.message?.includes('Could not find the function')) {
+        console.log('⚠️ consume_user_credits function not found - using direct update');
+
+        // Get current balance
+        const { data: userCredits, error: fetchError } = await supabaseAdmin
+          .from('user_credits')
+          .select('current_balance, consumed_this_month')
+          .eq('user_id', userId)
+          .single();
+
+        if (fetchError || !userCredits) {
+          return {
+            success: false,
+            error: 'Failed to fetch user credits',
+          };
+        }
+
+        // Check sufficient balance
+        if (userCredits.current_balance < credits) {
+          return {
+            success: false,
+            error: 'Insufficient credits',
+            newBalance: userCredits.current_balance,
+          };
+        }
+
+        // Deduct credits (fallback - no smart consumption)
+        const { error: updateError } = await supabaseAdmin
+          .from('user_credits')
+          .update({
+            current_balance: userCredits.current_balance - credits,
+            consumed_this_month: userCredits.consumed_this_month + credits,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', userId);
+
+        if (updateError) {
+          console.error('❌ Credit deduction failed:', updateError);
+          return {
+            success: false,
+            error: 'Failed to deduct credits',
+          };
+        }
+
+        const newBalance = userCredits.current_balance - credits;
+        console.log(`✅ Credits deducted (fallback). New balance: ${newBalance}`);
+
+        // Log transaction
+        await supabaseAdmin
+          .from('credit_transactions')
+          .insert({
+            user_id: userId,
+            transaction_type: TRANSACTION_TYPES.DEDUCTION,
+            credits_used: credits,
+            enhancement_type: operationType,
+            status: TRANSACTION_STATUSES.COMPLETED,
+            metadata,
+          });
+
+        return {
+          success: true,
+          newBalance,
+        };
+      }
+
+      // Other RPC errors
       return {
         success: false,
-        error: 'Failed to fetch user credits',
+        error: rpcError.message || 'Failed to deduct credits',
       };
     }
 
-    // Check sufficient balance
-    if (userCredits.current_balance < credits) {
-      return {
-        success: false,
-        error: 'Insufficient credits',
-        newBalance: userCredits.current_balance,
-      };
-    }
+    // RPC succeeded - consumeResult contains breakdown
+    const breakdown = consumeResult as {
+      total_consumed: number;
+      purchased_consumed: number;
+      subscription_consumed: number;
+      remaining_balance: number;
+      remaining_purchased: number;
+    };
 
-    // Deduct credits
-    const { error: updateError } = await supabaseAdmin
-      .from('user_credits')
-      .update({
-        current_balance: userCredits.current_balance - credits,
-        consumed_this_month: userCredits.consumed_this_month + credits,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId);
+    console.log(`✅ Credits consumed smartly:`, {
+      total: breakdown.total_consumed,
+      fromPurchased: breakdown.purchased_consumed,
+      fromSubscription: breakdown.subscription_consumed,
+      remainingBalance: breakdown.remaining_balance,
+      remainingPurchased: breakdown.remaining_purchased,
+    });
 
-    if (updateError) {
-      console.error('❌ Credit deduction failed:', updateError);
-      return {
-        success: false,
-        error: 'Failed to deduct credits',
-      };
-    }
-
-    // Log transaction
+    // Log transaction with breakdown
     const { data: transaction, error: logError } = await supabaseAdmin
       .from('credit_transactions')
       .insert({
@@ -244,21 +320,24 @@ export async function deductUserCredits(
         credits_used: credits,
         enhancement_type: operationType,
         status: TRANSACTION_STATUSES.COMPLETED,
-        metadata,
+        metadata: {
+          ...metadata,
+          consumption_breakdown: {
+            purchased_consumed: breakdown.purchased_consumed,
+            subscription_consumed: breakdown.subscription_consumed,
+          },
+        },
       })
       .select('id')
       .single();
 
     if (logError) {
-      console.error('⚠️  Failed to log transaction:', logError);
+      console.error('⚠️ Failed to log transaction:', logError);
     }
-
-    const newBalance = userCredits.current_balance - credits;
-    console.log(`✅ Credits deducted successfully. New balance: ${newBalance}`);
 
     return {
       success: true,
-      newBalance,
+      newBalance: breakdown.remaining_balance,
       transactionId: transaction?.id,
     };
   } catch (err) {
