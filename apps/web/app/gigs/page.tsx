@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Camera, Users, Sparkles, Eye } from 'lucide-react';
+import { Camera, Users, Sparkles, Eye, Grid, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PageHeader } from '@/components/PageHeader';
@@ -16,7 +16,9 @@ import { filterGigs } from './lib/filterGigs';
 import { GigFilters } from './components/GigFilters';
 import { GigGrid } from './components/GigGrid';
 import { EmptyState } from './components/EmptyState';
-import { Gig } from './types';
+import { Gig, MapGig } from './types';
+import GigsMap from '@/components/GigsMap';
+import GigsMapSidebar from '@/components/GigsMapSidebar';
 
 /**
  * Main Gig Discovery Page
@@ -35,6 +37,11 @@ export default function GigDiscoveryPage() {
   // Local state for enhanced gigs
   const [enhancedGigs, setEnhancedGigs] = useState<Gig[]>([]);
   const [filteredGigs, setFilteredGigs] = useState<Gig[]>([]);
+  
+  // Map view state
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [mapGigs, setMapGigs] = useState<MapGig[]>([]);
+  const [selectedGig, setSelectedGig] = useState<MapGig | null>(null);
 
   // Enhance gigs with simulated data when gigs are loaded
   useEffect(() => {
@@ -97,6 +104,19 @@ export default function GigDiscoveryPage() {
   // Handle save gig with redirect to sign-in if not authenticated
   const handleToggleSave = (gigId: string) => {
     toggleSaveGig(gigId, () => router.push('/auth/signin'));
+  };
+
+  // Map handlers
+  const handleGigSelect = (gig: MapGig) => {
+    setSelectedGig(gig);
+  };
+
+  const handleGigView = (gig: MapGig) => {
+    router.push(`/gigs/${gig.id}`);
+  };
+
+  const handleMapGigsUpdate = (gigs: MapGig[]) => {
+    setMapGigs(gigs);
   };
 
   // Loading state
@@ -194,16 +214,55 @@ export default function GigDiscoveryPage() {
           onClearFilters={filters.clearAllFilters}
         />
 
-        {/* Results Count */}
-        <div className="mb-4 text-sm text-muted-foreground">
-          Found {filteredGigs.length} gigs
-          {filters.hasActiveFilters() && (
-            <span className="ml-2 text-primary">(filtered)</span>
-          )}
+        {/* View Toggle & Results Count */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-sm text-muted-foreground">
+            Found {viewMode === 'grid' ? filteredGigs.length : mapGigs.length} gigs
+            {filters.hasActiveFilters() && (
+              <span className="ml-2 text-primary">(filtered)</span>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant={viewMode === 'grid' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setViewMode('grid')}
+            >
+              <Grid className="w-4 h-4 mr-2" />
+              Grid
+            </Button>
+            <Button 
+              variant={viewMode === 'map' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setViewMode('map')}
+            >
+              <Map className="w-4 h-4 mr-2" />
+              Map
+            </Button>
+          </div>
         </div>
 
-        {/* Gig Grid or Empty State */}
-        {filteredGigs.length > 0 ? (
+        {/* Gig Grid, Map, or Empty State */}
+        {viewMode === 'map' ? (
+          <div className="h-[calc(100vh-400px)] flex gap-4">
+            <div className="flex-1">
+              <GigsMap 
+                onGigSelect={handleGigSelect}
+                className="h-full"
+              />
+            </div>
+            <div className="w-80">
+              <GigsMapSidebar
+                gigs={mapGigs}
+                selectedGig={selectedGig}
+                onGigSelect={handleGigSelect}
+                onGigView={handleGigView}
+                className="h-full"
+              />
+            </div>
+          </div>
+        ) : filteredGigs.length > 0 ? (
           <GigGrid
             gigs={filteredGigs}
             savedGigs={savedGigs}

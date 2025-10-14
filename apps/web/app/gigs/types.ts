@@ -10,6 +10,8 @@ export interface Gig {
   comp_type: CompensationType;
   looking_for_types?: string[];
   location_text: string;
+  lat?: number;
+  lng?: number;
   start_time: string;
   end_time: string;
   application_deadline: string;
@@ -68,4 +70,19 @@ export interface GigFilters {
   maxRateFilter: number | null;
   travelOnlyFilter: boolean;
   studioOnlyFilter: boolean;
+}
+
+// Map-specific gig type (from API response)
+export interface MapGig {
+  id: string;
+  title: string;
+  description: string;
+  comp_type: CompensationType;
+  location_text: string;
+  lat: number;
+  lng: number;
+  start_time: string;
+  end_time: string;
+  owner_user_id: string;
+  created_at: string;
 }

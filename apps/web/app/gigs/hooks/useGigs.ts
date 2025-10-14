@@ -89,7 +89,7 @@ export const useGigs = () => {
         // Fallback: get colors from moodboards directly
         const { data: moodboardData, error: mbError } = await supabase
           .from('moodboards')
-          .select('palette, moodboard_items(palette)')
+          .select('palette')
           .not('palette', 'is', null);
 
         if (!mbError && moodboardData) {
@@ -99,15 +99,22 @@ export const useGigs = () => {
             if (mb.palette && Array.isArray(mb.palette)) {
               mb.palette.forEach((color: string) => colors.add(color));
             }
-            // Add colors from moodboard items
-            if (mb.moodboard_items) {
-              mb.moodboard_items.forEach((item: any) => {
-                if (item.palette && Array.isArray(item.palette)) {
-                  item.palette.forEach((color: string) => colors.add(color));
-                }
-              });
-            }
           });
+          
+          // Also get colors from moodboard items
+          const { data: itemData, error: itemError } = await supabase
+            .from('moodboard_items')
+            .select('palette')
+            .not('palette', 'is', null);
+            
+          if (!itemError && itemData) {
+            itemData.forEach((item: any) => {
+              if (item.palette && Array.isArray(item.palette)) {
+                item.palette.forEach((color: string) => colors.add(color));
+              }
+            });
+          }
+          
           setAvailablePalettes(Array.from(colors).slice(0, 20));
         } else {
           // Fallback to demo colors

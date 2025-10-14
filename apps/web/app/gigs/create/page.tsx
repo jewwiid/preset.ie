@@ -313,18 +313,21 @@ export default function CreateGigPage() {
       if (insertError) throw insertError
       gigId = data.id
       
-      // Update moodboard to link to the real gig ID if one exists
+      // Update moodboard to link to the real gig ID and make it public if one exists
       if (formData.moodboardId) {
         try {
           const { error: moodboardError } = await supabase
             .from('moodboards')
-            .update({ gig_id: gigId })
+            .update({ 
+              gig_id: gigId,
+              is_public: true  // Make moodboard public when linked to a gig
+            })
             .eq('id', formData.moodboardId)
           
           if (moodboardError) {
             console.warn('Failed to link moodboard to gig:', moodboardError)
           } else {
-            console.log('✅ Moodboard linked to gig successfully')
+            console.log('✅ Moodboard linked to gig and made public successfully')
           }
         } catch (error) {
           console.warn('Error linking moodboard to gig:', error)
