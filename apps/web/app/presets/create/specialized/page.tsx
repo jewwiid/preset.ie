@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../../lib/auth-context'
-import { 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   Camera, 
   Package, 
   Wand2, 
@@ -573,7 +574,7 @@ export default function CreateSpecializedPresetPage() {
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                <LoadingSpinner size="sm" />
                 Creating...
               </>
             ) : (

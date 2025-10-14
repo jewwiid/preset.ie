@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import CinematicParameterSelector from '../cinematic/CinematicParameterSelector'
-import { CinematicParameters, AspectRatio } from '../../../../../packages/types/src/cinematic-parameters'
+import { CinematicParameters, AspectRatio } from '@preset/types'
 import { VideoProviderSelector } from '../VideoProviderSelector'
 import { VideoImageUploader } from '../../../components/playground/VideoImageUploader'
 import { VideoPromptBuilder } from '../../../components/playground/VideoPromptBuilder'
@@ -18,6 +18,7 @@ import { usePexelsSearch } from '../../../lib/hooks/playground/usePexelsSearch'
 import { Input } from '@/components/ui/input'
 import PresetSelector from './PresetSelector'
 import { replaceSubjectInTemplate, getPromptTemplateForMode } from '../../../lib/utils/playground'
+import { useVideoGenerationState } from '../../../hooks/useVideoGenerationState'
 
 interface VideoGenerationPanelProps {
   onGenerateVideo: (params: {
@@ -76,20 +77,17 @@ export default function VideoGenerationPanel({
   onActiveImageChange,
   onStyledImageChange
 }: VideoGenerationPanelProps) {
-  // Form state
-  const [videoDuration, setVideoDuration] = useState(5)
-  const [videoResolution, setVideoResolution] = useState('480p')
-  const [motionType, setMotionType] = useState('smooth')
-  const [videoPrompt, setVideoPrompt] = useState('')
-  const [selectedAspectRatio, setSelectedAspectRatio] = useState(aspectRatio)
-  const [imageYPosition, setImageYPosition] = useState(0)
-  const [videoStyle, setVideoStyle] = useState('')
-  const [isEnhancing, setIsEnhancing] = useState(false)
-  const [videoSubject, setVideoSubject] = useState('')
+  // Initialize video generation state hook
+  const videoState = useVideoGenerationState({
+    initialAspectRatio: aspectRatio,
+    selectedProvider,
+    selectedPreset,
+    onAspectRatioChange,
+    onResolutionChange})
+
+  // Additional local state (not managed by hook)
   const [availableStyles, setAvailableStyles] = useState<Array<{ style_name: string; display_name: string }>>([])
   const [loadingStyles, setLoadingStyles] = useState(true)
-  const [styledImageUrl, setStyledImageUrl] = useState<string | null>(null)
-  const [applyingStyle, setApplyingStyle] = useState(false)
 
   // Fetch available styles from database
   useEffect(() => {
@@ -113,28 +111,14 @@ export default function VideoGenerationPanel({
     fetchStyles()
   }, [])
 
-  // Auto-correct duration when switching to Wan (only allows 5 or 10)
-  useEffect(() => {
-    if (selectedProvider === 'wan' && videoDuration !== 5 && videoDuration !== 10) {
-      // Round to nearest valid value
-      const validDuration = videoDuration < 7.5 ? 5 : 10
-      console.log(`⚠️ Auto-correcting duration from ${videoDuration}s to ${validDuration}s for Wan`)
-      setVideoDuration(validDuration)
-    }
-  }, [selectedProvider, videoDuration])
-
-  // Image source state
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null)
-  const [activeImageSource, setActiveImageSource] = useState<'selected' | 'uploaded' | 'saved' | 'pexels'>('selected')
-
   // Debug: Log image state changes
   useEffect(() => {
     console.log('🎬 Image state:', {
-      uploadedImage: uploadedImage ? 'exists' : 'null',
-      activeImageSource,
+      uploadedImage: videoState.uploadedImage ? 'exists' : 'null',
+      activeImageSource: videoState.activeImageSource,
       selectedImage: selectedImage ? 'exists' : 'null'
     })
-  }, [uploadedImage, activeImageSource, selectedImage])
+  }, [videoState.uploadedImage, videoState.activeImageSource, selectedImage])
 
   // Pexels search state
   const pexelsSearch = usePexelsSearch()
@@ -142,98 +126,32 @@ export default function VideoGenerationPanel({
   // Feedback hook (needed early for auto-apply style)
   const { showFeedback } = useFeedback()
 
-  // Cinematic parameters state
-  const [enableCinematicMode, setEnableCinematicMode] = useState(false)
-  const [cinematicParameters, setCinematicParameters] = useState<Partial<CinematicParameters>>({})
-  const [includeTechnicalDetails, setIncludeTechnicalDetails] = useState(true)
-  const [includeStyleReferences, setIncludeStyleReferences] = useState(true)
-  const [enhancedPrompt, setEnhancedPrompt] = useState('')
-
-  // Load preset when selectedPreset changes
-  useEffect(() => {
-    if (selectedPreset) {
-      console.log('🎬 Loading video preset:', selectedPreset)
-
-      // Set prompt from preset
-      if (selectedPreset.prompt_template_video || selectedPreset.prompt_template) {
-        const promptToUse = selectedPreset.prompt_template_video || selectedPreset.prompt_template
-        setVideoPrompt(promptToUse)
-        console.log('🎬 Set video prompt from preset:', promptToUse)
-      }
-
-      // Set aspect ratio from preset (check both cinematic_settings and technical_settings)
-      const presetAspectRatio = selectedPreset.cinematic_settings?.cinematicParameters?.aspectRatio
-        || selectedPreset.technical_settings?.aspect_ratio
-        || selectedPreset.technical_settings?.aspectRatio
-
-      if (presetAspectRatio) {
-        console.log('🎬 Setting aspect ratio from preset:', presetAspectRatio)
-        setSelectedAspectRatio(presetAspectRatio)
-        onAspectRatioChange?.(presetAspectRatio)
-      }
-
-      // Set resolution from preset (check both cinematic_settings.video and technical_settings)
-      let presetResolution = selectedPreset.cinematic_settings?.video?.resolution
-        || selectedPreset.technical_settings?.resolution
-
-      // Normalize resolution format - convert numeric values to "480p" or "720p" format
-      if (presetResolution) {
-        // If resolution is numeric (like "1024"), convert to appropriate format
-        if (!presetResolution.includes('p')) {
-          const resNum = parseInt(presetResolution)
-          presetResolution = resNum >= 720 ? '720p' : '480p'
-        }
-        console.log('🎬 Setting resolution from preset:', presetResolution)
-        setVideoResolution(presetResolution)
-        onResolutionChange?.(presetResolution)
-      }
-
-      // Set cinematic parameters if available
-      if (selectedPreset.cinematic_settings) {
-        setEnableCinematicMode(true)
-        setCinematicParameters(selectedPreset.cinematic_settings.cinematicParameters || {})
-
-        // Load video-specific settings from cinematic_settings.video
-        if (selectedPreset.cinematic_settings.video) {
-          const { cameraMovement: presetCamera, videoStyle: presetStyle, duration: presetDuration, provider: presetProvider } = selectedPreset.cinematic_settings.video
-
-          if (presetCamera) setMotionType(presetCamera)
-          if (presetStyle) setVideoStyle(presetStyle)
-          if (presetDuration) setVideoDuration(presetDuration)
-          if (presetProvider) onProviderChange?.(presetProvider)
-
-          console.log('🎬 Loaded video settings from preset:', selectedPreset.cinematic_settings.video)
-        }
-      }
-    }
-  }, [selectedPreset, onProviderChange, onAspectRatioChange, onResolutionChange])
-
   // Auto-enable cinematic mode when parameters are selected
   useEffect(() => {
-    const hasParameters = Object.keys(cinematicParameters).length > 0 &&
-      Object.values(cinematicParameters).some(val => val !== undefined && val !== null && val !== '')
+    const hasParameters = Object.keys(videoState.cinematicParameters).length > 0 &&
+      Object.values(videoState.cinematicParameters).some(val => val !== undefined && val !== null && val !== '')
 
-    if (hasParameters && !enableCinematicMode) {
+    if (hasParameters && !videoState.enableCinematicMode) {
       console.log('🎬 Auto-enabling cinematic mode due to parameter selection')
-      setEnableCinematicMode(true)
+      videoState.setEnableCinematicMode(true)
     }
-  }, [cinematicParameters, enableCinematicMode])
+  }, [videoState.cinematicParameters, videoState.enableCinematicMode, videoState.setEnableCinematicMode])
 
   // Sync aspect ratio between cinematic parameters and video settings
   useEffect(() => {
-    if (cinematicParameters.aspectRatio && cinematicParameters.aspectRatio !== selectedAspectRatio) {
-      console.log('🎬 Syncing aspect ratio from cinematic parameters:', cinematicParameters.aspectRatio)
-      setSelectedAspectRatio(cinematicParameters.aspectRatio)
+    if (videoState.cinematicParameters.aspectRatio && videoState.cinematicParameters.aspectRatio !== videoState.selectedAspectRatio) {
+      console.log('🎬 Syncing aspect ratio from cinematic parameters:', videoState.cinematicParameters.aspectRatio)
+      videoState.setSelectedAspectRatio(videoState.cinematicParameters.aspectRatio)
     }
-  }, [cinematicParameters.aspectRatio, selectedAspectRatio])
+  }, [videoState.cinematicParameters.aspectRatio, videoState.selectedAspectRatio, videoState.setSelectedAspectRatio])
 
   // Sync aspect ratio changes from video settings to cinematic parameters
   useEffect(() => {
-    if (enableCinematicMode && selectedAspectRatio && cinematicParameters.aspectRatio !== selectedAspectRatio) {
-      console.log('🎬 Syncing aspect ratio to cinematic parameters:', selectedAspectRatio)
-      setCinematicParameters(prev => ({ ...prev, aspectRatio: selectedAspectRatio as AspectRatio }))
+    if (videoState.enableCinematicMode && videoState.selectedAspectRatio && videoState.cinematicParameters.aspectRatio !== videoState.selectedAspectRatio) {
+      console.log('🎬 Syncing aspect ratio to cinematic parameters:', videoState.selectedAspectRatio)
+      videoState.setCinematicParameters(prev => ({ ...prev, aspectRatio: videoState.selectedAspectRatio as AspectRatio }))
     }
-  }, [selectedAspectRatio, enableCinematicMode, cinematicParameters.aspectRatio])
+  }, [videoState.selectedAspectRatio, videoState.enableCinematicMode, videoState.cinematicParameters.aspectRatio, videoState.setCinematicParameters])
 
   // Preset applied state (selectedPreset now comes from props)
   const [isPresetApplied, setIsPresetApplied] = useState(false)
@@ -243,16 +161,16 @@ export default function VideoGenerationPanel({
 
   // Helper function to get current image
   const getCurrentImage = useCallback(() => {
-    switch (activeImageSource) {
+    switch (videoState.activeImageSource) {
       case 'uploaded':
-        return uploadedImage
+        return videoState.uploadedImage
       case 'saved':
       case 'selected':
       case 'pexels':
       default:
         return selectedImage
     }
-  }, [activeImageSource, uploadedImage, selectedImage])
+  }, [videoState.activeImageSource, videoState.uploadedImage, selectedImage])
 
   // Update preset prompt when subject or image changes
   useEffect(() => {
@@ -264,12 +182,12 @@ export default function VideoGenerationPanel({
 
     const finalPrompt = replaceSubjectInTemplate(
       videoTemplate,
-      videoSubject,
+      videoState.videoSubject,
       generationMode
     )
 
-    setVideoPrompt(finalPrompt)
-  }, [videoSubject, selectedPreset, getCurrentImage])
+    videoState.setVideoPrompt(finalPrompt)
+  }, [videoState.videoSubject, selectedPreset, getCurrentImage, videoState.setVideoPrompt])
 
   // Auto-generate prompt from subject, style, and image selection
   useEffect(() => {
@@ -288,9 +206,9 @@ export default function VideoGenerationPanel({
 
     // Get current image based on active source
     let currentImage: string | null = null
-    switch (activeImageSource) {
+    switch (videoState.activeImageSource) {
       case 'uploaded':
-        currentImage = uploadedImage
+        currentImage = videoState.uploadedImage
         break
       case 'saved':
       case 'selected':
@@ -304,28 +222,28 @@ export default function VideoGenerationPanel({
       let generatedPrompt = ''
 
       // Build prompt based on context
-      if (currentImage && videoSubject) {
+      if (currentImage && videoState.videoSubject) {
         // Image-to-video with subject
-        generatedPrompt = videoSubject
-      } else if (currentImage && !videoSubject) {
+        generatedPrompt = videoState.videoSubject
+      } else if (currentImage && !videoState.videoSubject) {
         // Image-to-video without subject - leave empty, will be filled by style or default
         generatedPrompt = ''
-      } else if (!currentImage && videoSubject) {
+      } else if (!currentImage && videoState.videoSubject) {
         // Text-to-video with subject
-        generatedPrompt = videoSubject
+        generatedPrompt = videoState.videoSubject
       } else {
         // No image, no subject
         generatedPrompt = ''
       }
 
       // Add style if selected (fetch style prompt from database)
-      if (videoStyle && videoStyle !== 'none') {
+      if (videoState.videoStyle && videoState.videoStyle !== 'none') {
         try {
           const response = await fetch('/api/style-prompts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              styleName: videoStyle,
+              styleName: videoState.videoStyle,
               generationMode: currentImage ? 'image-to-image' : 'text-to-image'
             })
           })
@@ -352,51 +270,51 @@ export default function VideoGenerationPanel({
             } else {
               // Fallback if no style prompt returned
               if (generatedPrompt) {
-                generatedPrompt = `${generatedPrompt}. in the style of ${videoStyle}`
+                generatedPrompt = `${generatedPrompt}. in the style of ${videoState.videoStyle}`
               } else {
-                generatedPrompt = `Create video in the style of ${videoStyle}`
+                generatedPrompt = `Create video in the style of ${videoState.videoStyle}`
               }
             }
           } else {
             // Fallback if style not in database
-            console.log('⚠️ Style not found in database, using fallback for:', videoStyle)
+            console.log('⚠️ Style not found in database, using fallback for:', videoState.videoStyle)
             if (generatedPrompt) {
-              generatedPrompt = `${generatedPrompt}. in the style of ${videoStyle}`
+              generatedPrompt = `${generatedPrompt}. in the style of ${videoState.videoStyle}`
             } else if (currentImage) {
-              generatedPrompt = `Add motion with ${videoStyle} style`
+              generatedPrompt = `Add motion with ${videoState.videoStyle} style`
             } else {
-              generatedPrompt = `Create video in the style of ${videoStyle}`
+              generatedPrompt = `Create video in the style of ${videoState.videoStyle}`
             }
           }
         } catch (error) {
           console.error('Error fetching style prompt:', error)
           if (generatedPrompt) {
-            generatedPrompt = `${generatedPrompt}. in the style of ${videoStyle}`
+            generatedPrompt = `${generatedPrompt}. in the style of ${videoState.videoStyle}`
           } else {
-            generatedPrompt = `Create video with ${videoStyle} style`
+            generatedPrompt = `Create video with ${videoState.videoStyle} style`
           }
         }
       }
 
       // Add camera movement description from database
       // Fetch camera movement description if motionType is set
-      if (motionType) {
+      if (videoState.motionType) {
         try {
           const response = await fetch('/api/cinematic-parameters?category=camera_movements')
           const data = await response.json()
           if (data.success && data.parameters) {
-            const movement = data.parameters.find((m: any) => m.value === motionType)
+            const movement = data.parameters.find((m: any) => m.value === videoState.motionType)
             if (movement) {
               const movementPrompt = `Add ${movement.label.toLowerCase()}: ${movement.description}`
 
               // For image-to-video with no prompt, use movement description as the base
               if (currentImage && !generatedPrompt) {
                 generatedPrompt = movementPrompt
-                console.log(`🎬 Using camera movement "${motionType}" as base prompt for image-to-video`)
+                console.log(`🎬 Using camera movement "${videoState.motionType}" as base prompt for image-to-video`)
               } else if (generatedPrompt) {
                 // For prompts with content, append movement description
                 generatedPrompt = `${generatedPrompt}. ${movementPrompt}`
-                console.log(`🎬 Applied camera movement "${motionType}" to prompt`)
+                console.log(`🎬 Applied camera movement "${videoState.motionType}" to prompt`)
               }
             }
           }
@@ -411,17 +329,17 @@ export default function VideoGenerationPanel({
       }
 
       // Update the base prompt
-      setVideoPrompt(generatedPrompt?.trim() || '')
+      videoState.setVideoPrompt(generatedPrompt?.trim() || '')
       console.log('🎬 Updated video prompt:', generatedPrompt?.trim()?.substring(0, 100) + '...')
     }
 
     generateVideoPrompt()
-  }, [videoSubject, videoStyle, selectedImage, uploadedImage, activeImageSource, isPresetApplied, motionType, selectedPreset, regenerationTrigger])
+  }, [videoState.videoSubject, videoState.videoStyle, selectedImage, videoState.uploadedImage, videoState.activeImageSource, isPresetApplied, videoState.motionType, selectedPreset, regenerationTrigger, videoState.setVideoPrompt])
 
   // Generate enhanced prompt based on cinematic parameters
   useEffect(() => {
-    if (!enableCinematicMode || Object.keys(cinematicParameters).length === 0) {
-      setEnhancedPrompt(videoPrompt)
+    if (!videoState.enableCinematicMode || Object.keys(videoState.cinematicParameters).length === 0) {
+      videoState.setEnhancedPrompt(videoState.videoPrompt)
       return
     }
 
@@ -430,45 +348,45 @@ export default function VideoGenerationPanel({
         ({ CinematicPromptBuilder }) => {
           const promptBuilder = new CinematicPromptBuilder()
           const enhanced = promptBuilder.constructPrompt({
-            basePrompt: videoPrompt,
-            cinematicParameters,
+            basePrompt: videoState.videoPrompt,
+            cinematicParameters: videoState.cinematicParameters,
             enhancementType: 'generate',
-            includeTechnicalDetails,
-            includeStyleReferences
+            includeTechnicalDetails: videoState.includeTechnicalDetails,
+            includeStyleReferences: videoState.includeStyleReferences
           })
-          setEnhancedPrompt(enhanced.fullPrompt)
+          videoState.setEnhancedPrompt(enhanced.fullPrompt)
         }
       )
     } catch (error) {
-      setEnhancedPrompt(videoPrompt)
+      videoState.setEnhancedPrompt(videoState.videoPrompt)
     }
-  }, [videoPrompt, cinematicParameters, includeTechnicalDetails, includeStyleReferences, enableCinematicMode])
+  }, [videoState.videoPrompt, videoState.cinematicParameters, videoState.includeTechnicalDetails, videoState.includeStyleReferences, videoState.enableCinematicMode, videoState.setEnhancedPrompt])
 
   // Notify parent of prompt changes - use enhanced prompt if available
   useEffect(() => {
     if (onPromptChange) {
-      const currentPrompt = enableCinematicMode && enhancedPrompt
-        ? enhancedPrompt
-        : videoPrompt || videoSubject
+      const currentPrompt = videoState.enableCinematicMode && videoState.enhancedPrompt
+        ? videoState.enhancedPrompt
+        : videoState.videoPrompt || videoState.videoSubject
       if (currentPrompt) {
         onPromptChange(currentPrompt)
       }
     }
-  }, [videoSubject, videoPrompt, enhancedPrompt, enableCinematicMode, onPromptChange])
+  }, [videoState.videoSubject, videoState.videoPrompt, videoState.enhancedPrompt, videoState.enableCinematicMode, onPromptChange])
 
   // Notify parent of aspect ratio changes
   useEffect(() => {
     if (onAspectRatioChange) {
-      onAspectRatioChange(selectedAspectRatio)
+      onAspectRatioChange(videoState.selectedAspectRatio)
     }
-  }, [selectedAspectRatio, onAspectRatioChange])
+  }, [videoState.selectedAspectRatio, onAspectRatioChange])
 
   // Notify parent of resolution changes
   useEffect(() => {
     if (onResolutionChange) {
-      onResolutionChange(videoResolution)
+      onResolutionChange(videoState.videoResolution)
     }
-  }, [videoResolution, onResolutionChange])
+  }, [videoState.videoResolution, onResolutionChange])
 
   // Notify parent of active image changes
   useEffect(() => {
@@ -476,7 +394,7 @@ export default function VideoGenerationPanel({
       const currentImage = getCurrentImage()
       onActiveImageChange(currentImage)
     }
-  }, [uploadedImage, selectedImage, activeImageSource, onActiveImageChange, getCurrentImage])
+  }, [videoState.uploadedImage, selectedImage, videoState.activeImageSource, onActiveImageChange, getCurrentImage])
 
   // Debug: Log savedImages prop
   useEffect(() => {
@@ -486,9 +404,9 @@ export default function VideoGenerationPanel({
   // Notify parent when styled image changes
   useEffect(() => {
     if (onStyledImageChange) {
-      onStyledImageChange(styledImageUrl)
+      onStyledImageChange(videoState.styledImageUrl)
     }
-  }, [styledImageUrl, onStyledImageChange])
+  }, [videoState.styledImageUrl, onStyledImageChange])
 
   // Auto-apply style when videoStyle changes (Option 1 implementation)
   useEffect(() => {
@@ -500,17 +418,17 @@ export default function VideoGenerationPanel({
       // 2. There's an image to apply it to
       // 3. Not currently applying a style
       // 4. Not in a loading state
-      if (!videoStyle || videoStyle === '' || videoStyle.toLowerCase() === 'none' || !currentImage || applyingStyle || loading) {
+      if (!videoState.videoStyle || videoState.videoStyle === '' || videoState.videoStyle.toLowerCase() === 'none' || !currentImage || videoState.applyingStyle || loading) {
         // Clear styled image if no style selected
-        if ((!videoStyle || videoStyle === '' || videoStyle.toLowerCase() === 'none') && styledImageUrl) {
+        if ((!videoState.videoStyle || videoState.videoStyle === '' || videoState.videoStyle.toLowerCase() === 'none') && videoState.styledImageUrl) {
           console.log('🎨 Clearing styled image (no style selected)')
-          setStyledImageUrl(null)
+          videoState.setStyledImageUrl(null)
         }
         return
       }
 
-      console.log('🎨 Auto-applying style:', videoStyle)
-      setApplyingStyle(true)
+      console.log('🎨 Auto-applying style:', videoState.videoStyle)
+      videoState.setApplyingStyle(true)
 
       try {
         // Get auth token from supabase client
@@ -536,10 +454,10 @@ export default function VideoGenerationPanel({
           },
           body: JSON.stringify({
             imageUrl: currentImage,
-            videoStyle,
-            aspectRatio: selectedAspectRatio,
-            resolution: videoResolution,
-            prompt: videoPrompt || videoSubject || ''
+            videoStyle: videoState.videoStyle,
+            aspectRatio: videoState.selectedAspectRatio,
+            resolution: videoState.videoResolution,
+            prompt: videoState.videoPrompt || videoState.videoSubject || ''
           })
         })
 
@@ -550,12 +468,12 @@ export default function VideoGenerationPanel({
 
         const data = await response.json()
         console.log('✅ Style applied successfully:', data.styledImageUrl)
-        setStyledImageUrl(data.styledImageUrl)
+        videoState.setStyledImageUrl(data.styledImageUrl)
 
         showFeedback({
           type: 'success',
           title: 'Style Applied',
-          message: `${videoStyle} style applied (${data.creditsUsed} credits)`
+          message: `${videoState.videoStyle} style applied (${data.creditsUsed} credits)`
         })
       } catch (error: any) {
         console.error('❌ Error applying style:', error)
@@ -565,14 +483,14 @@ export default function VideoGenerationPanel({
           message: error.message || 'Failed to apply style'
         })
         // Clear styled image on error
-        setStyledImageUrl(null)
+        videoState.setStyledImageUrl(null)
       } finally {
-        setApplyingStyle(false)
+        videoState.setApplyingStyle(false)
       }
     }
 
     applyStyle()
-  }, [videoStyle, getCurrentImage, selectedAspectRatio, videoResolution, videoPrompt, videoSubject, applyingStyle, loading, styledImageUrl, showFeedback])
+  }, [videoState.videoStyle, getCurrentImage, videoState.selectedAspectRatio, videoState.videoResolution, videoState.videoPrompt, videoState.videoSubject, videoState.applyingStyle, loading, videoState.styledImageUrl, showFeedback, videoState.setStyledImageUrl, videoState.setApplyingStyle])
 
   // Store the file object instead of uploading immediately
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -585,10 +503,10 @@ export default function VideoGenerationPanel({
       // Store the file object and create a local preview URL
       setUploadedFile(file)
       const previewUrl = URL.createObjectURL(file)
-      setUploadedImage(previewUrl)
+      videoState.setUploadedImage(previewUrl)
 
       // Auto-switch to uploaded tab
-      setActiveImageSource('uploaded')
+      videoState.setActiveImageSource('uploaded')
       console.log('🎬 File ready for upload - will upload during video generation')
     }
   }
@@ -632,54 +550,69 @@ export default function VideoGenerationPanel({
   }
 
   const removeUploadedImage = () => {
-    if (uploadedImage) {
+    if (videoState.uploadedImage) {
       // Revoke the blob URL to free memory
-      URL.revokeObjectURL(uploadedImage)
-      setUploadedImage(null)
+      URL.revokeObjectURL(videoState.uploadedImage)
+      videoState.setUploadedImage(null)
       setUploadedFile(null)
-      setActiveImageSource('selected')
+      videoState.setActiveImageSource('selected')
     }
   }
 
   const selectSavedImage = (imageUrl: string) => {
     onSelectSavedImage?.(imageUrl)
-    setActiveImageSource('selected')
-    setImageYPosition(0)
+    videoState.setActiveImageSource('selected')
+    videoState.setImageYPosition(0)
   }
 
   const handleImageSourceChange = (source: 'selected' | 'uploaded' | 'saved' | 'pexels') => {
-    setActiveImageSource(source)
-    setImageYPosition(0)
+    videoState.setActiveImageSource(source)
+    videoState.setImageYPosition(0)
   }
 
-  const handleSelectPexelsImage = useCallback((imageUrl: string) => {
+  const handleSelectPexelsImage = useCallback((photo: any) => {
+    const imageUrl = photo.src.large2x || photo.src.large || photo.src.medium
     onSelectSavedImage?.(imageUrl)
-    setActiveImageSource('pexels')
-    setImageYPosition(0)
-  }, [onSelectSavedImage])
+    videoState.setActiveImageSource('pexels')
+    videoState.setImageYPosition(0)
+    
+    // Store attribution information in video state
+    videoState.setImageAttribution({
+      source: 'pexels',
+      photographer: photo.photographer,
+      photographer_url: photo.photographer_url,
+      photographer_id: photo.photographer_id,
+      original_url: photo.url})
+    
+    console.log('Pexels attribution stored:', {
+      photographer: photo.photographer,
+      photographer_url: photo.photographer_url,
+      photographer_id: photo.photographer_id
+    })
+  }, [onSelectSavedImage, videoState])
 
   const handleAIEnhance = useCallback(async () => {
-    setIsEnhancing(true)
+    videoState.setIsEnhancing(true)
     try {
       const currentImage = getCurrentImage()
       const response = await fetch('/api/enhance-prompt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          prompt: videoPrompt,
-          subject: videoSubject,
+          prompt: videoState.videoPrompt,
+          subject: videoState.videoSubject,
           generationMode: currentImage ? 'image-to-video' : 'text-to-video',
-          style: videoStyle,
-          cinematicParameters: enableCinematicMode ? cinematicParameters : undefined
+          style: videoState.videoStyle,
+          cinematicParameters: videoState.enableCinematicMode ? videoState.cinematicParameters : undefined
         })
       })
 
       if (response.ok) {
         const data = await response.json()
-        if (enableCinematicMode) {
-          setEnhancedPrompt(data.enhancedPrompt)
+        if (videoState.enableCinematicMode) {
+          videoState.setEnhancedPrompt(data.enhancedPrompt)
         } else {
-          setVideoPrompt(data.enhancedPrompt)
+          videoState.setVideoPrompt(data.enhancedPrompt)
         }
         showFeedback({
           type: 'success',
@@ -694,9 +627,9 @@ export default function VideoGenerationPanel({
         message: 'Failed to enhance prompt'
       })
     } finally {
-      setIsEnhancing(false)
+      videoState.setIsEnhancing(false)
     }
-  }, [videoPrompt, videoSubject, videoStyle, cinematicParameters, enableCinematicMode, showFeedback])
+  }, [videoState, getCurrentImage, showFeedback])
 
   const handleRegeneratePrompt = useCallback(() => {
     // Force regeneration by incrementing trigger
@@ -710,19 +643,19 @@ export default function VideoGenerationPanel({
     })
 
     console.log('🔄 Manual prompt regeneration triggered')
-    console.log('Current settings:', { videoSubject, videoStyle, motionType, enableCinematicMode })
-  }, [videoSubject, videoStyle, motionType, enableCinematicMode, showFeedback])
+    console.log('Current settings:', { videoSubject: videoState.videoSubject, videoStyle: videoState.videoStyle, motionType: videoState.motionType, enableCinematicMode: videoState.enableCinematicMode })
+  }, [videoState, showFeedback])
 
   const handleClearAll = useCallback(() => {
-    setVideoPrompt('')
-    setEnhancedPrompt('')
-    setVideoStyle('')
-    setCinematicParameters({})
-    setEnableCinematicMode(false)
-    setVideoDuration(5)
-    setMotionType('subtle')
-    setVideoResolution('480p')
-    setSelectedAspectRatio(aspectRatio)
+    videoState.setVideoPrompt('')
+    videoState.setEnhancedPrompt('')
+    videoState.setVideoStyle('')
+    videoState.setCinematicParameters()
+    videoState.setEnableCinematicMode(false)
+    videoState.setVideoDuration(5)
+    videoState.setMotionType('subtle')
+    videoState.setVideoResolution('480p')
+    videoState.setSelectedAspectRatio(aspectRatio)
 
     showFeedback({
       type: 'success',
@@ -748,17 +681,17 @@ export default function VideoGenerationPanel({
       // Replace {subject} placeholder with videoSubject or "this image"
       const finalPrompt = replaceSubjectInTemplate(
         videoTemplate,
-        videoSubject,
+        videoState.videoSubject,
         generationMode
       )
 
-      setVideoPrompt(finalPrompt)
+      videoState.setVideoPrompt(finalPrompt)
       setIsPresetApplied(true) // Prevent auto-generate from overwriting
       console.log('🎬 Applied preset prompt:', {
         imageTemplate: preset.prompt_template,
         videoTemplate: preset.prompt_template_video,
         selectedTemplate: videoTemplate,
-        subject: videoSubject,
+        subject: videoState.videoSubject,
         finalPrompt
       })
     }
@@ -768,23 +701,23 @@ export default function VideoGenerationPanel({
       const { cinematic_settings } = preset
 
       if (cinematic_settings.enableCinematicMode !== undefined) {
-        setEnableCinematicMode(cinematic_settings.enableCinematicMode)
+        videoState.setEnableCinematicMode(cinematic_settings.enableCinematicMode)
       }
 
       if (cinematic_settings.cinematicParameters) {
-        setCinematicParameters(cinematic_settings.cinematicParameters)
+        videoState.setCinematicParameters(cinematic_settings.cinematicParameters)
       }
 
       if (cinematic_settings.includeTechnicalDetails !== undefined) {
-        setIncludeTechnicalDetails(cinematic_settings.includeTechnicalDetails)
+        videoState.setIncludeTechnicalDetails(cinematic_settings.includeTechnicalDetails)
       }
 
       if (cinematic_settings.includeStyleReferences !== undefined) {
-        setIncludeStyleReferences(cinematic_settings.includeStyleReferences)
+        videoState.setIncludeStyleReferences(cinematic_settings.includeStyleReferences)
       }
 
       if (cinematic_settings.enhancedPrompt) {
-        setEnhancedPrompt(cinematic_settings.enhancedPrompt)
+        videoState.setEnhancedPrompt(cinematic_settings.enhancedPrompt)
       }
     }
 
@@ -793,16 +726,16 @@ export default function VideoGenerationPanel({
     // Applying it here would trigger auto-generate and overwrite the preset prompt
     if (preset.style_settings?.style && !preset.prompt_template && !preset.prompt_template_video) {
       // Only set style if there's no prompt template (edge case)
-      setVideoStyle(preset.style_settings.style)
+      videoState.setVideoStyle(preset.style_settings.style)
     }
 
     // Apply technical settings if available
     if (preset.technical_settings) {
       if (preset.technical_settings.resolution) {
-        setVideoResolution(preset.technical_settings.resolution)
+        videoState.setVideoResolution(preset.technical_settings.resolution)
       }
       if (preset.technical_settings.aspectRatio) {
-        setSelectedAspectRatio(preset.technical_settings.aspectRatio)
+        videoState.setSelectedAspectRatio(preset.technical_settings.aspectRatio)
       }
     }
 
@@ -811,12 +744,12 @@ export default function VideoGenerationPanel({
       title: 'Preset Applied',
       message: `Applied preset: ${preset.name}`
     })
-  }, [showFeedback, videoSubject])
+  }, [showFeedback, videoState.videoSubject])
 
   const getCreditsForVideo = () => {
     const baseCredits = selectedProvider === 'wan' ? 12 : 8
-    const durationMultiplier = videoDuration > 5 ? 1.5 : 1
-    const resolutionMultiplier = videoResolution === '720p' ? 1.5 : 1
+    const durationMultiplier = videoState.videoDuration > 5 ? 1.5 : 1
+    const resolutionMultiplier = videoState.videoResolution === '720p' ? 1.5 : 1
     return Math.ceil(baseCredits * durationMultiplier * resolutionMultiplier)
   }
 
@@ -824,12 +757,12 @@ export default function VideoGenerationPanel({
     // Upload file to storage if user uploaded a file
     let actualImageUrl = getCurrentImage()
 
-    if (uploadedFile && activeImageSource === 'uploaded') {
+    if (uploadedFile && videoState.activeImageSource === 'uploaded') {
       try {
         console.log('🎬 Uploading file before video generation...')
         actualImageUrl = await uploadFileToStorage(uploadedFile)
         // Update the uploadedImage state with the permanent URL
-        setUploadedImage(actualImageUrl)
+        videoState.setUploadedImage(actualImageUrl)
         // Clear the file object as it's no longer needed
         setUploadedFile(null)
       } catch (error) {
@@ -844,25 +777,25 @@ export default function VideoGenerationPanel({
     }
 
     // Use styled image if available (from auto-apply), otherwise use uploaded/selected image
-    const imageToUse = styledImageUrl || actualImageUrl
+    const imageToUse = videoState.styledImageUrl || actualImageUrl
 
     console.log('🎬 Image URL Debug:', {
       actualImageUrl,
-      styledImageUrl,
+      styledImageUrl: videoState.styledImageUrl,
       imageToUse,
       uploadedFile: uploadedFile?.name,
-      uploadedImage,
+      uploadedImage: videoState.uploadedImage,
       selectedImage,
-      activeImageSource,
+      activeImageSource: videoState.activeImageSource,
       imageToUseLength: imageToUse?.length,
       imageToUseStartsWith: imageToUse?.substring(0, 50)
     })
 
     // Use enhanced prompt if cinematic mode is on, otherwise use video prompt (which includes style)
     // Only fall back to videoSubject if neither are available
-    const promptToUse = enableCinematicMode && enhancedPrompt
-      ? enhancedPrompt
-      : videoPrompt || videoSubject || ''
+    const promptToUse = videoState.enableCinematicMode && videoState.enhancedPrompt
+      ? videoState.enhancedPrompt
+      : videoState.videoPrompt || videoState.videoSubject || ''
 
     // Seedream: image-to-video only (requires image)
     // Wan: supports both text-to-video and image-to-video
@@ -885,33 +818,33 @@ export default function VideoGenerationPanel({
     }
 
     console.log('🎬 Prompt selection:', {
-      videoSubject,
-      videoPrompt,
-      enhancedPrompt,
-      enableCinematicMode,
+      videoSubject: videoState.videoSubject,
+      videoPrompt: videoState.videoPrompt,
+      enhancedPrompt: videoState.enhancedPrompt,
+      enableCinematicMode: videoState.enableCinematicMode,
       selectedPrompt: promptToUse,
-      hasCinematicParams: Object.keys(cinematicParameters).length > 0
+      hasCinematicParams: Object.keys(videoState.cinematicParameters).length > 0
     })
 
     console.log('🎬 Image selection:', {
-      styledImageUrl,
+      styledImageUrl: videoState.styledImageUrl,
       currentImage: getCurrentImage(),
-      usingStyledImage: !!styledImageUrl,
+      usingStyledImage: !!videoState.styledImageUrl,
       imageToUse
     })
 
     await onGenerateVideo({
       imageUrl: imageToUse || '', // Can be empty for Wan text-to-video
-      duration: videoDuration,
-      resolution: videoResolution,
-      cameraMovement: motionType,
-      aspectRatio: selectedAspectRatio,
+      duration: videoState.videoDuration,
+      resolution: videoState.videoResolution,
+      cameraMovement: videoState.motionType,
+      aspectRatio: videoState.selectedAspectRatio,
       prompt: promptToUse,
-      videoStyle: styledImageUrl ? undefined : (videoStyle || undefined), // Don't pass style if already applied
-      yPosition: imageYPosition,
-      cinematicParameters: enableCinematicMode ? cinematicParameters : undefined,
-      includeTechnicalDetails,
-      includeStyleReferences,
+      videoStyle: videoState.styledImageUrl ? undefined : (videoState.videoStyle || undefined), // Don't pass style if already applied
+      yPosition: videoState.imageYPosition,
+      cinematicParameters: videoState.enableCinematicMode ? videoState.cinematicParameters : undefined,
+      includeTechnicalDetails: videoState.includeTechnicalDetails,
+      includeStyleReferences: videoState.includeStyleReferences,
       selectedProvider,
       presetId: selectedPreset?.id && selectedPreset.id !== 'local-preset' ? selectedPreset.id : undefined
     })
@@ -924,16 +857,16 @@ export default function VideoGenerationPanel({
   // Seedream: image-to-video only (requires image)
   // Wan: supports both text-to-video and image-to-video
   const canGenerate = selectedProvider === 'wan'
-    ? (!!currentImage || !!videoSubject.trim() || !!videoPrompt.trim())
+    ? (!!currentImage || !!videoState.videoSubject.trim() || !!videoState.videoPrompt.trim())
     : !!currentImage
 
   console.log('🎬 Video generation button state:', {
     selectedProvider,
     hasCurrentImage: !!currentImage,
-    videoSubject: videoSubject,
-    videoSubjectTrimmed: videoSubject.trim(),
-    videoPrompt: videoPrompt,
-    videoPromptTrimmed: videoPrompt.trim(),
+    videoSubject: videoState.videoSubject,
+    videoSubjectTrimmed: videoState.videoSubject.trim(),
+    videoPrompt: videoState.videoPrompt,
+    videoPromptTrimmed: videoState.videoPrompt.trim(),
     canGenerate,
     userCredits,
     totalCredits,
@@ -969,35 +902,35 @@ export default function VideoGenerationPanel({
               onPresetChange?.(preset)
             } else {
               // Clear preset
-              setVideoPrompt('')
-              setEnhancedPrompt('')
-              setVideoStyle('')
-              setCinematicParameters({})
-              setEnableCinematicMode(false)
+              videoState.setVideoPrompt('')
+              videoState.setEnhancedPrompt('')
+              videoState.setVideoStyle('')
+              videoState.setCinematicParameters()
+              videoState.setEnableCinematicMode(false)
               onPresetChange?.(null)
             }
           }}
           selectedPreset={selectedPreset}
           currentSettings={{
-            prompt: videoPrompt,
-            style: videoStyle,
-            resolution: videoResolution,
-            aspectRatio: selectedAspectRatio,
+            prompt: videoState.videoPrompt,
+            style: videoState.videoStyle,
+            resolution: videoState.videoResolution,
+            aspectRatio: videoState.selectedAspectRatio,
             consistencyLevel: 'high',
             intensity: 1,
             numImages: 1,
-            enableCinematicMode,
-            cinematicParameters,
-            enhancedPrompt,
-            includeTechnicalDetails,
-            includeStyleReferences,
+            enableCinematicMode: videoState.enableCinematicMode,
+            cinematicParameters: videoState.cinematicParameters,
+            enhancedPrompt: videoState.enhancedPrompt,
+            includeTechnicalDetails: videoState.includeTechnicalDetails,
+            includeStyleReferences: videoState.includeStyleReferences,
             generationMode: getCurrentImage() ? 'image-to-image' : 'text-to-image',
             selectedProvider: selectedProvider as 'nanobanana' | 'seedream',
             // Video-specific settings
-            motionType,
-            videoStyle,
-            duration: videoDuration,
-            videoResolution
+            motionType: videoState.motionType,
+            videoStyle: videoState.videoStyle,
+            duration: videoState.videoDuration,
+            videoResolution: videoState.videoResolution
           }}
         />
 
@@ -1078,8 +1011,8 @@ export default function VideoGenerationPanel({
             </Label>
             <Input
               id="videoSubject"
-              value={videoSubject}
-              onChange={(e) => setVideoSubject(e.target.value)}
+              value={videoState.videoSubject}
+              onChange={(e) => videoState.setVideoSubject(e.target.value)}
               placeholder="e.g., a cow in a field, ocean waves, city traffic, dancing character..."
               className="w-full"
             />
@@ -1189,7 +1122,7 @@ export default function VideoGenerationPanel({
           <Label htmlFor="videoStyle" className="text-sm">
             Video Style (Optional)
           </Label>
-          <Select value={videoStyle || undefined} onValueChange={(value) => setVideoStyle(value)} disabled={loadingStyles}>
+          <Select value={videoState.videoStyle || undefined} onValueChange={(value) => videoState.setVideoStyle(value)} disabled={loadingStyles}>
             <SelectTrigger>
               <SelectValue placeholder={loadingStyles ? "Loading styles..." : "Select a style for your video"} />
             </SelectTrigger>
@@ -1207,12 +1140,12 @@ export default function VideoGenerationPanel({
         {/* Image Uploader */}
         <VideoImageUploader
           currentImage={getCurrentImage()}
-          activeSource={activeImageSource}
-          uploadedImage={uploadedImage}
+          activeSource={videoState.activeImageSource}
+          uploadedImage={videoState.uploadedImage}
           savedImages={savedImages}
           selectedImage={selectedImage}
-          aspectRatio={selectedAspectRatio}
-          resolution={videoResolution}
+          aspectRatio={videoState.selectedAspectRatio}
+          resolution={videoState.videoResolution}
           onSourceChange={(source) => {
             console.log('🎬 Image source changed to:', source)
             handleImageSourceChange(source)
@@ -1220,7 +1153,7 @@ export default function VideoGenerationPanel({
           onFileUpload={handleFileUpload}
           onRemoveUpload={removeUploadedImage}
           onSelectSaved={selectSavedImage}
-          onPositionChange={setImageYPosition}
+          onPositionChange={videoState.setImageYPosition}
           pexelsState={{
             query: pexelsSearch.pexelsQuery,
             results: pexelsSearch.pexelsResults,
@@ -1243,16 +1176,16 @@ export default function VideoGenerationPanel({
 
         {/* Prompt Builder */}
         <VideoPromptBuilder
-          prompt={videoPrompt}
-          enhancedPrompt={enhancedPrompt}
-          enableCinematicMode={enableCinematicMode}
-          isEnhancing={isEnhancing}
-          onPromptChange={setVideoPrompt}
-          onEnhancedPromptChange={setEnhancedPrompt}
+          prompt={videoState.videoPrompt}
+          enhancedPrompt={videoState.enhancedPrompt}
+          enableCinematicMode={videoState.enableCinematicMode}
+          isEnhancing={videoState.isEnhancing}
+          onPromptChange={videoState.setVideoPrompt}
+          onEnhancedPromptChange={videoState.setEnhancedPrompt}
           onAIEnhance={handleAIEnhance}
           onClearAll={handleClearAll}
           onRegeneratePrompt={handleRegeneratePrompt}
-          style={videoStyle}
+          style={videoState.videoStyle}
         />
 
         {/* Cinematic Mode */}
@@ -1262,32 +1195,32 @@ export default function VideoGenerationPanel({
               <div className="flex items-center gap-2">
                 <Wand2 className="h-5 w-5" />
                 <CardTitle className="text-sm">Cinematic Mode</CardTitle>
-                {enableCinematicMode && (
+                {videoState.enableCinematicMode && (
                   <span className="text-xs text-primary font-medium px-2 py-0.5 bg-primary/10 rounded-full">
                     Active
                   </span>
                 )}
               </div>
               <Switch
-                checked={enableCinematicMode}
-                onCheckedChange={setEnableCinematicMode}
+                checked={videoState.enableCinematicMode}
+                onCheckedChange={videoState.setEnableCinematicMode}
               />
             </div>
             <CardDescription className="text-xs">
-              {enableCinematicMode
+              {videoState.enableCinematicMode
                 ? 'Professional cinematic parameters are active and will enhance your prompt'
                 : 'Enable to apply professional cinematic parameters to your video'
               }
             </CardDescription>
           </CardHeader>
-          {enableCinematicMode && (
+          {videoState.enableCinematicMode && (
             <CardContent>
               <CinematicParameterSelector
-                parameters={cinematicParameters}
-                onParametersChange={setCinematicParameters}
+                parameters={videoState.cinematicParameters}
+                onParametersChange={videoState.setCinematicParameters}
                 onToggleChange={(technical, style) => {
-                  setIncludeTechnicalDetails(technical)
-                  setIncludeStyleReferences(style)
+                  videoState.setIncludeTechnicalDetails(technical)
+                  videoState.setIncludeStyleReferences(style)
                 }}
                 compact={false}
                 showAdvanced={true}
@@ -1298,25 +1231,25 @@ export default function VideoGenerationPanel({
 
         {/* Video Settings */}
         <VideoSettings
-          duration={videoDuration}
-          resolution={videoResolution}
-          aspectRatio={selectedAspectRatio}
-          motionType={motionType}
+          duration={videoState.videoDuration}
+          resolution={videoState.videoResolution}
+          aspectRatio={videoState.selectedAspectRatio}
+          motionType={videoState.motionType}
           loading={loading}
           userCredits={userCredits}
           totalCredits={totalCredits}
-          onDurationChange={setVideoDuration}
+          onDurationChange={videoState.setVideoDuration}
           onResolutionChange={(resolution) => {
             console.log('🎬 Resolution changed to:', resolution)
-            setVideoResolution(resolution)
+            videoState.setVideoResolution(resolution)
             onResolutionChange?.(resolution)
           }}
           onAspectRatioChange={(ratio) => {
             console.log('🎬 Aspect ratio changed to:', ratio)
-            setSelectedAspectRatio(ratio)
+            videoState.setSelectedAspectRatio(ratio)
             onAspectRatioChange?.(ratio)
           }}
-          onMotionTypeChange={setMotionType}
+          onMotionTypeChange={videoState.setMotionType}
           onGenerate={handleGenerateVideo}
           hasImage={canGenerate}
           selectedProvider={selectedProvider}

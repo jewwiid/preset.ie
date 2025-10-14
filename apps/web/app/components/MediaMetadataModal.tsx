@@ -1,19 +1,29 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Copy, ExternalLink, Calendar, CreditCard, Image as ImageIcon, Film, Palette, Camera, Lightbulb, Save, Loader2, ToggleLeft, ToggleRight, Eye, Edit, Check } from 'lucide-react'
+import { X, Copy, ExternalLink, Calendar, CreditCard, Image as ImageIcon, Film, Palette, Camera, Lightbulb, Save, Loader2, ToggleLeft, ToggleRight, Eye } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/components/ui/toast'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuth } from '@/lib/auth-context'
+import { useFormManager } from '@/hooks/useFormManager'
+import { BasicInfoSection } from './metadata/BasicInfoSection'
+import {
+  cleanPromptWithSubject,
+  getSubject as getSubjectFromPrompt,
+  highlightPrompt as highlightPromptUtil,
+  getStyleBadge,
+  formatLabel,
+} from '@/lib/utils/prompt-utils'
 
 interface MediaMetadataModalProps {
   isOpen: boolean
@@ -54,18 +64,68 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
   const [isCreatingPreset, setIsCreatingPreset] = useState(false)
   const [showOriginalImage, setShowOriginalImage] = useState(false)
 
-  // Image metadata editing states
-  const [isEditingMetadata, setIsEditingMetadata] = useState(false)
-  const [editedTitle, setEditedTitle] = useState('')
-  const [editedDescription, setEditedDescription] = useState('')
-  const [isSavingMetadata, setIsSavingMetadata] = useState(false)
+  // Use form manager hook for managing form state
+  const metadataFormBase = useFormManager({
+    initialData: {
+      title: (media as any)?.title || showcase?.caption || '',
+      description: (media as any)?.description || '',
+    },
+    onSubmit: async (data) => {
+      const response = await fetch(`/api/showcase-media/${media.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify(data),
+      })
 
-  // Initialize edited values when modal opens or media changes
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update metadata')
+      }
+
+      // Update the media object to reflect changes
+      if ((media as any).title !== undefined) {
+        (media as any).title = data.title
+      }
+      if ((media as any).description !== undefined) {
+        (media as any).description = data.description
+      }
+
+      showSuccess('Image metadata updated successfully!')
+    },
+  })
+
+  // Compatibility layer: Add editing state and wrap metadataFormBase with old API
+  const [isEditing, setIsEditing] = React.useState(false)
+
+  const metadataForm = React.useMemo(() => ({
+    title: metadataFormBase.formData.title,
+    description: metadataFormBase.formData.description,
+    setTitle: (val: string) => metadataFormBase.updateField('title', val),
+    setDescription: (val: string) => metadataFormBase.updateField('description', val),
+    isEditing,
+    isSaving: metadataFormBase.loading,
+    isDirty: metadataFormBase.isDirty,
+    startEditing: () => setIsEditing(true),
+    handleSave: async () => {
+      await metadataFormBase.submitForm()
+      setIsEditing(false)
+    },
+    handleCancel: () => {
+      metadataFormBase.resetForm()
+      setIsEditing(false)
+    },
+  }), [metadataFormBase.formData.title, metadataFormBase.formData.description, metadataFormBase.loading, metadataFormBase.isDirty, isEditing])
+
+  // Initialize form when modal opens or media changes
   React.useEffect(() => {
     if (isOpen && media) {
-      setEditedTitle((media as any).title || showcase?.caption || '')
-      setEditedDescription((media as any).description || '')
-      setIsEditingMetadata(false)
+      metadataFormBase.updateMultipleFields({
+        title: (media as any).title || showcase?.caption || '',
+        description: (media as any).description || '',
+      })
     }
   }, [isOpen, media, showcase])
 
@@ -82,70 +142,13 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
 
   // Clean up duplicate prompts and replace {subject} with actual subject used
   // Returns both cleaned text and the subject for highlighting
-  const cleanPromptWithSubject = (text: string): { cleanedText: string; subject: string | null } => {
-    if (!text) return { cleanedText: text, subject: null }
-
-    // Extract the actual subject from the prompt if it exists
-    let actualSubject = generationMetadata?.user_subject || null
-
-    // Check if text has duplicate pattern by looking for the preset template repeated
-    const parts = text.split(',').map(p => p.trim())
-    if (parts.length >= 6) {
-      // Find the midpoint and check if the pattern repeats
-      const midpoint = Math.floor(parts.length / 2)
-      const firstHalf = parts.slice(0, midpoint)
-      const secondHalf = parts.slice(midpoint)
-
-      // Check if second half is very similar to first half (accounting for subject replacement)
-      let duplicateCount = 0
-      for (let i = 0; i < Math.min(firstHalf.length, secondHalf.length); i++) {
-        if (firstHalf[i] === secondHalf[i] || secondHalf[i].includes('{subject}')) {
-          duplicateCount++
-        }
-
-        // Extract actual subject by comparing first and second half
-        if (!actualSubject && firstHalf[i] !== secondHalf[i] && secondHalf[i].includes('{subject}')) {
-          // The difference in first half is likely the actual subject used
-          const firstPart = firstHalf[i].toLowerCase()
-          const secondPart = secondHalf[i].toLowerCase().replace('{subject}', '').trim()
-
-          // Extract the subject by finding what's different
-          const words = firstPart.split(' ')
-          const templateWords = secondPart.split(' ')
-          const subjectWords = words.filter(w => !templateWords.includes(w))
-          if (subjectWords.length > 0 && subjectWords.length < 10) {
-            actualSubject = subjectWords.join(' ')
-          }
-        }
-      }
-
-      // If more than 70% match, it's a duplicate - use first half only
-      if (duplicateCount / Math.min(firstHalf.length, secondHalf.length) > 0.7) {
-        text = firstHalf.join(', ')
-      }
-    }
-
-    // Determine the subject to use for replacement
-    const subjectReplacement = actualSubject ||
-                               (generationMetadata?.generation_mode === 'image-to-image' ? 'this image' : '')
-
-    // Replace {subject} placeholder with actual subject, or remove it if no subject found
-    if (subjectReplacement) {
-      const cleanedText = text.replace(/\{subject\}/g, subjectReplacement).replace(/,\s*,/g, ',').trim()
-      return { cleanedText, subject: subjectReplacement }
-    } else {
-      // Remove {subject} and clean up resulting empty parts
-      const cleanedText = text.replace(/\{subject\}/g, '').replace(/\s+of\s*,/g, ',').replace(/,\s*,/g, ',').trim()
-      return { cleanedText, subject: null }
-    }
-  }
-
-  const promptResult = cleanPromptWithSubject(rawPrompt)
-  const enhancedPromptResult = cleanPromptWithSubject(rawEnhancedPrompt)
+  // Use utility functions for prompt cleaning
+  const promptResult = cleanPromptWithSubject(rawPrompt, generationMetadata?.user_subject)
+  const enhancedPromptResult = cleanPromptWithSubject(rawEnhancedPrompt, generationMetadata?.user_subject)
 
   const prompt = promptResult.cleanedText
   const enhancedPrompt = enhancedPromptResult.cleanedText
-  const highlightedSubject = enhancedPromptResult.subject || promptResult.subject
+  const highlightedSubject = getSubjectFromPrompt(generationMetadata?.user_subject, prompt)
 
   // Helper to highlight the subject in green and italic
   const highlightSubjectInText = (text: string) => {
@@ -175,68 +178,8 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
      presetStyle === 'cartoon' ? 'Cartoon' :
      presetStyle.charAt(0).toUpperCase() + presetStyle.slice(1))
   
-  // Get style badge emoji
-  const getStyleBadge = (style: string) => {
-    switch (style.toLowerCase()) {
-      case 'photorealistic': return '📸 Photorealistic'
-      case 'artistic': return '🎨 Artistic'
-      case 'cartoon': return '🎭 Cartoon'
-      case 'vintage': return '📻 Vintage'
-      case 'cyberpunk': return '🤖 Cyberpunk'
-      case 'watercolor': return '🎨 Watercolor'
-      case 'impressionist': return '🎨 Impressionist'
-      case 'renaissance': return '🏛️ Renaissance'
-      case 'baroque': return '🎭 Baroque'
-      case 'art_deco': return '✨ Art Deco'
-      case 'pop_art': return '🎪 Pop Art'
-      case 'digital_art': return '💻 Digital Art'
-      case 'concept_art': return '🎮 Concept Art'
-      case 'fantasy': return '🧙 Fantasy'
-      case 'sci_fi': return '🚀 Sci-Fi'
-      case 'maximalist': return '🌈 Maximalist'
-      case 'surreal': return '🌌 Surreal'
-      case 'minimalist': return '⚪ Minimalist'
-      case 'abstract': return '🎭 Abstract'
-      case 'sketch': return '✏️ Sketch'
-      case 'oil_painting': return '🖼️ Oil Painting'
-      default: return `🎨 ${style.charAt(0).toUpperCase() + style.slice(1)}`
-    }
-  }
-  
-  // Get subject from stored userSubject (what user typed in "What are you creating?" or "image" for image-to-image)
-  // Fallback to extracting from prompt if userSubject is not available
-  const getSubject = () => {
-    // First try to get from stored userSubject
-    if (generationMetadata?.user_subject) {
-      // For image-to-image, show "image" as the subject
-      if (generationMetadata.user_subject === 'image') {
-        return 'image'
-      }
-      return generationMetadata.user_subject
-    }
-    
-    // Fallback: extract from prompt (for older generations)
-    const extractSubject = (promptText: string) => {
-      // Look for patterns like "of [subject]" or "with [subject]"
-      const patterns = [
-        /of ([^,]+?)(?:\s+with|\s+in|\s+and|,|$)/i,
-        /with ([^,]+?)(?:\s+and|\s+in|,|$)/i,
-        /featuring ([^,]+?)(?:\s+and|\s+in|,|$)/i
-      ]
-      
-      for (const pattern of patterns) {
-        const match = promptText.match(pattern)
-        if (match && match[1]) {
-          return match[1].trim()
-        }
-      }
-      return null
-    }
-    
-    return extractSubject(prompt || '')
-  }
-  
-  const subject = getSubject()
+  // Get subject using the local logic (needs context from generationMetadata)
+  const subject = getSubjectFromPrompt(generationMetadata?.user_subject, prompt)
   
   // Function to highlight prompt with different colors
   const highlightPrompt = (promptText: string) => {
@@ -490,69 +433,6 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
     }
   }
 
-  const handleSaveMetadata = async () => {
-    if (!media.id) {
-      showError('Cannot update: Media ID not found')
-      return
-    }
-
-    setIsSavingMetadata(true)
-
-    try {
-      console.log('💾 Saving metadata:', { mediaId: media.id, title: editedTitle, description: editedDescription })
-
-      const response = await fetch(`/api/showcase-media/${media.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
-          title: editedTitle.trim(),
-          description: editedDescription.trim()
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update metadata')
-      }
-
-      const result = await response.json()
-      console.log('✅ Metadata saved successfully:', result)
-
-      showSuccess('Image metadata updated successfully!')
-      setIsEditingMetadata(false)
-
-      // Update the media object to reflect changes immediately
-      if ((media as any).title !== undefined) {
-        (media as any).title = editedTitle.trim()
-      }
-      if ((media as any).description !== undefined) {
-        (media as any).description = editedDescription.trim()
-      }
-
-    } catch (error: any) {
-      console.error('❌ Error saving metadata:', error)
-      showError('Failed to save changes', error.message)
-    } finally {
-      setIsSavingMetadata(false)
-    }
-  }
-
-  const handleCancelEdit = () => {
-    // Reset to original values
-    setEditedTitle((media as any).title || showcase?.caption || '')
-    setEditedDescription((media as any).description || '')
-    setIsEditingMetadata(false)
-  }
-
-  const formatLabel = (value: string) => {
-    return value.split('-').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ')
-  }
-
   const getIconForParameter = (param: string) => {
     switch (param) {
       case 'cameraAngle':
@@ -663,103 +543,25 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
                 </div>
               </div>
               
-              {/* Image Metadata - Editable */}
-              <div className="p-4 bg-muted/50 rounded-lg border border-border space-y-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-foreground">Image Details</span>
-                  {canEdit && !isEditingMetadata && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsEditingMetadata(true)}
-                      className="h-7 px-2 text-xs"
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Edit
-                    </Button>
-                  )}
-                </div>
-
-                {isEditingMetadata ? (
-                  // Edit mode
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="image-title" className="text-xs font-medium mb-1.5">Title</Label>
-                      <Input
-                        id="image-title"
-                        value={editedTitle}
-                        onChange={(e) => setEditedTitle(e.target.value)}
-                        placeholder="Enter image title..."
-                        maxLength={200}
-                        className="h-9"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="image-description" className="text-xs font-medium mb-1.5">Description</Label>
-                      <Textarea
-                        id="image-description"
-                        value={editedDescription}
-                        onChange={(e) => setEditedDescription(e.target.value)}
-                        placeholder="Enter image description..."
-                        rows={3}
-                        maxLength={1000}
-                        className="text-sm resize-none"
-                      />
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      <Button
-                        onClick={handleSaveMetadata}
-                        disabled={isSavingMetadata}
-                        size="sm"
-                        className="h-8 px-3"
-                      >
-                        {isSavingMetadata ? (
-                          <>
-                            <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Check className="h-3 w-3 mr-1.5" />
-                            Save
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleCancelEdit}
-                        size="sm"
-                        className="h-8 px-3"
-                      >
-                        <X className="h-3 w-3 mr-1.5" />
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  // View mode
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2">
-                      <span className="text-xs font-medium text-muted-foreground min-w-[70px]">Title:</span>
-                      <span className="text-sm font-semibold text-foreground flex-1">
-                        {editedTitle || 'Untitled'}
-                      </span>
-                    </div>
-                    {editedDescription && (
-                      <div className="flex items-start gap-2">
-                        <span className="text-xs font-medium text-muted-foreground min-w-[70px]">Description:</span>
-                        <span className="text-sm text-muted-foreground flex-1">{editedDescription}</span>
-                      </div>
-                    )}
-                    {showcase && (
-                      <div className="flex items-center gap-2 pt-1 border-t border-border/50 mt-2">
-                        <span className="text-xs font-medium text-muted-foreground min-w-[70px]">Creator:</span>
-                        <span className="text-sm text-foreground">@{showcase.creator.handle}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+              {/* Image Metadata - Editable (using BasicInfoSection component) */}
+              <BasicInfoSection
+                title={metadataForm.title}
+                description={metadataForm.description}
+                onTitleChange={metadataForm.setTitle}
+                onDescriptionChange={metadataForm.setDescription}
+                isEditing={metadataForm.isEditing}
+                isSaving={metadataForm.isSaving}
+                canEdit={!!canEdit}
+                onEdit={metadataForm.startEditing}
+                onSave={async () => {
+                  try {
+                    await metadataForm.handleSave()
+                  } catch (error) {
+                    showError('Failed to save changes', error instanceof Error ? error.message : 'Unknown error')
+                  }
+                }}
+                onCancel={metadataForm.handleCancel}
+              />
               
               {/* Tabs */}
               <div className="flex border-b border-border">
@@ -1338,7 +1140,7 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
             <Button onClick={handleCreatePreset} disabled={isCreatingPreset || !presetForm.name.trim()}>
               {isCreatingPreset ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <LoadingSpinner size="sm" />
                   Saving...
                 </>
               ) : (

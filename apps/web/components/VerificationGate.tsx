@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import { Shield, AlertTriangle, Lock, CheckCircle } from 'lucide-react'
 import { VerificationBadge } from './VerificationBadge'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface VerificationGateProps {
   feature: 'view_gigs' | 'create_gigs' | 'apply_to_gigs' | 'messaging' | 'create_showcases'
   children: React.ReactNode
@@ -78,7 +79,7 @@ export function VerificationGate({ feature, children, fallback }: VerificationGa
   if (canAccess === null) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <LoadingSpinner size="lg" />
       </div>
     )
   }

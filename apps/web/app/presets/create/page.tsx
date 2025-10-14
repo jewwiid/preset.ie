@@ -22,8 +22,7 @@ import {
   Info,
   Store,
   Plus,
-  X,
-} from 'lucide-react';
+  X} from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
@@ -34,8 +33,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from '../../../components/ui/select';
+  SelectValue} from '../../../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Label } from '../../../components/ui/label';
 import { Switch } from '../../../components/ui/switch';
@@ -50,8 +48,7 @@ import {
   ASPECT_RATIOS,
   RESOLUTIONS,
   CONSISTENCY_LEVELS,
-  MODEL_VERSIONS,
-} from './constants/presetConfig';
+  MODEL_VERSIONS} from './constants/presetConfig';
 
 function CreatePresetPageContent() {
   const router = useRouter();
@@ -76,8 +73,7 @@ function CreatePresetPageContent() {
     removeTag,
     addMarketplaceTag,
     removeMarketplaceTag,
-    validate,
-  } = usePresetForm();
+    validate} = usePresetForm();
 
   // Load URL parameters on mount (from playground)
   useEffect(() => {
@@ -119,8 +115,7 @@ function CreatePresetPageContent() {
       const response = await fetch('/api/presets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(presetData),
-      });
+        body: JSON.stringify(presetData)});
 
       if (!response.ok) throw new Error('Failed to save preset');
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Sparkles, X, CheckCircle, Loader2, Move, Maximize2, Camera, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface MasonryItem {
   id: string
@@ -341,7 +342,7 @@ export default function DraggableMasonryGrid({
                     </>
                   ) : (
                     <>
-                      <Loader2 className="w-10 h-10 text-primary animate-spin mb-2" />
+                      <LoadingSpinner size="xl" />
                       <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-primary transition-all duration-500"

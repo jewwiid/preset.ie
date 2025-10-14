@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AsyncButton } from '@/components/ui/async-button';
 import { CreditCard, Coins, Shield, Euro, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthHeaders } from '@/lib/hooks/useAuthToken';
@@ -213,10 +215,7 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
             {paymentMethod === 'credits' && (
               <div className="mt-3">
                 {creditsLoading ? (
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground-500">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-400"></div>
-                    <span>Loading credit balance...</span>
-                  </div>
+                  <LoadingSpinner size="sm" text="Loading credit balance..." />
                 ) : userCredits ? (
                   <div className={`p-3 rounded-lg ${
                     canPayWithCredits() ? 'bg-primary-50 border border-primary/20' : 'bg-destructive-50 border border-destructive-200'
@@ -275,7 +274,7 @@ export default function PaymentModal({ order, onSuccess, onCancel }: PaymentModa
               disabled={loading || (paymentMethod === 'credits' && !canPayWithCredits())}
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
+                <LoadingSpinner size="sm" />
               ) : (
                 <>
                   <Euro className="h-4 w-4 mr-2" />

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Sparkles,
   MapPin,
@@ -136,7 +137,7 @@ export function RoleRecommendations({
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+          <LoadingSpinner size="lg" />
         </CardContent>
       </Card>
     )

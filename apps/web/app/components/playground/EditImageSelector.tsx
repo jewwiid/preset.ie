@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Edit3, Heart, Download, X } from 'lucide-react'
 import { downloadImageWithWatermark } from '../../../lib/watermark-utils'
 import { useToast } from '@/components/ui/toast'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface PlaygroundProject {
   id: string
@@ -149,7 +150,7 @@ export default function EditImageSelector({
                         title="Save to Gallery"
                       >
                         {savingImage === image.url ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                          <LoadingSpinner size="sm" />
                         ) : (
                           <Heart className="h-4 w-4" />
                         )}

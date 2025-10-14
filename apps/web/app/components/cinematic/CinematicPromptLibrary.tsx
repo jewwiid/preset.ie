@@ -1,20 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Plus, 
-  Star, 
-  Filter, 
-  Camera, 
-  Film, 
-  Palette, 
+import React, { useState } from 'react';
+import {
+  Plus,
+  Star,
+  Camera,
+  Film,
+  Palette,
   Settings,
   Eye,
   Copy,
-  Heart,
   TrendingUp,
-  Users,
   Zap
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
@@ -28,7 +24,10 @@ import { Label } from '../../../components/ui/label';
 import { Textarea } from '../../../components/ui/textarea';
 import { Switch } from '../../../components/ui/switch';
 import { Separator } from '../../../components/ui/separator';
-import { CinematicParameters, CINEMATIC_PARAMETERS } from '../../../../../packages/types/src/cinematic-parameters';
+import { CinematicParameters, CINEMATIC_PARAMETERS } from '@preset/types';
+import { useCinematicLibrary } from '../../../hooks/useCinematicLibrary';
+import { EmptyLibraryState } from '../../../components/cinematic/EmptyLibraryState';
+import { LibrarySearchFilters } from '../../../components/cinematic/LibrarySearchFilters';
 
 interface CinematicPromptTemplate {
   id: string;
@@ -82,18 +81,10 @@ export default function CinematicPromptLibrary({
   onMoodSelect,
   compact = false
 }: CinematicPromptLibraryProps) {
-  const [activeTab, setActiveTab] = useState('templates');
-  const [templates, setTemplates] = useState<CinematicPromptTemplate[]>([]);
-  const [directors, setDirectors] = useState<CustomDirector[]>([]);
-  const [moods, setMoods] = useState<CustomSceneMood[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  // Search and filter state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
-  
-  // Create dialog state
+  // Use the custom hook for all library data and state management
+  const library = useCinematicLibrary();
+
+  // Create dialog state (keeping these as they're form-specific)
   const [showCreateTemplate, setShowCreateTemplate] = useState(false);
   const [showCreateDirector, setShowCreateDirector] = useState(false);
   const [showCreateMood, setShowCreateMood] = useState(false);
@@ -104,7 +95,7 @@ export default function CinematicPromptLibrary({
     description: '',
     category: 'portrait',
     base_prompt: '',
-    cinematic_parameters: {} as Partial<CinematicParameters>,
+      cinematic_parameters: {} as Partial<CinematicParameters>,
     difficulty: 'beginner' as const,
     tags: [] as string[],
     is_public: false
@@ -129,82 +120,6 @@ export default function CinematicPromptLibrary({
     is_public: false
   });
 
-  // Load data on component mount
-  useEffect(() => {
-    loadTemplates();
-    loadDirectors();
-    loadMoods();
-  }, []);
-
-  const loadTemplates = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (selectedCategory !== 'all') params.append('category', selectedCategory);
-      if (selectedDifficulty !== 'all') params.append('difficulty', selectedDifficulty);
-      if (searchQuery) params.append('search', searchQuery);
-      
-      const response = await fetch(`/api/cinematic-prompts?${params}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setTemplates(data.templates || []);
-      } else {
-        setTemplates([]);
-      }
-    } catch (error) {
-      console.error('Error loading templates:', error);
-      setTemplates([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadDirectors = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('search', searchQuery);
-      
-      const response = await fetch(`/api/custom-directors?${params}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setDirectors(data.directors || []);
-      } else {
-        setDirectors([]);
-      }
-    } catch (error) {
-      console.error('Error loading directors:', error);
-      setDirectors([]);
-    }
-  };
-
-  const loadMoods = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('search', searchQuery);
-      
-      const response = await fetch(`/api/custom-moods?${params}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setMoods(data.moods || []);
-      } else {
-        setMoods([]);
-      }
-    } catch (error) {
-      console.error('Error loading moods:', error);
-      setMoods([]);
-    }
-  };
-
-  // Reload data when filters change
-  useEffect(() => {
-    loadTemplates();
-    loadDirectors();
-    loadMoods();
-  }, [searchQuery, selectedCategory, selectedDifficulty]);
-
   const handleTemplateSelect = (template: CinematicPromptTemplate) => {
     onTemplateSelect?.(template);
   };
@@ -228,83 +143,50 @@ export default function CinematicPromptLibrary({
   };
 
   const createTemplate = async () => {
-    try {
-      const response = await fetch('/api/cinematic-prompts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(templateForm)
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        setTemplates(prev => [data.template, ...prev]);
-        setShowCreateTemplate(false);
-        setTemplateForm({
-          name: '',
-          description: '',
-          category: 'portrait',
-          base_prompt: '',
+    const result = await library.createTemplate(templateForm);
+    if (result.success) {
+      setShowCreateTemplate(false);
+      setTemplateForm({
+        name: '',
+        description: '',
+        category: 'portrait',
+        base_prompt: '',
           cinematic_parameters: {},
-          difficulty: 'beginner',
-          tags: [],
-          is_public: false
-        });
-      }
-    } catch (error) {
-      console.error('Error creating template:', error);
+        difficulty: 'beginner',
+        tags: [],
+        is_public: false
+      });
     }
   };
 
   const createDirector = async () => {
-    try {
-      const response = await fetch('/api/custom-directors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(directorForm)
+    const result = await library.createDirector(directorForm);
+    if (result.success) {
+      setShowCreateDirector(false);
+      setDirectorForm({
+        name: '',
+        description: '',
+        visual_style: '',
+        signature_elements: [],
+        example_prompts: [],
+        is_public: false
       });
-      
-      const data = await response.json();
-      if (data.success) {
-        setDirectors(prev => [data.director, ...prev]);
-        setShowCreateDirector(false);
-        setDirectorForm({
-          name: '',
-          description: '',
-          visual_style: '',
-          signature_elements: [],
-          example_prompts: [],
-          is_public: false
-        });
-      }
-    } catch (error) {
-      console.error('Error creating director:', error);
     }
   };
 
   const createMood = async () => {
-    try {
-      const response = await fetch('/api/custom-moods', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(moodForm)
+    const result = await library.createMood(moodForm);
+    if (result.success) {
+      setShowCreateMood(false);
+      setMoodForm({
+        name: '',
+        description: '',
+        color_palette: '',
+        lighting_style: '',
+        atmosphere_description: '',
+        example_prompts: [],
+        is_public: false
       });
-      
-      const data = await response.json();
-      if (data.success) {
-        setMoods(prev => [data.mood, ...prev]);
-        setShowCreateMood(false);
-        setMoodForm({
-          name: '',
-          description: '',
-          color_palette: '',
-          lighting_style: '',
-          atmosphere_description: '',
-          example_prompts: [],
-          is_public: false
-        });
-      }
-    } catch (error) {
-      console.error('Error creating mood:', error);
     }
   };
 
@@ -338,17 +220,13 @@ export default function CinematicPromptLibrary({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search templates, directors, moods..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <LibrarySearchFilters
+            searchQuery={library.searchQuery}
+            onSearchChange={library.setSearchQuery}
+            showFilters={false}
+          />
+
+          <Tabs value={library.activeTab} onValueChange={library.setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="templates">Templates</TabsTrigger>
               <TabsTrigger value="directors">Directors</TabsTrigger>
@@ -357,20 +235,18 @@ export default function CinematicPromptLibrary({
             
             <TabsContent value="templates" className="space-y-2">
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {loading ? (
+                {library.loading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="text-sm text-muted-foreground">Loading templates...</div>
                   </div>
-                ) : templates.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Film className="h-8 w-8 text-muted-foreground mb-2" />
-                    <div className="text-sm text-muted-foreground">No cinematic templates available</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Templates will appear here when they're added to the database
-                    </div>
-                  </div>
+                ) : library.templates.length === 0 ? (
+                  <EmptyLibraryState
+                    icon={Film}
+                    title="No cinematic templates available"
+                    description="Templates will appear here when they're added to the database"
+                  />
                 ) : (
-                  templates.map((template) => (
+                  library.templates.map((template) => (
                   <div
                     key={template.id}
                     className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
@@ -398,20 +274,18 @@ export default function CinematicPromptLibrary({
             
             <TabsContent value="directors" className="space-y-2">
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {loading ? (
+                {library.loading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="text-sm text-muted-foreground">Loading directors...</div>
                   </div>
-                ) : directors.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Film className="h-8 w-8 text-muted-foreground mb-2" />
-                    <div className="text-sm text-muted-foreground">No custom directors available</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Directors will appear here when they're added to the database
-                    </div>
-                  </div>
+                ) : library.directors.length === 0 ? (
+                  <EmptyLibraryState
+                    icon={Camera}
+                    title="No custom directors available"
+                    description="Directors will appear here when they're added to the database"
+                  />
                 ) : (
-                  directors.map((director) => (
+                  library.directors.map((director) => (
                   <div
                     key={director.id}
                     className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
@@ -437,20 +311,18 @@ export default function CinematicPromptLibrary({
             
             <TabsContent value="moods" className="space-y-2">
               <div className="max-h-64 overflow-y-auto space-y-2">
-                {loading ? (
+                {library.loading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="text-sm text-muted-foreground">Loading moods...</div>
                   </div>
-                ) : moods.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Palette className="h-8 w-8 text-muted-foreground mb-2" />
-                    <div className="text-sm text-muted-foreground">No custom moods available</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Moods will appear here when they're added to the database
-                    </div>
-                  </div>
+                ) : library.moods.length === 0 ? (
+                  <EmptyLibraryState
+                    icon={Palette}
+                    title="No custom moods available"
+                    description="Moods will appear here when they're added to the database"
+                  />
                 ) : (
-                  moods.map((mood) => (
+                  library.moods.map((mood) => (
                   <div
                     key={mood.id}
                     className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
@@ -486,49 +358,19 @@ export default function CinematicPromptLibrary({
           <Film className="h-5 w-5" />
           Cinematic Prompt Library
         </CardTitle>
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search templates, directors, moods..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="portrait">Portrait</SelectItem>
-                <SelectItem value="landscape">Landscape</SelectItem>
-                <SelectItem value="cinematic">Cinematic</SelectItem>
-                <SelectItem value="fashion">Fashion</SelectItem>
-                <SelectItem value="architecture">Architecture</SelectItem>
-                <SelectItem value="nature">Nature</SelectItem>
-                <SelectItem value="abstract">Abstract</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Difficulty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Levels</SelectItem>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <LibrarySearchFilters
+          searchQuery={library.searchQuery}
+          onSearchChange={library.setSearchQuery}
+          selectedCategory={library.selectedCategory}
+          onCategoryChange={library.setSelectedCategory}
+          selectedDifficulty={library.selectedDifficulty}
+          onDifficultyChange={library.setSelectedDifficulty}
+          showFilters={true}
+        />
       </CardHeader>
-      
+
       <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={library.activeTab} onValueChange={library.setActiveTab}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="templates" className="flex items-center gap-2">
               <Film className="h-4 w-4" />
@@ -552,12 +394,12 @@ export default function CinematicPromptLibrary({
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Prompt Templates</h3>
               <Badge variant="outline">
-                {templates.length} templates
+                {library.templates.length} templates
               </Badge>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {templates.map((template) => (
+              {library.templates.map((template) => (
                 <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -607,12 +449,12 @@ export default function CinematicPromptLibrary({
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Custom Directors</h3>
               <Badge variant="outline">
-                {directors.length} directors
+                {library.directors.length} directors
               </Badge>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {directors.map((director) => (
+              {library.directors.map((director) => (
                 <Card key={director.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -656,12 +498,12 @@ export default function CinematicPromptLibrary({
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Custom Scene Moods</h3>
               <Badge variant="outline">
-                {moods.length} moods
+                {library.moods.length} moods
               </Badge>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {moods.map((mood) => (
+              {library.moods.map((mood) => (
                 <Card key={mood.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">

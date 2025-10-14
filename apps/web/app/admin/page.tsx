@@ -278,7 +278,7 @@ export default function AdminDashboard() {
         acc[reason].count++
         acc[reason].credits += refund.credits_refunded
         return acc
-      }, {})
+      }, )
 
       setRefundMetrics({
         totalRefunds,

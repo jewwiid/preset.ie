@@ -47,7 +47,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
   const { conversationId, enableRealtimeUpdates = true } = options
 
   // State
-  const [messageStatuses, setMessageStatuses] = useState<Record<string, MessageStatusData>>({})
+  const [messageStatuses, setMessageStatuses] = useState<Record<string, MessageStatusData>>()
   const [isConnected, setIsConnected] = useState(false)
   const [lastUpdate, setLastUpdate] = useState<string | null>(null)
 
@@ -277,7 +277,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
 
       // Update local state
       if (data) {
-        const statusMap: Record<string, MessageStatusData> = {}
+        const statusMap: Record<string, MessageStatusData> = 
         data.forEach(message => {
           statusMap[message.id] = {
             messageId: message.id,

@@ -16,6 +16,7 @@ import { DashboardMatchmakingCard } from '../../components/dashboard/DashboardMa
 import { UserReferralCard } from '../../components/dashboard/UserReferralCard'
 import SavedMediaGallery from '../components/playground/SavedImagesGallery'
 import { BannerPosition } from '../../lib/types/dashboard'
+import { LoadingSpinner } from '../../components/ui/loading-spinner'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -55,12 +56,7 @@ export default function Dashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-muted"></div>
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent absolute top-0"></div>
-        </div>
-      </div>
+      <LoadingSpinner size="xl" fullScreen />
     )
   }
 
@@ -91,11 +87,11 @@ export default function Dashboard() {
                     transformOrigin: 'center center'
                   }
                 } catch {
-                  return {}
+                  return 
                 }
               })()}
             />
-            <div className="absolute inset-0 bg-black/40"></div>
+            <div className="absolute inset-0 bg-foreground/40"></div>
           </div>
         ) : (
           <div className="absolute inset-0 bg-background">

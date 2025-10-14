@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { useIntersectionObserver } from '../../hooks/useIntersectionObserver'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface ProgressiveImageProps {
   src: string
   alt: string

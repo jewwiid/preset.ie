@@ -74,13 +74,45 @@ export async function GET(request: NextRequest) {
         referredUserId: rc.referred_user_id
       })) ?? [];
 
+    // If user doesn't have an invite code, generate one
+    let inviteCode = profile.invite_code;
+    if (!inviteCode) {
+      try {
+        // Generate new code by calling the database function
+        const { data: codeData, error: codeError } = await supabase
+          .rpc('generate_invite_code');
+
+        if (!codeError && codeData) {
+          inviteCode = codeData;
+          
+          // Update user profile with new code
+          await supabase
+            .from('users_profile')
+            .update({ invite_code: inviteCode })
+            .eq('id', profile.id);
+
+          // Create invite code record
+          await supabase
+            .from('invite_codes')
+            .insert({
+              code: inviteCode,
+              created_by_user_id: profile.id,
+              status: 'active'
+            });
+        }
+      } catch (genError) {
+        console.error('Error auto-generating invite code:', genError);
+        // Continue with null code - UI will handle it
+      }
+    }
+
     return NextResponse.json({
-      inviteCode: profile.invite_code,
-      totalReferrals: profile.total_referrals,
+      inviteCode: inviteCode || null,
+      totalReferrals: profile.total_referrals || 0,
       totalCreditsEarned,
       pendingReferrals: pendingCount,
       successfulReferrals,
-      shareUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com'}/auth/signup?invite=${profile.invite_code}`
+      shareUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://presetie.com'}/auth/signup?invite=${inviteCode || ''}`
     });
 
   } catch (error) {

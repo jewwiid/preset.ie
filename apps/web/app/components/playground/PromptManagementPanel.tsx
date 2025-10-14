@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Plus, Edit, Trash2, Star, Users, Search, Filter, Copy, ExternalLink } from 'lucide-react'
 import { useFeedback } from '@/components/feedback/FeedbackContext'
 import { useAuth } from '@/lib/auth-context'
@@ -610,7 +611,7 @@ const PromptManagementPanel: React.FC<PromptManagementPanelProps> = ({
       {/* Presets Grid */}
       {loading ? (
         <div className="flex items-center justify-center h-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <LoadingSpinner size="lg" />
         </div>
       ) : filteredPresets.length === 0 ? (
         <div className="text-center py-12">

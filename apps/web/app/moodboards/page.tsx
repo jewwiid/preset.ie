@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '../../lib/auth-context'
 import { supabase } from '../../lib/supabase'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Plus, Grid, List, Image as ImageIcon, Calendar, Loader2, Trash2, Edit, Eye, Palette } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -164,7 +165,7 @@ export default function MoodboardsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <LoadingSpinner size="lg" />
           </div>
         ) : moodboards.length === 0 ? (
           <div className="text-center py-16">
@@ -317,7 +318,7 @@ export default function MoodboardsPage() {
                       disabled={deleting === moodboard.id}
                     >
                       {deleting === moodboard.id ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <LoadingSpinner size="sm" />
                       ) : (
                         <Trash2 className="w-3.5 h-3.5" />
                       )}
@@ -402,7 +403,7 @@ export default function MoodboardsPage() {
                       disabled={deleting === moodboard.id}
                     >
                       {deleting === moodboard.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <LoadingSpinner size="sm" />
                       ) : (
                         <Trash2 className="w-4 h-4" />
                       )}

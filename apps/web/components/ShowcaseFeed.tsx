@@ -8,6 +8,7 @@ import { Heart, MessageCircle, User, Image as ImageIcon, Film, Palette, Video, F
 import { useAuth } from '@/lib/auth-context';
 import { Button } from './ui/button';
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface ShowcaseMedia {
   id: string;
   url: string;
@@ -122,7 +123,7 @@ export default function ShowcaseFeed({
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+        <LoadingSpinner size="xl" />
         <p className="text-muted-foreground-600">Loading showcases...</p>
       </div>
     );

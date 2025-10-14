@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
-import { 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   Mail, 
   CheckCircle2, 
   AlertCircle,
@@ -150,7 +151,7 @@ function SignupSuccessContent() {
               >
                 {loading ? (
                   <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                    <LoadingSpinner size="sm" />
                     Checking...
                   </div>
                 ) : (

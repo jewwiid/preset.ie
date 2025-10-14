@@ -5,6 +5,7 @@ import { Camera, User, MapPin, Briefcase, Instagram, Globe, Phone, Calendar, Spa
 import { DatePicker } from './ui/date-picker'
 import { MultiSelectCombobox } from './ui/combobox'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface EnhancedProfileFormProps {
   formData: any
   setFormData: (data: any) => void
@@ -719,7 +720,7 @@ export default function EnhancedProfileForm({
               >
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                    <LoadingSpinner size="sm" />
                     Creating Profile...
                   </>
                 ) : (

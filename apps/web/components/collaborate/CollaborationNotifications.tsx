@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Bell, 
   Users, 
@@ -275,7 +276,7 @@ export default function CollaborationNotifications({
         <CardContent className="p-0">
           {loading ? (
             <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+              <LoadingSpinner size="lg" />
               <p className="text-muted-foreground-500">Loading notifications...</p>
             </div>
           ) : error ? (

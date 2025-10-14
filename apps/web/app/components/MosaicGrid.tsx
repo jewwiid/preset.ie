@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Sparkles, X, CheckCircle, Loader2 } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface MosaicItem {
   id: string
   type: 'image' | 'video' | 'pexels'
@@ -272,7 +273,7 @@ export default function MosaicGrid({
                       return (
                         <>
                           <div className="relative mb-4">
-                            <Loader2 className="w-10 h-10 text-primary-400 animate-spin" />
+                            <LoadingSpinner size="xl" />
                             {task && (
                               <div className="absolute inset-0 flex items-center justify-center">
                                 <span className="text-sm font-bold text-primary-foreground">

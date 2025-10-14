@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { useProfile, useProfileUI, useProfileEditing, useProfileForm } from '../context/ProfileContext'
-import { 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   Edit3, 
   Globe, 
   Lock, 

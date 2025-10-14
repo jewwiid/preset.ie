@@ -75,7 +75,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
   const [isConnected, setIsConnected] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectionError, setConnectionError] = useState<string | null>(null)
-  const [typingUsers, setTypingUsers] = useState<Record<string, TypingEvent>>({})
+  const [typingUsers, setTypingUsers] = useState<Record<string, TypingEvent>>()
 
   // Refs for cleanup and avoiding stale closures
   const channelsRef = useRef<RealtimeChannel[]>([])
@@ -480,7 +480,7 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
     cleanupChannels()
     setIsConnected(false)
     setIsConnecting(false)
-    setTypingUsers({})
+    setTypingUsers()
     
     if (onConnectionChange) {
       onConnectionChange(false)

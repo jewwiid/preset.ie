@@ -9,15 +9,13 @@ import { Calendar } from "./calendar"
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
-} from "./popover"
+  PopoverTrigger} from "./popover"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "./select"
+  SelectValue} from "./select"
 
 interface DatePickerProps {
   date?: Date
@@ -38,8 +36,7 @@ export function DatePicker({
   disabled = false,
   maxDate,
   minDate,
-  error = false,
-}: DatePickerProps) {
+  error = false}: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
   const [currentMonth, setCurrentMonth] = React.useState<Date>(date || new Date())
 
@@ -226,8 +223,7 @@ export function DatePicker({
             day_outside: "text-muted-foreground-400 opacity-50",
             day_disabled: "text-muted-foreground-400 opacity-50 cursor-not-allowed",
             day_range_middle: "aria-selected:bg-muted-100 aria-selected:text-muted-foreground-900",
-            day_hidden: "invisible",
-          }}
+            day_hidden: "invisible"}}
         />
       </PopoverContent>
     </Popover>

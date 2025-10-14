@@ -170,150 +170,135 @@ Join a growing community of designers, photographers, videographers, and creativ
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Invite Code Section */}
-        <div className="p-4 border-2 border-primary/20 rounded-lg bg-primary/5">
-          <div className="text-sm font-medium text-muted-foreground mb-2">Your Invite Code</div>
-          <div className="flex items-center justify-between gap-4">
-            <code className="text-2xl font-bold font-mono tracking-wider text-primary">
-              {stats.inviteCode}
-            </code>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={copyLink}
-                className="min-w-[80px]"
-              >
-                {copied === 'link' ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-1" />
-                    Copy Link
-                  </>
-                )}
-              </Button>
-              <Button
-                size="sm"
-                onClick={copyShareMessage}
-                className="min-w-[80px]"
-              >
-                {copied === 'share' ? (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Share2 className="h-4 w-4 mr-1" />
-                    Share
-                  </>
-                )}
-              </Button>
+        {/* Two Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Invite Code & Actions */}
+          <div className="space-y-4">
+            {/* Invite Code Section */}
+            <div className="p-4 border-2 border-primary/20 rounded-lg bg-primary/5">
+              <div className="text-sm font-medium text-muted-foreground mb-2">Your Invite Code</div>
+              <div className="flex items-center justify-between gap-4">
+                <code className="text-2xl font-bold font-mono tracking-wider text-primary">
+                  {stats.inviteCode}
+                </code>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={copyLink}
+                    className="min-w-[80px]"
+                  >
+                    {copied === 'link' ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy Link
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={copyShareMessage}
+                    className="min-w-[80px]"
+                  >
+                    {copied === 'share' ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="h-4 w-4 mr-1" />
+                        Share
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                  <ExternalLink className="h-3 w-3 inline mr-1" />
+                  {stats.shareUrl}
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCustomize}
+                  className="text-xs"
+                >
+                  <Edit className="h-3 w-3 mr-1" />
+                  {showCustomize ? 'Hide' : 'Customize'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 border border-border rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xl font-bold">{stats.totalReferrals}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Total Referrals</div>
+                  </div>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="p-3 border border-border rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xl font-bold text-primary">{stats.totalCreditsEarned}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Credits Earned</div>
+                  </div>
+                  <Award className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+              <div className="p-3 border border-border rounded-lg bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xl font-bold text-accent-foreground">{stats.pendingReferrals}</div>
+                    <div className="text-xs text-muted-foreground mt-1">Pending</div>
+                  </div>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="mt-3 flex items-center justify-between">
-            <div className="text-xs text-muted-foreground">
-              <ExternalLink className="h-3 w-3 inline mr-1" />
-              {stats.shareUrl}
+
+          {/* Right Column - How It Works */}
+          <div className="space-y-4">
+            <div className="p-4 border border-border rounded-lg bg-muted/30">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">How It Works</h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-xs font-semibold text-primary">1</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Share your invite code or link with friends</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-xs font-semibold text-primary">2</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">They sign up using your code</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-xs font-semibold text-primary">3</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">You earn <span className="font-semibold text-primary">5 credits</span> when they complete their profile</p>
+                </div>
+              </div>
             </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleCustomize}
-              className="text-xs"
-            >
-              <Edit className="h-3 w-3 mr-1" />
-              {showCustomize ? 'Hide' : 'Customize Message'}
-            </Button>
           </div>
         </div>
 
-        {/* Customizable Share Message */}
-        {showCustomize && (
-          <div className="p-4 border border-border rounded-lg bg-muted/30 space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold">Customize Your Share Message</h4>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={resetToDefault}
-                className="text-xs"
-              >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                Reset
-              </Button>
-            </div>
-            <Textarea
-              value={customMessage}
-              onChange={(e) => setCustomMessage(e.target.value)}
-              rows={8}
-              className="font-mono text-sm"
-              placeholder="Edit your share message..."
-            />
-            <p className="text-xs text-muted-foreground">
-              💡 Tip: Keep your invite code and link in the message for best results
-            </p>
-          </div>
-        )}
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 border border-border rounded-lg bg-muted/30">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold">{stats.totalReferrals}</div>
-                <div className="text-xs text-muted-foreground mt-1">Total Referrals</div>
-              </div>
-              <Users className="h-8 w-8 text-muted-foreground opacity-50" />
-            </div>
-          </div>
-
-          <div className="p-4 border border-border rounded-lg bg-muted/30">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-green-600">{stats.totalCreditsEarned}</div>
-                <div className="text-xs text-muted-foreground mt-1">Credits Earned</div>
-              </div>
-              <Award className="h-8 w-8 text-green-600 opacity-50" />
-            </div>
-          </div>
-
-          <div className="p-4 border border-border rounded-lg bg-muted/30">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-yellow-600">{stats.pendingReferrals}</div>
-                <div className="text-xs text-muted-foreground mt-1">Pending</div>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-600 opacity-50" />
-            </div>
-          </div>
-        </div>
-
-        {/* How It Works */}
-        <div className="pt-4 border-t border-border">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            <h4 className="font-semibold text-sm">How It Works</h4>
-          </div>
-          <ol className="space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 shrink-0">1</Badge>
-              <span>Share your invite code or link with friends</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 shrink-0">2</Badge>
-              <span>They sign up using your code</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 shrink-0">3</Badge>
-              <span>You earn <strong className="text-foreground">5 credits</strong> when they complete their profile</span>
-            </li>
-          </ol>
-        </div>
 
         {/* Recent Referrals */}
         {stats.successfulReferrals.length > 0 && (
@@ -326,12 +311,12 @@ Join a growing community of designers, photographers, videographers, and creativ
                   className="flex items-center justify-between p-3 border border-border rounded-lg bg-muted/30"
                 >
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <CheckCircle className="h-4 w-4 text-primary" />
                     <span className="text-sm">
                       {new Date(referral.awardedAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <Badge variant="outline" className="text-green-600 border-green-600">
+                  <Badge variant="outline" className="text-primary border-primary">
                     +{referral.creditsEarned} credits
                   </Badge>
                 </div>

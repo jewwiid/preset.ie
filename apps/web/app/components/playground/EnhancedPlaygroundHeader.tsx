@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, Wand2, Edit3, Layers, Video, History, Zap, Users, Target, BookOpen } from 'lucide-react'
+import { Sparkles, Wand2, Edit3, Layers, Video, History, Zap, Users, Target, BookOpen, Scissors } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface EnhancedPlaygroundHeaderProps {
   userCredits: number
@@ -65,6 +66,16 @@ const tabInfo: Record<string, TabInfo> = {
     color: 'text-primary-600',
     gradient: 'bg-primary'
   },
+  stitch: {
+    id: 'stitch',
+    name: 'Stitch',
+    icon: Scissors,
+    description: 'Generate multiple images and stitch them together into compositions',
+    features: ['Multi-Image Generation', 'Automatic Stitching', 'Layout Control', 'Batch Creation'],
+    creditCost: '2-4 credits per stitch',
+    color: 'text-primary',
+    gradient: 'bg-primary'
+  },
   prompts: {
     id: 'prompts',
     name: 'Prompts',
@@ -87,17 +98,17 @@ const tabInfo: Record<string, TabInfo> = {
   }
 }
 
-export default function EnhancedPlaygroundHeader({ 
-  userCredits, 
-  userSubscriptionTier, 
-  activeTab, 
-  loading 
+export default function EnhancedPlaygroundHeader({
+  userCredits,
+  userSubscriptionTier,
+  activeTab,
+  loading
 }: EnhancedPlaygroundHeaderProps) {
   const [creditsAnimation, setCreditsAnimation] = useState(false)
-  const [currentTabInfo, setCurrentTabInfo] = useState<TabInfo>(tabInfo[activeTab])
+  const [currentTabInfo, setCurrentTabInfo] = useState<TabInfo>(tabInfo[activeTab] || tabInfo.generate)
 
   useEffect(() => {
-    setCurrentTabInfo(tabInfo[activeTab])
+    setCurrentTabInfo(tabInfo[activeTab] || tabInfo.generate)
   }, [activeTab])
 
   useEffect(() => {

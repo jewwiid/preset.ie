@@ -46,8 +46,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
       ...feedback,
       id,
       duration: feedback.duration || 5000,
-      dismissible: feedback.dismissible !== false,
-    }
+      dismissible: feedback.dismissible !== false}
 
     setFeedbacks(prev => [...prev, newFeedback])
 

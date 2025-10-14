@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/auth-context'
 import CinematicShowcaseFilters from './CinematicShowcaseFilters'
 import MediaMetadataModal from './MediaMetadataModal'
 import { useToast, ToastContainer } from '../../components/ui/toast'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 // Helper function to calculate aspect ratio
 const calculateAspectRatio = (width: number, height: number): string => {
@@ -91,9 +92,9 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [likingShowcase, setLikingShowcase] = useState<string | null>(null)
-  const [cinematicFilters, setCinematicFilters] = useState<CinematicFilters>({})
+  const [cinematicFilters, setCinematicFilters] = useState<CinematicFilters>()
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const menuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+  const menuRefs = useRef<{ [key: string]: HTMLDivElement | null }>()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [deletingShowcase, setDeletingShowcase] = useState<string | null>(null)
   const [metadataModal, setMetadataModal] = useState<{
@@ -140,9 +141,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
       try {
         const response = await fetch('/api/users/profile', {
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
+            'Authorization': `Bearer ${session.access_token}`}})
 
         if (response.ok) {
           const data = await response.json()
@@ -278,8 +277,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
       if (navigator.share) {
         await navigator.share({
           title: 'Check out this showcase on Preset',
-          url: `${window.location.origin}/showcases/${showcaseId}`,
-        })
+          url: `${window.location.origin}/showcases/${showcaseId}`})
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(`${window.location.origin}/showcases/${showcaseId}`)
@@ -341,8 +339,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+          'Authorization': `Bearer ${session.access_token}`},
         body: JSON.stringify({ showcaseId })
       })
 
@@ -376,9 +373,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
       const response = await fetch(`/api/showcases/${showcase.id}/view`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+          'Content-Type': 'application/json'}})
 
       if (response.ok) {
         const data = await response.json()
@@ -452,7 +447,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
   if (loading) {
     return (
       <div className={`flex justify-center items-center py-12 ${className}`}>
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+        <LoadingSpinner size="lg" />
         <span className="ml-2 text-sm text-muted-foreground">Loading showcases...</span>
       </div>
     )
@@ -487,7 +482,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
       {showCinematicFilters && (
         <CinematicShowcaseFilters
           onFiltersChange={setCinematicFilters}
-          onClearFilters={() => setCinematicFilters({})}
+          onClearFilters={() => setCinematicFilters()}
           activeFilters={cinematicFilters}
         />
       )}
@@ -807,7 +802,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
                 className="px-4 py-2 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 disabled:bg-destructive/50 rounded-md transition-colors flex items-center space-x-2"
               >
                 {deletingShowcase === showDeleteConfirm && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-destructive-foreground"></div>
+                  <LoadingSpinner size="sm" />
                 )}
                 <span>{deletingShowcase === showDeleteConfirm ? 'Deleting...' : 'Delete'}</span>
               </button>

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import StylePresetManager from './StylePresetManager'
 
 interface StyleVariationsPanelProps {
@@ -106,7 +107,7 @@ export default function StyleVariationsPanel({
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+              <LoadingSpinner size="sm" />
               Generating...
             </>
           ) : (

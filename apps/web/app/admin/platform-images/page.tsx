@@ -105,7 +105,7 @@ export default function PlatformImagesAdmin() {
     alt_text: '',
     title: '',
     description: '',
-    usage_context: '{}',
+    usage_context: '',
     is_active: true,
     display_order: 0,
     image_file: null as File | null,
@@ -211,8 +211,7 @@ export default function PlatformImagesAdmin() {
 
     const response = await fetch('/api/upload/platform-image', {
       method: 'POST',
-      body: formDataObj,
-    });
+      body: formDataObj});
 
     if (!response.ok) {
       const error = await response.json();
@@ -291,10 +290,8 @@ export default function PlatformImagesAdmin() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify(imageData),
-      });
+          'Authorization': `Bearer ${session.access_token}`},
+        body: JSON.stringify(imageData)});
 
       if (response.ok) {
         toast.success(editingImage ? 'Image updated successfully' : 'Image created successfully');
@@ -327,10 +324,8 @@ export default function PlatformImagesAdmin() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ is_active: false }),
-      });
+          'Authorization': `Bearer ${session.access_token}`},
+        body: JSON.stringify({ is_active: false })});
 
       if (response.ok) {
         toast.success('Image removed from display');
@@ -362,9 +357,7 @@ export default function PlatformImagesAdmin() {
       const response = await fetch(`/api/platform-images/${imageId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
+          'Authorization': `Bearer ${session.access_token}`}});
 
       if (response.ok) {
         toast.success('Image permanently deleted');
@@ -404,7 +397,7 @@ export default function PlatformImagesAdmin() {
       alt_text: '',
       title: '',
       description: '',
-      usage_context: '{}',
+      usage_context: '',
       is_active: true,
       display_order: 0,
       image_file: null,
@@ -435,7 +428,7 @@ export default function PlatformImagesAdmin() {
       alt_text: `${section.name} image`,
       title: section.name,
       description: '',
-      usage_context: '{}',
+      usage_context: '',
       is_active: true,
       display_order: 0,
       image_file: null,
@@ -453,8 +446,7 @@ export default function PlatformImagesAdmin() {
     setSyncing(true);
     try {
       const response = await fetch('/api/platform-images/sync-bucket', {
-        method: 'POST',
-      });
+        method: 'POST'});
 
       if (response.ok) {
         const result = await response.json();
@@ -480,8 +472,7 @@ export default function PlatformImagesAdmin() {
     setAuditResults(null);
     try {
       const response = await fetch(`/api/platform-images/audit?autoDelete=${autoDelete}`, {
-        method: 'POST',
-      });
+        method: 'POST'});
 
       if (response.ok) {
         const result = await response.json();
@@ -537,9 +528,7 @@ export default function PlatformImagesAdmin() {
       const response = await fetch('/api/admin/fix-role-duplicates', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
+          'Authorization': `Bearer ${session.access_token}`}});
 
       if (response.ok) {
         const result = await response.json();

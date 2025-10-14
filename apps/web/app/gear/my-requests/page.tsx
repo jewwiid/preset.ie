@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Calendar, Euro, MessageCircle, Clock, CheckCircle, XCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -426,7 +427,7 @@ export default function MyRequestsPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <LoadingSpinner size="lg" />
               <p className="text-muted-foreground">Loading your requests...</p>
             </div>
           </div>

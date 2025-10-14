@@ -7,7 +7,7 @@ import { UserProfile, UseProfileFormReturn } from '../types/profile'
 
 export function useProfileForm(): UseProfileFormReturn {
   const { user } = useAuth()
-  const [formData, setFormData] = useState<Partial<UserProfile>>({})
+  const [formData, setFormData] = useState<Partial<UserProfile>>()
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -98,7 +98,7 @@ export function useProfileForm(): UseProfileFormReturn {
   }, [user, formData])
 
   const handleCancel = useCallback(() => {
-    setFormData({})
+    setFormData()
     setError(null)
   }, [])
 

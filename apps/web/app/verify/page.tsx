@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { Upload, Shield, CheckCircle, AlertCircle, Camera, ExternalLink, User, Briefcase, Building, XCircle } from 'lucide-react'
 import { COUNTRY_CODES, type CountryCode } from '../../lib/social-utils'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface VerificationFormData {
   request_type: 'identity' | 'professional' | 'business'
   document_file: File | null

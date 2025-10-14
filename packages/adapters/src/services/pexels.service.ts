@@ -87,7 +87,8 @@ export class PexelsService {
         alt: photo.alt || '',
         width: photo.width,
         height: photo.height,
-        avg_color: photo.avg_color || '#000000'
+        avg_color: photo.avg_color || '#000000',
+        attribution: `Photo by ${photo.photographer} on Pexels`
       }));
     } catch (error) {
       console.error('Error searching Pexels photos:', error);

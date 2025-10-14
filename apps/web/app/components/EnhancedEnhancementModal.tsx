@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Separator } from '@/components/ui/separator'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface EnhancementMetadata {
   enhancementType: string
@@ -376,7 +377,7 @@ export default function EnhancedEnhancementModal({
                     {(status === 'processing' || status === 'polling') && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80">
                         <div className="relative">
-                          <Loader2 className="w-16 h-16 text-primary animate-spin" />
+                          <LoadingSpinner size="xl" />
                           <div className="absolute inset-0 flex items-center justify-center">
                             <span className="text-sm font-medium text-primary">
                               {Math.round(progress)}%
@@ -415,7 +416,7 @@ export default function EnhancedEnhancementModal({
                       >
                         {isSaving ? (
                           <>
-                            <Loader2 className="w-3 h-3 animate-spin mr-2" />
+                            <LoadingSpinner size="sm" />
                             Saving...
                           </>
                         ) : (
@@ -642,7 +643,7 @@ export default function EnhancedEnhancementModal({
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
+                    <LoadingSpinner size="sm" />
                     <span className="hidden sm:inline">Processing...</span>
                     <span className="sm:hidden">Processing</span>
                   </>

@@ -9,6 +9,7 @@ import { Button } from '../../../../components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs'
 import { ShoppingBag, Package, TrendingUp, Calendar, ArrowLeft, ExternalLink } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface PresetPurchase {
   id: string
   preset_id: string
@@ -237,7 +238,7 @@ export default function MarketplacePurchasesPage() {
           <TabsContent value="purchases" className="mt-6">
             {loading ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                <LoadingSpinner size="xl" />
               </div>
             ) : purchases.length === 0 ? (
               <Card>
@@ -308,7 +309,7 @@ export default function MarketplacePurchasesPage() {
           <TabsContent value="sales" className="mt-6">
             {loading ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                <LoadingSpinner size="xl" />
               </div>
             ) : sales.length === 0 ? (
               <Card>

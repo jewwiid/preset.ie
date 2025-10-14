@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface BatchImage {
   id: string
@@ -322,7 +323,7 @@ export default function BatchProcessingPanel({
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+              <LoadingSpinner size="sm" />
               Processing...
             </>
           ) : (

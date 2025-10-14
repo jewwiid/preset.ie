@@ -6,6 +6,7 @@ import { TagInput } from '../common/TagInput'
 import { FALLBACK_VIBES, FALLBACK_STYLES } from '../types/profile'
 import { Palette, Sparkles } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export function StyleSection() {
   const { profile } = useProfile()
   const { isEditing } = useProfileEditing()

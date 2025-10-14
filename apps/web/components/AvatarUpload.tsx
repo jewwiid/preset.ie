@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth-context'
 import { Camera, Upload, X, Loader2 } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface AvatarUploadProps {
   currentAvatarUrl?: string
   onAvatarUpdate: (newAvatarUrl: string) => void

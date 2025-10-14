@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Calendar, MapPin, DollarSign, Loader2, ChevronDown } from 'lucide-react'
 import { getAuthToken } from '@/lib/auth-utils'
 
@@ -231,7 +232,7 @@ export function InviteToGigDialog({
             <Label htmlFor="gig">Select Gig *</Label>
             {fetching ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <LoadingSpinner size="md" />
               </div>
             ) : gigs.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
@@ -409,7 +410,7 @@ export function InviteToGigDialog({
           >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LoadingSpinner size="sm" />
                 Sending...
               </>
             ) : (

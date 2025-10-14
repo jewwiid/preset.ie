@@ -6,6 +6,7 @@ import { useHomepageImages, usePreloadCriticalImages } from './hooks/usePlatform
 import { usePlatformGeneratedImages } from './hooks/usePlatformGeneratedImages';
 import { createRoleCard, RoleCard } from '../lib/utils/role-slug-mapper';
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 // Import homepage section components
 import HeroSection from './components/homepage/HeroSection';
 import WhatYouCanDoSection from './components/homepage/WhatYouCanDoSection';

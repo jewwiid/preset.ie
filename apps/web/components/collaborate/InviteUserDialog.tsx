@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Search, Mail, X, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -332,7 +333,7 @@ export function InviteUserDialog({
                     />
                     <Button onClick={handleSearch} disabled={isSearching}>
                       {isSearching ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <LoadingSpinner size="sm" />
                       ) : (
                         <Search className="h-4 w-4" />
                       )}
@@ -444,7 +445,7 @@ export function InviteUserDialog({
           <Button onClick={handleSendInvitation} disabled={!isValid() || isSending}>
             {isSending ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <LoadingSpinner size="sm" />
                 Sending...
               </>
             ) : (

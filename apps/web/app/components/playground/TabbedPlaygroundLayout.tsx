@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
-import { Wand2, Edit3, Layers, Video, History, Sparkles, BookOpen } from 'lucide-react'
+import { Wand2, Edit3, Layers, Video, History, Sparkles, BookOpen, Scissors } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -21,6 +21,12 @@ import PromptManagementPanel from './PromptManagementPanel'
 import { SaveMediaDialog } from './SaveMediaDialog'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import { generateImageTitle, generateVideoTitle, generateDefaultTags, generateDefaultDescription } from '../../../lib/media-title-utils'
+import GenerateTab from './tabs/GenerateTab'
+import EditTab from './tabs/EditTab'
+import BatchTab from './tabs/BatchTab'
+import VideoTab from './tabs/VideoTab'
+import StitchTab from './tabs/StitchTab'
+import HistoryTab from './tabs/HistoryTab'
 
 // Import PlaygroundProject type from the main playground page
 interface PlaygroundProject {
@@ -744,7 +750,7 @@ export default function TabbedPlaygroundLayout({
             message: `"${data.title}" has been saved to your gallery`
           })
         } else {
-          let errorData: any = {}
+          let errorData: any
           try {
             errorData = await response.json()
           } catch (e) {
@@ -899,295 +905,148 @@ export default function TabbedPlaygroundLayout({
         setActiveTab(value)
         onTabChange?.(value)
       }} className="w-full">
-        <TabsList className="inline-flex w-fit mx-auto gap-2">
-          <TabsTrigger value="generate" className="flex items-center gap-2.5 px-6 py-3">
+        <TabsList className="grid w-full grid-cols-7 gap-1">
+          <TabsTrigger value="generate" className="flex items-center justify-center gap-1 px-2 py-3 sm:gap-2.5 sm:px-6">
             <Wand2 className="h-4 w-4 flex-shrink-0" />
-            <span>Generate</span>
+            <span className="hidden sm:inline">Generate</span>
           </TabsTrigger>
-          <TabsTrigger value="edit" className="flex items-center gap-2.5 px-6 py-3">
+          <TabsTrigger value="edit" className="flex items-center justify-center gap-1 px-2 py-3 sm:gap-2.5 sm:px-6">
             <Edit3 className="h-4 w-4 flex-shrink-0" />
-            <span>Edit</span>
+            <span className="hidden sm:inline">Edit</span>
           </TabsTrigger>
-          <TabsTrigger value="batch" className="flex items-center gap-2.5 px-6 py-3">
+          <TabsTrigger value="batch" className="flex items-center justify-center gap-1 px-2 py-3 sm:gap-2.5 sm:px-6">
             <Layers className="h-4 w-4 flex-shrink-0" />
-            <span>Batch</span>
+            <span className="hidden sm:inline">Batch</span>
           </TabsTrigger>
-          <TabsTrigger value="video" className="flex items-center gap-2.5 px-6 py-3">
+          <TabsTrigger value="video" className="flex items-center justify-center gap-1 px-2 py-3 sm:gap-2.5 sm:px-6">
             <Video className="h-4 w-4 flex-shrink-0" />
-            <span>Video</span>
+            <span className="hidden sm:inline">Video</span>
           </TabsTrigger>
-          <TabsTrigger value="prompts" className="flex items-center gap-2.5 px-6 py-3">
+          <TabsTrigger value="stitch" className="flex items-center justify-center gap-1 px-2 py-3 sm:gap-2.5 sm:px-6">
+            <Scissors className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Stitch</span>
+          </TabsTrigger>
+          <TabsTrigger value="prompts" className="flex items-center justify-center gap-1 px-2 py-3 sm:gap-2.5 sm:px-6">
             <BookOpen className="h-4 w-4 flex-shrink-0" />
-            <span>Prompts</span>
+            <span className="hidden sm:inline">Prompts</span>
           </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2.5 px-6 py-3">
+          <TabsTrigger value="history" className="flex items-center justify-center gap-1 px-2 py-3 sm:gap-2.5 sm:px-6">
             <History className="h-4 w-4 flex-shrink-0" />
-            <span>History</span>
+            <span className="hidden sm:inline">History</span>
           </TabsTrigger>
         </TabsList>
 
         {/* Generate Tab */}
         <TabsContent value="generate" className="mt-6">
-          <div className="space-y-6">
-            {/* Full Width Generated Content Preview */}
-            <div ref={imagePreviewRef} className="w-full" data-preview-area>
-              <DynamicPreviewArea
-                aspectRatio={currentSettings.aspectRatio || currentSettings.baseImageAspectRatio || '1:1'}
-                resolution={currentSettings.resolution}
-                prompt={currentSettings.enhancedPrompt || currentSettings.prompt}
-                images={useMemo(() => {
-                  const currentImages = currentProject?.generated_images || []
-                  const imagesToShow = [...currentImages, ...additionalPreviewImages]
-                  
-                  // Add base image if it exists and is not already in the images
-                  if (currentSettings.baseImageUrl && !imagesToShow.some(img => img.url === currentSettings.baseImageUrl)) {
-                    imagesToShow.unshift({
-                      url: currentSettings.baseImageUrl,
-                      width: 1024, // Default dimensions for base images
-                      height: 1024,
-                      generated_at: new Date().toISOString(),
-                      type: 'base'
-                    })
-                  }
-                  
-                  // If selectedImage is not in current images, add it as a single-item array
-                  if (selectedImage && !imagesToShow.some(img => img.url === selectedImage)) {
-                    imagesToShow.push({
-                      url: selectedImage,
-                      width: 1024, // Default dimensions for saved images
-                      height: 1024,
-                      generated_at: new Date().toISOString(),
-                      type: 'saved'
-                    })
-                  }
-                  
-                  return imagesToShow
-                }, [currentProject?.generated_images, additionalPreviewImages, currentSettings.baseImageUrl, selectedImage])}
-                selectedImage={selectedImage}
-                onSelectImage={onSelectImage}
-                onSaveToGallery={handleSaveToGallery}
-                savingImage={savingImage}
-                loading={loading}
-                subscriptionTier={userSubscriptionTier as 'free' | 'plus' | 'pro'}
-                onRemoveBaseImage={removeBaseImageCallback}
-                fullWidth={true}
-                currentStyle={currentSettings.style || ''}
-                onStyleChange={handleStyleChange}
-                generationMode={currentSettings.generationMode}
-                onGenerationModeChange={handleGenerationModeChange}
-                userSubscriptionTier={userSubscriptionTier}
-                onResolutionChange={handleResolutionChange}
-                selectedProvider={currentSettings.selectedProvider || 'nanobanana'}
-                onProviderChange={handleProviderChange}
-                consistencyLevel={currentSettings.consistencyLevel || 'high'}
-                onConsistencyChange={handleConsistencyChange}
-                onRegenerate={handleRegenerate}
-                onClearImages={handleClearImages}
-              />
-            </div>
-
-            {/* Generation Controls - Full Width Below Preview */}
-            <div className="w-full">
-              <UnifiedImageGenerationPanel
-                onGenerate={handleImageGenerate}
-                onSettingsChange={handleSettingsChange}
-                loading={loading}
-                userCredits={userCredits}
-                userSubscriptionTier={userSubscriptionTier}
-                savedImages={savedImages}
-                onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
-                selectedPreset={selectedPreset}
-                onPresetApplied={() => {
-                  // Don't clear the preset - keep it so it can be saved with the image
-                  console.log('🎯 Preset applied, keeping preset data for image generation')
-                }}
-                currentStyle={currentSettings.style}
-                aspectRatio={currentSettings.aspectRatio}
-                onStyleChange={handleStyleChange}
-                generationMode={currentSettings.generationMode}
-                onGenerationModeChange={handleGenerationModeChange}
-                selectedProvider={currentSettings.selectedProvider}
-                onProviderChange={handleProviderChange}
-                consistencyLevel={currentSettings.consistencyLevel}
-                onConsistencyChange={handleConsistencyChange}
-                onPromptChange={handleSetPrompt}
-                onEnhancedPromptChange={handleSetEnhancedPrompt}
-              />
-            </div>
-          </div>
+          <GenerateTab
+            currentProject={currentProject}
+            additionalPreviewImages={additionalPreviewImages}
+            selectedImage={selectedImage}
+            currentSettings={currentSettings}
+            selectedProvider={currentSettings.selectedProvider || 'nanobanana'}
+            onSelectImage={onSelectImage}
+            onSaveToGallery={handleSaveToGallery}
+            onUpdateProject={onUpdateProject}
+            savingImage={savingImage}
+            loading={loading}
+            userSubscriptionTier={userSubscriptionTier}
+            onRegenerate={handleRegenerate}
+            onClearImages={handleClearImages}
+            onGenerate={handleImageGenerate}
+            onSettingsChange={handleSettingsChange}
+            userCredits={userCredits}
+            savedImages={savedImages}
+            selectedPreset={selectedPreset}
+            onStyleChange={handleStyleChange}
+            onGenerationModeChange={handleGenerationModeChange}
+            onProviderChange={handleProviderChange}
+            onConsistencyChange={handleConsistencyChange}
+            onPromptChange={handleSetPrompt}
+            onEnhancedPromptChange={handleSetEnhancedPrompt}
+            imagePreviewRef={imagePreviewRef}
+          />
         </TabsContent>
 
         {/* Edit Tab */}
         <TabsContent value="edit" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-            <AdvancedEditingPanel
-              onEdit={onEdit}
-              loading={loading}
-              selectedImage={selectedImage}
-              savedImages={savedImages}
-              onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
-              onImageUpload={async (file: File) => {
-                // Upload image to temporary storage or convert to data URL
-                // For now, we'll use a simple approach with data URLs
-                return new Promise((resolve) => {
-                  const reader = new FileReader()
-                  reader.onload = () => resolve(reader.result as string)
-                  reader.readAsDataURL(file)
-                })
-              }}
-            />
-
-            {/* Image Preview for Editing */}
-            <ImagePreviewArea
-              title="Select Image to Edit"
-              description="Choose an image from your current generation to edit"
-              aspectRatio={currentSettings.baseImageAspectRatio || currentSettings.aspectRatio}
-              resolution={currentSettings.resolution}
-              images={(() => {
-                const currentImages = currentProject?.generated_images || []
-                const allImages = [...currentImages, ...additionalPreviewImages]
-                
-                // If selectedImage is not in all images, add it as a single-item array
-                if (selectedImage && !allImages.some(img => img.url === selectedImage)) {
-                  // Try to find the image in savedImages to get actual dimensions
-                  const savedImageData = savedImages.find(img => img.image_url === selectedImage)
-                  const result = [...allImages, {
-                    url: selectedImage,
-                    width: savedImageData?.width || 1024, // Use actual dimensions if available
-                    height: savedImageData?.height || 1024,
-                    generated_at: new Date().toISOString(),
-                    type: 'saved'
-                  }]
-                  console.log('🔍 Added selectedImage to images:', result.length)
-                  return result
-                }
-                return allImages
-              })()}
-              selectedImage={selectedImage}
-              onSelectImage={onSelectImage}
-              onSaveToGallery={handleSaveToGallery}
-              onRemoveImage={(imageUrl) => {
-                // Remove image from current project
-                if (currentProject) {
-                  const updatedImages = currentProject.generated_images.filter(img => img.url !== imageUrl)
-                  const updatedProject = {
-                    ...currentProject,
-                    generated_images: updatedImages
-                  }
-                  onUpdateProject(updatedProject)
-                  
-                  // If the removed image was selected, clear selection
-                  if (selectedImage === imageUrl) {
-                    onSelectImage('')
-                  }
-                }
-              }}
-              savingImage={savingImage}
-              loading={loading}
-              showSaveButton={true}
-              showDownloadButton={true}
-              showRemoveButton={true}
-              showDimensions={true}
-              emptyStateMessage="No images available for editing. Generate some images first!"
-              subscriptionTier={userSubscriptionTier as 'free' | 'plus' | 'pro'}
-            />
-          </div>
+          <EditTab
+            onEdit={onEdit}
+            loading={loading}
+            selectedImage={selectedImage}
+            savedImages={savedImages}
+            onSelectImage={onSelectImage}
+            currentSettings={currentSettings}
+            currentProject={currentProject}
+            additionalPreviewImages={additionalPreviewImages}
+            onUpdateProject={onUpdateProject}
+            onSaveToGallery={handleSaveToGallery}
+            savingImage={savingImage}
+            userSubscriptionTier={userSubscriptionTier}
+          />
         </TabsContent>
 
         {/* Batch Tab */}
         <TabsContent value="batch" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-            <BatchProcessingPanel
-              onPerformBatchEdit={onPerformBatchEdit}
-              loading={loading}
-              savedImages={savedImages}
-              onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
-            />
-
-            {/* Images to Process */}
-            <ImagePreviewArea
-              title="Images to Process"
-              description="Select images from your generated content for batch processing"
-              aspectRatio={currentSettings.baseImageAspectRatio || currentSettings.aspectRatio}
-              resolution={currentSettings.resolution}
-              images={[...(currentProject?.generated_images || []), ...additionalPreviewImages]}
-              selectedImage={selectedImage}
-              onSelectImage={onSelectImage}
-              onSaveToGallery={handleSaveToGallery}
-              onRemoveImage={(imageUrl) => {
-                // Remove image from current project
-                if (currentProject) {
-                  const updatedImages = currentProject.generated_images.filter(img => img.url !== imageUrl)
-                  const updatedProject = {
-                    ...currentProject,
-                    generated_images: updatedImages
-                  }
-                  onUpdateProject(updatedProject)
-                  
-                  // If the removed image was selected, clear selection
-                  if (selectedImage === imageUrl) {
-                    onSelectImage('')
-                  }
-                }
-              }}
-              savingImage={savingImage}
-              loading={loading}
-              showSaveButton={true}
-              showDownloadButton={true}
-              showRemoveButton={true}
-              showDimensions={true}
-              emptyStateMessage="No images available for batch processing. Generate some images first!"
-              subscriptionTier={userSubscriptionTier as 'free' | 'plus' | 'pro'}
-            />
-          </div>
+          <BatchTab
+            onPerformBatchEdit={onPerformBatchEdit}
+            loading={loading}
+            savedImages={savedImages}
+            onSelectImage={onSelectImage}
+            selectedImage={selectedImage}
+            currentSettings={currentSettings}
+            currentProject={currentProject}
+            additionalPreviewImages={additionalPreviewImages}
+            onSaveToGallery={handleSaveToGallery}
+            onUpdateProject={onUpdateProject}
+            savingImage={savingImage}
+            userSubscriptionTier={userSubscriptionTier}
+          />
         </TabsContent>
 
         {/* Video Tab */}
         <TabsContent value="video" className="mt-6">
-          <div className="space-y-6">
-            {/* Full Width Video Preview Area */}
-            <div ref={videoPreviewRef} className="w-full" data-preview-area>
-              <VideoPreviewArea
-                sourceImage={videoSourceImage || selectedImage}
-                styledImageUrl={videoStyledImage || generatedVideoMetadata?.styledImageUrl || null}
-                aspectRatio={videoAspectRatio}
-                resolution={videoResolution}
-                prompt={videoPrompt}
-                videos={displayVideos}
-                selectedVideo={selectedVideo}
-                onSelectVideo={setSelectedVideo}
-                onSaveToGallery={handleSaveToGallery}
-                onDeleteVideo={handleDeleteVideo}
-                savingVideo={savingImage}
-                deletingVideo={deletingVideo}
-                loading={loading}
-                fullWidth={true}
-              />
-            </div>
+          <VideoTab
+            videoSourceImage={videoSourceImage}
+            selectedImage={selectedImage}
+            videoStyledImage={videoStyledImage}
+            generatedVideoMetadata={generatedVideoMetadata}
+            videoAspectRatio={videoAspectRatio}
+            videoResolution={videoResolution}
+            videoPrompt={videoPrompt}
+            displayVideos={displayVideos}
+            selectedVideo={selectedVideo}
+            setSelectedVideo={setSelectedVideo}
+            onSaveToGallery={handleSaveToGallery}
+            onDeleteVideo={handleDeleteVideo}
+            savingImage={savingImage}
+            deletingVideo={deletingVideo}
+            loading={loading}
+            onGenerateVideo={handleVideoGenerate}
+            savedImages={savedImages}
+            onSelectImage={onSelectImage}
+            setVideoPrompt={setVideoPrompt}
+            setVideoAspectRatio={setVideoAspectRatio}
+            setVideoResolution={setVideoResolution}
+            setVideoSourceImage={setVideoSourceImage}
+            setVideoStyledImage={setVideoStyledImage}
+            userCredits={userCredits}
+            userSubscriptionTier={userSubscriptionTier}
+            videoProvider={videoProvider}
+            setVideoProvider={setVideoProvider}
+            selectedPreset={selectedPreset}
+            setSelectedPreset={setSelectedPreset}
+            videoPreviewRef={videoPreviewRef}
+          />
+        </TabsContent>
 
-            {/* Video Generation Controls - Full Width Below Preview */}
-            <div className="w-full">
-              <VideoGenerationPanel
-                onGenerateVideo={handleVideoGenerate}
-                loading={loading}
-                selectedImage={selectedImage}
-                aspectRatio={videoAspectRatio}
-                savedImages={savedImages}
-                onSelectSavedImage={(imageUrl) => onSelectImage(imageUrl)}
-                onPromptChange={setVideoPrompt}
-                onAspectRatioChange={setVideoAspectRatio}
-                onResolutionChange={setVideoResolution}
-                onActiveImageChange={setVideoSourceImage}
-                onStyledImageChange={setVideoStyledImage}
-                userCredits={userCredits}
-                userSubscriptionTier={userSubscriptionTier}
-                selectedProvider={videoProvider}
-                onProviderChange={setVideoProvider}
-                selectedPreset={selectedPreset}
-                onPresetChange={(preset) => setSelectedPreset(preset)}
-              />
-            </div>
-          </div>
+        {/* Stitch Tab */}
+        <TabsContent value="stitch" className="mt-6">
+          <StitchTab
+            loading={loading}
+            userCredits={userCredits}
+            userSubscriptionTier={userSubscriptionTier}
+            onSaveToGallery={handleSaveToGallery}
+          />
         </TabsContent>
 
         {/* Prompts Tab */}
@@ -1263,43 +1122,11 @@ export default function TabbedPlaygroundLayout({
 
         {/* History Tab */}
         <TabsContent value="history" className="mt-6">
-        <PastGenerationsPanel
-          onImportProject={(project) => {
-            onImportProject(project)
-            
-            // Extract aspect ratio from the imported project
-            let aspectRatio: string | undefined
-            if (project.generated_images && project.generated_images.length > 0) {
-              const image = project.generated_images[0]
-              if (image.width && image.height) {
-                // Calculate aspect ratio from dimensions
-                const ratio = image.width / image.height
-                if (Math.abs(ratio - 1) < 0.05) aspectRatio = '1:1'
-                else if (Math.abs(ratio - 16/9) < 0.05) aspectRatio = '16:9'
-                else if (Math.abs(ratio - 9/16) < 0.05) aspectRatio = '9:16'
-                else if (Math.abs(ratio - 21/9) < 0.05) aspectRatio = '21:9'
-                else if (Math.abs(ratio - 4/3) < 0.05) aspectRatio = '4:3'
-                else if (Math.abs(ratio - 3/4) < 0.05) aspectRatio = '3:4'
-                else aspectRatio = '16:9' // Default fallback
-              }
-            }
-            
-            // Update settings with the imported project's aspect ratio
-            if (aspectRatio) {
-              updateSettings({ baseImageAspectRatio: aspectRatio })
-              console.log('📐 Updated aspect ratio from imported project:', aspectRatio)
-            }
-            
-            // Route to appropriate tab based on media type
-            if (project.is_video) {
-              console.log('🎬 Importing video project, switching to video tab')
-              setActiveTab('video')
-            } else {
-              console.log('🖼️ Importing image project, switching to edit tab')
-              setActiveTab('edit')
-            }
-          }}
-        />
+          <HistoryTab
+            onImportProject={onImportProject}
+            updateSettings={updateSettings}
+            setActiveTab={setActiveTab}
+          />
         </TabsContent>
       </Tabs>
 
@@ -1407,7 +1234,7 @@ export default function TabbedPlaygroundLayout({
 
               const images = media
                 .filter(item => {
-                  const isImage = item.media_type?.toLowerCase() === 'image'
+                  const isImage = item.media_type === 'image'
                   const hasUrl = !!item.image_url
                   console.log(`  Filter check: "${item.title}" - media_type="${item.media_type}" isImage=${isImage}, hasUrl=${hasUrl}`)
                   return isImage && hasUrl

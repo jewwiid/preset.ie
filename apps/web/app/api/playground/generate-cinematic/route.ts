@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '../../../../lib/supabase'
 import { getUserFromRequest } from '../../../../lib/auth-utils'
-import { CinematicParameters } from '../../../../../../packages/types/src/cinematic-parameters'
+import { CinematicParameters } from '@preset/types'
 import CinematicPromptBuilder from '../../../../../../packages/services/src/cinematic-prompt-builder'
 
 // Manually load environment variables

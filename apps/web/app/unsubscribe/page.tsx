@@ -20,8 +20,7 @@ function UnsubscribeContent() {
     message: true,
     booking: true,
     system: true,
-    marketing: true,
-  });
+    marketing: true});
 
   const email = searchParams.get('email');
   const userId = searchParams.get('userId');
@@ -34,8 +33,7 @@ function UnsubscribeContent() {
       const response = await fetch('/api/email-preferences/unsubscribe-all', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, userId }),
-      });
+        body: JSON.stringify({ email, userId })});
 
       if (!response.ok) {
         throw new Error('Failed to unsubscribe');
@@ -57,8 +55,7 @@ function UnsubscribeContent() {
       const response = await fetch('/api/email-preferences/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, userId, preferences }),
-      });
+        body: JSON.stringify({ email, userId, preferences })});
 
       if (!response.ok) {
         throw new Error('Failed to update preferences');

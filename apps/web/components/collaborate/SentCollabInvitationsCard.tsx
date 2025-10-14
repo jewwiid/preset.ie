@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Users, 
   Calendar, 
@@ -168,7 +169,7 @@ export function SentCollabInvitationsCard({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <LoadingSpinner size="md" />
           </div>
         </CardContent>
       </Card>

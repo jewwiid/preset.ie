@@ -213,22 +213,39 @@ export async function POST(request: NextRequest) {
         duration: duration,
         resolution: resolution,
         generation_metadata: {
-          aspect_ratio: aspectRatio,
-          camera_movement: cameraMovement,
+          // Core generation info
           prompt: prompt,
           enhanced_prompt: enhancedPrompt,
+          provider: 'nanobanana',
+          generation_mode: 'video',
+          credits_used: 1, // Video generation costs 1 credit
+          resolution: resolution,
+          aspect_ratio: aspectRatio,
+          duration: duration,
+          
+          // Video-specific parameters
+          camera_movement: cameraMovement,
+          y_position: yPosition || 0,
+          custom_dimensions: getTargetDimensions(aspectRatio, resolution),
+          
+          // Source image info
           image_url: imageUrl,
           styled_image_url: videoResult.styledImageUrl || null,
           processed_image_url: processedImageUrl,
-          y_position: yPosition || 0,
-          custom_dimensions: getTargetDimensions(aspectRatio, resolution),
-          resolution: resolution,
-          duration: duration,
-          created_at: new Date().toISOString(),
-          task_id: videoResult.taskId,
+          
+          // Cinematic parameters
           cinematic_parameters: cinematicParameters || null,
+          
+          // Technical settings
           include_technical_details: includeTechnicalDetails ?? true,
-          include_style_references: includeStyleReferences ?? true
+          include_style_references: includeStyleReferences ?? true,
+          
+          // API details
+          task_id: videoResult.taskId,
+          
+          // Timestamps
+          created_at: new Date().toISOString(),
+          generated_at: new Date().toISOString()
         }
       }
       

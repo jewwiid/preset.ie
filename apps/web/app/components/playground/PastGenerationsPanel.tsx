@@ -1,65 +1,51 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Clock, Download, Trash2, AlertCircle, Image as ImageIcon, CheckCircle, Edit3, Eye, X, Save, Video, Play, Pause, Maximize2, Info, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-react'
+import { Clock, Download, Trash2, AlertCircle, Image as ImageIcon, CheckCircle, Edit3, Eye, X, Save, Video, Play, Pause, Info, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useAuth } from '../../../lib/auth-context'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import ProgressiveImage from '../ui/ProgressiveImage'
 import ProgressiveVideo from '../ui/ProgressiveVideo'
 import { usePagination } from '../../hooks/usePagination'
-import useSmartPreloading from '../../hooks/useSmartPreloading' // Fixed import
-
-interface PastGeneration {
-  id: string
-  title: string
-  prompt: string
-  style?: string
-  generated_images: Array<{
-    url: string
-    width: number
-    height: number
-    generated_at: string
-    type?: string
-  }>
-  credits_used: number
-  created_at: string
-  last_generated_at: string
-  status: string
-  is_saved?: boolean
-  is_edit?: boolean
-  is_video?: boolean
-  metadata?: {
-    enhanced_prompt?: string
-    style_applied?: string
-    style_prompt?: string
-  }
-}
+import useSmartPreloading from '../../hooks/useSmartPreloading'
+import { usePastGenerations, type PastGeneration } from '@/hooks/usePastGenerations'
+import { useSaveToGallery } from '@/hooks/useSaveToGallery'
+import { GenerationMetadataModal } from './GenerationMetadataModal'
+import { MultiImageViewModal } from './MultiImageViewModal'
 
 interface PastGenerationsPanelProps {
   onImportProject: (project: PastGeneration) => void
 }
 
 export default function PastGenerationsPanel({ onImportProject }: PastGenerationsPanelProps) {
-  const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
-  
-  const [generations, setGenerations] = useState<PastGeneration[]>([])
-  const [loading, setLoading] = useState(true)
+
+  // Use custom hooks
+  const { generations, loading, refetch: fetchPastGenerations, deleteGeneration } = usePastGenerations()
+  const { savingImage, promotingImage, saveImageToGallery, promoteImageToMedia } = useSaveToGallery({
+    onSuccess: () => {
+      fetchPastGenerations()
+    },
+    onError: (error) => {
+      showFeedback({
+        type: 'error',
+        title: 'Operation Failed',
+        message: error.message})
+    }})
+
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [viewingImages, setViewingImages] = useState<PastGeneration | null>(null)
-  const [savingImage, setSavingImage] = useState<string | null>(null)
-  const [promotingImage, setPromotingImage] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
   const [requiresPermanent, setRequiresPermanent] = useState(false)
+  const [selectedImageForInfo, setSelectedImageForInfo] = useState<PastGeneration | null>(null)
   
   // Masonry layout state
   const containerRef = useRef<HTMLDivElement>(null)
   const [imagesLoaded, setImagesLoaded] = useState<Map<string, boolean>>(new Map())
-  const [selectedImageForInfo, setSelectedImageForInfo] = useState<PastGeneration | null>(null)
   const [imagesPerRow, setImagesPerRow] = useState(4)
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set())
   
@@ -190,51 +176,6 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
     return `${w}:${h}`
   }
 
-  useEffect(() => {
-    if (user && session?.access_token) {
-      fetchPastGenerations()
-    }
-  }, [user, session?.access_token])
-
-  const fetchPastGenerations = async () => {
-    try {
-      setLoading(true)
-      
-      if (!session?.access_token) {
-        throw new Error('No authentication token available')
-      }
-
-      const response = await fetch('/api/playground/past-generations', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(`Failed to fetch past generations: ${response.status} ${errorData.error || response.statusText}`)
-      }
-
-      const data = await response.json()
-      console.log('📊 Client: Received past generations:', {
-        total: data.total,
-        count: data.generations?.length || 0,
-        videos: data.generations?.filter((g: any) => g.is_video).length || 0,
-        images: data.generations?.filter((g: any) => !g.is_video).length || 0,
-        videoItems: data.generations?.filter((g: any) => g.is_video) || []
-      })
-      setGenerations(data.generations || [])
-    } catch (error) {
-      console.error('Error fetching past generations:', error)
-      showFeedback({
-        type: 'error',
-        title: 'Failed to Load',
-        message: 'Could not load past generations'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleDeleteClick = (id: string) => {
     setItemToDelete(id)
@@ -247,42 +188,23 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
 
     setDeletingId(itemToDelete)
     try {
-      const response = await fetch(`/api/playground/past-generations/${itemToDelete}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${session?.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ permanent })
-      })
+      await deleteGeneration(itemToDelete, permanent)
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        
-        if (errorData.requiresPermanent) {
-          setRequiresPermanent(true)
-          return // Don't close dialog, show permanent option
-        }
-        
-        // Provide more detailed error information
-        const errorMessage = errorData.details 
-          ? `${errorData.error}: ${errorData.details}`
-          : errorData.error || 'Failed to delete generation'
-        
-        throw new Error(errorMessage)
-      }
-
-      setGenerations(prev => prev.filter(gen => gen.id !== itemToDelete))
       showFeedback({
         type: 'success',
         title: 'Deleted',
         message: permanent ? 'Generation permanently deleted' : 'Generation deleted successfully'
       })
-      
+
       setShowDeleteConfirm(false)
       setItemToDelete(null)
       setRequiresPermanent(false)
     } catch (error) {
+      if (error instanceof Error && error.message === 'REQUIRES_PERMANENT') {
+        setRequiresPermanent(true)
+        return
+      }
+
       console.error('Error deleting generation:', error)
       const errorMessage = error instanceof Error ? error.message : 'Could not delete generation'
       showFeedback({
@@ -318,175 +240,31 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
     })
   }
 
-  // Helper function to extract subject from prompt
-  const extractSubjectFromPrompt = (prompt: string): string | null => {
-    if (!prompt) return null
-    
-    // Try to extract subject from common patterns
-    const patterns = [
-      /(?:of|for|with)\s+(?:a\s+)?([a-zA-Z]+)(?:\s|,|$)/i,
-      /(?:subject|feature|show|display|portrait|image)\s+(?:of\s+)?([a-zA-Z]+)(?:\s|,|$)/i,
-      /^([a-zA-Z]+)\s+(?:in|with|doing|wearing)/i
-    ]
-    
-    for (const pattern of patterns) {
-      const match = prompt.match(pattern)
-      if (match && match[1] && match[1].length > 2) {
-        return match[1].toLowerCase()
-      }
-    }
-    
-    return null
-  }
-
-  const saveImageToGallery = async (imageUrl: string, projectTitle: string, generation: any) => {
-    setSavingImage(imageUrl)
-    try {
-      const response = await fetch('/api/playground/save-to-gallery', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
-          imageUrl,
-          title: projectTitle,
-          description: `Generated from: ${projectTitle}`,
-          tags: ['ai-generated'],
-          generationMetadata: {
-            ...generation.metadata,
-            // Extract subject from prompt if available
-            subject: generation.metadata?.prompt ? extractSubjectFromPrompt(generation.metadata.prompt) : null,
-            subject_placeholder_used: generation.metadata?.prompt?.includes('{subject}') || false,
-            // Include preset information if available
-            preset_id: generation.metadata?.custom_style_preset?.id || generation.metadata?.preset_id || null,
-            preset_name: generation.metadata?.custom_style_preset?.name || generation.metadata?.preset_name || null
-          }
-        })
-      })
-
-      if (response.ok) {
+  // Wrapper functions that use the hook and show feedback
+  const handleSaveImage = async (imageUrl: string, projectTitle: string, generation: PastGeneration) => {
+    const result = await saveImageToGallery(imageUrl, projectTitle, generation)
+    if (result.success) {
+      if (result.isDuplicate) {
+        showFeedback({
+          type: 'info',
+          title: 'Already Saved',
+          message: 'This image is already saved in your gallery.'})
+      } else {
         showFeedback({
           type: 'success',
           title: 'Saved!',
-          message: 'Image saved to gallery successfully'
-        })
-
-        // Refresh the generations list to update save status
-        fetchPastGenerations()
-      } else {
-        const errorData = await response.json()
-        
-        // Handle duplicate images gracefully
-        if (response.status === 409 && errorData.error === 'duplicate') {
-          showFeedback({
-            type: 'info',
-            title: 'Already Saved',
-            message: errorData.message || 'This image is already saved in your gallery.'
-          })
-          return // Don't throw error for duplicates
-        }
-        
-        throw new Error(errorData.error || 'Failed to save image')
+          message: 'Image saved to gallery successfully'})
       }
-    } catch (error) {
-      console.error('Error saving image:', error)
-      showFeedback({
-        type: 'error',
-        title: 'Save Failed',
-        message: error instanceof Error ? error.message : 'Could not save image to gallery'
-      })
-    } finally {
-      setSavingImage(null)
     }
   }
 
-  const promoteImageToMedia = async (imageUrl: string, projectTitle: string, generation: any) => {
-    setPromotingImage(imageUrl)
-    try {
-      // First save to gallery if not already saved
-      const saveResponse = await fetch('/api/playground/save-to-gallery', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({
-          imageUrl,
-          title: projectTitle,
-          description: `Generated from: ${projectTitle}`,
-          tags: ['ai-generated'],
-          generationMetadata: {
-            ...generation.metadata,
-            // Extract subject from prompt if available
-            subject: generation.metadata?.prompt ? extractSubjectFromPrompt(generation.metadata.prompt) : null,
-            subject_placeholder_used: generation.metadata?.prompt?.includes('{subject}') || false,
-            // Include preset information if available
-            preset_id: generation.metadata?.custom_style_preset?.id || generation.metadata?.preset_id || null,
-            preset_name: generation.metadata?.custom_style_preset?.name || generation.metadata?.preset_name || null
-          }
-        })
-      })
-
-      if (!saveResponse.ok) {
-        const errorData = await saveResponse.json()
-        if (saveResponse.status !== 409 || errorData.error !== 'duplicate') {
-          throw new Error(errorData.error || 'Failed to save image to gallery')
-        }
-      }
-
-      // Get the gallery item ID from the save response or find existing one
-      let galleryItemId: string
-      if (saveResponse.ok) {
-        const saveData = await saveResponse.json()
-        galleryItemId = saveData.galleryItem.id
-      } else {
-        // If it's a duplicate, we need to find the existing gallery item
-        const galleryResponse = await fetch('/api/playground/gallery-with-status', {
-          headers: { 'Authorization': `Bearer ${session?.access_token}` }
-        })
-        if (galleryResponse.ok) {
-          const galleryData = await galleryResponse.json()
-          const existingItem = galleryData.gallery.find((item: any) => item.image_url === imageUrl)
-          if (existingItem) {
-            galleryItemId = existingItem.id
-          } else {
-            throw new Error('Could not find gallery item to promote')
-          }
-        } else {
-          throw new Error('Could not find gallery item to promote')
-        }
-      }
-
-      // Now promote to media
-      const promoteResponse = await fetch('/api/playground/promote-to-media', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({ galleryItemId })
-      })
-
-      if (promoteResponse.ok) {
-        showFeedback({
-          type: 'success',
-          title: 'Promoted!',
-          message: 'Image promoted to media library. You can now use it in showcases!'
-        })
-      } else {
-        const errorData = await promoteResponse.json()
-        throw new Error(errorData.error || 'Failed to promote image')
-      }
-    } catch (error) {
-      console.error('Error promoting image:', error)
+  const handlePromoteImage = async (imageUrl: string, projectTitle: string, generation: PastGeneration) => {
+    const success = await promoteImageToMedia(imageUrl, projectTitle, generation)
+    if (success) {
       showFeedback({
-        type: 'error',
-        title: 'Promote Failed',
-        message: error instanceof Error ? error.message : 'Could not promote image to media'
-      })
-    } finally {
-      setPromotingImage(null)
+        type: 'success',
+        title: 'Promoted!',
+        message: 'Image promoted to media library. You can now use it in showcases!'})
     }
   }
 
@@ -508,7 +286,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <LoadingSpinner size="lg" />
             <span className="ml-2 text-muted-foreground">Loading past generations...</span>
           </div>
         </CardContent>
@@ -727,7 +505,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                                 className="h-8 w-8 p-0"
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  saveImageToGallery(
+                                  handleSaveImage(
                                     generation.generated_images[0].url,
                                     generation.title,
                                     generation
@@ -737,7 +515,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                                 title="Save to gallery"
                               >
                                 {savingImage === generation.generated_images[0].url ? (
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
+                                  <LoadingSpinner size="sm" />
                                 ) : (
                                   <Save className="h-4 w-4" />
                                 )}
@@ -803,7 +581,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                               title="Delete generation"
                             >
                               {deletingId === generation.id ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
+                                <LoadingSpinner size="sm" />
                               ) : (
                                 <Trash2 className="h-4 w-4" />
                               )}
@@ -846,7 +624,34 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
       </Card>
 
       {/* Metadata Popup Modal */}
-      {selectedImageForInfo && (
+      <GenerationMetadataModal
+        generation={selectedImageForInfo}
+        open={!!selectedImageForInfo}
+        onClose={() => setSelectedImageForInfo(null)}
+        onImport={(gen) => {
+          onImportProject(gen)
+          setSelectedImageForInfo(null)
+        }}
+        onViewAll={(gen) => {
+          setViewingImages(gen)
+          setSelectedImageForInfo(null)
+        }}
+      />
+
+      {/* Multi-Image View Modal */}
+      <MultiImageViewModal
+        generation={viewingImages}
+        open={!!viewingImages}
+        onClose={() => setViewingImages(null)}
+        onSaveImage={handleSaveImage}
+        onPromoteImage={handlePromoteImage}
+        onImport={onImportProject}
+        savingImage={savingImage}
+        promotingImage={promotingImage}
+      />
+
+      {/* OLD MODALS - TO BE REMOVED */}
+      {false && selectedImageForInfo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <Card className="w-full max-w-4xl max-h-[90vh] overflow-hidden">
             <CardHeader className="pb-3">
@@ -1407,7 +1212,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                 >
                   {deletingId === itemToDelete ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                      <LoadingSpinner size="sm" />
                       Deleting...
                     </>
                   ) : (
@@ -1423,7 +1228,7 @@ export default function PastGenerationsPanel({ onImportProject }: PastGeneration
                   >
                     {deletingId === itemToDelete ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-muted-foreground mr-2"></div>
+                        <LoadingSpinner size="sm" />
                         Deleting...
                       </>
                     ) : (

@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ArrowLeft, Users, Star, Clock, MapPin, Mail, Phone, ExternalLink, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react'
 import CompatibilityScore from '../../../components/matchmaking/CompatibilityScore'
 
@@ -164,7 +165,7 @@ export default function ApplicationsPage({ params }: { params: Promise<{ id: str
                 return {
                   ...application,
                   compatibility_score: compatibilityData?.[0]?.score || Math.floor(Math.random() * 40) + 60,
-                  compatibility_breakdown: compatibilityData?.[0]?.breakdown || {}
+                  compatibility_breakdown: compatibilityData?.[0]?.breakdown || {} 
                 }
               } catch (error) {
                 console.warn('Error calculating compatibility for application:', application.id, error)

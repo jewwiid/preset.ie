@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  CameraAngle, 
-  LensType, 
-  ShotSize, 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
+  CameraAngle,
+  LensType,
+  ShotSize,
   DepthOfField,
   CompositionTechnique,
   LightingStyle,
-  ColorPalette,
+  CinematicColorPalette as ColorPalette,
   DirectorStyle,
   EraEmulation,
   SceneMood,
@@ -18,7 +19,7 @@ import {
   WeatherCondition,
   LocationType,
   CinematicParameters
-} from '../../../../../packages/types/src/cinematic-parameters';
+} from '@preset/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
@@ -66,7 +67,7 @@ export default function CinematicParameterSelector({
   const [includeStyleReferences, setIncludeStyleReferences] = useState(true);
   
   // Dynamic parameters state
-  const [dynamicParameters, setDynamicParameters] = useState<Record<string, any[]>>({});
+  const [dynamicParameters, setDynamicParameters] = useState<Record<string, any[]>>();
   const [loadingParameters, setLoadingParameters] = useState(false);
 
   // Fetch dynamic parameters from API
@@ -255,7 +256,7 @@ export default function CinematicParameterSelector({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+            <LoadingSpinner size="lg" />
           </div>
         </CardContent>
       </Card>
@@ -370,7 +371,7 @@ export default function CinematicParameterSelector({
           {/* Preset Buttons Grid */}
           {presetsLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <LoadingSpinner size="md" />
               <span className="ml-2 text-sm text-muted-foreground">Loading presets...</span>
             </div>
           ) : (

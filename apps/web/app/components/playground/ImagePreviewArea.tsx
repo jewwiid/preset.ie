@@ -18,8 +18,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+  AlertDialogTitle} from '@/components/ui/alert-dialog'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface ImagePreviewAreaProps {
   title?: string
@@ -443,7 +443,7 @@ export default function ImagePreviewArea({
                           title="Save to Gallery"
                         >
                           {savingImage === generatedVideoUrl ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
+                            <LoadingSpinner size="sm" />
                           ) : (
                             <Heart className="h-4 w-4" />
                           )}
@@ -561,7 +561,7 @@ export default function ImagePreviewArea({
                           title="Save to Gallery"
                         >
                           {savingImage === selectedImage ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
+                            <LoadingSpinner size="sm" />
                           ) : (
                             <Heart className="h-4 w-4" />
                           )}
@@ -751,7 +751,7 @@ export default function ImagePreviewArea({
               <p className="text-lg font-medium mb-2">{emptyStateMessage}</p>
               {loading && (
                 <div className="flex items-center justify-center mt-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+                  <LoadingSpinner size="md" />
                   <span className="ml-2 text-sm">Generating...</span>
                 </div>
               )}
@@ -813,7 +813,7 @@ export default function ImagePreviewArea({
                       className="bg-background/20 hover:bg-background/30 text-primary-foreground border-border/30"
                     >
                       {savingImage === fullScreenImage.url ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
+                        <LoadingSpinner size="sm" />
                       ) : (
                         <Heart className="h-4 w-4" />
                       )}

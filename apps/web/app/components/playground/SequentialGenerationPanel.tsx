@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface SequentialGenerationPanelProps {
   onGenerateSequential: (params: {
@@ -127,7 +128,7 @@ export default function SequentialGenerationPanel({
           >
             {loading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                <LoadingSpinner size="sm" />
                 Generating...
               </>
             ) : (
@@ -152,7 +153,7 @@ export default function SequentialGenerationPanel({
           >
             {loading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600 mr-2"></div>
+                <LoadingSpinner size="sm" />
                 Editing...
               </>
             ) : (

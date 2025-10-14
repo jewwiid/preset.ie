@@ -12,8 +12,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
 import { Switch } from '../../components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useFeedback } from '../../components/feedback/FeedbackContext'
 import { supabase } from '../../lib/supabase'
+import Link from 'next/link'
+import { Shield, AlertTriangle } from 'lucide-react'
 
 export default function SettingsPage() {
   const { user, loading } = useAuth()
@@ -231,7 +234,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
     )
   }
@@ -248,9 +251,10 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="notifications" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
+          <TabsTrigger value="content">Content & Safety</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
@@ -348,6 +352,92 @@ export default function SettingsPage() {
               <Button onClick={updateSettings} disabled={loadingSettings}>
                 {loadingSettings ? 'Saving...' : 'Save Privacy Settings'}
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="content" className="space-y-6 mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Age Verification & NSFW Content
+              </CardTitle>
+              <CardDescription>
+                Manage your age verification status and NSFW (Not Safe For Work) content preferences.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-blue-900 dark:text-blue-100">Age Verification Required</h4>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      You must be 18 or older to view NSFW content. Age verification is required for safety and compliance.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium text-foreground mb-2">Age Verification Status</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Verify your age to access all platform features, including NSFW content.
+                  </p>
+                  <Button asChild>
+                    <Link href="/settings/age-verification">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Manage Age Verification
+                    </Link>
+                  </Button>
+                </div>
+
+                <hr className="my-6" />
+
+                <div>
+                  <h3 className="text-lg font-medium text-foreground mb-2">NSFW Content Preferences</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Control how NSFW (Not Safe For Work) content is displayed to you.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div>
+                        <p className="font-medium">Show NSFW Content</p>
+                        <p className="text-sm text-muted-foreground">Display NSFW content without blurring</p>
+                      </div>
+                      <Button asChild variant="outline" size="sm">
+                        <Link href="/settings/age-verification">Configure</Link>
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div>
+                        <p className="font-medium">Content Warnings</p>
+                        <p className="text-sm text-muted-foreground">Show warnings before displaying NSFW content</p>
+                      </div>
+                      <Button asChild variant="outline" size="sm">
+                        <Link href="/settings/age-verification">Configure</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <hr className="my-6" />
+
+                <div>
+                  <h3 className="text-lg font-medium text-foreground mb-2">Content Moderation</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Help keep the platform safe by reporting inappropriate content.
+                  </p>
+                  <div className="text-sm text-muted-foreground space-y-2">
+                    <p>• Report inappropriate content using the flag button on any content</p>
+                    <p>• Mark your own content as NSFW when uploading</p>
+                    <p>• Content is automatically reviewed by our moderation team</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

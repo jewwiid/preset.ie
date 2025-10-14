@@ -7,6 +7,7 @@ import { supabase } from '../../../../lib/supabase'
 import { useGigFormPersistence, CompType, PurposeType, StatusType } from '../../../../lib/gig-form-persistence'
 import { CheckCircle2, X } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 // Step Components
 import StepIndicator, { GigEditStep } from '../../../components/gig-edit-steps/StepIndicator'
 import BasicDetailsStep from '../../../components/gig-edit-steps/BasicDetailsStep'

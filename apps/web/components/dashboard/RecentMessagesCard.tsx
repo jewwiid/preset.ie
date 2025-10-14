@@ -3,6 +3,9 @@
 import { useRouter } from 'next/navigation'
 import { Conversation } from '../../lib/types/dashboard'
 import { getTimeAgo, getUserInitials } from '../../lib/utils/dashboard'
+import { LoadingSpinner } from '../ui/loading-spinner'
+import { IconBadge } from '../ui/icon-badge'
+import { MessageCircle } from 'lucide-react'
 
 interface RecentMessagesCardProps {
   messages: Conversation[]
@@ -25,11 +28,7 @@ export function RecentMessagesCard({ messages, loading = false }: RecentMessages
   return (
     <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-          <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>
-        </div>
+        <IconBadge icon={MessageCircle} size="md" variant="primary" />
         <div>
           <h3 className="text-lg font-bold text-foreground">Recent Messages</h3>
           <p className="text-sm text-muted-foreground">Your latest conversations</p>
@@ -46,9 +45,7 @@ export function RecentMessagesCard({ messages, loading = false }: RecentMessages
 
       <div className="space-y-3">
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-          </div>
+          <LoadingSpinner size="md" className="py-8" />
         ) : messages.length > 0 ? (
           messages.map((conversation, index) => {
             const colors = [

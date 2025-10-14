@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export interface ImageUploadProps {
   value?: File[]
   onChange?: (files: File[]) => void
@@ -209,7 +210,7 @@ const ImageUpload = React.forwardRef<HTMLInputElement, ImageUploadProps>(
         {/* Upload status */}
         {uploading && (
           <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <LoadingSpinner size="sm" />
             <span>Uploading images...</span>
           </div>
         )}

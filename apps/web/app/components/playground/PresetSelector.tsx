@@ -10,7 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog'
 import { useAuth } from '../../../lib/auth-context'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
+import { usePresetSearch } from '../../../hooks/usePresetSearch'
+import PresetCard from './PresetCard'
+import PresetFilters from './PresetFilters'
+import PresetCategoryNav from './PresetCategoryNav'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface Preset {
   id: string
   name: string
@@ -92,15 +97,22 @@ export default function PresetSelector({
 }: PresetSelectorProps) {
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
-  
-  const [presets, setPresets] = useState<Preset[]>([])
-  const [trendingPresets, setTrendingPresets] = useState<Preset[]>([])
-  const [loading, setLoading] = useState(false)
-  const [trendingLoading, setTrendingLoading] = useState(false)
+
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [sortBy, setSortBy] = useState('popular')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+
+  // Use preset search hook
+  const { presets, loading, fetchPresets } = usePresetSearch({
+    category: selectedCategory,
+    searchQuery,
+    sortBy,
+    limit: 20,
+  })
+
+  const [trendingPresets, setTrendingPresets] = useState<Preset[]>([])
+  const [trendingLoading, setTrendingLoading] = useState(false)
   const [showTrending, setShowTrending] = useState(false)
   const [showPresetDialog, setShowPresetDialog] = useState(false)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
@@ -208,31 +220,12 @@ export default function PresetSelector({
     { value: 'post_processing', label: 'Post Processing' }
   ]
 
-  // Main effect for category and sort changes
-  useEffect(() => {
-    if (user && session) {
-      setSearchQuery('') // Clear search when category changes
-      fetchPresets()
-    }
-  }, [user, session, selectedCategory, sortBy])
-
   // Fetch trending presets when dialog opens
   useEffect(() => {
     if (showPresetDialog && user && session && trendingPresets.length === 0) {
       fetchTrendingPresets()
     }
   }, [showPresetDialog, user, session])
-
-  // Debounced search effect
-  useEffect(() => {
-    if (user && session && searchQuery !== '') {
-      const timeoutId = setTimeout(() => {
-        fetchPresets()
-      }, 300)
-      
-      return () => clearTimeout(timeoutId)
-    }
-  }, [searchQuery])
 
   const fetchSavedImages = async () => {
     if (!user || !session?.access_token) return
@@ -268,39 +261,7 @@ export default function PresetSelector({
     }
   }, [showSaveDialog, user, session])
 
-  const fetchPresets = async () => {
-    if (!session?.access_token) return
-
-    setLoading(true)
-    try {
-      const params = new URLSearchParams()
-      if (selectedCategory !== 'all') params.append('category', selectedCategory)
-      if (searchQuery) params.append('search', searchQuery)
-      params.append('sort', sortBy)
-      params.append('limit', '20')
-
-
-      const response = await fetch(`/api/presets?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      })
-
-      if (!response.ok) throw new Error('Failed to fetch presets')
-
-      const data = await response.json()
-      setPresets(data.presets || [])
-    } catch (error) {
-      console.error('Error fetching presets:', error)
-      showFeedback({
-        type: 'error',
-        title: 'Failed to Load Presets',
-        message: 'Could not load presets. Please try again.'
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
+  // fetchPresets is now provided by usePresetSearch hook
 
   const fetchTrendingPresets = async () => {
     if (!session?.access_token) return
@@ -439,9 +400,9 @@ export default function PresetSelector({
         throw new Error('Failed to delete preset')
       }
 
-      // Remove from local state
-      setPresets(prev => prev.filter(p => p.id !== presetToDelete.id))
-      
+      // Refetch presets to update the list
+      fetchPresets()
+
       // Clear selection if this was the selected preset
       if (selectedPreset?.id === presetToDelete.id) {
         onPresetSelect(null)
@@ -470,38 +431,7 @@ export default function PresetSelector({
     setShowDeleteDialog(true)
   }
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      photography: 'bg-primary/10 text-primary',
-      cinematic: 'bg-primary/10 text-primary',
-      artistic: 'bg-primary/10 text-primary',
-      custom: 'bg-primary/10 text-primary'
-    }
-    return colors[category as keyof typeof colors] || 'bg-muted text-muted-foreground'
-  }
-
-  const getPresetType = (presetId: string) => {
-    return presetId.startsWith('cinematic_') ? 'cinematic' : 'regular'
-  }
-
-  const getPresetTypeBadge = (presetId: string) => {
-    const type = getPresetType(presetId)
-    if (type === 'cinematic') {
-      return (
-        <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
-          <Camera className="h-3 w-3 mr-1" />
-          Cinematic
-        </Badge>
-      )
-    }
-    return (
-      <Badge variant="outline" className="bg-primary-50 text-primary-700 border-primary-200">
-        <Wand2 className="h-3 w-3 mr-1" />
-        Style
-      </Badge>
-    )
-  }
-
+  // Helper function for generation mode badge
   const getGenerationModeBadge = (preset: Preset) => {
     const mode = preset.technical_settings?.generation_mode
     if (!mode || mode === 'flexible') return null
@@ -523,23 +453,6 @@ export default function PresetSelector({
     }
 
     return null
-  }
-
-  const getVideoSettingsBadge = (preset: Preset) => {
-    const hasVideoSettings = preset.cinematic_settings?.video && (
-      preset.cinematic_settings.video.cameraMovement ||
-      preset.cinematic_settings.video.videoStyle ||
-      preset.cinematic_settings.video.duration
-    )
-
-    if (!hasVideoSettings) return null
-
-    return (
-      <Badge variant="outline" className="border-primary text-primary bg-primary/10">
-        <PlayCircle className="h-3 w-3 mr-1" />
-        Video Ready
-      </Badge>
-    )
   }
 
   return (
@@ -571,116 +484,31 @@ export default function PresetSelector({
               
               <div className="space-y-4">
                 {/* Search and Filter */}
-                <div className="flex space-x-2">
-                  <Input
-                    placeholder="Search presets..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        fetchPresets()
-                      }
-                    }}
-                  />
-                  {searchQuery && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSearchQuery('')
-                        fetchPresets()
-                      }}
-                      className="ml-2"
-                    >
-                      Clear
-                    </Button>
-                  )}
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map(category => (
-                        <SelectItem key={category.value} value={category.value}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Sort" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="popular">Popular</SelectItem>
-                      <SelectItem value="likes">Most Liked</SelectItem>
-                      <SelectItem value="created_at">Newest</SelectItem>
-                      <SelectItem value="name">Name A-Z</SelectItem>
-                      <SelectItem value="usage_count">Most Used</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={fetchPresets} size="sm">
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
+                <PresetFilters
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  onSearch={fetchPresets}
+                  onClearSearch={() => {
+                    setSearchQuery('')
+                    fetchPresets()
+                  }}
+                  categories={categories}
+                />
 
                 {/* Quick Access Buttons */}
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant={selectedCategory === 'headshot' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedCategory('headshot')}
-                      className="flex items-center"
-                    >
-                      <Camera className="h-4 w-4 mr-1" />
-                      Headshots
-                    </Button>
-                    <Button
-                      variant={selectedCategory === 'product_photography' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setSelectedCategory('product_photography')}
-                      className="flex items-center"
-                    >
-                      <Package className="h-4 w-4 mr-1" />
-                      Product Photos
-                    </Button>
-                    <Button
-                      variant={showTrending ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setShowTrending(!showTrending)}
-                      className="flex items-center"
-                    >
-                      <Star className="h-4 w-4 mr-1" />
-                      Trending
-                    </Button>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-muted-foreground">View:</span>
-                    <div className="flex border rounded-md">
-                      <Button
-                        variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('grid')}
-                        className="rounded-r-none border-r"
-                      >
-                        <Grid3X3 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant={viewMode === 'list' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setViewMode('list')}
-                        className="rounded-l-none"
-                      >
-                        <List className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {showTrending ? trendingPresets.length : presets.length} preset{(showTrending ? trendingPresets.length : presets.length) !== 1 ? 's' : ''}
-                  </div>
-                </div>
+                <PresetCategoryNav
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  showTrending={showTrending}
+                  onToggleTrending={() => setShowTrending(!showTrending)}
+                  presetsCount={showTrending ? trendingPresets.length : presets.length}
+                />
 
                 {/* Trending Presets Section */}
                 {showTrending && (
@@ -691,7 +519,7 @@ export default function PresetSelector({
                     </div>
                     {trendingLoading ? (
                       <div className="flex items-center justify-center py-4">
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <LoadingSpinner size="sm" />
                         <span className="ml-2 text-sm text-muted-foreground">Loading trending presets...</span>
                       </div>
                     ) : trendingPresets.length === 0 ? (
@@ -703,97 +531,13 @@ export default function PresetSelector({
                     ) : (
                       <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-2'}>
                         {trendingPresets.map(preset => (
-                          viewMode === 'grid' ? (
-                            <Card 
-                              key={preset.id} 
-                              className="cursor-pointer hover:shadow-md transition-shadow border-primary/20"
-                              onClick={() => handlePresetSelect(preset)}
-                            >
-                              <CardHeader className="pb-2">
-                                <div className="flex items-start justify-between">
-                                  <CardTitle className="text-sm">{preset.name}</CardTitle>
-                                  <div className="flex items-center space-x-1">
-                                    <Star className="h-3 w-3 text-primary fill-current" />
-                                    {preset.is_featured && (
-                                      <Star className="h-3 w-3 text-primary" />
-                                    )}
-                                    {preset.is_public && (
-                                      <Users className="h-3 w-3 text-primary" />
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
-                                    {preset.category}
-                                  </Badge>
-                                  {getPresetTypeBadge(preset.id)}
-                                  {getGenerationModeBadge(preset)}
-                                  {getVideoSettingsBadge(preset)}
-                                  <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                    <PlayCircle className="h-3 w-3" />
-                                    <span>{preset.usage_count}</span>
-                                  </div>
-                                  <div className="flex items-center space-x-1 text-xs text-primary">
-                                    <Heart className="h-3 w-3" />
-                                    <span>{preset.likes_count || 0}</span>
-                                  </div>
-                                </div>
-                              </CardHeader>
-                              <CardContent className="pt-0">
-                                {preset.description && (
-                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                                    {preset.description}
-                                  </p>
-                                )}
-                                <p className="text-xs text-muted-foreground">
-                                  by @{preset.creator.handle}
-                                </p>
-                              </CardContent>
-                            </Card>
-                          ) : (
-                            <div 
-                              key={preset.id} 
-                              className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors border-primary/20"
-                              onClick={() => handlePresetSelect(preset)}
-                            >
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <h3 className="font-medium text-sm truncate">{preset.name}</h3>
-                                  <Star className="h-3 w-3 text-primary fill-current" />
-                                  <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
-                                    {preset.category}
-                                  </Badge>
-                                  {getPresetTypeBadge(preset.id)}
-                                  {getGenerationModeBadge(preset)}
-                                  {getVideoSettingsBadge(preset)}
-                                  <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                    <PlayCircle className="h-3 w-3" />
-                                    <span>{preset.usage_count}</span>
-                                  </div>
-                                  <div className="flex items-center space-x-1 text-xs text-primary">
-                                    <Heart className="h-3 w-3" />
-                                    <span>{preset.likes_count || 0}</span>
-                                  </div>
-                                </div>
-                                {preset.description && (
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {preset.description}
-                                  </p>
-                                )}
-                                <p className="text-xs text-muted-foreground">
-                                  by @{preset.creator.handle}
-                                </p>
-                              </div>
-                              <div className="flex items-center space-x-1 ml-4">
-                                {preset.is_featured && (
-                                  <Star className="h-4 w-4 text-primary" />
-                                )}
-                                {preset.is_public && (
-                                  <Users className="h-4 w-4 text-primary" />
-                                )}
-                              </div>
-                            </div>
-                          )
+                          <PresetCard
+                            key={preset.id}
+                            preset={preset}
+                            viewMode={viewMode}
+                            onClick={handlePresetSelect}
+                            highlighted={true}
+                          />
                         ))}
                       </div>
                     )}
@@ -805,7 +549,7 @@ export default function PresetSelector({
                   <div className="max-h-96 overflow-y-auto">
                     {loading ? (
                       <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <LoadingSpinner size="md" />
                         <span className="ml-2">Loading presets...</span>
                       </div>
                     ) : presets.length === 0 ? (
@@ -816,146 +560,14 @@ export default function PresetSelector({
                     ) : (
                     <div key={`${selectedCategory}-${searchQuery}-${sortBy}`} className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-2'}>
                       {presets.map(preset => (
-                        viewMode === 'grid' ? (
-                          <Card 
-                            key={preset.id} 
-                            className="cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={() => handlePresetSelect(preset)}
-                          >
-                            <CardHeader className="pb-2">
-                              <div className="flex items-start justify-between">
-                                <CardTitle className="text-sm">{preset.name}</CardTitle>
-                                <div className="flex items-center space-x-1">
-                                  {preset.is_featured && (
-                                    <Star className="h-3 w-3 text-primary" />
-                                  )}
-                                  {preset.is_public && (
-                                    <Users className="h-3 w-3 text-primary" />
-                                  )}
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      confirmDelete(preset)
-                                    }}
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
-                                  {preset.category}
-                                </Badge>
-                                {getPresetTypeBadge(preset.id)}
-                                {getGenerationModeBadge(preset)}
-                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                  <PlayCircle className="h-3 w-3" />
-                                  <span>{preset.usage_count}</span>
-                                </div>
-                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                  <Heart className="h-3 w-3" />
-                                  <span>{preset.likes_count || 0}</span>
-                                </div>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              {preset.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                                  {preset.description}
-                                </p>
-                              )}
-                              
-                              {/* Sample Images Preview */}
-                              {preset.sample_images && (preset.sample_images.before_images?.length > 0 || preset.sample_images.after_images?.length > 0) && (
-                                <div className="mb-2">
-                                  <div className="text-xs text-muted-foreground mb-1">Sample Images:</div>
-                                  <div className="flex gap-1">
-                                    {preset.sample_images.before_images?.slice(0, 2).map((url, index) => (
-                                      <img
-                                        key={`before-${index}`}
-                                        src={url}
-                                        alt={`Before ${index + 1}`}
-                                        className="w-8 h-8 object-cover rounded border"
-                                      />
-                                    ))}
-                                    {preset.sample_images.after_images?.slice(0, 2).map((url, index) => (
-                                      <img
-                                        key={`after-${index}`}
-                                        src={url}
-                                        alt={`After ${index + 1}`}
-                                        className="w-8 h-8 object-cover rounded border"
-                                      />
-                                    ))}
-                                    {((preset.sample_images.before_images?.length || 0) + (preset.sample_images.after_images?.length || 0)) > 4 && (
-                                      <div className="w-8 h-8 bg-muted rounded border flex items-center justify-center text-xs text-muted-foreground">
-                                        +{((preset.sample_images.before_images?.length || 0) + (preset.sample_images.after_images?.length || 0)) - 4}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              <p className="text-xs text-muted-foreground">
-                                by @{preset.creator.handle}
-                              </p>
-                            </CardContent>
-                          </Card>
-                        ) : (
-                          <div 
-                            key={preset.id} 
-                            className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-                            onClick={() => handlePresetSelect(preset)}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <h3 className="font-medium text-sm truncate">{preset.name}</h3>
-                                <Badge className={`text-xs ${getCategoryColor(preset.category)}`}>
-                                  {preset.category}
-                                </Badge>
-                                {getPresetTypeBadge(preset.id)}
-                                {getGenerationModeBadge(preset)}
-                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                  <PlayCircle className="h-3 w-3" />
-                                  <span>{preset.usage_count}</span>
-                                </div>
-                                <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                                  <Heart className="h-3 w-3" />
-                                  <span>{preset.likes_count || 0}</span>
-                                </div>
-                              </div>
-                              {preset.description && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {preset.description}
-                                </p>
-                              )}
-                              <p className="text-xs text-muted-foreground">
-                                by @{preset.creator.handle}
-                              </p>
-                            </div>
-                            <div className="flex items-center space-x-1 ml-4">
-                              {preset.is_featured && (
-                                <Star className="h-4 w-4 text-primary" />
-                              )}
-                              {preset.is_public && (
-                                <Users className="h-4 w-4 text-primary" />
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  confirmDelete(preset)
-                                }}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        )
+                        <PresetCard
+                          key={preset.id}
+                          preset={preset}
+                          viewMode={viewMode}
+                          onClick={handlePresetSelect}
+                          onDelete={confirmDelete}
+                          showDeleteButton={true}
+                        />
                       ))}
                     </div>
                   )}

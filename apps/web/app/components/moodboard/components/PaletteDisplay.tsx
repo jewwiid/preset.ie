@@ -8,6 +8,7 @@
 import { Palette, Sparkles, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface PaletteDisplayProps {
   palette: string[]
@@ -62,7 +63,7 @@ export const PaletteDisplay = ({
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <LoadingSpinner size="sm" />
                 Extracting...
               </>
             ) : (

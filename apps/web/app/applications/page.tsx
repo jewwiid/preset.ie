@@ -37,11 +37,11 @@ import {
   Target,
   Zap,
   Trash2,
-  UserCheck,
-} from 'lucide-react';
+  UserCheck} from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
 import { supabase } from '../../lib/supabase';
 import { Badge } from '../../components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import CompatibilityScore from '../../components/matchmaking/CompatibilityScore';
 
 // Import refactored modules
@@ -52,16 +52,14 @@ import {
   useApplicationFilters,
   useApplicationActions,
   useApplicationStats,
-  useAdminStats,
-} from './hooks';
+  useAdminStats} from './hooks';
 import {
   getStatusColor,
   getStatusIcon,
   formatApplicationDate,
   canPerformAction,
   parseStyleTags,
-  truncateText,
-} from './lib/applicationHelpers';
+  truncateText} from './lib/applicationHelpers';
 
 export default function ApplicationsPage() {
   const { user, userRole, loading: authLoading } = useAuth();
@@ -78,14 +76,12 @@ export default function ApplicationsPage() {
     setSearchTerm,
     selectedStatus,
     setSelectedStatus,
-    applyFilters,
-  } = useApplicationFilters();
+    applyFilters} = useApplicationFilters();
 
   const { applications, loading, refetch } = useApplications({
     profile,
     viewMode,
-    autoFetch: true,
-  });
+    autoFetch: true});
 
   const filteredApplications = useMemo(
     () => applyFilters(applications),
@@ -103,10 +99,8 @@ export default function ApplicationsPage() {
     shortlistApplication,
     withdrawApplication,
     banUser,
-    deleteApplication,
-  } = useApplicationActions({
-    onSuccess: () => refetch(),
-  });
+    deleteApplication} = useApplicationActions({
+    onSuccess: () => refetch()});
 
   // Auth and profile setup
   useEffect(() => {

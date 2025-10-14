@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { ProfileFormData } from '@/lib/profile-validation'
 import { validateHandleFormat, validateHandleAvailability } from '@/lib/profile-validation'
@@ -161,7 +162,7 @@ export default function BasicDetailsStep({
                 />
                 <div className="absolute right-3 top-3">
                   {checkingHandle ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <LoadingSpinner size="sm" />
                   ) : handleAvailable === true ? (
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                   ) : handleAvailable === false ? (

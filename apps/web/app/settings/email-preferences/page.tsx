@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/lib/supabase';
 import { useFeedback } from '@/components/feedback/FeedbackContext';
 import { Mail, Bell, MessageSquare, Calendar, Shield, TrendingUp } from 'lucide-react';
@@ -26,8 +27,7 @@ export default function EmailPreferencesPage() {
     booking_notifications: true,
     system_notifications: true,
     marketing_notifications: false,
-    digest_frequency: 'real-time' as 'real-time' | 'hourly' | 'daily' | 'weekly',
-  });
+    digest_frequency: 'real-time' as 'real-time' | 'hourly' | 'daily' | 'weekly'});
 
   useEffect(() => {
     if (!loading && !user) {
@@ -66,8 +66,7 @@ export default function EmailPreferencesPage() {
           booking_notifications: data.booking_notifications ?? true,
           system_notifications: data.system_notifications ?? true,
           marketing_notifications: data.marketing_notifications ?? false,
-          digest_frequency: data.digest_frequency ?? 'real-time',
-        });
+          digest_frequency: data.digest_frequency ?? 'real-time'});
       }
     } catch (error) {
       console.error('Error fetching preferences:', error);
@@ -92,8 +91,7 @@ export default function EmailPreferencesPage() {
         .upsert({
           user_id: user.id,
           ...preferences,
-          updated_at: new Date().toISOString(),
-        });
+          updated_at: new Date().toISOString()});
 
       if (error) {
         console.error('Error saving preferences:', error);
@@ -124,7 +122,7 @@ export default function EmailPreferencesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

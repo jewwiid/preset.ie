@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ArrowLeft, Heart, Eye, Share2, Download } from 'lucide-react';
 import Link from 'next/link';
 
@@ -176,7 +177,7 @@ export default function ShowcaseDetailPage() {
             {showcase.media.map((media, index) => (
               <Card key={media.id} className="overflow-hidden">
                 <div className="relative aspect-square">
-                  {media.type === 'VIDEO' ? (
+                  {media.type === 'video' ? (
                     <video
                       src={media.url}
                       controls

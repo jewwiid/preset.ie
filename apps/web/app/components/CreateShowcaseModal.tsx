@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -10,6 +10,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Plus, Image as ImageIcon, Video, FileText, Palette, X, Check, Upload, Eye, EyeOff, Globe, Lock } from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
 import { Badge } from '../../components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useFormManager } from '../../hooks/useFormManager';
+import { useShowcaseMedia } from '../../hooks/useShowcaseMedia';
+
+// Define ShowcaseFormData type (moved from deleted useShowcaseForm hook)
+export interface ShowcaseFormData {
+  title: string;
+  description: string;
+  type: 'moodboard' | 'individual_image' | 'treatment' | 'video';
+  visibility: 'public' | 'private';
+  tags: string[];
+  selectedMoodboard: string;
+}
+import { useShowcaseSubscription } from '../../hooks/useShowcaseSubscription';
 
 interface CreateShowcaseModalProps {
   isOpen: boolean;
@@ -31,57 +45,107 @@ interface MediaItem {
 
 export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: CreateShowcaseModalProps) {
   const { user, session } = useAuth();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState<'moodboard' | 'individual_image' | 'treatment' | 'video'>('individual_image');
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [userSubscriptionTier, setUserSubscriptionTier] = useState<string>('FREE');
-  const [monthlyShowcaseCount, setMonthlyShowcaseCount] = useState<number>(0);
-  const [availableMedia, setAvailableMedia] = useState<MediaItem[]>([]);
-  const [playgroundGallery, setPlaygroundGallery] = useState<any[]>([]);
-  const [availableTreatments, setAvailableTreatments] = useState<Array<{ id: string; title: string; }>>([]);
-  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
-  const [selectedMoodboard, setSelectedMoodboard] = useState<string>('');
-  const [uploadingMedia, setUploadingMedia] = useState(false);
-  const [promotingImage, setPromotingImage] = useState<string | null>(null)
-  const [previewIndex, setPreviewIndex] = useState(0);
-  const [loadingMedia, setLoadingMedia] = useState(false);
-  const [loadingPlayground, setLoadingPlayground] = useState(false);
+
+  // Form state management using useFormManager
+  const formBase = useFormManager<ShowcaseFormData>({
+    initialData: {
+      title: '',
+      description: '',
+      type: 'individual_image',
+      visibility: 'public',
+      tags: [],
+      selectedMoodboard: ''
+    },
+    validationRules: {
+      title: (val) => !val.trim() ? 'Please enter a title for your showcase' : null,
+      description: (val) => !val.trim() ? 'Please enter a description' : null,
+    },
+    onError: (errorMsg) => console.error('Form error:', errorMsg)
+  });
+
+  // Tag management state
+  const [newTag, setNewTag] = React.useState('');
+
+  // Compatibility wrapper for old API
+  const form = React.useMemo(() => ({
+    // Form data
+    formData: formBase.formData,
+    title: formBase.formData.title,
+    description: formBase.formData.description,
+    type: formBase.formData.type,
+    visibility: formBase.formData.visibility,
+    tags: formBase.formData.tags,
+    selectedMoodboard: formBase.formData.selectedMoodboard,
+
+    // Tag input
+    newTag,
+    setNewTag,
+
+    // State
+    loading: formBase.loading,
+    setLoading: (val: boolean) => {}, // No-op since loading is managed by formBase
+    error: (formBase.errors as any)._form as string | null,
+    setError: (val: string | null) => formBase.setFieldError('_form' as any, val),
+
+    // Actions
+    updateField: formBase.updateField,
+    addTag: () => {
+      if (!newTag.trim()) return;
+      const trimmedTag = newTag.trim();
+      if (formBase.formData.tags.includes(trimmedTag)) {
+        formBase.setFieldError('_form' as any, 'Tag already added');
+        return;
+      }
+      formBase.updateField('tags', [...formBase.formData.tags, trimmedTag]);
+      setNewTag('');
+    },
+    removeTag: (tagToRemove: string) => {
+      formBase.updateField('tags', formBase.formData.tags.filter(tag => tag !== tagToRemove));
+    },
+    resetForm: formBase.resetForm,
+    validateForm: formBase.validateForm,
+
+    // Setters for backward compatibility
+    setTitle: (value: string) => formBase.updateField('title', value),
+    setDescription: (value: string) => formBase.updateField('description', value),
+    setType: (value: ShowcaseFormData['type']) => formBase.updateField('type', value),
+    setVisibility: (value: ShowcaseFormData['visibility']) => formBase.updateField('visibility', value),
+    setTags: (value: string[]) => formBase.updateField('tags', value),
+    setSelectedMoodboard: (value: string) => formBase.updateField('selectedMoodboard', value),
+  }), [formBase.formData, formBase.loading, formBase.errors, newTag]);
+
+  // Media management hook
+  const media = useShowcaseMedia({
+    accessToken: session?.access_token,
+    onError: (errorMsg) => form.setError(errorMsg)
+  });
+
+  // Subscription/limits hook
+  const subscription = useShowcaseSubscription({
+    accessToken: session?.access_token
+  });
 
   useEffect(() => {
     if (user && session) {
-      fetchUserProfile();
-      fetchAvailableMedia();
-      fetchPlaygroundGallery();
-      fetchAvailableTreatments();
+      subscription.fetchUserProfile();
+      media.fetchAvailableMedia();
+      media.fetchPlaygroundGallery();
+      media.fetchAvailableTreatments();
     }
   }, [user, session]);
 
-  // Reset preview index when selectedMedia changes
-  useEffect(() => {
-    if (selectedMedia.length === 0) {
-      setPreviewIndex(0);
-    } else if (previewIndex >= selectedMedia.length) {
-      setPreviewIndex(selectedMedia.length - 1);
-    }
-  }, [selectedMedia, previewIndex]);
-
   // Clear selected media when showcase type changes
   useEffect(() => {
-    setSelectedMedia([]);
-    setSelectedMoodboard('');
-  }, [type]);
+    media.clearSelectedMedia();
+    form.setSelectedMoodboard('');
+  }, [form.type]);
 
   // Render filtered media based on showcase type
   const renderFilteredMedia = () => {
-    const filtered = getFilteredMedia();
+    const filtered = media.getFilteredMedia(form.type);
     
     // Show treatments section for treatment type
-    if (type === 'treatment' && filtered.treatments && filtered.treatments.length > 0) {
+    if (form.type === 'treatment' && filtered.treatments && filtered.treatments.length > 0) {
       return (
         <>
           <div className="col-span-4 text-xs text-muted-foreground font-medium mb-2">
@@ -93,9 +157,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 type="button"
                 className="relative rounded-lg overflow-hidden border-2 transition-all w-full aspect-square bg-muted/50 hover:bg-muted/70"
                 onClick={() => {
-                  setSelectedMoodboard(treatment.id);
+                  form.setSelectedMoodboard(treatment.id);
                 }}
-                disabled={loading || !canCreateShowcase()}
+                disabled={form.loading || !subscription.canCreateShowcase()}
               >
                 <div className="flex flex-col items-center justify-center h-full p-4 text-center">
                   <div className="text-2xl mb-2">🎬</div>
@@ -120,14 +184,14 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
               <button
                 type="button"
                 className={`relative rounded-2xl overflow-hidden border-2 transition-all w-full shadow-lg hover:shadow-xl ${
-                  selectedMedia.some(media => media.id === `playground-${item.id}`)
+                  media.selectedMedia.some(media => media.id === `playground-${item.id}`)
                     ? 'border-primary ring-4 ring-primary/20 scale-105'
                     : 'border-border/30 hover:border-primary/60'
                 }`}
                 style={{
                   aspectRatio: item.width && item.height ? `${item.width}/${item.height}` : '1/1'
                 }}
-                onClick={() => handleMediaSelect({
+                onClick={() => media.handleMediaSelect({
                   id: `playground-${item.id}`,
                   url: item.image_url || item.video_url,
                   type: item.media_type === 'video' ? 'video' as const : 'image' as const,
@@ -136,8 +200,8 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   preset: item.generation_metadata?.preset || item.generation_metadata?.style || 'realistic',
                   source: 'playground_gallery'
                 })}
-                disabled={loading || !canCreateShowcase() || 
-                  (selectedMedia.length >= 6 && !selectedMedia.some(media => media.id === `playground-${item.id}`))}
+                disabled={form.loading || !subscription.canCreateShowcase() || 
+                  (media.selectedMedia.length >= 6 && !media.selectedMedia.some(media => media.id === `playground-${item.id}`))}
               >
                 {item.media_type === 'video' ? (
                   <video
@@ -161,7 +225,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 
                 {/* Selection overlay */}
-                {selectedMedia.some(media => media.id === `playground-${item.id}`) && (
+                {media.selectedMedia.some(media => media.id === `playground-${item.id}`) && (
                   <div className="absolute inset-0 bg-primary/30 flex items-center justify-center backdrop-blur-sm">
                     <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
                       <Check className="h-5 w-5 text-primary-foreground" />
@@ -192,14 +256,14 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 {item.can_promote && (
                   <button
                     type="button"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      promoteToMedia(item.id);
+                      media.promoteToMedia(item.id);
                     }}
-                    disabled={promotingImage === item.id || loading}
+                    disabled={media.promotingImage === item.id || form.loading}
                     className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity font-medium shadow-lg"
                   >
-                    {promotingImage === item.id ? '...' : 'Promote'}
+                    {media.promotingImage === item.id ? '...' : 'Promote'}
                   </button>
                 )}
               </button>
@@ -220,17 +284,17 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
             <div key={media.id} className="relative group">
               <button
                 type="button"
-                onClick={() => handleMediaSelect(media)}
+                onClick={() => media.handleMediaSelect(media)}
                 className={`relative rounded-2xl overflow-hidden border-2 transition-all w-full shadow-lg hover:shadow-xl ${
-                  selectedMedia.some(item => item.id === media.id)
+                  media.selectedMedia.some(item => item.id === media.id)
                     ? 'border-primary ring-4 ring-primary/20 scale-105'
                     : 'border-border/30 hover:border-primary/60'
                 }`}
                 style={{
                   aspectRatio: media.width && media.height ? `${media.width}/${media.height}` : '1/1'
                 }}
-                disabled={loading || !canCreateShowcase() || 
-                  (selectedMedia.length >= 6 && !selectedMedia.some(item => item.id === media.id))}
+                disabled={form.loading || !subscription.canCreateShowcase() || 
+                  (media.selectedMedia.length >= 6 && !media.selectedMedia.some(item => item.id === media.id))}
               >
                 {media.type === 'video' ? (
                   <video 
@@ -252,7 +316,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 
                 {/* Selection overlay */}
-                {selectedMedia.some(item => item.id === media.id) && (
+                {media.selectedMedia.some(item => item.id === media.id) && (
                   <div className="absolute inset-0 bg-primary/30 flex items-center justify-center backdrop-blur-sm">
                     <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
                       <Check className="h-5 w-5 text-primary-foreground" />
@@ -284,10 +348,10 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
     }
     
     // Loading state
-    if (loadingMedia || loadingPlayground) {
+    if (media.loadingMedia || media.loadingPlayground) {
       return (
         <div className="col-span-4 flex flex-col items-center justify-center py-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+          <LoadingSpinner size="lg" />
           <p className="text-sm text-muted-foreground mb-2">Loading media...</p>
           <p className="text-xs text-muted-foreground">Fetching your media and playground gallery</p>
         </div>
@@ -301,13 +365,13 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
           <Upload className="h-8 w-8 text-muted-foreground" />
         </div>
         <h4 className="text-lg font-semibold mb-2">
-          {type === 'treatment' ? 'No treatments available' : 
-           type === 'video' ? 'No videos available' : 
+          {form.type === 'treatment' ? 'No treatments available' : 
+           form.type === 'video' ? 'No videos available' : 
            'No media available'}
         </h4>
         <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-          {type === 'treatment' ? 'Generate treatments to create showcases' :
-           type === 'video' ? 'Upload videos to create showcases' :
+          {form.type === 'treatment' ? 'Generate treatments to create showcases' :
+           form.type === 'video' ? 'Upload videos to create showcases' :
            'Upload media to create showcases'}
         </p>
         <div className="space-y-3 w-full max-w-xs">
@@ -315,18 +379,18 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
             <input
               type="file"
               accept="image/*,video/*"
-              onChange={handleMediaUpload}
+              onChange={(e) => { const file = e.target.files?.[0]; if (file) media.handleMediaUpload(file); }}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={uploadingMedia || loading || !canCreateShowcase()}
+              disabled={media.uploadingMedia || form.loading || !subscription.canCreateShowcase()}
             />
             <Button 
               type="button" 
               variant="default" 
               size="lg"
-              disabled={uploadingMedia || loading || !canCreateShowcase()}
+              disabled={media.uploadingMedia || form.loading || !subscription.canCreateShowcase()}
               className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
             >
-              {uploadingMedia ? (
+              {media.uploadingMedia ? (
                 <>
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
                   Uploading...
@@ -345,10 +409,10 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
               variant="outline" 
               size="sm"
               onClick={() => {
-                fetchAvailableMedia();
-                fetchPlaygroundGallery();
+                media.fetchAvailableMedia();
+                media.fetchPlaygroundGallery();
               }}
-              disabled={loadingMedia || loadingPlayground}
+              disabled={media.loadingMedia || media.loadingPlayground}
               className="flex-1 text-xs"
             >
               Refresh
@@ -379,267 +443,33 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
     );
   };
 
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/users/profile', {
-        headers: { 'Authorization': `Bearer ${session?.access_token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUserSubscriptionTier(data.subscription_tier || 'FREE');
-        setMonthlyShowcaseCount(data.monthly_showcase_count || 0);
-      }
-    } catch (err) {
-      console.error('Failed to fetch user profile:', err);
-    }
-  };
-
-  const fetchAvailableMedia = async () => {
-    setLoadingMedia(true);
-    try {
-      console.log('Fetching available media...');
-      const response = await fetch('/api/media', {
-        headers: { 'Authorization': `Bearer ${session?.access_token}` }
-      });
-      console.log('Media API response status:', response.status);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Media API data:', data);
-        console.log('Sample media item from API:', data.media[0]);
-        setAvailableMedia(data.media.map((m: any) => ({
-          id: m.id,
-          url: m.url,
-          type: m.type,
-          thumbnail_url: m.thumbnail_url || m.url,
-          metadata: m.metadata,
-          preset: m.preset,
-          source: m.source
-        })));
-      } else {
-        const errorData = await response.json();
-        console.error('Media API error:', errorData);
-        setError(`Failed to load media: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (err) {
-      console.error('Failed to fetch available media:', err);
-      setError('Failed to load media. Please try again.');
-    } finally {
-      setLoadingMedia(false);
-    }
-  };
-
-  const fetchPlaygroundGallery = async () => {
-    setLoadingPlayground(true);
-    try {
-      console.log('Fetching playground gallery...');
-      const response = await fetch('/api/playground/gallery-with-status', {
-        headers: { 'Authorization': `Bearer ${session?.access_token}` }
-      });
-      console.log('Playground gallery response status:', response.status);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Playground gallery data:', data);
-        setPlaygroundGallery(data.gallery || []);
-      } else {
-        const errorData = await response.json();
-        console.error('Playground gallery API error:', errorData);
-        setError(`Failed to load playground gallery: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (err) {
-      console.error('Failed to fetch playground gallery:', err);
-      setError('Failed to load playground gallery. Please try again.');
-    } finally {
-      setLoadingPlayground(false);
-    }
-  };
-
-  const fetchAvailableTreatments = async () => {
-    try {
-      const response = await fetch('/api/treatments', {
-        headers: { 'Authorization': `Bearer ${session?.access_token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setAvailableTreatments(data.treatments || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch available treatments:', err);
-    }
-  };
-
-  const getMaxShowcases = () => {
-    switch (userSubscriptionTier) {
-      case 'FREE':
-        return 3;
-      case 'PLUS':
-        return 10;
-      case 'PRO':
-        return -1; // unlimited
-      default:
-        return 0;
-    }
-  };
-
-  const canCreateShowcase = () => {
-    const maxShowcases = getMaxShowcases();
-    return maxShowcases === -1 || monthlyShowcaseCount < maxShowcases;
-  };
-
-  // Filter media based on showcase type
-  const getFilteredMedia = () => {
-    console.log('Filtering media for type:', type);
-    console.log('Available media:', availableMedia);
-    console.log('Playground gallery:', playgroundGallery);
-    
-    switch (type) {
-      case 'moodboard':
-        // Moodboards should show multiple images, prefer playground gallery
-        return {
-          playground: playgroundGallery.filter(item => item.media_type === 'image'),
-          media: availableMedia.filter(item => item.type === 'image')
-        };
-      case 'individual_image':
-        // Individual images can be any single image - be more permissive
-        return {
-          playground: playgroundGallery.filter(item => item.media_type === 'image'),
-          media: availableMedia.filter(item => 
-            item.type === 'image' || 
-            !item.type // Include items without type specified
-          )
-        };
-      case 'treatment':
-        // Treatments should show available treatments
-        return {
-          playground: [],
-          media: [],
-          treatments: availableTreatments
-        };
-      case 'video':
-        // Videos should only show video content
-        return {
-          playground: playgroundGallery.filter(item => item.media_type === 'video'),
-          media: availableMedia.filter(item => item.type === 'video')
-        };
-      default:
-        // Show all media when no specific type is selected
-        return {
-          playground: playgroundGallery,
-          media: availableMedia
-        };
-    }
-  };
-
-  const handleMediaSelect = (media: MediaItem) => {
-      console.log('Media selected:', media);
-      console.log('Media preset:', media.preset);
-      console.log('Media metadata:', media.metadata);
-      console.log('Media source:', media.source);
-      console.log('Media keys:', Object.keys(media));
-      console.log('Current selectedMedia:', selectedMedia);
-      
-      if (selectedMedia.some(item => item.id === media.id)) {
-        console.log('Removing media:', media.id);
-        setSelectedMedia(prev => prev.filter(item => item.id !== media.id));
-      } else if (selectedMedia.length < 6) {
-        console.log('Adding media:', media.id);
-        setSelectedMedia(prev => [...prev, media]);
-      } else {
-        console.log('Cannot add more media - limit reached');
-      }
-    };
-
-  const handleMediaUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingMedia(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('title', file.name);
-
-      const response = await fetch('/api/media/upload', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session?.access_token}` },
-        body: formData
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const newMedia: MediaItem = {
-          id: data.id,
-          url: data.url,
-          type: data.type,
-          thumbnail_url: data.thumbnail_url
-        };
-        setAvailableMedia(prev => [newMedia, ...prev]);
-      } else {
-        const errorData = await response.json();
-        console.error('Upload failed:', errorData);
-      }
-    } catch (err) {
-      console.error('Upload error:', err);
-    } finally {
-      setUploadingMedia(false);
-    }
-  };
-
-  const promoteToMedia = async (galleryItemId: string) => {
-    setPromotingImage(galleryItemId);
-    try {
-      const response = await fetch('/api/playground/promote-to-media', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}` 
-        },
-        body: JSON.stringify({ galleryItemId })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Promotion successful:', data);
-        // Refresh both media lists
-        fetchAvailableMedia();
-        fetchPlaygroundGallery();
-      } else {
-        const errorData = await response.json();
-        console.error('Promotion failed:', errorData);
-      }
-    } catch (err) {
-      console.error('Promotion error:', err);
-    } finally {
-      setPromotingImage(null);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Submit clicked - selectedMedia:', selectedMedia);
-    console.log('Submit clicked - selectedMedia.length:', selectedMedia.length);
+    console.log('Submit clicked - selectedMedia:', media.selectedMedia);
+    console.log('Submit clicked - media.selectedMedia.length:', media.selectedMedia.length);
     
-    if (!canCreateShowcase()) {
-      setError('Monthly showcase limit reached. Upgrade your plan to create more showcases.');
+    if (!subscription.canCreateShowcase()) {
+      form.setError('Monthly showcase limit reached. Upgrade your plan to create more showcases.');
       return;
     }
 
-    if (selectedMedia.length === 0) {
-      setError('Please select at least one media item.');
+    if (media.selectedMedia.length === 0) {
+      form.setError('Please select at least one media item.');
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    form.setLoading(true);
+    form.setError(null);
 
     try {
       // Check if any selected media items are playground gallery items that need promotion
-      const playgroundItems = selectedMedia.filter(media => media.id.startsWith('playground-'));
-      const regularMediaItems = selectedMedia.filter(media => !media.id.startsWith('playground-'));
+      const playgroundItems = media.selectedMedia.filter(media => media.id.startsWith('playground-'));
+      const regularMediaItems = media.selectedMedia.filter(media => !media.id.startsWith('playground-'));
       
       console.log('Playground items found:', playgroundItems.length);
       console.log('Regular media items found:', regularMediaItems.length);
-      console.log('All selected media:', selectedMedia);
+      console.log('All selected media:', media.selectedMedia);
       
       let finalMediaIds = [...regularMediaItems.map(media => media.id)];
       
@@ -674,14 +504,14 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
       }
 
       const requestBody = {
-        title,
-        description,
-        type,
-        visibility,
-        tags,
+        title: form.title,
+        description: form.description,
+        type: form.type,
+        visibility: form.visibility,
+        tags: form.tags,
         mediaIds: finalMediaIds,
-        moodboardId: selectedMoodboard || null,
-        mediaMetadata: selectedMedia.map(media => ({
+        moodboardId: form.selectedMoodboard || null,
+        mediaMetadata: media.selectedMedia.map(media => ({
           id: media.id,
           preset: media.preset,
           metadata: media.metadata,
@@ -705,21 +535,21 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
         onSuccess();
         onClose();
         // Reset form
-        setTitle('');
-        setDescription('');
-        setSelectedMedia([]);
-        setTags([]);
-        setNewTag('');
-        setError(null);
+        form.setTitle('');
+        form.setDescription('');
+        media.setSelectedMedia([]);
+        form.setTags([]);
+        form.setNewTag('');
+        form.setError(null);
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Failed to create showcase');
+        form.setError(errorData.error || 'Failed to create showcase');
       }
     } catch (err) {
       console.error('Error creating showcase:', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
+      form.setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
     } finally {
-      setLoading(false);
+      form.setLoading(false);
     }
   };
 
@@ -737,7 +567,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
         </DialogHeader>
 
         {/* Monthly Limit Reached Banner */}
-        {!canCreateShowcase() && (
+        {!subscription.canCreateShowcase() && (
           <div className="flex-shrink-0 mx-6 mb-4 p-4 bg-gradient-to-r from-destructive/10 to-destructive/5 border border-destructive/20 rounded-xl">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0 w-8 h-8 bg-destructive/20 rounded-full flex items-center justify-center">
@@ -748,7 +578,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   Monthly Limit Reached
                 </p>
                 <p className="text-xs text-destructive/80 mt-1">
-                  You've used {monthlyShowcaseCount} of {getMaxShowcases()} showcases this month. 
+                  You've used {subscription.monthlyShowcaseCount} of {subscription.getMaxShowcases()} showcases this month. 
                   <span className="underline ml-1 cursor-pointer hover:text-destructive">Upgrade your plan</span> to create more showcases.
                 </p>
               </div>
@@ -757,11 +587,11 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
         )}
 
         {/* Error Message */}
-        {error && (
+        {form.error && (
           <div className="flex-shrink-0 mx-6 mb-4 p-4 bg-gradient-to-r from-destructive/10 to-destructive/5 border border-destructive/20 rounded-xl">
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-destructive rounded-full flex-shrink-0"></div>
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-sm text-destructive">{form.error}</p>
             </div>
           </div>
         )}
@@ -779,7 +609,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     <p className="text-sm text-muted-foreground">Choose up to 6 items for your showcase</p>
                   </div>
                   <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
-                    {selectedMedia.length}/6 selected
+                    {media.selectedMedia.length}/6 selected
                   </Badge>
                 </div>
                 
@@ -796,11 +626,11 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                       <Button
                         key={option.value}
                         type="button"
-                        variant={type === option.value ? "default" : "outline"}
-                        onClick={() => setType(option.value as any)}
-                        disabled={loading || !canCreateShowcase()}
+                        variant={form.type === option.value ? "default" : "outline"}
+                        onClick={() => form.setType(option.value as any)}
+                        disabled={form.loading || !subscription.canCreateShowcase()}
                         className={`flex items-center space-x-2 h-9 px-3 transition-all ${
-                          type === option.value ? 'shadow-md scale-105' : 'hover:shadow-sm hover:scale-102'
+                          form.type === option.value ? 'shadow-md scale-105' : 'hover:shadow-sm hover:scale-102'
                         }`}
                         size="sm"
                       >
@@ -816,7 +646,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                       // Show all media without filtering
                       console.log('Showing all media');
                     }}
-                    disabled={loading || !canCreateShowcase()}
+                    disabled={form.loading || !subscription.canCreateShowcase()}
                     className="flex items-center space-x-2 h-9 px-3 text-xs text-muted-foreground hover:text-foreground"
                     size="sm"
                   >
@@ -826,19 +656,19 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
               </div>
               
               {/* Main Preview */}
-              {selectedMedia.length > 0 && (
+              {media.selectedMedia.length > 0 && (
                 <div className="p-6 border-b bg-gradient-to-b from-primary/5 to-transparent">
                   <div className="flex items-center justify-between mb-4">
                     <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Preview</h4>
-                    {selectedMedia.length > 1 && (
+                    {media.selectedMedia.length > 1 && (
                       <div className="flex gap-2">
-                        {selectedMedia.map((_, index) => (
+                        {media.selectedMedia.map((_, index) => (
                           <button
                             key={index}
                             type="button"
-                            onClick={() => setPreviewIndex(index)}
+                            onClick={() => media.setPreviewIndex(index)}
                             className={`w-3 h-3 rounded-full transition-all ${
-                              previewIndex === index ? 'bg-primary scale-110' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                              media.previewIndex === index ? 'bg-primary scale-110' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
                             }`}
                           />
                         ))}
@@ -848,19 +678,19 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   
                   <div className="relative group">
                     <div className="aspect-video bg-muted/50 rounded-xl overflow-hidden shadow-lg ring-1 ring-border/50">
-                      {selectedMedia[previewIndex].type === 'video' ? (
+                      {media.selectedMedia[media.previewIndex].type === 'video' ? (
                         <video
-                          src={selectedMedia[previewIndex].url}
+                          src={media.selectedMedia[media.previewIndex].url}
                           className="w-full h-full object-cover"
                           controls
                           preload="metadata"
-                          poster={selectedMedia[previewIndex].thumbnail_url}
+                          poster={media.selectedMedia[media.previewIndex].thumbnail_url}
                         >
                           Your browser does not support the video tag.
                         </video>
                       ) : (
                         <img
-                          src={selectedMedia[previewIndex].thumbnail_url || selectedMedia[previewIndex].url}
+                          src={media.selectedMedia[media.previewIndex].thumbnail_url || media.selectedMedia[media.previewIndex].url}
                           alt="Preview"
                           className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         />
@@ -870,9 +700,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     {/* Preview Overlay Info */}
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 rounded-b-xl">
                       <div className="text-white">
-                        <p className="text-sm font-medium">{selectedMedia[previewIndex].preset || 'Custom'}</p>
-                        {selectedMedia[previewIndex].metadata?.generation_metadata?.resolution && (
-                          <p className="text-xs opacity-80">{selectedMedia[previewIndex].metadata.generation_metadata.resolution}</p>
+                        <p className="text-sm font-medium">{media.selectedMedia[media.previewIndex].preset || 'Custom'}</p>
+                        {media.selectedMedia[media.previewIndex].metadata?.generation_metadata?.resolution && (
+                          <p className="text-xs opacity-80">{media.selectedMedia[media.previewIndex].metadata.generation_metadata.resolution}</p>
                         )}
                       </div>
                     </div>
@@ -881,29 +711,29 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   {/* Media Details */}
                   <div className="mt-4 space-y-3">
                     <div className="flex flex-wrap gap-2">
-                      {selectedMedia[previewIndex].preset && (
+                      {media.selectedMedia[media.previewIndex].preset && (
                         <Badge variant="secondary" className="px-2 py-1 text-xs">
-                          🎨 {selectedMedia[previewIndex].preset}
+                          🎨 {media.selectedMedia[media.previewIndex].preset}
                         </Badge>
                       )}
-                      {selectedMedia[previewIndex].metadata?.generation_metadata?.aspect_ratio && (
+                      {media.selectedMedia[media.previewIndex].metadata?.generation_metadata?.aspect_ratio && (
                         <Badge variant="outline" className="px-2 py-1 text-xs">
-                          📐 {selectedMedia[previewIndex].metadata.generation_metadata.aspect_ratio}
+                          📐 {media.selectedMedia[media.previewIndex].metadata.generation_metadata.aspect_ratio}
                         </Badge>
                       )}
-                      {selectedMedia[previewIndex].metadata?.generation_metadata?.provider && (
+                      {media.selectedMedia[media.previewIndex].metadata?.generation_metadata?.provider && (
                         <Badge variant="outline" className="px-2 py-1 text-xs">
-                          ⚡ {selectedMedia[previewIndex].metadata.generation_metadata.provider}
+                          ⚡ {media.selectedMedia[media.previewIndex].metadata.generation_metadata.provider}
                         </Badge>
                       )}
                     </div>
                     
                     {/* Prompt Preview */}
-                    {selectedMedia[previewIndex].metadata?.generation_metadata?.prompt && (
+                    {media.selectedMedia[media.previewIndex].metadata?.generation_metadata?.prompt && (
                       <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground font-medium">Generation Prompt</Label>
                         <div className="text-xs bg-background/70 p-3 rounded-lg border max-h-16 overflow-y-auto leading-relaxed">
-                          {selectedMedia[previewIndex].metadata.generation_metadata.prompt}
+                          {media.selectedMedia[media.previewIndex].metadata.generation_metadata.prompt}
                         </div>
                       </div>
                     )}
@@ -912,32 +742,32 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
               )}
               
               {/* Selected Media Thumbnails */}
-              {selectedMedia.length > 1 && (
+              {media.selectedMedia.length > 1 && (
                 <div className="p-6 border-b bg-background/30">
                   <h4 className="text-sm font-semibold text-muted-foreground mb-4">
-                    Selected Media ({selectedMedia.length}/6)
+                    Selected Media ({media.selectedMedia.length}/6)
                   </h4>
                   <div className="grid grid-cols-4 gap-3">
-                    {selectedMedia.map((media, index) => (
+                    {media.selectedMedia.map((mediaItem, index) => (
                       <button
-                        key={media.id}
+                        key={mediaItem.id}
                         type="button"
-                        onClick={() => setPreviewIndex(index)}
+                        onClick={() => media.setPreviewIndex(index)}
                         className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all group ${
-                          previewIndex === index ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'
+                          media.previewIndex === index ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'
                         }`}
                       >
-                        {media.type === 'video' ? (
+                        {mediaItem.type === 'video' ? (
                           <video
-                            src={media.url}
+                            src={mediaItem.url}
                             className="w-full h-full object-cover"
                             muted
                             preload="metadata"
-                            poster={media.thumbnail_url}
+                            poster={mediaItem.thumbnail_url}
                           />
                         ) : (
                           <img
-                            src={media.thumbnail_url || media.url}
+                            src={mediaItem.thumbnail_url || mediaItem.url}
                             alt="Media thumbnail"
                             className="w-full h-full object-cover transition-transform group-hover:scale-110"
                           />
@@ -948,9 +778,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                               type="button"
                               variant="destructive"
                               size="sm"
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.stopPropagation()
-                                setSelectedMedia(prev => prev.filter(item => item.id !== media.id))
+                                media.setSelectedMedia(prev => prev.filter(item => item.id !== mediaItem.id))
                               }}
                               className="h-6 w-6 p-0 rounded-full"
                             >
@@ -958,7 +788,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                             </Button>
                           </div>
                         </div>
-                        {previewIndex === index && (
+                        {media.previewIndex === index && (
                           <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full font-medium">
                             {index + 1}
                           </div>
@@ -974,7 +804,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 <div className="h-full overflow-y-auto">
                   {/* Media Stats */}
                   {(() => {
-                    const filtered = getFilteredMedia();
+                    const filtered = media.getFilteredMedia(form.type);
                     const totalMedia = filtered.media.length + filtered.playground.length;
                     return totalMedia > 0 && (
                       <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border/50">
@@ -1017,10 +847,10 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     <Label htmlFor="title" className="text-sm font-semibold">Title *</Label>
                     <Input
                       id="title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      value={form.title}
+                      onChange={(e) => form.setTitle(e.target.value)}
                       placeholder="Enter a compelling title..."
-                      disabled={loading || !canCreateShowcase()}
+                      disabled={form.loading || !subscription.canCreateShowcase()}
                       className="text-sm h-11 border-border/50 focus:border-primary/50 transition-colors"
                     />
                   </div>
@@ -1029,11 +859,11 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     <Label htmlFor="description" className="text-sm font-semibold">Description</Label>
                     <Textarea
                       id="description"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
+                      value={form.description}
+                      onChange={(e) => form.setDescription(e.target.value)}
                       placeholder="Describe your showcase, the process, or any interesting details..."
                       rows={4}
-                      disabled={loading || !canCreateShowcase()}
+                      disabled={form.loading || !subscription.canCreateShowcase()}
                       className="text-sm resize-none border-border/50 focus:border-primary/50 transition-colors"
                     />
                   </div>
@@ -1046,9 +876,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     <div className="grid grid-cols-2 gap-3">
                       <Button
                         type="button"
-                        variant={visibility === 'public' ? "default" : "outline"}
-                        onClick={() => setVisibility('public')}
-                        disabled={loading || !canCreateShowcase()}
+                        variant={form.visibility === 'public' ? "default" : "outline"}
+                        onClick={() => form.setVisibility('public')}
+                        disabled={form.loading || !subscription.canCreateShowcase()}
                         className="flex items-center justify-center space-x-2 h-12 border-border/50 hover:border-primary/50 transition-colors"
                         size="sm"
                       >
@@ -1057,9 +887,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                       </Button>
                       <Button
                         type="button"
-                        variant={visibility === 'private' ? "default" : "outline"}
-                        onClick={() => setVisibility('private')}
-                        disabled={loading || !canCreateShowcase()}
+                        variant={form.visibility === 'private' ? "default" : "outline"}
+                        onClick={() => form.setVisibility('private')}
+                        disabled={form.loading || !subscription.canCreateShowcase()}
                         className="flex items-center justify-center space-x-2 h-12 border-border/50 hover:border-primary/50 transition-colors"
                         size="sm"
                       >
@@ -1076,30 +906,22 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     <Label className="text-sm font-semibold mb-3 block">Tags (Optional)</Label>
                     <div className="flex gap-2">
                       <Input
-                        value={newTag}
-                        onChange={(e) => setNewTag(e.target.value)}
+                        value={form.newTag}
+                        onChange={(e) => form.setNewTag(e.target.value)}
                         placeholder="Add a tag..."
-                        disabled={loading || !canCreateShowcase()}
+                        disabled={form.loading || !subscription.canCreateShowcase()}
                         onKeyPress={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault()
-                            if (newTag.trim() && !tags.includes(newTag.trim())) {
-                              setTags([...tags, newTag.trim()])
-                              setNewTag('')
-                            }
+                            form.addTag()
                           }
                         }}
                         className="text-sm h-11 border-border/50 focus:border-primary/50 transition-colors"
                       />
-                      <Button 
-                        type="button" 
-                        onClick={() => {
-                          if (newTag.trim() && !tags.includes(newTag.trim())) {
-                            setTags([...tags, newTag.trim()])
-                            setNewTag('')
-                          }
-                        }}
-                        disabled={loading || !canCreateShowcase() || !newTag.trim()}
+                      <Button
+                        type="button"
+                        onClick={() => form.addTag()}
+                        disabled={form.loading || !subscription.canCreateShowcase() || !form.newTag.trim()}
                         size="sm"
                         className="px-4 h-11"
                       >
@@ -1108,18 +930,18 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     </div>
                   </div>
                   
-                  {tags.length > 0 && (
+                  {form.tags.length > 0 && (
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground font-medium">Added Tags</Label>
                       <div className="flex flex-wrap gap-2">
-                        {tags.map((tag, index) => (
+                        {form.tags.map((tag, index) => (
                           <Badge key={index} variant="secondary" className="flex items-center gap-1 text-xs px-3 py-1">
                             {tag}
                             <button
                               type="button"
-                              onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                              onClick={() => form.removeTag(tag)}
                               className="ml-1 hover:text-destructive transition-colors"
-                              disabled={loading || !canCreateShowcase()}
+                              disabled={form.loading || !subscription.canCreateShowcase()}
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -1138,23 +960,23 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
         <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t bg-muted/20">
           <div className="flex items-center justify-between w-full">
             <div className="text-xs text-muted-foreground">
-              {canCreateShowcase() ? (
-                <span>You have {getMaxShowcases() === -1 ? 'unlimited' : `${getMaxShowcases() - monthlyShowcaseCount} remaining`} showcases this month</span>
+              {subscription.canCreateShowcase() ? (
+                <span>You have {subscription.getMaxShowcases() === -1 ? 'unlimited' : `${subscription.getMaxShowcases() - subscription.monthlyShowcaseCount} remaining`} showcases this month</span>
               ) : (
                 <span className="text-destructive">Monthly limit reached - upgrade to create more</span>
               )}
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={onClose} disabled={loading} className="px-6">
+              <Button variant="outline" onClick={onClose} disabled={form.loading} className="px-6">
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                disabled={loading || !canCreateShowcase()}
+                disabled={form.loading || !subscription.canCreateShowcase()}
                 onClick={handleSubmit}
                 className="px-6 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
               >
-                {loading ? (
+                {form.loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
                     Creating...

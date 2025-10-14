@@ -43,7 +43,7 @@ export function FeaturedPresetsQueue() {
   const [requests, setRequests] = useState<FeaturedPresetRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<string | null>(null)
-  const [adminNotes, setAdminNotes] = useState<{ [key: string]: string }>({})
+  const [adminNotes, setAdminNotes] = useState<{ [key: string]: string }>()
 
   useEffect(() => {
     fetchFeaturedRequests()

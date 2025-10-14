@@ -25,6 +25,8 @@ import { Alert, AlertDescription } from '../../../components/ui/alert'
 import { Checkbox } from '../../../components/ui/checkbox'
 import { GoogleSignInButton } from '../../../components/auth/GoogleSignInButton'
 import { RoleIndicator } from '../../../components/auth/RoleIndicator'
+import { AsyncButton } from '../../../components/ui/async-button'
+import { LoadingSpinner } from '../../../components/ui/loading-spinner'
 
 type SignupStep = 'role' | 'credentials'
 type UserRole = 'CONTRIBUTOR' | 'TALENT' | 'BOTH'
@@ -250,8 +252,8 @@ function SignUpPageContent() {
         sessionStorage.setItem('preset_signup_email', email)
       }
 
-      // Initiate Google OAuth
-      const { error } = await signInWithGoogle()
+      // Initiate Google OAuth with invite code
+      const { error } = await signInWithGoogle(inviteCode)
       
       if (error) {
         setError(error.message)
@@ -647,7 +649,7 @@ function SignUpPageContent() {
                       />
                       {validatingInvite && (
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                          <LoadingSpinner size="sm" />
                         </div>
                       )}
                       {!validatingInvite && inviteCodeValid === true && (

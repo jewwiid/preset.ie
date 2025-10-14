@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
-import { 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   Lock, 
   Eye, 
   EyeOff, 
@@ -303,7 +304,7 @@ export default function ResetPasswordPage() {
             >
               {loading ? (
                 <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                  <LoadingSpinner size="sm" />
                   Resetting password...
                 </div>
               ) : (

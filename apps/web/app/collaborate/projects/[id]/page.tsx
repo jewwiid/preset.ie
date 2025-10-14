@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Calendar, MapPin, Users, Camera, MessageCircle, Star, CheckCircle, XCircle, Clock, UserPlus, Mail, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -319,7 +320,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="min-h-screen bg-muted-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <LoadingSpinner size="xl" />
           <p className="text-muted-foreground-600">Loading project...</p>
         </div>
       </div>

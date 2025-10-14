@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Badge } from '../../../components/ui/badge'
 import { X, RotateCcw, CheckCircle, AlertCircle } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface BatchJob {
   id: string
   job_type: string

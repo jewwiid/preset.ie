@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Eye, Clock } from 'lucide-react';
 
 /**
@@ -62,7 +63,7 @@ export default function TreatmentAnalyticsDashboard({
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

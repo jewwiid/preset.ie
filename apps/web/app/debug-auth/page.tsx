@@ -16,7 +16,7 @@ export default function DebugAuth() {
       setStorageKeys(keys)
       
       // Get data for relevant keys
-      const data: Record<string, any> = {}
+      const data: Record<string, any> = 
       keys.forEach(key => {
         if (key.includes('supabase') || key.includes('auth') || key.includes('preset') || key.includes('sb-')) {
           try {

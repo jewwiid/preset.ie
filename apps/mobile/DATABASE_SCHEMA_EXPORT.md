@@ -668,7 +668,7 @@ CREATE TYPE showcase_visibility AS ENUM ('DRAFT', 'PUBLIC', 'PRIVATE');
 
 ### **Media Types**
 ```sql
-CREATE TYPE media_type AS ENUM ('IMAGE', 'VIDEO', 'PDF');
+CREATE TYPE media_type AS ENUM ('image', 'video', 'pdf');
 ```
 
 ### **Message Status**

@@ -9,6 +9,7 @@ import { EquipmentSection } from './EquipmentSection'
 import { UserSkillsSection } from './UserSkillsSection'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export function ProfessionalSection() {
   const { profile } = useProfile()

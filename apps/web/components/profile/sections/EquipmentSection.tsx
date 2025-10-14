@@ -7,6 +7,7 @@ import { Camera, Monitor, Plus, X, AlertCircle, Settings, Zap, Mic, Headphones, 
 import { supabase } from '../../../lib/supabase'
 import { useAuth } from '../../../lib/auth-context'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface EquipmentType {
   id: string
   name: string
@@ -544,7 +545,7 @@ export function EquipmentSection() {
     }
     
     // Check for excessive repetition
-    const repetitionPattern = /(.)\1{4,}/
+    const repetitionPattern = /(.)\1{4}/
     if (repetitionPattern.test(normalized)) {
       return { isValid: false, error: `${type} cannot have more than 4 repeated characters` }
     }
@@ -626,7 +627,7 @@ export function EquipmentSection() {
         
         {loadingEquipmentData ? (
           <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+            <LoadingSpinner size="md" />
             <p className="text-sm text-muted-foreground mt-2">Loading equipment...</p>
           </div>
         ) : userEquipment.length === 0 ? (

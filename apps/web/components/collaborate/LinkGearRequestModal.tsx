@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { X, Search, Package, MapPin, Star, CheckCircle } from 'lucide-react';
 import { getAuthToken } from '@/lib/auth-utils';
 
@@ -205,7 +206,7 @@ export default function LinkGearRequestModal({
               <Button type="submit" disabled={searching || !searchQuery.trim()}>
                 {searching ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                    <LoadingSpinner size="sm" />
                     Searching...
                   </>
                 ) : (
@@ -328,7 +329,7 @@ export default function LinkGearRequestModal({
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                  <LoadingSpinner size="sm" />
                   Linking...
                 </>
               ) : (

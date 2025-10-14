@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { Target, TrendingUp, Users } from 'lucide-react'
 import CompatibilityScore from '../matchmaking/CompatibilityScore'
 import { Recommendation } from '../../lib/types/matchmaking'
+import { LoadingSpinner } from '../ui/loading-spinner'
+import { IconBadge } from '../ui/icon-badge'
 
 interface MatchmakingData {
   topCompatibleGigs: Recommendation[]
@@ -31,9 +33,7 @@ export function DashboardMatchmakingCard({
     <div className="mb-6 max-w-7xl mx-auto">
       <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Target className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <IconBadge icon={Target} size="md" variant="primary" />
           <div>
             <h3 className="text-lg font-bold text-foreground">Perfect Matches For You</h3>
             <p className="text-sm text-muted-foreground">
@@ -147,10 +147,7 @@ export function DashboardMatchmakingCard({
         )}
 
         {loading && (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            <span className="ml-2 text-sm text-muted-foreground">Finding perfect matches...</span>
-          </div>
+          <LoadingSpinner size="md" text="Finding perfect matches..." className="py-8" />
         )}
       </div>
     </div>

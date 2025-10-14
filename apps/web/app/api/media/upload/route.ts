@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       .from('media')
       .insert({
         owner_user_id: userProfile.id,
-        type: file.type.startsWith('image/') ? 'IMAGE' : 'VIDEO',
+        type: file.type.startsWith('image/') ? 'image' : 'video',
         bucket: 'media',
         path: fileName,
         visibility: 'PRIVATE'

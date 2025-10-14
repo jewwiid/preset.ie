@@ -20,8 +20,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  SelectValue} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -35,8 +34,7 @@ import {
   Type,
   Eye,
   Code,
-  Copy,
-} from 'lucide-react';
+  Copy} from 'lucide-react';
 import { useToast, ToastContainer } from '@/components/ui/toast';
 
 // Import refactored modules
@@ -59,8 +57,7 @@ export default function BrandTester() {
     updateFont,
     setTheme,
     resetToDefaults,
-    loadConfiguration,
-  } = useBrandConfig();
+    loadConfiguration} = useBrandConfig();
 
   // Load Google Font dynamically
   const loadGoogleFont = (fontName: string) => {
@@ -96,8 +93,7 @@ export default function BrandTester() {
         name: 'Exported Design Config',
         description: 'Exported design configuration',
         createdAt: new Date().toISOString(),
-        version: '1.0.0',
-      }
+        version: '1.0.0'}
     );
     showSuccess('Exported', `Configuration exported as ${format.toUpperCase()}`);
   };
@@ -231,8 +227,7 @@ export default function BrandTester() {
                         <div
                           className="w-10 h-10 rounded border"
                           style={{
-                            background: colorConfigs[colorDef.variable]?.[currentTheme],
-                          }}
+                            background: colorConfigs[colorDef.variable]?.[currentTheme]}}
                         />
                         <div>
                           <h4 className="font-semibold">{colorDef.name}</h4>
@@ -335,8 +330,7 @@ export default function BrandTester() {
                         <p
                           className="text-lg"
                           style={{
-                            fontFamily: fontConfigs[fontDef.variable] || fontDef.currentValue,
-                          }}
+                            fontFamily: fontConfigs[fontDef.variable] || fontDef.currentValue}}
                         >
                           The quick brown fox jumps over the lazy dog
                         </p>

@@ -10,6 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { CalendarIcon, Euro } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -222,7 +223,7 @@ export default function RentalRequestForm({ listing, onClose, onSuccess, initial
           </p>
         </div>
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          <LoadingSpinner size="md" />
         </div>
       </div>
     );

@@ -13,9 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import AspectRatioSelector from '../ui/AspectRatioSelector'
 import CinematicParameterSelector from '../cinematic/CinematicParameterSelector'
-import { CinematicParameters } from '../../../../../packages/types/src/cinematic-parameters'
+import { CinematicParameters } from '@preset/types'
 import CinematicPromptBuilder from '../../../../../packages/services/src/cinematic-prompt-builder'
 
 interface StylePreset {
@@ -499,7 +500,7 @@ export default function CinematicGenerationPanel({
         >
           {loading ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <LoadingSpinner size="sm" />
               Generating...
             </>
           ) : (

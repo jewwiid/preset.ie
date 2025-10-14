@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Calendar, Euro, Star, Shield } from 'lucide-react';
+import { getListingConditionColor, getListingModeBadges } from '@/lib/utils/badge-helpers';
 
 interface ListingCardProps {
   listing: {
@@ -56,37 +57,19 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
     return `€${(cents / 100).toFixed(2)}`;
   };
 
-  const getConditionColor = (condition?: string) => {
-    if (!condition) return 'bg-muted text-muted-foreground';
-    
-    switch (condition) {
-      case 'new': return 'bg-primary/10 text-primary';
-      case 'like_new': return 'bg-primary/10 text-primary';
-      case 'good': return 'bg-primary/10 text-primary';
-      case 'fair': return 'bg-primary/10 text-primary';
-      case 'poor': return 'bg-destructive/10 text-destructive';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
-
   const getModeBadges = () => {
     const badges: React.ReactElement[] = [];
-    if (!listing.mode) return badges;
-    
-    if (listing.mode === 'rent' || listing.mode === 'both') {
+    const badgeConfigs = getListingModeBadges(listing.mode);
+
+    badgeConfigs.forEach((config, index) => {
+      const label = index === 0 && (listing.mode === 'rent' || listing.mode === 'both') ? 'Rent' : 'Sale';
       badges.push(
-        <Badge key="rent" variant="secondary" className="text-xs">
-          Rent
+        <Badge key={label} variant={config.variant} className={config.className}>
+          {label}
         </Badge>
       );
-    }
-    if (listing.mode === 'sale' || listing.mode === 'both') {
-      badges.push(
-        <Badge key="sale" variant="outline" className="text-xs">
-          Sale
-        </Badge>
-      );
-    }
+    });
+
     return badges;
   };
 
@@ -172,7 +155,7 @@ export default function ListingCard({ listing, showOwner = true }: ListingCardPr
         {/* Status Badge */}
         {listing.condition && (
           <div className="absolute top-2 left-2">
-            <Badge className={getConditionColor(listing.condition)}>
+            <Badge className={getListingConditionColor(listing.condition)}>
               {listing.condition.replace('_', ' ')}
             </Badge>
           </div>

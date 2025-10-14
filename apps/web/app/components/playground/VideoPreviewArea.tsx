@@ -5,6 +5,7 @@ import { Video as VideoIcon, Download, Heart, X, Image as ImageIcon, Loader2, Re
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import DraggableImagePreview from './DraggableImagePreview'
 
 interface VideoPreviewAreaProps {
@@ -226,7 +227,7 @@ export default function VideoPreviewArea({
                     <div className="text-center p-8 relative z-10">
                       {loading ? (
                         <>
-                          <Loader2 className="h-12 w-12 mx-auto mb-4 text-primary animate-spin" />
+                          <LoadingSpinner size="xl" />
                           <div className="space-y-2">
                             <p className="text-sm font-medium text-foreground">Generating your video...</p>
                             <p className="text-xs text-muted-foreground">

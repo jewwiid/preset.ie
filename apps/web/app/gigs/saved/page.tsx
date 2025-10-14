@@ -7,6 +7,7 @@ import { MapPin, Calendar, Users, Heart, Clock, DollarSign, Camera, Video, Spark
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 type CompensationType = 'TFP' | 'PAID' | 'EXPENSES' | 'OTHER';
 type PurposeType = 'PORTFOLIO' | 'COMMERCIAL' | 'EDITORIAL' | 'FASHION' | 'BEAUTY' | 'LIFESTYLE' | 'WEDDING' | 'EVENT' | 'PRODUCT' | 'ARCHITECTURE' | 'STREET' | 'CONCEPTUAL' | 'OTHER';
 

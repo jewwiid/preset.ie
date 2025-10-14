@@ -7,6 +7,7 @@ import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface ImageManipulatorProps {
   imageUrl: string
@@ -400,7 +401,7 @@ export default function ImageManipulator({
                   >
                     {isProcessing ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                        <LoadingSpinner size="sm" />
                         Processing...
                       </>
                     ) : (

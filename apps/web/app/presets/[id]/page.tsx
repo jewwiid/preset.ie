@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useAuth } from '../../../lib/auth-context'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Palette,
   Download,
@@ -341,7 +342,7 @@ export default function PresetDetailPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <LoadingSpinner size="xl" />
           <p className="text-muted-foreground">Loading preset...</p>
         </div>
       </div>
@@ -1039,7 +1040,7 @@ export default function PresetDetailPage() {
               <CardContent>
                 {examplesLoading ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                    <LoadingSpinner size="lg" />
                     <p>Loading examples...</p>
                   </div>
                 ) : examples.length > 0 ? (

@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ArrowLeft, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -456,7 +457,7 @@ export default function EditProfilePage() {
           >
             {saving ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <LoadingSpinner size="sm" />
                 Saving...
               </>
             ) : isLastStep ? (

@@ -3,6 +3,7 @@
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ImageIcon, X, ArrowUp } from 'lucide-react'
 import { useAuth } from '../../../lib/auth-context'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
@@ -334,7 +335,7 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <LoadingSpinner size="lg" />
             <span className="ml-2 text-muted-foreground">Loading saved images...</span>
           </div>
         ) : savedMedia.length === 0 ? (
@@ -400,7 +401,7 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
             >
               {deletingMedia === mediaToDelete ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-destructive-foreground mr-2"></div>
+                  <LoadingSpinner size="sm" />
                   Deleting...
                 </>
               ) : (

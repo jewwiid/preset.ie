@@ -67,7 +67,7 @@ export default function MarketplaceFilters({
   };
 
   const handleClearFilters = () => {
-    setLocalFilters({});
+    setLocalFilters();
     onClearFilters();
   };
 

@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       .from('media')
       .insert({
         owner_user_id: userProfile.id,
-        type: galleryItem.media_type?.toUpperCase() || 'IMAGE', // Use actual media type from gallery item
+        type: galleryItem.media_type?.toLowerCase() || 'image', // Use actual media type from gallery item
         bucket: 'external', // Use 'external' bucket for external URLs
         path: galleryItem.image_url, // Store the full URL as path for external images
         width: width,

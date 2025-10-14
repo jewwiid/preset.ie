@@ -14,7 +14,7 @@ export interface AuthContextType {
   loading: boolean
   signUp: (email: string, password: string, options?: { data?: Record<string, any> }) => Promise<{ error: AuthError | null; needsEmailConfirmation?: boolean }>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null; redirectPath?: string }>
-  signInWithGoogle: () => Promise<{ error: AuthError | null; redirectPath?: string }>
+  signInWithGoogle: (inviteCode?: string) => Promise<{ error: AuthError | null; redirectPath?: string }>
   signOut: () => Promise<{ error: AuthError | null }>
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>
 }
@@ -168,8 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password,
-    })
+      password})
 
     let redirectPath = '/dashboard'
 
@@ -237,15 +236,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (inviteCode?: string) => {
+    // Store invite code in session storage if provided
+    if (inviteCode) {
+      sessionStorage.setItem('preset_oauth_invite_code', inviteCode)
+    }
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`,
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent',
-        }
+          prompt: 'consent'}
       }
     })
     
@@ -259,8 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`,
-    })
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`})
     
     return { error }
   }
@@ -274,8 +276,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signInWithGoogle,
     signOut,
-    resetPassword,
-  }
+    resetPassword}
 
   return (
     <AuthContext.Provider value={value}>

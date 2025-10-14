@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { MapPin, ExternalLink, Loader2, Plus, Minus } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useTheme } from 'next-themes'
 import { normalizeLocationText, type ParsedLocation } from '../lib/location-service'
 
@@ -120,7 +121,7 @@ export default function LocationMap({
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              <LoadingSpinner size="md" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-foreground">{location}</p>
@@ -205,7 +206,7 @@ export default function LocationMap({
               {mapLoading && (
                 <div className="absolute inset-0 bg-muted/50 backdrop-blur-sm flex items-center justify-center rounded-t-lg">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <LoadingSpinner size="sm" />
                     <span className="text-sm">Loading map...</span>
                   </div>
                 </div>

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Star, 
   MessageSquare, 
@@ -199,8 +200,7 @@ export default function ReviewsPage() {
         4: reviewsData.filter(r => r.rating === 4).length,
         3: reviewsData.filter(r => r.rating === 3).length,
         2: reviewsData.filter(r => r.rating === 2).length,
-        1: reviewsData.filter(r => r.rating === 1).length,
-      };
+        1: reviewsData.filter(r => r.rating === 1).length};
 
       setStats({
         total_reviews: totalReviews,
@@ -357,7 +357,7 @@ export default function ReviewsPage() {
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                  <LoadingSpinner size="xl" />
                   <p className="mt-4 text-muted-foreground">Loading reviews...</p>
                 </div>
               </div>
@@ -463,7 +463,7 @@ export default function ReviewsPage() {
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                  <LoadingSpinner size="xl" />
                   <p className="mt-4 text-muted-foreground">Loading reviews...</p>
                 </div>
               </div>

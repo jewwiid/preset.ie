@@ -11,6 +11,7 @@ import CreditsDashboard from '../CreditsDashboard'
 import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface ProfileLayoutProps {
   children: React.ReactNode
 }
@@ -42,7 +43,7 @@ function ProfileLayoutContent({ children }: ProfileLayoutProps) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+          <LoadingSpinner size="lg" />
           <p className="text-muted-foreground">Loading profile...</p>
         </div>
       </div>
@@ -71,7 +72,7 @@ function ProfileLayoutContent({ children }: ProfileLayoutProps) {
         <div className="bg-card rounded-xl shadow-lg p-6">
           <Suspense fallback={
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <LoadingSpinner size="md" />
             </div>
           }>
             {renderTabContent()}

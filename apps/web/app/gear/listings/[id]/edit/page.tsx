@@ -7,6 +7,7 @@ import MarketplaceLayout from '@/components/marketplace/MarketplaceLayout';
 import CreateListingForm from '@/components/marketplace/CreateListingForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -128,7 +129,7 @@ export default function EditListingPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="flex items-center gap-2">
-              <Loader2 className="h-6 w-6 animate-spin" />
+              <LoadingSpinner size="md" />
               <span>Loading listing...</span>
             </div>
           </div>

@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   searchLocations, 
   getCurrentLocation, 
   reverseGeocode, 

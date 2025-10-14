@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Camera, Users, Sparkles, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PageHeader } from '@/components/PageHeader';
 import { usePageHeaderImage } from '@/hooks/usePageHeaderImage';
 import { useGigs } from './hooks/useGigs';

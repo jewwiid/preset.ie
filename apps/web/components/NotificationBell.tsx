@@ -5,6 +5,7 @@ import { Bell, Check, CheckCheck, X, BellOff, Volume2, VolumeX, RefreshCw } from
 import { useNotifications, type Notification } from '../lib/hooks/useNotifications'
 import { Button } from './ui/button'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -173,7 +174,7 @@ export function NotificationBell() {
           <div className="max-h-80 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+                <LoadingSpinner size="md" />
               </div>
             ) : notifications.length === 0 ? (
               <div className="text-center p-8">

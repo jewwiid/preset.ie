@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { RoleForm } from '@/components/collaborate/RoleForm';
 import { getAuthToken } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface ProjectFormData {
   title: string;
@@ -97,9 +98,7 @@ export default function ProjectEditPage() {
 
         const response = await fetch(`/api/collab/projects/${projectId}`, {
           headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+            'Authorization': `Bearer ${token}`}});
         const data = await response.json();
 
         if (response.ok) {
@@ -233,10 +232,8 @@ export default function ProjectEditPage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(projectData),
-      });
+          'Authorization': `Bearer ${token}`},
+        body: JSON.stringify(projectData)});
 
       if (!projectResponse.ok) {
         const errorData = await projectResponse.json();
@@ -251,10 +248,8 @@ export default function ProjectEditPage() {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(role),
-          });
+              'Authorization': `Bearer ${token}`},
+            body: JSON.stringify(role)});
           
           if (!roleResponse.ok) {
             const errorData = await roleResponse.json();
@@ -266,10 +261,8 @@ export default function ProjectEditPage() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(role),
-          });
+              'Authorization': `Bearer ${token}`},
+            body: JSON.stringify(role)});
           
           if (!roleResponse.ok) {
             const errorData = await roleResponse.json();
@@ -286,10 +279,8 @@ export default function ProjectEditPage() {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(gearRequest),
-          });
+              'Authorization': `Bearer ${token}`},
+            body: JSON.stringify(gearRequest)});
           
           if (!gearResponse.ok) {
             const errorData = await gearResponse.json();
@@ -301,10 +292,8 @@ export default function ProjectEditPage() {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify(gearRequest),
-          });
+              'Authorization': `Bearer ${token}`},
+            body: JSON.stringify(gearRequest)});
           
           if (!gearResponse.ok) {
             const errorData = await gearResponse.json();
@@ -360,7 +349,7 @@ export default function ProjectEditPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <LoadingSpinner size="xl" />
           <p className="text-muted-foreground">Loading project...</p>
         </div>
       </div>

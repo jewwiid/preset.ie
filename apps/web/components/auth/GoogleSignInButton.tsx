@@ -5,16 +5,19 @@ import { useAuth } from '../../lib/auth-context'
 import { Button } from '../ui/button'
 import { AlertCircle } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface GoogleSignInButtonProps {
   mode?: 'signin' | 'signup'
   className?: string
   disabled?: boolean
+  inviteCode?: string
 }
 
 export function GoogleSignInButton({ 
   mode = 'signin', 
   className = '',
-  disabled = false 
+  disabled = false,
+  inviteCode
 }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,7 +28,7 @@ export function GoogleSignInButton({
     setError(null)
 
     try {
-      const { error } = await signInWithGoogle()
+      const { error } = await signInWithGoogle(inviteCode)
       
       if (error) {
         setError(error.message)

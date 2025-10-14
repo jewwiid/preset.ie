@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { toast } from "sonner"
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export interface ExistingImage {
   id: string;
   url: string;

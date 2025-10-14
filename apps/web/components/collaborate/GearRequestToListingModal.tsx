@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { X, Package, MapPin, Euro } from 'lucide-react';
 import { getAuthToken } from '@/lib/auth-utils';
 
@@ -252,7 +253,7 @@ export default function GearRequestToListingModal({
               <Button type="submit" disabled={loading || !formData.title.trim()}>
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                    <LoadingSpinner size="sm" />
                     Creating...
                   </>
                 ) : (

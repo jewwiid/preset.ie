@@ -8,8 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu'
+  DropdownMenuTrigger} from '../ui/dropdown-menu'
 import { Mail, UserPlus, Briefcase, ChevronDown } from 'lucide-react'
 import { InviteToGigDialog } from '../gigs/InviteToGigDialog'
 

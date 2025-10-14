@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Package, 
   Euro, 
@@ -233,7 +234,7 @@ export default function OrdersPage() {
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+                <LoadingSpinner size="xl" />
                 <p className="mt-4 text-muted-foreground">Loading your orders...</p>
               </div>
             </div>

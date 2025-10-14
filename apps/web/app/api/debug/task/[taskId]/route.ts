@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const params = await props.params;
-    const taskId = params.taskId;
+    const { taskId: taskId } = await params;
     
     if (!taskId) {
       return NextResponse.json(

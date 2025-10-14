@@ -1,8 +1,7 @@
 import MarketplaceLayout from '@/components/marketplace/MarketplaceLayout';
 
 export default function RequestsLayout({
-  children,
-}: {
+  children}: {
   children: React.ReactNode;
 }) {
   return <MarketplaceLayout>{children}</MarketplaceLayout>;

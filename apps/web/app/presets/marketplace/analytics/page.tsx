@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../../components
 import { Badge } from '../../../../components/ui/badge'
 import { Button } from '../../../../components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   TrendingUp,
   TrendingDown,
@@ -167,7 +168,7 @@ export default function MarketplaceAnalyticsPage() {
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <LoadingSpinner size="xl" />
           </div>
         ) : !analytics ? (
           <Card>

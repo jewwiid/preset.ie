@@ -342,7 +342,14 @@ export async function POST(request: NextRequest) {
       // Set default values for required fields that might be missing
       used_in_moodboard: false,
       used_in_showcase: false,
-      media_type: 'IMAGE'
+      media_type: 'image',
+      
+      // NSFW moderation fields
+      is_nsfw: false,
+      is_flagged: false,
+      moderation_status: 'pending',
+      user_marked_nsfw: false,
+      nsfw_confidence_score: 0.0
     }
 
     // Only add optional fields if they exist and are valid
@@ -360,12 +367,47 @@ export async function POST(request: NextRequest) {
       insertData.format = 'webp'
     } else if (finalImageUrl.includes('.gif')) {
       insertData.format = 'gif'
-      insertData.media_type = 'VIDEO' // GIFs might be treated as video
+      insertData.media_type = 'video' // GIFs might be treated as video
     } else if (finalImageUrl.includes('.jpeg') || finalImageUrl.includes('.jpg')) {
       insertData.format = 'jpg'
     }
 
     console.log('Inserting data into playground_gallery table:', insertData)
+
+    // Perform NSFW detection on prompt and description
+    const nsfwKeywords = [
+      'adult', 'explicit', 'nude', 'naked', 'sex', 'sexual', 'porn', 'pornography',
+      'fetish', 'bdsm', 'kink', 'erotic', 'sensual', 'intimate', 'provocative',
+      'lingerie', 'underwear', 'bra', 'panties', 'thong', 'bikini', 'swimsuit',
+      'breast', 'boob', 'ass', 'butt', 'penis', 'dick', 'cock', 'vagina', 'pussy',
+      'masturbation', 'orgasm', 'cum', 'sperm', 'ejaculation', 'climax',
+      'strip', 'stripper', 'escort', 'prostitute', 'hooker', 'whore',
+      'rape', 'molest', 'abuse', 'incest', 'pedophile', 'child porn',
+      'violence', 'gore', 'blood', 'torture', 'murder', 'kill', 'death',
+      'hate', 'racist', 'discrimination', 'slur', 'offensive'
+    ];
+
+    const contentText = [
+      generationMetadata?.prompt || '',
+      generationMetadata?.enhanced_prompt || '',
+      title || '',
+      description || ''
+    ].join(' ').toLowerCase();
+
+    const detectedKeywords = nsfwKeywords.filter(keyword => 
+      contentText.includes(keyword)
+    );
+
+    const isNsfw = detectedKeywords.length > 0;
+    const confidenceScore = Math.min(detectedKeywords.length / 10, 1.0);
+
+    // Update insert data with NSFW detection results
+    if (isNsfw) {
+      insertData.is_nsfw = true;
+      insertData.moderation_status = 'flagged';
+      insertData.nsfw_confidence_score = confidenceScore;
+      console.log('NSFW content detected:', { detectedKeywords, confidenceScore });
+    }
 
     const { data: galleryItem, error: insertError } = await supabaseAdmin
       .from('playground_gallery')
@@ -374,6 +416,29 @@ export async function POST(request: NextRequest) {
       .single()
     
     console.log('Insert result:', { galleryItem, insertError })
+
+    // Add to moderation queue if NSFW content detected
+    if (galleryItem && !insertError && isNsfw) {
+      try {
+        await supabaseAdmin
+          .from('content_moderation_queue')
+          .insert({
+            content_type: 'playground_gallery',
+            content_id: galleryItem.id,
+            user_id: user.id,
+            content_title: title || 'Untitled',
+            content_description: description || generationMetadata?.prompt || '',
+            severity_score: Math.round(confidenceScore * 100),
+            detected_categories: ['nsfw'],
+            confidence_score: confidenceScore,
+            status: 'pending'
+          });
+        console.log('Added NSFW content to moderation queue');
+      } catch (queueError) {
+        console.error('Error adding to moderation queue:', queueError);
+        // Don't fail the main operation if queue insertion fails
+      }
+    }
 
     // Also create a media entry with cinematic metadata
     if (galleryItem && !insertError) {
@@ -396,7 +461,7 @@ export async function POST(request: NextRequest) {
           .from('media')
           .insert({
             owner_user_id: userProfile.id,
-            type: 'IMAGE',
+            type: 'image',
             bucket: 'playground-gallery',
             path: finalImageUrl,
             width: imageWidth,

@@ -4,10 +4,10 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '../../../lib/auth-context'
-import { 
-  Mail, 
-  Lock, 
-  AlertCircle, 
+import {
+  Mail,
+  Lock,
+  AlertCircle,
   CheckCircle2,
   ArrowRight,
   Eye,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Logo } from '../../../components/Logo'
 import { GoogleSignInButton } from '../../../components/auth/GoogleSignInButton'
+import { AsyncButton } from '../../../components/ui/async-button'
 
 function SignInContent() {
   const [emailOrHandle, setEmailOrHandle] = useState('')
@@ -23,6 +24,7 @@ function SignInContent() {
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [inviteOnlyMode, setInviteOnlyMode] = useState(false)
   const { signIn } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -35,6 +37,20 @@ function SignInContent() {
       setSuccessMessage('Password reset successfully! You can now sign in with your new password.')
     }
   }, [searchParams])
+
+  // Check if invite-only mode is active
+  useEffect(() => {
+    const checkInviteMode = async () => {
+      try {
+        const response = await fetch('/api/auth/validate-invite')
+        const data = await response.json()
+        setInviteOnlyMode(data.inviteOnlyMode)
+      } catch (err) {
+        console.error('Error checking invite mode:', err)
+      }
+    }
+    checkInviteMode()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -152,23 +168,16 @@ function SignInContent() {
             </div>
           </div>
 
-          <button
+          <AsyncButton
             type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+            isLoading={loading}
+            loadingText="Signing in..."
+            icon={ArrowRight}
+            iconPosition="right"
+            className="w-full px-6 py-3 text-base font-medium"
           >
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                Signing in...
-              </>
-            ) : (
-              <>
-                Sign in
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </button>
+            Sign in
+          </AsyncButton>
 
           <div className="text-center">
             <Link
@@ -185,7 +194,7 @@ function SignInContent() {
           <span className="text-muted-foreground">
             Don&apos;t have an account?{' '}
             <Link
-              href="/auth/signup"
+              href={inviteOnlyMode ? "/auth/invite-required" : "/auth/signup"}
               className="font-medium text-primary hover:text-primary/80"
             >
               Sign up

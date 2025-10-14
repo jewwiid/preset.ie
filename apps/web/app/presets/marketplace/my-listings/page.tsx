@@ -9,6 +9,7 @@ import { Button } from '../../../../components/ui/button'
 import { Switch } from '../../../../components/ui/switch'
 import { Input } from '../../../../components/ui/input'
 import { Label } from '../../../../components/ui/label'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Store,
   ArrowLeft,
@@ -253,7 +254,7 @@ export default function MyListingsPage() {
         {/* Listings */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <LoadingSpinner size="xl" />
           </div>
         ) : listings.length === 0 ? (
           <Card>

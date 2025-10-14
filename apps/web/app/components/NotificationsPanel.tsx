@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { ScrollArea } from '../../components/ui/scroll-area'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface Notification {
   id: string
@@ -185,7 +186,7 @@ export default function NotificationsPanel({ isOpen, onClose }: NotificationsPan
         <CardContent className="flex-1 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <LoadingSpinner size="lg" />
             </div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">

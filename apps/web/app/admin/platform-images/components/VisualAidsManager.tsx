@@ -17,8 +17,7 @@ interface VisualAidsManagerProps {
 export default function VisualAidsManager({
   presets,
   presetVisualAids,
-  onAddVisualAid,
-}: VisualAidsManagerProps) {
+  onAddVisualAid}: VisualAidsManagerProps) {
   const [showVisualAids, setShowVisualAids] = useState(false);
 
   return (

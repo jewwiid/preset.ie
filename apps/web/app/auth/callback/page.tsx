@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 type Status = 'loading' | 'success' | 'error'
 
 function AuthCallbackContent() {
@@ -218,9 +219,136 @@ function AuthCallbackContent() {
                              user.app_metadata?.providers?.includes('google');
           
           if (isOAuthUser) {
-            // OAuth users have verified emails - auto-create profile
+            // OAuth users have verified emails - but must check invite-only mode first
             if (process.env.NODE_ENV === 'development') {
-              console.log('🚀 CALLBACK PAGE: OAuth user, creating profile with email_verified=true')
+              console.log('🚀 CALLBACK PAGE: OAuth user detected, checking invite-only mode')
+            }
+            
+            // Check if invite-only mode is active
+            const { data: inviteSetting } = await supabase!
+              .from('platform_settings')
+              .select('value')
+              .eq('key', 'invite_only_mode')
+              .single();
+            
+            const inviteOnlyMode = inviteSetting?.value ?? false;
+            
+            if (inviteOnlyMode) {
+              // Get invite code from session storage (stored before OAuth redirect)
+              const inviteCode = sessionStorage.getItem('preset_oauth_invite_code');
+              
+              if (!inviteCode) {
+                // No invite code provided - reject signup
+                if (process.env.NODE_ENV === 'development') {
+                  console.error('🚀 CALLBACK PAGE: Invite-only mode active but no invite code provided')
+                }
+                setStatus('error');
+                setMessage('An invite code is required to sign up. Please use an invite link.');
+                
+                // Delete the auth user since we can't create their profile
+                try {
+                  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+                  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+                  
+                  if (supabaseServiceKey) {
+                    const { createClient } = await import('@supabase/supabase-js');
+                    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+                      auth: { autoRefreshToken: false, persistSession: false }
+                    });
+                    await supabaseAdmin.auth.admin.deleteUser(user.id);
+                  }
+                } catch (err) {
+                  console.error('Failed to cleanup auth user:', err);
+                }
+                
+                setTimeout(() => router.push('/auth/invite-required'), 3000);
+                return;
+              }
+              
+              // Validate the invite code
+              const normalizedCode = inviteCode.trim().toUpperCase();
+              const { data: inviteCodeData, error: codeError } = await supabase!
+                .from('invite_codes')
+                .select('id, status, used_by_user_id, expires_at, created_by_user_id')
+                .eq('code', normalizedCode)
+                .single();
+              
+              if (codeError || !inviteCodeData) {
+                setStatus('error');
+                setMessage('Invalid invite code. Please check your invite link and try again.');
+                
+                // Cleanup auth user
+                try {
+                  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+                  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+                  
+                  if (supabaseServiceKey) {
+                    const { createClient } = await import('@supabase/supabase-js');
+                    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+                      auth: { autoRefreshToken: false, persistSession: false }
+                    });
+                    await supabaseAdmin.auth.admin.deleteUser(user.id);
+                  }
+                } catch (err) {
+                  console.error('Failed to cleanup auth user:', err);
+                }
+                
+                setTimeout(() => router.push('/auth/signup'), 3000);
+                return;
+              }
+              
+              // Check if code is already used
+              if (inviteCodeData.status === 'used') {
+                setStatus('error');
+                setMessage('This invite code has already been used.');
+                
+                // Cleanup auth user
+                try {
+                  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+                  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+                  
+                  if (supabaseServiceKey) {
+                    const { createClient } = await import('@supabase/supabase-js');
+                    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+                      auth: { autoRefreshToken: false, persistSession: false }
+                    });
+                    await supabaseAdmin.auth.admin.deleteUser(user.id);
+                  }
+                } catch (err) {
+                  console.error('Failed to cleanup auth user:', err);
+                }
+                
+                setTimeout(() => router.push('/auth/signup'), 3000);
+                return;
+              }
+              
+              // Check if code is expired
+              if (inviteCodeData.status === 'expired' ||
+                  (inviteCodeData.expires_at && new Date(inviteCodeData.expires_at) < new Date())) {
+                setStatus('error');
+                setMessage('This invite code has expired.');
+                
+                // Cleanup auth user
+                try {
+                  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+                  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+                  
+                  if (supabaseServiceKey) {
+                    const { createClient } = await import('@supabase/supabase-js');
+                    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+                      auth: { autoRefreshToken: false, persistSession: false }
+                    });
+                    await supabaseAdmin.auth.admin.deleteUser(user.id);
+                  }
+                } catch (err) {
+                  console.error('Failed to cleanup auth user:', err);
+                }
+                
+                setTimeout(() => router.push('/auth/signup'), 3000);
+                return;
+              }
+              
+              // Valid invite code - will mark as used after profile creation
             }
             
             const metadata = user.user_metadata;
@@ -228,7 +356,7 @@ function AuthCallbackContent() {
             const [firstName, ...lastNameParts] = fullName.split(' ');
             const lastName = lastNameParts.join(' ') || firstName;
             
-            // Create profile with email_verified=TRUE (will trigger welcome email!)
+            // Create profile with email_verified=TRUE
             const { error: createError } = await supabase!
               .from('users_profile')
               .insert({
@@ -241,12 +369,80 @@ function AuthCallbackContent() {
                 email_verified: true, // OAuth emails are pre-verified!
                 email_verified_at: new Date().toISOString(),
                 availability_status: 'Available',
+                invited_by_code: inviteOnlyMode && sessionStorage.getItem('preset_oauth_invite_code') ? 
+                                 sessionStorage.getItem('preset_oauth_invite_code')!.trim().toUpperCase() : null,
               });
             
             if (createError) {
               console.error('Failed to create OAuth profile:', createError);
               router.replace('/auth/complete-profile');
             } else {
+              // If invite code was used, mark it as used
+              const storedInviteCode = sessionStorage.getItem('preset_oauth_invite_code');
+              if (inviteOnlyMode && storedInviteCode) {
+                try {
+                  const normalizedCode = storedInviteCode.trim().toUpperCase();
+                  
+                  // Get the invite code details
+                  const { data: codeData } = await supabase!
+                    .from('invite_codes')
+                    .select('id, created_by_user_id')
+                    .eq('code', normalizedCode)
+                    .single();
+                  
+                  if (codeData) {
+                    // Get the profile ID we just created
+                    const { data: newProfile } = await supabase!
+                      .from('users_profile')
+                      .select('id')
+                      .eq('user_id', user.id)
+                      .single();
+                    
+                    // Mark code as used
+                    await supabase!
+                      .from('invite_codes')
+                      .update({
+                        status: 'used',
+                        used_at: new Date().toISOString(),
+                        used_by_user_id: newProfile?.id
+                      })
+                      .eq('code', normalizedCode);
+                    
+                    // Send referral notification if applicable
+                    if (codeData.created_by_user_id) {
+                      try {
+                        const { data: referrerProfile } = await supabase!
+                          .from('users_profile')
+                          .select('user_id, display_name')
+                          .eq('id', codeData.created_by_user_id)
+                          .single();
+                        
+                        if (referrerProfile) {
+                          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+                          await fetch(`${baseUrl}/api/emails/new-signup-notification`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              referrerUserId: referrerProfile.user_id,
+                              referrerName: referrerProfile.display_name,
+                              newUserName: fullName,
+                              inviteCode: normalizedCode
+                            })
+                          });
+                        }
+                      } catch (emailError) {
+                        console.error('Error sending signup notification:', emailError);
+                      }
+                    }
+                  }
+                } catch (inviteError) {
+                  console.error('Error processing invite code:', inviteError);
+                }
+              }
+              
+              // Clean up session storage
+              sessionStorage.removeItem('preset_oauth_invite_code');
+              
               setMessage('Welcome! Redirecting to your dashboard...')
               router.replace('/dashboard');
             }
@@ -284,7 +480,7 @@ function AuthCallbackContent() {
       <div className="max-w-md w-full space-y-8 bg-background p-8 rounded-xl shadow-lg text-center">
         {status === 'loading' && (
           <>
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+            <LoadingSpinner size="xl" />
             <h1 className="text-2xl font-bold text-muted-foreground-900 mb-2">
               {message.includes('Confirming') ? 'Confirming your email...' : message}
             </h1>
@@ -341,7 +537,7 @@ export default function AuthCallbackPage() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-muted-50">
         <div className="max-w-md w-full bg-background rounded-lg shadow-lg p-6 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <LoadingSpinner size="lg" />
           <p className="text-muted-foreground-600">Loading...</p>
         </div>
       </div>

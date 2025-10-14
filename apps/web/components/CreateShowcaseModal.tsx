@@ -11,6 +11,7 @@ import { Plus, Image as ImageIcon, Video, FileText, Palette, X, Check, Upload, E
 import { useAuth } from '@/lib/auth-context';
 import { Badge } from './ui/badge';
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface CreateShowcaseModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -144,8 +145,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
           description,
           type,
           media_ids: selectedMedia.map(m => m.id),
-          tags,
-        })
+          tags})
       });
 
       if (!response.ok) {

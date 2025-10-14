@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Loader2 } from 'lucide-react'
 import { getAuthToken } from '@/lib/auth-utils'
 
@@ -104,7 +105,7 @@ export function WithdrawApplicationDialog({
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <LoadingSpinner size="sm" />
                 Withdrawing...
               </>
             ) : (

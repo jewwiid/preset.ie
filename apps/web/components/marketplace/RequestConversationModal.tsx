@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { MessageCircle, Send, User } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -221,7 +222,7 @@ export default function RequestConversationModal({
             <div className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-[300px]">
               {loading ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <LoadingSpinner size="lg" />
                   <p className="text-muted-foreground mt-2">Loading messages...</p>
                 </div>
               ) : messages.length === 0 ? (

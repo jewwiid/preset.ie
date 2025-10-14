@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ArrowLeft, Edit, Trash2, Loader2, Download } from 'lucide-react'
 import MoodboardViewer from '../../components/MoodboardViewer'
 
@@ -143,7 +144,7 @@ export default function ViewMoodboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <LoadingSpinner size="lg" />
       </div>
     )
   }
@@ -232,7 +233,7 @@ export default function ViewMoodboardPage() {
                     disabled={deleting}
                   >
                     {deleting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <LoadingSpinner size="sm" />
                     ) : (
                       <>
                         <Trash2 className="w-4 h-4 mr-2" />

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Bell,
   ShoppingBag,
@@ -234,7 +235,7 @@ export default function MarketplaceNotifications({
       <div className="space-y-2">
         {loading ? (
           <div className="flex items-center justify-center p-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+            <LoadingSpinner size="md" />
           </div>
         ) : filteredNotifications.length === 0 ? (
           <div className="text-center p-4 text-muted-foreground-500">
@@ -304,7 +305,7 @@ export default function MarketplaceNotifications({
       <CardContent>
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+            <LoadingSpinner size="lg" />
           </div>
         ) : error ? (
           <div className="text-center p-8">

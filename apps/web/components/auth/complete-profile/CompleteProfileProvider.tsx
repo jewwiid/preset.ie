@@ -188,7 +188,7 @@ export function CompleteProfileProvider({ children }: { children: ReactNode }) {
   const [country, setCountry] = useState('Ireland')
   
   // Profile data
-  const [profileData, setProfileData] = useState<ProfileData>({})
+  const [profileData, setProfileData] = useState<ProfileData>()
   
   // Style tags
   const [selectedStyles, setSelectedStyles] = useState<string[]>([])

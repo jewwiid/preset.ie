@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CinematicParameters } from '../../../../../packages/types/src/cinematic-parameters';
+import { CinematicParameters } from '@preset/types';
 import CinematicParameterSelector from '../cinematic/CinematicParameterSelector';
 import CinematicSearchFilter from '../cinematic/CinematicSearchFilter';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
@@ -11,6 +11,7 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { Separator } from '../../../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Wand2,
   Camera,
@@ -57,7 +58,7 @@ export default function EnhancedCinematicPlayground({
   userCredits = 0
 }: EnhancedCinematicPlaygroundProps) {
   const [activeTab, setActiveTab] = useState('enhance');
-  const [cinematicParameters, setCinematicParameters] = useState<Partial<CinematicParameters>>({});
+  const [cinematicParameters, setCinematicParameters] = useState<Partial<CinematicParameters>>();
   const [enhancementPrompt, setEnhancementPrompt] = useState('');
   const [enhancementType, setEnhancementType] = useState('cinematic');
   const [strength, setStrength] = useState(0.8);
@@ -72,7 +73,7 @@ export default function EnhancedCinematicPlayground({
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchFilters, setSearchFilters] = useState({});
+  const [searchFilters, setSearchFilters] = useState();
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -341,7 +342,7 @@ export default function EnhancedCinematicPlayground({
                 onFiltersChange={setSearchFilters}
                 onSearchChange={setSearchQuery}
                 onClearFilters={() => {
-                  setSearchFilters({});
+                  setSearchFilters();
                   setSearchQuery('');
                 }}
                 compact={false}

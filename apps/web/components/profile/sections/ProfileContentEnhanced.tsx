@@ -8,7 +8,11 @@ import { supabase } from '../../../lib/supabase'
 import CompatibilityScore from '../../matchmaking/CompatibilityScore'
 import MatchmakingCard from '../../matchmaking/MatchmakingCard'
 import { Recommendation } from '../../../lib/types/matchmaking'
-import { 
+import { useProfileStats } from '../../../hooks/useProfileStats'
+import { useUserRating } from '../../../hooks/useUserRating'
+import { useCompatibleGigs } from '../../../hooks/useCompatibleGigs'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   User, 
   Briefcase, 
   Camera, 
@@ -48,148 +52,11 @@ export function ProfileContentEnhanced() {
   const { profile } = useProfile()
   const { isEditing } = useProfileEditing()
   const { activeSubTab } = useProfileUI()
-  const [userRating, setUserRating] = useState<{ average: number; total: number } | null>(null)
-  const [stats, setStats] = useState({
-    totalGigs: 0,
-    totalShowcases: 0
-  })
-  
-  // Matchmaking state
-  const [compatibleGigs, setCompatibleGigs] = useState<Recommendation[]>([])
-  const [matchmakingLoading, setMatchmakingLoading] = useState(false)
 
-  useEffect(() => {
-    if (profile?.id) {
-      fetchUserRating()
-      fetchCompatibleGigs()
-      fetchStats()
-    }
-  }, [profile?.id])
-
-  const fetchStats = async () => {
-    try {
-      if (!supabase || !profile?.id) return
-
-      // Fetch gig count (gigs where user is owner)
-      const { data: gigsData, error: gigsError } = await (supabase as any)
-        .from('gigs')
-        .select('id', { count: 'exact' })
-        .eq('owner_user_id', profile.id)
-
-      if (gigsError) {
-        console.error('Error fetching gigs count:', gigsError)
-      }
-
-      // Fetch showcase count (showcases where user is creator or talent)
-      const { data: showcasesData, error: showcasesError } = await (supabase as any)
-        .from('showcases')
-        .select('id', { count: 'exact' })
-        .or(`creator_user_id.eq.${profile.id},talent_user_id.eq.${profile.id}`)
-
-      if (showcasesError) {
-        console.error('Error fetching showcases count:', showcasesError)
-      }
-
-      setStats({
-        totalGigs: gigsData?.length || 0,
-        totalShowcases: showcasesData?.length || 0
-      })
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    }
-  }
-
-  const fetchUserRating = async () => {
-    try {
-      if (!supabase || !profile?.id) return
-
-      const { data: reviews, error } = await (supabase as any)
-        .from('reviews')
-        .select('rating')
-        .eq('reviewed_user_id', profile.id)
-
-      if (error) {
-        console.error('Error fetching reviews:', error)
-        return
-      }
-
-      if (reviews && reviews.length > 0) {
-        const totalRating = reviews.reduce((sum: number, review: any) => sum + (review as any).rating, 0)
-        const averageRating = totalRating / reviews.length
-        setUserRating({
-          average: averageRating,
-          total: reviews.length
-        })
-      } else {
-        setUserRating(null)
-      }
-    } catch (error) {
-      console.error('Error fetching user rating:', error)
-    }
-  }
-
-  const fetchCompatibleGigs = async () => {
-    try {
-      if (!supabase || !profile?.id) return
-      
-      setMatchmakingLoading(true)
-      
-      // Only fetch for talent users - check if user has talent-related fields
-      const isTalent = profile.performance_roles && profile.performance_roles.length > 0
-      if (!isTalent) return
-
-      const { data: compatibleGigs, error } = await supabase
-        .rpc('find_compatible_gigs_for_user', {
-          p_profile_id: profile.id,
-          p_limit: 6
-        })
-
-      if (error) {
-        console.error('Error fetching compatible gigs:', error)
-        return
-      }
-
-      if (compatibleGigs) {
-        const gigRecommendations = compatibleGigs.map((gig: any) => ({
-          id: gig.gig_id,
-          type: 'gig' as const,
-          data: {
-            id: gig.gig_id,
-            title: gig.title,
-            description: 'Compatible gig based on your profile',
-            location_text: gig.location_text,
-            start_time: gig.start_time,
-            end_time: gig.start_time,
-            comp_type: 'TFP',
-            owner_user_id: 'unknown',
-            status: 'PUBLISHED',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          compatibility_score: gig.compatibility_score,
-          compatibility_breakdown: {
-            gender: gig.match_factors.gender_match ? 20 : 0,
-            age: gig.match_factors.age_match ? 20 : 0,
-            height: gig.match_factors.height_match ? 15 : 0,
-            experience: gig.match_factors.experience_match ? 25 : 0,
-            specialization: typeof gig.match_factors.specialization_match === 'number' ? 
-              (gig.match_factors.specialization_match / gig.match_factors.total_required) * 20 : 
-              gig.match_factors.specialization_match ? 20 : 0,
-            total: gig.compatibility_score
-          },
-          reason: 'Matches your profile',
-          priority: gig.compatibility_score >= 80 ? 'high' as const : 
-                   gig.compatibility_score >= 60 ? 'medium' as const : 'low' as const
-        }))
-
-        setCompatibleGigs(gigRecommendations)
-      }
-    } catch (error) {
-      console.error('Error fetching compatible gigs:', error)
-    } finally {
-      setMatchmakingLoading(false)
-    }
-  }
+  // Use custom hooks for data fetching
+  const { stats, loading: statsLoading } = useProfileStats(profile?.id)
+  const { rating: userRating, loading: ratingLoading } = useUserRating({ userId: profile?.id })
+  const { compatibleGigs, loading: matchmakingLoading } = useCompatibleGigs(profile?.id)
 
   // Overview Cards Data (excluding Profile Completion which is now a full-width card)
   const overviewCards = [
@@ -634,7 +501,7 @@ export function ProfileContentEnhanced() {
                 <CardContent>
                   {matchmakingLoading ? (
                     <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <LoadingSpinner size="lg" />
                       <span className="ml-3 text-muted-foreground">Finding compatible gigs...</span>
                     </div>
                   ) : compatibleGigs.length > 0 ? (
@@ -990,7 +857,7 @@ export function ProfileContentEnhanced() {
                 <CardContent>
                   {matchmakingLoading ? (
                     <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                      <LoadingSpinner size="lg" />
                       <span className="ml-3 text-muted-foreground">Finding compatible gigs...</span>
                     </div>
                   ) : compatibleGigs.length > 0 ? (

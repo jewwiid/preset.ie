@@ -8,6 +8,7 @@
 import { ImageIcon, Loader2 } from 'lucide-react'
 import { SavedImage } from '../lib/moodboardTypes'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface SavedImagesPanelProps {
   images: SavedImage[]
   loading: boolean
@@ -22,7 +23,7 @@ export const SavedImagesPanel = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
+        <LoadingSpinner size="md" />
         <span className="text-muted-foreground">Loading saved images...</span>
       </div>
     )

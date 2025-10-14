@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { CheckCircle, XCircle, Clock, Eye, Shield, AlertTriangle, ExternalLink, X } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 // Types
 interface VerificationRequest {
   id: string
@@ -67,8 +68,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   const config = {
     pending: { icon: Clock, text: 'Pending', className: 'bg-accent/10 text-accent-foreground' },
     approved: { icon: CheckCircle, text: 'Approved', className: 'bg-primary/10 text-primary' },
-    rejected: { icon: XCircle, text: 'Rejected', className: 'bg-destructive/10 text-destructive' },
-  }
+    rejected: { icon: XCircle, text: 'Rejected', className: 'bg-destructive/10 text-destructive' }}
 
   const { icon: Icon, text, className } = config[status as StatusType] || config.pending
 
@@ -85,8 +85,7 @@ const TypeBadge = ({ type }: { type: string }) => {
     identity: { label: 'Identity & Age', className: 'bg-primary/10 text-primary' },
     professional: { label: 'Professional', className: 'bg-primary/10 text-primary' },
     business: { label: 'Business', className: 'bg-accent/10 text-accent-foreground' },
-    age: { label: 'Age (Legacy)', className: 'bg-muted text-muted-foreground' },
-  }
+    age: { label: 'Age (Legacy)', className: 'bg-muted text-muted-foreground' }}
 
   const info = types[type] || { label: type.toUpperCase(), className: 'bg-muted text-muted-foreground' }
 
@@ -474,8 +473,7 @@ export function VerificationQueue() {
       const updates: any = {
         status,
         reviewed_at: new Date().toISOString(),
-        reviewed_by: admin?.id || null,
-      }
+        reviewed_by: admin?.id || null}
 
       if (reason) {
         updates.rejection_reason = reason

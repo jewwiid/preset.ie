@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { ImageDimensions } from '../../types/playground'
 import { getImageDimensions } from '../../utils/playground'
+import { ImportedImage } from '@/components/ui/image-import-dialog'
 
 export const useBaseImageUpload = (session?: any) => {
   const [baseImage, setBaseImage] = useState<string | null>(null)
@@ -107,6 +108,26 @@ export const useBaseImageUpload = (session?: any) => {
     setBaseImageSource(source)
   }, [])
 
+  // Unified handler for ImportedImage
+  const handleImportedImage = useCallback(async (image: ImportedImage) => {
+    setBaseImage(image.url)
+    setBaseImageSource(image.source === 'url' ? 'upload' : image.source)
+
+    // Use provided dimensions if available, otherwise fetch
+    if (image.width && image.height) {
+      setBaseImageDimensions({ width: image.width, height: image.height })
+    } else {
+      try {
+        const dimensions = await getImageDimensions(image.url)
+        setBaseImageDimensions(dimensions)
+        console.log('Base image dimensions:', dimensions)
+      } catch (error) {
+        console.error('Failed to get image dimensions:', error)
+        setBaseImageDimensions(null)
+      }
+    }
+  }, [])
+
   return {
     baseImage,
     baseImageSource,
@@ -116,6 +137,7 @@ export const useBaseImageUpload = (session?: any) => {
     removeBaseImage,
     selectSavedBaseImage,
     selectPexelsImage,
-    setBaseImageSource: setBaseImageSourceOnly
+    setBaseImageSource: setBaseImageSourceOnly,
+    handleImportedImage, // New unified handler
   }
 }

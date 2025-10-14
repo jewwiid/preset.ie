@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Euro } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -173,7 +174,7 @@ export default function MakeOfferForm({ listing, onClose, onSuccess, initialMess
           </p>
         </div>
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          <LoadingSpinner size="md" />
         </div>
       </div>
     );

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Sparkles, Loader2, Check, AlertCircle, Zap, Palette, Camera, Sun } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface EnhancementModalProps {
   isOpen: boolean
   onClose: () => void
@@ -205,7 +206,7 @@ export default function EnhancementModal({
                 {(status === 'processing' || status === 'polling') && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <div className="relative">
-                      <Loader2 className="w-12 h-12 text-primary-600 animate-spin" />
+                      <LoadingSpinner size="xl" />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-xs font-medium text-primary-600">
                           {Math.round(progress)}%
@@ -356,7 +357,7 @@ export default function EnhancementModal({
             >
               {isProcessing ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <LoadingSpinner size="sm" />
                   Processing...
                 </>
               ) : (

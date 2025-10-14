@@ -6,6 +6,7 @@ import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
 import { Plus, Edit, Eye, Calendar, MapPin, Users, Loader2 } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface Gig {
   id: string
   title: string
@@ -246,7 +247,7 @@ export default function MyGigsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+        <LoadingSpinner size="lg" />
       </div>
     )
   }

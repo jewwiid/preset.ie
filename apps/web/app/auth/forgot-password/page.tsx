@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../../../lib/auth-context'
-import { 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   Mail, 
   ArrowLeft, 
   AlertCircle, 
@@ -113,7 +114,7 @@ export default function ForgotPasswordPage() {
               >
                 {loading ? (
                   <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
+                    <LoadingSpinner size="sm" />
                     Sending reset email...
                   </div>
                 ) : (

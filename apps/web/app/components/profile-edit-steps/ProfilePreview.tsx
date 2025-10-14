@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react'
 import Image from 'next/image'
 import { MapPin, Camera, Upload, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ProfileFormData } from '@/lib/profile-validation'
 import { uploadAvatar, uploadHeaderBanner, updateProfileImages } from '@/lib/image-upload'
 import { ImageCropper } from '../ui/ImageCropper'
@@ -153,7 +154,7 @@ export function ProfilePreview({
             className="bg-white/10 hover:bg-white/20 text-white border-white/20"
           >
             {isUploadingHeader ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <LoadingSpinner size="sm" />
             ) : (
               <Camera className="h-4 w-4 mr-2" />
             )}
@@ -190,7 +191,7 @@ export function ProfilePreview({
                 className="absolute -bottom-1 -right-1 w-6 h-6 p-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground border-2 border-white shadow-lg z-20"
               >
                 {isUploadingAvatar ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <LoadingSpinner size="sm" />
                 ) : (
                   <Upload className="h-3 w-3" />
                 )}

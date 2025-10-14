@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Wand2, Sparkles } from 'lucide-react'
 import AspectRatioSelector from '../../app/components/ui/AspectRatioSelector'
 

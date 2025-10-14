@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface EnhancementPreviewProps {
   originalImage: string;
   taskId: string;

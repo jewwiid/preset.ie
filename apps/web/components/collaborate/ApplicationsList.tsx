@@ -73,7 +73,7 @@ export default function ApplicationsList({
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
-  const [compatibilityScores, setCompatibilityScores] = useState<Record<string, any>>({});
+  const [compatibilityScores, setCompatibilityScores] = useState<Record<string, any>>();
 
   // Fetch compatibility scores for all applications (only for creators)
   useEffect(() => {

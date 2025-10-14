@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Briefcase, Calendar, MapPin, DollarSign, CheckCircle, X, Loader2 } from 'lucide-react'
 import { GigInvitation } from '@/lib/hooks/dashboard/useGigInvitations'
 
@@ -89,7 +90,7 @@ export function PendingGigInvitationsCard({
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <LoadingSpinner size="md" />
           </div>
         </CardContent>
       </Card>
@@ -198,7 +199,7 @@ export function PendingGigInvitationsCard({
                 >
                   {processingId === invitation.id ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <LoadingSpinner size="sm" />
                       Accepting...
                     </>
                   ) : (
@@ -217,7 +218,7 @@ export function PendingGigInvitationsCard({
                 >
                   {processingId === invitation.id ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <LoadingSpinner size="sm" />
                       Declining...
                     </>
                   ) : (

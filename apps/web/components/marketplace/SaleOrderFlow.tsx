@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   MapPin, 
   CreditCard,
@@ -302,7 +303,7 @@ export default function SaleOrderFlow({
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                  <LoadingSpinner size="sm" />
                   Processing...
                 </>
               ) : step < 2 ? (

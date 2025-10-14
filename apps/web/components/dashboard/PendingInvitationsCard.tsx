@@ -3,6 +3,9 @@
 import { useRouter } from 'next/navigation'
 import { Invitation } from '../../lib/types/dashboard'
 import { getDaysUntilExpiry, getUserInitials } from '../../lib/utils/dashboard'
+import { LoadingSpinner } from '../ui/loading-spinner'
+import { IconBadge } from '../ui/icon-badge'
+import { Mail } from 'lucide-react'
 
 interface PendingInvitationsCardProps {
   invitations: Invitation[]
@@ -25,11 +28,7 @@ export function PendingInvitationsCard({
     <div className="mb-6 max-w-7xl mx-auto">
       <div className="bg-card rounded-2xl p-6 border border-border shadow-xl">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </div>
+          <IconBadge icon={Mail} size="md" variant="primary" />
           <div>
             <h3 className="text-lg font-bold text-foreground">Pending Invitations</h3>
             <p className="text-sm text-muted-foreground">
@@ -48,9 +47,7 @@ export function PendingInvitationsCard({
 
         <div className="space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            </div>
+            <LoadingSpinner size="md" className="py-8" />
           ) : (
             invitations.slice(0, 3).map((invitation) => {
               const daysUntilExpiry = getDaysUntilExpiry(invitation.expires_at)
@@ -65,7 +62,7 @@ export function PendingInvitationsCard({
                       <div className="flex items-center gap-2 mb-1">
                         <h5 className="font-semibold text-foreground">{invitation.project?.title || 'Project'}</h5>
                         {daysUntilExpiry <= 3 && (
-                          <span className="text-xs px-2 py-0.5 bg-orange-500/10 text-orange-500 rounded-full">
+                          <span className="text-xs px-2 py-0.5 bg-destructive/10 text-destructive-foreground rounded-full">
                             {daysUntilExpiry}d left
                           </span>
                         )}

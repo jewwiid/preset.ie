@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { X, Send, User, Star, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { getAuthToken } from '@/lib/auth-utils';
 import { useCollaborationCompatibility } from '@/lib/hooks/useCollaborationCompatibility';
@@ -255,7 +256,7 @@ export default function RoleApplicationModal({
           {/* Compatibility Warning */}
           {compatibilityLoading && (
             <div className="flex items-center justify-center p-4 bg-muted-50 rounded-lg">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              <LoadingSpinner size="md" />
               <span className="text-sm text-muted-foreground">Checking your compatibility...</span>
             </div>
           )}
@@ -341,7 +342,7 @@ export default function RoleApplicationModal({
               >
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <LoadingSpinner size="sm" />
                     Submitting...
                   </>
                 ) : (

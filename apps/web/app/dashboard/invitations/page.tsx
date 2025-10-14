@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   Briefcase, 
   Users, 
@@ -80,7 +81,7 @@ export default function InvitationsPage() {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <LoadingSpinner size="lg" />
           </div>
         </div>
       </div>
@@ -352,7 +353,7 @@ function InvitationsPageContent() {
               <Card>
                 <CardContent className="py-12">
                   <div className="flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <LoadingSpinner size="lg" />
                   </div>
                 </CardContent>
               </Card>
@@ -464,7 +465,7 @@ function InvitationsPageContent() {
                             >
                               {isProcessing ? (
                                 <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  <LoadingSpinner size="sm" />
                                   Accepting...
                                 </>
                               ) : (
@@ -482,7 +483,7 @@ function InvitationsPageContent() {
                             >
                               {isProcessing ? (
                                 <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  <LoadingSpinner size="sm" />
                                   Declining...
                                 </>
                               ) : (
@@ -508,7 +509,7 @@ function InvitationsPageContent() {
               <Card>
                 <CardContent className="py-12">
                   <div className="flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <LoadingSpinner size="lg" />
                   </div>
                 </CardContent>
               </Card>
@@ -636,7 +637,7 @@ function InvitationsPageContent() {
                             >
                               {isProcessing ? (
                                 <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  <LoadingSpinner size="sm" />
                                   Accepting...
                                 </>
                               ) : (
@@ -654,7 +655,7 @@ function InvitationsPageContent() {
                             >
                               {isProcessing ? (
                                 <>
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  <LoadingSpinner size="sm" />
                                   Declining...
                                 </>
                               ) : (

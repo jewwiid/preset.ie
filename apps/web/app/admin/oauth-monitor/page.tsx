@@ -7,6 +7,7 @@ import { Badge } from '../../../components/ui/badge'
 import { Button } from '../../../components/ui/button'
 import { RefreshCw, AlertTriangle, CheckCircle, XCircle, Clock, Users, Database } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface OAuthMetrics {
   totalUsers: number
   googleUsers: number

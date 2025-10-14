@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+  PopoverTrigger} from '@/components/ui/popover';
 
 interface ComboboxProps {
   value: string;
@@ -28,8 +27,7 @@ export function Combobox({
   placeholder = "Select option...",
   emptyText = "No option found.",
   className,
-  disabled = false,
-}: ComboboxProps) {
+  disabled = false}: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
 
@@ -121,8 +119,7 @@ export function MultiSelectCombobox({
   emptyText = "No options found.",
   className,
   disabled = false,
-  maxSelections,
-}: MultiSelectComboboxProps) {
+  maxSelections}: MultiSelectComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
 

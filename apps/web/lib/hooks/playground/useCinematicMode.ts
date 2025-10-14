@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { CinematicParameters } from '../../../../../packages/types/src/cinematic-parameters'
+import { CinematicParameters } from '@preset/types'
 import CinematicPromptBuilder from '../../../../../packages/services/src/cinematic-prompt-builder'
 
 interface UseCinematicModeProps {

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui
 import { Button } from '../../../components/ui/button'
 import { Badge } from '../../../components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs'
-import { 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   Camera, 
   Package, 
   ShoppingCart, 
@@ -129,7 +130,7 @@ export default function SpecializedPresetManager({
     return (
       <div className="space-y-6">
         <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <LoadingSpinner size="lg" />
           <p className="text-muted-foreground">Loading specialized presets...</p>
         </div>
       </div>

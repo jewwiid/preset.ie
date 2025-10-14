@@ -353,30 +353,8 @@ export default function UnifiedImageGenerationPanel({
               baseImage={baseImageState.baseImage}
               baseImageSource={baseImageState.baseImageSource}
               baseImageDimensions={baseImageState.baseImageDimensions}
-              savedImages={savedImages}
-              uploading={baseImageState.uploading}
-              onFileUpload={baseImageState.handleFileUpload}
+              onBaseImageSelected={baseImageState.handleImportedImage}
               onRemoveBaseImage={baseImageState.removeBaseImage}
-              onSelectSavedImage={baseImageState.selectSavedBaseImage}
-              onSelectBaseImageSource={baseImageState.setBaseImageSource}
-              pexelsState={{
-                query: pexelsState.pexelsQuery,
-                results: pexelsState.pexelsResults,
-                loading: pexelsState.pexelsLoading,
-                page: pexelsState.pexelsPage,
-                totalResults: pexelsState.pexelsTotalResults,
-                filters: pexelsState.pexelsFilters,
-                customHexColor: pexelsState.customHexColor,
-                showHexInput: pexelsState.showHexInput,
-                updateQuery: pexelsState.updateQuery,
-                updateFilters: pexelsState.updateFilters,
-                updateCustomHexColor: pexelsState.updateCustomHexColor,
-                toggleHexInput: pexelsState.toggleHexInput,
-                prevPage: pexelsState.prevPage,
-                nextPage: pexelsState.nextPage,
-                goToPage: pexelsState.goToPage
-              }}
-              onSelectPexelsImage={baseImageState.selectPexelsImage}
             />
           )}
 

@@ -30,8 +30,7 @@ export default function ImageUploadModal({
   onFormDataChange,
   onSubmit,
   onImageFileChange,
-  onSelectExisting,
-}: ImageUploadModalProps) {
+  onSelectExisting}: ImageUploadModalProps) {
   const [existingImages, setExistingImages] = useState<any[]>([]);
   const [showExistingImages, setShowExistingImages] = useState(false);
   const [imageFilter, setImageFilter] = useState('');
@@ -94,8 +93,7 @@ export default function ImageUploadModal({
         url: supabase.storage.from('platform-images').getPublicUrl(file.fullPath).data.publicUrl,
         name: file.fullPath,
         folder: folder,
-        fileName: fileName,
-      };
+        fileName: fileName};
     });
     setExistingImages(imageUrls);
     setShowExistingImages(true);

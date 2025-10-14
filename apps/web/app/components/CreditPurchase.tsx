@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useEffect } from 'react'
 import { useAuth } from '../../lib/auth-context'
-import { supabase } from '../../lib/supabase'
-import { CreditCard, Sparkles, Loader2, Check, X } from 'lucide-react'
+import { Sparkles, Loader2, Check, X } from 'lucide-react'
+import { useCreditPurchase } from '../../hooks/useCreditPurchase'
+import { CreditPackageCard } from '../../components/credits/CreditPackageCard'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface CreditPackage {
   credits: number
   price: number
@@ -18,260 +20,32 @@ interface CreditPurchaseProps {
 
 export default function CreditPurchase({ onPurchaseComplete, embedded = false }: CreditPurchaseProps) {
   const { user } = useAuth()
-  const [loading, setLoading] = useState(false)
-  const [purchasing, setPurchasing] = useState<string | null>(null)
-  const [creditInfo, setCreditInfo] = useState<any>(null)
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  const credit = useCreditPurchase({
+    userId: user?.id,
+    onPurchaseComplete
+  })
 
   useEffect(() => {
     if (user) {
-      fetchCreditInfo()
+      credit.fetchCreditInfo()
     }
   }, [user?.id]) // Only depend on user ID, not the entire user object
 
-  const fetchCreditInfo = async () => {
-    if (!user) return
-    
-    setLoading(true)
-    try {
-      if (!supabase) {
-        setError('Database connection not available. Please try again.')
-        setLoading(false)
-        return
-      }
-      
-      const session = await supabase.auth.getSession()
-      if (!session.data.session) throw new Error('No session')
-
-      // Get packages and platform capacity with cache busting
-      const packagesResponse = await fetch(`/api/credits/purchase?t=${Date.now()}&include_lootbox=false`, {
-        headers: {
-          'Authorization': `Bearer ${session.data.session.access_token}`
-        }
-      })
-
-      const packagesData = await packagesResponse.json()
-      
-      if (packagesData.error) {
-        setError(packagesData.error)
-        return
-      }
-
-      // Get user's current credit balance
-      const { data: userCredits } = await supabase
-        .from('user_credits')
-        .select('current_balance, monthly_allowance, consumed_this_month, subscription_tier, last_reset_at')
-        .eq('user_id', user.id)
-        .single()
-
-      // Get user profile for subscription tier and profile info
-      const { data: profile } = await supabase
-        .from('users_profile')
-        .select('subscription_tier, display_name, handle, avatar_url, subscription_started_at, subscription_expires_at')
-        .eq('user_id', user.id)
-        .single()
-
-      const subscriptionTier = profile?.subscription_tier || 'FREE'
-      const canPurchase = subscriptionTier === 'PLUS' || subscriptionTier === 'PRO'
-
-      setCreditInfo({
-        packages: packagesData.packages,
-        lootboxPackages: packagesData.lootboxPackages || [],
-        platformCapacity: packagesData.platformCapacity,
-        currentBalance: userCredits?.current_balance || 0,
-        monthlyAllowance: userCredits?.monthly_allowance || 0,
-        consumedThisMonth: userCredits?.consumed_this_month || 0,
-        subscriptionTier,
-        canPurchase,
-        lastResetAt: userCredits?.last_reset_at,
-        subscriptionStartedAt: profile?.subscription_started_at,
-        subscriptionExpiresAt: profile?.subscription_expires_at
-      })
-
-      // Set user profile data
-      setUserProfile({
-        display_name: profile?.display_name || 'User',
-        handle: profile?.handle || 'user',
-        avatar_url: profile?.avatar_url
-      })
-    } catch (err: any) {
-      console.error('Error fetching credit info:', err)
-      setError('Failed to load credit information')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const purchaseCredits = async (packageId: string) => {
-    if (!user) return
-    
-    setPurchasing(packageId)
-    setError(null)
-    setSuccess(null)
-    
-    try {
-      if (!supabase) {
-        setError('Database connection not available. Please try again.')
-        return
-      }
-      
-      const session = await supabase.auth.getSession()
-      if (!session.data.session) throw new Error('No session')
-
-      // Find the package details
-      const selectedPackage = creditInfo?.packages?.find((pkg: any) => pkg.id === packageId)
-      if (!selectedPackage) {
-        setError('Package not found')
-        return
-      }
-
-      // Create Stripe checkout session
-      const response = await fetch('/api/stripe/create-credit-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.data.session.access_token}`
-        },
-        body: JSON.stringify({ 
-          packageId: selectedPackage.id,
-          successUrl: `${window.location.origin}/credits/purchase?success=true`,
-          cancelUrl: `${window.location.origin}/credits/purchase?canceled=true`
-        })
-      })
-
-      const data = await response.json()
-      
-      if (data.url) {
-        // Redirect to Stripe checkout
-        window.location.href = data.url
-      } else {
-        setError(data.error || 'Failed to create checkout session')
-        setPurchasing(null)
-      }
-    } catch (err: any) {
-      console.error('Purchase error:', err)
-      setError('Failed to complete purchase')
-      setPurchasing(null)
-    }
-  }
-
-  const checkLootboxAvailability = useCallback(async () => {
-    if (!user) return
-    
-    setLoading(true)
-    setError(null)
-    
-    try {
-      if (!supabase) {
-        setError('Database connection not available. Please try again.')
-        setLoading(false)
-        return
-      }
-
-      const session = await supabase.auth.getSession()
-      if (!session.data.session) throw new Error('No session')
-      
-      const response = await fetch(`/api/lootbox/availability?t=${Date.now()}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.data.session.access_token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-      
-      const data = await response.json()
-      
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to check lootbox availability')
-      }
-      
-      // Update only the lootbox packages in the existing credit info
-      setCreditInfo((prev: any) => ({
-        ...prev,
-        lootboxPackages: data.lootbox.available_packages || []
-      }))
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to check lootbox availability')
-    } finally {
-      setLoading(false)
-    }
-  }, [user])
-
-  const purchaseLootbox = async (packageId: string) => {
-    if (!user) return
-    
-    setPurchasing(packageId)
-    setError(null)
-    setSuccess(null)
-    
-    try {
-      if (!supabase) {
-        setError('Database connection not available. Please try again.')
-        return
-      }
-
-      const session = await supabase.auth.getSession()
-      if (!session.data.session) throw new Error('No session')
-
-      // Find the lootbox package details
-      const selectedPackage = creditInfo?.lootboxPackages?.find((pkg: any) => pkg.id === packageId)
-      if (!selectedPackage) {
-        setError('Lootbox package not found')
-        return
-      }
-
-      // Create Stripe checkout session for lootbox
-      const response = await fetch('/api/stripe/create-credit-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.data.session.access_token}`
-        },
-        body: JSON.stringify({ 
-          packageId: selectedPackage.id,
-          successUrl: `${window.location.origin}/credits/purchase?success=true&lootbox=true`,
-          cancelUrl: `${window.location.origin}/credits/purchase?canceled=true`
-        })
-      })
-
-      const data = await response.json()
-      
-      if (data.url) {
-        // Redirect to Stripe checkout
-        window.location.href = data.url
-      } else {
-        setError(data.error || 'Failed to create checkout session')
-        setPurchasing(null)
-      }
-    } catch (err: any) {
-      console.error('Lootbox purchase error:', err)
-      setError('Failed to complete lootbox purchase')
-      setPurchasing(null)
-    }
-  }
-
-  if (loading) {
+  if (credit.loading) {
     return (
       <div className={`${embedded ? '' : 'min-h-screen'} flex items-center justify-center`}>
-        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
+        <LoadingSpinner size="lg" />
       </div>
     )
   }
 
-  if (!creditInfo) {
+  if (!credit.creditInfo) {
     return (
       <div className={`${embedded ? '' : 'min-h-screen'} flex items-center justify-center`}>
         <div className="text-center">
           <p className="text-muted-foreground">Loading credit information...</p>
-          {error && <p className="text-destructive mt-2">{error}</p>}
+          {credit.error && <p className="text-destructive mt-2">{credit.error}</p>}
         </div>
       </div>
     )
@@ -291,37 +65,37 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
         {/* Main Row Layout */}
         <div className="flex items-center gap-6">
           {/* Left: User Profile */}
-          {userProfile && (
+          {credit.userProfile && (
             <div className="flex items-center gap-4">
               {/* User Avatar */}
               <div className="relative">
-                {userProfile.avatar_url ? (
-                  <img 
-                    src={userProfile.avatar_url} 
-                    alt={userProfile.display_name}
+                {credit.userProfile.avatar_url ? (
+                  <img
+                    src={credit.userProfile.avatar_url}
+                    alt={credit.userProfile.display_name}
                     className="w-16 h-16 rounded-full object-cover border-2 border-primary/20 shadow-lg"
                   />
                 ) : (
                   <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center border-2 border-primary/20 shadow-lg">
                     <span className="text-primary-foreground font-bold text-xl">
-                      {userProfile.display_name?.charAt(0)?.toUpperCase() || 'U'}
+                      {credit.userProfile.display_name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
                 )}
                 {/* Online status indicator */}
                 <div className="absolute bottom-0 right-0 w-4 h-4 bg-primary-500 border-2 border-border rounded-full"></div>
               </div>
-              
+
               {/* User Info */}
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-1">
-                  <h2 className="text-xl font-bold text-foreground">{userProfile.display_name}</h2>
+                  <h2 className="text-xl font-bold text-foreground">{credit.userProfile.display_name}</h2>
                   <span className="px-2 py-1 bg-primary-100 text-primary-800 text-xs font-semibold rounded-full">
-                    {creditInfo?.subscriptionTier || 'FREE'}
+                    {credit.creditInfo?.subscriptionTier || 'FREE'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-sm">@{userProfile.handle}</span>
+                  <span className="text-muted-foreground text-sm">@{credit.userProfile.handle}</span>
                   <div className="w-1 h-1 bg-muted-foreground rounded-full"></div>
                   <span className="text-muted-foreground text-sm">Contributor & Talent</span>
                   <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
@@ -351,19 +125,19 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   cy="50"
                   r="35"
                   stroke={(() => {
-                    const totalCredits = creditInfo.currentBalance + creditInfo.consumedThisMonth
+                    const totalCredits = credit.creditInfo.currentBalance + credit.creditInfo.consumedThisMonth
                     const lowThreshold = Math.max(5, Math.floor(totalCredits * 0.15))
                     const mediumThreshold = Math.max(10, Math.floor(totalCredits * 0.35))
-                    
-                    if (creditInfo.currentBalance >= mediumThreshold) return "#10b981"
-                    if (creditInfo.currentBalance >= lowThreshold) return "#f59e0b"
+
+                    if (credit.creditInfo.currentBalance >= mediumThreshold) return "#10b981"
+                    if (credit.creditInfo.currentBalance >= lowThreshold) return "#f59e0b"
                     return "#ef4444"
                   })()}
                   strokeWidth="6"
                   fill="none"
                   strokeLinecap="round"
                   strokeDasharray={`${2 * Math.PI * 35}`}
-                  strokeDashoffset={`${2 * Math.PI * 35 * (1 - (creditInfo.currentBalance / (creditInfo.currentBalance + creditInfo.consumedThisMonth)))}`}
+                  strokeDashoffset={`${2 * Math.PI * 35 * (1 - (credit.creditInfo.currentBalance / (credit.creditInfo.currentBalance + credit.creditInfo.consumedThisMonth)))}`}
                   className="transition-all duration-700 ease-out drop-shadow-md"
                 />
               </svg>
@@ -372,16 +146,16 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <div className={`text-2xl font-bold transition-colors duration-500 ${
                   (() => {
-                    const totalCredits = creditInfo.currentBalance + creditInfo.consumedThisMonth
+                    const totalCredits = credit.creditInfo.currentBalance + credit.creditInfo.consumedThisMonth
                     const lowThreshold = Math.max(5, Math.floor(totalCredits * 0.15))
                     const mediumThreshold = Math.max(10, Math.floor(totalCredits * 0.35))
-                    
-                    if (creditInfo.currentBalance >= mediumThreshold) return 'text-primary-600'
-                    if (creditInfo.currentBalance >= lowThreshold) return 'text-amber-600'
+
+                    if (credit.creditInfo.currentBalance >= mediumThreshold) return 'text-primary-600'
+                    if (credit.creditInfo.currentBalance >= lowThreshold) return 'text-amber-600'
                     return 'text-destructive'
                   })()
                 }`}>
-                  {creditInfo.currentBalance}
+                  {credit.creditInfo.currentBalance}
                 </div>
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">CREDITS</div>
               </div>
@@ -399,7 +173,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   </svg>
                 </div>
                 <p className="text-primary-600 text-xs font-semibold mb-1">Available</p>
-                <p className="text-muted-foreground-900 text-xl font-bold">{creditInfo.currentBalance}</p>
+                <p className="text-muted-foreground-900 text-xl font-bold">{credit.creditInfo.currentBalance}</p>
               </div>
             </div>
 
@@ -412,7 +186,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                   </svg>
                 </div>
                 <p className="text-primary-600 text-xs font-semibold mb-1">Used</p>
-                <p className="text-muted-foreground-900 text-xl font-bold">{creditInfo.consumedThisMonth}</p>
+                <p className="text-muted-foreground-900 text-xl font-bold">{credit.creditInfo.consumedThisMonth}</p>
               </div>
             </div>
           </div>
@@ -429,27 +203,27 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                 // Use real subscription billing data from database
                 let lastResetDate: Date
                 let nextResetDate: Date
-                
-                if (creditInfo?.subscriptionExpiresAt) {
+
+                if (credit.creditInfo?.subscriptionExpiresAt) {
                   // Use subscription expiration date for paid plans
-                  nextResetDate = new Date(creditInfo.subscriptionExpiresAt)
-                  
+                  nextResetDate = new Date(credit.creditInfo.subscriptionExpiresAt)
+
                   // Calculate last reset based on subscription start or last credit reset
-                  if (creditInfo?.lastResetAt) {
-                    lastResetDate = new Date(creditInfo.lastResetAt)
-                  } else if (creditInfo?.subscriptionStartedAt) {
-                    lastResetDate = new Date(creditInfo.subscriptionStartedAt)
+                  if (credit.creditInfo?.lastResetAt) {
+                    lastResetDate = new Date(credit.creditInfo.lastResetAt)
+                  } else if (credit.creditInfo?.subscriptionStartedAt) {
+                    lastResetDate = new Date(credit.creditInfo.subscriptionStartedAt)
                   } else {
                     // Fallback to 30 days before expiration
                     lastResetDate = new Date(nextResetDate)
                     lastResetDate.setDate(lastResetDate.getDate() - 30)
                   }
-                } else if (creditInfo?.lastResetAt) {
+                } else if (credit.creditInfo?.lastResetAt) {
                   // Use credit reset date for free users or fallback
-                  lastResetDate = new Date(creditInfo.lastResetAt)
-                  
+                  lastResetDate = new Date(credit.creditInfo.lastResetAt)
+
                   // Calculate next reset based on subscription tier
-                  const cycleDays = creditInfo.subscriptionTier === 'FREE' ? 30 : 30 // All plans use monthly cycles
+                  const cycleDays = credit.creditInfo.subscriptionTier === 'FREE' ? 30 : 30 // All plans use monthly cycles
                   nextResetDate = new Date(lastResetDate)
                   nextResetDate.setDate(nextResetDate.getDate() + cycleDays)
                   
@@ -523,9 +297,9 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
             <button
               onClick={() => window.location.href = '/subscription'}
               className={`group relative inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 hover:shadow-md ${
-                creditInfo.subscriptionTier === 'PRO' 
-                  ? 'bg-primary text-primary-foreground hover:from-primary/90 hover:to-primary' 
-                  : creditInfo.subscriptionTier === 'PLUS'
+                credit.creditInfo.subscriptionTier === 'PRO'
+                  ? 'bg-primary text-primary-foreground hover:from-primary/90 hover:to-primary'
+                  : credit.creditInfo.subscriptionTier === 'PLUS'
                     ? 'bg-primary text-primary-foreground hover:from-primary/90 hover:to-primary'
                     : 'bg-gradient-to-r from-muted to-muted/80 text-muted-foreground hover:from-muted/80 hover:to-muted'
               }`}
@@ -534,17 +308,17 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="font-semibold">{creditInfo.subscriptionTier}</span>
+                <span className="font-semibold">{credit.creditInfo.subscriptionTier}</span>
                 <svg className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-              
+
               {/* Subtle glow effect */}
               <div className={`absolute inset-0 rounded-lg opacity-0 group-hover:opacity-20 transition-opacity duration-200 ${
-                creditInfo.subscriptionTier === 'PRO' 
-                  ? 'bg-primary-400' 
-                  : creditInfo.subscriptionTier === 'PLUS'
+                credit.creditInfo.subscriptionTier === 'PRO'
+                  ? 'bg-primary-400'
+                  : credit.creditInfo.subscriptionTier === 'PLUS'
                     ? 'bg-primary-400'
                     : 'bg-muted-400'
               }`}></div>
@@ -554,111 +328,54 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
       </div>
 
       {/* Error/Success Messages */}
-      {error && (
+      {credit.error && (
         <div className="mb-4 p-4 bg-destructive-50 border border-destructive-200 rounded-md flex items-center gap-2">
           <X className="w-5 h-5 text-destructive-500" />
-          <p className="text-destructive-700">{error}</p>
+          <p className="text-destructive-700">{credit.error}</p>
         </div>
       )}
-      
-      {success && (
+
+      {credit.success && (
         <div className="mb-4 p-4 bg-primary-50 border border-primary/20 rounded-md flex items-center gap-2">
           <Check className="w-5 h-5 text-primary-500" />
-          <p className="text-primary-700">{success}</p>
+          <p className="text-primary-700">{credit.success}</p>
         </div>
       )}
 
       {/* Credit Packages */}
-      {creditInfo.canPurchase ? (
+      {credit.creditInfo.canPurchase ? (
         <div>
         <div className="mb-4">
           <h2 className="text-2xl font-bold text-muted-foreground-900">Credit Packages</h2>
         </div>
           <div className="grid md:grid-cols-3 gap-4">
             {/* Regular Packages */}
-            {creditInfo.packages?.map((pkg: any) => {
+            {credit.creditInfo.packages?.map((pkg: any) => {
               const isPopular = pkg.id === 'creative'
               const savings = pkg.id === 'creative' ? 20 : pkg.id === 'pro' ? 30 : pkg.id === 'studio' ? 40 : 0
-              
+
               return (
-                <div
+                <CreditPackageCard
                   key={pkg.id}
-                  className={`relative rounded-lg border-2 p-6 flex flex-col h-full ${
-                    isPopular 
-                      ? 'border-primary-500 shadow-lg' 
-                      : 'border-border-200 hover:border-border-300'
-                  } ${!pkg.available ? 'opacity-50' : ''}`}
-                >
-                  {isPopular && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-primary-500 text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">
-                        MOST POPULAR
-                      </span>
-                    </div>
-                  )}
-                  
-                  <div className="text-center flex-grow flex flex-col justify-center">
-                    <h3 className="text-xl font-bold text-muted-foreground-900">{pkg.name}</h3>
-                    <div className="mt-2">
-                      <span className="text-3xl font-bold text-muted-foreground-900">{pkg.credits}</span>
-                      <span className="text-muted-foreground-600 ml-1">credits</span>
-                    </div>
-                    <div className="mt-1">
-                      <span className="text-2xl font-bold text-primary-600">${pkg.price_usd.toFixed(2)}</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground-500 mt-1">
-                      ${(pkg.price_usd / pkg.credits).toFixed(3)} per credit
-                    </div>
-                    {savings > 0 && (
-                      <div className="mt-3 mb-2">
-                        <span className="inline-block bg-primary-100 text-primary-700 px-2 py-1 rounded-full text-xs font-semibold">
-                          Save {savings}%
-                        </span>
-                      </div>
-                    )}
-                    {!pkg.available && (
-                      <div className="mt-2">
-                        <span className="inline-block bg-destructive-100 text-destructive-700 px-2 py-1 rounded-full text-xs font-semibold">
-                          Temporarily Unavailable
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <button
-                    onClick={() => purchaseCredits(pkg.id)}
-                    disabled={purchasing !== null || !pkg.available}
-                    className={`w-full py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center gap-2 ${
-                      isPopular
-                        ? 'bg-primary-600 text-primary-foreground hover:bg-primary-700'
-                        : 'bg-muted-900 text-primary-foreground hover:bg-muted-800'
-                    } disabled:opacity-50`}
-                  >
-                    {purchasing === pkg.id ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="w-4 h-4" />
-                        {!pkg.available ? 'Unavailable' : 'Purchase'}
-                      </>
-                    )}
-                  </button>
-                </div>
+                  packageData={pkg}
+                  isPopular={isPopular}
+                  savings={savings}
+                  isPurchasing={credit.purchasing === pkg.id}
+                  onPurchase={(id) => credit.purchasePackage(id, false)}
+                  disabled={credit.purchasing !== null}
+                />
               )
             })}
 
             {/* Lootbox Status Card - Only show when no lootbox packages are available */}
-            {(!creditInfo.lootboxPackages || creditInfo.lootboxPackages.length === 0) && (
+            {(!credit.creditInfo.lootboxPackages || credit.creditInfo.lootboxPackages.length === 0) && (
               <div className="relative rounded-lg border-2 p-6 flex flex-col h-full border-border-200 hover:border-border-300">
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <span className="px-3 py-1 rounded-full text-xs font-bold shadow-md bg-primary text-primary-foreground">
                     🎁 LOOTBOX
                   </span>
                 </div>
-                
+
                 <div className="text-center flex-grow flex flex-col justify-center">
                   <h3 className="text-xl font-bold text-muted-foreground-900">Lootbox Status</h3>
                   <div className="mt-2">
@@ -668,19 +385,19 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
                     Special offers available
                   </div>
                 </div>
-                
+
                 <div
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    checkLootboxAvailability()
+                    credit.checkLootboxAvailability()
                   }}
                   className="w-full py-2 px-4 rounded-md font-medium transition-colors flex items-center justify-center gap-2 bg-muted-900 text-primary-foreground hover:bg-muted-800 disabled:opacity-50 cursor-pointer"
-                  style={{ pointerEvents: loading ? 'none' : 'auto' }}
+                  style={{ pointerEvents: credit.loading ? 'none' : 'auto' }}
                 >
-                  {loading ? (
+                  {credit.loading ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <LoadingSpinner size="sm" />
                       Checking...
                     </>
                   ) : (
@@ -696,112 +413,47 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
             )}
 
             {/* Lootbox Packages - Show when available */}
-            {creditInfo.lootboxPackages && creditInfo.lootboxPackages.length > 0 && 
-              creditInfo.lootboxPackages.map((pkg: any) => (
-              <div
-                key={pkg.id}
-                className={`relative rounded-lg border-2 p-6 shadow-lg flex flex-col h-full transition-all duration-300 ${
-                  pkg.available 
-                    ? 'border-primary bg-gradient-to-br from-primary/10 to-primary/20 hover:scale-105 hover:shadow-2xl' 
-                    : 'border-border bg-gradient-to-br from-muted to-muted/80 opacity-75'
-                }`}
-              >
-                {/* Animated glow effect for available lootbox */}
-                {pkg.available && (
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 blur-xl opacity-50 animate-pulse"></div>
-                )}
-                
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1 ${
-                    pkg.available 
-                      ? 'bg-gradient-to-r from-primary to-primary-600 text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground'
-                  }`}>
-                    🎁 LOOTBOX
-                  </span>
-                </div>
-                
-                <div className="text-center flex-grow flex flex-col justify-center relative">
-                  {pkg.available && (
-                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-                      <span className="inline-block px-3 py-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 text-white text-xs font-black rounded shadow-lg animate-pulse">
-                        ⚡ FLASH SALE ⚡
-                      </span>
+            {credit.creditInfo.lootboxPackages && credit.creditInfo.lootboxPackages.length > 0 &&
+              credit.creditInfo.lootboxPackages.map((pkg: any) => {
+                // Map lootbox package fields to match CreditPackageCard interface
+                const mappedPackage = {
+                  id: pkg.id,
+                  name: pkg.name,
+                  credits: pkg.user_credits || pkg.credits,
+                  price_usd: pkg.price_usd,
+                  available: pkg.available
+                };
+
+                return (
+                  <div key={pkg.id} className="relative rounded-lg border-2 p-6 flex flex-col h-full border-border-200 hover:border-border-300">
+                    {/* Animated glow effect for available lootbox */}
+                    {pkg.available && (
+                      <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20 opacity-50 blur-xl animate-pulse"></div>
+                    )}
+
+                    {/* Flash Sale Badge */}
+                    {pkg.available && (
+                      <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-20">
+                        <span className="inline-block px-3 py-1 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400 text-white text-xs font-black rounded shadow-lg animate-pulse">
+                          ⚡ FLASH SALE ⚡
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="relative z-10">
+                      <CreditPackageCard
+                        packageData={mappedPackage}
+                        isPurchasing={credit.purchasing === pkg.id}
+                        onPurchase={(id) => credit.purchasePackage(id, true)}
+                        disabled={credit.purchasing !== null || pkg.already_purchased}
+                        badge="LOOTBOX"
+                        badgeEmoji="🎁"
+                        savings={pkg.savings_percentage || 0}
+                      />
                     </div>
-                  )}
-                  
-                  <h3 className={`text-xl font-bold ${pkg.available ? 'text-muted-foreground-900' : 'text-muted-foreground-500'}`}>
-                    {pkg.name}
-                  </h3>
-
-                  <div className="mt-2">
-                    <span className={`text-3xl font-bold ${pkg.available ? 'text-primary-600' : 'text-muted-foreground-400'}`}>
-                      {pkg.user_credits}
-                    </span>
-                    <span className={`ml-1 ${pkg.available ? 'text-muted-foreground-600' : 'text-muted-foreground-400'}`}>credits</span>
                   </div>
-
-                  <div className="mt-1">
-                    <span className={`text-2xl font-bold ${pkg.available ? 'text-primary-600' : 'text-muted-foreground-400'}`}>
-                      ${pkg.price_usd.toFixed(2)}
-                    </span>
-                  </div>
-
-                  <div className={`text-sm mt-1 ${pkg.available ? 'text-muted-foreground-500' : 'text-muted-foreground-400'}`}>
-                    ${pkg.price_per_credit.toFixed(3)} per credit
-                  </div>
-
-                  {pkg.savings_percentage > 0 && (
-                    <div className="mt-3">
-                      <span className={`inline-block px-3 py-1.5 rounded-full text-sm font-bold shadow-md ${
-                        pkg.available
-                          ? 'bg-gradient-to-r from-primary-primary to-primary-primary text-white animate-pulse'
-                          : 'bg-muted-300 text-muted-foreground-600'
-                      }`}>
-                        💰 Save {pkg.savings_percentage}%
-                      </span>
-                    </div>
-                  )}
-
-                </div>
-                
-                <button
-                  onClick={() => purchaseLootbox(pkg.id)}
-                  disabled={purchasing !== null || !pkg.available || pkg.already_purchased}
-                  className={`w-full py-2 px-4 rounded-md font-bold transition-all duration-200 flex items-center justify-center gap-2 shadow-md ${
-                    pkg.already_purchased
-                      ? 'text-muted-foreground-400 bg-muted-200 cursor-not-allowed'
-                      : pkg.available
-                        ? 'text-primary-foreground bg-primary hover:from-primary/90 hover:to-primary'
-                        : 'text-muted-foreground-400 bg-muted-200 cursor-not-allowed'
-                  } disabled:opacity-50`}
-                >
-                  {purchasing === pkg.id ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Claiming...
-                    </>
-                  ) : pkg.already_purchased ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Already Claimed
-                    </>
-                  ) : !pkg.available ? (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      Locked
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Claim Lootbox
-                    </>
-                  )}
-                </button>
-              </div>
-              ))
+                );
+              })
             }
           </div>
         </div>
@@ -814,7 +466,7 @@ export default function CreditPurchase({ onPurchaseComplete, embedded = false }:
             Credit purchases are available for Plus and Pro subscribers only.
           </p>
           <p className="text-sm text-primary-600 mb-4">
-            Your current tier: <span className="font-semibold">{creditInfo.subscriptionTier}</span>
+            Your current tier: <span className="font-semibold">{credit.creditInfo.subscriptionTier}</span>
           </p>
           <button
             onClick={() => window.location.href = '/subscription'}

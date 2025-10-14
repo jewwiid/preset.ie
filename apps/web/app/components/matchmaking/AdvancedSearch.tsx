@@ -9,10 +9,11 @@ import { Textarea } from '../../../components/ui/textarea'
 import { Checkbox } from '../../../components/ui/checkbox'
 import { Slider } from '../../../components/ui/slider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs'
-import { 
-  Search, 
-  Filter, 
-  Save, 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
+  Search,
+  Filter,
+  Save,
   Download, 
   MapPin, 
   Calendar,

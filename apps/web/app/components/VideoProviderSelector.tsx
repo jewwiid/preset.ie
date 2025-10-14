@@ -26,8 +26,7 @@ const providers: VideoProvider[] = [
     quality: 'high',
     costPerCredit: 8,
     icon: <Sparkles className="h-5 w-5" />,
-    isAvailable: true,
-  },
+    isAvailable: true},
   {
     id: 'wan',
     name: 'Wan 2.5',
@@ -37,8 +36,7 @@ const providers: VideoProvider[] = [
     quality: 'high',
     costPerCredit: 12,
     icon: <Zap className="h-5 w-5" />,
-    isAvailable: true,
-  },
+    isAvailable: true},
 ];
 
 interface VideoProviderSelectorProps {
@@ -50,8 +48,7 @@ interface VideoProviderSelectorProps {
 export function VideoProviderSelector({
   selectedProvider,
   onProviderChange,
-  userCredits,
-}: VideoProviderSelectorProps) {
+  userCredits}: VideoProviderSelectorProps) {
   const getSpeedColor = (speed: string) => {
     switch (speed) {
       case 'fast': return 'bg-primary/10 text-primary';

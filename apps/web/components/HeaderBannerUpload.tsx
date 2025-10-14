@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { Camera, Upload, X, AlertCircle, CheckCircle, Move, Edit3, RotateCcw } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface HeaderBannerUploadProps {
   currentBannerUrl?: string
   onBannerUpdate: (newBannerUrl: string) => void
@@ -312,7 +313,7 @@ export function HeaderBannerUpload({ currentBannerUrl, onBannerUpdate, userId }:
             >
               {uploading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                  <LoadingSpinner size="sm" />
                   Uploading...
                 </>
               ) : (

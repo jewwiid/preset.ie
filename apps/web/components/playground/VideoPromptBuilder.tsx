@@ -3,6 +3,7 @@
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Wand2, Sparkles, Trash2, X, Loader2, RefreshCw } from 'lucide-react'
 
 interface VideoPromptBuilderProps {
@@ -120,7 +121,7 @@ export function VideoPromptBuilder({
           >
             {isEnhancing ? (
               <>
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <LoadingSpinner size="sm" />
                 Enhancing...
               </>
             ) : (

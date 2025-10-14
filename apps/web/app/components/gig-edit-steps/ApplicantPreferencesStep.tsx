@@ -11,6 +11,9 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import RangeInput from '../form/RangeInput'
+import MultiSelectChips from '../form/MultiSelectChips'
+import PreferenceSection from '../form/PreferenceSection'
 import {
   Form,
   FormControl,
@@ -18,8 +21,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+  FormMessage} from '@/components/ui/form'
 import { 
   Users, 
   Ruler, 
@@ -581,222 +583,74 @@ export default function ApplicantPreferencesStep({
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Height Range */}
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-base font-medium">Height Range (cm)</Label>
-                  <p className="text-sm text-muted-foreground mt-1">Specify preferred height range for applicants</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="min-height" className="text-sm">Minimum height</Label>
-                    <Input
-                      id="min-height"
-                      type="number"
-                      placeholder="e.g., 150"
-                      value={preferences.physical.height_range.min || ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
-                        updatePreferences('physical', 'height_range', {
-                          ...preferences.physical.height_range,
-                          min: value
-                        })
-                      }}
-                      min={100}
-                      max={250}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max-height" className="text-sm">Maximum height</Label>
-                    <Input
-                      id="max-height"
-                      type="number"
-                      placeholder="e.g., 200"
-                      value={preferences.physical.height_range.max || ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
-                        updatePreferences('physical', 'height_range', {
-                          ...preferences.physical.height_range,
-                          max: value
-                        })
-                      }}
-                      min={100}
-                      max={250}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
+              <RangeInput
+                label="Height Range"
+                description="Specify preferred height range for applicants"
+                minValue={preferences.physical.height_range.min}
+                maxValue={preferences.physical.height_range.max}
+                onMinChange={(value) => updatePreferences('physical', 'height_range', {
+                  ...preferences.physical.height_range,
+                  min: value
+                })}
+                onMaxChange={(value) => updatePreferences('physical', 'height_range', {
+                  ...preferences.physical.height_range,
+                  max: value
+                })}
+                minPlaceholder="e.g., 150"
+                maxPlaceholder="e.g., 200"
+                min={100}
+                max={250}
+                unit="cm"
+              />
 
               {/* Eye Color Preferences */}
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-base font-medium">Eye Color Preferences</Label>
-                  <p className="text-sm text-muted-foreground mt-1">Select preferred eye colors (optional)</p>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  {/* Left Column */}
-                  <div className="space-y-3">
-                    {EYE_COLORS.slice(0, Math.ceil(EYE_COLORS.length / 2)).map(color => (
-                      <div key={color} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`eye-color-${color.toLowerCase()}`}
-                          checked={preferences.physical.eye_color.preferred.includes(color)}
-                          onCheckedChange={(checked) => {
-                            if (checked === true) {
-                              addArrayItem('physical', 'eye_color', 'preferred', color)
-                            } else if (checked === false) {
-                              removeArrayItem('physical', 'eye_color', 'preferred', color)
-                            }
-                          }}
-                        />
-                        <Label 
-                          htmlFor={`eye-color-${color.toLowerCase()}`} 
-                          className="text-sm font-normal cursor-pointer flex items-center gap-1"
-                        >
-                          <Eye className="w-3 h-3" />
-                          {color}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Right Column */}
-                  <div className="space-y-3">
-                    {EYE_COLORS.slice(Math.ceil(EYE_COLORS.length / 2)).map(color => (
-                      <div key={color} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`eye-color-${color.toLowerCase()}`}
-                          checked={preferences.physical.eye_color.preferred.includes(color)}
-                          onCheckedChange={(checked) => {
-                            if (checked === true) {
-                              addArrayItem('physical', 'eye_color', 'preferred', color)
-                            } else if (checked === false) {
-                              removeArrayItem('physical', 'eye_color', 'preferred', color)
-                            }
-                          }}
-                        />
-                        <Label 
-                          htmlFor={`eye-color-${color.toLowerCase()}`} 
-                          className="text-sm font-normal cursor-pointer flex items-center gap-1"
-                        >
-                          <Eye className="w-3 h-3" />
-                          {color}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <MultiSelectChips
+                label="Eye Color Preferences"
+                description="Select preferred eye colors (optional)"
+                options={EYE_COLORS.map(color => ({ value: color, label: color }))}
+                selectedValues={preferences.physical.eye_color.preferred}
+                onValuesChange={(values) => updatePreferences('physical', 'eye_color', {
+                  ...preferences.physical.eye_color,
+                  preferred: values
+                })}
+                placeholder="Select eye colors..."
+                emptyText="No eye colors found"
+              />
 
               {/* Hair Color Preferences */}
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-base font-medium">Hair Color Preferences</Label>
-                  <p className="text-sm text-muted-foreground mt-1">Select preferred hair colors (optional)</p>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  {/* Left Column */}
-                  <div className="space-y-3">
-                    {HAIR_COLORS.slice(0, Math.ceil(HAIR_COLORS.length / 2)).map(color => (
-                      <div key={color} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`hair-color-${color.toLowerCase()}`}
-                          checked={preferences.physical.hair_color.preferred.includes(color)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              addArrayItem('physical', 'hair_color', 'preferred', color)
-                            } else {
-                              removeArrayItem('physical', 'hair_color', 'preferred', color)
-                            }
-                          }}
-                        />
-                        <Label 
-                          htmlFor={`hair-color-${color.toLowerCase()}`} 
-                          className="text-sm font-normal cursor-pointer flex items-center gap-1"
-                        >
-                          <Palette className="w-3 h-3" />
-                          {color}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Right Column */}
-                  <div className="space-y-3">
-                    {HAIR_COLORS.slice(Math.ceil(HAIR_COLORS.length / 2)).map(color => (
-                      <div key={color} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`hair-color-${color.toLowerCase()}`}
-                          checked={preferences.physical.hair_color.preferred.includes(color)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              addArrayItem('physical', 'hair_color', 'preferred', color)
-                            } else {
-                              removeArrayItem('physical', 'hair_color', 'preferred', color)
-                            }
-                          }}
-                        />
-                        <Label 
-                          htmlFor={`hair-color-${color.toLowerCase()}`} 
-                          className="text-sm font-normal cursor-pointer flex items-center gap-1"
-                        >
-                          <Palette className="w-3 h-3" />
-                          {color}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <MultiSelectChips
+                label="Hair Color Preferences"
+                description="Select preferred hair colors (optional)"
+                options={HAIR_COLORS.map(color => ({ value: color, label: color }))}
+                selectedValues={preferences.physical.hair_color.preferred}
+                onValuesChange={(values) => updatePreferences('physical', 'hair_color', {
+                  ...preferences.physical.hair_color,
+                  preferred: values
+                })}
+                placeholder="Select hair colors..."
+                emptyText="No hair colors found"
+              />
 
               {/* Age Range */}
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-base font-medium">Age Range</Label>
-                  <p className="text-sm text-muted-foreground mt-1">Specify age requirements for applicants (18+ minimum)</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="min-age" className="text-sm">Minimum age</Label>
-                    <Input
-                      id="min-age"
-                      type="number"
-                      placeholder="e.g., 18"
-                      value={preferences.other.age_range.min || ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
-                        updatePreferences('other', 'age_range', {
-                          ...preferences.other.age_range,
-                          min: value
-                        })
-                      }}
-                      min={18}
-                      max={80}
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max-age" className="text-sm">Maximum age</Label>
-                    <Input
-                      id="max-age"
-                      type="number"
-                      placeholder="e.g., 65"
-                      value={preferences.other.age_range.max || ''}
-                      onChange={(e) => {
-                        const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
-                        updatePreferences('other', 'age_range', {
-                          ...preferences.other.age_range,
-                          max: value
-                        })
-                      }}
-                      min={18}
-                      max={80}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
+              <RangeInput
+                label="Age Range"
+                description="Specify age requirements for applicants (18+ minimum)"
+                minValue={preferences.other.age_range.min}
+                maxValue={preferences.other.age_range.max}
+                onMinChange={(value) => updatePreferences('other', 'age_range', {
+                  ...preferences.other.age_range,
+                  min: value
+                })}
+                onMaxChange={(value) => updatePreferences('other', 'age_range', {
+                  ...preferences.other.age_range,
+                  max: value
+                })}
+                minPlaceholder="e.g., 18"
+                maxPlaceholder="e.g., 65"
+                min={18}
+                max={80}
+                unit="years"
+              />
 
               {/* Tattoos & Piercings */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -905,52 +759,25 @@ export default function ApplicantPreferencesStep({
             {expandedSections.professional && (
               <CardContent className="space-y-6">
                   {/* Experience Range */}
-                  <div className="space-y-4">
-                    <div>
-                      <Label className="text-base font-medium">Experience Range (years)</Label>
-                      <p className="text-sm text-muted-foreground mt-1">Specify required experience level</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="min-experience" className="text-sm">Minimum experience</Label>
-                        <Input
-                          id="min-experience"
-                          type="number"
-                          placeholder="e.g., 2"
-                          value={preferences.professional.experience_years.min || ''}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
-                            updatePreferences('professional', 'experience_years', {
-                              ...preferences.professional.experience_years,
-                              min: value
-                            })
-                          }}
-                          min={0}
-                          max={30}
-                          className="w-full"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="max-experience" className="text-sm">Maximum experience</Label>
-                        <Input
-                          id="max-experience"
-                          type="number"
-                          placeholder="e.g., 10"
-                          value={preferences.professional.experience_years.max || ''}
-                          onChange={(e) => {
-                            const value = e.target.value === '' ? null : parseInt(e.target.value, 10)
-                            updatePreferences('professional', 'experience_years', {
-                              ...preferences.professional.experience_years,
-                              max: value
-                            })
-                          }}
-                          min={0}
-                          max={30}
-                          className="w-full"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <RangeInput
+                    label="Experience Range"
+                    description="Specify required experience level"
+                    minValue={preferences.professional.experience_years.min}
+                    maxValue={preferences.professional.experience_years.max}
+                    onMinChange={(value) => updatePreferences('professional', 'experience_years', {
+                      ...preferences.professional.experience_years,
+                      min: value
+                    })}
+                    onMaxChange={(value) => updatePreferences('professional', 'experience_years', {
+                      ...preferences.professional.experience_years,
+                      max: value
+                    })}
+                    minPlaceholder="e.g., 2"
+                    maxPlaceholder="e.g., 10"
+                    min={0}
+                    max={30}
+                    unit="years"
+                  />
 
                   {/* Portfolio Required */}
                   <div className="flex items-center space-x-2">
@@ -1269,40 +1096,26 @@ export default function ApplicantPreferencesStep({
 
               {/* Rate Range - Only show when travel is required */}
               {preferences.availability.travel_required && (
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-base font-medium">Hourly Rate Budget (€)</Label>
-                    <p className="text-sm text-muted-foreground mt-1">Set your budget range for hourly rates</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <NumberInputWithButtons
-                      id="min-rate"
-                      label="Minimum rate"
-                      placeholder="e.g., 25"
-                      value={preferences.availability.hourly_rate_range.min}
-                      onChange={(value) => updatePreferences('availability', 'hourly_rate_range', {
-                        ...preferences.availability.hourly_rate_range,
-                        min: value
-                      })}
-                      min={5}
-                      max={500}
-                      step={5}
-                    />
-                    <NumberInputWithButtons
-                      id="max-rate"
-                      label="Maximum rate"
-                      placeholder="e.g., 100"
-                      value={preferences.availability.hourly_rate_range.max}
-                      onChange={(value) => updatePreferences('availability', 'hourly_rate_range', {
-                        ...preferences.availability.hourly_rate_range,
-                        max: value
-                      })}
-                      min={5}
-                      max={500}
-                      step={5}
-                    />
-                  </div>
-                </div>
+                <RangeInput
+                  label="Hourly Rate Budget"
+                  description="Set your budget range for hourly rates"
+                  minValue={preferences.availability.hourly_rate_range.min}
+                  maxValue={preferences.availability.hourly_rate_range.max}
+                  onMinChange={(value) => updatePreferences('availability', 'hourly_rate_range', {
+                    ...preferences.availability.hourly_rate_range,
+                    min: value
+                  })}
+                  onMaxChange={(value) => updatePreferences('availability', 'hourly_rate_range', {
+                    ...preferences.availability.hourly_rate_range,
+                    max: value
+                  })}
+                  minPlaceholder="e.g., 25"
+                  maxPlaceholder="e.g., 100"
+                  min={5}
+                  max={500}
+                  step={5}
+                  unit="€/hour"
+                />
               )}
             </CardContent>
           </Card>

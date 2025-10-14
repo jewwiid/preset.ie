@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   FileText, 
   Download, 
@@ -149,7 +150,7 @@ export default function SharedTreatmentPage() {
     return (
       <div className="min-h-screen bg-muted-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <LoadingSpinner size="xl" />
           <p className="text-muted-foreground-600">Loading treatment...</p>
         </div>
       </div>

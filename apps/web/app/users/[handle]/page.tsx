@@ -409,8 +409,7 @@ export default async function UserProfilePage({ params }: PageProps) {
   const memberSinceDate = new Date(stats.member_since).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'numeric',
-    day: 'numeric',
-  });
+    day: 'numeric'});
 
   // Parse verification badges
   const verificationBadges = parseVerificationBadges(profile.verification_badges || [])

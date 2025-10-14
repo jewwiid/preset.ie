@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Send, MapPin, Calendar, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthToken } from '../../lib/supabase';
@@ -360,7 +361,7 @@ export default function GearOfferModal({
               <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                    <LoadingSpinner size="sm" />
                     Submitting...
                   </>
                 ) : (

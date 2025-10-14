@@ -5,6 +5,7 @@ import { Wand2 } from 'lucide-react'
 import { useAuth } from '../../lib/auth-context'
 import { useFeedback } from '../../components/feedback/FeedbackContext'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export default function PlaygroundTestPage() {
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
@@ -86,7 +87,7 @@ export default function PlaygroundTestPage() {
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+              <LoadingSpinner size="sm" />
               Testing...
             </>
           ) : (

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { RefreshCw, Grid, List, Plus, Store, Package } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { usePageHeaderImage } from '@/hooks/usePageHeaderImage';

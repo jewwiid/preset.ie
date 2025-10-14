@@ -11,6 +11,7 @@ import { Badge } from '../../components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import NotificationsPanel from '../components/NotificationsPanel'
 
 interface Preset {
@@ -123,7 +124,7 @@ function MyPresetsGeneratedContent() {
           generationCredits: 1,
           prompt: image.prompt,
           negativePrompt: '',
-          generationSettings: {}
+          generationSettings: {} 
         })
       })
 
@@ -153,7 +154,7 @@ function MyPresetsGeneratedContent() {
   if (loading) {
     return (
       <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+        <LoadingSpinner size="lg" />
         <p className="text-muted-foreground">Loading generated images...</p>
       </div>
     )
@@ -536,7 +537,7 @@ export default function PresetsPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-preset-500 mx-auto mb-4"></div>
+          <LoadingSpinner size="xl" />
           <p className="text-muted-foreground">Loading presets...</p>
         </div>
       </div>
@@ -921,7 +922,7 @@ export default function PresetsPage() {
               </div>
             ) : myPresetsLoading ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-preset-500 mx-auto mb-4"></div>
+                <LoadingSpinner size="xl" />
                 <p className="text-muted-foreground">Loading your presets...</p>
               </div>
             ) : myPresetsError ? (

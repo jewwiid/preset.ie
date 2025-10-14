@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Loader2 } from 'lucide-react'
 import { PexelsPhoto } from '../../lib/types/playground'
 import { isValidHexColor } from '../../lib/utils/playground'
@@ -22,7 +23,7 @@ interface PexelsSearchPanelProps {
   onFiltersChange: (filters: { orientation?: string; size?: string; color?: string }) => void
   onCustomHexColorChange: (color: string) => void
   onToggleHexInput: (show: boolean) => void
-  onSelectPhoto: (photoUrl: string) => void
+  onSelectPhoto: (photo: PexelsPhoto) => void
   onPrevPage: () => void
   onNextPage: () => void
   onGoToPage: (page: number) => void
@@ -69,7 +70,7 @@ export function PexelsSearchPanel({
         />
         {loading && (
           <div className="flex items-center px-3 py-2 text-sm text-primary">
-            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            <LoadingSpinner size="sm" />
             Searching...
           </div>
         )}
@@ -187,7 +188,7 @@ export function PexelsSearchPanel({
             )}
             {loading && (
               <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <LoadingSpinner size="sm" />
                 <span>Loading...</span>
               </div>
             )}
@@ -245,7 +246,7 @@ export function PexelsSearchPanel({
               <div
                 key={photo.id}
                 className="relative group cursor-pointer"
-                onClick={() => onSelectPhoto(photo.src.large2x || photo.src.large)}
+                onClick={() => onSelectPhoto(photo)}
               >
                 <div className="aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
                   <img

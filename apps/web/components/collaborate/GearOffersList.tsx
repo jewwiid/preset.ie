@@ -24,8 +24,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  DialogTitle} from '@/components/ui/dialog';
 
 interface GearOffer {
   id: string;

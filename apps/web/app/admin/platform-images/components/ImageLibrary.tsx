@@ -16,8 +16,7 @@ interface ImageLibraryProps {
 export default function ImageLibrary({
   images,
   onEdit,
-  onDelete,
-}: ImageLibraryProps) {
+  onDelete}: ImageLibraryProps) {
   const [showAllImages, setShowAllImages] = useState(false);
 
   return (

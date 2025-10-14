@@ -7,6 +7,7 @@ import { supabase } from '../../../lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Badge } from '../../ui/badge'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Bell,
   BellOff,

@@ -25,8 +25,7 @@ export default function ImageSectionManager({
   images,
   onQuickUpload,
   onEdit,
-  onDeactivate,
-}: ImageSectionManagerProps) {
+  onDeactivate}: ImageSectionManagerProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">

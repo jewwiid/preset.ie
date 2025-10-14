@@ -4,6 +4,7 @@ import { useAuth } from './auth-context'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface ProtectedRouteProps {
   children: React.ReactNode
   redirectTo?: string
@@ -25,7 +26,7 @@ export function ProtectedRoute({ children, redirectTo = '/auth/signin' }: Protec
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto"></div>
+          <LoadingSpinner size="xl" />
           <p className="mt-4 text-muted-foreground-600">Loading...</p>
         </div>
       </div>

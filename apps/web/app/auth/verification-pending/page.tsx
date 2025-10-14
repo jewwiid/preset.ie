@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Mail, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export default function VerificationPendingPage() {
   const [email, setEmail] = useState<string>('');
   const [resending, setResending] = useState(false);

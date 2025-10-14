@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, AlertTriangle, Users, RefreshCw } from 'lucide-react';
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface CreditStats {
   // New pay-per-generation metrics
   activeUsersToday: number;
@@ -70,7 +71,7 @@ const CreditManagementDashboard = () => {
   if (!creditStats) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <LoadingSpinner size="lg" />
       </div>
     );
   }

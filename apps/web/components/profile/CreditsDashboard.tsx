@@ -6,7 +6,8 @@ import { useAuth } from '../../lib/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import {
   CreditCard, 
   Coins, 
   History, 
@@ -200,14 +201,11 @@ export default function CreditsDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+          'Authorization': `Bearer ${session.access_token}`},
         body: JSON.stringify({
           packageId,
           successUrl: `${window.location.origin}/profile?tab=credits&success=true`,
-          cancelUrl: `${window.location.origin}/profile?tab=credits&cancelled=true`,
-        }),
-      });
+          cancelUrl: `${window.location.origin}/profile?tab=credits&cancelled=true`})});
 
       const data = await response.json();
       console.log('📦 Stripe API response:', data);

@@ -1,7 +1,7 @@
 // Playground Types and Interfaces
 // This file defines all the types needed for the image generation playground
 
-import { CinematicParameters } from '../../../../packages/types/src/cinematic-parameters'
+import { CinematicParameters } from '@preset/types'
 
 export interface Preset {
   id: string

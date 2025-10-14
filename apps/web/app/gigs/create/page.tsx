@@ -275,7 +275,7 @@ export default function CreateGigPage() {
         application_deadline: formData.applicationDeadline,
         max_applicants: formData.maxApplicants,
         safety_notes: formData.safetyNotes,
-        applicant_preferences: formData.applicantPreferences || {}
+        applicant_preferences: formData.applicantPreferences || {} 
       }
       
       const { data, error: insertError } = await supabase
@@ -320,13 +320,11 @@ export default function CreateGigPage() {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`,
-              },
+                'Authorization': `Bearer ${session.access_token}`},
               body: JSON.stringify({
                 gigId,
                 publishNow: true
-              }),
-            })
+              })})
 
             const data = await response.json()
             console.log('📦 Notification API response:', data)

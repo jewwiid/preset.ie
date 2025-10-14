@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Store, Search, Star, Users, CheckCircle, XCircle, Clock, Eye, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -66,8 +67,7 @@ export default function AdminMarketplaceListingsPage() {
   const handleApprove = async (listingId: string) => {
     try {
       const response = await fetch(`/api/admin/marketplace/listings/${listingId}/approve`, {
-        method: 'POST',
-      });
+        method: 'POST'});
 
       if (response.ok) {
         fetchListings(); // Refresh listings
@@ -83,8 +83,7 @@ export default function AdminMarketplaceListingsPage() {
   const handleReject = async (listingId: string) => {
     try {
       const response = await fetch(`/api/admin/marketplace/listings/${listingId}/reject`, {
-        method: 'POST',
-      });
+        method: 'POST'});
 
       if (response.ok) {
         fetchListings(); // Refresh listings
@@ -212,7 +211,7 @@ export default function AdminMarketplaceListingsPage() {
                   </div>
                 ) : loading ? (
                   <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <LoadingSpinner size="xl" />
                     <p className="text-muted-foreground">Loading listings...</p>
                   </div>
                 ) : filteredListings.length === 0 ? (

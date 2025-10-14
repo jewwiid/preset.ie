@@ -1,13 +1,16 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Wand2, Upload, X, Image as ImageIcon, Search, Loader2 } from 'lucide-react'
+import { Wand2, Upload, X, Image as ImageIcon, Search } from 'lucide-react'
 import { useFeedback } from '../../../components/feedback/FeedbackContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { AsyncButton } from '@/components/ui/async-button'
+import UnifiedImageImportDialog, { ImportedImage } from '@/components/ui/image-import-dialog'
 
 interface AdvancedEditingPanelProps {
   onEdit: (params: {
@@ -16,6 +19,13 @@ interface AdvancedEditingPanelProps {
     editPrompt: string
     strength: number
     referenceImage?: string
+    attribution?: {
+      source: 'pexels' | 'url' | 'upload' | 'saved';
+      photographer?: string;
+      photographer_url?: string;
+      photographer_id?: number;
+      original_url?: string;
+    } | null
   }) => Promise<void>
   loading: boolean
   selectedImage: string | null
@@ -52,6 +62,13 @@ export default function AdvancedEditingPanel({
   const [referenceImage, setReferenceImage] = useState<string | null>(null)
   const [referenceImageSource, setReferenceImageSource] = useState<'upload' | 'saved'>('upload')
   const [imageSource, setImageSource] = useState<'upload' | 'saved' | 'pexels'>('saved')
+  const [imageAttribution, setImageAttribution] = useState<{
+    source: 'pexels' | 'url' | 'upload' | 'saved';
+    photographer?: string;
+    photographer_url?: string;
+    photographer_id?: number;
+    original_url?: string;
+  } | null>(null)
   
   // Pexels state
   const [pexelsQuery, setPexelsQuery] = useState('')
@@ -67,7 +84,10 @@ export default function AdvancedEditingPanel({
   const [uploadedImage, setUploadedImage] = useState<string | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const baseImageInputRef = useRef<HTMLInputElement>(null)
+
+  // Import dialog state
+  const [showBaseImageImport, setShowBaseImageImport] = useState(false)
+  const [showReferenceImageImport, setShowReferenceImageImport] = useState(false)
 
   const handleEdit = async () => {
     const imageToEdit = imageSource === 'upload' ? uploadedImage : selectedImage
@@ -80,7 +100,8 @@ export default function AdvancedEditingPanel({
       editType,
       editPrompt,
       strength: editStrength,
-      referenceImage: referenceImage || undefined
+      referenceImage: referenceImage || undefined,
+      attribution: imageAttribution
     })
   }
 
@@ -137,6 +158,25 @@ export default function AdvancedEditingPanel({
         URL.revokeObjectURL(uploadedImage)
       }
       setUploadedImage(null)
+    }
+  }
+
+  // Handle imported base image
+  const handleBaseImageImported = (images: ImportedImage[]) => {
+    if (images.length > 0) {
+      const image = images[0]
+      setUploadedImage(image.url)
+      setImageSource(image.source === 'url' ? 'upload' : image.source)
+      setImageAttribution(image.attribution || null)
+    }
+  }
+
+  // Handle imported reference image
+  const handleReferenceImageImported = (images: ImportedImage[]) => {
+    if (images.length > 0) {
+      const image = images[0]
+      setReferenceImage(image.url)
+      setReferenceImageSource(image.source === 'saved' ? 'saved' : 'upload')
     }
   }
 
@@ -245,8 +285,7 @@ export default function AdvancedEditingPanel({
       const response = await fetch('/api/moodboard/pexels/search', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'},
         body: JSON.stringify({
           query: pexelsQuery,
           page: page,
@@ -301,9 +340,22 @@ export default function AdvancedEditingPanel({
     setReferenceImage(imageUrl)
     setImageSource('pexels')
     
+    // Store attribution information
+    setImageAttribution({
+      source: 'pexels',
+      photographer: photo.photographer,
+      photographer_url: photo.photographer_url,
+      photographer_id: photo.photographer_id,
+      original_url: photo.url})
+    
     try {
       const dimensions = await getImageDimensions(imageUrl)
       console.log('Pexels image dimensions:', dimensions)
+      console.log('Pexels attribution:', {
+        photographer: photo.photographer,
+        photographer_url: photo.photographer_url,
+        photographer_id: photo.photographer_id
+      })
     } catch (error) {
       console.error('Failed to get Pexels image dimensions:', error)
     }
@@ -319,6 +371,7 @@ export default function AdvancedEditingPanel({
   }
 
   return (
+    <>
     <Card className="w-full">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center">
@@ -335,14 +388,20 @@ export default function AdvancedEditingPanel({
           <Button
             variant={imageSource === 'saved' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setImageSource('saved')}
+            onClick={() => {
+              setImageSource('saved')
+              setImageAttribution(null)
+            }}
           >
             Saved Images
           </Button>
           <Button
             variant={imageSource === 'upload' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setImageSource('upload')}
+            onClick={() => {
+              setImageSource('upload')
+              setImageAttribution(null)
+            }}
           >
             Upload Image
           </Button>
@@ -401,7 +460,13 @@ export default function AdvancedEditingPanel({
                     }`}
                     onClick={() => onSelectSavedImage?.(image.image_url)}
                   >
-                    <div className="relative aspect-square">
+                    <div 
+                      className="relative"
+                      style={{ 
+                        aspectRatio: `${image.width}/${image.height}`,
+                        maxHeight: '200px'
+                      }}
+                    >
                       <img
                         src={image.image_url}
                         alt={image.title}
@@ -453,6 +518,11 @@ export default function AdvancedEditingPanel({
             <div className="mt-1 text-xs text-primary">
               Selected image
             </div>
+            {imageAttribution?.photographer && (
+              <div className="mt-1 text-xs text-muted-foreground">
+                Photo by {imageAttribution.photographer}
+              </div>
+            )}
           </div>
         )}
         
@@ -470,47 +540,24 @@ export default function AdvancedEditingPanel({
       {imageSource === 'upload' && (
         <div className="mb-4">
           <Label className="text-sm">
-            Upload Image to Edit
+            Import Image to Edit
           </Label>
-          
+
           {!uploadedImage ? (
-            <div className="border-2 border-dashed border-border-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
-              <input
-                ref={baseImageInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleBaseImageUpload}
-                className="hidden"
-              />
-              <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground-400 mb-2" />
-              <p className="text-sm text-muted-foreground-600 mb-2">
-                Upload an image to apply editing functions like background removal, upscale, etc.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => baseImageInputRef.current?.click()}
-                className="text-primary-600 border-primary-200 hover:bg-primary-50"
-                disabled={uploadingImage}
-              >
-                {uploadingImage ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Choose Image to Edit
-                  </>
-                )}
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setShowBaseImageImport(true)}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import Image to Edit
+            </Button>
           ) : (
             <div className="relative">
               <img
                 src={uploadedImage}
-                alt="Uploaded image for editing"
+                alt="Imported image for editing"
                 className="w-full h-48 object-cover rounded-lg border"
               />
               <Button
@@ -524,11 +571,11 @@ export default function AdvancedEditingPanel({
               </Button>
               <div className="absolute top-2 left-2">
                 <span className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                  Uploaded Image
+                  Imported Image
                 </span>
               </div>
               <div className="mt-2 text-xs text-muted-foreground-500">
-                Image uploaded successfully and ready for editing
+                Image imported successfully and ready for editing
               </div>
             </div>
           )}
@@ -555,7 +602,7 @@ export default function AdvancedEditingPanel({
               />
               {pexelsLoading && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground-400" />
+                  <LoadingSpinner size="sm" />
                 </div>
               )}
             </div>
@@ -648,10 +695,7 @@ export default function AdvancedEditingPanel({
                     className="w-full"
                   >
                     {pexelsLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Loading...
-                      </>
+                      <LoadingSpinner size="sm" text="Loading..." />
                     ) : (
                       `Load more (${(pexelsTotalResults - pexelsResults.length).toLocaleString()} remaining)`
                     )}
@@ -881,7 +925,7 @@ export default function AdvancedEditingPanel({
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+              <LoadingSpinner size="sm" className="mr-2" />
               Editing...
             </>
           ) : (
@@ -894,5 +938,36 @@ export default function AdvancedEditingPanel({
       </div>
       </CardContent>
     </Card>
+
+    {/* Base Image Import Dialog */}
+    <UnifiedImageImportDialog
+      open={showBaseImageImport}
+      onOpenChange={setShowBaseImageImport}
+      maxImages={1}
+      multiSelect={false}
+      onImagesSelected={handleBaseImageImported}
+      enableFileUpload={true}
+      enableUrlImport={true}
+      enablePexelsSearch={true}
+      enableSavedGallery={true}
+      title="Import Base Image"
+      description="Select an image to edit"
+    />
+
+    {/* Reference Image Import Dialog */}
+    <UnifiedImageImportDialog
+      open={showReferenceImageImport}
+      onOpenChange={setShowReferenceImageImport}
+      maxImages={1}
+      multiSelect={false}
+      onImagesSelected={handleReferenceImageImported}
+      enableFileUpload={true}
+      enableUrlImport={true}
+      enablePexelsSearch={true}
+      enableSavedGallery={true}
+      title="Import Reference Image"
+      description="Select a reference image for style transfer or face swap"
+    />
+    </>
   )
 }

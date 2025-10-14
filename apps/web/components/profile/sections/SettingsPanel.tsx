@@ -13,6 +13,7 @@ import { Button } from '../../ui/button'
 import { VerificationBadges } from '../../VerificationBadges'
 import { parseVerificationBadges } from '../../../lib/utils/verification-badges'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export function SettingsPanel() {
   const { user } = useAuth()
   const { profile } = useProfile()

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { CinematicParameters } from '../../../../../packages/types/src/cinematic-parameters';
+import { CinematicParameters } from '@preset/types';
 import CinematicPromptBuilder from '../../../../../packages/services/src/cinematic-prompt-builder';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;

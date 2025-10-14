@@ -7,6 +7,7 @@ import { Card, CardContent } from '../../../ui/card'
 import { Badge } from '../../../ui/badge'
 import { Check, Users, Camera, Sparkles, Loader2 } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface CategoryOption {
   id: string
   name: string
@@ -194,7 +195,7 @@ export function CategoriesStep() {
           </p>
         </div>
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <LoadingSpinner size="lg" />
         </div>
       </div>
     )

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { RefreshCw, Filter, Star, TrendingUp, Users, MapPin } from 'lucide-react'
 import { MatchmakingProvider, useMatchmaking } from '../components/matchmaking/context/MatchmakingContext'
 import { useAuth } from '../../lib/auth-context'

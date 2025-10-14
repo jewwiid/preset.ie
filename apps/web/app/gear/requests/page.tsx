@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import EquipmentRequestCard from '@/components/marketplace/EquipmentRequestCard';
 import CreateRequestModal from '@/components/marketplace/CreateRequestModal';
 import { Plus, Search, Filter, AlertCircle } from 'lucide-react';
@@ -352,7 +353,7 @@ function EquipmentRequestsPageContent() {
       {/* Requests Grid */}
       {loading && requests.length === 0 ? (
         <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <LoadingSpinner size="xl" />
           <p className="text-muted-foreground mt-4">Loading requests...</p>
         </div>
       ) : filteredRequests.length === 0 ? (

@@ -940,12 +940,21 @@ export async function POST(request: NextRequest) {
                   credits_used: 1, // NanoBanana costs 1 credit
                   status: 'processing',
                   last_generated_at: new Date().toISOString(),
-                  metadata: {
+                  generation_metadata: {
+                    // Core generation info
+                    prompt: prompt,
                     enhanced_prompt: enhancedPrompt,
-                    style_applied: style,
+                    provider: 'nanobanana',
+                    generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
+                    credits_used: 1, // NanoBanana costs 1 credit
+                    resolution: resolutionForGeneration,
+                    aspect_ratio: aspectRatio,
+                    
+                    // Style and preset info
+                    style: style || 'photorealistic',
                     style_prompt: stylePrompt,
-                    consistency_level: consistencyLevel || 'high',
-                    intensity: intensity || (customStylePreset ? customStylePreset.intensity : 1.0),
+                    preset_id: customStylePreset?.id,
+                    preset_name: customStylePreset?.name,
                     custom_style_preset: customStylePreset ? {
                       id: customStylePreset.id,
                       name: customStylePreset.name,
@@ -954,15 +963,26 @@ export async function POST(request: NextRequest) {
                       style_settings: customStylePreset.style_settings,
                       technical_settings: customStylePreset.technical_settings
                     } : null,
-                    generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
-                    base_image: baseImage || null,
-                    api_endpoint: isImageToImage ? 'nanobanana/edit' : 'nanobanana/text-to-image',
+                    consistency_level: consistencyLevel || 'high',
+                    intensity: intensity || (customStylePreset ? customStylePreset.intensity : 1.0),
+                    
+                    // Cinematic parameters
                     cinematic_parameters: cinematicParameters || null,
+                    
+                    // Technical settings
                     include_technical_details: includeTechnicalDetails ?? true,
                     include_style_references: includeStyleReferences ?? true,
                     user_subject: userSubject || null,
-                    provider: 'nanobanana',
-                    taskId: callbackResult.taskId
+                    
+                    // Base image (for image-to-image)
+                    base_image: baseImage || null,
+                    
+                    // API details
+                    api_endpoint: isImageToImage ? 'nanobanana/edit' : 'nanobanana/text-to-image',
+                    taskId: callbackResult.taskId,
+                    
+                    // Timestamps
+                    generated_at: new Date().toISOString()
                   }
                 })
             }
@@ -1118,15 +1138,45 @@ export async function POST(request: NextRequest) {
                 credits_used: 1, // NanoBanana costs 1 credit
                 status: 'generated',
                 last_generated_at: new Date().toISOString(),
-                metadata: {
-                  provider: result.provider,
-                  cost: result.cost,
-                  generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
-                  cinematic_parameters: cinematicParameters,
+                generation_metadata: {
+                  // Core generation info
+                  prompt: prompt,
                   enhanced_prompt: enhancedPrompt,
-                  include_technical_details: includeTechnicalDetails,
-                  include_style_references: includeStyleReferences,
-                  base_image: baseImage || null
+                  provider: result.provider,
+                  generation_mode: isImageToImage ? 'image-to-image' : 'text-to-image',
+                  credits_used: creditsNeeded,
+                  resolution: resolutionForGeneration,
+                  aspect_ratio: aspectRatio,
+                  
+                  // Style and preset info
+                  style: style || 'photorealistic',
+                  style_prompt: stylePrompt,
+                  preset_id: customStylePreset?.id,
+                  preset_name: customStylePreset?.name,
+                  custom_style_preset: customStylePreset,
+                  consistency_level: consistencyLevel || 'high',
+                  intensity: intensity || (customStylePreset ? customStylePreset.intensity : 1.0),
+                  
+                  // Cinematic parameters
+                  cinematic_parameters: cinematicParameters,
+                  
+                  // Technical settings
+                  include_technical_details: includeTechnicalDetails ?? true,
+                  include_style_references: includeStyleReferences ?? true,
+                  user_subject: userSubject || null,
+                  
+                  // Base image (for image-to-image)
+                  base_image: baseImage || null,
+                  
+                  // API details
+                  api_endpoint: isImageToImage ? 'nanobanana/edit' : 'nanobanana/text-to-image',
+                  taskId: result.taskId,
+                  
+                  // Timestamps
+                  generated_at: new Date().toISOString(),
+                  
+                  // Legacy fields for backward compatibility
+                  cost: result.cost
                 }
               }
               

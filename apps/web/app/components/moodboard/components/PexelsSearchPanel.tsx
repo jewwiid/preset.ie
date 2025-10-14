@@ -8,6 +8,7 @@
 import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PexelsPhoto, PexelsFilters } from '../lib/moodboardTypes'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface PexelsSearchPanelProps {
   query: string
   results: PexelsPhoto[]
@@ -53,7 +54,7 @@ export const PexelsSearchPanel = ({
         </div>
         {loading && (
           <div className="flex items-center px-3 py-2 text-sm text-primary">
-            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            <LoadingSpinner size="sm" />
             Searching...
           </div>
         )}
@@ -185,7 +186,7 @@ export const PexelsSearchPanel = ({
           {loading && (
             <div className="text-center py-4">
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <LoadingSpinner size="sm" />
                 Loading images...
               </div>
             </div>

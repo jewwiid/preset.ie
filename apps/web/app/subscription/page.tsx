@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context'
 import { supabase } from '@/lib/supabase'
 import { Check, X, Star, Zap, Crown } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface SubscriptionPlan {
   id: string
   name: string

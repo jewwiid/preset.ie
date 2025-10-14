@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { X, Sparkles, Loader2 } from 'lucide-react'
 
 interface PromptBuilderProps {
@@ -149,7 +150,7 @@ export function PromptBuilder({
         >
           {isEnhancing ? (
             <>
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <LoadingSpinner size="sm" />
               Enhancing...
             </>
           ) : (

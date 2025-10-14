@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { CinematicParameters } from '../../../../packages/types/src/cinematic-parameters'
+import { CinematicParameters } from '@preset/types'
 
 interface SavePresetDialogProps {
   isOpen: boolean

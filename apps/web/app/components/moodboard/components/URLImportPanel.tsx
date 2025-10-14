@@ -7,6 +7,7 @@
 
 import { Link as LinkIcon, Loader2, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useState } from 'react'
 
 interface URLImportPanelProps {
@@ -78,7 +79,7 @@ export const URLImportPanel = ({ onImport, loading = false }: URLImportPanelProp
         >
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <LoadingSpinner size="sm" />
               Importing...
             </>
           ) : (

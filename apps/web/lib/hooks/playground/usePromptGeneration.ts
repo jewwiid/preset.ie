@@ -118,7 +118,7 @@ export const usePromptGeneration = ({
     }
   }, [])
 
-  // Update prompt when userSubject changes
+  // Update prompt when userSubject or style changes
   useEffect(() => {
     // Don't update if user is still typing or if prompt has been manually modified
     if (isUserTypingSubject || isPromptModified) {
@@ -160,8 +160,8 @@ export const usePromptGeneration = ({
       return
     }
 
-    // If subject is cleared and we have a style, update prompt accordingly
-    if (!userSubject.trim() && style) {
+    // If subject is cleared but we have a style, generate style-only prompt
+    if (!userSubject.trim() && style && !currentPreset) {
       setIsSubjectUpdating(true)
       generateEnhancedPrompt(style, '', generationMode).then((newPrompt: string) => {
         setPrompt(newPrompt)

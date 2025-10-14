@@ -1,16 +1,19 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { Wand2, Download, Heart, Settings, X, Sparkles, Grid3X3, Minus } from 'lucide-react'
+import { Download, Heart, Wand2, X, Settings } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/components/ui/toast'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { downloadImageWithWatermark } from '../../../lib/watermark-utils'
 import DraggableImagePreview from './DraggableImagePreview'
+import { usePreviewControls } from '../../../hooks/usePreviewControls'
+import { GridOverlayControls } from '../../../components/playground/GridOverlayControls'
+import { ImageActionButtons } from '../../../components/playground/ImageActionButtons'
+import { StyleProviderSelectors } from '../../../components/playground/StyleProviderSelectors'
 
 interface DynamicPreviewAreaProps {
   aspectRatio: string
@@ -79,59 +82,13 @@ export default function DynamicPreviewArea({
   onClearImages
 }: DynamicPreviewAreaProps) {
   const { showSuccess, showError } = useToast()
-  const [showBaseImage, setShowBaseImage] = useState(false) // Default to showing generated images
-  const [showGridOverlay, setShowGridOverlay] = useState(true)
-  const [gridType, setGridType] = useState<'horizontal' | 'rule-of-thirds'>('horizontal')
-  const [availableStyles, setAvailableStyles] = useState<Array<{ style_name: string; display_name: string }>>([])
-  const [loadingStyles, setLoadingStyles] = useState(true)
 
-  // Fetch available styles from database
-  useEffect(() => {
-    const fetchStyles = async () => {
-      try {
-        setLoadingStyles(true)
-        const response = await fetch('/api/style-prompts')
-        if (response.ok) {
-          const data = await response.json()
-          setAvailableStyles(data.stylePrompts || [])
-        } else {
-          console.error('Failed to fetch styles')
-        }
-      } catch (error) {
-        console.error('Error fetching styles:', error)
-      } finally {
-        setLoadingStyles(false)
-      }
-    }
+  // Use the preview controls hook
+  const preview = usePreviewControls({ images })
 
-    fetchStyles()
-  }, [])
-  
   // Use the aspect ratio from parent instead of local state
   const displayAspectRatio = aspectRatio || '1:1'
   const previewAspectRatio = displayAspectRatio.replace(':', '/')
-  
-  // Separate base images from generated images - memoized to prevent infinite loops
-  const baseImages = useMemo(() => images.filter(img => img.type === 'base'), [images])
-  const generatedImages = useMemo(() => images.filter(img => img.type !== 'base'), [images])
-  
-  // Auto-show base image when it exists and no generated images are present
-  useEffect(() => {
-    const hasBaseImages = baseImages.length > 0
-    const hasGeneratedImages = generatedImages.length > 0
-    
-    // If there are base images but no generated images, show base images by default
-    if (hasBaseImages && !hasGeneratedImages) {
-      setShowBaseImage(true)
-    }
-    // If there are generated images, show them by default
-    else if (hasGeneratedImages) {
-      setShowBaseImage(false)
-    }
-  }, [baseImages, generatedImages])
-  
-  // Show generated images by default when they exist, otherwise show base images
-  const imagesToDisplay = showBaseImage ? baseImages : generatedImages.length > 0 ? generatedImages : baseImages
   
   // Debug logging (only when needed)
   // console.log('🔍 DynamicPreviewArea Debug:', {
@@ -267,43 +224,14 @@ export default function DynamicPreviewArea({
                 Preview and generated images side-by-side
               </CardDescription>
             </div>
-            {/* Style and Provider Selectors */}
-            <div className="flex items-center gap-4">
-              {/* Style Selector */}
-              {onStyleChange && (
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="style-selector" className="text-sm font-medium">Style:</Label>
-                  <Select value={currentStyle || ''} onValueChange={onStyleChange} disabled={loadingStyles}>
-                    <SelectTrigger className="w-[160px] h-8 text-sm">
-                      <SelectValue placeholder={loadingStyles ? "Loading..." : "Select style"} />
-                    </SelectTrigger>
-                  <SelectContent>
-                    {availableStyles.map((style) => (
-                      <SelectItem key={style.style_name} value={style.style_name}>
-                        {style.display_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              )}
-              
-              {/* Provider Selector */}
-              {onProviderChange && (
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="provider-selector" className="text-sm font-medium">Provider:</Label>
-                  <Select value={selectedProvider || 'nanobanana'} onValueChange={onProviderChange}>
-                    <SelectTrigger className="w-[140px] h-8 text-sm">
-                      <SelectValue placeholder="Select provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nanobanana">🍌 NanoBanana</SelectItem>
-                      <SelectItem value="seedream">🌊 Seedream</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
+            <StyleProviderSelectors
+              currentStyle={currentStyle}
+              onStyleChange={onStyleChange}
+              availableStyles={preview.availableStyles}
+              loadingStyles={preview.loadingStyles}
+              selectedProvider={selectedProvider}
+              onProviderChange={onProviderChange}
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -355,72 +283,22 @@ export default function DynamicPreviewArea({
                   </div>
                 )}
               </div>
-              
-              {baseImages.length > 0 ? (
+
+              {preview.baseImages.length > 0 ? (
                 <div className="space-y-3">
                   {/* Grid Overlay Controls */}
-                  <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="grid-overlay" className="text-sm font-medium">
-                          Grid Overlay
-                        </Label>
-                        <Switch
-                          id="grid-overlay"
-                          checked={showGridOverlay}
-                          onCheckedChange={setShowGridOverlay}
-                        />
-                      </div>
-                      
-                      {showGridOverlay && (
-                        <div className="flex items-center gap-2">
-                          <Label className="text-sm font-medium">Type:</Label>
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant={gridType === 'horizontal' ? 'default' : 'outline'}
-                              onClick={() => setGridType('horizontal')}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <Minus className="h-3 w-3 mr-1" />
-                              Horizontal
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={gridType === 'rule-of-thirds' ? 'default' : 'outline'}
-                              onClick={() => setGridType('rule-of-thirds')}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <Grid3X3 className="h-3 w-3 mr-1" />
-                              Rule of Thirds
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Remove Base Image Button */}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        if (onRemoveBaseImage) {
-                          onRemoveBaseImage()
-                        } else {
-                          // Fallback: clear the base image from the images array
-                          setShowBaseImage(false)
-                        }
-                      }}
-                      className="h-8 px-3 text-xs text-destructive hover:text-destructive-foreground hover:bg-destructive"
-                    >
-                      <X className="h-3 w-3 mr-1" />
-                      Remove
-                    </Button>
-                  </div>
+                  <GridOverlayControls
+                    showGridOverlay={preview.showGridOverlay}
+                    onGridOverlayChange={preview.setShowGridOverlay}
+                    gridType={preview.gridType}
+                    onGridTypeChange={preview.setGridType}
+                    onRemove={onRemoveBaseImage ? onRemoveBaseImage : () => preview.setShowBaseImage(false)}
+                    switchId="grid-overlay"
+                  />
                   
                   <div className="relative">
                     <DraggableImagePreview
-                    imageUrl={baseImages[0].url}
+                    imageUrl={preview.baseImages[0].url}
                     aspectRatio={aspectRatio}
                     resolution={resolution}
                     onPositionChange={(yPosition) => {
@@ -430,8 +308,8 @@ export default function DynamicPreviewArea({
                       console.log('Base image framing saved:', framing)
                     }}
                     className="w-full"
-                    showGridOverlay={showGridOverlay}
-                    gridType={gridType}
+                    showGridOverlay={preview.showGridOverlay}
+                    gridType={preview.gridType}
                   />
                   
                   {/* Action buttons for base image */}
@@ -442,13 +320,13 @@ export default function DynamicPreviewArea({
                       className="h-7 w-7 p-0 bg-background/90 hover:bg-background shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleSaveToGallery(baseImages[0].url)
+                        handleSaveToGallery(preview.baseImages[0].url)
                       }}
-                      disabled={savingImage === baseImages[0].url}
+                      disabled={savingImage === preview.baseImages[0].url}
                       title="Save to Gallery"
                     >
-                      {savingImage === baseImages[0].url ? (
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-border-600"></div>
+                      {savingImage === preview.baseImages[0].url ? (
+                        <LoadingSpinner size="sm" className="h-3 w-3" />
                       ) : (
                         <Heart className="h-3 w-3" />
                       )}
@@ -459,7 +337,7 @@ export default function DynamicPreviewArea({
                       className="h-7 w-7 p-0 bg-background/90 hover:bg-background shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleDownloadImage(baseImages[0].url, `base-image.png`)
+                        handleDownloadImage(preview.baseImages[0].url, `base-image.png`)
                       }}
                       title="Download"
                     >
@@ -547,23 +425,6 @@ export default function DynamicPreviewArea({
                       )}
                     </div>
                   )}
-
-                  {/* Consistency Level */}
-                  {onConsistencyChange && (
-                    <div>
-                      <Label htmlFor="consistency" className="text-sm font-medium">Consistency</Label>
-                      <Select value={consistencyLevel} onValueChange={onConsistencyChange}>
-                        <SelectTrigger className="h-8 text-sm mt-1">
-                          <SelectValue placeholder="Select consistency level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">🎲 Low Variation</SelectItem>
-                          <SelectItem value="medium">⚖️ Medium</SelectItem>
-                          <SelectItem value="high">🎯 High Consistency</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -572,7 +433,7 @@ export default function DynamicPreviewArea({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Generated Images</Label>
-                {generatedImages.length > 0 && (
+                {preview.generatedImages.length > 0 && (
                   <div className="flex gap-2">
                     <Button
                       onClick={onRegenerate}
@@ -597,10 +458,10 @@ export default function DynamicPreviewArea({
                   </div>
                 )}
               </div>
-              
-              {generatedImages.length > 0 ? (
+
+              {preview.generatedImages.length > 0 ? (
                 <div className="space-y-3">
-                  {generatedImages.map((image, index) => (
+                  {preview.generatedImages.map((image, index) => (
                     <div 
                       key={index}
                       className={`relative w-full bg-muted border-2 rounded-lg overflow-hidden transition-all duration-300 ${
@@ -649,7 +510,7 @@ export default function DynamicPreviewArea({
                             title="Save to Gallery"
                           >
                             {savingImage === image.url ? (
-                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-border-600"></div>
+                              <LoadingSpinner size="sm" className="h-3 w-3" />
                             ) : (
                               <Heart className="h-3 w-3" />
                             )}
@@ -680,9 +541,8 @@ export default function DynamicPreviewArea({
                   }}
                 >
                   <div className="text-center text-muted-foreground">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="font-medium">Generating your image...</p>
-                    <p className="text-sm">This usually takes 5-30 seconds</p>
+                    <LoadingSpinner size="xl" text="Generating your image..." />
+                    <p className="text-sm mt-2">This usually takes 5-30 seconds</p>
                     <div className="mt-2 text-xs text-muted-foreground">
                       Preview area: {aspectRatio} ({calculateDimensions(aspectRatio, resolution).width}×{calculateDimensions(aspectRatio, resolution).height})
                     </div>
@@ -739,25 +599,25 @@ export default function DynamicPreviewArea({
         </div>
       </CardHeader>
       <CardContent>
-        {imagesToDisplay.length > 0 ? (
+        {preview.imagesToDisplay.length > 0 ? (
           <div className="space-y-4">
             {/* Toggle between Base Image and Generated Images */}
-            {baseImages.length > 0 && generatedImages.length > 0 && (
+            {preview.baseImages.length > 0 && preview.generatedImages.length > 0 && (
               <div className="flex items-center justify-end gap-2">
                 <Label className="text-sm font-medium">View:</Label>
                 <div className="flex bg-muted rounded-lg p-1">
                   <Button
                     size="sm"
-                    variant={showBaseImage ? "default" : "ghost"}
-                    onClick={() => setShowBaseImage(true)}
+                    variant={preview.showBaseImage ? "default" : "ghost"}
+                    onClick={() => preview.setShowBaseImage(true)}
                     className="text-xs px-3 py-1"
                   >
                     Base Image
                   </Button>
                   <Button
                     size="sm"
-                    variant={!showBaseImage ? "default" : "ghost"}
-                    onClick={() => setShowBaseImage(false)}
+                    variant={!preview.showBaseImage ? "default" : "ghost"}
+                    onClick={() => preview.setShowBaseImage(false)}
                     className="text-xs px-3 py-1"
                   >
                     Generated
@@ -765,76 +625,26 @@ export default function DynamicPreviewArea({
                 </div>
               </div>
             )}
-            
+
             {/* Dynamic Preview Container */}
-            {imagesToDisplay.length === 1 ? (
+            {preview.imagesToDisplay.length === 1 ? (
               // Single image - full size
-              imagesToDisplay[0].type === 'base' ? (
+              preview.imagesToDisplay[0].type === 'base' ? (
                 // Base image - use draggable preview
                 <div className="space-y-3">
                   {/* Grid Overlay Controls */}
-                  <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="grid-overlay-2" className="text-sm font-medium">
-                          Grid Overlay
-                        </Label>
-                        <Switch
-                          id="grid-overlay-2"
-                          checked={showGridOverlay}
-                          onCheckedChange={setShowGridOverlay}
-                        />
-                      </div>
-                      
-                      {showGridOverlay && (
-                        <div className="flex items-center gap-2">
-                          <Label className="text-sm font-medium">Type:</Label>
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant={gridType === 'horizontal' ? 'default' : 'outline'}
-                              onClick={() => setGridType('horizontal')}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <Minus className="h-3 w-3 mr-1" />
-                              Horizontal
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={gridType === 'rule-of-thirds' ? 'default' : 'outline'}
-                              onClick={() => setGridType('rule-of-thirds')}
-                              className="h-8 px-3 text-xs"
-                            >
-                              <Grid3X3 className="h-3 w-3 mr-1" />
-                              Rule of Thirds
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Remove Base Image Button */}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        if (onRemoveBaseImage) {
-                          onRemoveBaseImage()
-                        } else {
-                          // Fallback: clear the base image from the images array
-                          setShowBaseImage(false)
-                        }
-                      }}
-                      className="h-8 px-3 text-xs text-destructive hover:text-destructive-foreground hover:bg-destructive"
-                    >
-                      <X className="h-3 w-3 mr-1" />
-                      Remove
-                    </Button>
-                  </div>
+                  <GridOverlayControls
+                    showGridOverlay={preview.showGridOverlay}
+                    onGridOverlayChange={preview.setShowGridOverlay}
+                    gridType={preview.gridType}
+                    onGridTypeChange={preview.setGridType}
+                    onRemove={onRemoveBaseImage ? onRemoveBaseImage : () => preview.setShowBaseImage(false)}
+                    switchId="grid-overlay-2"
+                  />
                   
                   <div className="relative">
                     <DraggableImagePreview
-                    imageUrl={imagesToDisplay[0].url}
+                    imageUrl={preview.imagesToDisplay[0].url}
                     aspectRatio={aspectRatio}
                     resolution={resolution}
                     onPositionChange={(yPosition) => {
@@ -846,10 +656,10 @@ export default function DynamicPreviewArea({
                       console.log('Base image framing saved:', framing)
                     }}
                     className="w-full"
-                    showGridOverlay={showGridOverlay}
-                    gridType={gridType}
+                    showGridOverlay={preview.showGridOverlay}
+                    gridType={preview.gridType}
                   />
-                  
+
                   {/* Action buttons overlay for base image */}
                   <div className="absolute top-2 right-2 flex gap-1 z-10">
                     <Button
@@ -858,13 +668,13 @@ export default function DynamicPreviewArea({
                       className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleSaveToGallery(imagesToDisplay[0].url)
+                        handleSaveToGallery(preview.imagesToDisplay[0].url)
                       }}
-                      disabled={savingImage === imagesToDisplay[0].url}
+                      disabled={savingImage === preview.imagesToDisplay[0].url}
                       title="Save to Gallery"
                     >
-                      {savingImage === imagesToDisplay[0].url ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
+                      {savingImage === preview.imagesToDisplay[0].url ? (
+                        <LoadingSpinner size="sm" />
                       ) : (
                         <Heart className="h-4 w-4" />
                       )}
@@ -875,7 +685,7 @@ export default function DynamicPreviewArea({
                       className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                       onClick={(e) => {
                         e.stopPropagation()
-                        handleDownloadImage(imagesToDisplay[0].url, `base-image.png`)
+                        handleDownloadImage(preview.imagesToDisplay[0].url, `base-image.png`)
                       }}
                       title="Download Base Image"
                     >
@@ -900,9 +710,9 @@ export default function DynamicPreviewArea({
               </div>
               ) : (
                 // Generated image or video - regular display
-                <div 
+                <div
                   className="relative w-full bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden transition-all duration-300"
-                  style={{ 
+                  style={{
                     aspectRatio: previewAspectRatio,
                     minHeight: '300px',
                     maxHeight: '500px'
@@ -910,31 +720,31 @@ export default function DynamicPreviewArea({
                 >
                   <div
                     className={`absolute inset-0 cursor-pointer transition-all duration-200 ${
-                      selectedImage === imagesToDisplay[0].url 
-                        ? 'ring-2 ring-primary-primary ring-offset-2' 
+                      selectedImage === preview.imagesToDisplay[0].url
+                        ? 'ring-2 ring-primary-primary ring-offset-2'
                         : 'hover:ring-1 hover:ring-muted-primary'
                     }`}
-                    onClick={() => onSelectImage(imagesToDisplay[0].url)}
+                    onClick={() => onSelectImage(preview.imagesToDisplay[0].url)}
                   >
-                    {imagesToDisplay[0].type === 'video' ? (
+                    {preview.imagesToDisplay[0].type === 'video' ? (
                       <video
-                        src={imagesToDisplay[0].url}
+                        src={preview.imagesToDisplay[0].url}
                         className="w-full h-full object-cover"
                         controls
                         preload="metadata"
                         loop
-                        poster={imagesToDisplay[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
+                        poster={preview.imagesToDisplay[0].url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
                       >
                         Your browser does not support the video tag.
                       </video>
                     ) : (
                       <img
-                        src={imagesToDisplay[0].url}
+                        src={preview.imagesToDisplay[0].url}
                         alt="Generated image"
                         className="w-full h-full object-cover"
                       />
                     )}
-                    
+
                     {/* Action buttons - always visible */}
                     <div className="absolute top-2 right-2 flex gap-1">
                       <Button
@@ -943,13 +753,13 @@ export default function DynamicPreviewArea({
                         className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleSaveToGallery(imagesToDisplay[0].url)
+                          handleSaveToGallery(preview.imagesToDisplay[0].url)
                         }}
-                        disabled={savingImage === imagesToDisplay[0].url}
+                        disabled={savingImage === preview.imagesToDisplay[0].url}
                         title="Save to Gallery"
                       >
-                        {savingImage === imagesToDisplay[0].url ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
+                        {savingImage === preview.imagesToDisplay[0].url ? (
+                          <LoadingSpinner size="sm" className="h-4 w-4" />
                         ) : (
                           <Heart className="h-4 w-4" />
                         )}
@@ -960,17 +770,17 @@ export default function DynamicPreviewArea({
                         className="h-8 w-8 p-0 bg-background/90 hover:bg-background shadow-md"
                         onClick={(e) => {
                           e.stopPropagation()
-                          if (imagesToDisplay[0].type === 'video') {
-                            handleDownloadVideo(imagesToDisplay[0].url, `generated-video.mp4`)
+                          if (preview.imagesToDisplay[0].type === 'video') {
+                            handleDownloadVideo(preview.imagesToDisplay[0].url, `generated-video.mp4`)
                           } else {
-                            handleDownloadImage(imagesToDisplay[0].url, `generated-image.png`)
+                            handleDownloadImage(preview.imagesToDisplay[0].url, `generated-image.png`)
                           }
                         }}
-                        title={imagesToDisplay[0].type === 'video' ? "Download Video" : "Download Image"}
+                        title={preview.imagesToDisplay[0].type === 'video' ? "Download Video" : "Download Image"}
                       >
                         <Download className="h-4 w-4" />
                       </Button>
-                      {selectedImage === imagesToDisplay[0].url ? (
+                      {selectedImage === preview.imagesToDisplay[0].url ? (
                         <Button
                           size="sm"
                           variant="secondary"
@@ -987,7 +797,7 @@ export default function DynamicPreviewArea({
                     </div>
 
                     {/* Selection indicator */}
-                    {selectedImage === imagesToDisplay[0].url && (
+                    {selectedImage === preview.imagesToDisplay[0].url && (
                       <div className="absolute top-2 left-2">
                         <Badge variant="default" className="bg-primary">Selected</Badge>
                       </div>
@@ -998,7 +808,7 @@ export default function DynamicPreviewArea({
             ) : (
               // Multiple images - grid layout
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {imagesToDisplay.map((image, index) => (
+                {preview.imagesToDisplay.map((image, index) => (
                   <div
                     key={index}
                     className={`relative bg-muted border-2 border-dashed border-border rounded-lg overflow-hidden transition-all duration-200 cursor-pointer ${
@@ -1050,7 +860,7 @@ export default function DynamicPreviewArea({
                         title="Save to Gallery"
                       >
                         {savingImage === image.url ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
+                          <LoadingSpinner size="sm" className="h-4 w-4" />
                         ) : (
                           <Heart className="h-4 w-4" />
                         )}
@@ -1123,7 +933,7 @@ export default function DynamicPreviewArea({
               <div className="text-sm text-muted-foreground">
                 <span>Dimensions: {dimensions.width} × {dimensions.height}</span>
                 <span className="mx-2 text-muted-foreground">|</span>
-                <span>{imagesToDisplay.length} {showBaseImage ? 'base' : 'generated'} image{imagesToDisplay.length > 1 ? 's' : ''}</span>
+                <span>{preview.imagesToDisplay.length} {preview.showBaseImage ? 'base' : 'generated'} image{preview.imagesToDisplay.length > 1 ? 's' : ''}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Label className="text-sm font-medium text-foreground">
@@ -1147,28 +957,20 @@ export default function DynamicPreviewArea({
           >
             {loading ? (
               <div className="text-center text-muted-foreground">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="font-medium">Generating your image...</p>
-                <p className="text-sm">This usually takes 5-30 seconds</p>
+                <LoadingSpinner size="xl" text="Generating your image..." />
+                <p className="text-sm mt-2">This usually takes 5-30 seconds</p>
                 <div className="mt-2 text-xs text-muted-foreground">
                   Preview area: {aspectRatio} ({dimensions.width} × {dimensions.height})
-                </div>
-                <div className="mt-3">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                  </div>
                 </div>
               </div>
             ) : (
               <div className="text-center text-muted-foreground">
                 <Wand2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="font-medium">
-                  {showBaseImage ? 'No base image selected' : 'No images generated yet'}
+                  {preview.showBaseImage ? 'No base image selected' : 'No images generated yet'}
                 </p>
                 <p className="text-sm">
-                  {showBaseImage ? 'Select a base image to get started' : 'Create your first image!'}
+                  {preview.showBaseImage ? 'Select a base image to get started' : 'Create your first image!'}
                 </p>
                 <div className="mt-2 text-xs text-muted-foreground">
                   Preview area: {aspectRatio} ({dimensions.width} × {dimensions.height})

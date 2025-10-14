@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Calendar, Check, X, Loader2, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import Link from 'next/link';
@@ -148,7 +149,7 @@ export function InvitationsList() {
         </CardHeader>
         <CardContent>
           <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <LoadingSpinner size="lg" />
           </div>
         </CardContent>
       </Card>
@@ -265,7 +266,7 @@ export function InvitationsList() {
                       disabled={isProcessing}
                     >
                       {isProcessing ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <LoadingSpinner size="sm" />
                       ) : (
                         <>
                           <Check className="h-4 w-4 mr-1" />

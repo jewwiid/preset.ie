@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { useFeedback } from '@/components/feedback/FeedbackContext';
 
@@ -270,7 +271,7 @@ export function ReportMessageDialog({
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <LoadingSpinner size="sm" />
                   Submitting...
                 </>
               ) : (

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Image as ImageIcon, Upload, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuth } from '../../../lib/auth-context'
 import { supabase } from '../../../lib/supabase'
 import MoodboardBuilder from '../MoodboardBuilder'
@@ -150,7 +151,7 @@ export default function MoodboardStep({
           <h3 className="font-semibold mb-3">Import from Your Moodboards</h3>
           {loadingMoodboards ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <LoadingSpinner size="md" />
             </div>
           ) : savedMoodboards.length === 0 ? (
             <div className="text-center py-8">
@@ -203,7 +204,7 @@ export default function MoodboardStep({
                     >
                       {importing === moodboard.id ? (
                         <>
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          <LoadingSpinner size="sm" />
                           Importing...
                         </>
                       ) : (

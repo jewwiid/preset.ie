@@ -67,7 +67,7 @@ node src/verify-setup.js
 - `compensation_type` - TFP, PAID, EXPENSES
 - `application_status` - PENDING, SHORTLISTED, ACCEPTED, DECLINED, WITHDRAWN
 - `showcase_visibility` - DRAFT, PUBLIC, PRIVATE
-- `media_type` - IMAGE, VIDEO, PDF
+- `media_type` - image, video, pdf
 
 ## Troubleshooting
 

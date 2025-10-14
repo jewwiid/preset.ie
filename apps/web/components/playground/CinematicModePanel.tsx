@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Film } from 'lucide-react'
 import CinematicParameterSelector from '../../app/components/cinematic/CinematicParameterSelector'
-import { CinematicParameters } from '../../../../packages/types/src/cinematic-parameters'
+import { CinematicParameters } from '@preset/types'
 
 interface CinematicModePanelProps {
   enableCinematicMode: boolean

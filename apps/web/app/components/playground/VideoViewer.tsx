@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Play, Pause, Volume2, VolumeX, Maximize2, Download, Heart, Share2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface VideoViewerProps {
   title?: string
@@ -143,7 +144,7 @@ export default function VideoViewer({
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <LoadingSpinner size="lg" />
           <span className="ml-2 text-muted-foreground">Loading videos...</span>
         </div>
       ) : videos.length === 0 ? (
@@ -263,7 +264,7 @@ export default function VideoViewer({
                       title="Save to Gallery"
                     >
                       {savingVideo === selectedVideo ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-600"></div>
+                        <LoadingSpinner size="sm" />
                       ) : (
                         <Heart className="h-4 w-4" />
                       )}
@@ -292,7 +293,7 @@ export default function VideoViewer({
                       title="Remove Video"
                     >
                       {deletingVideo === selectedVideo ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
+                        <LoadingSpinner size="sm" />
                       ) : (
                         <X className="h-4 w-4" />
                       )}
@@ -439,7 +440,7 @@ export default function VideoViewer({
               >
                 {deletingVideo === videoToDelete ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border mr-2"></div>
+                    <LoadingSpinner size="sm" />
                     Removing...
                   </>
                 ) : (

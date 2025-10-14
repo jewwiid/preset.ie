@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Wand2, Download, Save } from 'lucide-react'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface GeneratedImage {
   url: string
   width: number
@@ -59,7 +60,7 @@ export default function ImageGalleryPanel({
                   >
                     {savingImage === image.url ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border-800 mr-1"></div>
+                        <LoadingSpinner size="sm" />
                         Saving...
                       </>
                     ) : (

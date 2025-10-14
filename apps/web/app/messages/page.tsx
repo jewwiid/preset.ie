@@ -8,6 +8,7 @@ import { useMessagesApi, ConversationDTO, ConversationDetailsDTO, MessageDTO } f
 import { useRealtimeMessages, RealtimeMessage, MessageStatusUpdate, TypingEvent } from '../../lib/hooks/useRealtimeMessages'
 import { MessageSquare, Send, Search, User, Clock, AlertCircle, Wifi, WifiOff, ChevronLeft, ChevronRight, Menu, Briefcase, ShoppingCart, Tag } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface ExtendedConversationDTO extends ConversationDTO {
   otherUser?: {
@@ -587,7 +588,7 @@ export default function MessagesPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <LoadingSpinner size="xl" />
           <p className="mt-4 text-muted-foreground">Loading messages...</p>
         </div>
       </div>
@@ -1041,7 +1042,7 @@ export default function MessagesPage() {
                         className="px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[44px]"
                       >
                         {sending ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+                          <LoadingSpinner size="sm" />
                         ) : (
                           <Send className="h-4 w-4" />
                         )}
@@ -1087,7 +1088,7 @@ export default function MessagesPage() {
                     {/* <div className="mt-4">
                       {realtimeMessages.isConnecting ? (
                         <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-muted-foreground"></div>
+                          <LoadingSpinner size="sm" />
                           <span>Connecting to real-time messaging...</span>
                         </div>
                       ) : realtimeMessages.isConnected ? (

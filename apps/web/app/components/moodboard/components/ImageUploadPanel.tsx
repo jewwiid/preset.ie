@@ -7,6 +7,7 @@
 
 import { Upload, Loader2, CheckCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatFileSize } from '../lib/moodboardHelpers'
 
 interface ImageUploadPanelProps {
@@ -58,7 +59,7 @@ export const ImageUploadPanel = ({
 
         {uploading ? (
           <div className="space-y-3">
-            <Loader2 className="w-12 h-12 mx-auto text-primary animate-spin" />
+            <LoadingSpinner size="xl" />
             <div>
               <p className="text-sm font-medium text-foreground">
                 Uploading files...

@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { MapPin, Calendar, Clock, Users, Eye, Edit, ArrowLeft, Palette, Camera, Star, Sparkles, CheckCircle } from 'lucide-react'
 import LocationMap from '../../../components/LocationMap'
 

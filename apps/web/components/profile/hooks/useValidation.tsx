@@ -5,7 +5,7 @@ import { validateAndCheckTag } from '../../../lib/contentModeration'
 import { ValidationResult, ValidationType, UseValidationReturn } from '../types/profile'
 
 export function useValidation(): UseValidationReturn {
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>()
 
   const validateField = useCallback((field: string, value: any): ValidationResult => {
     switch (field) {

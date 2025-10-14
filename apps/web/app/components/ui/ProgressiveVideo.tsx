@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useIntersectionObserver } from '../../hooks/useIntersectionObserver'
 
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface ProgressiveVideoProps {
   src: string
   poster?: string
@@ -131,6 +132,7 @@ export default function ProgressiveVideo({
           preload={preload}
           controls={controls}
           playsInline={playsInline}
+          crossOrigin="anonymous"
         >
           <source src={src} type="video/mp4" />
           Your browser does not support the video tag.

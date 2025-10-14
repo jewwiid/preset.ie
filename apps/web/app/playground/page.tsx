@@ -28,8 +28,7 @@ import type {
   StyleVariationsParams,
   BatchEditParams,
   VideoGenerationParams,
-  FullScreenMedia,
-} from './types'
+  FullScreenMedia} from './types'
 import { replaceImagesInProject, createImageEntry } from './lib/imageHelpers'
 
 function PlaygroundContent() {
@@ -64,8 +63,7 @@ function PlaygroundContent() {
     generatedVideoMetadata,
     setGeneratedVideoMetadata,
     currentPrompt,
-    setCurrentPrompt,
-  } = usePlaygroundState()
+    setCurrentPrompt} = usePlaygroundState()
 
   const { saveToGallery, savingImage } = useSaveToGallery(session, currentProject)
 
@@ -101,16 +99,14 @@ function PlaygroundContent() {
       showFeedback({
         type: 'success',
         title: 'Images Generated!',
-        message: `Successfully generated ${images.length} image(s) using ${creditsUsed} credits.`,
-      })
+        message: `Successfully generated ${images.length} image(s) using ${creditsUsed} credits.`})
 
       // Show warning if fewer images were generated than requested
       if (warning) {
         showFeedback({
           type: 'warning',
           title: 'Service Limitation',
-          message: warning,
-        })
+          message: warning})
       }
     } catch (error) {
       console.error('Generation failed:', error)
@@ -123,8 +119,7 @@ function PlaygroundContent() {
       showFeedback({
         type: 'error',
         title: errorTitle,
-        message: errorMessage,
-      })
+        message: errorMessage})
     } finally {
       setLoading(false)
     }
@@ -141,15 +136,13 @@ function PlaygroundContent() {
       showFeedback({
         type: 'success',
         title: 'Edit Completed!',
-        message: `Successfully applied ${params.editType} edit. The edited image is now displayed in the preview area.`,
-      })
+        message: `Successfully applied ${params.editType} edit. The edited image is now displayed in the preview area.`})
     } catch (error) {
       console.error('Advanced edit failed:', error)
       showFeedback({
         type: 'error',
         title: 'Edit Failed',
-        message: error instanceof Error ? error.message : 'Unknown error occurred',
-      })
+        message: error instanceof Error ? error.message : 'Unknown error occurred'})
     } finally {
       setLoading(false)
     }
@@ -171,22 +164,19 @@ function PlaygroundContent() {
         showFeedback({
           type: 'warning',
           title: 'Style Variations Completed with Errors',
-          message: `Generated ${results.length} variations with ${errors.length} errors. Used ${creditsUsed} credits.`,
-        })
+          message: `Generated ${results.length} variations with ${errors.length} errors. Used ${creditsUsed} credits.`})
       } else {
         showFeedback({
           type: 'success',
           title: 'Style Variations Generated!',
-          message: `Successfully generated ${results.length} style variations using ${creditsUsed} credits.`,
-        })
+          message: `Successfully generated ${results.length} style variations using ${creditsUsed} credits.`})
       }
     } catch (error) {
       console.error('Style variation generation failed:', error)
       showFeedback({
         type: 'error',
         title: 'Style Variation Generation Failed',
-        message: error instanceof Error ? error.message : 'Unknown error occurred',
-      })
+        message: error instanceof Error ? error.message : 'Unknown error occurred'})
     } finally {
       setLoading(false)
     }
@@ -208,22 +198,19 @@ function PlaygroundContent() {
         showFeedback({
           type: 'warning',
           title: 'Batch Editing Completed with Errors',
-          message: `Processed ${results.length} images with ${errors.length} errors. Used ${creditsUsed} credits.`,
-        })
+          message: `Processed ${results.length} images with ${errors.length} errors. Used ${creditsUsed} credits.`})
       } else {
         showFeedback({
           type: 'success',
           title: 'Batch Editing Completed!',
-          message: `Successfully processed ${results.length} images using ${creditsUsed} credits.`,
-        })
+          message: `Successfully processed ${results.length} images using ${creditsUsed} credits.`})
       }
     } catch (error) {
       console.error('Batch editing failed:', error)
       showFeedback({
         type: 'error',
         title: 'Batch Editing Failed',
-        message: error instanceof Error ? error.message : 'Unknown error occurred',
-      })
+        message: error instanceof Error ? error.message : 'Unknown error occurred'})
     } finally {
       setLoading(false)
     }
@@ -240,14 +227,12 @@ function PlaygroundContent() {
       showFeedback({
         type: 'info',
         title: 'Video Generation Started!',
-        message: `Video generation is in progress. This may take a few minutes.`,
-      })
+        message: `Video generation is in progress. This may take a few minutes.`})
 
       showFeedback({
         type: 'success',
         title: 'Video Generated!',
-        message: `Successfully generated video!`,
-      })
+        message: `Successfully generated video!`})
     } catch (error) {
       console.error('Video generation failed:', error)
       setVideoGenerationStatus('idle')
@@ -255,8 +240,7 @@ function PlaygroundContent() {
       showFeedback({
         type: 'error',
         title: 'Video Generation Failed',
-        message: error instanceof Error ? error.message : 'Unknown error occurred',
-      })
+        message: error instanceof Error ? error.message : 'Unknown error occurred'})
     } finally {
       setLoading(false)
     }
@@ -293,15 +277,13 @@ function PlaygroundContent() {
           resolution: `${project.generated_images[0].width}x${project.generated_images[0].height}`,
           duration: 5,
           prompt: project.prompt || '',
-          cameraMovement: 'smooth',
-        })
+          cameraMovement: 'smooth'})
       }
 
       showFeedback({
         type: 'success',
         title: 'Video Imported!',
-        message: 'Past video generation has been imported and is ready for viewing.',
-      })
+        message: 'Past video generation has been imported and is ready for viewing.'})
     } else if (project.generated_images && project.generated_images.length > 0) {
       // For images, set selected image normally
       setSelectedImage(project.generated_images[0].url)
@@ -309,8 +291,7 @@ function PlaygroundContent() {
       showFeedback({
         type: 'success',
         title: 'Project Imported!',
-        message: 'Past generation has been imported and is ready for editing.',
-      })
+        message: 'Past generation has been imported and is ready for editing.'})
     }
   }
 
@@ -320,8 +301,7 @@ function PlaygroundContent() {
       url: media.media_type === 'video' ? media.video_url || '' : media.image_url || '',
       title: media.title,
       index: -1,
-      type: media.media_type === 'video' ? 'video' : 'image',
-    }
+      type: media.media_type === 'video' ? 'video' : 'image'}
     setFullScreenImage(fullScreenMedia)
   }
 

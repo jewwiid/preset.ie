@@ -8,7 +8,7 @@ export type GigStatus = 'DRAFT' | 'PUBLISHED' | 'APPLICATIONS_CLOSED' | 'BOOKED'
 export type CompensationType = 'TFP' | 'PAID' | 'EXPENSES'
 export type ApplicationStatus = 'PENDING' | 'SHORTLISTED' | 'ACCEPTED' | 'DECLINED' | 'WITHDRAWN'
 export type ShowcaseVisibility = 'DRAFT' | 'PUBLIC' | 'PRIVATE'
-export type MediaType = 'IMAGE' | 'VIDEO' | 'PDF'
+export type MediaType = 'image' | 'video' | 'pdf'
 
 // Core Database Tables
 export interface UserProfile {

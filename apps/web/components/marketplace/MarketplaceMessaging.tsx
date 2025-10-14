@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { MessageCircle, Send, User, Clock, AlertCircle, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAuthToken } from '@/lib/auth-utils';
@@ -265,7 +266,7 @@ export default function MarketplaceMessaging({
         <div className="p-4 space-y-3 max-h-64 overflow-y-auto">
           {loading ? (
             <div className="text-center text-muted-foreground-500">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto"></div>
+              <LoadingSpinner size="md" />
               <p className="text-sm mt-2">Loading messages...</p>
             </div>
           ) : error ? (
@@ -320,7 +321,7 @@ export default function MarketplaceMessaging({
               size="sm"
             >
               {sending ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
+                <LoadingSpinner size="sm" />
               ) : (
                 <Send className="h-4 w-4" />
               )}
@@ -399,7 +400,7 @@ export default function MarketplaceMessaging({
         <div className="h-64 overflow-y-auto border border-border-200 rounded-lg p-4 space-y-3">
           {loading ? (
             <div className="text-center text-muted-foreground-500">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+              <LoadingSpinner size="lg" />
               <p className="text-sm mt-2">Loading messages...</p>
             </div>
           ) : error ? (
@@ -465,7 +466,7 @@ export default function MarketplaceMessaging({
             disabled={!newMessage.trim() || sending}
           >
             {sending ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-border"></div>
+              <LoadingSpinner size="sm" />
             ) : (
               <Send className="h-4 w-4" />
             )}
