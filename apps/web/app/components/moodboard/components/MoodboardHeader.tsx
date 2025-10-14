@@ -68,22 +68,23 @@ export const MoodboardHeader = ({
                 className="w-full px-3 py-2 pr-14 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors resize-none"
                 placeholder="Describe the vibe or concept..."
               />
-              <div className="absolute right-2 bottom-2">
-                <VoiceToTextButton
-                  onAppendText={async (text) => {
-                    // Typewriter effect
-                    const base = description.endsWith(' ') || !description ? description : description + ' ';
-                    let out = base;
-                    onDescriptionChange(out);
-                    for (let i = 0; i < text.length; i++) {
-                      out += text[i];
+                <div className="absolute right-2 bottom-2">
+                  <VoiceToTextButton
+                    onAppendText={async (text) => {
+                      // Typewriter effect
+                      const base = description.endsWith(' ') || !description ? description : description + ' ';
+                      let out = base;
                       onDescriptionChange(out);
-                      await new Promise(r => setTimeout(r, 8));
-                    }
-                  }}
-                  disabled={userSubscriptionTier === 'FREE'}
-                />
-              </div>
+                      for (let i = 0; i < text.length; i++) {
+                        out += text[i];
+                        onDescriptionChange(out);
+                        await new Promise(r => setTimeout(r, 8));
+                      }
+                    }}
+                    disabled={userSubscriptionTier === 'FREE'}
+                    size={32}
+                  />
+                </div>
             </div>
           </div>
         </div>
@@ -164,22 +165,23 @@ export const MoodboardHeader = ({
               className="w-full px-4 py-3 pr-14 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-colors resize-none"
               placeholder="Describe the vibe, concept, or inspiration for this moodboard..."
             />
-            <div className="absolute right-2 bottom-2">
-              <VoiceToTextButton
-                onAppendText={async (text) => {
-                  // Typewriter effect
-                  const base = description.endsWith(' ') || !description ? description : description + ' ';
-                  let out = base;
-                  onDescriptionChange(out);
-                  for (let i = 0; i < text.length; i++) {
-                    out += text[i];
-                    onDescriptionChange(out);
-                    await new Promise(r => setTimeout(r, 8));
-                  }
-                }}
-                disabled={userSubscriptionTier === 'FREE'}
-              />
-            </div>
+                <div className="absolute right-2 bottom-2">
+                  <VoiceToTextButton
+                    onAppendText={async (text) => {
+                      // Typewriter effect
+                      const base = description.endsWith(' ') || !description ? description : description + ' ';
+                      let out = base;
+                      onDescriptionChange(out);
+                      for (let i = 0; i < text.length; i++) {
+                        out += text[i];
+                        onDescriptionChange(out);
+                        await new Promise(r => setTimeout(r, 8));
+                      }
+                    }}
+                    disabled={userSubscriptionTier === 'FREE'}
+                    size={32}
+                  />
+                </div>
           </div>
         </div>
       </div>

@@ -1,17 +1,27 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { aiDetectMentions, type MentionDetectionContext } from '@/lib/ai/mention-detection';
+import type { MentionableEntity } from '@/lib/utils/mention-types';
 
 interface UseVoiceToTextOptions {
   maxSeconds?: number;
   onTranscript?: (text: string) => void;
   onError?: (error: string) => void;
+  // Enhanced AI mention detection options
+  enableAIMentions?: boolean;
+  mentionContext?: MentionDetectionContext;
+  availableEntities?: MentionableEntity[];
 }
 
 export function useVoiceToText({ 
   maxSeconds = 30,
   onTranscript,
-  onError 
+  onError,
+  // Enhanced AI mention detection options
+  enableAIMentions = false,
+  mentionContext,
+  availableEntities = []
 }: UseVoiceToTextOptions = {}) {
   const recRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -75,18 +85,63 @@ export function useVoiceToText({
       const fd = new FormData();
       fd.append('file', blob, 'speech.webm');
 
+      console.log('Sending transcription request...');
       const res = await fetch('/api/transcribe', { 
         method: 'POST', 
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: fd 
       });
 
+      console.log(`Transcription response status: ${res.status}`);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('Transcription API error:', errorData);
+        onError?.(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+        return;
+      }
+
       const { text, error } = await res.json();
       
       if (error) {
+        console.error('Transcription error:', error);
         onError?.(error);
       } else if (text) {
-        onTranscript?.(text);
+        console.log('Transcription successful:', text);
+        
+        // Enhanced processing with AI mention detection
+        if (enableAIMentions && mentionContext && availableEntities.length > 0) {
+          try {
+            console.log('Running AI mention detection on transcribed text...');
+            const mentionResult = await aiDetectMentions(
+              text,
+              mentionContext,
+              availableEntities,
+              {
+                confidence: 0.7,
+                maxMentions: 20,
+                preserveOriginal: true,
+                timeout: 10000
+              }
+            );
+            
+            console.log('AI mention detection successful:', {
+              detectedCount: mentionResult.detectedEntities.length,
+              confidence: mentionResult.confidence,
+              textChanged: mentionResult.mentionedText !== mentionResult.originalText
+            });
+            
+            // Use the enhanced text with mentions
+            onTranscript?.(mentionResult.mentionedText);
+          } catch (mentionError) {
+            console.warn('AI mention detection failed, using original transcription:', mentionError);
+            // Fall back to original transcription
+            onTranscript?.(text);
+          }
+        } else {
+          // Use original transcription
+          onTranscript?.(text);
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Transcription failed';

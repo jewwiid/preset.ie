@@ -262,20 +262,21 @@ export default function BasicDetailsStep({
               placeholder="Describe your shoot concept, what you're looking for, and any specific requirements..."
             />
             <div className="absolute right-2 bottom-2">
-              <VoiceToTextButton
-                onAppendText={async (text) => {
-                  // Typewriter effect
-                  const base = description.endsWith(' ') || !description ? description : description + ' ';
-                  let out = base;
-                  onDescriptionChange(out);
-                  for (let i = 0; i < text.length; i++) {
-                    out += text[i];
+                <VoiceToTextButton
+                  onAppendText={async (text) => {
+                    // Typewriter effect
+                    const base = description.endsWith(' ') || !description ? description : description + ' ';
+                    let out = base;
                     onDescriptionChange(out);
-                    await new Promise(r => setTimeout(r, 8));
-                  }
-                }}
-                disabled={userSubscriptionTier === 'FREE'}
-              />
+                    for (let i = 0; i < text.length; i++) {
+                      out += text[i];
+                      onDescriptionChange(out);
+                      await new Promise(r => setTimeout(r, 8));
+                    }
+                  }}
+                  disabled={userSubscriptionTier === 'FREE'}
+                  size={32}
+                />
             </div>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">

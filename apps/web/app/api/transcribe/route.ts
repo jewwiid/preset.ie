@@ -1,15 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('Transcribe API called');
+    
+    // Check environment variables
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY not set');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+    
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Supabase environment variables not set');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
     // Get user session
     const authHeader = req.headers.get('Authorization');
     const token = authHeader?.replace('Bearer ', '');
     if (!token) {
+      console.log('No auth token provided');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -44,12 +58,18 @@ export async function POST(req: NextRequest) {
     }
 
     // Get audio file
-    const form = await req.formData() as unknown as FormData;
-    const file = form.get('file') as File | null;
-    if (!file) {
+    const form = await req.formData();
+    const fileEntry = (form as any).get('file');
+    if (!fileEntry || typeof fileEntry === 'string') {
+      console.log('No audio file provided');
       return NextResponse.json({ error: 'No audio file provided' }, { status: 400 });
     }
+    const file = fileEntry as File;
+    
+    console.log(`Audio file received: ${file.name}, size: ${file.size} bytes, type: ${file.type}`);
+    
     if (file.size > 2_000_000) {
+      console.log(`File too large: ${file.size} bytes`);
       return NextResponse.json({ error: 'Audio file too large (max 2MB)' }, { status: 413 });
     }
 
@@ -57,6 +77,7 @@ export async function POST(req: NextRequest) {
     // No credit deduction needed
 
     // Forward to OpenAI Whisper API
+    console.log('Sending request to OpenAI Whisper API...');
     const upstream = new FormData();
     upstream.append('file', file, 'speech.webm');
     upstream.append('model', 'whisper-1');
@@ -66,11 +87,12 @@ export async function POST(req: NextRequest) {
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: { 
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'multipart/form-data'
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: upstream
     });
+
+    console.log(`OpenAI API response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();

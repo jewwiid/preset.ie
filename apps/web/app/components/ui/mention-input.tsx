@@ -1,12 +1,19 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../../components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useMentionSystem, MentionableItem } from '../../../hooks/useMentionSystem';
+import VoiceToTextButton from '@/components/ui/VoiceToTextButton';
+import { typewriterWithMentions } from '../../../lib/utils/voice-mention-parser';
+import AIAnalyzeButton from '@/app/components/ui/ai-analyze-button';
+import TextSelectionMenu from '@/app/components/ui/text-selection-menu';
+import { parseAndHighlight, type ParseResult } from '@/lib/utils/universal-mention-parser';
+import type { MentionableEntity, MentionType } from '@/lib/utils/mention-types';
+import type { MentionDetectionContext, MentionDetectionResult } from '@/lib/ai/mention-detection';
 
 interface MentionInputProps {
   value: string;
@@ -17,6 +24,16 @@ interface MentionInputProps {
   onMentionSelect?: (item: MentionableItem) => void;
   disabled?: boolean;
   rows?: number;
+  userSubscriptionTier?: string;
+  enableVoiceToText?: boolean;
+  // Enhanced universal mention props
+  mentionTypes?: MentionType[];
+  enableAIMentions?: boolean;
+  onAIMentionDetect?: (text: string) => Promise<string>;
+  colorCodedMentions?: boolean;
+  allowTextSelection?: boolean;
+  mentionContext?: MentionDetectionContext;
+  availableEntities?: MentionableEntity[];
 }
 
 export function MentionInput({
@@ -27,10 +44,22 @@ export function MentionInput({
   mentionableItems,
   onMentionSelect,
   disabled = false,
-  rows = 4}: MentionInputProps) {
+  rows = 4,
+  userSubscriptionTier = 'FREE',
+  enableVoiceToText = true,
+  // Enhanced universal mention props
+  mentionTypes,
+  enableAIMentions = false,
+  onAIMentionDetect,
+  colorCodedMentions = true,
+  allowTextSelection = true,
+  mentionContext,
+  availableEntities = []
+}: MentionInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [parseResult, setParseResult] = useState<ParseResult | null>(null);
 
   const {
     activeMatch,
@@ -120,8 +149,77 @@ export function MentionInput({
 
   const suggestionsPosition = getSuggestionsPosition();
 
-  // Parse text to find mentions and render them with styling
+  // Enhanced mention parsing with universal entities
+  const enhancedMentionableItems = useMemo(() => {
+    // Combine legacy mentionable items with universal entities
+    const legacyItems = mentionableItems.map(item => ({
+      id: item.id,
+      label: item.label,
+      type: 'source-image' as MentionType,
+      value: item.label,
+      thumbnail: item.thumbnail,
+      metadata: {
+        category: 'Image',
+        description: item.description,
+        confidence: 1.0
+      }
+    }));
+    
+    return [...legacyItems, ...availableEntities];
+  }, [mentionableItems, availableEntities]);
+
+  // Parse text for universal mentions
+  useEffect(() => {
+    if (value && availableEntities.length > 0) {
+      const result = parseAndHighlight(value, availableEntities, {
+        fuzzyMatch: true,
+        contextAware: true,
+        highlightColors: colorCodedMentions,
+        minConfidence: 0.6
+      });
+      setParseResult(result);
+    } else {
+      setParseResult(null);
+    }
+  }, [value, availableEntities, colorCodedMentions]);
+
+  // Smart voice-to-text processing that handles mentions
+  const processVoiceText = async (transcribedText: string) => {
+    // Get the base text (current value + space if needed)
+    const base = value.endsWith(' ') || !value ? value : value + ' ';
+    
+    // Use the enhanced typewriter with mention processing
+    await typewriterWithMentions(
+      transcribedText,
+      mentionableItems,
+      (newText) => onChange(base + newText),
+      {
+        delay: 8,
+        processMentions: true
+      }
+    );
+  };
+
+  // Handle AI mention detection
+  const handleAIMentionDetection = useCallback((result: MentionDetectionResult) => {
+    onChange(result.mentionedText);
+  }, [onChange]);
+
+  // Handle text selection to mention conversion
+  const handleTextSelectionToMention = useCallback((text: string, entity: MentionableEntity) => {
+    const mentionText = `@${entity.label}`;
+    const newValue = value.replace(text, mentionText);
+    onChange(newValue);
+  }, [value, onChange]);
+
+  // Enhanced text rendering with universal mentions
   const renderTextWithMentions = useMemo(() => {
+    // If we have parse results, use the enhanced highlighting
+    if (parseResult && parseResult.mentions.length > 0) {
+      return parseResult.highlightedText;
+    }
+
+    // Fallback to legacy mention parsing
     const mentionRegex = /@(\w+)/g;
     const parts = [];
     let lastIndex = 0;
@@ -137,18 +235,23 @@ export function MentionInput({
         });
       }
 
-      // Find the mentionable item
+      // Find the mentionable item (check both legacy and universal entities)
       const mentionText = match[1];
       const mentionableItem = mentionableItems.find(item => 
         item.label.toLowerCase() === mentionText.toLowerCase()
       );
+      
+      const universalEntity = availableEntities.find(entity =>
+        entity.label.toLowerCase() === mentionText.toLowerCase()
+      );
 
-      // Add the mention
+      // Add the mention with enhanced styling
       parts.push({
         type: 'mention',
         content: match[0],
         label: mentionText,
         item: mentionableItem,
+        entity: universalEntity,
         key: `mention-${match.index}`
       });
 
@@ -165,7 +268,7 @@ export function MentionInput({
     }
 
     return parts;
-  }, [value, mentionableItems]);
+  }, [value, mentionableItems, availableEntities, parseResult]);
 
   return (
     <div className="relative">
@@ -185,6 +288,30 @@ export function MentionInput({
         rows={rows}
       />
       
+      {/* Action buttons */}
+      <div className="absolute right-2 bottom-2 z-10 flex gap-2">
+        {/* AI Analyze button */}
+        {enableAIMentions && mentionContext && availableEntities.length > 0 && (
+          <AIAnalyzeButton
+            onAnalyze={handleAIMentionDetection}
+            text={value}
+            context={mentionContext}
+            availableEntities={availableEntities}
+            disabled={disabled || userSubscriptionTier === 'FREE'}
+            size="sm"
+          />
+        )}
+        
+        {/* Voice-to-text button */}
+        {enableVoiceToText && (
+          <VoiceToTextButton
+            onAppendText={processVoiceText}
+            disabled={userSubscriptionTier === 'FREE' || disabled}
+            size={32}
+          />
+        )}
+      </div>
+      
       {/* Visible styled text display */}
       <div 
         className={cn(
@@ -192,72 +319,88 @@ export function MentionInput({
           'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
           'disabled:cursor-not-allowed disabled:opacity-50',
           'whitespace-pre-wrap break-words cursor-text',
+          (enableVoiceToText || enableAIMentions) ? 'pr-20' : '',
           className
         )}
         style={{ minHeight: `${rows * 1.5}rem` }}
         onClick={() => textareaRef.current?.focus()}
       >
         <TooltipProvider>
-          {renderTextWithMentions.map((part) => {
-            if (part.type === 'text') {
-              return <span key={part.key}>{part.content}</span>;
-            } else {
-              const mentionItem = part.item;
-              return (
-                <Tooltip key={part.key}>
-                  <TooltipTrigger asChild>
-                    <span 
-                      className={cn(
-                        "inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 cursor-pointer shadow-sm",
-                        mentionItem 
-                          ? "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 hover:border-primary/40"
-                          : "bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20 hover:border-destructive/40"
-                      )}
-                    >
-                      {part.content}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs">
-                    {mentionItem ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          {mentionItem.thumbnail && (
-                            <div className="w-6 h-6 rounded overflow-hidden bg-muted flex-shrink-0">
-                              <img
-                                src={mentionItem.thumbnail}
-                                alt={mentionItem.label}
-                                className="w-full h-full object-cover"
-                              />
+          {typeof renderTextWithMentions === 'object' && 'map' in renderTextWithMentions ? (
+            // Legacy rendering for array of parts
+            renderTextWithMentions.map((part) => {
+              if (part.type === 'text') {
+                return <span key={part.key}>{part.content}</span>;
+              } else {
+                const mentionItem = part.item;
+                const universalEntity = part.entity;
+                const entity = universalEntity || mentionItem;
+                
+                return (
+                  <Tooltip key={part.key}>
+                    <TooltipTrigger asChild>
+                      <span 
+                        className={cn(
+                          "inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium transition-all duration-200 cursor-pointer shadow-sm",
+                          entity 
+                            ? "text-white border border-transparent hover:opacity-80"
+                            : "bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20 hover:border-destructive/40"
+                        )}
+                        style={entity && universalEntity ? { backgroundColor: universalEntity.color || '#0FA678' } : undefined}
+                      >
+                        {part.content}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      {entity ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            {mentionItem?.thumbnail && (
+                              <div className="w-6 h-6 rounded overflow-hidden bg-muted flex-shrink-0">
+                                <img
+                                  src={mentionItem.thumbnail}
+                                  alt={mentionItem.label}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <div>
+                              <div className="font-medium text-sm">{entity.label}</div>
+                              {universalEntity?.metadata?.category && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {universalEntity.metadata.category}
+                                </Badge>
+                              )}
+                              {mentionItem?.type && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {mentionItem.type}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          {(mentionItem?.description || universalEntity?.metadata?.description) && (
+                            <div className="text-xs text-muted-foreground">
+                              {mentionItem?.description || universalEntity?.metadata?.description}
                             </div>
                           )}
-                          <div>
-                            <div className="font-medium text-sm">{mentionItem.label}</div>
-                            {mentionItem.type && (
-                              <Badge variant="secondary" className="text-xs">
-                                {mentionItem.type}
-                              </Badge>
-                            )}
-                          </div>
                         </div>
-                        {mentionItem.description && (
+                      ) : (
+                        <div className="text-sm">
+                          <div className="font-medium text-destructive">@{part.label}</div>
                           <div className="text-xs text-muted-foreground">
-                            {mentionItem.description}
+                            Reference not found - check spelling
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-sm">
-                        <div className="font-medium text-destructive">@{part.label}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Reference not found - check spelling
                         </div>
-                      </div>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-          })}
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+            })
+          ) : (
+            // Enhanced rendering from parseResult
+            renderTextWithMentions
+          )}
         </TooltipProvider>
         
         {/* Show placeholder when empty */}
@@ -348,6 +491,14 @@ export function MentionInput({
             </div>
           </CardContent>
         </Card>
+      )}
+      
+      {/* Text Selection Context Menu */}
+      {allowTextSelection && availableEntities.length > 0 && (
+        <TextSelectionMenu
+          onConvertToMention={handleTextSelectionToMention}
+          availableEntities={availableEntities}
+        />
       )}
     </div>
   );

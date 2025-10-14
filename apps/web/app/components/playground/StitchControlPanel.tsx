@@ -314,6 +314,8 @@ export default function StitchControlPanel({
             }}
             rows={4}
             className="resize-none"
+            userSubscriptionTier={userSubscriptionTier}
+            enableVoiceToText={true}
           />
           <p className="text-xs text-muted-foreground">
             💡 Tip: Use @ to reference your images (e.g., "@Character", "@shoes") and mention the number of images you want (e.g., "Create 5 images...")

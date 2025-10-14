@@ -892,20 +892,21 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                         className="text-sm resize-none border-border/50 focus:border-primary/50 transition-colors pr-14"
                       />
                       <div className="absolute right-2 bottom-2">
-                        <VoiceToTextButton
-                          onAppendText={async (text) => {
-                            // Typewriter effect
-                            const base = form.description.endsWith(' ') || !form.description ? form.description : form.description + ' ';
-                            let out = base;
-                            form.setDescription(out);
-                            for (let i = 0; i < text.length; i++) {
-                              out += text[i];
-                              form.setDescription(out);
-                              await new Promise(r => setTimeout(r, 8));
-                            }
-                          }}
-                          disabled={userSubscriptionTier === 'FREE' || form.loading || !subscription.canCreateShowcase()}
-                        />
+                    <VoiceToTextButton
+                      onAppendText={async (text) => {
+                        // Typewriter effect
+                        const base = form.description.endsWith(' ') || !form.description ? form.description : form.description + ' ';
+                        let out = base;
+                        form.setDescription(out);
+                        for (let i = 0; i < text.length; i++) {
+                          out += text[i];
+                          form.setDescription(out);
+                          await new Promise(r => setTimeout(r, 8));
+                        }
+                      }}
+                      disabled={userSubscriptionTier === 'FREE' || form.loading || !subscription.canCreateShowcase()}
+                      size={32}
+                    />
                       </div>
                     </div>
                   </div>

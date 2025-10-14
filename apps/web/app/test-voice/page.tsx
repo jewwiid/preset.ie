@@ -42,6 +42,7 @@ export default function TestVoicePage() {
               <VoiceToTextButton
                 onAppendText={appendText}
                 disabled={false} // Test with enabled for demo
+                size={32}
               />
             </div>
           </div>
