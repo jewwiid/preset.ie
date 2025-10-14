@@ -277,7 +277,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
 
       // Update local state
       if (data) {
-        const statusMap: Record<string, MessageStatusData> = 
+        const statusMap: Record<string, MessageStatusData> = {}
         data.forEach(message => {
           statusMap[message.id] = {
             messageId: message.id,
@@ -287,7 +287,7 @@ export function useMessageStatus(options: UseMessageStatusOptions = {}): UseMess
             toUserId: message.to_user_id
           }
         })
-        
+
         setMessageStatuses(prev => ({ ...prev, ...statusMap }))
       }
 

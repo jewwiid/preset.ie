@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactNode } from 'react';
-import { Badge } from '../../../components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 
 interface LibraryItemCardProps {
   title: string;

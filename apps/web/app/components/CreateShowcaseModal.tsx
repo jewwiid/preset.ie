@@ -13,6 +13,7 @@ import { Badge } from '../../components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useFormManager } from '../../hooks/useFormManager';
 import { useShowcaseMedia } from '../../hooks/useShowcaseMedia';
+import VoiceToTextButton from '@/components/ui/VoiceToTextButton';
 
 // Define ShowcaseFormData type (moved from deleted useShowcaseForm hook)
 export interface ShowcaseFormData {
@@ -45,6 +46,9 @@ interface MediaItem {
 
 export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: CreateShowcaseModalProps) {
   const { user, session } = useAuth();
+
+  // User subscription tier state
+  const [userSubscriptionTier, setUserSubscriptionTier] = React.useState<string>('FREE');
 
   // Form state management using useFormManager
   const formBase = useFormManager<ShowcaseFormData>({
@@ -131,6 +135,26 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
       media.fetchAvailableMedia();
       media.fetchPlaygroundGallery();
       media.fetchAvailableTreatments();
+      
+      // Fetch user subscription tier
+      const fetchUserProfile = async () => {
+        try {
+          const { supabase } = await import('../../lib/supabase');
+          const { data: profile } = await supabase
+            .from('users_profile')
+            .select('subscription_tier')
+            .eq('user_id', user.id)
+            .single()
+          
+          if (profile) {
+            setUserSubscriptionTier(profile.subscription_tier || 'FREE')
+          }
+        } catch (error) {
+          console.warn('Failed to fetch user profile:', error)
+        }
+      }
+      
+      fetchUserProfile()
     }
   }, [user, session]);
 
@@ -857,15 +881,33 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   
                   <div className="space-y-3">
                     <Label htmlFor="description" className="text-sm font-semibold">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={form.description}
-                      onChange={(e) => form.setDescription(e.target.value)}
-                      placeholder="Describe your showcase, the process, or any interesting details..."
-                      rows={4}
-                      disabled={form.loading || !subscription.canCreateShowcase()}
-                      className="text-sm resize-none border-border/50 focus:border-primary/50 transition-colors"
-                    />
+                    <div className="relative">
+                      <Textarea
+                        id="description"
+                        value={form.description}
+                        onChange={(e) => form.setDescription(e.target.value)}
+                        placeholder="Describe your showcase, the process, or any interesting details..."
+                        rows={4}
+                        disabled={form.loading || !subscription.canCreateShowcase()}
+                        className="text-sm resize-none border-border/50 focus:border-primary/50 transition-colors pr-14"
+                      />
+                      <div className="absolute right-2 bottom-2">
+                        <VoiceToTextButton
+                          onAppendText={async (text) => {
+                            // Typewriter effect
+                            const base = form.description.endsWith(' ') || !form.description ? form.description : form.description + ' ';
+                            let out = base;
+                            form.setDescription(out);
+                            for (let i = 0; i < text.length; i++) {
+                              out += text[i];
+                              form.setDescription(out);
+                              await new Promise(r => setTimeout(r, 8));
+                            }
+                          }}
+                          disabled={userSubscriptionTier === 'FREE' || form.loading || !subscription.canCreateShowcase()}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

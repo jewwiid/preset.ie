@@ -5,8 +5,8 @@ import { StreamlinedStepIndicator } from './steps/StreamlinedStepIndicator'
 import { RoleStep } from './steps/RoleStep'
 import { EssentialProfileStep } from './steps/EssentialProfileStep'
 import { QuickSetupStep } from './steps/QuickSetupStep'
-import { Alert, AlertDescription } from '../../../components/ui/alert'
-import { Card, CardContent } from '../../../components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card, CardContent } from '@/components/ui/card'
 import { AlertCircle } from 'lucide-react'
 
 export function StreamlinedProfileLayout() {

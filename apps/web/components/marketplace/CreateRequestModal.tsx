@@ -14,7 +14,6 @@ import { Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 import { useFormManager } from '../../hooks/useFormManager';
-import { RequestFormData } from '../../hooks/useRequestForm';
 import { useEquipmentData } from '../../hooks/useEquipmentData';
 import { useUserRating } from '../../hooks/useUserRating';
 import { EquipmentSelector } from './request/EquipmentSelector';
@@ -24,6 +23,37 @@ import { LocationPreferences } from './request/LocationPreferences';
 import { PurposeSelector } from './request/PurposeSelector';
 import { RatingRequirements } from './request/RatingRequirements';
 import { UrgencyToggle } from './request/UrgencyToggle';
+
+interface RequestFormData {
+  title: string;
+  description: string;
+  category: string;
+  equipment_type: string;
+  brand: string;
+  model: string;
+  condition_preference: string;
+  request_type: 'rent' | 'buy';
+  rental_start_date: string;
+  rental_end_date: string;
+  max_daily_rate_cents: string;
+  max_total_cents: string;
+  max_purchase_price_cents: string;
+  location_city: string;
+  location_country: string;
+  pickup_preferred: boolean;
+  delivery_acceptable: boolean;
+  max_distance_km: string;
+  verified_users_only: boolean;
+  min_rating: number;
+  urgent: boolean;
+  purpose_id: string;
+  purpose_category: string;
+  reference_type: string;
+  reference_title: string;
+  reference_url: string;
+  reference_description: string;
+  reference_thumbnail_url: string;
+}
 
 interface CreateRequestModalProps {
   isOpen: boolean;

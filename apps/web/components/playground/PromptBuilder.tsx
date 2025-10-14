@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { X, Sparkles, Loader2 } from 'lucide-react'
+import VoiceToTextButton from '@/components/ui/VoiceToTextButton'
 
 interface PromptBuilderProps {
   userSubject: string
@@ -18,6 +19,7 @@ interface PromptBuilderProps {
   isSubjectUpdating: boolean
   generationMode: 'text-to-image' | 'image-to-image'
   currentPreset: any
+  userSubscriptionTier?: string
   onUserSubjectChange: (subject: string) => void
   onPromptChange: (prompt: string) => void
   onAIEnhance: () => void
@@ -38,6 +40,7 @@ export function PromptBuilder({
   isSubjectUpdating,
   generationMode,
   currentPreset,
+  userSubscriptionTier = 'FREE',
   onUserSubjectChange,
   onPromptChange,
   onAIEnhance,
@@ -120,13 +123,31 @@ export function PromptBuilder({
             Edit this prompt to customize your generation
           </span>
         </Label>
-        <Textarea
-          value={currentPrompt}
-          onChange={(e) => onPromptChange(e.target.value)}
-          placeholder="Edit the generated prompt or write your own custom prompt..."
-          rows={3}
-          className="text-sm"
-        />
+        <div className="relative">
+          <Textarea
+            value={currentPrompt}
+            onChange={(e) => onPromptChange(e.target.value)}
+            placeholder="Edit the generated prompt or write your own custom prompt..."
+            rows={3}
+            className="text-sm pr-14"
+          />
+          <div className="absolute right-2 bottom-2">
+            <VoiceToTextButton
+              onAppendText={async (text) => {
+                // Typewriter effect
+                const base = currentPrompt.endsWith(' ') || !currentPrompt ? currentPrompt : currentPrompt + ' ';
+                let out = base;
+                onPromptChange(out);
+                for (let i = 0; i < text.length; i++) {
+                  out += text[i];
+                  onPromptChange(out);
+                  await new Promise(r => setTimeout(r, 8));
+                }
+              }}
+              disabled={userSubscriptionTier === 'FREE'}
+            />
+          </div>
+        </div>
         {isPromptModified && (
           <p className="text-xs text-primary">
             💡 Modified prompt - save as preset above

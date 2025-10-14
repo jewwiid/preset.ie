@@ -12,8 +12,8 @@ import { CategoriesStep } from './steps/CategoriesStep'
 import { PreferencesStep } from './steps/PreferencesStep'
 import { PrivacyStep } from './steps/PrivacyStep'
 import { StylesStep } from './steps/StylesStep'
-import { Alert, AlertDescription } from '../../../components/ui/alert'
-import { Card, CardContent } from '../../../components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Card, CardContent } from '@/components/ui/card'
 import { AlertCircle } from 'lucide-react'
 
 export function CompleteProfileLayout() {

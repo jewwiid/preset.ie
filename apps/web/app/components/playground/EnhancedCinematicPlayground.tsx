@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CinematicParameters } from '@preset/types';
+import { CinematicParameters, CinematicFilter } from '@preset/types';
 import CinematicParameterSelector from '../cinematic/CinematicParameterSelector';
 import CinematicSearchFilter from '../cinematic/CinematicSearchFilter';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
@@ -73,7 +73,7 @@ export default function EnhancedCinematicPlayground({
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchFilters, setSearchFilters] = useState();
+  const [searchFilters, setSearchFilters] = useState<CinematicFilter>({});
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -342,7 +342,7 @@ export default function EnhancedCinematicPlayground({
                 onFiltersChange={setSearchFilters}
                 onSearchChange={setSearchQuery}
                 onClearFilters={() => {
-                  setSearchFilters();
+                  setSearchFilters({});
                   setSearchQuery('');
                 }}
                 compact={false}

@@ -276,6 +276,7 @@ export default function MoodboardBuilder({
         loading={moodboardData.loading}
         hasUnsavedChanges={moodboardData.hasUnsavedChanges}
         compactMode={compactMode}
+        userSubscriptionTier={credits.tier}
         onTitleChange={moodboardData.setTitle}
         onDescriptionChange={moodboardData.setDescription}
         onSave={handleSave}

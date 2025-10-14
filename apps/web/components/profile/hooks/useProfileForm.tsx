@@ -98,7 +98,7 @@ export function useProfileForm(): UseProfileFormReturn {
   }, [user, formData])
 
   const handleCancel = useCallback(() => {
-    setFormData()
+    setFormData({})
     setError(null)
   }, [])
 

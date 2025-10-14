@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { CompType, PurposeType, LookingForType } from '../../../lib/gig-form-persistence'
+import VoiceToTextButton from '@/components/ui/VoiceToTextButton'
 
 interface BasicDetailsStepProps {
   title: string
@@ -13,6 +14,7 @@ interface BasicDetailsStepProps {
   purpose: PurposeType
   compType: CompType
   compDetails: string
+  userSubscriptionTier?: string
   onTitleChange: (value: string) => void
   onDescriptionChange: (value: string) => void
   onLookingForChange?: (value: LookingForType[]) => void  // Changed to array
@@ -30,6 +32,7 @@ export default function BasicDetailsStep({
   purpose,
   compType,
   compDetails,
+  userSubscriptionTier = 'FREE',
   onTitleChange,
   onDescriptionChange,
   onLookingForChange,
@@ -248,15 +251,33 @@ export default function BasicDetailsStep({
           <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
             Description <span className="text-destructive">*</span>
           </label>
-          <textarea
-            id="description"
-            required
-            rows={4}
-            value={description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
-            className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
-            placeholder="Describe your shoot concept, what you're looking for, and any specific requirements..."
-          />
+          <div className="relative">
+            <textarea
+              id="description"
+              required
+              rows={4}
+              value={description}
+              onChange={(e) => onDescriptionChange(e.target.value)}
+              className="w-full px-4 py-3 pr-14 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
+              placeholder="Describe your shoot concept, what you're looking for, and any specific requirements..."
+            />
+            <div className="absolute right-2 bottom-2">
+              <VoiceToTextButton
+                onAppendText={async (text) => {
+                  // Typewriter effect
+                  const base = description.endsWith(' ') || !description ? description : description + ' ';
+                  let out = base;
+                  onDescriptionChange(out);
+                  for (let i = 0; i < text.length; i++) {
+                    out += text[i];
+                    onDescriptionChange(out);
+                    await new Promise(r => setTimeout(r, 8));
+                  }
+                }}
+                disabled={userSubscriptionTier === 'FREE'}
+              />
+            </div>
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Provide details about the concept, style, and what talent should expect (minimum 50 characters)
           </p>

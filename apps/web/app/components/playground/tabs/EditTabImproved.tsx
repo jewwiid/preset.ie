@@ -29,6 +29,7 @@ export default function EditTabImproved({
   currentProject,
   additionalPreviewImages,
   onUpdateProject,
+  onSaveToGallery,
   savingImage,
   userSubscriptionTier}: EditTabImprovedProps) {
   const [editResult, setEditResult] = useState<string | null>(null);

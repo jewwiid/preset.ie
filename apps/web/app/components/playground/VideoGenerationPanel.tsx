@@ -650,7 +650,7 @@ export default function VideoGenerationPanel({
     videoState.setVideoPrompt('')
     videoState.setEnhancedPrompt('')
     videoState.setVideoStyle('')
-    videoState.setCinematicParameters()
+    videoState.setCinematicParameters({})
     videoState.setEnableCinematicMode(false)
     videoState.setVideoDuration(5)
     videoState.setMotionType('subtle')
@@ -905,7 +905,7 @@ export default function VideoGenerationPanel({
               videoState.setVideoPrompt('')
               videoState.setEnhancedPrompt('')
               videoState.setVideoStyle('')
-              videoState.setCinematicParameters()
+              videoState.setCinematicParameters({})
               videoState.setEnableCinematicMode(false)
               onPresetChange?.(null)
             }

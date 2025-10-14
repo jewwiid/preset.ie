@@ -30,6 +30,9 @@ export default function CreateGigPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   
+  // User profile state
+  const [userSubscriptionTier, setUserSubscriptionTier] = useState<string>('FREE')
+  
   // Form data
   const [formData, setFormData] = useState<GigFormData>({
     title: '',
@@ -52,6 +55,29 @@ export default function CreateGigPage() {
   // Temporary gig ID for moodboard creation
   const [tempGigId, setTempGigId] = useState<string | null>(null)
   
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        try {
+          const { data: profile } = await supabase
+            .from('users_profile')
+            .select('subscription_tier')
+            .eq('user_id', user.id)
+            .single()
+          
+          if (profile) {
+            setUserSubscriptionTier(profile.subscription_tier || 'FREE')
+          }
+        } catch (error) {
+          console.warn('Failed to fetch user profile:', error)
+        }
+      }
+    }
+    
+    fetchUserProfile()
+  }, [user])
+
   // Check for unsaved data on mount
   useEffect(() => {
     const checkUnsavedData = () => {
@@ -360,6 +386,7 @@ export default function CreateGigPage() {
             purpose={formData.purpose!}
             compType={formData.compType}
             compDetails={formData.compDetails || ''}
+            userSubscriptionTier={userSubscriptionTier}
             onTitleChange={(value) => saveFormData({ title: value })}
             onDescriptionChange={(value) => saveFormData({ description: value })}
             onLookingForChange={(value) => saveFormData({ lookingFor: value })}

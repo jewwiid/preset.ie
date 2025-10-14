@@ -92,9 +92,9 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [likingShowcase, setLikingShowcase] = useState<string | null>(null)
-  const [cinematicFilters, setCinematicFilters] = useState<CinematicFilters>()
+  const [cinematicFilters, setCinematicFilters] = useState<CinematicFilters>({})
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const menuRefs = useRef<{ [key: string]: HTMLDivElement | null }>()
+  const menuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [deletingShowcase, setDeletingShowcase] = useState<string | null>(null)
   const [metadataModal, setMetadataModal] = useState<{
@@ -482,7 +482,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
       {showCinematicFilters && (
         <CinematicShowcaseFilters
           onFiltersChange={setCinematicFilters}
-          onClearFilters={() => setCinematicFilters()}
+          onClearFilters={() => setCinematicFilters({})}
           activeFilters={cinematicFilters}
         />
       )}

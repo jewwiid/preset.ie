@@ -177,6 +177,7 @@ export const useContentModerationExtended = () => {
     userPreferences?: {
       allow_nsfw_content: boolean;
       show_nsfw_warnings: boolean;
+      auto_hide_nsfw?: boolean;
     }
   ): boolean => {
     if (!isNsfw) return false; // Not NSFW, no warning needed

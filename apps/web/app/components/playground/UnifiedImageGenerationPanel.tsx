@@ -370,6 +370,7 @@ export default function UnifiedImageGenerationPanel({
             isSubjectUpdating={promptState.isSubjectUpdating}
             generationMode={formState.generationMode}
             currentPreset={presetState.currentPreset}
+            userSubscriptionTier={userSubscriptionTier}
             onUserSubjectChange={setUserSubject}
             onPromptChange={(newPrompt) => {
               if (cinematicState.enableCinematicMode) {

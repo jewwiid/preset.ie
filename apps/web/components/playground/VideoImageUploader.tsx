@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Upload, Image as ImageIcon, X } from 'lucide-react'
 import DraggableImagePreview from '../../app/components/playground/DraggableImagePreview'
 import { PexelsSearchPanel } from './PexelsSearchPanel'
+import { PexelsPhoto } from '@/lib/types/playground'
 
 interface VideoImageUploaderProps {
   currentImage: string | null
@@ -42,7 +43,7 @@ interface VideoImageUploaderProps {
     nextPage: () => void
     goToPage: (page: number) => void
   }
-  onSelectPexelsImage?: (photoUrl: string) => void
+  onSelectPexelsImage?: (photo: PexelsPhoto) => void
 }
 
 export function VideoImageUploader({

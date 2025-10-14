@@ -5,6 +5,7 @@ export interface MentionableItem {
   label: string;
   thumbnail?: string;
   type?: string;
+  description?: string;
   metadata?: Record<string, any>;
 }
 

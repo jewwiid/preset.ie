@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { Flag, AlertTriangle, Shield, Eye, EyeOff, Info } from 'lucide-react';
-import { Button } from './button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
-import { Badge } from './badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
-import { Label } from './label';
-import { Textarea } from './textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { useAuth } from '../../../lib/auth-context';
+import { useAuth } from '@/lib/auth-context';
 
 export type ContentType = 'playground_gallery' | 'media' | 'enhancement_tasks' | 'user_type' | 'suggested_type';
 export type FlagType = 'nsfw' | 'inappropriate' | 'spam' | 'copyright' | 'violence' | 'hate_speech' | 'other';
@@ -132,10 +132,10 @@ export const ContentFlagging: React.FC<ContentFlaggingProps> = ({
       return <Badge variant="destructive" className="flex items-center gap-1"><Shield className="h-3 w-3" />NSFW</Badge>;
     }
     if (isFlagged) {
-      return <Badge variant="warning" className="flex items-center gap-1"><Flag className="h-3 w-3" />Flagged</Badge>;
+      return <Badge variant="outline" className="flex items-center gap-1 border-yellow-500 text-yellow-600"><Flag className="h-3 w-3" />Flagged</Badge>;
     }
     if (moderationStatus === 'approved') {
-      return <Badge variant="success" className="flex items-center gap-1"><Eye className="h-3 w-3" />Approved</Badge>;
+      return <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-700"><Eye className="h-3 w-3" />Approved</Badge>;
     }
     if (moderationStatus === 'rejected') {
       return <Badge variant="destructive" className="flex items-center gap-1"><EyeOff className="h-3 w-3" />Rejected</Badge>;

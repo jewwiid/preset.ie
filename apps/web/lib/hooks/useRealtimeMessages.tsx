@@ -480,8 +480,8 @@ export function useRealtimeMessages(options: UseRealtimeMessagesOptions = {}): U
     cleanupChannels()
     setIsConnected(false)
     setIsConnecting(false)
-    setTypingUsers()
-    
+    setTypingUsers({})
+
     if (onConnectionChange) {
       onConnectionChange(false)
     }

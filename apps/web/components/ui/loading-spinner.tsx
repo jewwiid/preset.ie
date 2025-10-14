@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   text?: string;
