@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { RefreshCw, Grid, List, Plus, Store, Search, Star, Users, PlayCircle, ShoppingCart, DollarSign, TrendingUp, Eye, Heart, Settings, Palette } from 'lucide-react';
@@ -372,18 +373,20 @@ function PresetMarketplaceContent() {
 
                       {/* Price Range */}
                       <div className="flex space-x-2">
-                        <Input
+                        <NumberInput
                           placeholder="Min price"
-                          type="number"
-                          value={filters.minPrice}
-                          onChange={(e) => handleFiltersChange({ ...filters, minPrice: e.target.value })}
+                          value={filters.minPrice ? parseFloat(filters.minPrice) : undefined}
+                          onChange={(value) => handleFiltersChange({ ...filters, minPrice: value?.toString() || '' })}
+                          min={0}
+                          step={1}
                           className="w-24"
                         />
-                        <Input
+                        <NumberInput
                           placeholder="Max price"
-                          type="number"
-                          value={filters.maxPrice}
-                          onChange={(e) => handleFiltersChange({ ...filters, maxPrice: e.target.value })}
+                          value={filters.maxPrice ? parseFloat(filters.maxPrice) : undefined}
+                          onChange={(value) => handleFiltersChange({ ...filters, maxPrice: value?.toString() || '' })}
+                          min={0}
+                          step={1}
                           className="w-24"
                         />
                       </div>

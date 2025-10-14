@@ -1,89 +1,134 @@
-import * as React from "react"
-import { Minus, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+'use client';
 
-export interface NumberInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
-  value?: number | string
-  onChange?: (value: number) => void
-  min?: number
-  max?: number
-  step?: number
-  disabled?: boolean
+import * as React from 'react';
+import { Minus, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+
+interface NumberInputProps {
+  value?: number;
+  onChange?: (value: number | undefined) => void;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  disabled?: boolean;
+  className?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
-  ({ className, value = 0, onChange, min = 0, max, step = 1, disabled, ...props }, ref) => {
-    const [internalValue, setInternalValue] = React.useState<number>(Number(value) || 0)
+export function NumberInput({
+  value,
+  onChange,
+  placeholder,
+  min,
+  max,
+  step = 1,
+  disabled = false,
+  className,
+  size = 'md'
+}: NumberInputProps) {
+  const [inputValue, setInputValue] = React.useState(value?.toString() || '');
 
-    React.useEffect(() => {
-      setInternalValue(Number(value) || 0)
-    }, [value])
+  // Update input value when prop value changes
+  React.useEffect(() => {
+    setInputValue(value?.toString() || '');
+  }, [value]);
 
-    const handleIncrement = () => {
-      const newValue = internalValue + step
-      if (max === undefined || newValue <= max) {
-        setInternalValue(newValue)
-        onChange?.(newValue)
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    
+    if (newValue === '') {
+      onChange?.(undefined);
+    } else {
+      const numValue = parseFloat(newValue);
+      if (!isNaN(numValue)) {
+        onChange?.(numValue);
       }
     }
+  };
 
-    const handleDecrement = () => {
-      const newValue = internalValue - step
-      if (newValue >= min) {
-        setInternalValue(newValue)
-        onChange?.(newValue)
-      }
+  const handleIncrement = () => {
+    const currentValue = value || 0;
+    const newValue = Math.min(currentValue + step, max ?? Infinity);
+    if (newValue !== currentValue) {
+      onChange?.(newValue);
     }
+  };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = Number(e.target.value)
-      if (!isNaN(newValue) && newValue >= min && (max === undefined || newValue <= max)) {
-        setInternalValue(newValue)
-        onChange?.(newValue)
-      }
+  const handleDecrement = () => {
+    const currentValue = value || 0;
+    const newValue = Math.max(currentValue - step, min ?? -Infinity);
+    if (newValue !== currentValue) {
+      onChange?.(newValue);
     }
+  };
 
-    return (
-      <div className={cn("flex items-center space-x-2", className)}>
+  const sizeClasses = {
+    sm: 'h-8 text-sm',
+    md: 'h-9 text-sm',
+    lg: 'h-10 text-base'
+  };
+
+  const buttonSizeClasses = {
+    sm: 'h-8 w-8',
+    md: 'h-9 w-9',
+    lg: 'h-10 w-10'
+  };
+
+  const iconSizeClasses = {
+    sm: 'h-3 w-3',
+    md: 'h-4 w-4',
+    lg: 'h-4 w-4'
+  };
+
+  return (
+    <div className={cn('relative flex items-center', className)}>
+      <Input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={inputValue}
+        onChange={handleInputChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        className={cn(
+          sizeClasses[size],
+          'pr-16 text-center [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]'
+        )}
+      />
+      <div className="absolute right-0 flex flex-col">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className="h-10 w-10"
-          onClick={handleDecrement}
-          disabled={disabled || internalValue <= min}
-        >
-          <Minus className="h-4 w-4" />
-        </Button>
-        <Input
-          ref={ref}
-          type="number"
-          value={internalValue}
-          onChange={handleInputChange}
-          min={min}
-          max={max}
-          step={step}
-          disabled={disabled}
-          className="text-center"
-          {...props}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="h-10 w-10"
+          className={cn(
+            buttonSizeClasses[size],
+            'h-1/2 rounded-none rounded-tr-md border-l border-border hover:bg-muted/50',
+            disabled && 'opacity-50 cursor-not-allowed'
+          )}
           onClick={handleIncrement}
-          disabled={disabled || (max !== undefined && internalValue >= max)}
+          disabled={disabled || (max !== undefined && (value || 0) >= max)}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className={iconSizeClasses[size]} />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={cn(
+            buttonSizeClasses[size],
+            'h-1/2 rounded-none rounded-br-md border-l border-t border-border hover:bg-muted/50',
+            disabled && 'opacity-50 cursor-not-allowed'
+          )}
+          onClick={handleDecrement}
+          disabled={disabled || (min !== undefined && (value || 0) <= min)}
+        >
+          <Minus className={iconSizeClasses[size]} />
         </Button>
       </div>
-    )
-  }
-)
-NumberInput.displayName = "NumberInput"
-
-export { NumberInput }
+    </div>
+  );
+}

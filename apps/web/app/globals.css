@@ -427,6 +427,17 @@ select {
   color-scheme: light;
 }
 
+/* Hide default browser spinners for number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 input[type="checkbox"],
 input[type="radio"] {
   color-scheme: light !important;

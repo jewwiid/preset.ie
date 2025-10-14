@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
@@ -229,17 +230,19 @@ export default function MarketplaceFilters({
             </Label>
             <div className="mt-2 space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <Input
-                  type="number"
+                <NumberInput
                   placeholder="Min price"
-                  value={localFilters.min_price ? localFilters.min_price / 100 : ''}
-                  onChange={(e) => handleFilterChange('min_price', e.target.value ? parseInt(e.target.value) * 100 : undefined)}
+                  value={localFilters.min_price ? localFilters.min_price / 100 : undefined}
+                  onChange={(value) => handleFilterChange('min_price', value ? value * 100 : undefined)}
+                  min={0}
+                  step={1}
                 />
-                <Input
-                  type="number"
+                <NumberInput
                   placeholder="Max price"
-                  value={localFilters.max_price ? localFilters.max_price / 100 : ''}
-                  onChange={(e) => handleFilterChange('max_price', e.target.value ? parseInt(e.target.value) * 100 : undefined)}
+                  value={localFilters.max_price ? localFilters.max_price / 100 : undefined}
+                  onChange={(value) => handleFilterChange('max_price', value ? value * 100 : undefined)}
+                  min={0}
+                  step={1}
                 />
               </div>
             </div>
