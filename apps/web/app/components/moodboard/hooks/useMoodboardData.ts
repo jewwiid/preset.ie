@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { Moodboard, MoodboardItem } from '../lib/moodboardTypes'
 import { sortItemsByPosition } from '../lib/moodboardHelpers'
+import { toast } from 'sonner'
 
 interface UseMoodboardDataProps {
   moodboardId?: string
@@ -206,6 +207,9 @@ export const useMoodboardData = ({
         console.log('Moodboard updated successfully with enhanced items')
         setSuccess('Moodboard updated successfully!')
         setHasUnsavedChanges(false)
+        toast.success('Moodboard updated!', {
+          description: 'Your changes have been saved'
+        })
         return moodboardId
       } else {
         // Handle template saving with deduplication
@@ -230,6 +234,9 @@ export const useMoodboardData = ({
           console.log('Existing template updated successfully')
           setSuccess('Template updated successfully!')
           setHasUnsavedChanges(false)
+          toast.success('Template updated!', {
+            description: 'Your template has been saved'
+          })
           return existingTemplate.id
         } else {
           // Create new moodboard/template
@@ -262,6 +269,9 @@ export const useMoodboardData = ({
           console.log(saveAsTemplate ? 'New template created successfully' : 'New moodboard created successfully')
           setSuccess(saveAsTemplate ? 'Template saved successfully!' : 'Moodboard saved successfully!')
           setHasUnsavedChanges(false)
+          toast.success(saveAsTemplate ? 'Template saved!' : 'Moodboard saved!', {
+            description: saveAsTemplate ? 'Your template is ready to use' : 'Your moodboard has been created'
+          })
           return newMoodboard.id
         }
       }
@@ -287,6 +297,9 @@ export const useMoodboardData = ({
       }
 
       setError(errorMessage)
+      toast.error('Save failed', {
+        description: errorMessage
+      })
       return undefined
     } finally {
       setLoading(false)

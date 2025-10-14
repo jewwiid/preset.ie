@@ -432,7 +432,12 @@ function PlaygroundContent() {
                 controls
                 autoPlay
                 preload="metadata"
-                poster={fullScreenImage.url.replace(/\.(mp4|webm|mov)$/i, '_poster.jpg')}
+                onError={(e) => {
+                  console.error('Video playback error:', e);
+                  const videoElement = e.currentTarget;
+                  // Remove poster on error to show default video error state
+                  videoElement.removeAttribute('poster');
+                }}
               >
                 Your browser does not support the video tag.
               </video>
@@ -441,6 +446,11 @@ function PlaygroundContent() {
                 src={fullScreenImage.url}
                 alt={fullScreenImage.title}
                 className="max-w-full max-h-full object-contain"
+                onError={(e) => {
+                  console.error('Image load error:', e);
+                  // Optionally set a fallback image
+                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgZm91bmQ8L3RleHQ+PC9zdmc+';
+                }}
               />
             )}
 

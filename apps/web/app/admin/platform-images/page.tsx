@@ -7,7 +7,7 @@ import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Upload, ImageIcon, Plus, Edit, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import ImageUploadModal from './components/ImageUploadModal';
 import ImageSectionManager from './components/ImageSectionManager';

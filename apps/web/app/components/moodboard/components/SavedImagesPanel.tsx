@@ -7,7 +7,7 @@
 
 import { ImageIcon, Loader2 } from 'lucide-react'
 import { SavedImage } from '../lib/moodboardTypes'
-
+import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface SavedImagesPanelProps {
   images: SavedImage[]
@@ -55,7 +55,7 @@ export const SavedImagesPanel = ({
             className="relative group cursor-pointer"
             onClick={() => onSelectImage(image)}
           >
-            <div className="aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <AspectRatio ratio={1} className="overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
               <img
                 src={image.image_url}
                 alt={image.title}
@@ -67,7 +67,7 @@ export const SavedImagesPanel = ({
                   + Add
                 </span>
               </div>
-            </div>
+            </AspectRatio>
 
             {/* Image title */}
             <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">

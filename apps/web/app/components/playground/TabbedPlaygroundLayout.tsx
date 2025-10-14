@@ -219,8 +219,6 @@ export default function TabbedPlaygroundLayout({
   }, [onGenerate, scrollToPreview])
 
   const handleVideoGenerate = useCallback(async (...args: any[]) => {
-    // Clear selected video to show loading state
-    setSelectedVideo(null)
     if (videoPreviewRef.current) {
       scrollToPreview(videoPreviewRef)
     }
@@ -751,17 +749,24 @@ export default function TabbedPlaygroundLayout({
           })
         } else {
           let errorData: any
+          const text = await response.text()
+
           try {
-            errorData = await response.json()
+            errorData = JSON.parse(text)
           } catch (e) {
-            const text = await response.text()
             console.error('❌ Video save failed - Response not JSON:', {
               status: response.status,
               statusText: response.statusText,
               text
             })
+            showFeedback({
+              type: 'error',
+              title: 'Failed to Save Video',
+              message: `Server error: ${response.statusText}`
+            })
             return
           }
+
           console.error('❌ Video save failed:', {
             status: response.status,
             statusText: response.statusText,

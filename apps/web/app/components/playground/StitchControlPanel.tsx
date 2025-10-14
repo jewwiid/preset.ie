@@ -152,19 +152,28 @@ export default function StitchControlPanel({
 
   // Calculate actual dimensions based on size + aspect ratio
   const calculateDimensions = (baseSize: number, ratio: string) => {
-    const [w, h] = ratio.split(':').map(Number);
-    
-    // Safety check for valid numbers
-    if (isNaN(w) || isNaN(h) || h === 0 || isNaN(baseSize)) {
-      return { width: baseSize || 1024, height: baseSize || 1024 };
+    const DEFAULT_SIZE = 1024;
+    const validBaseSize = isNaN(baseSize) || baseSize <= 0 ? DEFAULT_SIZE : baseSize;
+
+    // Parse aspect ratio
+    const parts = ratio.split(':');
+    if (parts.length !== 2) {
+      return { width: validBaseSize, height: validBaseSize };
     }
-    
+
+    const [w, h] = parts.map(Number);
+
+    // Safety check for valid numbers
+    if (isNaN(w) || isNaN(h) || w <= 0 || h <= 0) {
+      return { width: validBaseSize, height: validBaseSize };
+    }
+
     const aspectValue = w / h;
-    
+
     if (aspectValue >= 1) {
-      return { width: baseSize, height: Math.round(baseSize / aspectValue) };
+      return { width: validBaseSize, height: Math.round(validBaseSize / aspectValue) };
     } else {
-      return { width: Math.round(baseSize * aspectValue), height: baseSize };
+      return { width: Math.round(validBaseSize * aspectValue), height: validBaseSize };
     }
   };
 
@@ -446,7 +455,10 @@ export default function StitchControlPanel({
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Final output: {calculateDimensions(parseInt(size, 10) || 1024, aspectRatio).width}×{calculateDimensions(parseInt(size, 10) || 1024, aspectRatio).height} (Nanobanana supports 10 ratios)
+            Final output: {(() => {
+              const dims = calculateDimensions(parseInt(size, 10) || 1024, aspectRatio);
+              return `${dims.width}×${dims.height}`;
+            })()} (Nanobanana supports 10 ratios)
           </p>
         </div>
 

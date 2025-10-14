@@ -26,6 +26,7 @@ import {
   SavedImagesPanel,
   PaletteDisplay
 } from './components'
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { parsePexelsPhoto, getSubscriptionLimits, generateItemId } from './lib/moodboardHelpers'
 import DraggableMasonryGrid from '../DraggableMasonryGrid'
 
@@ -381,38 +382,47 @@ export default function MoodboardBuilder({
         )}
       </div>
 
-      {/* Moodboard Grid */}
+      {/* Moodboard Grid and Palette with Resizable Panels */}
       {itemsManager.items.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-4">Your Moodboard</h3>
-          <DraggableMasonryGrid
-            items={itemsManager.items}
-            onReorder={itemsManager.reorderItems}
-            onRemove={itemsManager.removeItem}
-            onSetFeatured={itemsManager.setFeaturedImage}
-            featuredImageId={itemsManager.featuredImageId}
-            // @ts-expect-error - Type mismatch between onEnhance callback signature
-            onEnhance={(itemId: any, type: any, prompt: any, provider: any) => {
-              handleEnhanceImage(itemId, type, prompt, provider)
-            }}
-            enhancingItems={enhancement.enhancingItems}
-            enhancementTasks={enhancement.enhancementTasks}
-          />
+        <div className="mb-6 h-[600px]">
+          <ResizablePanelGroup direction="horizontal" className="h-full">
+            <ResizablePanel defaultSize={70} minSize={40}>
+              <div className="h-full">
+                <h3 className="text-lg font-semibold mb-4">Your Moodboard</h3>
+                <div className="h-[calc(100%-2rem)] overflow-auto">
+                  <DraggableMasonryGrid
+                    items={itemsManager.items}
+                    onReorder={itemsManager.reorderItems}
+                    onRemove={itemsManager.removeItem}
+                    onSetFeatured={itemsManager.setFeaturedImage}
+                    featuredImageId={itemsManager.featuredImageId}
+                    // @ts-expect-error - Type mismatch between onEnhance callback signature
+                    onEnhance={(itemId: any, type: any, prompt: any, provider: any) => {
+                      handleEnhanceImage(itemId, type, prompt, provider)
+                    }}
+                    enhancingItems={enhancement.enhancingItems}
+                    enhancementTasks={enhancement.enhancementTasks}
+                  />
+                </div>
+              </div>
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={30} minSize={20}>
+              <div className="h-full pl-4">
+                <PaletteDisplay
+                  palette={palette.palette}
+                  loading={palette.loading}
+                  useAI={palette.useAI}
+                  aiDescription={palette.aiAnalysis?.description}
+                  aiMood={palette.aiAnalysis?.mood}
+                  onToggleAI={palette.setUseAI}
+                  onExtract={handleExtractPalette}
+                  disabled={itemsManager.items.length === 0}
+                />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
-      )}
-
-      {/* Color Palette */}
-      {itemsManager.items.length > 0 && (
-        <PaletteDisplay
-          palette={palette.palette}
-          loading={palette.loading}
-          useAI={palette.useAI}
-          aiDescription={palette.aiAnalysis?.description}
-          aiMood={palette.aiAnalysis?.mood}
-          onToggleAI={palette.setUseAI}
-          onExtract={handleExtractPalette}
-          disabled={itemsManager.items.length === 0}
-        />
       )}
 
       {/* Credits Display */}

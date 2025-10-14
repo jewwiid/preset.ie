@@ -7,7 +7,7 @@
 
 import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PexelsPhoto, PexelsFilters } from '../lib/moodboardTypes'
-
+import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 interface PexelsSearchPanelProps {
   query: string
@@ -159,7 +159,7 @@ export const PexelsSearchPanel = ({
                 className="relative group cursor-pointer"
                 onClick={() => onSelectPhoto(photo)}
               >
-                <div className="aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                <AspectRatio ratio={1} className="overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow">
                   <img
                     src={photo.src.medium}
                     alt={photo.alt}
@@ -170,7 +170,7 @@ export const PexelsSearchPanel = ({
                       + Add
                     </span>
                   </div>
-                </div>
+                </AspectRatio>
 
                 {/* Photographer attribution */}
                 <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">

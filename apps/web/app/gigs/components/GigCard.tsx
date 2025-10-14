@@ -3,7 +3,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Calendar, Users, Heart, Clock, Camera, ArrowLeft } from 'lucide-react';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { MapPin, Calendar, Users, Heart, Clock, Camera, ArrowLeft, Share2, Copy, Bookmark, ExternalLink } from 'lucide-react';
 import { Gig } from '../types';
 import { getCompTypeIcon, getCompTypeColor, formatDate, getDaysUntilDeadline, getLookingForLabel } from '../utils';
 
@@ -19,21 +22,25 @@ interface GigCardProps {
  */
 export const GigCard = ({ gig, isSaved, onToggleSave }: GigCardProps) => {
   return (
-    <Link href={`/gigs/${gig.id}`}>
-      <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-border hover:border-primary/50">
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <Link href={`/gigs/${gig.id}`}>
+          <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-border hover:border-primary/50">
         {/* Gig Image/Moodboard Preview */}
-        <div className="relative h-56 bg-muted overflow-hidden">
-          {gig.moodboard_urls && gig.moodboard_urls.length > 0 ? (
-            <img
-              src={gig.moodboard_urls[0]}
-              alt={gig.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20">
-              <Camera className="w-16 h-16 text-primary/40" />
-            </div>
-          )}
+        <div className="relative bg-muted overflow-hidden">
+          <AspectRatio ratio={16 / 9} className="bg-muted">
+            {gig.moodboard_urls && gig.moodboard_urls.length > 0 ? (
+              <img
+                src={gig.moodboard_urls[0]}
+                alt={gig.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20">
+                <Camera className="w-16 h-16 text-primary/40" />
+              </div>
+            )}
+          </AspectRatio>
 
           {/* Save Button */}
           <button
@@ -87,15 +94,25 @@ export const GigCard = ({ gig, isSaved, onToggleSave }: GigCardProps) => {
 
           {/* Creator Info - Simplified */}
           <div className="flex items-center gap-3">
-            <Avatar className="w-12 h-12 ring-2 ring-primary/10">
-              <AvatarImage
-                src={gig.users_profile?.avatar_url || undefined}
-                alt={gig.users_profile?.display_name || 'User'}
-              />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                {gig.users_profile?.display_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
-              </AvatarFallback>
-            </Avatar>
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <Avatar className="w-12 h-12 ring-2 ring-primary/10 cursor-pointer">
+                  <AvatarImage
+                    src={gig.users_profile?.avatar_url || undefined}
+                    alt={gig.users_profile?.display_name || 'User'}
+                  />
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    {gig.users_profile?.display_name?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-foreground">{gig.users_profile?.display_name || 'User'}</h4>
+                  <p className="text-sm text-muted-foreground">@{gig.users_profile?.handle || 'user'}</p>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground truncate">
                 {gig.users_profile?.display_name || 'Unknown User'}
@@ -191,5 +208,37 @@ export const GigCard = ({ gig, isSaved, onToggleSave }: GigCardProps) => {
         </CardContent>
       </Card>
     </Link>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="bg-popover border-border">
+        <ContextMenuItem onClick={() => window.open(`/gigs/${gig.id}`, '_blank')}>
+          <ExternalLink className="w-4 h-4 mr-2" />
+          View Details
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onToggleSave(gig.id)}>
+          <Bookmark className="w-4 h-4 mr-2" />
+          {isSaved ? 'Remove from Saved' : 'Save Gig'}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          if (navigator.share) {
+            navigator.share({
+              title: gig.title,
+              text: gig.description,
+              url: `${window.location.origin}/gigs/${gig.id}`
+            })
+          } else {
+            navigator.clipboard.writeText(`${window.location.origin}/gigs/${gig.id}`)
+          }
+        }}>
+          <Share2 className="w-4 h-4 mr-2" />
+          Share Gig
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => {
+          navigator.clipboard.writeText(`${window.location.origin}/gigs/${gig.id}`)
+        }}>
+          <Copy className="w-4 h-4 mr-2" />
+          Copy Link
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 };

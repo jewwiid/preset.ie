@@ -82,7 +82,7 @@ export default function StitchTab({
         max_images: maxImages,
         size: parseInt(size),
         aspect_ratio: aspectRatio,
-        cinematic_parameters: Object.keys(cinematicParams).length > 0 ? cinematicParams : undefined,
+        cinematic_parameters: cinematicParams && Object.keys(cinematicParams).length > 0 ? cinematicParams : undefined,
         provider,
         enable_base64_output: false,
         enable_sync_mode: true};
@@ -118,7 +118,7 @@ export default function StitchTab({
     } finally {
       setGenerating(false);
     }
-  }, [sourceImages, prompt, maxImages, size, provider]);
+  }, [sourceImages, prompt, maxImages, size, aspectRatio, cinematicParams, provider, session?.access_token]);
 
   const handleSaveToGallery = useCallback(
     async (url: string) => {

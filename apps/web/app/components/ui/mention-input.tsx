@@ -119,7 +119,7 @@ export function MentionInput({
   // Show/hide suggestions based on active state
   useEffect(() => {
     setShowSuggestions(isActive && suggestions.length > 0);
-  }, [isActive, suggestions.length]);
+  }, [isActive, suggestions]);
 
   // Calculate suggestions position
   const getSuggestionsPosition = () => {
@@ -281,11 +281,12 @@ export function MentionInput({
         onKeyDown={handleKeyDownEvent}
         placeholder={placeholder}
         className={cn(
-          'resize-none absolute inset-0 opacity-0 pointer-events-none',
+          'resize-none absolute inset-0 opacity-0 z-10',
           className
         )}
         disabled={disabled}
         rows={rows}
+        style={{ caretColor: 'transparent' }}
       />
       
       {/* Action buttons */}
@@ -314,7 +315,7 @@ export function MentionInput({
       </div>
       
       {/* Visible styled text display */}
-      <div 
+      <div
         className={cn(
           'min-h-[80px] p-3 border border-input rounded-md bg-background text-sm ring-offset-background',
           'focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
@@ -327,7 +328,7 @@ export function MentionInput({
         onClick={() => textareaRef.current?.focus()}
       >
         <TooltipProvider>
-          {typeof renderTextWithMentions === 'object' && 'map' in renderTextWithMentions ? (
+          {Array.isArray(renderTextWithMentions) ? (
             // Legacy rendering for array of parts
             renderTextWithMentions.map((part) => {
               if (part.type === 'text') {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 interface CreditInfo {
   packages: any[];
@@ -151,15 +152,26 @@ export function useCreditPurchase({ userId, onPurchaseComplete }: UseCreditPurch
 
       if (data.url) {
         // Redirect to Stripe checkout
+        toast.loading('Redirecting to checkout...', {
+          description: 'Please complete your purchase'
+        });
         window.location.href = data.url;
       } else {
-        setError(data.error || 'Failed to create checkout session');
+        const errorMessage = data.error || 'Failed to create checkout session';
+        setError(errorMessage);
         setPurchasing(null);
+        toast.error('Purchase failed', {
+          description: errorMessage
+        });
       }
     } catch (err: any) {
       console.error('Purchase error:', err);
-      setError('Failed to complete purchase');
+      const errorMessage = 'Failed to complete purchase';
+      setError(errorMessage);
       setPurchasing(null);
+      toast.error('Purchase failed', {
+        description: errorMessage
+      });
     }
   }, [userId, creditInfo]);
 

@@ -6,6 +6,8 @@ import { MapPin, Users, Calendar, DollarSign, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { useTheme } from 'next-themes'
 
 // Types
@@ -25,6 +27,8 @@ export default function GigsMap({ onGigSelect, className = '' }: GigsMapProps) {
   const [gigs, setGigs] = useState<Gig[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null)
+  const [hoveredGig, setHoveredGig] = useState<Gig | null>(null)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const { resolvedTheme } = useTheme()
 
   // Debounced fetch function
@@ -172,11 +176,16 @@ export default function GigsMap({ onGigSelect, className = '' }: GigsMapProps) {
         map.getCanvas().style.cursor = ''
       })
 
-      map.on('mouseenter', 'unclustered-point', () => {
+      map.on('mouseenter', 'unclustered-point', (e) => {
         map.getCanvas().style.cursor = 'pointer'
+        const feature = e.features[0]
+        const gig = feature.properties as Gig
+        setHoveredGig(gig)
+        setMousePosition({ x: e.point.x, y: e.point.y })
       })
       map.on('mouseleave', 'unclustered-point', () => {
         map.getCanvas().style.cursor = ''
+        setHoveredGig(null)
       })
 
       // Fetch initial gigs
@@ -239,6 +248,76 @@ export default function GigsMap({ onGigSelect, className = '' }: GigsMapProps) {
     <div className={`relative ${className}`}>
       {/* Map Container */}
       <div ref={mapContainer} className="w-full h-full rounded-lg overflow-hidden" />
+      
+      {/* Hover Card for Map Markers */}
+      {hoveredGig && (
+        <div 
+          className="absolute z-50 pointer-events-none"
+          style={{
+            left: mousePosition.x + 10,
+            top: mousePosition.y - 10,
+          }}
+        >
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <div className="w-80 bg-popover border border-border rounded-md p-4 text-popover-foreground shadow-lg pointer-events-auto">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-foreground">{hoveredGig.title}</h4>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{hoveredGig.description}</p>
+                  <div className="flex items-center space-x-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    <span className="text-sm">{hoveredGig.location_text}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-sm">{formatDate(hoveredGig.start_time)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={getCompTypeColor(hoveredGig.comp_type)}>
+                      {hoveredGig.comp_type}
+                    </Badge>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => window.open(`/gigs/${hoveredGig.id}`, '_blank')}
+                    className="w-full"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    View Details
+                  </Button>
+                </div>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent className="bg-popover border-border">
+              <ContextMenuItem onClick={() => window.open(`/gigs/${hoveredGig.id}`, '_blank')}>
+                <ExternalLink className="w-4 h-4 mr-2" />
+                View Details
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: hoveredGig.title,
+                    text: hoveredGig.description,
+                    url: `${window.location.origin}/gigs/${hoveredGig.id}`
+                  })
+                } else {
+                  navigator.clipboard.writeText(`${window.location.origin}/gigs/${hoveredGig.id}`)
+                }
+              }}>
+                <Users className="w-4 h-4 mr-2" />
+                Share Gig
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => {
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${hoveredGig.lat},${hoveredGig.lng}`
+                window.open(url, '_blank')
+              }}>
+                <MapPin className="w-4 h-4 mr-2" />
+                Get Directions
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+        </div>
+      )}
       
       {/* Loading Overlay */}
       {loading && (
