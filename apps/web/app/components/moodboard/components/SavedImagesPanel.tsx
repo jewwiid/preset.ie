@@ -8,7 +8,9 @@
 import { ImageIcon, Loader2 } from 'lucide-react'
 import { SavedImage } from '../lib/moodboardTypes'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 interface SavedImagesPanelProps {
   images: SavedImage[]
   loading: boolean
@@ -48,8 +50,9 @@ export const SavedImagesPanel = ({
       </div>
 
       {/* Images grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 max-h-96 overflow-y-auto">
-        {images.map((image) => (
+      <ScrollArea className="max-h-96">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-1">
+          {images.map((image) => (
           <div
             key={image.id}
             className="relative group cursor-pointer"
@@ -71,13 +74,23 @@ export const SavedImagesPanel = ({
 
             {/* Image title */}
             <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
-              <div className="text-xs text-white truncate" title={image.title}>
-                {image.title}
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="text-xs text-white truncate cursor-help">
+                      {image.title}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{image.title}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   )
 }

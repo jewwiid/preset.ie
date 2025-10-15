@@ -4,11 +4,10 @@ import { useState, useRef, useEffect } from 'react'
 import { Bell, Check, CheckCheck, X, BellOff, Volume2, VolumeX, RefreshCw } from 'lucide-react'
 import { useNotifications, type Notification } from '../lib/hooks/useNotifications'
 import { Button } from './ui/button'
-
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const {
     notifications,
     unreadCount,
@@ -23,20 +22,6 @@ export function NotificationBell() {
 
   // Get mute state from preferences (push_enabled: false = muted)
   const isMuted = preferences?.push_enabled === false
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
 
   const handleNotificationClick = async (notification: Notification) => {
     // Mark as read if unread
@@ -96,34 +81,33 @@ export function NotificationBell() {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Bell Button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative w-9 h-9 hover:bg-accent hover:text-accent-foreground"
-        aria-label={`Notifications ${isMuted ? '(muted)' : ''} ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
-      >
-        {isMuted ? (
-          <BellOff className="h-4 w-4" />
-        ) : (
-          <Bell className="h-4 w-4" />
-        )}
-        
-        {/* Badge - show even when muted but with different style */}
-        {unreadCount > 0 && (
-          <span className={`absolute top-0 left-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-primary-foreground transform -translate-x-1/2 -translate-y-1/2 rounded-full min-w-[1.25rem] h-5 ${
-            isMuted ? 'bg-muted-400' : 'bg-primary'
-          }`}>
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </Button>
-
-      {/* Dropdown Panel */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-background rounded-lg shadow-lg border border-border-200 z-50 max-h-96 overflow-hidden">
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="relative w-9 h-9 hover:bg-accent hover:text-accent-foreground"
+          aria-label={`Notifications ${isMuted ? '(muted)' : ''} ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
+        >
+          {isMuted ? (
+            <BellOff className="h-4 w-4" />
+          ) : (
+            <Bell className="h-4 w-4" />
+          )}
+          
+          {/* Badge - show even when muted but with different style */}
+          {unreadCount > 0 && (
+            <span className={`absolute top-0 left-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-primary-foreground transform -translate-x-1/2 -translate-y-1/2 rounded-full min-w-[1.25rem] h-5 ${
+              isMuted ? 'bg-muted-400' : 'bg-primary'
+            }`}>
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      
+      <PopoverContent className="w-80 sm:w-96 p-0" align="end">
+        <div className="max-h-96 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border-100">
             <h3 className="text-lg font-semibold text-muted-foreground-900">
@@ -277,7 +261,7 @@ export function NotificationBell() {
 
           {/* Footer - Removed "View all notifications" since no dedicated page exists */}
         </div>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   )
 }

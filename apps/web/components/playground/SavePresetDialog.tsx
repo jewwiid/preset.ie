@@ -1,9 +1,11 @@
 'use client'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { CinematicParameters } from '@preset/types'
+import { useState, useEffect } from 'react'
 
 interface SavePresetDialogProps {
   isOpen: boolean
@@ -43,6 +45,18 @@ export function SavePresetDialog({
   videoPrompt,
   generationMode = 'both'
 }: SavePresetDialogProps) {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   const handleSave = () => {
     const finalPrompt = enableCinematicMode ? enhancedPrompt : prompt
 
@@ -72,43 +86,65 @@ export function SavePresetDialog({
 
   const displayPrompt = enableCinematicMode ? enhancedPrompt : prompt
 
+  const content = (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Save your current prompt, style, and parameters as a reusable preset.
+      </p>
+      <div className="space-y-2">
+        <Label>Current Configuration</Label>
+        <div className="text-sm space-y-1">
+          <div>
+            <strong>Prompt:</strong> {displayPrompt.substring(0, 100)}...
+          </div>
+          {userSubject && (
+            <div>
+              <strong>Subject:</strong> {userSubject}
+            </div>
+          )}
+          {style && (
+            <div>
+              <strong>Style:</strong> {style}
+            </div>
+          )}
+          {enableCinematicMode && Object.keys(cinematicParameters).length > 0 && (
+            <div>
+              <strong>Cinematic Parameters:</strong> {Object.keys(cinematicParameters).length} active
+            </div>
+          )}
+        </div>
+      </div>
+      <Button className="w-full" onClick={handleSave}>
+        Continue to Save Preset
+      </Button>
+    </div>
+  )
+
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent side="bottom" className="h-[80vh]">
+          <SheetHeader>
+            <SheetTitle>Save as Preset</SheetTitle>
+            <SheetDescription>
+              Save your current prompt, style, and parameters as a reusable preset.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6">
+            {content}
+          </div>
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Save as Preset</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Save your current prompt, style, and parameters as a reusable preset.
-          </p>
-          <div className="space-y-2">
-            <Label>Current Configuration</Label>
-            <div className="text-sm space-y-1">
-              <div>
-                <strong>Prompt:</strong> {displayPrompt.substring(0, 100)}...
-              </div>
-              {userSubject && (
-                <div>
-                  <strong>Subject:</strong> {userSubject}
-                </div>
-              )}
-              {style && (
-                <div>
-                  <strong>Style:</strong> {style}
-                </div>
-              )}
-              {enableCinematicMode && Object.keys(cinematicParameters).length > 0 && (
-                <div>
-                  <strong>Cinematic Parameters:</strong> {Object.keys(cinematicParameters).length} active
-                </div>
-              )}
-            </div>
-          </div>
-          <Button className="w-full" onClick={handleSave}>
-            Continue to Save Preset
-          </Button>
-        </div>
+        {content}
       </DialogContent>
     </Dialog>
   )

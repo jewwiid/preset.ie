@@ -8,7 +8,9 @@
 import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PexelsPhoto, PexelsFilters } from '../lib/moodboardTypes'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 interface PexelsSearchPanelProps {
   query: string
   results: PexelsPhoto[]
@@ -124,36 +126,53 @@ export const PexelsSearchPanel = ({
             {/* Pagination controls */}
             {totalPages > 1 && (
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={onPreviousPage}
-                  disabled={currentPage === 1 || loading}
-                  className="p-2 rounded-md border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title="Previous page"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={onPreviousPage}
+                        disabled={currentPage === 1 || loading}
+                        className="p-2 rounded-md border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Previous page</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
                 <span className="text-sm text-muted-foreground min-w-[80px] text-center">
                   {currentPage} of {totalPages}
                 </span>
 
-                <button
-                  type="button"
-                  onClick={onNextPage}
-                  disabled={currentPage === totalPages || loading}
-                  className="p-2 rounded-md border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  title="Next page"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={onNextPage}
+                        disabled={currentPage === totalPages || loading}
+                        className="p-2 rounded-md border border-border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Next page</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             )}
           </div>
 
           {/* Photo grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {results.map((photo) => (
+          <ScrollArea className="max-h-96">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 p-1">
+              {results.map((photo) => (
               <div
                 key={photo.id}
                 className="relative group cursor-pointer"
@@ -174,13 +193,24 @@ export const PexelsSearchPanel = ({
 
                 {/* Photographer attribution */}
                 <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="text-xs text-white truncate">
-                    Photo by {photo.photographer}
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="text-xs text-white truncate cursor-help">
+                          Photo by {photo.photographer}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Photo by {photo.photographer}</p>
+                        <p className="text-xs text-muted-foreground">Click to add to moodboard</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          </ScrollArea>
 
           {/* Loading indicator */}
           {loading && (

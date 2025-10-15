@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 // Types
 import { MapGig } from '@/app/gigs/types'
@@ -88,7 +89,7 @@ export default function GigsMapSidebar({
       </div>
 
       {/* Gigs List */}
-      <div className="flex-1 overflow-y-auto">
+      <ScrollArea className="flex-1">
         <div className="p-4 space-y-4">
           {gigs.map((gig) => (
             <Card
@@ -160,7 +161,7 @@ export default function GigsMapSidebar({
             </Card>
           ))}
         </div>
-      </div>
+      </ScrollArea>
 
       {/* Footer */}
       <div className="p-4 border-t border-border bg-muted/30">

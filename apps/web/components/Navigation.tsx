@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, Fragment } from 'react'
+import { Transition } from '@headlessui/react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '../lib/auth-context'
@@ -22,7 +23,16 @@ import {
   Search,
   ChevronDown
 } from 'lucide-react'
-import { Menu as HeadlessMenu, Transition } from '@headlessui/react'
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from './ui/navigation-menu'
+import { cn } from '../lib/utils'
 
 interface NavigationProps {
   className?: string
@@ -106,26 +116,34 @@ export default function Navigation({ className = '' }: NavigationProps) {
             </Link>
 
             {/* Desktop navigation */}
-            <div className="hidden md:ml-6 md:flex md:space-x-1">
-              {navigationItems
-                .filter(item => item.show)
-                .map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                        isActive(item.href)
-                          ? 'text-primary bg-primary/10'
-                          : 'text-muted-foreground-700 hover:text-primary hover:bg-primary/10'
-                      }`}
-                    >
-                      <Icon className="h-4 w-4 mr-1.5" />
-                      {item.name}
-                    </Link>
-                  )
-                })}
+            <div className="hidden md:ml-6 md:flex">
+              <NavigationMenu>
+                <NavigationMenuList>
+                  {navigationItems
+                    .filter(item => item.show)
+                    .map((item) => {
+                      const Icon = item.icon
+                      return (
+                        <NavigationMenuItem key={item.name}>
+                          <Link href={item.href} legacyBehavior passHref>
+                            <NavigationMenuLink
+                              className={cn(
+                                navigationMenuTriggerStyle(),
+                                "inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                                isActive(item.href)
+                                  ? 'text-primary bg-primary/10'
+                                  : 'text-muted-foreground-700 hover:text-primary hover:bg-primary/10'
+                              )}
+                            >
+                              <Icon className="h-4 w-4 mr-1.5" />
+                              {item.name}
+                            </NavigationMenuLink>
+                          </Link>
+                        </NavigationMenuItem>
+                      )
+                    })}
+                </NavigationMenuList>
+              </NavigationMenu>
             </div>
           </div>
 
@@ -146,105 +164,62 @@ export default function Navigation({ className = '' }: NavigationProps) {
 
 
                 {/* User menu */}
-                <HeadlessMenu as="div" className="relative ml-3">
-                  <HeadlessMenu.Button className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-primary">
-                    <div className="flex items-center space-x-2 px-2 py-1 rounded-lg hover-bg transition-colors">
-                      <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary-foreground" />
-                      </div>
-                      <ChevronDown className="h-4 w-4 text-muted-foreground-500" />
-                    </div>
-                  </HeadlessMenu.Button>
-
-                  <Transition
-                    as={Fragment}
-                    enter="transition ease-out duration-100"
-                    enterFrom="transform opacity-0 scale-95"
-                    enterTo="transform opacity-100 scale-100"
-                    leave="transition ease-in duration-75"
-                    leaveFrom="transform opacity-100 scale-100"
-                    leaveTo="transform opacity-0 scale-95"
-                  >
-                    <HeadlessMenu.Items className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-lg bg-background py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                      <HeadlessMenu.Item>
-                        {({ active, close }) => (
-                          <Link
-                            href="/profile"
-                            onClick={close}
-                            className={`${
-                              active ? 'bg-muted-100' : ''
-                            } flex items-center px-4 py-2 text-sm text-foreground hover-bg transition-colors cursor-pointer`}
-                          >
-                            <User className="h-4 w-4 mr-2" />
-                            Your Profile
+                <NavigationMenu>
+                  <NavigationMenuList>
+                    <NavigationMenuItem>
+                      <NavigationMenuTrigger className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-primary bg-transparent hover:bg-transparent">
+                        <div className="flex items-center space-x-2 px-2 py-1 rounded-lg hover:bg-accent transition-colors">
+                          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary-foreground" />
+                          </div>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground-500" />
+                        </div>
+                      </NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <div className="w-48 p-1">
+                          <Link href="/profile" legacyBehavior passHref>
+                            <NavigationMenuLink className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer rounded-md">
+                              <User className="h-4 w-4 mr-2" />
+                              Your Profile
+                            </NavigationMenuLink>
                           </Link>
-                        )}
-                      </HeadlessMenu.Item>
-                      <HeadlessMenu.Item>
-                        {({ active, close }) => (
-                          <Link
-                            href="/settings"
-                            onClick={close}
-                            className={`${
-                              active ? 'bg-muted-100' : ''
-                            } flex items-center px-4 py-2 text-sm text-foreground hover-bg transition-colors cursor-pointer`}
-                          >
-                            <Settings className="h-4 w-4 mr-2" />
-                            Settings
+                          <Link href="/settings" legacyBehavior passHref>
+                            <NavigationMenuLink className="flex items-center px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer rounded-md">
+                              <Settings className="h-4 w-4 mr-2" />
+                              Settings
+                            </NavigationMenuLink>
                           </Link>
-                        )}
-                      </HeadlessMenu.Item>
-                      {isAdmin && (
-                        <>
-                          <div className="border-t border-border-100 my-1"></div>
-                          <HeadlessMenu.Item>
-                            {({ active, close }) => (
-                              <Link
-                                href="/admin"
-                                onClick={close}
-                                className={`${
-                                  active ? 'bg-muted-100' : ''
-                                } flex items-center px-4 py-2 text-sm text-primary font-medium hover-bg transition-colors cursor-pointer`}
-                              >
-                                <Settings className="h-4 w-4 mr-2" />
-                                Admin Panel
+                          {isAdmin && (
+                            <>
+                              <div className="border-t border-border my-1"></div>
+                              <Link href="/admin" legacyBehavior passHref>
+                                <NavigationMenuLink className="flex items-center px-4 py-2 text-sm text-primary font-medium hover:bg-accent transition-colors cursor-pointer rounded-md">
+                                  <Settings className="h-4 w-4 mr-2" />
+                                  Admin Panel
+                                </NavigationMenuLink>
                               </Link>
-                            )}
-                          </HeadlessMenu.Item>
-                        </>
-                      )}
-                      <div className="border-t border-border-100 my-1"></div>
-                      <HeadlessMenu.Item>
-                        {({ active, close }) => (
-                          <Link
-                            href="/profile"
-                            onClick={close}
-                            className={`${
-                              active ? 'bg-primary-50' : ''
-                            } flex items-center px-4 py-2 text-sm text-primary-foreground bg-primary-600 hover:bg-primary-700 transition-colors cursor-pointer font-medium`}
-                          >
-                            <User className="h-4 w-4 mr-2" />
-                            Edit Profile
+                            </>
+                          )}
+                          <div className="border-t border-border my-1"></div>
+                          <Link href="/profile" legacyBehavior passHref>
+                            <NavigationMenuLink className="flex items-center px-4 py-2 text-sm text-primary-foreground bg-primary hover:bg-primary/90 transition-colors cursor-pointer font-medium rounded-md">
+                              <User className="h-4 w-4 mr-2" />
+                              Edit Profile
+                            </NavigationMenuLink>
                           </Link>
-                        )}
-                      </HeadlessMenu.Item>
-                      <div className="border-t border-border-100 my-1"></div>
-                      <HeadlessMenu.Item>
-                        {({ active }) => (
+                          <div className="border-t border-border my-1"></div>
                           <button
                             onClick={handleSignOut}
-                            className={`${
-                              active ? 'bg-muted-100' : ''
-                            } flex items-center w-full px-4 py-2 text-sm text-foreground hover-bg transition-colors cursor-pointer text-left`}
+                            className="flex items-center w-full px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer text-left rounded-md"
                           >
                             <LogOut className="h-4 w-4 mr-2" />
                             Sign out
                           </button>
-                        )}
-                      </HeadlessMenu.Item>
-                    </HeadlessMenu.Items>
-                  </Transition>
-                </HeadlessMenu>
+                        </div>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  </NavigationMenuList>
+                </NavigationMenu>
               </>
             ) : (
               <div className="flex items-center space-x-3">
