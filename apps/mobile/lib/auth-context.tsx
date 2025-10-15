@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { data: profile, error } = await supabase
         .from('users_profile')
-        .select('role_flags')
+        .select('account_type')
         .eq('user_id', userId)
         .single()
 
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return
       }
 
-      const roleFlags = profile?.role_flags || []
+      const roleFlags = profile?.account_type || []
       setUserRole({
         isContributor: roleFlags.includes('CONTRIBUTOR') || roleFlags.includes('BOTH'),
         isTalent: roleFlags.includes('TALENT') || roleFlags.includes('BOTH'),

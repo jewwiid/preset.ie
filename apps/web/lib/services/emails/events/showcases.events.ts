@@ -1,12 +1,14 @@
 import { EventHandler } from '../types/event';
-import { emailService } from '../email-service';
-import { 
+import { EmailService } from '../../email-service';
+import {
   getShowcaseSubmittedForApprovalTemplate,
   getShowcaseApprovedTemplate,
   getShowcaseChangesRequestedTemplate
-} from './templates/showcases.templates';
+} from '../templates/showcases.templates';
 
 export class ShowcaseEventHandlers {
+  private emailService = new EmailService();
+
   async handleShowcaseSubmittedForApproval(event: any): Promise<void> {
     try {
       const { showcaseId, gigId, creatorId, talentId } = event.payload;
@@ -33,7 +35,7 @@ export class ShowcaseEventHandlers {
         platformUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://preset.ie'
       });
 
-      await emailService.sendEmail(template);
+      await this.emailService.sendEmail(template);
       
       console.log(`Showcase approval notification sent to ${talent.email}`);
     } catch (error) {
@@ -63,11 +65,13 @@ export class ShowcaseEventHandlers {
         creatorEmail: creator.email,
         gigTitle: gig.title,
         talentName: talent.display_name,
+        totalTalents: 1, // TODO: Get actual count from event
+        approvedTalents: 1, // TODO: Get actual count from event
         showcaseId,
         platformUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://preset.ie'
       });
 
-      await emailService.sendEmail(template);
+      await this.emailService.sendEmail(template);
       
       console.log(`Showcase approved notification sent to ${creator.email}`);
     } catch (error) {
@@ -98,11 +102,13 @@ export class ShowcaseEventHandlers {
         gigTitle: gig.title,
         talentName: talent.display_name,
         feedback: note || 'Please review the uploaded photos and make any necessary changes.',
+        totalTalents: 1, // TODO: Get actual count from event
+        changeRequests: 1, // TODO: Get actual count from event
         showcaseId,
         platformUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://preset.ie'
       });
 
-      await emailService.sendEmail(template);
+      await this.emailService.sendEmail(template);
       
       console.log(`Showcase changes requested notification sent to ${creator.email}`);
     } catch (error) {

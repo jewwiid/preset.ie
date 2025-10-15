@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CheckSquare, Clock, Upload, Eye } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 
 interface PendingShowcase {
@@ -20,12 +20,15 @@ interface PendingShowcase {
   creator_handle: string;
   creator_avatar_url?: string;
   approval_status: string;
+  total_talents?: number;
+  approved_talents?: number;
+  change_requests?: number;
   created_at: string;
   updated_at: string;
 }
 
 export function PendingShowcaseApprovals() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const router = useRouter();
   const [pendingShowcases, setPendingShowcases] = useState<PendingShowcase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,7 +43,7 @@ export function PendingShowcaseApprovals() {
     try {
       const response = await fetch('/api/showcases/pending-approvals', {
         headers: {
-          'Authorization': `Bearer ${user?.access_token}`
+          'Authorization': `Bearer ${session?.access_token}`
         }
       });
 
@@ -62,6 +65,13 @@ export function PendingShowcaseApprovals() {
           <Badge className="bg-yellow-100 text-yellow-800">
             <Clock className="w-3 h-3 mr-1" />
             Pending Your Approval
+          </Badge>
+        );
+      case 'blocked_by_changes':
+        return (
+          <Badge className="bg-red-100 text-red-800">
+            <CheckSquare className="w-3 h-3 mr-1" />
+            Blocked by Changes
           </Badge>
         );
       case 'changes_requested':
@@ -93,6 +103,17 @@ export function PendingShowcaseApprovals() {
           >
             <CheckSquare className="w-4 h-4 mr-2" />
             Review & Approve
+          </Button>
+        );
+      case 'blocked_by_changes':
+        return (
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => router.push(`/gigs/${showcase.gig_id}`)}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Address Feedback
           </Button>
         );
       case 'changes_requested':
@@ -224,6 +245,31 @@ export function PendingShowcaseApprovals() {
                   <p className="text-xs text-muted-foreground">
                     by @{showcase.creator_handle}
                   </p>
+                  
+                  {/* Multi-talent approval progress */}
+                  {showcase.total_talents && showcase.total_talents > 1 && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Approval Progress:</span>
+                        <span className="font-semibold">
+                          {showcase.approved_talents || 0}/{showcase.total_talents}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                        <div 
+                          className="bg-green-600 h-1 rounded-full transition-all duration-300"
+                          style={{ 
+                            width: `${((showcase.approved_talents || 0) / showcase.total_talents) * 100}%` 
+                          }}
+                        ></div>
+                      </div>
+                      {showcase.change_requests && showcase.change_requests > 0 && (
+                        <p className="text-xs text-orange-600 mt-1">
+                          {showcase.change_requests} change request{showcase.change_requests !== 1 ? 's' : ''}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               

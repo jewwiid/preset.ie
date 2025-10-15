@@ -110,7 +110,7 @@ export function DesktopNav({
             <MenubarMenu>
               <MenubarTrigger className={`
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
-                ${(isActive('/dashboard') || isActive('/profile') || isActive('/matchmaking'))
+                ${(isActive('/dashboard') || isActive('/profile') || isActive('/matchmaking') || isActive('/dashboard/media'))
                   ? 'text-primary bg-primary/10'
                   : 'text-primary hover:bg-primary/5'
                 }
@@ -142,6 +142,12 @@ export function DesktopNav({
                   <Link href="/applications" className="flex items-center nav-submenu-item">
                     <Briefcase className="mr-2 h-4 w-4" />
                     My Applications
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/dashboard/media" className="flex items-center nav-submenu-item">
+                    <Image className="mr-2 h-4 w-4" />
+                    Media Management
                   </Link>
                 </MenubarItem>
               </MenubarContent>
@@ -298,12 +304,6 @@ export function DesktopNav({
                   <Link href="/playground" className="flex items-center nav-submenu-item">
                     <Camera className="mr-2 h-4 w-4" />
                     Media (Playground)
-                  </Link>
-                </MenubarItem>
-                <MenubarItem asChild>
-                  <Link href="/dashboard/media" className="flex items-center nav-submenu-item">
-                    <Image className="mr-2 h-4 w-4" />
-                    Media Management
                   </Link>
                 </MenubarItem>
                 <MenubarSeparator />

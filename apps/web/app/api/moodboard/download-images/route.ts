@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { FeaturedImageService } from '../../../../../packages/adapters/src/services/featured-image.service'
+import { FeaturedImageService } from '@preset/adapters'
 
 export async function POST(request: NextRequest) {
   try {

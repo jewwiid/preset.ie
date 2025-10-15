@@ -166,7 +166,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
 
   // Render filtered media based on showcase type
   const renderFilteredMedia = () => {
-    const filtered = media.getFilteredMedia(form.type);
+    const filtered = media.getFilteredMedia(form.type === 'gig' ? 'individual_image' : form.type);
     
     // Show treatments section for treatment type
     if (form.type === 'treatment' && filtered.treatments && filtered.treatments.length > 0) {
@@ -837,7 +837,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 <div className="h-full overflow-y-auto">
                   {/* Media Stats */}
                   {(() => {
-                    const filtered = media.getFilteredMedia(form.type);
+                    const filtered = media.getFilteredMedia(form.type === 'gig' ? 'individual_image' : form.type);
                     const totalMedia = filtered.media.length + filtered.playground.length;
                     return totalMedia > 0 && (
                       <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border/50">

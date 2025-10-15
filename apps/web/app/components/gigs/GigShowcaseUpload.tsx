@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Upload, X, Check } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Upload, X, Check, Image as ImageIcon } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/useToast';
+import { useAuth } from '../../../lib/auth-context';
+import { useToast } from '../../../components/ui/toast';
 
 interface GigShowcaseUploadProps {
   gigId: string;
@@ -31,8 +32,8 @@ export function GigShowcaseUpload({
   onSuccess, 
   onCancel 
 }: GigShowcaseUploadProps) {
-  const { user } = useAuth();
-  const { showToast } = useToast();
+  const { user, session } = useAuth();
+  const { showSuccess, showError } = useToast();
   
   const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia[]>([]);
   const [title, setTitle] = useState('');
@@ -44,7 +45,7 @@ export function GigShowcaseUpload({
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (uploadedMedia.length + acceptedFiles.length > 6) {
-      showToast('Maximum 6 images allowed', 'error');
+      showError('Maximum 6 images allowed');
       return;
     }
 
@@ -68,7 +69,7 @@ export function GigShowcaseUpload({
           method: 'POST',
           body: formData,
           headers: {
-            'Authorization': `Bearer ${user?.access_token}`
+            'Authorization': `Bearer ${session?.access_token}`
           }
         });
         
@@ -87,15 +88,15 @@ export function GigShowcaseUpload({
       }
       
       setUploadedMedia(prev => [...prev, ...newMedia]);
-      showToast(`Uploaded ${acceptedFiles.length} image(s)`, 'success');
+      showSuccess(`Uploaded ${acceptedFiles.length} image(s)`);
       
     } catch (error) {
       console.error('Upload error:', error);
-      showToast('Failed to upload images', 'error');
+      showError('Failed to upload images');
     } finally {
       setIsUploading(false);
     }
-  }, [uploadedMedia.length, gigId, user?.access_token, showToast]);
+  }, [uploadedMedia.length, gigId, session?.access_token, showSuccess, showError]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -123,12 +124,12 @@ export function GigShowcaseUpload({
 
   const handleSubmit = async () => {
     if (uploadedMedia.length < 3) {
-      showToast('Please upload at least 3 images', 'error');
+      showError('Please upload at least 3 images');
       return;
     }
 
     if (!title.trim()) {
-      showToast('Please enter a title', 'error');
+      showError('Please enter a title');
       return;
     }
 
@@ -139,7 +140,7 @@ export function GigShowcaseUpload({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.access_token}`
+          'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
           title: title.trim(),
@@ -156,153 +157,155 @@ export function GigShowcaseUpload({
         throw new Error(result.error || 'Failed to create showcase');
       }
 
-      showToast('Showcase created successfully! Submit for approval when ready.', 'success');
+      showSuccess('Showcase created successfully! Submit for approval when ready.');
       onSuccess?.(result.showcase.id);
       
     } catch (error) {
       console.error('Create showcase error:', error);
-      showToast('Failed to create showcase', 'error');
+      showError('Failed to create showcase');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <YStack space="$4" padding="$4" maxWidth={800} margin="0 auto">
-      <Text fontSize="$6" fontWeight="bold">
-        Create Showcase for "{gigTitle}"
-      </Text>
-      
-      <Text fontSize="$4" color="$gray10">
-        Upload 3-6 custom photos from your gig. These will be tagged as custom images and require approval from the talent before being published.
-      </Text>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold mb-2">
+          Create Showcase for "{gigTitle}"
+        </h2>
+        <p className="text-muted-foreground">
+          Upload 3-6 custom photos from your gig. These will be tagged as custom images and require approval from the talent before being published.
+        </p>
+      </div>
 
       {/* Upload Area */}
-      <Card padding="$4" borderWidth={2} borderStyle="dashed" borderColor="$gray8">
-        <div {...getRootProps()} style={{ cursor: 'pointer' }}>
-          <input {...getInputProps()} />
-          <YStack alignItems="center" space="$3">
-            <Upload size={48} color="$gray10" />
-            <Text fontSize="$4" color="$gray10">
-              {isDragActive 
-                ? 'Drop images here...' 
-                : 'Drag & drop images here, or click to select'
-              }
-            </Text>
-            <Text fontSize="$3" color="$gray9">
-              {uploadedMedia.length}/6 images uploaded
-            </Text>
-          </YStack>
-        </div>
+      <Card className="border-2 border-dashed border-muted-foreground/25">
+        <CardContent className="p-8">
+          <div {...getRootProps()} className="cursor-pointer">
+            <input {...getInputProps()} />
+            <div className="flex flex-col items-center space-y-4">
+              <Upload className="w-12 h-12 text-muted-foreground" />
+              <div className="text-center">
+                <p className="text-lg text-muted-foreground">
+                  {isDragActive 
+                    ? 'Drop images here...' 
+                    : 'Drag & drop images here, or click to select'
+                  }
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {uploadedMedia.length}/6 images uploaded
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Uploaded Images Preview */}
       {uploadedMedia.length > 0 && (
-        <YStack space="$3">
-          <Text fontSize="$4" fontWeight="600">Uploaded Images:</Text>
-          <XStack flexWrap="wrap" gap="$2">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Uploaded Images:</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {uploadedMedia.map((media) => (
-              <Card key={media.id} padding="$2" position="relative">
-                <Image
-                  src={media.preview}
-                  width={100}
-                  height={100}
-                  borderRadius="$2"
-                  objectFit="cover"
-                />
+              <div key={media.id} className="relative group">
+                <div className="aspect-square rounded-lg overflow-hidden border">
+                  <img
+                    src={media.preview}
+                    alt="Uploaded image"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <Button
-                  position="absolute"
-                  top={-8}
-                  right={-8}
-                  size="$2"
-                  circular
-                  backgroundColor="$red9"
-                  onPress={() => removeMedia(media.id)}
+                  size="sm"
+                  variant="destructive"
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => removeMedia(media.id)}
                 >
-                  <X size={12} color="white" />
+                  <X className="w-3 h-3" />
                 </Button>
-              </Card>
+              </div>
             ))}
-          </XStack>
-        </YStack>
+          </div>
+        </div>
       )}
 
       {/* Title Input */}
-      <YStack space="$2">
-        <Text fontSize="$4" fontWeight="600">Title *</Text>
+      <div className="space-y-2">
+        <Label htmlFor="title">Title *</Label>
         <Input
+          id="title"
           placeholder="Enter showcase title..."
           value={title}
-          onChangeText={setTitle}
+          onChange={(e) => setTitle(e.target.value)}
         />
-      </YStack>
+      </div>
 
       {/* Description Input */}
-      <YStack space="$2">
-        <Text fontSize="$4" fontWeight="600">Description</Text>
-        <TextArea
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
           placeholder="Describe your showcase..."
           value={description}
-          onChangeText={setDescription}
-          minHeight={100}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={4}
         />
-      </YStack>
+      </div>
 
       {/* Tags Input */}
-      <YStack space="$2">
-        <Text fontSize="$4" fontWeight="600">Tags</Text>
-        <XStack space="$2">
+      <div className="space-y-2">
+        <Label htmlFor="tags">Tags</Label>
+        <div className="flex gap-2">
           <Input
+            id="tags"
             placeholder="Add a tag..."
             value={tagInput}
-            onChangeText={setTagInput}
+            onChange={(e) => setTagInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && addTag()}
-            flex={1}
+            className="flex-1"
           />
-          <Button onPress={addTag} disabled={!tagInput.trim()}>
+          <Button onClick={addTag} disabled={!tagInput.trim()}>
             Add
           </Button>
-        </XStack>
+        </div>
         
         {tags.length > 0 && (
-          <XStack flexWrap="wrap" gap="$2">
+          <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
-              <Card key={tag} padding="$2" backgroundColor="$blue3">
-                <XStack alignItems="center" space="$2">
-                  <Text fontSize="$3">{tag}</Text>
-                  <Button
-                    size="$1"
-                    circular
-                    backgroundColor="$red8"
-                    onPress={() => removeTag(tag)}
-                  >
-                    <X size={10} color="white" />
-                  </Button>
-                </XStack>
-              </Card>
+              <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                {tag}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => removeTag(tag)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </Badge>
             ))}
-          </XStack>
+          </div>
         )}
-      </YStack>
+      </div>
 
       {/* Action Buttons */}
-      <XStack space="$3" justifyContent="flex-end">
-        <Button variant="outlined" onPress={onCancel}>
+      <div className="flex justify-end gap-3">
+        <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
         <Button
-          onPress={handleSubmit}
+          onClick={handleSubmit}
           disabled={uploadedMedia.length < 3 || !title.trim() || isSubmitting}
-          opacity={uploadedMedia.length < 3 || !title.trim() ? 0.5 : 1}
         >
           {isSubmitting ? 'Creating...' : 'Create Showcase'}
         </Button>
-      </XStack>
+      </div>
 
       {/* Info Text */}
-      <Text fontSize="$3" color="$gray9" textAlign="center">
+      <p className="text-sm text-muted-foreground text-center">
         After creating, you can submit the showcase for talent approval. The talent will review all images before the showcase becomes public.
-      </Text>
-    </YStack>
+      </p>
+    </div>
   );
 }

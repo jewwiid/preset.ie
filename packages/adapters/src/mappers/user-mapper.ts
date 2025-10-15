@@ -16,7 +16,7 @@ interface UserProfileRow {
   avatar_url: string | null;
   bio: string | null;
   city: string | null;
-  role_flags: string[];
+  account_type: string[];
   style_tags: string[];
   subscription_tier: string;
   subscription_status: string;
@@ -33,7 +33,7 @@ export class UserMapper {
     
     // Map role flags to UserRoles
     const roles = new UserRoles(
-      row.role_flags.map(role => role as UserRole)
+      row.account_type.map(role => role as UserRole)
     );
 
     // Map subscription
@@ -69,7 +69,7 @@ export class UserMapper {
       avatar_url: user.avatarUrl,
       bio: user.bio,
       city: user.city,
-      role_flags: user.roles.toArray(),
+      account_type: user.roles.toArray(),
       style_tags: user.styleTags,
       subscription_tier: user.subscription.tier,
       subscription_status: user.subscription.status,

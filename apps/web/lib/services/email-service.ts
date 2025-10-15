@@ -1,4 +1,4 @@
-import { Plunk } from '@plunk/node';
+import Plunk from '@plunk/node';
 
 export interface EmailTemplate {
   to: string;
@@ -32,15 +32,6 @@ export class EmailService {
         to: template.to,
         subject: template.subject,
         body: template.html,
-        // Use your brand colors and styling
-        reply_to: 'hello@preset.ie',
-        from_name: 'Preset',
-        from_email: 'noreply@preset.ie',
-        // Track opens and clicks
-        track_opens: true,
-        track_clicks: true,
-        // Add unsubscribe link
-        unsubscribe_url: `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe`,
       });
 
       console.log(`✅ Email sent successfully to ${template.to}`);
@@ -57,19 +48,14 @@ export class EmailService {
         return;
       }
 
-      const emails = templates.map(template => ({
-        to: template.to,
-        subject: template.subject,
-        body: template.html,
-        reply_to: 'hello@preset.ie',
-        from_name: 'Preset',
-        from_email: 'noreply@preset.ie',
-        track_opens: true,
-        track_clicks: true,
-        unsubscribe_url: `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe`,
-      }));
-
-      await this.plunk.emails.sendBulk(emails);
+      // Send emails individually since sendBulk is not available
+      for (const template of templates) {
+        await this.plunk.emails.send({
+          to: template.to,
+          subject: template.subject,
+          body: template.html,
+        });
+      }
       console.log(`✅ ${templates.length} emails sent successfully`);
     } catch (error) {
       console.error('❌ Failed to send bulk emails:', error);

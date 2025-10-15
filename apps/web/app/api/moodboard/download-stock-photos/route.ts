@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { StockPhotoDownloaderService } from '../../../../../packages/adapters/src/services/stock-photo-downloader.service'
+import { StockPhotoDownloaderService } from '@preset/adapters'
 import { StockPhoto } from '../../../components/moodboard/lib/moodboardTypes'
 
 export async function POST(request: NextRequest) {

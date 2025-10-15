@@ -324,6 +324,20 @@ export function MobileNav({
                       <Briefcase className="w-5 h-5 inline mr-3" />
                       My Applications
                     </Link>
+                    <Link
+                      href="/dashboard/media"
+                      className={`
+                        block px-3 py-2 text-base font-medium rounded-md preset-branding
+                        ${isActive('/dashboard/media')
+                          ? 'text-primary bg-primary/10'
+                          : 'nav-item'
+                        }
+                      `}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Image className="w-5 h-5 inline mr-3" />
+                      Media Management
+                    </Link>
                   </>
                 )}
 

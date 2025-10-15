@@ -5083,7 +5083,7 @@ export type Database = {
           phone_number: string | null
           piercings: boolean | null
           portfolio_url: string | null
-          role_flags: Database["public"]["Enums"]["user_role"][] | null
+          account_type: Database["public"]["Enums"]["user_role"][] | null
           shoe_size: string | null
           specializations: string[] | null
           studio_address: string | null
@@ -5144,7 +5144,7 @@ export type Database = {
           phone_number?: string | null
           piercings?: boolean | null
           portfolio_url?: string | null
-          role_flags?: Database["public"]["Enums"]["user_role"][] | null
+          account_type?: Database["public"]["Enums"]["user_role"][] | null
           shoe_size?: string | null
           specializations?: string[] | null
           studio_address?: string | null
@@ -5205,7 +5205,7 @@ export type Database = {
           phone_number?: string | null
           piercings?: boolean | null
           portfolio_url?: string | null
-          role_flags?: Database["public"]["Enums"]["user_role"][] | null
+          account_type?: Database["public"]["Enums"]["user_role"][] | null
           shoe_size?: string | null
           specializations?: string[] | null
           studio_address?: string | null

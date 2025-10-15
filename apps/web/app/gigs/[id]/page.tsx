@@ -18,7 +18,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { MapPin, Calendar, Clock, Users, Eye, Edit, ArrowLeft, Palette, Camera, Star, Sparkles, CheckCircle, Upload, CheckSquare } from 'lucide-react'
 import LocationMap from '../../../components/LocationMap'
 // import { GigShowcaseUpload } from '../../components/gigs/GigShowcaseUpload'
-import { ShowcaseApprovalReview } from '../../components/showcases/ShowcaseApprovalReview'
+// import { ShowcaseApprovalReview } from '../../components/showcases/ShowcaseApprovalReview'
 
 interface GigDetails {
   id: string
@@ -50,7 +50,7 @@ interface GigDetails {
 
 export default function GigDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const [gig, setGig] = useState<GigDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -970,6 +970,12 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                           Pending Approval
                         </Badge>
                       )}
+                      {showcase.approval_status === 'blocked_by_changes' && (
+                        <Badge className="bg-red-100 text-red-800">
+                          <CheckSquare className="w-3 h-3 mr-1" />
+                          Blocked by Changes
+                        </Badge>
+                      )}
                       {showcase.approval_status === 'changes_requested' && (
                         <Badge className="bg-orange-100 text-orange-800">
                           <CheckSquare className="w-3 h-3 mr-1" />
@@ -983,6 +989,34 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                         </Badge>
                       )}
                     </div>
+
+                    {/* Multi-Talent Approval Progress */}
+                    {showcase.total_talents && showcase.total_talents > 1 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Approval Progress:</span>
+                          <span className="font-semibold">
+                            {showcase.approved_talents || 0}/{showcase.total_talents} talents approved
+                          </span>
+                        </div>
+                        {showcase.change_requests && showcase.change_requests > 0 && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-orange-600">Change requests:</span>
+                            <span className="font-semibold text-orange-600">
+                              {showcase.change_requests}
+                            </span>
+                          </div>
+                        )}
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                            style={{ 
+                              width: `${((showcase.approved_talents || 0) / showcase.total_talents) * 100}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Showcase Info */}
                     <div>
@@ -1011,7 +1045,7 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                               const response = await fetch(`/api/showcases/${showcase.id}/submit`, {
                                 method: 'POST',
                                 headers: {
-                                  'Authorization': `Bearer ${user?.access_token}`
+                                  'Authorization': `Bearer ${session?.access_token}`
                                 }
                               });
                               if (response.ok) {
@@ -1035,6 +1069,17 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                         >
                           <Upload className="w-4 h-4 mr-2" />
                           Make Changes
+                        </Button>
+                      )}
+
+                      {isOwner && showcase.approval_status === 'blocked_by_changes' && (
+                        <Button
+                          onClick={() => setShowCreateShowcase(true)}
+                          size="sm"
+                          variant="destructive"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Address Feedback & Resubmit
                         </Button>
                       )}
 
@@ -1218,8 +1263,8 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
         </div>
       )} */}
 
-      {/* Showcase Approval Review Modal */}
-      {showApprovalReview && showcase && (
+      {/* Showcase Approval Review Modal - Temporarily disabled */}
+      {/* {showApprovalReview && showcase && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-background border border-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <ShowcaseApprovalReview
@@ -1235,7 +1280,7 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
             />
           </div>
         </div>
-      )}
+      )} */}
     </div>
   )
 }

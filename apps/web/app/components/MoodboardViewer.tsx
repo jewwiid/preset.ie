@@ -7,7 +7,7 @@ import DraggableMasonryGrid from './DraggableMasonryGrid'
 interface MoodboardItem {
   id: string
   type: 'image' | 'video' | 'pexels'
-  source: 'upload' | 'pexels' | 'url' | 'ai-enhanced'
+  source: 'upload' | 'pexels' | 'unsplash' | 'pixabay' | 'url' | 'ai-enhanced'
   url: string
   thumbnail_url?: string
   enhanced_url?: string  // URL of enhanced version if exists

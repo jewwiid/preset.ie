@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -68,12 +69,17 @@ export interface SavedMediaGalleryRef {
 
 const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProps>(
   ({ onMediaSelect, onReusePrompt, onReuseGenerationSettings, onSaveAsPreset, onMediaUpdated, onAddMediaToPreview, onExpandMedia, selectedMediaUrl, currentTab = 'generate', className = '' }, ref) => {
+  const router = useRouter()
   const { user, session } = useAuth()
   const { showFeedback } = useFeedback()
   const [savedMedia, setSavedMedia] = useState<SavedMedia[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingMedia, setDeletingMedia] = useState<string | null>(null)
   const [promotingMedia, setPromotingMedia] = useState<string | null>(null)
+
+  const handleViewMediaManagement = () => {
+    router.push('/dashboard/media')
+  }
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'plus' | 'pro'>('free')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [mediaToDelete, setMediaToDelete] = useState<string | null>(null)
@@ -325,10 +331,9 @@ const SavedMediaGallery = forwardRef<SavedMediaGalleryRef, SavedMediaGalleryProp
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchSavedMedia}
-            disabled={loading}
+            onClick={handleViewMediaManagement}
           >
-            {loading ? 'Loading...' : 'Refresh'}
+            View
           </Button>
         </div>
       </CardHeader>

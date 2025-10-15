@@ -19,15 +19,19 @@ export * from './clients/supabase.client';
 // export * from './repositories/showcase.repository';
 // export * from './repositories/media.repository';
 
-// Service adapters (to be implemented)
-// export * from './services/auth.service';
-// export * from './services/storage.service';
-// export * from './services/email.service';
-// export * from './services/subscription.service';
+// Service adapters
+export * from './services/featured-image.service';
+export * from './services/stock-photo-downloader.service';
+export * from './services/pexels.service';
+export * from './services/unsplash.service';
+export * from './services/pixabay.service';
+// export * from './services/moodboard.service';
+// export * from './services/enhanced-moodboard.service';
+export * from './services/nanobana.service';
 
 // Configuration and types
-// export * from './types/database.types';
-// export * from './types/supabase.types';
+export * from './types/database.types';
+export * from './types/stock-photo.types';
 
 /**
  * Current Status:

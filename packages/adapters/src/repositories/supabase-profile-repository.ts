@@ -157,7 +157,7 @@ export class SupabaseProfileRepository implements ProfileRepository {
       bio: profile.getBio(),
       city: profile.getCity(),
       style_tags: profile.getStyleTags(),
-      role_flags: [], // Default value
+      account_type: [], // Default value
       created_at: profile.getCreatedAt().toISOString(),
       updated_at: profile.getUpdatedAt().toISOString()
     };

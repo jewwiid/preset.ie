@@ -92,8 +92,8 @@ export default function DashboardScreen() {
 
   const loadUserData = async (userId: string, profileData: UserProfile) => {
     try {
-      const isContributor = profileData.role_flags?.includes('CONTRIBUTOR') || profileData.role_flags?.includes('BOTH')
-      const isTalent = profileData.role_flags?.includes('TALENT') || profileData.role_flags?.includes('BOTH')
+      const isContributor = profileData.account_type?.includes('CONTRIBUTOR') || profileData.account_type?.includes('BOTH')
+      const isTalent = profileData.account_type?.includes('TALENT') || profileData.account_type?.includes('BOTH')
 
       // Load recent gigs
       let gigsQuery = supabase
@@ -212,9 +212,9 @@ export default function DashboardScreen() {
     )
   }
 
-  const isContributor = profile.role_flags?.includes('CONTRIBUTOR') || profile.role_flags?.includes('BOTH')
-  const isTalent = profile.role_flags?.includes('TALENT') || profile.role_flags?.includes('BOTH')
-  const isAdmin = profile.role_flags?.includes('ADMIN')
+  const isContributor = profile.account_type?.includes('CONTRIBUTOR') || profile.account_type?.includes('BOTH')
+  const isTalent = profile.account_type?.includes('TALENT') || profile.account_type?.includes('BOTH')
+  const isAdmin = profile.account_type?.includes('ADMIN')
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>

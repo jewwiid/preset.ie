@@ -19,7 +19,7 @@ export interface UserProfile {
   avatar_url?: string
   bio?: string
   city?: string
-  role_flags: UserRole[]
+  account_type: UserRole[]
   style_tags: string[]
   subscription_tier: SubscriptionTier
   subscription_status: SubscriptionStatus

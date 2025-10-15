@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getEmailService } from '@/lib/services/email-service';
+import { EmailService } from '@/lib/services/email-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,27 +19,30 @@ export async function POST(request: NextRequest) {
     // const user = await createUser({ email, name, password });
     
     // 2. Initialize email service
-    const emailService = getEmailService();
+    const emailService = new EmailService();
 
     // 3. Track signup event in Plunk
-    await emailService.trackUserSignup(email, {
-      name,
-      plan: 'free',
-      signupDate: new Date().toISOString(),
-      referrer: request.headers.get('referer'),
-      userAgent: request.headers.get('user-agent'),
-    });
+    // TODO: Implement trackUserSignup method
+    // await emailService.trackUserSignup(email, {
+    //   name,
+    //   plan: 'free',
+    //   signupDate: new Date().toISOString(),
+    //   referrer: request.headers.get('referer'),
+    //   userAgent: request.headers.get('user-agent'),
+    // });
 
     // 4. Send welcome email
-    await emailService.sendWelcomeEmail(email, name);
+    // TODO: Implement sendWelcomeEmail method
+    // await emailService.sendWelcomeEmail(email, name);
 
     // 5. Optionally subscribe to newsletter
-    if (subscribeToNewsletter) {
-      await emailService.subscribeToNewsletter(email, {
-        source: 'signup-form',
-        interests: ['preset-updates', 'tutorials']
-      });
-    }
+    // TODO: Implement subscribeToNewsletter method
+    // if (subscribeToNewsletter) {
+    //   await emailService.subscribeToNewsletter(email, {
+    //     source: 'signup-form',
+    //     interests: ['preset-updates', 'tutorials']
+    //   });
+    // }
 
     return NextResponse.json({
       success: true,

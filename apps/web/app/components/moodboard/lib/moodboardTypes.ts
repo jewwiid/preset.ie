@@ -34,6 +34,9 @@ export interface MoodboardItem {
   enhancement_status?: EnhancementStatus
   cost?: number
   showing_original?: boolean
+  downloadStatus?: 'pending' | 'completed' | 'failed'
+  downloadError?: string
+  permanentlyStored?: boolean
 }
 
 /**

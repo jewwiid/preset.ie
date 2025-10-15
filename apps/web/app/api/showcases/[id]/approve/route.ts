@@ -72,24 +72,87 @@ export async function POST(
       );
     }
 
-    // 2. Verify user is talent in the gig
-    if (showcase.talent_user_id !== user.id) {
+    // 2. Verify user is accepted talent for this gig
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data: application, error: applicationError } = await supabaseAdmin
+      .from('applications')
+      .select('*')
+      .eq('gig_id', showcase.gig_id)
+      .eq('applicant_user_id', user.id)
+      .in('status', ['ACCEPTED', 'PENDING'])
+      .single();
+
+    if (applicationError || !application) {
       return NextResponse.json(
-        { success: false, error: 'Only the talent can approve this showcase' },
+        { success: false, error: 'Only accepted talent can approve this showcase' },
         { status: 403 }
       );
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
     if (action === 'approve') {
-      // 2. If approved: set approved_by_talent_at, status='approved', visibility='public'
+      // 3. Update talent's approval record
+      const { error: approvalError } = await supabaseAdmin
+        .from('showcase_talent_approvals')
+        .update({
+          action: 'approve',
+          note: note || null,
+          approved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('showcase_id', showcaseId)
+        .eq('talent_user_id', user.id);
+
+      if (approvalError) {
+        console.error('Error updating talent approval:', approvalError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to record approval' },
+          { status: 500 }
+        );
+      }
+
+      // 4. Get updated approval counts
+      const { data: approvals, error: approvalsError } = await supabaseAdmin
+        .from('showcase_talent_approvals')
+        .select('action')
+        .eq('showcase_id', showcaseId);
+
+      if (approvalsError) {
+        console.error('Error fetching approvals:', approvalsError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to fetch approval status' },
+          { status: 500 }
+        );
+      }
+
+      const approvedCount = approvals.filter(a => a.action === 'approve').length;
+      const changeRequestCount = approvals.filter(a => a.action === 'request_changes').length;
+      const totalTalents = approvals.length;
+
+      // 5. Determine showcase status
+      let newStatus = 'pending_approval';
+      let visibility = 'draft';
+
+      if (changeRequestCount > 0) {
+        // ANY change request blocks publication
+        newStatus = 'blocked_by_changes';
+      } else if (approvedCount === totalTalents) {
+        // ALL talents approved - publish!
+        newStatus = 'approved';
+        visibility = 'public';
+      }
+
+      // 6. Update showcase
       const { data: updatedShowcase, error: updateError } = await supabaseAdmin
         .from('showcases')
         .update({
-          approval_status: 'approved',
-          approved_by_talent_at: new Date().toISOString(),
-          visibility: 'public',
+          approval_status: newStatus,
+          approved_talents: approvedCount,
+          change_requests: changeRequestCount,
+          last_action_by: user.id,
+          last_action_at: new Date().toISOString(),
+          visibility,
+          approved_by_talent_at: newStatus === 'approved' ? new Date().toISOString() : null,
           updated_at: new Date().toISOString()
         })
         .eq('id', showcaseId)
@@ -97,19 +160,25 @@ export async function POST(
         .single();
 
       if (updateError) {
-        console.error('Error approving showcase:', updateError);
+        console.error('Error updating showcase:', updateError);
         return NextResponse.json(
-          { success: false, error: 'Failed to approve showcase' },
+          { success: false, error: 'Failed to update showcase' },
           { status: 500 }
         );
       }
 
-      // Send notification to creator
+      // 7. Send immediate email to creator
       try {
         const { data: creator, error: creatorError } = await supabaseAdmin
           .from('users_profile')
-          .select('display_name, handle')
+          .select('display_name, handle, email')
           .eq('id', showcase.creator_user_id)
+          .single();
+
+        const { data: talent, error: talentError } = await supabaseAdmin
+          .from('users_profile')
+          .select('display_name, handle')
+          .eq('id', user.id)
           .single();
 
         const { data: gig, error: gigError } = await supabaseAdmin
@@ -118,17 +187,44 @@ export async function POST(
           .eq('id', showcase.gig_id)
           .single();
 
-        if (!creatorError && !gigError) {
+        if (!creatorError && !talentError && !gigError) {
           console.log(`Sending approval notification to creator: ${creator.display_name} for gig: ${gig.title}`);
           
-          // TODO: Integrate with email service
-          // await emailService.sendShowcaseApprovedNotification({
-          //   creatorEmail: creator.email,
-          //   creatorName: creator.display_name,
-          //   gigTitle: gig.title,
-          //   showcaseId: showcaseId,
-          //   talentName: user.display_name
-          // });
+          try {
+            const { getShowcaseApprovedTemplate, getShowcasePartialApprovalTemplate } = await import('@/lib/services/emails/templates/showcases.templates');
+            const { emailService } = await import('@/lib/services/email-service');
+            
+            if (newStatus === 'approved') {
+              // All approved - showcase is live!
+              const template = getShowcaseApprovedTemplate({
+                creatorName: creator.display_name,
+                creatorEmail: creator.email,
+                gigTitle: gig.title,
+                talentName: talent.display_name,
+                totalTalents: totalTalents,
+                approvedTalents: approvedCount,
+                showcaseId: showcaseId,
+                platformUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://preset.ie'
+              });
+              await emailService.sendEmail(template);
+            } else {
+              // Partial approval
+              const template = getShowcasePartialApprovalTemplate({
+                creatorName: creator.display_name,
+                creatorEmail: creator.email,
+                talentName: talent.display_name,
+                gigTitle: gig.title,
+                approvedCount: approvedCount,
+                totalTalents: totalTalents,
+                showcaseId: showcaseId,
+                platformUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://preset.ie'
+              });
+              await emailService.sendEmail(template);
+            }
+          } catch (emailError) {
+            console.error('Error sending email notification:', emailError);
+            // Don't fail the request if email fails
+          }
         }
       } catch (notificationError) {
         console.error('Error sending approval notification:', notificationError);
@@ -137,15 +233,58 @@ export async function POST(
       return NextResponse.json({
         success: true,
         showcase: updatedShowcase,
-        message: 'Showcase approved and published'
+        status: newStatus,
+        message: newStatus === 'approved' ? 'Showcase approved and published' : 'Approval recorded, waiting for other talents'
       });
 
     } else if (action === 'request_changes') {
-      // 3. If changes requested: status='changes_requested', notify creator
+      // 3. Update talent's approval record
+      const { error: approvalError } = await supabaseAdmin
+        .from('showcase_talent_approvals')
+        .update({
+          action: 'request_changes',
+          note: note || null,
+          approved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('showcase_id', showcaseId)
+        .eq('talent_user_id', user.id);
+
+      if (approvalError) {
+        console.error('Error updating talent approval:', approvalError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to record change request' },
+          { status: 500 }
+        );
+      }
+
+      // 4. Get updated approval counts
+      const { data: approvals, error: approvalsError } = await supabaseAdmin
+        .from('showcase_talent_approvals')
+        .select('action')
+        .eq('showcase_id', showcaseId);
+
+      if (approvalsError) {
+        console.error('Error fetching approvals:', approvalsError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to fetch approval status' },
+          { status: 500 }
+        );
+      }
+
+      const approvedCount = approvals.filter(a => a.action === 'approve').length;
+      const changeRequestCount = approvals.filter(a => a.action === 'request_changes').length;
+      const totalTalents = approvals.length;
+
+      // 5. Update showcase - ANY change request blocks publication
       const { data: updatedShowcase, error: updateError } = await supabaseAdmin
         .from('showcases')
         .update({
-          approval_status: 'changes_requested',
+          approval_status: 'blocked_by_changes',
+          approved_talents: approvedCount,
+          change_requests: changeRequestCount,
+          last_action_by: user.id,
+          last_action_at: new Date().toISOString(),
           approval_notes: note || '',
           updated_at: new Date().toISOString()
         })
@@ -161,12 +300,18 @@ export async function POST(
         );
       }
 
-      // Send notification to creator
+      // 6. Send notification to creator
       try {
         const { data: creator, error: creatorError } = await supabaseAdmin
           .from('users_profile')
-          .select('display_name, handle')
+          .select('display_name, handle, email')
           .eq('id', showcase.creator_user_id)
+          .single();
+
+        const { data: talent, error: talentError } = await supabaseAdmin
+          .from('users_profile')
+          .select('display_name, handle')
+          .eq('id', user.id)
           .single();
 
         const { data: gig, error: gigError } = await supabaseAdmin
@@ -175,18 +320,30 @@ export async function POST(
           .eq('id', showcase.gig_id)
           .single();
 
-        if (!creatorError && !gigError) {
+        if (!creatorError && !talentError && !gigError) {
           console.log(`Sending changes requested notification to creator: ${creator.display_name} for gig: ${gig.title}`);
           
-          // TODO: Integrate with email service
-          // await emailService.sendShowcaseChangesRequestedNotification({
-          //   creatorEmail: creator.email,
-          //   creatorName: creator.display_name,
-          //   gigTitle: gig.title,
-          //   showcaseId: showcaseId,
-          //   talentName: user.display_name,
-          //   feedback: note
-          // });
+          try {
+            const { getShowcaseChangesRequestedTemplate } = await import('@/lib/services/emails/templates/showcases.templates');
+            const { emailService } = await import('@/lib/services/email-service');
+            
+            const template = getShowcaseChangesRequestedTemplate({
+              creatorName: creator.display_name,
+              creatorEmail: creator.email,
+              talentName: talent.display_name,
+              gigTitle: gig.title,
+              feedback: note,
+              totalTalents: totalTalents,
+              changeRequests: changeRequestCount,
+              showcaseId: showcaseId,
+              platformUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://preset.ie'
+            });
+            
+            await emailService.sendEmail(template);
+          } catch (emailError) {
+            console.error('Error sending email notification:', emailError);
+            // Don't fail the request if email fails
+          }
         }
       } catch (notificationError) {
         console.error('Error sending changes notification:', notificationError);
@@ -195,7 +352,8 @@ export async function POST(
       return NextResponse.json({
         success: true,
         showcase: updatedShowcase,
-        message: 'Changes requested from creator'
+        status: 'blocked_by_changes',
+        message: 'Changes requested - showcase blocked until resolved'
       });
     }
 

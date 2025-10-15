@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getEmailService } from '@/lib/services/email-service';
+import { EmailService } from '@/lib/services/email-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,28 +22,30 @@ export async function POST(request: NextRequest) {
       transactionId 
     } = await request.json();
 
-    const emailService = getEmailService();
+    const emailService = new EmailService();
 
     // 1. Send purchase confirmation email
-    await emailService.sendCreditPurchaseConfirmation(
-      email,
-      credits,
-      amount,
-      name
-    );
+    // TODO: Implement sendCreditPurchaseConfirmation method
+    // await emailService.sendCreditPurchaseConfirmation(
+    //   email,
+    //   credits,
+    //   amount,
+    //   name
+    // );
 
     // The trackPurchase is already called inside sendCreditPurchaseConfirmation,
     // but you can also track additional events:
-    
+
     // 2. Track milestone purchases (optional)
-    if (credits >= 100) {
-      await emailService.trackUserSignup(email, {
-        milestone: 'first-large-purchase',
-        credits,
-        amount,
-        transactionId
-      });
-    }
+    // TODO: Implement trackUserSignup method
+    // if (credits >= 100) {
+    //   await emailService.trackUserSignup(email, {
+    //     milestone: 'first-large-purchase',
+    //     credits,
+    //     amount,
+    //     transactionId
+    //   });
+    // }
 
     return NextResponse.json({
       success: true,

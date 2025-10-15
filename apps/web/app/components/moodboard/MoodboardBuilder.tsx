@@ -213,7 +213,7 @@ export default function MoodboardBuilder({
         photographer_url: photo.photographer_url,
         position: itemsManager.items.length,
         // Mark as pending download
-        downloadStatus: 'pending'
+        downloadStatus: 'pending' as const
       }
       
       itemsManager.addItem(item)
@@ -234,17 +234,12 @@ export default function MoodboardBuilder({
         if (downloadResult.success && downloadResult.results.length > 0) {
           const downloadedPhoto = downloadResult.results[0]
           
-          // Update the item with the permanent URL and media ID
+          // Update the item with the permanent URL and status
           itemsManager.updateItem(item.id, {
             url: downloadedPhoto.permanentUrl,
             thumbnail_url: downloadedPhoto.permanentUrl,
-            mediaId: downloadedPhoto.mediaId,
             downloadStatus: 'completed',
             permanentlyStored: true,
-            // Preserve all attribution
-            photographer: downloadedPhoto.photographer,
-            photographer_url: photo.photographer_url,
-            attribution: downloadedPhoto.attribution
           })
           
           console.log(`✅ Stock photo downloaded and saved: ${downloadedPhoto.permanentUrl}`)
