@@ -4,6 +4,17 @@ import Link from 'next/link'
 import { User } from '@supabase/supabase-js'
 import { Button } from '../ui/button'
 import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarSub,
+  MenubarSubContent,
+  MenubarSubTrigger,
+  MenubarTrigger,
+} from '../ui/menubar'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -93,254 +104,234 @@ export function DesktopNav({
 
       {/* Center: Navigation menus */}
       <div className="flex items-center justify-center flex-1 gap-1 md:gap-2 lg:gap-3 xl:gap-4 mx-2 lg:mx-4 overflow-x-auto">
-        {/* Dashboard Dropdown */}
         {user && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={`
+          <Menubar className="border-none bg-transparent">
+            {/* Dashboard Menu */}
+            <MenubarMenu>
+              <MenubarTrigger className={`
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/dashboard') || isActive('/profile') || isActive('/matchmaking'))
                   ? 'text-primary bg-primary/10'
                   : 'text-primary hover:bg-primary/5'
                 }
-              `}
-            >
-              <Home className="w-4 h-4 lg:mr-2" />
-              <span className="hidden lg:inline">Dashboard</span>
-              <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-48" align="start">
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard" className="flex items-center nav-submenu-item">
-                <Home className="mr-2 h-4 w-4" />
-                Dashboard
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/profile" className="flex items-center nav-submenu-item">
-                <UserIcon className="mr-2 h-4 w-4" />
-                Profile
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/matchmaking" className="flex items-center nav-submenu-item">
-                <Target className="mr-2 h-4 w-4" />
-                Matchmaking
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/applications" className="flex items-center nav-submenu-item">
-                <Briefcase className="mr-2 h-4 w-4" />
-                My Applications
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+              `}>
+                <Home className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">Dashboard</span>
+                <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
+              </MenubarTrigger>
+              <MenubarContent className="w-48">
+                <MenubarItem asChild>
+                  <Link href="/dashboard" className="flex items-center nav-submenu-item">
+                    <Home className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/profile" className="flex items-center nav-submenu-item">
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/matchmaking" className="flex items-center nav-submenu-item">
+                    <Target className="mr-2 h-4 w-4" />
+                    Matchmaking
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/applications" className="flex items-center nav-submenu-item">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    My Applications
+                  </Link>
+                </MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
 
-      {/* Gigs Dropdown */}
-      {user && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={`
+            {/* Gigs Menu */}
+            <MenubarMenu>
+              <MenubarTrigger className={`
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/gigs'))
                   ? 'text-primary bg-primary/10'
                   : 'text-primary hover:bg-primary/5'
                 }
-              `}
-            >
-              <Search className="w-4 h-4 lg:mr-2" />
-              <span className="hidden lg:inline">Gigs</span>
-              <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-48" align="start">
-            <DropdownMenuItem asChild>
-              <Link href="/gigs" className="flex items-center nav-submenu-item">
-                <Search className="mr-2 h-4 w-4" />
-                Browse Gigs
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/gigs/saved" className="flex items-center nav-submenu-item">
-                <Heart className="mr-2 h-4 w-4" />
-                Saved Gigs
-              </Link>
-            </DropdownMenuItem>
-            {isContributor && (
-              <DropdownMenuItem asChild>
-                <Link href="/gigs/my-gigs" className="flex items-center nav-submenu-item">
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  My Gigs
-                </Link>
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+              `}>
+                <Search className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">Gigs</span>
+                <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
+              </MenubarTrigger>
+              <MenubarContent className="w-48">
+                <MenubarItem asChild>
+                  <Link href="/gigs" className="flex items-center nav-submenu-item">
+                    <Search className="mr-2 h-4 w-4" />
+                    Browse Gigs
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/gigs/saved" className="flex items-center nav-submenu-item">
+                    <Heart className="mr-2 h-4 w-4" />
+                    Saved Gigs
+                  </Link>
+                </MenubarItem>
+                {isContributor && (
+                  <MenubarItem asChild>
+                    <Link href="/gigs/my-gigs" className="flex items-center nav-submenu-item">
+                      <Briefcase className="mr-2 h-4 w-4" />
+                      My Gigs
+                    </Link>
+                  </MenubarItem>
+                )}
+              </MenubarContent>
+            </MenubarMenu>
 
-      {/* Marketplace Dropdown */}
-      {user && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={`
+            {/* Marketplace Menu */}
+            <MenubarMenu>
+              <MenubarTrigger className={`
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/gear') || isActive('/presets/marketplace'))
                   ? 'text-primary bg-primary/10'
                   : 'text-primary hover:bg-primary/5'
                 }
-              `}
-            >
-              <Store className="w-4 h-4 lg:mr-2" />
-              <span className="hidden lg:inline">Marketplace</span>
-              <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-48" align="start">
-            <DropdownMenuLabel className="nav-submenu-title">Preset Marketplace</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link href="/presets/marketplace" className="flex items-center nav-submenu-item">
-                <Palette className="mr-2 h-4 w-4" />
-                Browse Presets
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/presets/marketplace/my-listings" className="flex items-center nav-submenu-item">
-                <ShoppingBag className="mr-2 h-4 w-4" />
-                My Preset Listings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/presets/marketplace/purchases" className="flex items-center nav-submenu-item">
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Purchase History
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/presets/marketplace/analytics" className="flex items-center nav-submenu-item">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                Analytics
-              </Link>
-            </DropdownMenuItem>
+              `}>
+                <Store className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">Marketplace</span>
+                <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
+              </MenubarTrigger>
+              <MenubarContent className="w-48">
+                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Preset Marketplace</div>
+                <MenubarItem asChild>
+                  <Link href="/presets/marketplace" className="flex items-center nav-submenu-item">
+                    <Palette className="mr-2 h-4 w-4" />
+                    Browse Presets
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/presets/marketplace/my-listings" className="flex items-center nav-submenu-item">
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    My Preset Listings
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/presets/marketplace/purchases" className="flex items-center nav-submenu-item">
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Purchase History
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/presets/marketplace/analytics" className="flex items-center nav-submenu-item">
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Analytics
+                  </Link>
+                </MenubarItem>
 
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="nav-submenu-title">Equipment Marketplace</DropdownMenuLabel>
-            <DropdownMenuItem asChild>
-              <Link href="/gear" className="flex items-center nav-submenu-item">
-                <Camera className="mr-2 h-4 w-4" />
-                Browse Equipment
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/gear/create" className="flex items-center nav-submenu-item">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Listing
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/gear/my-listings" className="flex items-center nav-submenu-item">
-                <Package className="mr-2 h-4 w-4" />
-                My Equipment Listings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/gear/orders" className="flex items-center nav-submenu-item">
-                <Briefcase className="mr-2 h-4 w-4" />
-                My Orders
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="nav-submenu-title">
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Requests
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href="/gear/requests?create=true" className="flex items-center nav-submenu-item">
+                <MenubarSeparator />
+                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Equipment Marketplace</div>
+                <MenubarItem asChild>
+                  <Link href="/gear" className="flex items-center nav-submenu-item">
+                    <Camera className="mr-2 h-4 w-4" />
+                    Browse Equipment
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/gear/create" className="flex items-center nav-submenu-item">
                     <Plus className="mr-2 h-4 w-4" />
-                    Create Request
+                    Create Listing
                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/gear/requests" className="flex items-center nav-submenu-item">
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/gear/my-listings" className="flex items-center nav-submenu-item">
+                    <Package className="mr-2 h-4 w-4" />
+                    My Equipment Listings
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/gear/orders" className="flex items-center nav-submenu-item">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    My Orders
+                  </Link>
+                </MenubarItem>
+                <MenubarSeparator />
+                <MenubarSub>
+                  <MenubarSubTrigger className="nav-submenu-title">
                     <MessageSquare className="mr-2 h-4 w-4" />
-                    Browse Requests
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/gear/my-requests" className="flex items-center nav-submenu-item">
-                    <Clock className="mr-2 h-4 w-4" />
-                    My Requests
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+                    Requests
+                  </MenubarSubTrigger>
+                  <MenubarSubContent className="w-48">
+                    <MenubarItem asChild>
+                      <Link href="/gear/requests?create=true" className="flex items-center nav-submenu-item">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Request
+                      </Link>
+                    </MenubarItem>
+                    <MenubarItem asChild>
+                      <Link href="/gear/requests" className="flex items-center nav-submenu-item">
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Browse Requests
+                      </Link>
+                    </MenubarItem>
+                    <MenubarItem asChild>
+                      <Link href="/gear/my-requests" className="flex items-center nav-submenu-item">
+                        <Clock className="mr-2 h-4 w-4" />
+                        My Requests
+                      </Link>
+                    </MenubarItem>
+                  </MenubarSubContent>
+                </MenubarSub>
+              </MenubarContent>
+            </MenubarMenu>
 
-      {/* Create Menu */}
-      {user && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={`
+            {/* Create Menu */}
+            <MenubarMenu>
+              <MenubarTrigger className={`
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/presets') || isActive('/presets/create') || isActive('/showcases') || isActive('/showcases/create') || isActive('/treatments') || isActive('/treatments/create') || isActive('/playground') || isActive('/moodboards'))
                   ? 'text-primary bg-primary/10'
                   : 'text-primary hover:bg-primary/5'
                 }
-              `}
-            >
-              <Plus className="w-4 h-4 lg:mr-2" />
-              <span className="hidden lg:inline">Create</span>
-              <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="start">
-            <DropdownMenuItem asChild>
-              <Link href="/playground" className="flex items-center nav-submenu-item">
-                <Camera className="mr-2 h-4 w-4" />
-                Media (Playground)
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/moodboards" className="flex items-center nav-submenu-item">
-                <Image className="mr-2 h-4 w-4" />
-                Moodboards
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/presets" className="flex items-center nav-submenu-item">
-                <Palette className="mr-2 h-4 w-4" />
-                Presets
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/showcases" className="flex items-center nav-submenu-item">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Showcases
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/treatments" className="flex items-center nav-submenu-item">
-                <Wand2 className="mr-2 h-4 w-4" />
-                Treatments
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+              `}>
+                <Plus className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">Create</span>
+                <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
+              </MenubarTrigger>
+              <MenubarContent className="w-56">
+                <MenubarItem asChild>
+                  <Link href="/playground" className="flex items-center nav-submenu-item">
+                    <Camera className="mr-2 h-4 w-4" />
+                    Media (Playground)
+                  </Link>
+                </MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem asChild>
+                  <Link href="/moodboards" className="flex items-center nav-submenu-item">
+                    <Image className="mr-2 h-4 w-4" />
+                    Moodboards
+                  </Link>
+                </MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem asChild>
+                  <Link href="/presets" className="flex items-center nav-submenu-item">
+                    <Palette className="mr-2 h-4 w-4" />
+                    Presets
+                  </Link>
+                </MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem asChild>
+                  <Link href="/showcases" className="flex items-center nav-submenu-item">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Showcases
+                  </Link>
+                </MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem asChild>
+                  <Link href="/treatments" className="flex items-center nav-submenu-item">
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Treatments
+                  </Link>
+                </MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+          </Menubar>
+        )}
 
       {/* Regular Nav Items */}
       {visibleNavItems.map((item) => {

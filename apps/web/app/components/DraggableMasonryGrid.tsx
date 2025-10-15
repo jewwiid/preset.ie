@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Sparkles, X, CheckCircle, Loader2, Move, Maximize2, Camera, Star } from 'lucide-react'
+import { Sparkles, X, CheckCircle, Loader2, Move, Maximize2, Camera, Star, Copy, Edit, Trash2, Download, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu'
 
 interface MasonryItem {
   id: string
@@ -268,27 +269,28 @@ export default function DraggableMasonryGrid({
           const isDraggedOver = dragState.draggedOverItem?.id === item.id
 
           return (
-            <div
-              key={item.id}
-              data-item-id={item.id}
-              className={`
-                relative group rounded-lg overflow-hidden bg-muted/20 
-                ${editable ? 'cursor-move' : 'cursor-pointer'}
-                ${isDragging ? 'opacity-50 scale-95' : 'opacity-100'}
-                ${isDraggedOver ? 'ring-4 ring-primary ring-offset-2' : ''}
-                hover:shadow-xl transition-all duration-300 
-                ${itemSpan}
-              `}
-              draggable={editable && !isEnhancing}
-              onDragStart={(e) => handleDragStart(e, item)}
-              onDragOver={(e) => handleDragOver(e, item)}
-              onDrop={(e) => handleDrop(e, item)}
-              onDragEnd={handleDragEnd}
-              onTouchStart={(e) => handleTouchStart(e, item)}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              onClick={() => !editable && onItemClick?.(item)}
-            >
+            <ContextMenu key={item.id}>
+              <ContextMenuTrigger asChild>
+                <div
+                  data-item-id={item.id}
+                  className={`
+                    relative group rounded-lg overflow-hidden bg-muted/20 
+                    ${editable ? 'cursor-move' : 'cursor-pointer'}
+                    ${isDragging ? 'opacity-50 scale-95' : 'opacity-100'}
+                    ${isDraggedOver ? 'ring-4 ring-primary ring-offset-2' : ''}
+                    hover:shadow-xl transition-all duration-300 
+                    ${itemSpan}
+                  `}
+                  draggable={editable && !isEnhancing}
+                  onDragStart={(e) => handleDragStart(e, item)}
+                  onDragOver={(e) => handleDragOver(e, item)}
+                  onDrop={(e) => handleDrop(e, item)}
+                  onDragEnd={handleDragEnd}
+                  onTouchStart={(e) => handleTouchStart(e, item)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  onClick={() => !editable && onItemClick?.(item)}
+                >
               {/* Drag handle indicator */}
               {editable && !isEnhancing && (
                 <div className="absolute top-2 left-2 z-20 bg-background/90 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -514,7 +516,77 @@ export default function DraggableMasonryGrid({
                   <Maximize2 className="w-4 h-4" />
                 </Button>
               )}
-            </div>
+                </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent className="w-48">
+                <ContextMenuItem onClick={() => onItemClick?.(item)}>
+                  <Maximize2 className="w-4 h-4 mr-2" />
+                  View Full Size
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => navigator.clipboard.writeText(item.url)}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Image URL
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => {
+                  const link = document.createElement('a')
+                  link.href = item.url
+                  link.download = `moodboard-item-${item.id}`
+                  link.click()
+                }}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Image
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: 'Moodboard Item',
+                      text: item.caption || 'Check out this moodboard item',
+                      url: item.url
+                    })
+                  } else {
+                    navigator.clipboard.writeText(item.url)
+                  }
+                }}>
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </ContextMenuItem>
+                {editable && (
+                  <>
+                    <ContextMenuSeparator />
+                    {onSetFeatured && featuredImageId !== item.id && (
+                      <ContextMenuItem onClick={() => onSetFeatured(item.id)}>
+                        <Star className="w-4 h-4 mr-2" />
+                        Set as Featured
+                      </ContextMenuItem>
+                    )}
+                    {item.original_url && item.enhancement_status === 'completed' && onToggleOriginal && (
+                      <ContextMenuItem onClick={() => onToggleOriginal(item.id)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        {item.showing_original ? 'Show Enhanced' : 'Show Original'}
+                      </ContextMenuItem>
+                    )}
+                    {subscriptionTier !== 'free' && item.type === 'image' && !item.enhanced_url && !isEnhancing && onEnhance && (
+                      <ContextMenuItem onClick={() => onEnhance(item.id)}>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Enhance with AI
+                      </ContextMenuItem>
+                    )}
+                    {onRemove && (
+                      <>
+                        <ContextMenuSeparator />
+                        <ContextMenuItem 
+                          onClick={() => onRemove(item.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Remove from Moodboard
+                        </ContextMenuItem>
+                      </>
+                    )}
+                  </>
+                )}
+              </ContextMenuContent>
+            </ContextMenu>
           )
         })}
       </div>

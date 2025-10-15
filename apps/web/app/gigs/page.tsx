@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Camera, Users, Sparkles, Eye, Grid, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { PageHeader } from '@/components/PageHeader';
 import { usePageHeaderImage } from '@/hooks/usePageHeaderImage';
 import { useGigs } from './hooks/useGigs';
@@ -245,22 +246,25 @@ export default function GigDiscoveryPage() {
 
         {/* Gig Grid, Map, or Empty State */}
         {viewMode === 'map' ? (
-          <div className="h-[calc(100vh-400px)] flex gap-4">
-            <div className="flex-1">
-              <GigsMap 
-                onGigSelect={handleGigSelect}
-                className="h-full"
-              />
-            </div>
-            <div className="w-80">
-              <GigsMapSidebar
-                gigs={mapGigs}
-                selectedGig={selectedGig}
-                onGigSelect={handleGigSelect}
-                onGigView={handleGigView}
-                className="h-full"
-              />
-            </div>
+          <div className="h-[calc(100vh-400px)]">
+            <ResizablePanelGroup direction="horizontal" className="h-full">
+              <ResizablePanel defaultSize={70} minSize={40} className="min-w-0">
+                <GigsMap 
+                  onGigSelect={handleGigSelect}
+                  className="h-full"
+                />
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={30} minSize={20} className="min-w-0">
+                <GigsMapSidebar
+                  gigs={mapGigs}
+                  selectedGig={selectedGig}
+                  onGigSelect={handleGigSelect}
+                  onGigView={handleGigView}
+                  className="h-full"
+                />
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </div>
         ) : filteredGigs.length > 0 ? (
           <GigGrid
