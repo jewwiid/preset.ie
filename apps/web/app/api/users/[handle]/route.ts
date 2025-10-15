@@ -33,7 +33,7 @@ export async function GET(
         avatar_url,
         city,
         country,
-        role_flags,
+        account_type,
         style_tags,
         verified_id,
         created_at,

@@ -18,11 +18,11 @@ export async function POST(
 
     const { data: profile } = await supabase
       .from('users_profile')
-      .select('role_flags')
+      .select('account_type')
       .eq('user_id', user.id)
       .single()
 
-    if (!profile?.role_flags?.includes('ADMIN')) {
+    if (!profile?.account_type?.includes('ADMIN')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -39,7 +39,7 @@ export async function POST(
     // Get current user flags
     const { data: targetUser } = await supabase
       .from('users_profile')
-      .select('role_flags')
+      .select('account_type')
       .eq('user_id', id)
       .single()
 
@@ -48,7 +48,7 @@ export async function POST(
     }
 
     // Add BANNED flag
-    const updatedFlags = targetUser.role_flags || []
+    const updatedFlags = targetUser.account_type || []
     if (!updatedFlags.includes('BANNED')) {
       updatedFlags.push('BANNED')
     }
@@ -56,7 +56,7 @@ export async function POST(
     // Update user profile with BANNED flag
     const { error: updateError } = await supabase
       .from('users_profile')
-      .update({ role_flags: updatedFlags })
+      .update({ account_type: updatedFlags })
       .eq('user_id', id)
 
     if (updateError) {

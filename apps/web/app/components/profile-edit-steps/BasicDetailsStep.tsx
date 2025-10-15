@@ -164,7 +164,7 @@ export default function BasicDetailsStep({
                   {checkingHandle ? (
                     <LoadingSpinner size="sm" />
                   ) : handleAvailable === true ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <CheckCircle2 className="h-4 w-4 text-primary-500" />
                   ) : handleAvailable === false ? (
                     <AlertCircle className="h-4 w-4 text-red-500" />
                   ) : null}

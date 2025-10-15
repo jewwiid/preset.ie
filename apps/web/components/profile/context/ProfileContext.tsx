@@ -63,7 +63,7 @@ function profileReducer(state: ProfileState, action: ProfileAction): ProfileStat
           ...state.profile,
           // Ensure array fields are properly initialized when entering edit mode
           clothing_sizes: state.profile.clothing_sizes || null, // TEXT field, not array
-          performance_roles: state.profile.performance_roles || [],
+          talent_categories: state.profile.talent_categories || [],
           professional_skills: state.profile.professional_skills || [],
           style_tags: state.profile.style_tags || [],
           vibe_tags: state.profile.vibe_tags || []
@@ -158,7 +158,7 @@ function profileReducer(state: ProfileState, action: ProfileAction): ProfileStat
           ...state.profile,
           // Ensure array fields are properly initialized
           clothing_sizes: state.profile.clothing_sizes || null, // TEXT field, not array
-          performance_roles: state.profile.performance_roles || [],
+          talent_categories: state.profile.talent_categories || [],
           professional_skills: state.profile.professional_skills || [],
           style_tags: state.profile.style_tags || [],
           vibe_tags: state.profile.vibe_tags || []
@@ -324,7 +324,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
               bio: '',
               city: '',
               country: '',
-              role_flags: ['TALENT'],
+              account_type: ['TALENT'],
               style_tags: [],
               subscription_tier: 'FREE',
               subscription_status: 'ACTIVE',
@@ -338,7 +338,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
               clothing_sizes: null, // TEXT field, not array
               tattoos: false,
               piercings: false,
-              performance_roles: [],
+              talent_categories: [],
               vibe_tags: []
             }
             const { data: newProfile, error: createError } = await (supabase as any)
@@ -371,7 +371,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
             clothing_sizes: (profile as any).clothing_sizes || null, // TEXT field, not array
             tattoos: (profile as any).tattoos || false,
             piercings: (profile as any).piercings || false,
-            performance_roles: (profile as any).performance_roles || [],
+            talent_categories: (profile as any).talent_categories || [],
             style_tags: (profile as any).style_tags || [],
             vibe_tags: (profile as any).vibe_tags || []
           }
@@ -573,7 +573,7 @@ export function useProfileForm() {
         clothing_sizes: state.formData.clothing_sizes?.trim() || null, // TEXT field, not array
         tattoos: state.formData.tattoos || false,
         piercings: state.formData.piercings || false,
-        performance_roles: state.formData.performance_roles || [],
+        talent_categories: state.formData.talent_categories || [],
         style_tags: state.formData.style_tags || [],
         vibe_tags: state.formData.vibe_tags || [],
         avatar_url: state.formData.avatar_url || null,

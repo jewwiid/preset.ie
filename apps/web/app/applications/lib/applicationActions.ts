@@ -126,7 +126,7 @@ export async function banUser(
   // Get current user data
   const { data: userData, error: fetchError } = await supabase
     .from('users_profile')
-    .select('role_flags')
+    .select('account_type')
     .eq('id', userId)
     .single();
 
@@ -135,14 +135,14 @@ export async function banUser(
   }
 
   // Add BANNED flag to user
-  const currentFlags = userData.role_flags || [];
+  const currentFlags = userData.account_type || [];
   if (!currentFlags.includes('BANNED')) {
     currentFlags.push('BANNED');
   }
 
   const { error } = await supabase
     .from('users_profile')
-    .update({ role_flags: currentFlags })
+    .update({ account_type: currentFlags })
     .eq('id', userId);
 
   if (error) {

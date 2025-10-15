@@ -23,7 +23,7 @@ export function TalentSpecificSection() {
   const { user } = useAuth()
   
   // Check if user has TALENT role
-  const userRoleFlags = profile?.role_flags || []
+  const userRoleFlags = profile?.account_type || []
   const canEditTalentCategories = userRoleFlags.includes('TALENT') || userRoleFlags.includes('BOTH')
 
   // Use custom hooks for data fetching
@@ -54,15 +54,15 @@ export function TalentSpecificSection() {
   }
 
   const addTalentCategory = (category: string) => {
-    const currentCategories = formData.performance_roles || []
+    const currentCategories = formData.talent_categories || []
     if (!currentCategories.includes(category)) {
-      handleFieldChange('performance_roles', [...currentCategories, category])
+      handleFieldChange('talent_categories', [...currentCategories, category])
     }
   }
 
   const removeTalentCategory = (category: string) => {
-    const currentCategories = formData.performance_roles || []
-    handleFieldChange('performance_roles', currentCategories.filter(c => c !== category))
+    const currentCategories = formData.talent_categories || []
+    handleFieldChange('talent_categories', currentCategories.filter(c => c !== category))
   }
 
   // Clothing size management functions
@@ -618,35 +618,35 @@ export function TalentSpecificSection() {
         </div>
       </div>
 
-      {/* Performance Roles */}
+      {/* Talent Categorys */}
       <div className="bg-muted rounded-lg p-4">
-        <h3 className="text-lg font-medium text-foreground mb-4">Performance Roles</h3>
+        <h3 className="text-lg font-medium text-foreground mb-4">Talent Categorys</h3>
         
         {!canEditTalentCategories && (
           <div className="mb-4 p-3 bg-muted-foreground/10 border border-muted-foreground/20 rounded-md">
             <p className="text-sm text-muted-foreground">
-              <strong>Note:</strong> You signed up as a <strong>CONTRIBUTOR</strong>. Performance roles are only available for users with the TALENT role. You can manage your professional skills in the Professional section instead.
+              <strong>Note:</strong> You signed up as a <strong>CONTRIBUTOR</strong>. Talent Categorys are only available for users with the TALENT role. You can manage your professional skills in the Professional section instead.
             </p>
           </div>
         )}
         
         <div className="space-y-3">
           <div>
-            <Label htmlFor="talent-category">Add Performance Role</Label>
+            <Label htmlFor="talent-category">Add Talent Category</Label>
             <Select
               onValueChange={(value) => {
-                if (value && !(isEditing ? (formData.performance_roles || []) : (profile?.performance_roles || [])).includes(value)) {
+                if (value && !(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).includes(value)) {
                   addTalentCategory(value)
                 }
               }}
               disabled={!isEditing || !canEditTalentCategories}
             >
               <SelectTrigger id="talent-category">
-                <SelectValue placeholder={canEditTalentCategories ? "Select a performance role..." : "Not available for your role"} />
+                <SelectValue placeholder={canEditTalentCategories ? "Select a Talent Category..." : "Not available for your role"} />
               </SelectTrigger>
               <SelectContent>
                 {talentData.predefinedTalentCategories
-                  .filter(category => !(isEditing ? (formData.performance_roles || []) : (profile?.performance_roles || [])).includes(category))
+                  .filter(category => !(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).includes(category))
                   .map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
@@ -657,11 +657,11 @@ export function TalentSpecificSection() {
           </div>
           
           {/* Display Selected Categories */}
-          {(isEditing ? (formData.performance_roles || []) : (profile?.performance_roles || [])).length > 0 && (
+          {(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).length > 0 && (
             <div>
-              <Label className="text-sm font-medium text-foreground mb-2">Selected Performance Roles</Label>
+              <Label className="text-sm font-medium text-foreground mb-2">Selected Talent Categorys</Label>
               <div className="flex flex-wrap gap-2">
-                {(isEditing ? (formData.performance_roles || []) : (profile?.performance_roles || [])).map((category, index) => (
+                {(isEditing ? (formData.talent_categories || []) : (profile?.talent_categories || [])).map((category, index) => (
                   <span
                     key={index}
                     className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"

@@ -51,11 +51,11 @@ export function useAdminStats(viewMode: ViewMode): UseAdminStatsReturn {
       // Get banned users count
       const { data: allUsers, error: bannedError } = await supabase
         .from('users_profile')
-        .select('role_flags');
+        .select('account_type');
 
       const bannedUsers = allUsers
         ? allUsers.filter(
-            (user) => user.role_flags && user.role_flags.includes('BANNED')
+            (user) => user.account_type && user.account_type.includes('BANNED')
           ).length
         : 0;
 

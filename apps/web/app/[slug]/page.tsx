@@ -22,7 +22,7 @@ interface DirectoryProfile {
   city?: string;
   primary_skill?: string;
   created_at: string;
-  role_flags?: string[];
+  account_type?: string[];
   verified_id?: boolean;
   verification_badges?: VerificationBadge[];
 }
@@ -99,11 +99,11 @@ async function getTalentProfiles(skillSlug: string) {
         bio,
         city,
         country,
-        role_flags,
+        account_type,
         style_tags,
         vibe_tags,
         professional_skills,
-        performance_roles,
+        talent_categoriess,
         contributor_roles,
         years_experience,
         account_status,
@@ -144,7 +144,7 @@ async function getTalentProfiles(skillSlug: string) {
     const filteredData = (data || []).filter((profile: any) => {
       const profileSkills = [
         ...(profile.professional_skills || []),
-        ...(profile.performance_roles || []),
+        ...(profile.talent_categoriess || []),
         ...(profile.contributor_roles || [])
       ].map(s => s.toLowerCase());
       

@@ -7,7 +7,7 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Plus, Image as ImageIcon, Video, FileText, Palette, X, Check, Upload, Eye, EyeOff, Globe, Lock } from 'lucide-react';
+import { Plus, Image as ImageIcon, Video, FileText, Palette, X, Check, Upload, Eye, EyeOff, Globe, Lock, Camera } from 'lucide-react';
 import { useAuth } from '../../lib/auth-context';
 import { Badge } from '../../components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -19,7 +19,7 @@ import VoiceToTextButton from '@/components/ui/VoiceToTextButton';
 export interface ShowcaseFormData {
   title: string;
   description: string;
-  type: 'moodboard' | 'individual_image' | 'treatment' | 'video';
+  type: 'moodboard' | 'individual_image' | 'treatment' | 'video' | 'gig';
   visibility: 'public' | 'private';
   tags: string[];
   selectedMoodboard: string;
@@ -271,7 +271,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 
                 {/* Promoted badge */}
                 {item.is_promoted && (
-                  <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
+                  <div className="absolute top-3 right-3 bg-primary-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
                     ✓ Promoted
                   </div>
                 )}
@@ -546,6 +546,14 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
       console.log('Request body:', requestBody);
       console.log('Final media IDs being sent:', finalMediaIds);
 
+      // Special handling for gig showcases
+      if (form.type === 'gig') {
+        // For gig showcases, redirect to gig selection or show a message
+        form.setError('To create a showcase from a completed gig, please visit the gig page and use the "Create Showcase" button there.');
+        form.setLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/showcases', {
         method: 'POST',
         headers: {
@@ -642,8 +650,9 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   {[
                     { value: 'individual_image', label: 'Image', icon: ImageIcon, color: 'bg-blue-500' },
                     { value: 'moodboard', label: 'Moodboard', icon: Palette, color: 'bg-purple-500' },
-                    { value: 'video', label: 'Video', icon: Video, color: 'bg-green-500' },
-                    { value: 'treatment', label: 'Treatment', icon: FileText, color: 'bg-orange-500' }
+                    { value: 'video', label: 'Video', icon: Video, color: 'bg-primary-500' },
+                    { value: 'treatment', label: 'Treatment', icon: FileText, color: 'bg-orange-500' },
+                    { value: 'gig', label: 'From Gig', icon: Camera, color: 'bg-green-500' }
                   ].map((option) => {
                     const Icon = option.icon
                     return (

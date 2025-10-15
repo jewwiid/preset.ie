@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { MapPin, ExternalLink, Loader2, Plus, Minus } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import 'maplibre-gl/dist/maplibre-gl.css'
+import { MapPin, ExternalLink, Plus, Minus } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useTheme } from 'next-themes'
 import { normalizeLocationText, type ParsedLocation } from '../lib/location-service'
 
@@ -23,16 +25,19 @@ export default function LocationMap({
   className = "", 
   showFullMap = true 
 }: LocationMapProps) {
+  const mapContainer = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<any>(null)
+  const markerRef = useRef<any>(null)
+  
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     latitude && longitude ? { lat: latitude, lng: longitude } : null
   )
   const [locationData, setLocationData] = useState<ParsedLocation | null>(null)
   const [loading, setLoading] = useState(false)
+  const [mapLoaded, setMapLoaded] = useState(false)
   const [mapError, setMapError] = useState(false)
   const [zoomLevel, setZoomLevel] = useState(14)
-  const [mapAttempt, setMapAttempt] = useState(0) // Track which map service to try
-  const [mapLoading, setMapLoading] = useState(true)
-  const { theme, resolvedTheme } = useTheme()
+  const { resolvedTheme } = useTheme()
 
   // Fetch coordinates if not provided
   useEffect(() => {
@@ -54,14 +59,149 @@ export default function LocationMap({
     }
   }, [location, coords])
 
-  // Reset map when theme changes
+  // Initialize map
   useEffect(() => {
-    if (coords) {
-      setMapAttempt(0)
-      setMapError(false)
-      setMapLoading(true)
+    if (!showFullMap || !coords || mapRef.current || !mapContainer.current) return
+
+    const initMap = async () => {
+      try {
+        const maplibregl = (await import('maplibre-gl')).default
+
+        const isDark = resolvedTheme === 'dark'
+        
+        // Create map style without custom fonts to avoid 404 errors
+        const mapStyle = {
+          version: 8 as const,
+          sources: {
+            'osm': {
+              type: 'raster' as const,
+              tiles: isDark ? [
+                'https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
+                'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+              ] : [
+                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              ],
+              tileSize: 256
+            }
+          },
+          layers: [
+            {
+              id: 'osm',
+              type: 'raster' as const,
+              source: 'osm'
+            }
+          ]
+        }
+
+        // Create map instance
+        const map = new maplibregl.Map({
+          container: mapContainer.current,
+          style: mapStyle,
+          center: [coords.lng, coords.lat],
+          zoom: zoomLevel,
+          maxZoom: 18,
+          minZoom: 8,
+          attributionControl: false,
+          interactive: true // Allow panning and zooming
+        })
+
+        mapRef.current = map
+
+        map.on('load', () => {
+          setMapLoaded(true)
+
+          // Add custom marker
+          const el = document.createElement('div')
+          el.className = 'custom-marker'
+          el.style.width = '32px'
+          el.style.height = '32px'
+          el.style.backgroundImage = 'url(data:image/svg+xml;base64,' + btoa(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${isDark ? '#2dd4bf' : '#00876f'}" stroke="${isDark ? '#1e293b' : '#ffffff'}" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3" fill="${isDark ? '#1e293b' : '#ffffff'}"></circle>
+            </svg>
+          `) + ')'
+          el.style.backgroundSize = 'contain'
+          el.style.backgroundRepeat = 'no-repeat'
+          el.style.cursor = 'pointer'
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat([coords.lng, coords.lat])
+            .addTo(map)
+
+          markerRef.current = marker
+        })
+
+        map.on('error', (e) => {
+          console.error('Map error:', e)
+          setMapError(true)
+        })
+
+        // Update zoom level when user zooms
+        map.on('zoomend', () => {
+          setZoomLevel(Math.round(map.getZoom()))
+        })
+
+      } catch (error) {
+        console.error('Failed to initialize map:', error)
+        setMapError(true)
+      }
     }
-  }, [resolvedTheme, coords])
+
+    initMap()
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+    }
+  }, [coords, showFullMap, resolvedTheme])
+
+  // Update map style when theme changes
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return
+
+    const isDark = resolvedTheme === 'dark'
+    const style = mapRef.current.getStyle()
+    
+    if (style) {
+      const newTiles = isDark ? [
+        'https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
+        'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+      ] : [
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      ]
+
+      const osmSource = style.sources['osm'] as any
+      if (osmSource && osmSource.tiles) {
+        osmSource.tiles = newTiles
+        mapRef.current.setStyle(style)
+      }
+
+      // Update marker color
+      if (markerRef.current && coords) {
+        const el = document.createElement('div')
+        el.className = 'custom-marker'
+        el.style.width = '32px'
+        el.style.height = '32px'
+        el.style.backgroundImage = 'url(data:image/svg+xml;base64,' + btoa(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${isDark ? '#2dd4bf' : '#00876f'}" stroke="${isDark ? '#1e293b' : '#ffffff'}" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3" fill="${isDark ? '#1e293b' : '#ffffff'}"></circle>
+          </svg>
+        `) + ')'
+        el.style.backgroundSize = 'contain'
+        el.style.backgroundRepeat = 'no-repeat'
+        el.style.cursor = 'pointer'
+
+        markerRef.current.setLngLat([coords.lng, coords.lat])
+        markerRef.current.getElement().replaceWith(el)
+      }
+    }
+  }, [resolvedTheme, mapLoaded, coords])
 
   const handleOpenInMaps = () => {
     if (coords) {
@@ -74,44 +214,15 @@ export default function LocationMap({
     }
   }
 
-  // Generate static map using theme-aware tile services
-  const getStaticMapUrl = (lat: number, lng: number, zoom: number = 14) => {
-    const tileX = Math.floor(((lng + 180) / 360) * Math.pow(2, zoom))
-    const tileY = Math.floor((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2 * Math.pow(2, zoom))
-    
-    const isDark = resolvedTheme === 'dark'
-    
-    if (isDark) {
-      // Dark mode: Use CartoDB Dark Matter tiles
-      return `https://cartodb-basemaps-a.global.ssl.fastly.net/dark_all/${zoom}/${tileX}/${tileY}.png`
-    } else {
-      // Light mode: Use standard OpenStreetMap tiles
-      return `https://tile.openstreetmap.org/${zoom}/${tileX}/${tileY}.png`
+  const handleZoomIn = () => {
+    if (mapRef.current && zoomLevel < 18) {
+      mapRef.current.zoomIn()
     }
   }
 
-  // Alternative: Theme-aware Geoapify
-  const getAlternativeMapUrl = (lat: number, lng: number, zoom: number = 14) => {
-    const isDark = resolvedTheme === 'dark'
-    const style = isDark ? 'dark-matter' : 'osm-bright'
-    const markerColor = isDark ? '%2300ff88' : '%2300aa55' // Green marker matching theme
-    
-    return `https://maps.geoapify.com/v1/staticmap?style=${style}&width=600&height=300&center=lonlat:${lng},${lat}&zoom=${zoom}&marker=lonlat:${lng},${lat};color:${markerColor};size:medium&apiKey=demo`
-  }
-
-  // Final fallback: Different themed tile server
-  const getTileMapUrl = (lat: number, lng: number, zoom: number = 14) => {
-    const tileX = Math.floor(((lng + 180) / 360) * Math.pow(2, zoom))
-    const tileY = Math.floor((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2 * Math.pow(2, zoom))
-    
-    const isDark = resolvedTheme === 'dark'
-    
-    if (isDark) {
-      // Dark mode: Use Stamen Toner (dark style)
-      return `https://stamen-tiles.a.ssl.fastly.net/toner/${zoom}/${tileX}/${tileY}.png`
-    } else {
-      // Light mode: Use alternative OSM server
-      return `https://a.tile.openstreetmap.org/${zoom}/${tileX}/${tileY}.png`
+  const handleZoomOut = () => {
+    if (mapRef.current && zoomLevel > 8) {
+      mapRef.current.zoomOut()
     }
   }
 
@@ -120,12 +231,10 @@ export default function LocationMap({
       <Card className={`${className}`}>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-              <LoadingSpinner size="md" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">{location}</p>
-              <p className="text-xs text-muted-foreground">Loading map preview...</p>
+            <Skeleton className="w-12 h-12 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
             </div>
           </div>
         </CardContent>
@@ -160,90 +269,59 @@ export default function LocationMap({
     )
   }
 
-  // Full map mode with coordinates
+  // Full map mode with interactive MapLibre
   return (
     <Card className={`overflow-hidden ${className}`}>
       <CardContent className="p-0">
-        {/* Map Preview */}
+        {/* Interactive Map */}
         <div className="relative w-full h-64 bg-muted">
           {!mapError ? (
             <>
-              <img
-                key={`map-${zoomLevel}-${mapAttempt}-${resolvedTheme}`} // Force re-render when zoom, service, or theme changes
-                src={
-                  mapAttempt === 0 ? getStaticMapUrl(coords.lat, coords.lng, zoomLevel) :
-                  mapAttempt === 1 ? getAlternativeMapUrl(coords.lat, coords.lng, zoomLevel) :
-                  getTileMapUrl(coords.lat, coords.lng, zoomLevel)
-                }
-                alt={`Map of ${location}`}
-                className="w-full h-full object-cover rounded-t-lg"
-                onLoad={() => setMapLoading(false)}
-                onError={() => {
-                  console.log(`Map service ${mapAttempt} failed, trying next...`)
-                  if (mapAttempt < 2) {
-                    setMapAttempt(prev => prev + 1)
-                  } else {
-                    setMapError(true)
-                    setMapLoading(false)
-                  }
-                }}
-                loading="lazy"
-              />
-              
-              {/* Map Pin Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                <div className="relative">
-                  {/* Pin shadow */}
-                  <div className="absolute top-8 left-1/2 transform -translate-x-1/2 w-4 h-2 bg-black/20 rounded-full blur-sm"></div>
-                  {/* Main pin */}
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg border-2 border-primary-foreground animate-bounce">
-                    <MapPin className="w-5 h-5 text-primary-foreground" />
-                  </div>
-                </div>
-              </div>
-              
-              {/* Loading Overlay */}
-              {mapLoading && (
-                <div className="absolute inset-0 bg-muted/50 backdrop-blur-sm flex items-center justify-center rounded-t-lg">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <LoadingSpinner size="sm" />
-                    <span className="text-sm">Loading map...</span>
-                  </div>
+              {!mapLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-t-lg z-10">
+                  <Skeleton className="h-full w-full rounded-t-lg" />
                 </div>
               )}
               
-              {/* Green Zoom Controls */}
+              <div ref={mapContainer} className="w-full h-full rounded-t-lg" />
+              
+              {/* Zoom Controls with Tooltips */}
               <div className="absolute top-3 right-3 flex flex-col gap-1 z-30">
-                <Button
-                  variant="default"
-                  size="icon"
-                  className="w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg border-0"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setZoomLevel(prev => Math.min(prev + 1, 18))
-                    setMapAttempt(0) // Reset to first map service when zooming
-                    setMapError(false) // Reset error state
-                    setMapLoading(true) // Show loading while new map loads
-                  }}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="default"
-                  size="icon"
-                  className="w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg border-0"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setZoomLevel(prev => Math.max(prev - 1, 8))
-                    setMapAttempt(0) // Reset to first map service when zooming
-                    setMapError(false) // Reset error state
-                    setMapLoading(true) // Show loading while new map loads
-                  }}
-                >
-                  <Minus className="w-4 h-4" />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="default"
+                        size="icon"
+                        className="w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+                        onClick={handleZoomIn}
+                        disabled={zoomLevel >= 18}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Zoom in</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="default"
+                        size="icon"
+                        className="w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+                        onClick={handleZoomOut}
+                        disabled={zoomLevel <= 8}
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Zoom out</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </>
           ) : (
@@ -251,7 +329,7 @@ export default function LocationMap({
             <div className={`w-full h-full ${resolvedTheme === 'dark' 
               ? 'bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10' 
               : 'bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5'
-            } flex items-center justify-center relative overflow-hidden`}>
+            } flex items-center justify-center relative overflow-hidden rounded-t-lg`}>
               {/* Background pattern */}
               <div className="absolute inset-0 opacity-10">
                 <div className="w-full h-full" style={{
@@ -260,7 +338,7 @@ export default function LocationMap({
                 }} />
               </div>
               
-              {/* Location pin with better styling */}
+              {/* Location pin */}
               <div className="relative z-10 flex flex-col items-center">
                 <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mb-3 shadow-lg animate-pulse">
                   <MapPin className="w-7 h-7 text-primary-foreground" />
@@ -276,37 +354,15 @@ export default function LocationMap({
                 </div>
               </div>
               
-              {/* Coordinate display with better styling */}
-              <div className="absolute bottom-3 right-3 text-xs text-muted-foreground bg-background/90 backdrop-blur-sm rounded-md px-3 py-2 border border-border/50 shadow-sm">
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  <span>{coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}</span>
-                </div>
-              </div>
             </div>
           )}
-          
-          {/* Overlay button - only covers the map area, not the controls */}
-          <div 
-            className="absolute inset-0 bg-transparent hover:bg-black/10 transition-colors cursor-pointer flex items-center justify-center group z-0"
-            onClick={handleOpenInMaps}
-          >
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Open in Maps
-            </Button>
-          </div>
         </div>
         
         {/* Location Info */}
         <div className="p-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="text-sm font-medium text-foreground mb-1">
+              <h4 className="text-base font-semibold text-foreground mb-1">
                 {locationData?.city && locationData?.country 
                   ? `${locationData.city}, ${locationData.country}`
                   : location
@@ -315,11 +371,6 @@ export default function LocationMap({
               {locationData?.formatted_address && (
                 <p className="text-xs text-muted-foreground line-clamp-2">
                   {locationData.formatted_address}
-                </p>
-              )}
-              {coords && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
                 </p>
               )}
             </div>

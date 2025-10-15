@@ -77,7 +77,7 @@ export default function EditProfilePage() {
     editing_software: [],
     professional_skills: [],
     contributor_roles: [],
-    performance_roles: [],
+    talent_categories: [],
     experience_level: 'beginner',
     instagram_handle: '',
     tiktok_handle: '',
@@ -130,7 +130,7 @@ export default function EditProfilePage() {
             id, display_name, handle, bio, city, country,
             years_experience, languages, specializations,
             equipment_list, editing_software, professional_skills,
-            contributor_roles, performance_roles, experience_level,
+            contributor_roles, talent_categories, experience_level,
             instagram_handle, tiktok_handle, website_url,
             portfolio_url, behance_url, dribbble_url,
             phone_number, availability_status,
@@ -172,7 +172,7 @@ export default function EditProfilePage() {
           editing_software: profile.editing_software || [],
           professional_skills: profile.professional_skills || [],
           contributor_roles: profile.contributor_roles || [],
-          performance_roles: profile.performance_roles || [],
+          talent_categories: profile.talent_categories || [],
           experience_level: profile.experience_level || 'beginner',
           instagram_handle: profile.instagram_handle || '',
           tiktok_handle: profile.tiktok_handle || '',
@@ -363,7 +363,7 @@ export default function EditProfilePage() {
         )}
 
         {success && (
-          <Alert className="mb-6 border-green-200 bg-green-50 text-green-800">
+          <Alert className="mb-6 border-primary/20 bg-primary-50 text-primary-800">
             <CheckCircle2 className="h-4 w-4" />
             <AlertDescription>{success}</AlertDescription>
           </Alert>

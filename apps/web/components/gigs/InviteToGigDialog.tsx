@@ -386,8 +386,8 @@ export function InviteToGigDialog({
 
           {/* Success Message */}
           {success && (
-            <div className="rounded-md bg-green-500/10 border border-green-500/20 p-3">
-              <p className="text-sm text-green-600 dark:text-green-400">
+            <div className="rounded-md bg-primary-500/10 border border-primary-500/20 p-3">
+              <p className="text-sm text-primary">
                 ✓ Invitation sent successfully!
               </p>
             </div>

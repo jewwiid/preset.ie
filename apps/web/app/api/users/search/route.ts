@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     // Build the query
     let dbQuery = supabase
       .from('users_profile')
-      .select('id, handle, display_name, avatar_url, primary_skill, role_flags, specializations, performance_roles, city, country, years_experience, available_for_travel')
+      .select('id, handle, display_name, avatar_url, primary_skill, account_type, specializations, talent_categories, city, country, years_experience, available_for_travel')
       .in('account_status', ['active', 'pending_verification'])
       .not('avatar_url', 'is', null)
       .eq('allow_collaboration_invites', true);
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by role flags (TALENT or CONTRIBUTOR)
     if (role.trim()) {
-      dbQuery = dbQuery.contains('role_flags', [role]);
+      dbQuery = dbQuery.contains('account_type', [role]);
     }
 
     // Filter by city (case-insensitive)
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Exclude admin profiles (using PostgreSQL array contains operator)
-    dbQuery = dbQuery.not('role_flags', 'cs', '{"ADMIN"}');
+    dbQuery = dbQuery.not('account_type', 'cs', '{"ADMIN"}');
 
     // Order by profile completion and limit
     dbQuery = dbQuery

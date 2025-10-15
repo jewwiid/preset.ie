@@ -23,7 +23,7 @@ interface DirectoryProfile {
   city?: string;
   primary_skill?: string;
   created_at: string;
-  role_flags?: string[];
+  account_type?: string[];
   availability_status?: string;
   verified_id?: boolean;
   verification_badges?: VerificationBadgeData[];
@@ -73,7 +73,7 @@ export default function TalentDirectoryClient({
     // Apply role filter
     if (roleFilter !== 'all') {
       filtered = filtered.filter(profile => {
-        const roles = profile.role_flags || [];
+        const roles = profile.account_type || [];
         if (roleFilter === 'talent') {
           return roles.includes('TALENT') || roles.includes('BOTH');
         } else if (roleFilter === 'contributor') {

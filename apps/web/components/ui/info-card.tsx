@@ -27,7 +27,7 @@ export function InfoCard({
     primary: 'bg-primary/10 border-primary/20',
     accent: 'bg-accent/10 border-accent/20',
     destructive: 'bg-destructive/10 border-destructive/20',
-    success: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800',
+    success: 'bg-primary-50 border-primary/20 dark:bg-primary-900/20 dark:border-primary-800',
     warning: 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800'};
 
   return (

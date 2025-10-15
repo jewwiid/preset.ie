@@ -105,12 +105,12 @@ export class PlunkCampaignsService {
     // Start with base query
     let query = supabase
       .from('users_profile')
-      .select('user_id, role_flags, primary_skill, talent_category, city, subscription_tier, verified_id, style_tags, last_active_at');
+      .select('user_id, account_type, primary_skill, talent_category, city, subscription_tier, verified_id, style_tags, last_active_at');
 
     // Apply role filter
     if (targeting.roles && targeting.roles.length > 0) {
       // Filter users who have any of the specified roles
-      query = query.or(targeting.roles.map(role => `role_flags.cs.{${role}}`).join(','));
+      query = query.or(targeting.roles.map(role => `account_type.cs.{${role}}`).join(','));
     }
 
     // Apply subscription tier filter

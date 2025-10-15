@@ -263,13 +263,13 @@ export default function ProfessionalStep({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Performance Roles */}
+            {/* Talent Categories */}
             <div>
-              <Label>Performance Roles</Label>
+              <Label>Talent Categories</Label>
               <TagInput
-                value={formData.performance_roles || []}
-                onChange={(roles) => handleFieldChange('performance_roles', roles)}
-                placeholder={loading ? "Loading roles..." : "Add roles (e.g., Actor, Model, Dancer, Voice Artist)"}
+                value={formData.talent_categories || []}
+                onChange={(roles) => handleFieldChange('talent_categories', roles)}
+                placeholder={loading ? "Loading categories..." : "Add categories (e.g., Actor, Model, Dancer, Voice Artist)"}
                 maxTags={20}
                 className="mt-1"
                 predefinedOptions={talentCategories.map(category => category.category_name)}

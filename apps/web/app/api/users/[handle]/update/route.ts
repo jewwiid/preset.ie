@@ -58,7 +58,7 @@ export async function PUT(
       editing_software,
       professional_skills,
       contributor_roles,
-      performance_roles,
+      talent_categories,
       experience_level,
       // Contact fields
       instagram_handle,
@@ -151,7 +151,7 @@ export async function PUT(
       editing_software,
       professional_skills,
       contributor_roles,
-      performance_roles,
+      talent_categories,
       experience_level,
       instagram_handle,
       tiktok_handle,
@@ -196,7 +196,7 @@ export async function PUT(
     if (editing_software !== undefined) updateData.editing_software = editing_software;
     if (professional_skills !== undefined) updateData.professional_skills = professional_skills;
     if (contributor_roles !== undefined) updateData.contributor_roles = contributor_roles;
-    if (performance_roles !== undefined) updateData.performance_roles = performance_roles;
+    if (talent_categories !== undefined) updateData.talent_categories = talent_categories;
     if (experience_level !== undefined) updateData.experience_level = experience_level;
 
     // Contact fields

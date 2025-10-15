@@ -363,7 +363,7 @@ function AuthCallbackContent() {
                 user_id: user.id,
                 display_name: fullName,
                 handle: `${firstName.toLowerCase()}_${lastName.toLowerCase()}_${Date.now()}`,
-                role_flags: ['TALENT'], // Default, user can change later
+                account_type: ['TALENT'], // Default, user can change later
                 first_name: firstName,
                 last_name: lastName,
                 email_verified: true, // OAuth emails are pre-verified!

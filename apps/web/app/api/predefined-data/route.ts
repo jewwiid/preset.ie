@@ -42,7 +42,7 @@ export async function GET() {
       clothingSizesResult,
       shoeSizeSystemsResult,
       shoeSizesResult,
-      predefinedRolesResult,
+      contributorCategoriesResult,
       professionalSkillsResult,
       talentCategoriesResult,
       genderIdentitiesResult,
@@ -55,73 +55,73 @@ export async function GET() {
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_hair_colors')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_clothing_size_systems')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_clothing_sizes')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_shoe_size_systems')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_shoe_sizes')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
-        .from('predefined_roles')
+        .from('contributor_categories')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_professional_skills')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
-        .from('predefined_talent_categories')
+        .from('talent_categories')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_gender_identities')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_ethnicities')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_experience_levels')
         .select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
-      
+
       supabase
         .from('predefined_nationalities')
         .select('*')
@@ -137,7 +137,7 @@ export async function GET() {
       clothingSizesResult.error,
       shoeSizeSystemsResult.error,
       shoeSizesResult.error,
-      predefinedRolesResult.error,
+      contributorCategoriesResult.error,
       professionalSkillsResult.error,
       talentCategoriesResult.error,
       genderIdentitiesResult.error,
@@ -161,20 +161,25 @@ export async function GET() {
       clothing_sizes: clothingSizesResult.data || [],
       shoe_size_systems: shoeSizeSystemsResult.data || [],
       shoe_sizes: shoeSizesResult.data || [],
-      
-      // Professional data (CLEAR SEPARATION)
-      predefined_roles: predefinedRolesResult.data || [],           // For CONTRIBUTORS (Photographer, Editor, Producer, etc.)
-      professional_skills: professionalSkillsResult.data || [],     // Skills/certifications (Color Grading, Adobe Suite, etc.)
-      talent_categories: talentCategoriesResult.data || [],         // For TALENT (Actor, Model, Dancer, etc.)
-      
+
+      // =====================================================
+      // ROLE CATEGORIES (UPDATED NAMING)
+      // =====================================================
+      contributor_categories: contributorCategoriesResult.data || [],  // For CONTRIBUTORS (Photographer, Editor, Producer, etc.)
+      professional_skills: professionalSkillsResult.data || [],        // Skills/certifications (Color Grading, Adobe Suite, etc.)
+      talent_categories: talentCategoriesResult.data || [],            // For TALENT (Actor, Model, Dancer, etc.)
+
       // Other predefined data
       gender_identities: genderIdentitiesResult.data || [],
       ethnicities: ethnicitiesResult.data || [],
       experience_levels: experienceLevelsResult.data || [],
       nationalities: nationalitiesResult.data || [],
-      
-      // Legacy aliases for backward compatibility
-      performance_roles: talentCategoriesResult.data || [],  // Alias for talent_categories
+
+      // =====================================================
+      // LEGACY ALIASES (for backward compatibility)
+      // =====================================================
+      predefined_roles: contributorCategoriesResult.data || [],  // DEPRECATED: use contributor_categories
+      talent_categoriess: talentCategoriesResult.data || [],      // DEPRECATED: use talent_categories
       languages: [],
       equipment_types: [],
       equipment_brands: [],

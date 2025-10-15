@@ -28,7 +28,7 @@ interface Application {
     bio?: string
     city?: string
     style_tags: string[]
-    role_flags: string[]
+    account_type: string[]
   }
   compatibility_score?: number
   compatibility_breakdown?: any
@@ -125,7 +125,7 @@ export default function ApplicationsPage({ params }: { params: Promise<{ id: str
             bio,
             city,
             style_tags,
-            role_flags
+            account_type
           )
         `)
         .eq('gig_id', gigId)
@@ -512,9 +512,9 @@ export default function ApplicationsPage({ params }: { params: Promise<{ id: str
                             <Clock className="w-3 h-3" />
                             <span>Applied {new Date(application.applied_at).toLocaleDateString()}</span>
                           </div>
-                          {application.users_profile.role_flags && (
+                          {application.users_profile.account_type && (
                             <div className="flex gap-1">
-                              {application.users_profile.role_flags.map((role) => (
+                              {application.users_profile.account_type.map((role) => (
                                 <Badge key={role} variant="outline" className="text-xs">
                                   {role}
                                 </Badge>

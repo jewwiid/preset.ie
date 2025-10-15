@@ -177,7 +177,7 @@ export const PaletteDisplay = ({
                             >
                               <span className="font-mono">{color}</span>
                               {copiedColor === 'hex' ? (
-                                <Check className="w-4 h-4 text-green-500" />
+                                <Check className="w-4 h-4 text-primary-500" />
                               ) : (
                                 <Copy className="w-4 h-4 text-muted-foreground" />
                               )}
@@ -193,7 +193,7 @@ export const PaletteDisplay = ({
                               >
                                 <span className="font-mono text-xs">rgb({rgb.r}, {rgb.g}, {rgb.b})</span>
                                 {copiedColor === 'rgb' ? (
-                                  <Check className="w-4 h-4 text-green-500" />
+                                  <Check className="w-4 h-4 text-primary-500" />
                                 ) : (
                                   <Copy className="w-4 h-4 text-muted-foreground" />
                                 )}
@@ -211,7 +211,7 @@ export const PaletteDisplay = ({
                             >
                               <span className="font-mono text-xs">hsl({hsl.h}, {hsl.s}%, {hsl.l}%)</span>
                               {copiedColor === 'hsl' ? (
-                                <Check className="w-4 h-4 text-green-500" />
+                                <Check className="w-4 h-4 text-primary-500" />
                               ) : (
                                 <Copy className="w-4 h-4 text-muted-foreground" />
                               )}

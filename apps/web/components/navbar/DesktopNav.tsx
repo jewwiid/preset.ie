@@ -53,7 +53,7 @@ import { ProfileDropdown } from './ProfileDropdown'
 interface Profile {
   avatar_url?: string
   display_name?: string
-  role_flags?: string[]
+  account_type?: string[]
   handle?: string
 }
 
@@ -298,6 +298,12 @@ export function DesktopNav({
                   <Link href="/playground" className="flex items-center nav-submenu-item">
                     <Camera className="mr-2 h-4 w-4" />
                     Media (Playground)
+                  </Link>
+                </MenubarItem>
+                <MenubarItem asChild>
+                  <Link href="/dashboard/media" className="flex items-center nav-submenu-item">
+                    <Image className="mr-2 h-4 w-4" />
+                    Media Management
                   </Link>
                 </MenubarItem>
                 <MenubarSeparator />

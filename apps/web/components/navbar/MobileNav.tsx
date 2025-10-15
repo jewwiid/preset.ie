@@ -39,7 +39,7 @@ import { ThemeToggle } from '../ThemeToggle'
 interface Profile {
   avatar_url?: string
   display_name?: string
-  role_flags?: string[]
+  account_type?: string[]
   handle?: string
 }
 
@@ -141,7 +141,7 @@ export function MobileNav({
                         </p>
                       </div>
                       <div className="inline-flex pt-1">
-                        {profile?.role_flags?.includes('CONTRIBUTOR') ? (
+                        {profile?.account_type?.includes('CONTRIBUTOR') ? (
                           <Badge className="text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
                             Contributor
                           </Badge>

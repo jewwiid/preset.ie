@@ -36,11 +36,11 @@ async function checkAdminAuth(request: NextRequest): Promise<{ authorized: boole
   // Check if user has admin role in their profile
   const { data: profile } = await supabase
     .from('users_profile')
-    .select('role_flags')
+    .select('account_type')
     .eq('user_id', user.id)
     .maybeSingle() // Use maybeSingle to handle case where profile doesn't exist
 
-  if (!profile?.role_flags?.includes('ADMIN')) {
+  if (!profile?.account_type?.includes('ADMIN')) {
     return {
       authorized: false,
       error: NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 })

@@ -67,7 +67,7 @@ export function useTalentData() {
         // Extract the data we need
         setPredefinedTalentCategories(
           data.talent_categories?.map((r: any) => r.category_name) ||
-          data.performance_roles?.map((r: any) => r.category_name) ||
+          data.talent_categoriess?.map((r: any) => r.category_name) ||
           []
         );
         setPredefinedEyeColors(data.eye_colors?.map((c: any) => c.color_name) || []);

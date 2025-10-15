@@ -79,7 +79,7 @@ export default function SimilarTalentSlim({ gigId, className = "" }: SimilarTale
           specializations,
           years_experience
         `)
-        .contains('role_flags', ['TALENT'])
+        .contains('account_type', ['TALENT'])
         .neq('id', (await supabase.from('gigs').select('owner_user_id').eq('id', gigId).single())?.data?.owner_user_id || '')
         .limit(6)
         .order('created_at', { ascending: false })
@@ -189,7 +189,7 @@ export default function SimilarTalentSlim({ gigId, className = "" }: SimilarTale
 
                 {/* Applied Indicator - Top Right */}
                 {applicantIds.has(profile.id) && (
-                  <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1 shadow-lg ring-2 ring-background">
+                  <div className="absolute -top-1 -right-1 bg-primary-500 rounded-full p-1 shadow-lg ring-2 ring-background">
                     <CheckCircle className="w-4 h-4 text-white" />
                   </div>
                 )}
@@ -198,7 +198,7 @@ export default function SimilarTalentSlim({ gigId, className = "" }: SimilarTale
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
                   <Badge className={`text-xs font-bold px-2 py-1 shadow-lg ${
                     applicantIds.has(profile.id) 
-                      ? 'bg-green-500 text-white' 
+                      ? 'bg-primary-500 text-white' 
                       : 'bg-primary text-primary-foreground'
                   }`}>
                     {profile.compatibility_score}%

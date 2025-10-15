@@ -77,7 +77,7 @@ export default function TestAdmin() {
       const { error } = await supabase
         .from('users_profile')
         .update({
-          role_flags: ['ADMIN', 'CONTRIBUTOR', 'TALENT'],
+          account_type: ['ADMIN', 'CONTRIBUTOR', 'TALENT'],
           display_name: 'Admin User',
           bio: 'Platform Administrator',
           city: 'Dublin',
@@ -99,7 +99,7 @@ export default function TestAdmin() {
           handle: `admin_${Date.now()}`, // Unique handle
           bio: 'Platform Administrator',
           city: 'Dublin',
-          role_flags: ['ADMIN', 'CONTRIBUTOR', 'TALENT'],
+          account_type: ['ADMIN', 'CONTRIBUTOR', 'TALENT'],
           style_tags: [],
           subscription_tier: 'PRO'
         });
@@ -153,10 +153,10 @@ export default function TestAdmin() {
           .single();
           
         if (profile) {
-          setStatus(prev => prev + `\n\nProfile found:\n- Display Name: ${profile.display_name}\n- Handle: ${profile.handle}\n- Roles: ${profile.role_flags?.join(', ')}\n- Subscription: ${profile.subscription_tier}`);
+          setStatus(prev => prev + `\n\nProfile found:\n- Display Name: ${profile.display_name}\n- Handle: ${profile.handle}\n- Roles: ${profile.account_type?.join(', ')}\n- Subscription: ${profile.subscription_tier}`);
           
           // If admin role exists, show admin panel link
-          if (profile.role_flags?.includes('ADMIN')) {
+          if (profile.account_type?.includes('ADMIN')) {
             setStatus(prev => prev + '\n\n✅ Admin role confirmed! You can access the admin panel.');
           }
         } else {
@@ -211,7 +211,7 @@ export default function TestAdmin() {
             handle: `admin_${Date.now()}`,
             bio: 'Platform Administrator',
             city: 'Dublin',
-            role_flags: ['ADMIN', 'CONTRIBUTOR', 'TALENT'],
+            account_type: ['ADMIN', 'CONTRIBUTOR', 'TALENT'],
             style_tags: [],
             subscription_tier: 'PRO'
           });

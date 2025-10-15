@@ -76,8 +76,8 @@ export const formatPexelsPhoto = (photo: PexelsPhoto) => {
     id: crypto.randomUUID(),
     type: 'pexels' as const,
     source: 'pexels' as const,
-    url: photo.src.large2x || photo.src.large,
-    thumbnail_url: photo.src.medium,
+    url: photo.src.large2x || photo.src.large, // Use large2x for better balance of quality vs loading speed
+    thumbnail_url: photo.src.large, // Use large for thumbnails
     caption: photo.alt || '',
     width: photo.width,
     height: photo.height,

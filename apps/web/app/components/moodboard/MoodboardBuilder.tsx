@@ -11,7 +11,7 @@ import { MoodboardBuilderProps, TabType, SavedImage } from './lib/moodboardTypes
 import {
   useMoodboardData,
   useMoodboardItems,
-  usePexelsSearch,
+  useStockPhotoSearch,
   useImageUpload,
   useImageEnhancement,
   useColorPalette,
@@ -21,7 +21,7 @@ import {
   MoodboardHeader,
   MoodboardTabs,
   ImageUploadPanel,
-  PexelsSearchPanel,
+  StockPhotoSearchPanel,
   URLImportPanel,
   SavedImagesPanel,
   PaletteDisplay
@@ -29,6 +29,9 @@ import {
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { parsePexelsPhoto, getSubscriptionLimits, generateItemId } from './lib/moodboardHelpers'
 import DraggableMasonryGrid from '../DraggableMasonryGrid'
+import EnhancementModal from '../EnhancementModal'
+import { downloadAndSaveEnhancedImageToGallery } from '@/lib/enhanced-image-storage'
+import { useAuth } from '@/lib/auth-context'
 
 export default function MoodboardBuilder({
   gigId,
@@ -42,6 +45,9 @@ export default function MoodboardBuilder({
   // HOOKS
   // ============================================================================
 
+  // User authentication
+  const { user } = useAuth()
+
   // Moodboard data (CRUD operations)
   const moodboardData = useMoodboardData({ moodboardId, gigId })
 
@@ -52,8 +58,8 @@ export default function MoodboardBuilder({
     onFeaturedImageChange
   })
 
-  // Pexels search
-  const pexels = usePexelsSearch()
+  // Stock photo search
+  const stockPhoto = useStockPhotoSearch()
 
   // Image upload
   const upload = useImageUpload()
@@ -184,11 +190,91 @@ export default function MoodboardBuilder({
   }
 
   /**
-   * Handle Pexels photo selection
+   * Handle stock photo selection - automatically download and save to user storage
    */
-  const handlePexelsSelect = (photo: any) => {
-    const item = parsePexelsPhoto(photo)
-    itemsManager.addItem(item)
+  const handleStockPhotoSelect = async (photo: any) => {
+    if (!user?.id) {
+      console.error('No user ID available for stock photo download')
+      return
+    }
+
+    try {
+      // First add the item to the moodboard with external URL
+      const item = {
+        id: generateItemId(),
+        type: 'image' as const,
+        source: photo.provider,
+        url: photo.url,
+        thumbnail_url: photo.src.medium,
+        caption: photo.alt,
+        width: photo.width,
+        height: photo.height,
+        photographer: photo.photographer,
+        photographer_url: photo.photographer_url,
+        position: itemsManager.items.length,
+        // Mark as pending download
+        downloadStatus: 'pending'
+      }
+      
+      itemsManager.addItem(item)
+      
+      // Download the stock photo in the background
+      const downloadResponse = await fetch('/api/moodboard/download-stock-photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stockPhotos: [photo],
+          userId: user.id,
+          purpose: 'moodboard'
+        })
+      })
+      
+      if (downloadResponse.ok) {
+        const downloadResult = await downloadResponse.json()
+        if (downloadResult.success && downloadResult.results.length > 0) {
+          const downloadedPhoto = downloadResult.results[0]
+          
+          // Update the item with the permanent URL and media ID
+          itemsManager.updateItem(item.id, {
+            url: downloadedPhoto.permanentUrl,
+            thumbnail_url: downloadedPhoto.permanentUrl,
+            mediaId: downloadedPhoto.mediaId,
+            downloadStatus: 'completed',
+            permanentlyStored: true,
+            // Preserve all attribution
+            photographer: downloadedPhoto.photographer,
+            photographer_url: photo.photographer_url,
+            attribution: downloadedPhoto.attribution
+          })
+          
+          console.log(`✅ Stock photo downloaded and saved: ${downloadedPhoto.permanentUrl}`)
+        } else {
+          console.warn('⚠️ Failed to download stock photo:', downloadResult.errors)
+          // Update status to failed but keep the item
+          itemsManager.updateItem(item.id, {
+            downloadStatus: 'failed',
+            downloadError: downloadResult.errors?.[0] || 'Download failed'
+          })
+        }
+      } else {
+        console.error('❌ Stock photo download API error:', downloadResponse.status)
+        itemsManager.updateItem(item.id, {
+          downloadStatus: 'failed',
+          downloadError: 'Download service unavailable'
+        })
+      }
+      
+    } catch (error) {
+      console.error('❌ Error handling stock photo selection:', error)
+      // The item was already added, just mark it as failed
+      const lastItem = itemsManager.items[itemsManager.items.length - 1]
+      if (lastItem && lastItem.downloadStatus === 'pending') {
+        itemsManager.updateItem(lastItem.id, {
+          downloadStatus: 'failed',
+          downloadError: 'Network error'
+        })
+      }
+    }
   }
 
   /**
@@ -256,7 +342,41 @@ export default function MoodboardBuilder({
     moodboardData.setPalette(palette.palette)
     
     const savedId = await moodboardData.saveMoodboard(itemsManager.items, itemsManager.featuredImageId)
+    
     if (savedId && onSave) {
+      // Download all stock photos and ensure featured image is stored
+      try {
+        console.log('🔄 Downloading stock photos for saved moodboard...')
+        
+        const downloadResponse = await fetch('/api/moodboard/download-images', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            moodboardId: savedId,
+            userId: user?.id,
+            featuredImageId: itemsManager.featuredImageId
+          })
+        })
+        
+        if (downloadResponse.ok) {
+          const downloadResult = await downloadResponse.json()
+          console.log(`✅ Downloaded ${downloadResult.stockPhotos.downloaded} stock photos`)
+          
+          if (downloadResult.stockPhotos.failed > 0) {
+            console.warn(`⚠️ Failed to download ${downloadResult.stockPhotos.failed} stock photos:`, downloadResult.stockPhotos.errors)
+          }
+          
+          if (downloadResult.featuredImage?.success) {
+            console.log('✅ Featured image downloaded and stored')
+          }
+        } else {
+          console.warn('⚠️ Failed to download stock photos, but moodboard was saved')
+        }
+      } catch (error) {
+        console.warn('⚠️ Error downloading stock photos:', error)
+        // Don't fail the save operation for download issues
+      }
+      
       onSave(savedId)
     }
   }
@@ -285,7 +405,7 @@ export default function MoodboardBuilder({
   const error =
     moodboardData.error ||
     upload.error ||
-    pexels.error ||
+    stockPhoto.error ||
     enhancement.error ||
     palette.error ||
     credits.error
@@ -345,19 +465,21 @@ export default function MoodboardBuilder({
         )}
 
         {activeTab === 'pexels' && (
-          <PexelsSearchPanel
-            query={pexels.query}
-            results={pexels.results}
-            loading={pexels.loading}
-            currentPage={pexels.currentPage}
-            totalPages={pexels.totalPages}
-            totalResults={pexels.totalResults}
-            filters={pexels.filters}
-            onQueryChange={pexels.setQuery}
-            onFiltersChange={pexels.setFilters}
-            onSelectPhoto={handlePexelsSelect}
-            onPreviousPage={pexels.goToPreviousPage}
-            onNextPage={pexels.goToNextPage}
+          <StockPhotoSearchPanel
+            query={stockPhoto.query}
+            results={stockPhoto.results}
+            loading={stockPhoto.loading}
+            currentPage={stockPhoto.currentPage}
+            totalPages={stockPhoto.totalPages}
+            totalResults={stockPhoto.totalResults}
+            filters={stockPhoto.filters}
+            provider={stockPhoto.provider}
+            onQueryChange={stockPhoto.setQuery}
+            onFiltersChange={stockPhoto.setFilters}
+            onProviderChange={stockPhoto.setProvider}
+            onSelectPhoto={handleStockPhotoSelect}
+            onPreviousPage={stockPhoto.goToPreviousPage}
+            onNextPage={stockPhoto.goToNextPage}
           />
         )}
 
@@ -384,44 +506,87 @@ export default function MoodboardBuilder({
 
       {/* Moodboard Grid and Palette with Resizable Panels */}
       {itemsManager.items.length > 0 && (
-        <div className="mb-6 h-[600px]">
-          <ResizablePanelGroup direction="horizontal" className="h-full">
-            <ResizablePanel defaultSize={70} minSize={40}>
-              <div className="h-full">
-                <h3 className="text-lg font-semibold mb-4">Your Moodboard</h3>
-                <div className="h-[calc(100%-2rem)] overflow-auto">
-                  <DraggableMasonryGrid
-                    items={itemsManager.items}
-                    onReorder={itemsManager.reorderItems}
-                    onRemove={itemsManager.removeItem}
-                    onSetFeatured={itemsManager.setFeaturedImage}
-                    featuredImageId={itemsManager.featuredImageId}
-                    // @ts-expect-error - Type mismatch between onEnhance callback signature
-                    onEnhance={(itemId: any, type: any, prompt: any, provider: any) => {
-                      handleEnhanceImage(itemId, type, prompt, provider)
-                    }}
-                    enhancingItems={enhancement.enhancingItems}
-                    enhancementTasks={enhancement.enhancementTasks}
-                  />
-                </div>
-              </div>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={30} minSize={20}>
-              <div className="h-full pl-4">
-                <PaletteDisplay
-                  palette={palette.palette}
-                  loading={palette.loading}
-                  useAI={palette.useAI}
-                  aiDescription={palette.aiAnalysis?.description}
-                  aiMood={palette.aiAnalysis?.mood}
-                  onToggleAI={palette.setUseAI}
-                  onExtract={handleExtractPalette}
-                  disabled={itemsManager.items.length === 0}
+        <div className="mb-6">
+          {/* Mobile Layout - Stacked */}
+          <div className="block lg:hidden space-y-4">
+            <div className="h-[400px]">
+              <h3 className="text-lg font-semibold mb-4">Your Moodboard</h3>
+              <div className="h-[calc(100%-2rem)] overflow-auto">
+                <DraggableMasonryGrid
+                  items={itemsManager.items.map(item => ({
+                    ...item,
+                    // Map source to match MasonryItem type
+                    source: (item.source === 'unsplash' || item.source === 'pixabay') ? 'url' : item.source
+                  }))}
+                  onReorder={itemsManager.reorderItems}
+                  onRemove={itemsManager.removeItem}
+                  onSetFeatured={itemsManager.setFeaturedImage}
+                  featuredImageId={itemsManager.featuredImageId}
+                  onEnhance={(itemId: string) => {
+                    enhancement.openEnhancementModal(itemId)
+                  }}
+                  enhancingItems={enhancement.enhancingItems}
+                  enhancementTasks={enhancement.enhancementTasks}
                 />
               </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+            </div>
+            <div className="h-[300px]">
+              <PaletteDisplay
+                palette={palette.palette}
+                loading={palette.loading}
+                useAI={palette.useAI}
+                aiDescription={palette.aiAnalysis?.description}
+                aiMood={palette.aiAnalysis?.mood}
+                onToggleAI={palette.setUseAI}
+                onExtract={handleExtractPalette}
+                disabled={itemsManager.items.length === 0}
+              />
+            </div>
+          </div>
+
+          {/* Desktop Layout - Resizable Panels */}
+          <div className="hidden lg:block h-[600px]">
+            <ResizablePanelGroup direction="horizontal" className="h-full">
+              <ResizablePanel defaultSize={70} minSize={40}>
+                <div className="h-full">
+                  <h3 className="text-lg font-semibold mb-4">Your Moodboard</h3>
+                  <div className="h-[calc(100%-2rem)] overflow-auto">
+                    <DraggableMasonryGrid
+                      items={itemsManager.items.map(item => ({
+                        ...item,
+                        // Map source to match MasonryItem type
+                        source: (item.source === 'unsplash' || item.source === 'pixabay') ? 'url' : item.source
+                      }))}
+                      onReorder={itemsManager.reorderItems}
+                      onRemove={itemsManager.removeItem}
+                      onSetFeatured={itemsManager.setFeaturedImage}
+                      featuredImageId={itemsManager.featuredImageId}
+                      onEnhance={(itemId: string) => {
+                        enhancement.openEnhancementModal(itemId)
+                      }}
+                      enhancingItems={enhancement.enhancingItems}
+                      enhancementTasks={enhancement.enhancementTasks}
+                    />
+                  </div>
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={30} minSize={20}>
+                <div className="h-full pl-4">
+                  <PaletteDisplay
+                    palette={palette.palette}
+                    loading={palette.loading}
+                    useAI={palette.useAI}
+                    aiDescription={palette.aiAnalysis?.description}
+                    aiMood={palette.aiAnalysis?.mood}
+                    onToggleAI={palette.setUseAI}
+                    onExtract={handleExtractPalette}
+                    disabled={itemsManager.items.length === 0}
+                  />
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          </div>
         </div>
       )}
 
@@ -430,6 +595,57 @@ export default function MoodboardBuilder({
         <div className="mt-4 text-sm text-muted-foreground text-center">
           Credits: {credits.credits.current} / {credits.credits.monthly} monthly
         </div>
+      )}
+
+      {/* Enhancement Modal */}
+      {enhancement.enhancementModal.isOpen && (
+        <EnhancementModal
+          isOpen={enhancement.enhancementModal.isOpen}
+          onClose={enhancement.closeEnhancementModal}
+          onEnhance={async (type: string, prompt: string) => {
+            const item = itemsManager.items.find(i => i.id === enhancement.enhancementModal.itemId)
+            if (!item) return
+
+            const result = await enhancement.enhanceImage(item, type, prompt, enhancement.selectedProvider)
+            if (result.success && result.enhancedUrl) {
+              // Update item with enhanced URL
+              itemsManager.updateItem(enhancement.enhancementModal.itemId!, {
+                enhanced_url: result.enhancedUrl,
+                original_url: item.original_url || item.url,
+                enhancement_status: 'completed',
+                source: 'ai-enhanced',
+                showing_original: false
+              })
+
+              // Save enhanced image to user gallery
+              try {
+                const savedImage = await downloadAndSaveEnhancedImageToGallery(
+                  result.enhancedUrl,
+                  user?.id || '',
+                  item.id,
+                  type
+                )
+                if (savedImage.success) {
+                  console.log('Enhanced image saved to gallery:', savedImage.permanentUrl)
+
+                  // Update item with permanent URL
+                  itemsManager.updateItem(enhancement.enhancementModal.itemId!, {
+                    enhanced_url: savedImage.permanentUrl
+                  })
+                } else {
+                  console.error('Failed to save enhanced image to gallery:', savedImage.error)
+                }
+              } catch (saveError) {
+                console.error('Error saving enhanced image to gallery:', saveError)
+              }
+            }
+          }}
+          itemUrl={itemsManager.items.find(i => i.id === enhancement.enhancementModal.itemId)?.url || ''}
+          itemCaption={itemsManager.items.find(i => i.id === enhancement.enhancementModal.itemId)?.caption}
+          credits={credits.credits?.current || 0}
+          enhancedUrl={enhancement.activeEnhancement ? enhancement.activeEnhancement.url : undefined}
+          isEnhancing={enhancement.enhancingItems.has(enhancement.enhancementModal.itemId || '')}
+        />
       )}
     </div>
   )

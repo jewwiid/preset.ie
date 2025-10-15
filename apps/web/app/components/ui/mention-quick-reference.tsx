@@ -104,7 +104,7 @@ export default function MentionQuickReference({ className, compact = false }: Me
                   <span>AI Analysis</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <MousePointer className="h-3 w-3 text-green-600" />
+                  <MousePointer className="h-3 w-3 text-primary-600" />
                   <span>Text Selection</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
@@ -132,7 +132,7 @@ export default function MentionQuickReference({ className, compact = false }: Me
                           className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           {copiedText === example ? (
-                            <Check className="h-2 w-2 text-green-600" />
+                            <Check className="h-2 w-2 text-primary-600" />
                           ) : (
                             <Copy className="h-2 w-2" />
                           )}
@@ -176,7 +176,7 @@ export default function MentionQuickReference({ className, compact = false }: Me
               <Badge variant="secondary" className="text-xs">Smart</Badge>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <MousePointer className="h-4 w-4 text-green-600" />
+              <MousePointer className="h-4 w-4 text-primary-600" />
               <span>Text Selection</span>
               <Badge variant="secondary" className="text-xs">Manual</Badge>
             </div>
@@ -227,7 +227,7 @@ export default function MentionQuickReference({ className, compact = false }: Me
                         className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         {copiedText === example ? (
-                          <Check className="h-3 w-3 text-green-600" />
+                          <Check className="h-3 w-3 text-primary-600" />
                         ) : (
                           <Copy className="h-3 w-3" />
                         )}

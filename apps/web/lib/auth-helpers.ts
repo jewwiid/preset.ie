@@ -14,16 +14,16 @@ export async function getUserRole(userId: string): Promise<UserRole | null> {
     
     const { data: profile } = await supabase
       .from('users_profile')
-      .select('role_flags')
+      .select('account_type')
       .eq('user_id', userId)
       .single()
 
     if (!profile) return null
 
     return {
-      isAdmin: profile.role_flags?.includes('ADMIN') || false,
-      isContributor: profile.role_flags?.includes('CONTRIBUTOR') || false,
-      isTalent: profile.role_flags?.includes('TALENT') || false
+      isAdmin: profile.account_type?.includes('ADMIN') || false,
+      isContributor: profile.account_type?.includes('CONTRIBUTOR') || false,
+      isTalent: profile.account_type?.includes('TALENT') || false
     }
   } catch (error) {
     // Only log in development

@@ -64,7 +64,7 @@ async function getAuthenticatedUser(supabase: any, request: NextRequest) {
 
   const { data: profile, error: profileError } = await supabase
     .from('users_profile')
-    .select('id, role_flags')
+    .select('id, account_type')
     .eq('user_id', user.id)
     .single();
 
@@ -192,7 +192,7 @@ export async function POST(
     const { profile } = await getAuthenticatedUser(supabase, request);
     
     // Check if user is a CONTRIBUTOR (only contributors can create gigs and send invitations)
-    const isContributor = profile.role_flags?.includes('CONTRIBUTOR') || profile.role_flags?.includes('BOTH');
+    const isContributor = profile.account_type?.includes('CONTRIBUTOR') || profile.account_type?.includes('BOTH');
     if (!isContributor) {
       return NextResponse.json({ 
         error: 'Only contributors can send gig invitations' 
@@ -229,7 +229,7 @@ export async function POST(
     // Check if invitee is TALENT
     const { data: inviteeProfile, error: inviteeError } = await supabase
       .from('users_profile')
-      .select('id, role_flags, allow_gig_invites')
+      .select('id, account_type, allow_gig_invites')
       .eq('id', validatedData.invitee_id)
       .single();
 
@@ -239,7 +239,7 @@ export async function POST(
       }, { status: 404 });
     }
 
-    const isTalent = inviteeProfile.role_flags?.includes('TALENT') || inviteeProfile.role_flags?.includes('BOTH');
+    const isTalent = inviteeProfile.account_type?.includes('TALENT') || inviteeProfile.account_type?.includes('BOTH');
     if (!isTalent) {
       return NextResponse.json({
         error: 'Can only invite talent users to gigs'

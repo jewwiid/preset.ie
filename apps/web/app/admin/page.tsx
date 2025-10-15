@@ -113,11 +113,11 @@ export default function AdminDashboard() {
 
       const { data: profile } = await supabase
         .from('users_profile')
-        .select('role_flags')
+        .select('account_type')
         .eq('user_id', user.id)
         .single()
 
-      if (!profile?.role_flags?.includes('ADMIN')) {
+      if (!profile?.account_type?.includes('ADMIN')) {
         router.push('/')
         return
       }

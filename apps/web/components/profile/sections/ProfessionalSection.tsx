@@ -17,7 +17,7 @@ export function ProfessionalSection() {
   const { formData, updateField } = useProfileForm()
 
   // Check if user has CONTRIBUTOR role
-  const userRoleFlags = profile?.role_flags || []
+  const userRoleFlags = profile?.account_type || []
   const canEditSpecializations = userRoleFlags.includes('CONTRIBUTOR') || userRoleFlags.includes('BOTH')
 
   // Guard against SSR issues

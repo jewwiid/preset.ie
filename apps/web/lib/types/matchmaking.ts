@@ -80,7 +80,10 @@ export interface UserProfile {
 
 export interface MatchmakingContextType {
   // State
-  recommendations: Recommendation[]
+  recommendations: {
+    all: Recommendation[]
+    filtered: Recommendation[]
+  }
   compatibilityCache: Map<string, CompatibilityData>
   filters: MatchmakingFilters
   loading: boolean

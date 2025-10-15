@@ -14,6 +14,7 @@ import { PendingGigInvitationsCard } from '../../components/dashboard/PendingGig
 import { AllInvitationsCard } from '../../components/dashboard/AllInvitationsCard'
 import { DashboardMatchmakingCard } from '../../components/dashboard/DashboardMatchmakingCard'
 import { UserReferralCard } from '../../components/dashboard/UserReferralCard'
+import { PendingShowcaseApprovals } from '../../components/dashboard/PendingShowcaseApprovals'
 import SavedMediaGallery from '../components/playground/SavedImagesGallery'
 import { BannerPosition } from '../../lib/types/dashboard'
 import { LoadingSpinner } from '../../components/ui/loading-spinner'
@@ -212,6 +213,9 @@ export default function Dashboard() {
               loading={matchmakingLoading}
             />
           )}
+
+          {/* Pending Showcase Approvals */}
+          <PendingShowcaseApprovals />
 
           {/* Saved Images Gallery */}
           <div className="bg-card rounded-2xl p-6 border border-border shadow-xl mb-6">

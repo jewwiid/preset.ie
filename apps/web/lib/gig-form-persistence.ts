@@ -2,77 +2,142 @@ import { useCallback, useMemo } from 'react'
 import { debounce } from 'lodash'
 
 export type CompType = 'TFP' | 'PAID' | 'EXPENSES' | 'OTHER'
+export type BudgetType = 'hourly' | 'per_project' | 'per_day' | 'total'
 export type PurposeType = 'PORTFOLIO' | 'COMMERCIAL' | 'EDITORIAL' | 'FASHION' | 'BEAUTY' | 'LIFESTYLE' | 'WEDDING' | 'EVENT' | 'PRODUCT' | 'ARCHITECTURE' | 'STREET' | 'CONCEPTUAL' | 'OTHER'
 export type StatusType = 'DRAFT' | 'PUBLISHED' | 'CLOSED' | 'COMPLETED'
-export type LookingForType =
-  // 🎭 Talent & Performers
-  | 'MODELS'
-  | 'MODELS_FASHION'
-  | 'MODELS_COMMERCIAL'
-  | 'MODELS_FITNESS'
-  | 'MODELS_EDITORIAL'
-  | 'MODELS_RUNWAY'
-  | 'MODELS_HAND'
-  | 'MODELS_PARTS'
-  | 'ACTORS'
-  | 'DANCERS'
-  | 'MUSICIANS'
-  | 'SINGERS'
-  | 'VOICE_ACTORS'
-  | 'PERFORMERS'
-  | 'INFLUENCERS'
+// =====================================================
+// DEFINITIVE ROLE CATEGORIES (100+ items)
+// =====================================================
+// This type matches EXACTLY with database tables:
+// - talent_categories (20 items)
+// - contributor_categories (80 items)
+// These are the ONLY valid values for exact matching
+// =====================================================
 
-  // 📸 Visual Creators
-  | 'PHOTOGRAPHERS'
-  | 'VIDEOGRAPHERS'
-  | 'CINEMATOGRAPHERS'
+export type RoleCategory =
+  // 🎭 TALENT CATEGORIES (from talent_categories table)
+  | 'Model'
+  | 'Actor'
+  | 'Actress'
+  | 'Dancer'
+  | 'Musician'
+  | 'Singer'
+  | 'Voice Actor'
+  | 'Influencer'
+  | 'Content Creator'
+  | 'Performer'
+  | 'Stunt Performer'
+  | 'Extra/Background Actor'
+  | 'Hand Model'
+  | 'Fitness Model'
+  | 'Commercial Model'
+  | 'Fashion Model'
+  | 'Plus-Size Model'
+  | 'Child Model'
+  | 'Teen Model'
+  | 'Mature Model'
 
-  // 🎬 Production & Crew
-  | 'PRODUCTION_CREW'
-  | 'PRODUCERS'
-  | 'DIRECTORS'
-  | 'CREATIVE_DIRECTORS'
-  | 'ART_DIRECTORS'
+  // 📸 PHOTOGRAPHY & VIDEOGRAPHY
+  | 'Photographer'
+  | 'Videographer'
+  | 'Cinematographer'
+  | 'Drone Operator'
+  | 'Camera Operator'
+  | 'Steadicam Operator'
+  | 'BTS Photographer'
+  | 'Product Photographer'
 
-  // 💄 Styling & Beauty
-  | 'MAKEUP_ARTISTS'
-  | 'HAIR_STYLISTS'
-  | 'FASHION_STYLISTS'
-  | 'WARDROBE_STYLISTS'
+  // 🎬 PRODUCTION & DIRECTION
+  | 'Producer'
+  | 'Director'
+  | 'Creative Director'
+  | 'Art Director'
+  | 'Production Manager'
+  | 'Production Assistant'
+  | 'First AD'
+  | 'Second AD'
+  | 'Script Supervisor'
+  | 'Location Manager'
 
-  // 🎨 Post-Production
-  | 'EDITORS'
-  | 'VIDEO_EDITORS'
-  | 'PHOTO_EDITORS'
-  | 'VFX_ARTISTS'
-  | 'MOTION_GRAPHICS'
-  | 'RETOUCHERS'
-  | 'COLOR_GRADERS'
+  // 💄 STYLING & BEAUTY
+  | 'Makeup Artist'
+  | 'Hair Stylist'
+  | 'Fashion Stylist'
+  | 'Wardrobe Stylist'
+  | 'Costume Designer'
+  | 'Grooming Artist'
+  | 'Special Effects Makeup'
+  | 'Nail Artist'
 
-  // 🎨 Design & Creative
-  | 'DESIGNERS'
-  | 'GRAPHIC_DESIGNERS'
-  | 'ILLUSTRATORS'
-  | 'ANIMATORS'
+  // 🎨 POST-PRODUCTION
+  | 'Editor'
+  | 'Video Editor'
+  | 'Photo Editor'
+  | 'Retoucher'
+  | 'Color Grader'
+  | 'Colorist'
+  | 'VFX Artist'
+  | 'Motion Graphics Designer'
+  | 'Animator'
+  | 'Compositor'
+  | 'Sound Designer'
+  | 'Sound Engineer'
 
-  // 📱 Content & Social
-  | 'CONTENT_CREATORS'
-  | 'SOCIAL_MEDIA_MANAGERS'
-  | 'DIGITAL_MARKETERS'
+  // 🎨 DESIGN & CREATIVE
+  | 'Graphic Designer'
+  | 'UI/UX Designer'
+  | 'Web Designer'
+  | 'Illustrator'
+  | '3D Artist'
+  | 'Set Designer'
+  | 'Prop Master'
+  | 'Production Designer'
+  | 'Visual Designer'
+  | 'Brand Designer'
 
-  // 💼 Business & Teams
-  | 'AGENCIES'
-  | 'BRAND_MANAGERS'
-  | 'MARKETING_TEAMS'
-  | 'STUDIOS'
+  // 🎥 LIGHTING & GRIP
+  | 'Gaffer'
+  | 'Key Grip'
+  | 'Best Boy Electric'
+  | 'Best Boy Grip'
+  | 'Lighting Technician'
+  | 'Grip'
 
-  // ✍️ Writing
-  | 'WRITERS'
-  | 'COPYWRITERS'
-  | 'SCRIPTWRITERS'
+  // 📱 DIGITAL & SOCIAL
+  | 'Social Media Manager'
+  | 'Digital Marketer'
+  | 'Copywriter'
+  | 'Scriptwriter'
+  | 'Writer'
+  | 'Blogger'
+  | 'Journalist'
 
-  // Other
-  | 'OTHER'
+  // 💼 BUSINESS & MANAGEMENT
+  | 'Agent'
+  | 'Casting Director'
+  | 'Talent Manager'
+  | 'Brand Manager'
+  | 'Marketing Manager'
+  | 'Public Relations'
+  | 'Event Coordinator'
+  | 'Studio Manager'
+
+  // 🎵 AUDIO
+  | 'Music Producer'
+  | 'DJ'
+  | 'Boom Operator'
+  | 'Audio Engineer'
+  | 'Foley Artist'
+
+  // 🔧 TECHNICAL
+  | 'DIT'
+  | 'Data Wrangler'
+  | 'Playback Operator'
+  | 'Technical Director'
+  | 'Systems Engineer'
+
+// Legacy type alias for backward compatibility
+export type LookingForType = RoleCategory
 
 export interface ApplicantPreferences {
   physical: {
@@ -107,10 +172,13 @@ export interface ApplicantPreferences {
 export interface GigFormData {
   title: string
   description: string
-  lookingFor?: LookingForType[]  // Changed to array for multi-select
+  lookingFor?: RoleCategory[]  // Updated: now using RoleCategory (exact database match)
   purpose?: PurposeType
   compType: CompType
   compDetails?: string
+  budgetMin?: number | null
+  budgetMax?: number | null
+  budgetType?: BudgetType
   usageRights: string
   location: string
   city?: string

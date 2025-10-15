@@ -153,8 +153,8 @@ export function usePredefinedOptions() {
             .order('sort_order'),
 
           supabase
-            .from('predefined_performance_roles')
-            .select('id, role_name, is_active, sort_order')
+            .from('talent_categories')
+            .select('id, category_name, is_active, sort_order')
             .eq('is_active', true)
             .order('sort_order')
         ])

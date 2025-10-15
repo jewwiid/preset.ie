@@ -171,7 +171,7 @@ export function ProfileContentEnhanced() {
   ]
 
   // Physical Attributes (for talent)
-  const physicalInfo = profile?.performance_roles && profile.performance_roles.length > 0 ? [
+  const physicalInfo = profile?.talent_categories && profile.talent_categories.length > 0 ? [
     {
       label: 'Height',
       value: profile?.height_cm ? `${profile.height_cm}cm` : 'Not specified',
@@ -473,7 +473,7 @@ export function ProfileContentEnhanced() {
             )}
 
             {/* Compatible Gigs Section - Only for Talent Users */}
-            {profile?.performance_roles && profile.performance_roles.length > 0 && (
+            {profile?.talent_categories && profile.talent_categories.length > 0 && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-3">
@@ -829,7 +829,7 @@ export function ProfileContentEnhanced() {
             </Card>
 
             {/* Compatible Gigs Section - Only for Talent Users */}
-            {profile?.performance_roles && profile.performance_roles.length > 0 && (
+            {profile?.talent_categories && profile.talent_categories.length > 0 && (
               <Card>
                 <CardHeader>
                   <div className="flex items-center gap-3">

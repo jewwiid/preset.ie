@@ -48,7 +48,9 @@ export const useGigs = () => {
           ),
           moodboards!gig_id (
             id,
-            palette
+            palette,
+            featured_image_id,
+            items
           )
         `)
         .eq('status', 'PUBLISHED')
@@ -57,12 +59,39 @@ export const useGigs = () => {
 
       if (error) throw error;
 
-      const formattedGigs = data?.map(gig => ({
-        ...gig,
-        current_applicants: gig.applications?.[0]?.count || 0,
-        is_saved: false,
-        palette_colors: extractPaletteColors(gig.moodboards)
-      })) || [];
+      const formattedGigs = data?.map(gig => {
+        // Extract moodboard image URLs with featured image priority
+        const moodboardUrls: string[] = [];
+        if (gig.moodboards && gig.moodboards.length > 0) {
+          const moodboard = gig.moodboards[0]; // Get the first moodboard
+          if (moodboard.items && Array.isArray(moodboard.items)) {
+            // Sort items to prioritize featured image
+            const sortedItems = [...moodboard.items].sort((a: any, b: any) => {
+              // Featured image first
+              if (a.id === moodboard.featured_image_id) return -1;
+              if (b.id === moodboard.featured_image_id) return 1;
+              // Then by position
+              return (a.position || 0) - (b.position || 0);
+            });
+            
+            sortedItems.forEach((item: any) => {
+              // Use full-quality image URL, not thumbnail
+              const imageUrl = item.url || item.thumbnail_url;
+              if (imageUrl) {
+                moodboardUrls.push(imageUrl);
+              }
+            });
+          }
+        }
+
+        return {
+          ...gig,
+          current_applicants: gig.applications?.[0]?.count || 0,
+          is_saved: false,
+          palette_colors: extractPaletteColors(gig.moodboards),
+          moodboard_urls: moodboardUrls
+        };
+      }) || [];
 
       setGigs(formattedGigs);
     } catch (error) {

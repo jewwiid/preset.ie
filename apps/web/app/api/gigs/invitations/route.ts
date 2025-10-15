@@ -34,7 +34,7 @@ async function getAuthenticatedUser(supabase: any, request: NextRequest) {
 
   const { data: profile, error: profileError } = await supabase
     .from('users_profile')
-    .select('id, role_flags')
+    .select('id, account_type')
     .eq('user_id', user.id)
     .single();
 

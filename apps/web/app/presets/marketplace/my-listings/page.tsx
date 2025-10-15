@@ -221,7 +221,7 @@ export default function MyListingsPage() {
                   <p className="text-sm text-muted-foreground">Active Listings</p>
                   <p className="text-2xl font-bold">{stats.active_listings}</p>
                 </div>
-                <Eye className="h-8 w-8 text-green-500" />
+                <Eye className="h-8 w-8 text-primary-500" />
               </div>
             </CardContent>
           </Card>
@@ -283,7 +283,7 @@ export default function MyListingsPage() {
                         </h3>
                         <Badge variant="outline">{listing.category}</Badge>
                         {listing.is_for_sale && listing.is_public ? (
-                          <Badge className="bg-green-500">
+                          <Badge className="bg-primary-500">
                             <Eye className="h-3 w-3 mr-1" />
                             Active
                           </Badge>

@@ -317,7 +317,7 @@ export function StreamlinedProfileProvider({ children }: { children: ReactNode }
         city: profileData.city || null,
         country: profileData.country || 'Ireland',
         avatar_url: existingAvatarUrl,
-        role_flags: roleFlags,
+        account_type: roleFlags,
         date_of_birth: dateOfBirth,
         
         // Essential fields only (matching database schema)

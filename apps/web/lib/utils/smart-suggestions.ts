@@ -41,13 +41,15 @@ const PROFILE_FIELDS: ProfileField[] = [
   { key: 'languages', label: 'Languages', weight: 4, category: 'low' },
   
   // ============ CONTRIBUTOR-SPECIFIC FIELDS ============
+  { key: 'professional_skills', label: 'Professional Skills', weight: 12, category: 'high', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
+  { key: 'contributor_roles', label: 'Contributor Roles', weight: 10, category: 'high', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
   { key: 'equipment_list', label: 'Equipment', weight: 8, category: 'high', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
   { key: 'editing_software', label: 'Software', weight: 6, category: 'medium', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
   { key: 'studio_name', label: 'Studio Info', weight: 4, category: 'low', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
   { key: 'has_studio', label: 'Has Studio', weight: 3, category: 'low', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
   
   // ============ TALENT-SPECIFIC FIELDS ============
-  { key: 'performance_roles', label: 'Performance Roles', weight: 10, category: 'high', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'talent_categories', label: 'Talent Categories', weight: 10, category: 'high', applicableRoles: ['TALENT', 'BOTH'] },
   
   // Physical Attributes
   { key: 'height_cm', label: 'Height', weight: 6, category: 'medium', applicableRoles: ['TALENT', 'BOTH'] },
@@ -87,7 +89,7 @@ function getApplicableFields(roleFlags: string[]): ProfileField[] {
  * Get missing fields from user profile
  */
 export function getMissingFields(profile: UserProfile): ProfileField[] {
-  const applicableFields = getApplicableFields(profile.role_flags || [])
+  const applicableFields = getApplicableFields(profile.account_type || [])
   
   return applicableFields.filter(field => {
     const value = profile[field.key]
@@ -186,7 +188,7 @@ export function calculatePotentialWithField(profile: UserProfile, fieldKey: keyo
   const field = PROFILE_FIELDS.find(f => f.key === fieldKey)
   if (!field) return profile.profile_completion_percentage || 0
   
-  const applicableFields = getApplicableFields(profile.role_flags || [])
+  const applicableFields = getApplicableFields(profile.account_type || [])
   const totalWeight = applicableFields.reduce((sum, f) => sum + f.weight, 0)
   
   if (totalWeight === 0) return 0

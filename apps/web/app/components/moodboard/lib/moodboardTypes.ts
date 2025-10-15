@@ -2,13 +2,14 @@
  * Type definitions for the Moodboard system
  */
 
-export type ImageSource = 'upload' | 'pexels' | 'url' | 'ai-enhanced'
+export type ImageSource = 'upload' | 'pexels' | 'unsplash' | 'pixabay' | 'url' | 'ai-enhanced'
 export type ItemType = 'image' | 'video' | 'pexels'
 export type EnhancementStatus = 'pending' | 'processing' | 'completed' | 'failed'
 export type EnhancementType = 'lighting' | 'style' | 'background' | 'mood' | 'custom'
 export type EnhancementProvider = 'nanobanana' | 'seedream'
 export type SubscriptionTier = 'free' | 'FREE' | 'plus' | 'PLUS' | 'pro' | 'PRO'
 export type TabType = 'upload' | 'pexels' | 'saved' | 'url' | 'enhance'
+export type StockPhotoProvider = 'pexels' | 'unsplash' | 'pixabay'
 
 /**
  * Individual moodboard item (image or video)
@@ -69,6 +70,96 @@ export interface ActiveEnhancement {
 }
 
 /**
+ * Unified stock photo interface for all providers
+ */
+export interface StockPhoto {
+  id: string
+  url: string
+  photographer: string
+  photographer_url: string
+  src: {
+    original: string
+    large2x: string
+    large: string
+    medium: string
+    small: string
+    portrait: string
+    landscape: string
+    tiny: string
+  }
+  alt: string
+  width: number
+  height: number
+  avg_color: string
+  provider: StockPhotoProvider
+  attribution: string
+}
+
+/**
+ * Unsplash photo from API
+ */
+export interface UnsplashPhoto {
+  id: string
+  width: number
+  height: number
+  urls: {
+    raw: string
+    full: string
+    regular: string
+    small: string
+    thumb: string
+  }
+  user: {
+    name: string
+    username: string
+    links: {
+      html: string
+    }
+  }
+  color: string
+  alt_description: string
+  description: string
+}
+
+/**
+ * Pixabay photo from API
+ */
+export interface PixabayPhoto {
+  id: number
+  pageURL: string
+  type: string
+  tags: string
+  previewURL: string
+  previewWidth: number
+  previewHeight: number
+  webformatURL: string
+  webformatWidth: number
+  webformatHeight: number
+  largeImageURL: string
+  fullHDURL: string
+  imageURL: string
+  imageWidth: number
+  imageHeight: number
+  imageSize: number
+  views: number
+  downloads: number
+  likes: number
+  comments: number
+  user_id: number
+  user: string
+  userImageURL: string
+}
+
+/**
+ * Stock photo search filters (unified)
+ */
+export interface StockPhotoFilters {
+  orientation: '' | 'landscape' | 'portrait' | 'square'
+  size: '' | 'large' | 'medium' | 'small'
+  color: string
+}
+
+/**
  * Pexels photo from API
  */
 export interface PexelsPhoto {
@@ -95,13 +186,10 @@ export interface PexelsPhoto {
 }
 
 /**
- * Pexels search filters
+ * Pexels search filters (deprecated - use StockPhotoFilters)
+ * @deprecated Use StockPhotoFilters instead
  */
-export interface PexelsFilters {
-  orientation: '' | 'landscape' | 'portrait' | 'square'
-  size: '' | 'large' | 'medium' | 'small'
-  color: string
-}
+export interface PexelsFilters extends StockPhotoFilters {}
 
 /**
  * User credits information

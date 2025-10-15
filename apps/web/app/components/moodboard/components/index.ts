@@ -6,7 +6,8 @@
 export { MoodboardHeader } from './MoodboardHeader'
 export { MoodboardTabs } from './MoodboardTabs'
 export { ImageUploadPanel } from './ImageUploadPanel'
-export { PexelsSearchPanel } from './PexelsSearchPanel'
+export { StockPhotoSearchPanel } from './StockPhotoSearchPanel'
+export { PexelsSearchPanel } from './PexelsSearchPanel' // Keep for backward compatibility
 export { URLImportPanel } from './URLImportPanel'
 export { SavedImagesPanel } from './SavedImagesPanel'
 export { PaletteDisplay } from './PaletteDisplay'

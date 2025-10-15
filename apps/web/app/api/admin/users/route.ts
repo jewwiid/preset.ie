@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
     // Verify admin role
     const { data: profile } = await authSupabase
       .from('users_profile')
-      .select('role_flags')
+      .select('account_type')
       .eq('user_id', user.id)
       .single()
 
-    if (!profile?.role_flags?.includes('ADMIN')) {
+    if (!profile?.account_type?.includes('ADMIN')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     // Apply role filter
     if (role) {
-      query = query.contains('role_flags', [role])
+      query = query.contains('account_type', [role])
     }
 
     // Apply subscription filter
@@ -68,9 +68,9 @@ export async function GET(request: NextRequest) {
 
     // Apply banned filter
     if (is_banned === 'true') {
-      query = query.contains('role_flags', ['BANNED'])
+      query = query.contains('account_type', ['BANNED'])
     } else if (is_banned === 'false') {
-      query = query.not('role_flags', 'cs', '["BANNED"]')
+      query = query.not('account_type', 'cs', '["BANNED"]')
     }
 
     // Apply pagination and ordering

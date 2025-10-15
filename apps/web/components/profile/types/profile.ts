@@ -9,7 +9,7 @@ export interface UserProfile {
   avatar_url?: string
   header_banner_url?: string
   header_banner_position?: string
-  role_flags?: string[]
+  account_type?: string[]
   bio?: string
   city?: string
   country?: string
@@ -20,7 +20,7 @@ export interface UserProfile {
   portfolio_url?: string
   years_experience?: number
   professional_skills?: string[]    // NEW: Services user provides (Photography, Video Editing, etc.)
-  performance_roles?: string[]      // NEW: What user performs as (Model, Actor, Dancer, etc.)
+  talent_categories?: string[]      // NEW: What user performs as (Model, Actor, Dancer, etc.) - renamed from talent_categoriess
   contributor_roles?: string[]
   equipment_list?: string[]
   editing_software?: string[]
@@ -37,7 +37,7 @@ export interface UserProfile {
   typical_turnaround_days?: number | null
   turnaround_unit_preference?: 'days' | 'weeks'
   height_cm?: number | null
-  measurements?: string
+  measurements?: string // DEPRECATED: Use user_measurements table instead
   eye_color?: string
   hair_color?: string
   shoe_size?: string

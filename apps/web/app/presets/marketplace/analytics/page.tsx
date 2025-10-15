@@ -199,7 +199,7 @@ export default function MarketplaceAnalyticsPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm text-muted-foreground">Total Sales</p>
-                    <ShoppingCart className="h-5 w-5 text-green-500" />
+                    <ShoppingCart className="h-5 w-5 text-primary-500" />
                   </div>
                   <p className="text-3xl font-bold">{analytics.overview.total_sales}</p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -357,7 +357,7 @@ export default function MarketplaceAnalyticsPage() {
                           <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                             <div className="flex items-center gap-3">
                               {activity.type === 'sale' ? (
-                                <ShoppingCart className="h-4 w-4 text-green-500" />
+                                <ShoppingCart className="h-4 w-4 text-primary-500" />
                               ) : activity.type === 'view' ? (
                                 <Eye className="h-4 w-4 text-blue-500" />
                               ) : (
@@ -374,7 +374,7 @@ export default function MarketplaceAnalyticsPage() {
                             </div>
                             <div className="text-right">
                               {activity.amount && (
-                                <p className="text-sm font-semibold text-green-600">
+                                <p className="text-sm font-semibold text-primary-600">
                                   +{formatCurrency(activity.amount)}
                                 </p>
                               )}

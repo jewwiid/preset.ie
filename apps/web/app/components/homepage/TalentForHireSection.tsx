@@ -11,7 +11,7 @@ interface TalentProfile {
   display_name?: string;
   avatar_url?: string;
   bio?: string;
-  performance_roles?: string[];
+  talent_categoriess?: string[];
   professional_skills?: string[];
   verification_badges?: any;
 }

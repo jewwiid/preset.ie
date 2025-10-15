@@ -301,16 +301,25 @@ export default function DraggableMasonryGrid({
               {/* Image container */}
               <div className="relative w-full h-full min-h-[150px]">
                 {item.type === 'image' ? (
-                  <img
-                    src={imageUrl}
-                    alt={item.caption || ''}
-                    className={`w-full h-full object-cover ${
-                      isEnhancing ? 'opacity-50' : 'opacity-100'
-                    }`}
-                    loading="lazy"
-                    onLoad={(e) => handleImageLoad(item.id)}
-                    draggable={false}
-                  />
+                  <>
+                    <img
+                      src={imageUrl}
+                      alt={item.caption || ''}
+                      className={`w-full h-full object-cover transition-opacity duration-300 ${
+                        isEnhancing ? 'opacity-50' : imagesLoaded.get(item.id) ? 'opacity-100' : 'opacity-0'
+                      }`}
+                      loading="lazy"
+                      onLoad={(e) => handleImageLoad(item.id)}
+                      draggable={false}
+                    />
+                    
+                    {/* Loading placeholder with better animation */}
+                    {!imagesLoaded.get(item.id) && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 animate-pulse flex items-center justify-center">
+                        <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <video
                     src={item.url}
@@ -321,11 +330,6 @@ export default function DraggableMasonryGrid({
                     poster={item.thumbnail_url}
                     draggable={false}
                   />
-                )}
-
-                {/* Loading placeholder */}
-                {!imagesLoaded.get(item.id) && (
-                  <div className="absolute inset-0 bg-muted animate-pulse" />
                 )}
               </div>
 

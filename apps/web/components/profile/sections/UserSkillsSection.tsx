@@ -203,7 +203,7 @@ export function UserSkillsSection() {
       case 'Expert': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
       case 'Advanced': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300'
       case 'Intermediate': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
-      case 'Novice': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+      case 'Novice': return 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300'
       case 'Beginner': return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300'
     }
@@ -388,7 +388,7 @@ export function UserSkillsSection() {
                       <Star className="h-4 w-4 text-yellow-500 fill-current" />
                     )}
                     {skill.verified && (
-                      <Award className="h-4 w-4 text-green-500" />
+                      <Award className="h-4 w-4 text-primary-500" />
                     )}
                   </div>
                   

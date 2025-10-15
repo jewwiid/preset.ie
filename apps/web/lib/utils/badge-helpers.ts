@@ -23,10 +23,10 @@ export function getPresetCategoryColor(category: string): string {
   const colors: Record<string, string> = {
     headshot: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
     product_photography: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-    ecommerce: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    ecommerce: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
     corporate_portrait: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
     linkedin_photo: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300',
-    style: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300',
+    style: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
     cinematic: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
     technical: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
   };
@@ -137,7 +137,7 @@ export function getStatusBadgeColor(status: string): string {
     case 'approved':
     case 'completed':
     case 'success':
-      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+      return 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300';
 
     case 'pending':
     case 'in_progress':
@@ -217,11 +217,11 @@ export function getCategoryBadgeColor(category: string): string {
   const colors = [
     'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
     'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
     'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
     'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
     'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
-    'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300',
+    'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
     'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300',
   ];
 

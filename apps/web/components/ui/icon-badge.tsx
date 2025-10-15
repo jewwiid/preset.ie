@@ -31,7 +31,7 @@ export function IconBadge({ icon: Icon, size = 'md', variant = 'primary', classN
     accent: 'bg-accent text-accent-foreground',
     destructive: 'bg-destructive text-destructive-foreground',
     muted: 'bg-muted text-muted-foreground',
-    success: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+    success: 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300',
     warning: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'};
 
   return (

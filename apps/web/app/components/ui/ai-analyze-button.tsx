@@ -123,7 +123,7 @@ export default function AIAnalyzeButton({
       case 'loading':
         return <Loader2 className="animate-spin" size={getIconSize()} />;
       case 'success':
-        return <CheckCircle className="text-green-500" size={getIconSize()} />;
+        return <CheckCircle className="text-primary-500" size={getIconSize()} />;
       case 'error':
         return <AlertCircle className="text-red-500" size={getIconSize()} />;
       default:
@@ -151,7 +151,7 @@ export default function AIAnalyzeButton({
       case 'loading':
         return `${baseClasses} bg-blue-100 text-blue-600 cursor-wait`;
       case 'success':
-        return `${baseClasses} bg-green-100 text-green-600 hover:bg-green-200`;
+        return `${baseClasses} bg-primary-100 text-primary-600 hover:bg-primary-200`;
       case 'error':
         return `${baseClasses} bg-red-100 text-red-600 hover:bg-red-200`;
       default:
@@ -228,7 +228,7 @@ export default function AIAnalyzeButton({
                 <div className="flex gap-2">
                   <button
                     onClick={handleAccept}
-                    className="flex-1 px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                    className="flex-1 px-3 py-1.5 bg-primary-600 text-white text-sm rounded hover:bg-primary/90 transition-colors"
                   >
                     Apply Changes
                   </button>

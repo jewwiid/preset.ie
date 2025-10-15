@@ -1,0 +1,190 @@
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+export async function GET() {
+  try {
+    console.log('[predefined-data API] Starting request')
+    console.log('[predefined-data API] Supabase URL:', supabaseUrl ? 'Set' : 'Missing')
+    console.log('[predefined-data API] Service Key:', supabaseServiceKey ? 'Set' : 'Missing')
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[predefined-data API] Missing environment variables')
+      return NextResponse.json(
+        { error: 'Server configuration error - missing environment variables' },
+        { status: 500 }
+      )
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Helper function to safely query tables
+    const safeQuery = async (tableName: string) => {
+      try {
+        return await supabase
+          .from(tableName)
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+      } catch (error) {
+        console.warn(`Table ${tableName} not found or error:`, error)
+        return { data: [], error: null }
+      }
+    }
+
+    // Fetch all predefined data in parallel
+    const [
+      eyeColorsResult,
+      hairColorsResult,
+      clothingSizeSystemsResult,
+      clothingSizesResult,
+      shoeSizeSystemsResult,
+      shoeSizesResult,
+      predefinedRolesResult,
+      professionalSkillsResult,
+      genderIdentitiesResult,
+      ethnicitiesResult,
+      experienceLevelsResult,
+      nationalitiesResult
+    ] = await Promise.all([
+      supabase
+        .from('predefined_eye_colors')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_hair_colors')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_clothing_size_systems')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_clothing_sizes')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_shoe_size_systems')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_shoe_sizes')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_roles')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_professional_skills')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_gender_identities')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_ethnicities')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_experience_levels')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true }),
+      
+      supabase
+        .from('predefined_nationalities')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+    ])
+
+    // Check for errors
+    const errors = [
+      eyeColorsResult.error,
+      hairColorsResult.error,
+      clothingSizeSystemsResult.error,
+      clothingSizesResult.error,
+      shoeSizeSystemsResult.error,
+      shoeSizesResult.error,
+      predefinedRolesResult.error,
+      professionalSkillsResult.error,
+      genderIdentitiesResult.error,
+      ethnicitiesResult.error,
+      experienceLevelsResult.error,
+      nationalitiesResult.error
+    ].filter(Boolean)
+
+    if (errors.length > 0) {
+      console.error('Errors fetching predefined data:', errors)
+      return NextResponse.json(
+        { error: 'Failed to fetch some predefined data', details: errors },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      eye_colors: eyeColorsResult.data || [],
+      hair_colors: hairColorsResult.data || [],
+      clothing_size_systems: clothingSizeSystemsResult.data || [],
+      clothing_sizes: clothingSizesResult.data || [],
+      shoe_size_systems: shoeSizeSystemsResult.data || [],
+      shoe_sizes: shoeSizesResult.data || [],
+      
+      // Professional data (what we need for profile editing)
+      predefined_roles: predefinedRolesResult.data || [],
+      professional_skills: professionalSkillsResult.data || [],
+      
+      // Other predefined data
+      gender_identities: genderIdentitiesResult.data || [],
+      ethnicities: ethnicitiesResult.data || [],
+      experience_levels: experienceLevelsResult.data || [],
+      nationalities: nationalitiesResult.data || [],
+      
+      // Legacy aliases for backward compatibility
+      performance_roles: [],
+      languages: [],
+      equipment_types: [],
+      equipment_brands: [],
+      availability_statuses: []
+    })
+
+  } catch (error) {
+    console.error('[predefined-data API] Unexpected error:', error)
+    console.error('[predefined-data API] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown'
+    })
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}

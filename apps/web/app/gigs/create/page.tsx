@@ -41,6 +41,9 @@ export default function CreateGigPage() {
     purpose: 'PORTFOLIO',
     compType: 'TFP',
     compDetails: '',
+    budgetMin: null,
+    budgetMax: null,
+    budgetType: 'hourly',
     usageRights: '',
     location: '',
     startDate: '',
@@ -303,6 +306,9 @@ export default function CreateGigPage() {
         purpose: formData.purpose,
         comp_type: formData.compType,
         comp_details: formData.compDetails,
+        budget_min: formData.budgetMin,
+        budget_max: formData.budgetMax,
+        budget_type: formData.budgetType,
         usage_rights: formData.usageRights,
         start_time: formData.startDate,
         end_time: formData.endDate,
@@ -313,7 +319,7 @@ export default function CreateGigPage() {
         application_deadline: formData.applicationDeadline,
         max_applicants: formData.maxApplicants,
         safety_notes: formData.safetyNotes,
-        applicant_preferences: formData.applicantPreferences || {} 
+        applicant_preferences: formData.applicantPreferences || {}
       }
       
       const { data, error: insertError } = await supabase
@@ -401,6 +407,9 @@ export default function CreateGigPage() {
             purpose={formData.purpose!}
             compType={formData.compType}
             compDetails={formData.compDetails || ''}
+            budgetMin={formData.budgetMin}
+            budgetMax={formData.budgetMax}
+            budgetType={formData.budgetType}
             userSubscriptionTier={userSubscriptionTier}
             onTitleChange={(value) => saveFormData({ title: value })}
             onDescriptionChange={(value) => saveFormData({ description: value })}
@@ -408,6 +417,9 @@ export default function CreateGigPage() {
             onPurposeChange={(value) => saveFormData({ purpose: value })}
             onCompTypeChange={(value) => saveFormData({ compType: value })}
             onCompDetailsChange={(value) => saveFormData({ compDetails: value })}
+            onBudgetMinChange={(value) => saveFormData({ budgetMin: value })}
+            onBudgetMaxChange={(value) => saveFormData({ budgetMax: value })}
+            onBudgetTypeChange={(value) => saveFormData({ budgetType: value })}
             onNext={goToNextStep}
             isValid={validateBasicDetails()}
           />

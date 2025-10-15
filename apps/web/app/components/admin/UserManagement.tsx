@@ -9,7 +9,7 @@ interface User {
   user_id: string
   display_name: string
   handle: string
-  role_flags: string[]
+  account_type: string[]
   subscription_tier: string
   created_at: string
   city?: string
@@ -49,7 +49,7 @@ export function UserManagement() {
       // Apply role filter
       if (filterRole !== 'all') {
         const roleFlag = filterRole.toUpperCase()
-        query = query.contains('role_flags', [roleFlag])
+        query = query.contains('account_type', [roleFlag])
       }
 
       const { data, error } = await query
@@ -73,7 +73,7 @@ export function UserManagement() {
       const user = users.find(u => u.user_id === userId)
       if (!user) return
 
-      let updatedRoleFlags = [...user.role_flags]
+      let updatedRoleFlags = [...user.account_type]
 
       switch (action) {
         case 'makeAdmin':
@@ -101,7 +101,7 @@ export function UserManagement() {
 
       const { error } = await supabase
         .from('users_profile')
-        .update({ role_flags: updatedRoleFlags })
+        .update({ account_type: updatedRoleFlags })
         .eq('user_id', userId)
 
       if (error) throw error
@@ -259,7 +259,7 @@ export function UserManagement() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">
-                      {getRoleBadges(user.role_flags)}
+                      {getRoleBadges(user.account_type)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -289,7 +289,7 @@ export function UserManagement() {
                             View Details
                           </button>
                           
-                          {!user.role_flags.includes('ADMIN') && (
+                          {!user.account_type.includes('ADMIN') && (
                             <button
                               onClick={() => updateUserRole(user.user_id, 'makeAdmin')}
                               className="block w-full text-left px-4 py-2 text-sm text-muted-foreground-700 hover:bg-muted-50"
@@ -298,7 +298,7 @@ export function UserManagement() {
                             </button>
                           )}
                           
-                          {user.role_flags.includes('ADMIN') && (
+                          {user.account_type.includes('ADMIN') && (
                             <button
                               onClick={() => updateUserRole(user.user_id, 'removeAdmin')}
                               className="block w-full text-left px-4 py-2 text-sm text-muted-foreground-700 hover:bg-muted-50"
@@ -307,7 +307,7 @@ export function UserManagement() {
                             </button>
                           )}
                           
-                          {!user.role_flags.includes('BANNED') ? (
+                          {!user.account_type.includes('BANNED') ? (
                             <button
                               onClick={() => updateUserRole(user.user_id, 'ban')}
                               className="block w-full text-left px-4 py-2 text-sm text-destructive-600 hover:bg-destructive-50"
@@ -380,7 +380,7 @@ export function UserManagement() {
               <div>
                 <p className="text-sm text-muted-foreground-500">Roles</p>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {getRoleBadges(selectedUser.role_flags)}
+                  {getRoleBadges(selectedUser.account_type)}
                 </div>
               </div>
               

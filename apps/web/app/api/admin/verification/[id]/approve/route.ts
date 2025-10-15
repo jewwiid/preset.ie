@@ -22,11 +22,11 @@ export async function POST(
     // Verify admin role
     const { data: profile } = await supabase
       .from('users_profile')
-      .select('role_flags')
+      .select('account_type')
       .eq('user_id', user.id)
       .single()
 
-    if (!profile?.role_flags?.includes('ADMIN')) {
+    if (!profile?.account_type?.includes('ADMIN')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -115,21 +115,21 @@ export async function POST(
 
     const flag = flagMap[request_data.verification_type]
     if (flag) {
-      // Get current role_flags
+      // Get current account_type
       const { data: userData } = await supabase
         .from('users_profile')
-        .select('role_flags')
+        .select('account_type')
         .eq('user_id', request_data.user_id)
         .single()
       
-      let updatedFlags = userData?.role_flags || []
+      let updatedFlags = userData?.account_type || []
       // Remove flag if it exists, then add it
       updatedFlags = updatedFlags.filter((f: string) => f !== flag)
       updatedFlags.push(flag)
       
       await supabase
         .from('users_profile')
-        .update({ role_flags: updatedFlags })
+        .update({ account_type: updatedFlags })
         .eq('user_id', request_data.user_id)
     }
 

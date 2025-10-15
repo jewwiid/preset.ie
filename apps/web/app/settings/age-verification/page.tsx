@@ -198,7 +198,7 @@ export default function AgeVerificationPage() {
           <CardContent className="space-y-4">
             {status?.age_verified ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-green-600">
+                <div className="flex items-center gap-2 text-primary-600">
                   <CheckCircle className="w-5 h-5" />
                   <span className="font-medium">Age Verified</span>
                 </div>
@@ -286,7 +286,7 @@ export default function AgeVerificationPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-green-600">
+                  <div className="flex items-center gap-2 text-primary-600">
                     <CheckCircle className="w-5 h-5" />
                     <span className="font-medium">NSFW Consent Given</span>
                     <Badge variant="secondary" className="ml-auto">

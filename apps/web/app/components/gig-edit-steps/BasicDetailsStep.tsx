@@ -4,7 +4,9 @@ import { ChevronRight, FileText, Target, DollarSign, Users, X } from 'lucide-rea
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { CompType, PurposeType, LookingForType } from '../../../lib/gig-form-persistence'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { CompType, BudgetType, PurposeType, LookingForType } from '../../../lib/gig-form-persistence'
 import VoiceToTextButton from '@/components/ui/VoiceToTextButton'
 
 interface BasicDetailsStepProps {
@@ -14,6 +16,9 @@ interface BasicDetailsStepProps {
   purpose: PurposeType
   compType: CompType
   compDetails: string
+  budgetMin?: number | null
+  budgetMax?: number | null
+  budgetType?: BudgetType
   userSubscriptionTier?: string
   onTitleChange: (value: string) => void
   onDescriptionChange: (value: string) => void
@@ -21,6 +26,9 @@ interface BasicDetailsStepProps {
   onPurposeChange: (value: PurposeType) => void
   onCompTypeChange: (value: CompType) => void
   onCompDetailsChange: (value: string) => void
+  onBudgetMinChange?: (value: number | null) => void
+  onBudgetMaxChange?: (value: number | null) => void
+  onBudgetTypeChange?: (value: BudgetType) => void
   onNext: () => void
   isValid: boolean
 }
@@ -32,6 +40,9 @@ export default function BasicDetailsStep({
   purpose,
   compType,
   compDetails,
+  budgetMin,
+  budgetMax,
+  budgetType = 'hourly',
   userSubscriptionTier = 'FREE',
   onTitleChange,
   onDescriptionChange,
@@ -39,6 +50,9 @@ export default function BasicDetailsStep({
   onPurposeChange,
   onCompTypeChange,
   onCompDetailsChange,
+  onBudgetMinChange,
+  onBudgetMaxChange,
+  onBudgetTypeChange,
   onNext,
   isValid
 }: BasicDetailsStepProps) {
@@ -107,21 +121,23 @@ export default function BasicDetailsStep({
               {/* 🎭 Talent & Performers */}
               <SelectGroup>
                 <SelectLabel>🎭 Talent & Performers</SelectLabel>
-                <SelectItem value="MODELS">Models (All Types)</SelectItem>
-                <SelectItem value="MODELS_FASHION">  • Fashion Models</SelectItem>
-                <SelectItem value="MODELS_COMMERCIAL">  • Commercial Models</SelectItem>
-                <SelectItem value="MODELS_FITNESS">  • Fitness Models</SelectItem>
-                <SelectItem value="MODELS_EDITORIAL">  • Editorial Models</SelectItem>
-                <SelectItem value="MODELS_RUNWAY">  • Runway Models</SelectItem>
-                <SelectItem value="MODELS_HAND">  • Hand Models</SelectItem>
-                <SelectItem value="MODELS_PARTS">  • Parts Models</SelectItem>
-                <SelectItem value="ACTORS">Actors / Actresses</SelectItem>
-                <SelectItem value="DANCERS">Dancers</SelectItem>
-                <SelectItem value="MUSICIANS">Musicians</SelectItem>
-                <SelectItem value="SINGERS">Singers</SelectItem>
-                <SelectItem value="VOICE_ACTORS">Voice Actors</SelectItem>
-                <SelectItem value="PERFORMERS">Performers</SelectItem>
-                <SelectItem value="INFLUENCERS">Influencers</SelectItem>
+                <SelectItem value="Model">Models</SelectItem>
+                <SelectItem value="Fashion Model">  • Fashion Models</SelectItem>
+                <SelectItem value="Commercial Model">  • Commercial Models</SelectItem>
+                <SelectItem value="Fitness Model">  • Fitness Models</SelectItem>
+                <SelectItem value="Plus-Size Model">  • Plus-Size Models</SelectItem>
+                <SelectItem value="Hand Model">  • Hand Models</SelectItem>
+                <SelectItem value="Actor">Actors / Actresses</SelectItem>
+                <SelectItem value="Actress">Actresses</SelectItem>
+                <SelectItem value="Dancer">Dancers</SelectItem>
+                <SelectItem value="Musician">Musicians</SelectItem>
+                <SelectItem value="Singer">Singers</SelectItem>
+                <SelectItem value="Voice Actor">Voice Actors</SelectItem>
+                <SelectItem value="Performer">Performers</SelectItem>
+                <SelectItem value="Influencer">Influencers</SelectItem>
+                <SelectItem value="Content Creator">Content Creators</SelectItem>
+                <SelectItem value="Stunt Performer">Stunt Performers</SelectItem>
+                <SelectItem value="Extra/Background Actor">Background Actors</SelectItem>
               </SelectGroup>
 
               <SelectSeparator />
@@ -129,9 +145,13 @@ export default function BasicDetailsStep({
               {/* 📸 Visual Creators */}
               <SelectGroup>
                 <SelectLabel>📸 Visual Creators</SelectLabel>
-                <SelectItem value="PHOTOGRAPHERS">Photographers</SelectItem>
-                <SelectItem value="VIDEOGRAPHERS">Videographers</SelectItem>
-                <SelectItem value="CINEMATOGRAPHERS">Cinematographers</SelectItem>
+                <SelectItem value="Photographer">Photographers</SelectItem>
+                <SelectItem value="Videographer">Videographers</SelectItem>
+                <SelectItem value="Cinematographer">Cinematographers</SelectItem>
+                <SelectItem value="Drone Operator">Drone Operators</SelectItem>
+                <SelectItem value="Camera Operator">Camera Operators</SelectItem>
+                <SelectItem value="BTS Photographer">BTS Photographers</SelectItem>
+                <SelectItem value="Product Photographer">Product Photographers</SelectItem>
               </SelectGroup>
 
               <SelectSeparator />
@@ -139,11 +159,13 @@ export default function BasicDetailsStep({
               {/* 🎬 Production & Crew */}
               <SelectGroup>
                 <SelectLabel>🎬 Production & Crew</SelectLabel>
-                <SelectItem value="PRODUCTION_CREW">Production Crew</SelectItem>
-                <SelectItem value="PRODUCERS">Producers</SelectItem>
-                <SelectItem value="DIRECTORS">Directors</SelectItem>
-                <SelectItem value="CREATIVE_DIRECTORS">Creative Directors</SelectItem>
-                <SelectItem value="ART_DIRECTORS">Art Directors</SelectItem>
+                <SelectItem value="Producer">Producers</SelectItem>
+                <SelectItem value="Director">Directors</SelectItem>
+                <SelectItem value="Creative Director">Creative Directors</SelectItem>
+                <SelectItem value="Art Director">Art Directors</SelectItem>
+                <SelectItem value="Production Assistant">Production Assistants</SelectItem>
+                <SelectItem value="Location Scout">Location Scouts</SelectItem>
+                <SelectItem value="Production Manager">Production Managers</SelectItem>
               </SelectGroup>
 
               <SelectSeparator />
@@ -151,10 +173,12 @@ export default function BasicDetailsStep({
               {/* 💄 Styling & Beauty */}
               <SelectGroup>
                 <SelectLabel>💄 Styling & Beauty</SelectLabel>
-                <SelectItem value="MAKEUP_ARTISTS">Makeup Artists</SelectItem>
-                <SelectItem value="HAIR_STYLISTS">Hair Stylists</SelectItem>
-                <SelectItem value="FASHION_STYLISTS">Fashion Stylists</SelectItem>
-                <SelectItem value="WARDROBE_STYLISTS">Wardrobe Stylists</SelectItem>
+                <SelectItem value="Makeup Artist">Makeup Artists</SelectItem>
+                <SelectItem value="Hair Stylist">Hair Stylists</SelectItem>
+                <SelectItem value="Fashion Stylist">Fashion Stylists</SelectItem>
+                <SelectItem value="Wardrobe Stylist">Wardrobe Stylists</SelectItem>
+                <SelectItem value="Nail Technician">Nail Technicians</SelectItem>
+                <SelectItem value="Beauty Artist">Beauty Artists</SelectItem>
               </SelectGroup>
 
               <SelectSeparator />
@@ -162,13 +186,14 @@ export default function BasicDetailsStep({
               {/* 🎨 Post-Production */}
               <SelectGroup>
                 <SelectLabel>🎨 Post-Production</SelectLabel>
-                <SelectItem value="EDITORS">Editors (All Types)</SelectItem>
-                <SelectItem value="VIDEO_EDITORS">  • Video Editors</SelectItem>
-                <SelectItem value="PHOTO_EDITORS">  • Photo Editors</SelectItem>
-                <SelectItem value="VFX_ARTISTS">VFX Artists</SelectItem>
-                <SelectItem value="MOTION_GRAPHICS">Motion Graphics Artists</SelectItem>
-                <SelectItem value="RETOUCHERS">Retouchers</SelectItem>
-                <SelectItem value="COLOR_GRADERS">Color Graders</SelectItem>
+                <SelectItem value="Video Editor">Video Editors</SelectItem>
+                <SelectItem value="Photo Editor">Photo Editors</SelectItem>
+                <SelectItem value="VFX Artist">VFX Artists</SelectItem>
+                <SelectItem value="Motion Graphics Artist">Motion Graphics Artists</SelectItem>
+                <SelectItem value="Retoucher">Retouchers</SelectItem>
+                <SelectItem value="Color Grader">Color Graders</SelectItem>
+                <SelectItem value="Sound Editor">Sound Editors</SelectItem>
+                <SelectItem value="Video Colorist">Video Colorists</SelectItem>
               </SelectGroup>
 
               <SelectSeparator />
@@ -176,10 +201,13 @@ export default function BasicDetailsStep({
               {/* 🎨 Design & Creative */}
               <SelectGroup>
                 <SelectLabel>🎨 Design & Creative</SelectLabel>
-                <SelectItem value="DESIGNERS">Designers (All Types)</SelectItem>
-                <SelectItem value="GRAPHIC_DESIGNERS">  • Graphic Designers</SelectItem>
-                <SelectItem value="ILLUSTRATORS">Illustrators</SelectItem>
-                <SelectItem value="ANIMATORS">Animators</SelectItem>
+                <SelectItem value="Graphic Designer">Graphic Designers</SelectItem>
+                <SelectItem value="Illustrator">Illustrators</SelectItem>
+                <SelectItem value="Animator">Animators</SelectItem>
+                <SelectItem value="UI/UX Designer">UI/UX Designers</SelectItem>
+                <SelectItem value="Web Designer">Web Designers</SelectItem>
+                <SelectItem value="Brand Designer">Brand Designers</SelectItem>
+                <SelectItem value="Logo Designer">Logo Designers</SelectItem>
               </SelectGroup>
 
               <SelectSeparator />
@@ -187,9 +215,11 @@ export default function BasicDetailsStep({
               {/* 📱 Content & Social */}
               <SelectGroup>
                 <SelectLabel>📱 Content & Social</SelectLabel>
-                <SelectItem value="CONTENT_CREATORS">Content Creators</SelectItem>
-                <SelectItem value="SOCIAL_MEDIA_MANAGERS">Social Media Managers</SelectItem>
-                <SelectItem value="DIGITAL_MARKETERS">Digital Marketers</SelectItem>
+                <SelectItem value="Social Media Manager">Social Media Managers</SelectItem>
+                <SelectItem value="Digital Marketer">Digital Marketers</SelectItem>
+                <SelectItem value="Copywriter">Copywriters</SelectItem>
+                <SelectItem value="Content Strategist">Content Strategists</SelectItem>
+                <SelectItem value="Community Manager">Community Managers</SelectItem>
               </SelectGroup>
 
               <SelectSeparator />
@@ -197,10 +227,11 @@ export default function BasicDetailsStep({
               {/* 💼 Business & Teams */}
               <SelectGroup>
                 <SelectLabel>💼 Business & Teams</SelectLabel>
-                <SelectItem value="AGENCIES">Agencies</SelectItem>
-                <SelectItem value="BRAND_MANAGERS">Brand Managers</SelectItem>
-                <SelectItem value="MARKETING_TEAMS">Marketing Teams</SelectItem>
-                <SelectItem value="STUDIOS">Studios</SelectItem>
+                <SelectItem value="Marketing Manager">Marketing Managers</SelectItem>
+                <SelectItem value="Brand Manager">Brand Managers</SelectItem>
+                <SelectItem value="Project Manager">Project Managers</SelectItem>
+                <SelectItem value="Account Manager">Account Managers</SelectItem>
+                <SelectItem value="Studio Owner">Studio Owners</SelectItem>
               </SelectGroup>
 
               <SelectSeparator />
@@ -208,9 +239,34 @@ export default function BasicDetailsStep({
               {/* ✍️ Writing */}
               <SelectGroup>
                 <SelectLabel>✍️ Writing</SelectLabel>
-                <SelectItem value="WRITERS">Writers</SelectItem>
-                <SelectItem value="COPYWRITERS">Copywriters</SelectItem>
-                <SelectItem value="SCRIPTWRITERS">Scriptwriters</SelectItem>
+                <SelectItem value="Writer">Writers</SelectItem>
+                <SelectItem value="Copywriter">Copywriters</SelectItem>
+                <SelectItem value="Scriptwriter">Scriptwriters</SelectItem>
+                <SelectItem value="Technical Writer">Technical Writers</SelectItem>
+                <SelectItem value="Content Writer">Content Writers</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* 🎵 Music & Audio */}
+              <SelectGroup>
+                <SelectLabel>🎵 Music & Audio</SelectLabel>
+                <SelectItem value="Music Producer">Music Producers</SelectItem>
+                <SelectItem value="Audio Engineer">Audio Engineers</SelectItem>
+                <SelectItem value="Sound Designer">Sound Designers</SelectItem>
+                <SelectItem value="Composer">Composers</SelectItem>
+                <SelectItem value="DJ">DJs</SelectItem>
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* 🏠 Studios & Spaces */}
+              <SelectGroup>
+                <SelectLabel>🏠 Studios & Spaces</SelectLabel>
+                <SelectItem value="Studio Owner">Studio Owners</SelectItem>
+                <SelectItem value="Rental Studio">Rental Studios</SelectItem>
+                <SelectItem value="Venue Manager">Venue Managers</SelectItem>
+                <SelectItem value="Space Manager">Space Managers</SelectItem>
               </SelectGroup>
 
               <SelectSeparator />
@@ -218,7 +274,9 @@ export default function BasicDetailsStep({
               {/* Other */}
               <SelectGroup>
                 <SelectLabel>Other</SelectLabel>
-                <SelectItem value="OTHER">Other Creative Roles</SelectItem>
+                <SelectItem value="Other Creative Professional">Other Creative Roles</SelectItem>
+                <SelectItem value="Assistant">Assistants</SelectItem>
+                <SelectItem value="Intern">Interns</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -360,7 +418,7 @@ export default function BasicDetailsStep({
               onChange={(e) => onCompDetailsChange(e.target.value)}
               className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
               placeholder={
-                compType === 'PAID' 
+                compType === 'PAID'
                   ? "e.g., €150 per hour, €500 flat rate, includes 10 edited images..."
                   : compType === 'EXPENSES'
                   ? "e.g., Travel expenses covered, lunch provided, parking reimbursed..."
@@ -368,13 +426,82 @@ export default function BasicDetailsStep({
               }
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              {compType === 'PAID' 
+              {compType === 'PAID'
                 ? "Specify the payment amount, rate, and what's included"
                 : compType === 'EXPENSES'
                 ? "Detail what expenses will be covered and any limits"
                 : "Describe the alternative compensation arrangement clearly"
               }
             </p>
+          </div>
+        )}
+
+        {/* Budget Fields - Only show for PAID gigs */}
+        {compType === 'PAID' && (
+          <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign className="w-5 h-5 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Budget Range (Optional)</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Setting a budget helps matchmaking by connecting you with talent in your price range
+            </p>
+
+            {/* Budget Type Selector */}
+            <div>
+              <Label htmlFor="budget-type" className="text-sm mb-2">Budget Type</Label>
+              <Select value={budgetType || 'hourly'} onValueChange={(value) => onBudgetTypeChange?.(value as BudgetType)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select budget type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hourly">Per Hour (€/hour)</SelectItem>
+                  <SelectItem value="per_day">Per Day (€/day)</SelectItem>
+                  <SelectItem value="per_project">Per Project (total)</SelectItem>
+                  <SelectItem value="total">Total Budget</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Budget Min/Max */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="budget-min" className="text-sm mb-2">
+                  Minimum Budget (€)
+                </Label>
+                <Input
+                  id="budget-min"
+                  type="number"
+                  min="0"
+                  step="5"
+                  value={budgetMin ?? ''}
+                  onChange={(e) => onBudgetMinChange?.(e.target.value ? parseFloat(e.target.value) : null)}
+                  placeholder="e.g., 50"
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <Label htmlFor="budget-max" className="text-sm mb-2">
+                  Maximum Budget (€)
+                </Label>
+                <Input
+                  id="budget-max"
+                  type="number"
+                  min="0"
+                  step="5"
+                  value={budgetMax ?? ''}
+                  onChange={(e) => onBudgetMaxChange?.(e.target.value ? parseFloat(e.target.value) : null)}
+                  placeholder="e.g., 150"
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            {budgetMin && budgetMax && budgetMin > budgetMax && (
+              <p className="text-xs text-destructive">
+                ⚠️ Minimum budget should be less than maximum budget
+              </p>
+            )}
           </div>
         )}
 

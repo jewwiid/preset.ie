@@ -197,7 +197,7 @@ export default function MentionExamplesPanel({
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'bg-green-100 text-green-800 border-green-200';
+      case 'beginner': return 'bg-primary-100 text-primary-800 border-primary/20';
       case 'intermediate': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'advanced': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -263,7 +263,7 @@ export default function MentionExamplesPanel({
                               className="h-6 w-6 p-0"
                             >
                               {copiedExample === example.title ? (
-                                <Check className="h-3 w-3 text-green-600" />
+                                <Check className="h-3 w-3 text-primary-600" />
                               ) : (
                                 <Copy className="h-3 w-3" />
                               )}

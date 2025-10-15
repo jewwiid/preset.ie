@@ -15,8 +15,10 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { MapPin, Calendar, Clock, Users, Eye, Edit, ArrowLeft, Palette, Camera, Star, Sparkles, CheckCircle } from 'lucide-react'
+import { MapPin, Calendar, Clock, Users, Eye, Edit, ArrowLeft, Palette, Camera, Star, Sparkles, CheckCircle, Upload, CheckSquare } from 'lucide-react'
 import LocationMap from '../../../components/LocationMap'
+// import { GigShowcaseUpload } from '../../components/gigs/GigShowcaseUpload'
+import { ShowcaseApprovalReview } from '../../components/showcases/ShowcaseApprovalReview'
 
 interface GigDetails {
   id: string
@@ -59,6 +61,11 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
   const [acceptedApplicants, setAcceptedApplicants] = useState<any[]>([])
   const [acceptedCount, setAcceptedCount] = useState(0)
   
+  // Showcase state
+  const [showcase, setShowcase] = useState<any>(null)
+  const [showCreateShowcase, setShowCreateShowcase] = useState(false)
+  const [showApprovalReview, setShowApprovalReview] = useState(false)
+  
   // Matchmaking state
   const [compatibilityData, setCompatibilityData] = useState<CompatibilityData | null>(null)
   const [similarUsers, setSimilarUsers] = useState<Recommendation[]>([])
@@ -75,6 +82,7 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
     fetchMoodboardData()
     fetchApplications()
     fetchAcceptedApplicants()
+    fetchShowcase()
     if (user) {
       fetchUserProfile()
     }
@@ -107,6 +115,16 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
     }
   }
 
+  // Helper function to get featured image from moodboard
+  const getFeaturedImage = () => {
+    if (!moodboardData?.featured_image_id || !moodboardData?.items) return null
+    
+    const featuredItem = moodboardData.items.find((item: any) => item.id === moodboardData.featured_image_id)
+    return featuredItem || null
+  }
+
+  const featuredImage = getFeaturedImage()
+
   const fetchMoodboardData = async () => {
     if (!supabase) return
 
@@ -118,6 +136,10 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
         .single()
       
       if (data) {
+        // Sort items by position if they exist
+        if (data.items && Array.isArray(data.items)) {
+          data.items.sort((a: any, b: any) => a.position - b.position)
+        }
         setMoodboardData(data)
       }
     } catch (error) {
@@ -182,6 +204,41 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
       }
     } catch (error) {
       console.log('Error fetching accepted applicants:', error)
+    }
+  }
+
+  const fetchShowcase = async () => {
+    if (!supabase) return
+
+    try {
+      const { data, error } = await supabase
+        .from('showcases')
+        .select(`
+          *,
+          creator:creator_user_id (
+            display_name,
+            handle,
+            avatar_url
+          ),
+          talent:talent_user_id (
+            display_name,
+            handle,
+            avatar_url
+          )
+        `)
+        .eq('gig_id', gigId)
+        .eq('from_gig', true)
+        .single()
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        throw error
+      }
+
+      if (data) {
+        setShowcase(data)
+      }
+    } catch (error) {
+      console.log('Error fetching showcase:', error)
     }
   }
 
@@ -355,7 +412,7 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
   }
 
   const isOwner = userProfile?.id === gig.owner_user_id
-  const isTalent = userProfile?.role_flags?.includes('TALENT')
+  const isTalent = userProfile?.account_type?.includes('TALENT')
   const applicationDeadlinePassed = new Date(gig.application_deadline) < new Date()
 
   return (
@@ -485,6 +542,7 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
         </div>
       </div>
 
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -516,32 +574,88 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                   )}
                 </CardHeader>
                 <CardContent>
-                  {/* Masonry Grid for Images */}
-                  <div className="columns-2 md:columns-3 gap-4 space-y-4">
-                    {moodboardData.items.map((item: any, index: number) => (
-                      <div
-                        key={index}
-                        className="break-inside-avoid mb-4 group cursor-pointer"
-                        onClick={() => window.open(item.url, '_blank')}
-                      >
-                        <div className="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02]">
-                          <img
-                            src={item.thumbnail_url || item.url}
-                            alt={item.caption || `Moodboard image ${index + 1}`}
-                            className="w-full h-auto object-cover"
-                            loading="lazy"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          <div className="absolute bottom-0 left-0 right-0 p-3 text-foreground bg-background/90 backdrop-blur-sm transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                            <p className="text-xs font-medium line-clamp-2">{item.caption}</p>
-                            {item.photographer && (
-                              <p className="text-xs opacity-80 mt-1">📷 {item.photographer}</p>
-                            )}
+                  {/* Dynamic Layout based on number of images */}
+                  {moodboardData.items.length <= 2 ? (
+                    /* 1-2 images: Show in a clean grid layout */
+                    <div className={`grid gap-4 ${moodboardData.items.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                      {moodboardData.items.map((item: any, index: number) => {
+                        const isFeatured = item.id === moodboardData.featured_image_id
+                        return (
+                          <div
+                            key={index}
+                            className="group cursor-pointer"
+                            onClick={() => window.open(item.url, '_blank')}
+                          >
+                            <div className={`relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02] ${
+                              isFeatured ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
+                            }`}>
+                              <img
+                                src={item.thumbnail_url || item.url}
+                                alt={item.caption || `Moodboard image ${index + 1}`}
+                                className="w-full h-[300px] object-cover"
+                                loading="lazy"
+                              />
+                              {isFeatured && (
+                                <div className="absolute top-2 right-2">
+                                  <div className="bg-primary text-primary-foreground px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                                    <Star className="w-3 h-3 fill-current" />
+                                    <span className="text-xs font-medium">Featured</span>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <div className="absolute bottom-0 left-0 right-0 p-3 text-foreground bg-background/90 backdrop-blur-sm transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <p className="text-xs font-medium line-clamp-2">{item.caption}</p>
+                                {item.photographer && (
+                                  <p className="text-xs opacity-80 mt-1">📷 {item.photographer}</p>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* 3+ images: Use masonry layout */
+                    <div className="columns-2 md:columns-3 gap-4 space-y-4">
+                      {moodboardData.items.map((item: any, index: number) => {
+                        const isFeatured = item.id === moodboardData.featured_image_id
+                        return (
+                          <div
+                            key={index}
+                            className="break-inside-avoid mb-4 group cursor-pointer"
+                            onClick={() => window.open(item.url, '_blank')}
+                          >
+                            <div className={`relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02] ${
+                              isFeatured ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
+                            }`}>
+                              <img
+                                src={item.thumbnail_url || item.url}
+                                alt={item.caption || `Moodboard image ${index + 1}`}
+                                className="w-full h-auto object-cover"
+                                loading="lazy"
+                              />
+                              {isFeatured && (
+                                <div className="absolute top-2 right-2">
+                                  <div className="bg-primary text-primary-foreground px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                                    <Star className="w-3 h-3 fill-current" />
+                                    <span className="text-xs font-medium">Featured</span>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <div className="absolute bottom-0 left-0 right-0 p-3 text-foreground bg-background/90 backdrop-blur-sm transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                                <p className="text-xs font-medium line-clamp-2">{item.caption}</p>
+                                {item.photographer && (
+                                  <p className="text-xs opacity-80 mt-1">📷 {item.photographer}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -822,6 +936,161 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
           </div>
         )}
 
+        {/* Showcase Section */}
+        {gig.status === 'COMPLETED' && (
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Camera className="w-5 h-5 text-primary" />
+                      Gig Showcase
+                    </CardTitle>
+                    <CardDescription>
+                      Share photos from this completed gig
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {showcase ? (
+                  <div className="space-y-4">
+                    {/* Showcase Status */}
+                    <div className="flex items-center gap-2">
+                      {showcase.approval_status === 'approved' && (
+                        <Badge className="bg-green-100 text-green-800">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Published
+                        </Badge>
+                      )}
+                      {showcase.approval_status === 'pending_approval' && (
+                        <Badge className="bg-yellow-100 text-yellow-800">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Pending Approval
+                        </Badge>
+                      )}
+                      {showcase.approval_status === 'changes_requested' && (
+                        <Badge className="bg-orange-100 text-orange-800">
+                          <CheckSquare className="w-3 h-3 mr-1" />
+                          Changes Requested
+                        </Badge>
+                      )}
+                      {showcase.approval_status === 'draft' && (
+                        <Badge variant="outline">
+                          <Upload className="w-3 h-3 mr-1" />
+                          Draft
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Showcase Info */}
+                    <div>
+                      <h4 className="font-semibold">{showcase.title}</h4>
+                      {showcase.description && (
+                        <p className="text-sm text-muted-foreground mt-1">{showcase.description}</p>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      {isOwner && showcase.approval_status === 'draft' && (
+                        <Button
+                          onClick={() => setShowCreateShowcase(true)}
+                          size="sm"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Edit Showcase
+                        </Button>
+                      )}
+                      
+                      {isOwner && showcase.approval_status === 'draft' && (
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const response = await fetch(`/api/showcases/${showcase.id}/submit`, {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${user?.access_token}`
+                                }
+                              });
+                              if (response.ok) {
+                                fetchShowcase(); // Refresh showcase data
+                              }
+                            } catch (error) {
+                              console.error('Error submitting showcase:', error);
+                            }
+                          }}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Submit for Approval
+                        </Button>
+                      )}
+
+                      {isOwner && showcase.approval_status === 'changes_requested' && (
+                        <Button
+                          onClick={() => setShowCreateShowcase(true)}
+                          size="sm"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Make Changes
+                        </Button>
+                      )}
+
+                      {/* Talent can review pending showcases */}
+                      {!isOwner && showcase.approval_status === 'pending_approval' && 
+                       acceptedApplicants.some(app => app.users_profile.id === userProfile?.id) && (
+                        <Button
+                          onClick={() => setShowApprovalReview(true)}
+                          size="sm"
+                        >
+                          <CheckSquare className="w-4 h-4 mr-2" />
+                          Review & Approve
+                        </Button>
+                      )}
+
+                      {showcase.approval_status === 'approved' && (
+                        <Button
+                          onClick={() => router.push(`/showcases/${showcase.id}`)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Showcase
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Show feedback if changes were requested */}
+                    {showcase.approval_status === 'changes_requested' && showcase.approval_notes && (
+                      <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <p className="text-sm text-orange-800">
+                          <strong>Feedback:</strong> {showcase.approval_notes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Showcase Yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create a showcase to share photos from this completed gig
+                    </p>
+                    {isOwner && (
+                      <Button onClick={() => setShowCreateShowcase(true)}>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Create Showcase
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Similar Talent Section - Full Width */}
         <div className="mt-8">
           <SimilarTalentSlim gigId={gigId} />
@@ -930,6 +1199,42 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
             updated_at: gig.created_at // Use created_at as updated_at since we don't have it
           }}
         />
+      )}
+
+      {/* Create Showcase Modal - Temporarily disabled */}
+      {/* {showCreateShowcase && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border border-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <GigShowcaseUpload
+              gigId={gigId}
+              gigTitle={gig.title}
+              onSuccess={(showcaseId) => {
+                setShowCreateShowcase(false);
+                fetchShowcase(); // Refresh showcase data
+              }}
+              onCancel={() => setShowCreateShowcase(false)}
+            />
+          </div>
+        </div>
+      )} */}
+
+      {/* Showcase Approval Review Modal */}
+      {showApprovalReview && showcase && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-background border border-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <ShowcaseApprovalReview
+              showcaseId={showcase.id}
+              onApproved={() => {
+                setShowApprovalReview(false);
+                fetchShowcase(); // Refresh showcase data
+              }}
+              onChangesRequested={() => {
+                setShowApprovalReview(false);
+                fetchShowcase(); // Refresh showcase data
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

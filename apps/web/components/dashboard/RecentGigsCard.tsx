@@ -57,7 +57,7 @@ export function RecentGigsCard({ gigs, isContributor }: RecentGigsCardProps) {
         </button>
       </div>
 
-      <div className={`space-y-3 transition-all duration-300 ease-in-out overflow-hidden lg:max-h-none lg:opacity-100 ${
+      <div className={`space-y-3 transition-all duration-300 ease-in-out overflow-hidden lg:opacity-100 ${
         isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
       }`}>
         {gigs.length > 0 ? (
@@ -73,13 +73,21 @@ export function RecentGigsCard({ gigs, isContributor }: RecentGigsCardProps) {
                 <span className="text-xs text-muted-foreground">
                   {new Date(gig.created_at).toLocaleDateString()}
                 </span>
-                <span className={`text-xs px-2 py-1 rounded-full ${
-                  gig.status === 'PUBLISHED'
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-muted text-muted-foreground'
-                }`}>
-                  {gig.status}
-                </span>
+                {gig.compatibility_score ? (
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    gig.compatibility_score >= 80
+                      ? 'bg-green-100 text-green-700'
+                      : gig.compatibility_score >= 60
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {gig.compatibility_score}% match
+                  </span>
+                ) : (
+                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
+                    {gig.status}
+                  </span>
+                )}
               </div>
             </div>
           ))

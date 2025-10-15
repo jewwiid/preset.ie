@@ -254,7 +254,7 @@ export function useVerificationStatus() {
         setStatus({
           isAgeVerified: profile.age_verified || false,
           isEmailVerified: !!user.email_confirmed_at,
-          isIdentityVerified: profile.role_flags?.includes('VERIFIED_ID') || false,
+          isIdentityVerified: profile.account_type?.includes('VERIFIED_ID') || false,
           accountStatus: profile.account_status || 'pending_verification',
           canCreateGigs: canCreateGigs.data || false,
           canApplyToGigs: canApplyToGigs.data || false,

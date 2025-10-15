@@ -40,15 +40,15 @@ export const useDashboardData = () => {
   })
   const [matchmakingLoading, setMatchmakingLoading] = useState(false)
 
-  const isTalent = userRole?.isTalent || profile?.role_flags?.includes('TALENT') || profile?.role_flags?.includes('BOTH')
-  const isContributor = userRole?.isContributor || profile?.role_flags?.includes('CONTRIBUTOR') || profile?.role_flags?.includes('BOTH')
+  const isTalent = userRole?.isTalent || profile?.account_type?.includes('TALENT') || profile?.account_type?.includes('BOTH')
+  const isContributor = userRole?.isContributor || profile?.account_type?.includes('CONTRIBUTOR') || profile?.account_type?.includes('BOTH')
 
   const loadMatchmakingData = useCallback(async (profileData: UserProfile) => {
     if (!user || !profileData || !supabase) return
 
     try {
       setMatchmakingLoading(true)
-      const isTalent = userRole?.isTalent || profileData.role_flags?.includes('TALENT') || profileData.role_flags?.includes('BOTH')
+      const isTalent = userRole?.isTalent || profileData.account_type?.includes('TALENT') || profileData.account_type?.includes('BOTH')
 
       if (isTalent) {
         // Fetch collaboration recommendations
@@ -190,15 +190,40 @@ export const useDashboardData = () => {
     if (!user || !currentProfile || !supabase) return
 
     try {
-      const isContributor = userRole?.isContributor || currentProfile.role_flags?.includes('CONTRIBUTOR') || currentProfile.role_flags?.includes('BOTH')
+      const isContributor = userRole?.isContributor || currentProfile.account_type?.includes('CONTRIBUTOR') || currentProfile.account_type?.includes('BOTH')
 
-      // Load gigs
+      // Load gigs - only show PUBLISHED gigs for both user types, limit to 2
       const gigsQuery = isContributor
-        ? (supabase as any).from('gigs').select('*').eq('owner_user_id', currentProfile.id).order('created_at', { ascending: false }).limit(5)
-        : (supabase as any).from('gigs').select('*').eq('status', 'PUBLISHED').order('created_at', { ascending: false }).limit(5)
+        ? (supabase as any).from('gigs').select('*').eq('owner_user_id', currentProfile.id).eq('status', 'PUBLISHED').order('created_at', { ascending: false }).limit(2)
+        : (supabase as any).from('gigs').select('*').eq('status', 'PUBLISHED').order('created_at', { ascending: false }).limit(2)
 
       const { data: gigs } = await gigsQuery
-      setRecentGigs(gigs || [])
+      
+      // Get compatibility scores for each gig if user is talent
+      if (isTalent && gigs && gigs.length > 0) {
+        const gigsWithCompatibility = await Promise.all(
+          gigs.map(async (gig: any) => {
+            try {
+              const { data: compatibility } = await (supabase as any)
+                .rpc('calculate_gig_compatibility', {
+                  p_gig_id: gig.id,
+                  p_profile_id: currentProfile.id
+                })
+              
+              return {
+                ...gig,
+                compatibility_score: compatibility?.[0]?.compatibility_score || 0
+              }
+            } catch (error) {
+              console.error('Error fetching compatibility for gig:', gig.id, error)
+              return gig
+            }
+          })
+        )
+        setRecentGigs(gigsWithCompatibility)
+      } else {
+        setRecentGigs(gigs || [])
+      }
 
       // Load stats
       const [gigsCount, applicationsCount, showcasesCount, messagesCount, userCredits] = await Promise.all([

@@ -228,7 +228,7 @@ export default function MoodboardsPage() {
                       </div>
                     )}
                     {moodboard.is_public && (
-                      <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                      <div className="bg-primary-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
                         Public
                       </div>
                     )}

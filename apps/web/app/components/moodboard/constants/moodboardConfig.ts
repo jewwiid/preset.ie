@@ -54,6 +54,52 @@ export const PEXELS_CONFIG = {
 } as const
 
 /**
+ * Unsplash API configuration
+ */
+export const UNSPLASH_CONFIG = {
+  RESULTS_PER_PAGE: 15,
+  MAX_RESULTS: 1000,
+  DEFAULT_ORIENTATION: '',
+  DEFAULT_SIZE: '',
+  DEFAULT_COLOR: ''
+} as const
+
+/**
+ * Pixabay API configuration
+ */
+export const PIXABAY_CONFIG = {
+  RESULTS_PER_PAGE: 15,
+  MAX_RESULTS: 1000,
+  DEFAULT_ORIENTATION: '',
+  DEFAULT_SIZE: '',
+  DEFAULT_COLOR: ''
+} as const
+
+/**
+ * Available stock photo providers
+ */
+export const STOCK_PROVIDERS = {
+  pexels: {
+    name: 'Pexels',
+    display: 'Pexels',
+    website: 'https://www.pexels.com',
+    attribution: 'Photos provided by Pexels'
+  },
+  unsplash: {
+    name: 'Unsplash',
+    display: 'Unsplash',
+    website: 'https://unsplash.com',
+    attribution: 'Photos provided by Unsplash'
+  },
+  pixabay: {
+    name: 'Pixabay',
+    display: 'Pixabay',
+    website: 'https://pixabay.com',
+    attribution: 'Images provided by Pixabay'
+  }
+} as const
+
+/**
  * Enhancement providers configuration
  */
 export const ENHANCEMENT_PROVIDERS = {

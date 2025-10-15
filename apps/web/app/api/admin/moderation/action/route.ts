@@ -18,11 +18,11 @@ export async function POST(request: NextRequest) {
     // Verify admin role
     const { data: profile } = await supabase
       .from('users_profile')
-      .select('role_flags')
+      .select('account_type')
       .eq('user_id', user.id)
       .single()
 
-    if (!profile?.role_flags?.includes('ADMIN')) {
+    if (!profile?.account_type?.includes('ADMIN')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -71,14 +71,14 @@ export async function POST(request: NextRequest) {
 
     // Update user flags if needed
     if (target_user_id) {
-      // First get the current user's role_flags
+      // First get the current user's account_type
       const { data: userData } = await supabase
         .from('users_profile')
-        .select('role_flags')
+        .select('account_type')
         .eq('user_id', target_user_id)
         .single()
       
-      let updatedFlags = userData?.role_flags || []
+      let updatedFlags = userData?.account_type || []
       
       if (action_type === 'ban') {
         // Remove BANNED if exists, then add it
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         
         await supabase
           .from('users_profile')
-          .update({ role_flags: updatedFlags })
+          .update({ account_type: updatedFlags })
           .eq('user_id', target_user_id)
       } else if (action_type === 'unban') {
         // Remove BANNED flag
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         
         await supabase
           .from('users_profile')
-          .update({ role_flags: updatedFlags })
+          .update({ account_type: updatedFlags })
           .eq('user_id', target_user_id)
       } else if (action_type === 'shadowban') {
         // Remove SHADOWBANNED if exists, then add it
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         
         await supabase
           .from('users_profile')
-          .update({ role_flags: updatedFlags })
+          .update({ account_type: updatedFlags })
           .eq('user_id', target_user_id)
       } else if (action_type === 'unshadowban') {
         // Remove SHADOWBANNED flag
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         
         await supabase
           .from('users_profile')
-          .update({ role_flags: updatedFlags })
+          .update({ account_type: updatedFlags })
           .eq('user_id', target_user_id)
       }
     }

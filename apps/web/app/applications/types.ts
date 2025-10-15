@@ -30,7 +30,7 @@ export interface UserProfile {
   bio?: string;
   city?: string;
   style_tags?: string[];
-  role_flags?: string[];
+  account_type?: string[];
   subscription_tier?: string;
   created_at?: string;
 }

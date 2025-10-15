@@ -373,7 +373,7 @@ export default function ApplicationsPage() {
                             className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-background flex items-center justify-center text-xs font-bold ${
                               application.application_type === 'gig'
                                 ? 'bg-blue-500 text-white'
-                                : 'bg-green-500 text-white'
+                                : 'bg-primary-500 text-white'
                             }`}
                           >
                             {application.application_type === 'gig' ? 'G' : 'C'}
@@ -526,7 +526,7 @@ export default function ApplicationsPage() {
                                       </button>
                                       <button
                                         onClick={() => acceptApplication(application.id)}
-                                        className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                                        className="flex items-center gap-2 px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 text-sm"
                                         disabled={isUpdating}
                                       >
                                         <CheckCircle className="w-4 h-4" />
@@ -547,7 +547,7 @@ export default function ApplicationsPage() {
                                     <>
                                       <button
                                         onClick={() => acceptApplication(application.id)}
-                                        className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                                        className="flex items-center gap-2 px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary/90 text-sm"
                                         disabled={isUpdating}
                                       >
                                         <CheckCircle className="w-4 h-4" />

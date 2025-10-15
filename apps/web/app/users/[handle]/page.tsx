@@ -27,7 +27,7 @@ interface UserProfile {
   header_banner_position?: string
   city?: string
   country?: string
-  role_flags?: string[]
+  account_type?: string[]
   style_tags?: string[]
   verified_id: boolean
   created_at: string
@@ -50,7 +50,7 @@ interface UserProfile {
   availability_status?: string
   account_status?: string
   verification_badges?: VerificationBadge[]
-  performance_roles?: string[]
+  talent_categoriess?: string[]
   height_cm?: number
   eye_color?: string
   hair_color?: string
@@ -191,7 +191,7 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
         header_banner_position,
         city,
         country,
-        role_flags,
+        account_type,
         style_tags,
         verified_id,
         created_at,
@@ -213,7 +213,7 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
         studio_name,
         availability_status,
         account_status,
-        performance_roles,
+        talent_categoriess,
         height_cm,
         eye_color,
         hair_color
@@ -474,7 +474,7 @@ export default async function UserProfilePage({ params }: PageProps) {
               profileUserId={profile.user_id}
               profileHandle={profile.handle}
               profileDisplayName={profile.display_name}
-              profileRoleFlags={profile.role_flags}
+              profileRoleFlags={profile.account_type}
             />
           </div>
 
@@ -668,12 +668,12 @@ export default async function UserProfilePage({ params }: PageProps) {
 
               {/* Additional Professional Details */}
               <div className="space-y-6">
-                {/* Performance Roles */}
-                {profile.role_flags?.includes('TALENT') && (profile as any).performance_roles && (profile as any).performance_roles.length > 0 && (
+                {/* Talent Categorys */}
+                {profile.account_type?.includes('TALENT') && (profile as any).talent_categoriess && (profile as any).talent_categoriess.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Performance Roles</h3>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">Talent Categorys</h3>
                     <div className="flex flex-wrap gap-2">
-                      {(profile as any).performance_roles.map((role: string, index: number) => (
+                      {(profile as any).talent_categoriess.map((role: string, index: number) => (
                         <span
                           key={`role-${index}`}
                           className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary border border-primary/20"
@@ -686,7 +686,7 @@ export default async function UserProfilePage({ params }: PageProps) {
                 )}
 
                 {/* Physical Attributes - For Talent */}
-                {profile.role_flags?.includes('TALENT') && ((profile as any).height_cm || (profile as any).eye_color || (profile as any).hair_color) && (
+                {profile.account_type?.includes('TALENT') && ((profile as any).height_cm || (profile as any).eye_color || (profile as any).hair_color) && (
                   <div>
                     <h3 className="text-sm font-semibold text-muted-foreground mb-2">Physical Attributes</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -755,7 +755,7 @@ export default async function UserProfilePage({ params }: PageProps) {
                 )}
 
                 {/* Equipment - For Contributors */}
-                {profile.role_flags?.includes('CONTRIBUTOR') && profile.equipment_list && profile.equipment_list.length > 0 && (
+                {profile.account_type?.includes('CONTRIBUTOR') && profile.equipment_list && profile.equipment_list.length > 0 && (
                   <div>
                     <h3 className="text-sm font-semibold text-muted-foreground mb-2">Equipment</h3>
                     <div className="flex flex-wrap gap-2">
@@ -772,7 +772,7 @@ export default async function UserProfilePage({ params }: PageProps) {
                 )}
 
                 {/* Editing Software - For Contributors */}
-                {profile.role_flags?.includes('CONTRIBUTOR') && profile.editing_software && profile.editing_software.length > 0 && (
+                {profile.account_type?.includes('CONTRIBUTOR') && profile.editing_software && profile.editing_software.length > 0 && (
                   <div>
                     <h3 className="text-sm font-semibold text-muted-foreground mb-2">Editing Software</h3>
                     <div className="flex flex-wrap gap-2">

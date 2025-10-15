@@ -28,19 +28,103 @@ export const GigCard = ({ gig, isSaved, onToggleSave }: GigCardProps) => {
           <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-border hover:border-primary/50">
         {/* Gig Image/Moodboard Preview */}
         <div className="relative bg-muted overflow-hidden">
-          <AspectRatio ratio={16 / 9} className="bg-muted">
+          <div className="h-48 bg-muted">
             {gig.moodboard_urls && gig.moodboard_urls.length > 0 ? (
-              <img
-                src={gig.moodboard_urls[0]}
-                alt={gig.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              <div className="relative w-full h-full">
+                {gig.moodboard_urls.length === 1 ? (
+                  /* Single image - full space */
+                  <img
+                    src={gig.moodboard_urls[0]}
+                    alt={gig.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : gig.moodboard_urls.length === 2 ? (
+                  /* Two images - side by side */
+                  <div className="flex h-full">
+                    <img
+                      src={gig.moodboard_urls[0]}
+                      alt={`${gig.title} image 1`}
+                      className="w-1/2 h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <img
+                      src={gig.moodboard_urls[1]}
+                      alt={`${gig.title} image 2`}
+                      className="w-1/2 h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ) : gig.moodboard_urls.length === 3 ? (
+                  /* Three images - 2 on top, 1 on bottom */
+                  <div className="grid grid-cols-2 h-full">
+                    <img
+                      src={gig.moodboard_urls[0]}
+                      alt={`${gig.title} image 1`}
+                      className="h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <img
+                      src={gig.moodboard_urls[1]}
+                      alt={`${gig.title} image 2`}
+                      className="h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <img
+                      src={gig.moodboard_urls[2]}
+                      alt={`${gig.title} image 3`}
+                      className="col-span-2 h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                ) : (
+                  /* Four or more images - 2x2 grid */
+                  <div className="grid grid-cols-2 h-full">
+                    <img
+                      src={gig.moodboard_urls[0]}
+                      alt={`${gig.title} image 1`}
+                      className="h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <img
+                      src={gig.moodboard_urls[1]}
+                      alt={`${gig.title} image 2`}
+                      className="h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <img
+                      src={gig.moodboard_urls[2]}
+                      alt={`${gig.title} image 3`}
+                      className="h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {gig.moodboard_urls.length === 3 ? (
+                      <div className="h-full bg-muted flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">+0</span>
+                      </div>
+                    ) : (
+                      <div className="relative h-full">
+                        <img
+                          src={gig.moodboard_urls[3]}
+                          alt={`${gig.title} image 4`}
+                          className="h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {gig.moodboard_urls.length > 4 && (
+                          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+                            <span className="text-sm font-semibold text-foreground">
+                              +{gig.moodboard_urls.length - 4}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Image count indicator */}
+                <div className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm">
+                  <span className="text-xs font-medium text-foreground">
+                    {gig.moodboard_urls.length} image{gig.moodboard_urls.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/20">
                 <Camera className="w-16 h-16 text-primary/40" />
               </div>
             )}
-          </AspectRatio>
+          </div>
 
           {/* Save Button */}
           <button

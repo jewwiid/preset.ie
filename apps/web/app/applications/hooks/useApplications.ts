@@ -107,7 +107,7 @@ export function useApplications({
           bio,
           city,
           style_tags,
-          role_flags,
+          account_type,
           subscription_tier,
           created_at
         )
@@ -268,7 +268,7 @@ export function useApplications({
           bio,
           city,
           style_tags,
-          role_flags,
+          account_type,
           subscription_tier,
           created_at
         )
@@ -327,7 +327,7 @@ export function useApplications({
               bio: profile.bio,
               city: profile.city,
               style_tags: profile.style_tags,
-              role_flags: profile.role_flags,
+              account_type: profile.account_type,
               subscription_tier: profile.subscription_tier,
               created_at: profile.created_at,
             },

@@ -14,17 +14,21 @@ import {
   RefreshCw,
   Target,
   Heart,
-  ThumbsUp,
-  ThumbsDown,
+  Bookmark,
+  BookmarkCheck,
   Info
 } from 'lucide-react'
+import { useSavedGigs } from '../../gigs/hooks/useSavedGigs'
 import MatchmakingCard from './MatchmakingCard'
 import CompatibilityScore from './CompatibilityScore'
 import { Recommendation, MatchmakingFilters } from '../../../lib/types/matchmaking'
 
 interface RecommendationEngineProps {
   userType: 'talent' | 'contributor'
-  recommendations: Recommendation[]
+  recommendations: {
+    all: Recommendation[]
+    filtered: Recommendation[]
+  }
   onRecommendationClick: (recommendation: Recommendation) => void
   onRefresh?: () => void
   loading?: boolean
@@ -40,22 +44,44 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
   className = ''
 }) => {
   const [activeTab, setActiveTab] = useState('recommended')
-  const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map())
+  const { savedGigs, toggleSaveGig } = useSavedGigs()
+
+  // Use filtered recommendations for most tabs
+  const filteredRecommendations = recommendations.filtered
+  const allRecommendations = recommendations.all
 
   // Group recommendations by priority
-  const highPriorityRecommendations = recommendations.filter(r => r.priority === 'high')
-  const mediumPriorityRecommendations = recommendations.filter(r => r.priority === 'medium')
-  const lowPriorityRecommendations = recommendations.filter(r => r.priority === 'low')
+  const highPriorityRecommendations = filteredRecommendations.filter(r => r.priority === 'high')
+  const mediumPriorityRecommendations = filteredRecommendations.filter(r => r.priority === 'medium')
+  const lowPriorityRecommendations = filteredRecommendations.filter(r => r.priority === 'low')
 
   // Calculate average compatibility
-  const averageCompatibility = recommendations.length > 0 
-    ? Math.round(recommendations.reduce((sum, r) => sum + r.compatibility_score, 0) / recommendations.length)
+  const averageCompatibility = filteredRecommendations.length > 0
+    ? Math.round(filteredRecommendations.reduce((sum, r) => sum + r.compatibility_score, 0) / filteredRecommendations.length)
     : 0
 
-  const handleFeedback = (recommendationId: string, type: 'like' | 'dislike') => {
-    setFeedback(prev => new Map(prev.set(recommendationId, type)))
-    // Here you would typically send feedback to your backend
-    console.log(`User ${type}d recommendation:`, recommendationId)
+  // Tab-specific stats
+  const tabStats = {
+    recommended: {
+      high: highPriorityRecommendations.length,
+      medium: mediumPriorityRecommendations.length,
+      low: lowPriorityRecommendations.length,
+      total: filteredRecommendations.length,
+      avgCompatibility: averageCompatibility
+    },
+    all: {
+      high: allRecommendations.filter(r => r.priority === 'high').length,
+      medium: allRecommendations.filter(r => r.priority === 'medium').length,
+      low: allRecommendations.filter(r => r.priority === 'low').length,
+      total: allRecommendations.length,
+      avgCompatibility: allRecommendations.length > 0
+        ? Math.round(allRecommendations.reduce((sum, r) => sum + r.compatibility_score, 0) / allRecommendations.length)
+        : 0
+    }
+  }
+
+  const handleSaveGig = (recommendationId: string) => {
+    toggleSaveGig(recommendationId)
   }
 
   const RecommendationSection: React.FC<{ 
@@ -103,33 +129,28 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
                 onApply={() => onRecommendationClick(recommendation)}
               />
               
-              {/* Feedback Buttons */}
-              <div className="absolute top-2 right-2 flex gap-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className={`h-6 w-6 p-0 ${
-                    feedback.get(recommendation.id) === 'like' 
-                      ? 'text-primary-600 bg-primary-50' 
-                      : 'text-muted-foreground-400 hover:text-primary-600'
-                  }`}
-                  onClick={() => handleFeedback(recommendation.id, 'like')}
-                >
-                  <ThumbsUp className="w-3 h-3" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className={`h-6 w-6 p-0 ${
-                    feedback.get(recommendation.id) === 'dislike' 
-                      ? 'text-destructive-600 bg-destructive-50' 
-                      : 'text-muted-foreground-400 hover:text-destructive-600'
-                  }`}
-                  onClick={() => handleFeedback(recommendation.id, 'dislike')}
-                >
-                  <ThumbsDown className="w-3 h-3" />
-                </Button>
-              </div>
+              {/* Save/Like Button - Only for gig recommendations */}
+              {recommendation.type === 'gig' && (
+                <div className="absolute top-2 right-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className={`h-6 w-6 p-0 ${
+                      savedGigs.has(recommendation.id)
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-muted-foreground-400 hover:text-primary-600'
+                    }`}
+                    onClick={() => handleSaveGig(recommendation.id)}
+                    title={savedGigs.has(recommendation.id) ? 'Remove from saved' : 'Save gig'}
+                  >
+                    {savedGigs.has(recommendation.id) ? (
+                      <BookmarkCheck className="w-3 h-3" />
+                    ) : (
+                      <Bookmark className="w-3 h-3" />
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -213,7 +234,7 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
                 </div>
                 <div>
                   <p className="text-xl font-bold text-muted-foreground-900 dark:text-primary-foreground">
-                    {highPriorityRecommendations.length}
+                    {activeTab === 'all' ? tabStats.all.high : tabStats.recommended.high}
                   </p>
                   <p className="text-sm text-muted-foreground">Perfect Matches</p>
                 </div>
@@ -229,7 +250,7 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
                 </div>
                 <div>
                   <p className="text-xl font-bold text-muted-foreground-900 dark:text-primary-foreground">
-                    {mediumPriorityRecommendations.length}
+                    {activeTab === 'all' ? tabStats.all.medium : tabStats.recommended.medium}
                   </p>
                   <p className="text-sm text-muted-foreground">Good Matches</p>
                 </div>
@@ -245,7 +266,7 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
                 </div>
                 <div>
                   <p className="text-xl font-bold text-muted-foreground-900 dark:text-primary-foreground">
-                    {recommendations.length}
+                    {activeTab === 'all' ? tabStats.all.total : tabStats.recommended.total}
                   </p>
                   <p className="text-sm text-muted-foreground">Total Opportunities</p>
                 </div>
@@ -261,7 +282,7 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
                 </div>
                 <div>
                   <p className="text-xl font-bold text-muted-foreground-900 dark:text-primary-foreground">
-                    {averageCompatibility}%
+                    {activeTab === 'all' ? tabStats.all.avgCompatibility : tabStats.recommended.avgCompatibility}%
                   </p>
                   <p className="text-sm text-muted-foreground">Avg Compatibility</p>
                 </div>
@@ -285,7 +306,7 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
         <TabsContent value="recommended" className="space-y-6 mt-6">
           <RecommendationSection
             title="Recommended for You"
-            recommendations={recommendations.slice(0, 6)}
+            recommendations={filteredRecommendations.slice(0, 6)}
             icon={<Star className="w-5 h-5 text-primary-500" />}
             badgeColor="bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-300"
             description="Top recommendations based on your profile and preferences"
@@ -305,7 +326,7 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
         <TabsContent value="all" className="space-y-6 mt-6">
           <RecommendationSection
             title="All Opportunities"
-            recommendations={recommendations}
+            recommendations={recommendations.all}
             icon={<Users className="w-5 h-5 text-primary-500" />}
             badgeColor="bg-primary-100 text-primary-800 dark:bg-primary-900/20 dark:text-primary-300"
             description="Complete list of available opportunities"
@@ -324,7 +345,7 @@ const RecommendationEngine: React.FC<RecommendationEngineProps> = ({
       )}
 
       {/* Empty State */}
-      {!loading && recommendations.length === 0 && (
+      {!loading && recommendations.filtered.length === 0 && (
         <Card className="mt-6">
           <CardContent className="p-12 text-center">
             <Users className="w-16 h-16 mx-auto mb-6 text-muted-foreground-300 dark:text-muted-foreground-600" />

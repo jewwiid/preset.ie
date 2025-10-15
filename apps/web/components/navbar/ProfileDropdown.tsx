@@ -16,7 +16,7 @@ import { Home, User as UserIcon, LogOut, Shield, Settings } from 'lucide-react'
 interface Profile {
   avatar_url?: string
   display_name?: string
-  role_flags?: string[]
+  account_type?: string[]
   handle?: string
 }
 
@@ -92,7 +92,7 @@ export function ProfileDropdown({
                 </p>
               </div>
               <div className="inline-flex">
-                {profile?.role_flags?.includes('CONTRIBUTOR') ? (
+                {profile?.account_type?.includes('CONTRIBUTOR') ? (
                   <Badge className="text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
                     Contributor
                   </Badge>

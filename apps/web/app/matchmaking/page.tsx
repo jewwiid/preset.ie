@@ -6,9 +6,12 @@ import { Button } from '../../components/ui/button'
 import { Badge } from '../../components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { RefreshCw, Filter, Star, TrendingUp, Users, MapPin } from 'lucide-react'
+import { RefreshCw, Filter, Star, TrendingUp, Users, MapPin, ArrowLeft, Heart } from 'lucide-react'
 import { MatchmakingProvider, useMatchmaking } from '../components/matchmaking/context/MatchmakingContext'
 import { useAuth } from '../../lib/auth-context'
+import { PageHeader } from '@/components/PageHeader'
+import { usePageHeaderImage } from '@/hooks/usePageHeaderImage'
+import Link from 'next/link'
 import MatchmakingCard from '../components/matchmaking/MatchmakingCard'
 import CompatibilityScore from '../components/matchmaking/CompatibilityScore'
 import MatchmakingFilters from '../components/matchmaking/MatchmakingFilters'
@@ -32,6 +35,9 @@ const MatchmakingDashboardContent: React.FC = () => {
   const [userType, setUserType] = useState<'talent' | 'contributor'>('talent')
   const [searchResults, setSearchResults] = useState<Recommendation[]>([])
 
+  // Get header image
+  const { headerImage } = usePageHeaderImage('matchmaking')
+
   useEffect(() => {
     fetchRecommendations()
   }, [fetchRecommendations])
@@ -41,39 +47,49 @@ const MatchmakingDashboardContent: React.FC = () => {
   }
 
   const handleViewDetails = (recommendation: Recommendation) => {
-    // Navigate to gig detail page or open modal
-    console.log('View details for:', recommendation.id)
+    // Navigate to gig detail page
+    if (recommendation.type === 'gig') {
+      window.open(`/gigs/${recommendation.id}`, '_blank')
+    }
   }
 
   const handleApply = (recommendation: Recommendation) => {
-    // Handle application logic
-    console.log('Apply to:', recommendation.id)
+    // Navigate to gig application page
+    if (recommendation.type === 'gig') {
+      window.open(`/gigs/${recommendation.id}`, '_blank')
+    }
   }
 
   // Group recommendations by priority for stats
-  const highPriorityRecommendations = recommendations.filter(r => r.priority === 'high')
-  const mediumPriorityRecommendations = recommendations.filter(r => r.priority === 'medium')
-  const lowPriorityRecommendations = recommendations.filter(r => r.priority === 'low')
+  const highPriorityRecommendations = recommendations.filtered.filter(r => r.priority === 'high')
+  const mediumPriorityRecommendations = recommendations.filtered.filter(r => r.priority === 'medium')
+  const lowPriorityRecommendations = recommendations.filtered.filter(r => r.priority === 'low')
 
   return (
     <div className="min-h-screen bg-muted-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-muted-foreground-900">Matchmaking</h1>
-              <p className="text-muted-foreground-600 mt-2">
-                Discover gigs that match your profile and preferences
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-3">
+        {/* Page Header */}
+        <PageHeader
+          title="Matchmaking"
+          subtitle="Discover gigs that match your profile and preferences"
+          icon={Heart}
+          stats={[
+            { icon: Star, label: `${highPriorityRecommendations.length} Perfect Matches` },
+            { icon: TrendingUp, label: `${mediumPriorityRecommendations.length} Good Matches` },
+            { icon: Users, label: `${recommendations.filtered.length} Total Opportunities` }
+          ]}
+          actions={
+            <>
+              <Link href="/gigs">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Gigs
+                </Button>
+              </Link>
               <MatchmakingFilters
                 onFiltersChange={updateFilters}
                 userType={userType}
               />
-              
               <Button
                 variant="outline"
                 size="sm"
@@ -83,65 +99,26 @@ const MatchmakingDashboardContent: React.FC = () => {
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          backgroundImage={headerImage}
+        />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Quick Stats Summary */}
+        <div className="mb-8">
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary-100 rounded-lg">
-                  <Star className="w-6 h-6 text-primary-600" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-8">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-primary-600">
+                      {recommendations.filtered.length > 0 ? Math.round(recommendations.filtered.reduce((acc, r) => acc + r.compatibility_score, 0) / recommendations.filtered.length) : 0}%
+                    </p>
+                    <p className="text-sm text-muted-foreground-600">Average Compatibility</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-muted-foreground-900">{highPriorityRecommendations.length}</p>
-                  <p className="text-sm text-muted-foreground-600">Perfect Matches</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary-100 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-primary-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-muted-foreground-900">{mediumPriorityRecommendations.length}</p>
-                  <p className="text-sm text-muted-foreground-600">Good Matches</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary-100 rounded-lg">
-                  <Users className="w-6 h-6 text-primary-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-muted-foreground-900">{recommendations.length}</p>
-                  <p className="text-sm text-muted-foreground-600">Total Opportunities</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary-100 rounded-lg">
-                  <MapPin className="w-6 h-6 text-primary-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-muted-foreground-900">
-                    {recommendations.length > 0 ? Math.round(recommendations.reduce((acc, r) => acc + r.compatibility_score, 0) / recommendations.length) : 0}%
-                  </p>
-                  <p className="text-sm text-muted-foreground-600">Avg Compatibility</p>
+                <div className="text-right text-sm text-muted-foreground-500">
+                  {userType === 'talent' ? 'Finding gigs perfect for your talent profile' : 'Discovering talent for your projects'}
                 </div>
               </div>
             </CardContent>

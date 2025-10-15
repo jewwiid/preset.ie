@@ -662,7 +662,7 @@ function SignUpPageContent() {
                           setInviteCodeValid(null)
                         }}
                         onBlur={(e) => validateInviteCode(e.target.value)}
-                        className={`pl-10 pr-10 ${inviteCodeValid === false ? 'border-destructive' : inviteCodeValid === true ? 'border-green-500' : ''}`}
+                        className={`pl-10 pr-10 ${inviteCodeValid === false ? 'border-destructive' : inviteCodeValid === true ? 'border-primary-500' : ''}`}
                         placeholder="Enter your invite code"
                       />
                       {validatingInvite && (
@@ -671,7 +671,7 @@ function SignUpPageContent() {
                         </div>
                       )}
                       {!validatingInvite && inviteCodeValid === true && (
-                        <CheckCircle2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-500" />
+                        <CheckCircle2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-primary-500" />
                       )}
                       {!validatingInvite && inviteCodeValid === false && (
                         <X className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-destructive" />

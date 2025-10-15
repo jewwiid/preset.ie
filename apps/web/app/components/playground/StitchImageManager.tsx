@@ -287,21 +287,21 @@ export default function StitchImageManager({
     const colors: Record<StitchImage['type'], string> = {
       // Legacy types
       character: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-      location: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+      location: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
       style: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
       object: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
       reference: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
-      custom: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300',
+      custom: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
       // Fashion & Apparel
-      model: 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-300',
-      garment: 'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900 dark:text-fuchsia-300',
+      model: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
+      garment: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
       fabric: 'bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-300',
       outfit: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
       // Product Design
       product: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
       logo: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-      packaging: 'bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-300',
-      brand_element: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
+      packaging: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
+      brand_element: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
       // Automotive
       vehicle: 'bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-300',
       rims_wheels: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-300',
@@ -313,19 +313,19 @@ export default function StitchImageManager({
       lighting: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
       wall_finish: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
       // Beauty & Cosmetics
-      face: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300',
-      makeup: 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-300',
-      hair: 'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900 dark:text-fuchsia-300',
+      face: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
+      makeup: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
+      hair: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
       skincare: 'bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-300',
       // Architecture & Construction
       building: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
       material: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
       landscape: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300',
-      fixture: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300',
+      fixture: 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900 dark:text-secondary-300',
       // Marketing & Advertising
-      lifestyle: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
-      scene: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-      prop: 'bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-300',
+      lifestyle: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
+      scene: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
+      prop: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300',
       text_overlay: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
       // Real Estate
       property: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',

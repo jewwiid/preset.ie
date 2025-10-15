@@ -55,7 +55,7 @@ interface TalentProfile {
   bio: string;
   city: string;
   country: string;
-  role_flags: string[];
+  account_type: string[];
   style_tags: string[];
   vibe_tags: string[];
   professional_skills: string[];    // Services they provide

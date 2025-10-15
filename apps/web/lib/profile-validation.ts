@@ -20,7 +20,7 @@ export interface ProfileFormData {
   editing_software?: string[]
   professional_skills?: string[]
   contributor_roles?: string[]
-  performance_roles?: string[]
+  talent_categories?: string[]
   experience_level?: string
   
   // Contact fields
@@ -131,9 +131,11 @@ export function validateProfileStep(step: string, data: ProfileFormData): Valida
         errors.push('Cannot have more than 20 contributor roles')
       }
 
-      if (data.performance_roles && data.performance_roles.length > 20) {
-        errors.push('Cannot have more than 20 performance roles')
+      if (data.talent_categories && data.talent_categories.length > 20) {
+        errors.push('Cannot have more than 20 talent categories')
       }
+
+      // talent_categoriess has been renamed to talent_categories
       break
 
     case 'contact':

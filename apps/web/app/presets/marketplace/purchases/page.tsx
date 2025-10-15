@@ -209,7 +209,7 @@ export default function MarketplacePurchasesPage() {
                   <p className="text-sm text-muted-foreground">Sales</p>
                   <p className="text-2xl font-bold">{stats.totalSales}</p>
                 </div>
-                <Package className="h-8 w-8 text-green-500" />
+                <Package className="h-8 w-8 text-primary-500" />
               </div>
             </CardContent>
           </Card>
@@ -360,7 +360,7 @@ export default function MarketplacePurchasesPage() {
                           <p className="text-2xl font-bold mb-1">
                             {sale.purchase_price} CR
                           </p>
-                          <p className="text-sm text-green-600 mb-4">
+                          <p className="text-sm text-primary-600 mb-4">
                             You earned: {Math.floor(sale.purchase_price * 0.9)} CR
                           </p>
                           <Button

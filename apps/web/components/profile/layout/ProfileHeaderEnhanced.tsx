@@ -100,8 +100,8 @@ export function ProfileHeaderEnhanced() {
   }, [])
 
   // Tab configuration - role-aware
-  const hasContributor = profile?.role_flags?.includes('CONTRIBUTOR') || false
-  const hasTalent = profile?.role_flags?.includes('TALENT') || false
+  const hasContributor = profile?.account_type?.includes('CONTRIBUTOR') || false
+  const hasTalent = profile?.account_type?.includes('TALENT') || false
   
   const allTabs = [
     { id: 'professional', label: 'Professional', icon: Briefcase },
@@ -197,7 +197,7 @@ export function ProfileHeaderEnhanced() {
   ]
 
   // Physical Attributes (for talent)
-  const physicalInfo = profile?.performance_roles && profile.performance_roles.length > 0 ? [
+  const physicalInfo = profile?.talent_categories && profile.talent_categories.length > 0 ? [
     {
       label: 'Height',
       value: profile?.height_cm ? `${profile.height_cm}cm` : 'Not specified',

@@ -410,7 +410,7 @@ export default function ShowcaseFeed({ className = '', showcaseType = 'all', sho
   const isOwner = (showcase: Showcase) => {
     if (!currentUserProfile) return false
     // Check if user is admin
-    const isAdmin = currentUserProfile.role_flags?.includes('ADMIN')
+    const isAdmin = currentUserProfile.account_type?.includes('ADMIN')
     // Check if user owns the showcase
     const isCreator = showcase.creator.id === currentUserProfile.id
     return isAdmin || isCreator

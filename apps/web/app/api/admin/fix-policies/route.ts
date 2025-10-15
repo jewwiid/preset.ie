@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
          EXISTS (
            SELECT 1 FROM users_profile 
            WHERE user_id = auth.uid() 
-           AND 'ADMIN' = ANY(role_flags)
+           AND 'ADMIN' = ANY(account_type)
          )
        );`,
       `CREATE POLICY IF NOT EXISTS "Admin users can update all applications" ON applications
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
          EXISTS (
            SELECT 1 FROM users_profile 
            WHERE user_id = auth.uid() 
-           AND 'ADMIN' = ANY(role_flags)
+           AND 'ADMIN' = ANY(account_type)
          )
        );`
     ]

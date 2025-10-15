@@ -138,8 +138,8 @@ export default function ReviewStep({
             {isTalent && (
               <div className="mt-4">
                 <div>
-                  <span className="font-medium text-muted-foreground">Performance Roles:</span>
-                  <p className="font-medium">{formatArray(data.performance_roles)}</p>
+                  <span className="font-medium text-muted-foreground">Talent Categories:</span>
+                  <p className="font-medium">{formatArray(data.talent_categories)}</p>
                 </div>
               </div>
             )}

@@ -251,7 +251,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
             created_at,
             updated_at
           `)
-          .contains('role_flags', ['TALENT'])
+          .contains('account_type', ['TALENT'])
           .or(`display_name.ilike.%${filters.query}%,bio.ilike.%${filters.query}%`)
           .limit(50)
 

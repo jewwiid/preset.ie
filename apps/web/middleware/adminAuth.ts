@@ -25,11 +25,11 @@ export async function isAdmin(request: NextRequest): Promise<{ isValid: boolean;
     // Check if user has admin role
     const { data: profile } = await supabase
       .from('users_profile')
-      .select('role_flags')
+      .select('account_type')
       .eq('user_id', user.id)
       .single();
     
-    if (!profile || !profile.role_flags.includes('ADMIN')) {
+    if (!profile || !profile.account_type.includes('ADMIN')) {
       return { isValid: false };
     }
     

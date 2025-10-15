@@ -5,7 +5,8 @@
 
 export { useMoodboardData } from './useMoodboardData'
 export { useMoodboardItems } from './useMoodboardItems'
-export { usePexelsSearch } from './usePexelsSearch'
+export { useStockPhotoSearch } from './useStockPhotoSearch'
+export { usePexelsSearch } from './usePexelsSearch' // Keep for backward compatibility
 export { useImageUpload } from './useImageUpload'
 export { useImageEnhancement } from './useImageEnhancement'
 export { useColorPalette } from './useColorPalette'

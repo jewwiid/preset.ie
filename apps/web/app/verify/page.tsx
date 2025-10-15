@@ -106,7 +106,7 @@ export default function VerificationPage() {
         const [profileResult, badgesResult, requestsResult] = await Promise.all([
           supabase
             .from('users_profile')
-            .select('role_flags, instagram_url, linkedin_url, tiktok_url, portfolio_url, years_experience, phone_number')
+            .select('account_type, instagram_url, linkedin_url, tiktok_url, portfolio_url, years_experience, phone_number')
             .eq('user_id', user.id)
             .single(),
           supabase
@@ -124,8 +124,8 @@ export default function VerificationPage() {
         const { data: profile, error: profileError } = profileResult
 
         if (profile && !profileError) {
-          if (profile.role_flags) {
-            setUserRoles(profile.role_flags)
+          if (profile.account_type) {
+            setUserRoles(profile.account_type)
           }
 
           // Pre-populate form with existing profile data and format URLs

@@ -129,6 +129,8 @@ export default function MessagesPage() {
     return true
   })
   
+  const [showConversations, setShowConversations] = useState(false)
+  
   // Refs for auto-scrolling and input management
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -235,9 +237,11 @@ export default function MessagesPage() {
       setIsMobile(mobile)
       if (mobile) {
         setSidebarCollapsed(true)
+        setShowConversations(false)
       } else {
         // On desktop, keep sidebar expanded by default
         setSidebarCollapsed(false)
+        setShowConversations(false)
       }
     }
 
@@ -621,18 +625,138 @@ export default function MessagesPage() {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-card rounded-lg shadow-sm overflow-hidden" style={{ height: 'calc(100vh - 8rem)' }}>
-          {/* Mobile backdrop overlay */}
-          {!sidebarCollapsed && isMobile && (
-            <div 
-              className="lg:hidden fixed inset-0 bg-black/50 z-10"
-              onClick={() => setSidebarCollapsed(true)}
-            />
+          {/* Mobile conversation overlay */}
+          {showConversations && isMobile && (
+            <div className="lg:hidden fixed inset-0 bg-background z-50 flex flex-col">
+              {/* Mobile conversation header */}
+              <div className="p-4 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-xl font-semibold text-foreground">Messages</h1>
+                  <button
+                    onClick={() => setShowConversations(false)}
+                    className="p-2 hover:bg-accent rounded-lg transition-colors"
+                    title="Close conversations"
+                  >
+                    <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                </div>
+                <div className="mt-2 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <input
+                    type="text"
+                    placeholder="Search conversations..."
+                    className="w-full pl-10 pr-4 py-2 border border-border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Mobile conversations list */}
+              <div className="flex-1 overflow-y-auto">
+                {conversations.length === 0 ? (
+                  <div className="text-center text-muted-foreground p-4">
+                    <MessageSquare className="mx-auto mb-2 text-muted-foreground h-8 w-8" />
+                    <p className="text-sm">No conversations yet</p>
+                  </div>
+                ) : (
+                  conversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      onClick={() => {
+                        setSelectedConversation(conversation.id)
+                        setShowConversations(false)
+                      }}
+                      className="p-4 border-b border-border cursor-pointer hover:bg-accent transition-colors"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 relative">
+                          {conversation.otherUser?.avatar_url ? (
+                            <img 
+                              src={conversation.otherUser.avatar_url} 
+                              alt={conversation.otherUser.display_name}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-10 h-10 bg-primary rounded-full flex items-center justify-center ${conversation.otherUser?.avatar_url ? 'hidden' : ''}`}>
+                            <User className="h-5 w-5 text-primary-foreground" />
+                          </div>
+                          {conversation.unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center text-xs font-medium text-primary-foreground bg-primary rounded-full px-2 py-1">
+                              {conversation.unreadCount}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <h3 className="text-sm font-medium text-foreground truncate">
+                                {conversation.otherUser?.display_name || 'Unknown User'}
+                              </h3>
+                              {/* Context badge */}
+                              {conversation.context?.type === 'gig' ? (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Briefcase className="h-3 w-3 mr-1" />
+                                  Gig
+                                </Badge>
+                              ) : conversation.context?.type === 'marketplace' ? (
+                                <Badge variant="outline" className="text-xs">
+                                  <ShoppingCart className="h-3 w-3 mr-1" />
+                                  Marketplace
+                                </Badge>
+                              ) : null}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <p className="text-xs text-muted-foreground">
+                                {conversation.lastMessageAt && formatDate(conversation.lastMessageAt)}
+                              </p>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteConversation(conversation.id)
+                                }}
+                                className="p-1 hover:bg-destructive/10 rounded text-destructive hover:text-destructive-foreground transition-colors"
+                                title="Delete conversation"
+                              >
+                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-1">@{conversation.otherUser?.handle || 'unknown'}</p>
+                          {/* Show listing preview for marketplace conversations */}
+                          {conversation.context?.type === 'marketplace' && conversation.context?.listing && (
+                            <div className="flex items-center space-x-2 mb-1">
+                              <div className="flex-shrink-0">
+                                <div className="w-6 h-6 bg-muted rounded flex items-center justify-center">
+                                  <Tag className="h-3 w-3 text-muted-foreground" />
+                                </div>
+                              </div>
+                              <p className="text-xs text-primary truncate">
+                                {conversation.context.listing.title}
+                              </p>
+                            </div>
+                          )}
+                          <p className="text-sm text-muted-foreground truncate">
+                            {conversation.lastMessage?.body || 'No messages yet'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           )}
+          
           <div className="flex h-full">
             {/* Conversations Sidebar */}
             <div className={`${sidebarCollapsed ? 'lg:w-16 w-16' : 'lg:w-1/3 w-80'} border-r border-border flex flex-col transition-all duration-300 ease-in-out ${
-              sidebarCollapsed ? 'lg:relative absolute lg:translate-x-0 -translate-x-full z-20 lg:z-auto' : 'lg:relative absolute lg:translate-x-0 translate-x-0 z-20 lg:z-auto'
-            } lg:static ${!sidebarCollapsed ? 'lg:bg-transparent bg-card lg:shadow-none shadow-xl' : ''}`}>
+              sidebarCollapsed ? 'lg:relative relative lg:translate-x-0 translate-x-0' : 'lg:relative relative lg:translate-x-0 translate-x-0'
+            } lg:static ${!sidebarCollapsed ? 'lg:bg-transparent bg-card lg:shadow-none shadow-none' : ''}`}>
               {/* Header */}
               <div className="p-4 border-b border-border">
                 <div className="flex items-center justify-between">
@@ -684,9 +808,9 @@ export default function MessagesPage() {
                         key={conversation.id}
                         onClick={() => {
                           setSelectedConversation(conversation.id)
-                          // Auto-collapse sidebar on mobile when conversation is selected
+                          // On mobile, keep sidebar visible but show conversation details
                           if (isMobile) {
-                            setSidebarCollapsed(true)
+                            setShowConversations(false)
                           }
                         }}
                         className={`${sidebarCollapsed ? 'p-2' : 'p-4'} border-b border-border cursor-pointer hover:bg-accent transition-colors ${
@@ -792,19 +916,6 @@ export default function MessagesPage() {
 
             {/* Chat Area */}
             <div className="flex-1 flex flex-col">
-              {/* Mobile sidebar toggle - always visible when sidebar is collapsed */}
-              {sidebarCollapsed && isMobile && (
-                <div className="lg:hidden p-2 border-b border-border">
-                  <button
-                    onClick={() => setSidebarCollapsed(false)}
-                    className="flex items-center space-x-2 p-2 hover:bg-accent rounded-lg transition-colors w-full"
-                    title="Show conversations"
-                  >
-                    <Menu className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Show Conversations</span>
-                  </button>
-                </div>
-              )}
               
               {selectedConversation && conversationDetails ? (
                 <>
@@ -820,6 +931,17 @@ export default function MessagesPage() {
                         >
                           <Menu className="h-5 w-5 text-muted-foreground" />
                         </button>
+                        
+                        {/* Mobile back button */}
+                        {isMobile && (
+                          <button
+                            onClick={() => setSelectedConversation(null)}
+                            className="lg:hidden p-2 hover:bg-accent rounded-lg transition-colors"
+                            title="Back to conversations"
+                          >
+                            <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+                          </button>
+                        )}
                         
                         {/* User Avatar */}
                         <div className="flex-shrink-0 relative">
@@ -1074,9 +1196,9 @@ export default function MessagesPage() {
                     <p className="text-muted-foreground mb-4">Choose a conversation from the sidebar to start messaging.</p>
                     
                     {/* Show conversations button when no conversation selected */}
-                    {sidebarCollapsed && isMobile && (
+                    {isMobile && (
                       <button
-                        onClick={() => setSidebarCollapsed(false)}
+                        onClick={() => setShowConversations(true)}
                         className="inline-flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                       >
                         <Menu className="h-4 w-4" />

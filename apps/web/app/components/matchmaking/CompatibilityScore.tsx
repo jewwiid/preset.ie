@@ -12,15 +12,16 @@ interface CompatibilityScoreProps {
   showDetails?: boolean
 }
 
-export default function CompatibilityScore({ 
-  score, 
-  breakdown, 
-  size = 'md', 
-  showBreakdown = false, 
-  showDetails = false 
+export default function CompatibilityScore({
+  score,
+  breakdown,
+  size = 'md',
+  showBreakdown = false,
+  showDetails = false
 }: CompatibilityScoreProps) {
   const [showTooltip, setShowTooltip] = useState(false)
 
+  
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-primary-600'
     if (score >= 60) return 'text-primary-600'

@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 interface Profile {
   avatar_url?: string
   display_name?: string
-  role_flags?: string[]
+  account_type?: string[]
   handle?: string
 }
 
@@ -76,7 +76,7 @@ export function useNavBarProfile(user: User | null, loading: boolean) {
     try {
       const { data, error } = await supabase
         .from('users_profile')
-        .select('avatar_url, display_name, role_flags, handle')
+        .select('avatar_url, display_name, account_type, handle')
         .eq('user_id', user.id)
         .maybeSingle()
 
@@ -97,8 +97,8 @@ export function useNavBarProfile(user: User | null, loading: boolean) {
     }
   }
 
-  const isAdmin = profile?.role_flags?.includes('ADMIN') || false
-  const isContributor = profile?.role_flags?.includes('CONTRIBUTOR') || false
+  const isAdmin = profile?.account_type?.includes('ADMIN') || false
+  const isContributor = profile?.account_type?.includes('CONTRIBUTOR') || false
 
   return {
     profile,

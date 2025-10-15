@@ -193,7 +193,7 @@ export default function WorkingHoursSection({
         // Display mode
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <div className="w-2 h-2 rounded-full bg-primary-500"></div>
             <span className="text-foreground font-medium">{formatWorkingHours()}</span>
           </div>
           

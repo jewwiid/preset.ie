@@ -189,16 +189,166 @@ export function isExternalImageUrl(url: string): boolean {
 }
 
 /**
+ * Downloads an enhanced image from an external URL and saves it to the user's gallery (playground_gallery table)
+ */
+export async function downloadAndSaveEnhancedImageToGallery(
+  externalUrl: string,
+  userId: string,
+  originalImageId: string,
+  enhancementType: string,
+  enhancementMetadata?: any
+): Promise<EnhancedImageStorageResult> {
+  try {
+    console.log('🔄 Downloading enhanced image to gallery from:', externalUrl)
+
+    // Download the image from external URL
+    const response = await fetch(externalUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to download image: ${response.status} ${response.statusText}`)
+    }
+
+    const imageBuffer = await response.arrayBuffer()
+    const imageBlob = new Blob([imageBuffer])
+
+    // Get file info
+    const contentType = response.headers.get('content-type') || 'image/png'
+    const fileExt = contentType.includes('jpeg') ? 'jpg' :
+                   contentType.includes('png') ? 'png' :
+                   contentType.includes('webp') ? 'webp' : 'png'
+
+    // Generate unique filename
+    const timestamp = Date.now()
+    const randomStr = Math.random().toString(36).substring(7)
+    const fileName = `enhanced-${userId}-${originalImageId}-${enhancementType}-${timestamp}-${randomStr}.${fileExt}`
+    const filePath = `enhanced-images/${userId}/${fileName}`
+
+    console.log('💾 Saving enhanced image to bucket:', filePath)
+
+    // Create Supabase admin client for storage operations
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Upload to playground-images bucket (for consistency with playground saves)
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('playground-images')
+      .upload(filePath, imageBlob, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: contentType
+      })
+
+    if (uploadError) {
+      console.error('❌ Upload error:', uploadError)
+      throw new Error(`Failed to upload to bucket: ${uploadError.message}`)
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('playground-images')
+      .getPublicUrl(filePath)
+
+    console.log('✅ Enhanced image saved successfully:', publicUrl)
+
+    // Save to playground_gallery table for proper gallery integration
+    try {
+      const imageWidth = enhancementMetadata?.width || 1024
+      const imageHeight = enhancementMetadata?.height || 1024
+
+      const galleryData = {
+        user_id: userId,
+        image_url: publicUrl,
+        thumbnail_url: publicUrl,
+        title: `Enhanced ${enhancementType}`,
+        description: `AI-enhanced image using ${enhancementType} enhancement`,
+        tags: [enhancementType, 'ai-enhanced'],
+        width: imageWidth,
+        height: imageHeight,
+        format: fileExt,
+        generation_metadata: {
+          prompt: enhancementMetadata?.prompt || '',
+          style: enhancementMetadata?.provider || 'ai-enhanced',
+          aspect_ratio: `${imageWidth}:${imageHeight}`,
+          resolution: `${imageWidth}*${imageHeight}`,
+          consistency_level: 'standard',
+          enhanced_prompt: enhancementMetadata?.prompt || '',
+          style_applied: enhancementType,
+          credits_used: 1,
+          generated_at: new Date().toISOString(),
+          provider: enhancementMetadata?.provider || 'unknown',
+          source: 'ai_enhancement',
+          original_url: externalUrl,
+          permanently_stored: true,
+          storage_method: 'downloaded',
+          enhancement_type: enhancementType,
+          enhanced_at: new Date().toISOString()
+        },
+        exif_json: {
+          promoted_from_moodboard: true,
+          enhancement_metadata: {
+            prompt: enhancementMetadata?.prompt || '',
+            style: enhancementType,
+            provider: enhancementMetadata?.provider || 'unknown',
+            enhanced_at: new Date().toISOString()
+          }
+        },
+        // Set default values for required fields
+        used_in_moodboard: false,
+        used_in_showcase: false,
+        media_type: 'image',
+        is_nsfw: false,
+        is_flagged: false,
+        moderation_status: 'pending',
+        user_marked_nsfw: false,
+        nsfw_confidence_score: 0.0
+      }
+
+      const { data: galleryItem, error: galleryError } = await supabaseAdmin
+        .from('playground_gallery')
+        .insert(galleryData)
+        .select()
+        .single()
+
+      if (galleryError) {
+        console.warn('⚠️ Failed to save to gallery:', galleryError)
+      } else {
+        console.log('✅ Enhanced image saved to gallery:', galleryItem.id)
+      }
+    } catch (galleryError) {
+      console.warn('⚠️ Failed to save to gallery:', galleryError)
+      // Don't fail the whole operation for gallery issues
+    }
+
+    return {
+      success: true,
+      permanentUrl: publicUrl,
+      metadata: {
+        fileName,
+        fileSize: imageBlob.size,
+        mimeType: contentType,
+        bucket: 'playground-images',
+        path: filePath
+      }
+    }
+
+  } catch (error) {
+    console.error('❌ Enhanced image download/save failed:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+  }
+}
+
+/**
  * Gets the file path from a Supabase storage URL
  */
 export function getStoragePathFromUrl(url: string): string | null {
   try {
     const urlParts = url.split('/storage/v1/object/public/')
     if (urlParts.length < 2) return null
-    
+
     const pathParts = urlParts[1].split('/')
     if (pathParts.length < 2) return null
-    
+
     return pathParts.slice(1).join('/') // Remove bucket name
   } catch {
     return null

@@ -56,7 +56,7 @@ export function CategoriesStep() {
         
         // Map the data to our CategoryOption format
         setPerformanceRoles(
-          data.performance_roles?.map((role: any) => ({
+          data.talent_categoriess?.map((role: any) => ({
             id: role.id,
             name: role.role_name,  // NEW: role_name instead of category_name
             description: role.description,
@@ -145,7 +145,7 @@ export function CategoriesStep() {
   const getRoleTitle = (role: string) => {
     switch (role) {
       case 'TALENT':
-        return 'Performance Roles'
+        return 'Talent Categorys'
       case 'CONTRIBUTOR':
         return 'Professional Skills'
       case 'BOTH':
@@ -162,7 +162,7 @@ export function CategoriesStep() {
       case 'CONTRIBUTOR':
         return 'Select services you provide (Photography, Video Editing, etc.)'
       case 'BOTH':
-        return 'Select both your performance roles and professional skills'
+        return 'Select both your Talent Categorys and professional skills'
       default:
         return 'Select your categories'
     }
@@ -249,12 +249,12 @@ export function CategoriesStep() {
         </Card>
       )}
 
-      {/* Performance Roles */}
+      {/* Talent Categorys */}
       {(selectedRole === 'TALENT' || selectedRole === 'BOTH') && (
         <div className="space-y-4">
           <div>
             <h3 className="text-lg font-medium text-foreground mb-2">
-              Performance Roles
+              Talent Categorys
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
               What you perform as (Model, Actor, Dancer, etc.)

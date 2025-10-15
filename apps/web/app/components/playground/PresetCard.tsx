@@ -72,7 +72,7 @@ function getGenerationModeBadge(preset: Preset) {
 function getVideoSettingsBadge(preset: Preset) {
   if (preset.cinematic_settings?.video) {
     return (
-      <Badge variant="outline" className="text-xs bg-green-50 border-green-200 text-green-700">
+      <Badge variant="outline" className="text-xs bg-primary-50 border-primary/20 text-primary-700">
         Video Ready
       </Badge>
     );

@@ -43,7 +43,7 @@ export async function DELETE(request: NextRequest) {
     // Get user profile
     const { data: userProfile, error: profileError } = await supabase
       .from('users_profile')
-      .select('id, role_flags')
+      .select('id, account_type')
       .eq('user_id', user.id)
       .single();
 
@@ -65,7 +65,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user is admin or owns the showcase
-    const isAdmin = Array.isArray(userProfile.role_flags) && userProfile.role_flags.includes('ADMIN');
+    const isAdmin = Array.isArray(userProfile.account_type) && userProfile.account_type.includes('ADMIN');
     const isOwner = showcase.creator_user_id === userProfile.id || 
                     showcase.talent_user_id === userProfile.id;
     const canDelete = isAdmin || isOwner;

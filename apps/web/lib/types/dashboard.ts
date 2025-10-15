@@ -33,12 +33,12 @@ export interface UserProfile {
   clothing_sizes?: string
   tattoos?: boolean
   piercings?: boolean
-  performance_roles?: string[]
+  talent_categories?: string[]
   contributor_roles?: string[]
   professional_skills?: string[]
   behance_url?: string
   dribbble_url?: string
-  role_flags: string[]
+  account_type: string[]
   style_tags: string[]
   subscription_tier: string
   verification_status: string
@@ -110,6 +110,7 @@ export interface RecentGig {
   location_text: string
   created_at: string
   status: string
+  compatibility_score?: number
 }
 
 export interface DashboardStats {

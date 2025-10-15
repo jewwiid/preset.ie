@@ -181,7 +181,7 @@ export default function Home() {
   // Initialize randomized creative roles once on mount
   useEffect(() => {
     // Separate talent and contributor profiles for correct role matching
-    const talents = getTalentProfiles(); // For performance roles (actors, models, singers, etc.)
+    const talents = getTalentProfiles(); // For Talent Categorys (actors, models, singers, etc.)
     const contributors = getContributorProfiles(); // For service providers (photographers, videographers, etc.)
 
     const allCreativeRoles = [
@@ -209,7 +209,7 @@ export default function Home() {
         name: 'Models',
         slug: 'models',
         description: 'Fashion, commercial, and editorial modeling',
-        // Use talents for performance roles like models
+        // Use talents for Talent Categorys like models
         imageUrl: talents.find(t => t.performance_roles?.includes('Model'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
       },
       {
@@ -304,14 +304,14 @@ export default function Home() {
         name: 'Actors',
         slug: 'actors',
         description: 'Professional actors and performers',
-        // Use talents for performance roles like actors
+        // Use talents for Talent Categorys like actors
         imageUrl: talents.find(t => t.performance_roles?.includes('Actor'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/photoshoot-black-and-white.jpg'
       },
       {
         name: 'Musicians',
         slug: 'musicians',
         description: 'Music composers and performers',
-        // Use talents for performance roles like musicians
+        // Use talents for Talent Categorys like musicians
         imageUrl: talents.find(t => t.performance_roles?.includes('Musician'))?.avatar_url || 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/portrait1.jpeg'
       }
     ];

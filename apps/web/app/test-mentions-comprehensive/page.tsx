@@ -211,7 +211,7 @@ export default function ComprehensiveMentionsTestPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <CheckCircle className="h-5 w-5 text-primary-600" />
                     Test Scenarios
                   </CardTitle>
                 </CardHeader>
@@ -240,7 +240,7 @@ export default function ComprehensiveMentionsTestPage() {
                         <div className={cn(
                           "text-xs p-2 rounded mt-2 flex items-center gap-2",
                           testResults[scenario.id].status === 'success' 
-                            ? "bg-green-50 text-green-800 border border-green-200"
+                            ? "bg-primary-50 text-primary-800 border border-primary/20"
                             : testResults[scenario.id].status === 'error'
                             ? "bg-red-50 text-red-800 border border-red-200"
                             : "bg-blue-50 text-blue-800 border border-blue-200"
@@ -329,7 +329,7 @@ export default function ComprehensiveMentionsTestPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <MousePointer className="h-5 w-5 text-green-600" />
+                    <MousePointer className="h-5 w-5 text-primary-600" />
                     Manual Selection Test
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
@@ -475,7 +475,7 @@ export default function ComprehensiveMentionsTestPage() {
                   <div className="text-sm text-muted-foreground">Tests Run</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-2xl font-bold text-primary-600">
                     {Object.values(testResults).filter(r => r.status === 'success').length}
                   </div>
                   <div className="text-sm text-muted-foreground">Passed</div>

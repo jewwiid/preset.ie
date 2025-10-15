@@ -670,7 +670,7 @@ export default function ProjectDetailPage() {
                             <p className="text-sm text-muted-foreground">Total Roles</p>
                           </div>
                           <div className="text-center">
-                            <p className="text-2xl font-bold text-green-600">
+                            <p className="text-2xl font-bold text-primary-600">
                               {project.collab_roles.filter(r => r.status === 'open').length}
                             </p>
                             <p className="text-sm text-muted-foreground">Open Positions</p>
@@ -697,7 +697,7 @@ export default function ProjectDetailPage() {
                                   {role.status}
                                 </Badge>
                                 {role.is_paid && (
-                                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                  <Badge variant="secondary" className="bg-primary-100 text-primary-800">
                                     Paid Role
                                   </Badge>
                                 )}

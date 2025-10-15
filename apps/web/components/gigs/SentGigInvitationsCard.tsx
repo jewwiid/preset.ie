@@ -92,7 +92,7 @@ export function SentGigInvitationsCard({
       case 'pending':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">⏳ Pending</Badge>
       case 'accepted':
-        return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">✅ Accepted</Badge>
+        return <Badge variant="default" className="bg-primary-100 text-primary-800 border-primary/20">✅ Accepted</Badge>
       case 'declined':
         return <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200">❌ Declined</Badge>
       case 'expired':

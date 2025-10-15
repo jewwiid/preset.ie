@@ -76,7 +76,7 @@ const PROFILE_FIELDS: ProfileField[] = [
   { key: 'has_studio', label: 'Has Studio', weight: 3, icon: Camera, category: 'equipment', description: 'Studio availability', actionText: 'Set Studio', applicableRoles: ['CONTRIBUTOR', 'BOTH'] },
   
   // ============ TALENT-SPECIFIC FIELDS ============
-  { key: 'performance_roles', label: 'Performance Roles', weight: 10, icon: Star, category: 'professional', description: 'Types of performance work', actionText: 'Add Roles', applicableRoles: ['TALENT', 'BOTH'] },
+  { key: 'talent_categoriess', label: 'Talent Categorys', weight: 10, icon: Star, category: 'professional', description: 'Types of performance work', actionText: 'Add Roles', applicableRoles: ['TALENT', 'BOTH'] },
   { key: 'height_cm', label: 'Height', weight: 6, icon: Users, category: 'professional', description: 'Your height', actionText: 'Add Height', applicableRoles: ['TALENT', 'BOTH'] },
   { key: 'weight_kg', label: 'Weight', weight: 4, icon: Users, category: 'professional', description: 'Your weight', actionText: 'Add Weight', applicableRoles: ['TALENT', 'BOTH'] },
   { key: 'body_type', label: 'Body Type', weight: 4, icon: Users, category: 'professional', description: 'Your body type', actionText: 'Set Body Type', applicableRoles: ['TALENT', 'BOTH'] },
@@ -127,7 +127,7 @@ const calculateProfileCompletion = (profile: UserProfile): {
   })
 
   // Get only the fields applicable to this user's role
-  const applicableFields = getApplicableFields(profile.role_flags || [])
+  const applicableFields = getApplicableFields(profile.account_type || [])
 
   applicableFields.forEach(field => {
     totalWeight += field.weight

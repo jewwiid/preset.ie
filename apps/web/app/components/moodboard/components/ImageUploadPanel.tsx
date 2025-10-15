@@ -38,7 +38,7 @@ export const ImageUploadPanel = ({
         onDrop={onDrop}
         onDragOver={onDragOver}
         className={`
-          border-2 border-dashed rounded-lg p-8 text-center transition-colors
+          border-2 border-dashed rounded-lg p-4 sm:p-8 text-center transition-colors
           ${
             uploading
               ? 'border-primary bg-primary/5'
@@ -77,16 +77,17 @@ export const ImageUploadPanel = ({
           </div>
         ) : (
           <div className="space-y-3">
-            <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
+            <Upload className="w-8 h-8 sm:w-12 sm:h-12 mx-auto text-muted-foreground" />
             <div>
               <p className="text-sm font-medium text-foreground">
-                Drop files here or click to browse
+                <span className="hidden sm:inline">Drop files here or click to browse</span>
+                <span className="sm:hidden">Tap to browse files</span>
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Supports {acceptedFormats.join(', ')} • Max {maxFileSize}MB per file
               </p>
             </div>
-            <Button type="button" variant="outline" size="sm">
+            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto">
               <Upload className="w-4 h-4 mr-2" />
               Choose Files
             </Button>

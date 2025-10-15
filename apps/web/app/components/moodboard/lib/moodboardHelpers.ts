@@ -293,8 +293,8 @@ export const parsePexelsPhoto = (photo: any): MoodboardItem => {
     id: crypto.randomUUID(),
     type: 'pexels',
     source: 'pexels',
-    url: photo.src.large,
-    thumbnail_url: photo.src.medium,
+    url: photo.src.large2x, // Use large2x (1880px max) for better balance of quality vs loading speed
+    thumbnail_url: photo.src.large, // Use large (940px max) for thumbnails
     width: photo.width,
     height: photo.height,
     photographer: photo.photographer,

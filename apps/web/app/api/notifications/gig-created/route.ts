@@ -174,7 +174,7 @@ async function findMatchingTalent(gig: any, supabase: any): Promise<any[]> {
           in_app_enabled
         )
       `)
-      .contains('role_flags', ['TALENT'])
+      .contains('account_type', ['TALENT'])
       .eq('notification_preferences.gig_notifications', true)
       .eq('notification_preferences.in_app_enabled', true)
     

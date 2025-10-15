@@ -224,12 +224,14 @@ export default function MoodboardStep({
 
       {/* Moodboard Builder */}
       {!showImport && (
-        <MoodboardBuilder
-          gigId={gigId}
-          moodboardId={moodboardId}
-          onSave={onMoodboardSave}
-          compactMode={true}
-        />
+        <div className="mobile-optimized-moodboard">
+          <MoodboardBuilder
+            gigId={gigId}
+            moodboardId={moodboardId}
+            onSave={onMoodboardSave}
+            compactMode={true}
+          />
+        </div>
       )}
 
       {/* Navigation */}

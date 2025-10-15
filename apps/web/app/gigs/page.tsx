@@ -251,6 +251,7 @@ export default function GigDiscoveryPage() {
               <ResizablePanel defaultSize={70} minSize={40} className="min-w-0">
                 <GigsMap 
                   onGigSelect={handleGigSelect}
+                  onGigsUpdate={handleMapGigsUpdate}
                   className="h-full"
                 />
               </ResizablePanel>

@@ -135,7 +135,7 @@ export const ContentFlagging: React.FC<ContentFlaggingProps> = ({
       return <Badge variant="outline" className="flex items-center gap-1 border-yellow-500 text-yellow-600"><Flag className="h-3 w-3" />Flagged</Badge>;
     }
     if (moderationStatus === 'approved') {
-      return <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-700"><Eye className="h-3 w-3" />Approved</Badge>;
+      return <Badge variant="secondary" className="flex items-center gap-1 bg-primary-100 text-primary-700"><Eye className="h-3 w-3" />Approved</Badge>;
     }
     if (moderationStatus === 'rejected') {
       return <Badge variant="destructive" className="flex items-center gap-1"><EyeOff className="h-3 w-3" />Rejected</Badge>;

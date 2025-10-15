@@ -76,6 +76,8 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
   const [compDetails, setCompDetails] = useState('')
   const [usageRights, setUsageRights] = useState('')
   const [location, setLocation] = useState('')
+  const [city, setCity] = useState('')
+  const [country, setCountry] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [applicationDeadline, setApplicationDeadline] = useState('')
@@ -248,6 +250,8 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
       setCompDetails(gig.comp_details || '')
       setUsageRights(gig.usage_rights || '')
       setLocation(gig.location_text || '')
+      setCity(gig.city || '')
+      setCountry(gig.country || '')
       setStatus(gig.status)
       setMaxApplicants(gig.max_applicants || 10)
       setSafetyNotes(gig.safety_notes || '')
@@ -345,23 +349,9 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
         return
       }
 
-      // Parse location into city and country if formatted correctly
-      const parseLocation = (locationText: string): { city: string | null; country: string | null } => {
-        if (!locationText) return { city: null, country: null }
-        
-        // Check if location is in "City, Country" format
-        const parts = locationText.split(',').map(p => p.trim())
-        if (parts.length >= 2) {
-          return {
-            city: parts[0],
-            country: parts.slice(1).join(', ')
-          }
-        }
-        
-        return { city: null, country: null }
-      }
-      
-      const { city: parsedCity, country: parsedCountry } = parseLocation(location)
+      // Use the separate city and country fields directly
+      const parsedCity = city || null
+      const parsedCountry = country || null
       
       // Update the gig
       const { error: updateError } = await supabase
@@ -373,9 +363,9 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
           purpose,
           comp_type: compType,
           usage_rights: usageRights,
-          location_text: location,
-          city: parsedCity,  // Parse and save city
-          country: parsedCountry,  // Parse and save country
+          location_text: parsedCity && parsedCountry ? `${parsedCity}, ${parsedCountry}` : location,
+          city: parsedCity,  // Save city separately
+          country: parsedCountry,  // Save country separately
           start_time: startDateTime.toISOString(),
           end_time: endDateTime.toISOString(),
           application_deadline: deadlineDateTime.toISOString(),
@@ -687,10 +677,32 @@ export default function EditGigPage({ params }: { params: Promise<{ id: string }
         {currentStep === 'schedule' && (
           <LocationScheduleStep
             location={location}
+            city={city}
+            country={country}
             startDate={startDate}
             endDate={endDate}
             applicationDeadline={applicationDeadline}
-            onLocationChange={setLocation}
+            onLocationChange={(value) => {
+              setLocation(value)
+              // Parse location into city and country for backward compatibility
+              const parts = value.split(',').map(p => p.trim())
+              if (parts.length >= 2) {
+                setCity(parts[0])
+                setCountry(parts.slice(1).join(', '))
+              }
+            }}
+            onCityChange={(value) => {
+              setCity(value)
+              // Update combined location field
+              const newLocation = country ? `${value}, ${country}` : value
+              setLocation(newLocation)
+            }}
+            onCountryChange={(value) => {
+              setCountry(value)
+              // Update combined location field
+              const newLocation = city ? `${city}, ${value}` : value
+              setLocation(newLocation)
+            }}
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
             onApplicationDeadlineChange={setApplicationDeadline}

@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         bio,
         city,
         country,
-        role_flags,
+        account_type,
         style_tags,
         vibe_tags,
         professional_skills,
@@ -79,15 +79,15 @@ export async function GET(request: NextRequest) {
 
     // Filter out admin profiles and by role if specified
     let publicProfiles = (data || []).filter(profile =>
-      !profile.role_flags || !profile.role_flags.includes('ADMIN')
+      !profile.account_type || !profile.account_type.includes('ADMIN')
     );
 
     // Filter by role if specified
     if (role) {
       publicProfiles = publicProfiles.filter(profile =>
-        profile.role_flags && (
-          profile.role_flags.includes(role) ||
-          profile.role_flags.includes('BOTH')
+        profile.account_type && (
+          profile.account_type.includes(role) ||
+          profile.account_type.includes('BOTH')
         )
       );
     }

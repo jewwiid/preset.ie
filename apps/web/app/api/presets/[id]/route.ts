@@ -631,10 +631,10 @@ export async function PATCH(
       );
     }
 
-    // Get user profile with role_flags
+    // Get user profile with account_type
     const { data: profile, error: profileError } = await supabase
       .from('users_profile')
-      .select('id, role_flags, user_id, handle')
+      .select('id, account_type, user_id, handle')
       .eq('user_id', user.id)
       .single();
 
@@ -642,13 +642,13 @@ export async function PATCH(
     console.log('PATCH promote - Profile:', profile);
     console.log('PATCH promote - Profile error:', profileError);
 
-    const isAdmin = profile?.role_flags?.includes('ADMIN');
-    console.log('PATCH promote - isAdmin:', isAdmin, 'role_flags:', profile?.role_flags);
+    const isAdmin = profile?.account_type?.includes('ADMIN');
+    console.log('PATCH promote - isAdmin:', isAdmin, 'account_type:', profile?.account_type);
 
     // Only admins can promote examples
     if (!isAdmin) {
       return NextResponse.json(
-        { error: 'Forbidden - admin access required', debug: { role_flags: profile?.role_flags, handle: profile?.handle } },
+        { error: 'Forbidden - admin access required', debug: { account_type: profile?.account_type, handle: profile?.handle } },
         { status: 403 }
       );
     }

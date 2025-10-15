@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
           user_id: userId,
           display_name: metadata.full_name || `${metadata.first_name} ${metadata.last_name}`,
           handle: `${metadata.first_name?.toLowerCase() || 'user'}_${metadata.last_name?.toLowerCase() || 'user'}_${Date.now()}`,
-          role_flags: [role],
+          account_type: [role],
           first_name: metadata.first_name,
           last_name: metadata.last_name,
           date_of_birth: metadata.date_of_birth,

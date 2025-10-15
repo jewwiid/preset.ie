@@ -20,11 +20,11 @@ export async function GET(
 
     const { data: profile } = await supabase
       .from('users_profile')
-      .select('role_flags')
+      .select('account_type')
       .eq('user_id', user.id)
       .single()
 
-    if (!profile?.role_flags?.includes('ADMIN')) {
+    if (!profile?.account_type?.includes('ADMIN')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -37,7 +37,7 @@ export async function GET(
         handle,
         bio,
         city,
-        role_flags,
+        account_type,
         subscription_tier,
         created_at,
         last_seen_at
@@ -116,7 +116,7 @@ export async function GET(
       violation_count: violationCount,
       risk_score: riskScore,
       is_suspended: !!suspensions,
-      is_banned: userDetails.role_flags?.includes('BANNED'),
+      is_banned: userDetails.account_type?.includes('BANNED'),
       suspension_expires_at: suspensions?.expires_at,
       credits_balance: credits?.balance || 0,
       subscription_status: subscription?.status,
@@ -194,11 +194,11 @@ export async function PATCH(
     // Verify admin role
     const { data: profile } = await authSupabase
       .from('users_profile')
-      .select('role_flags')
+      .select('account_type')
       .eq('user_id', user.id)
       .single()
 
-    if (!profile?.role_flags?.includes('ADMIN')) {
+    if (!profile?.account_type?.includes('ADMIN')) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -209,15 +209,15 @@ export async function PATCH(
     )
 
     const body = await request.json()
-    const { role_flags, subscription_tier, notes } = body
+    const { account_type, subscription_tier, notes } = body
 
     // Build update object
     const updateData: any = {
       updated_at: new Date().toISOString()
     }
 
-    if (role_flags !== undefined) {
-      updateData.role_flags = role_flags
+    if (account_type !== undefined) {
+      updateData.account_type = account_type
     }
 
     if (subscription_tier !== undefined) {

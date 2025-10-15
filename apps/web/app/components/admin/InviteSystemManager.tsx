@@ -245,7 +245,7 @@ Join a growing community of designers, photographers, videographers, and creativ
                 <Ticket className="h-8 w-8 text-muted-foreground opacity-50" />
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-green-600 border-green-600">
+                <Badge variant="outline" className="text-primary-600 border-primary-600">
                   {stats.activeCodes} active
                 </Badge>
                 <Badge variant="outline" className="text-gray-600 border-gray-600">
@@ -272,7 +272,7 @@ Join a growing community of designers, photographers, videographers, and creativ
                 <Users className="h-8 w-8 text-muted-foreground opacity-50" />
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-green-600 border-green-600">
+                <Badge variant="outline" className="text-primary-600 border-primary-600">
                   {stats.profileCompletedCount} completed
                 </Badge>
                 <Badge variant="outline" className="text-yellow-600 border-yellow-600">
@@ -430,7 +430,7 @@ Join a growing community of designers, photographers, videographers, and creativ
                             title="Copy link"
                           >
                             {copiedCode === code.code ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
+                              <CheckCircle className="h-4 w-4 text-primary-600" />
                             ) : (
                               <Copy className="h-4 w-4" />
                             )}
@@ -529,7 +529,7 @@ Join a growing community of designers, photographers, videographers, and creativ
                           <p className="font-semibold">{signup.displayName}</p>
                           <Badge
                             variant={signup.profileCompleted ? 'default' : 'outline'}
-                            className={signup.profileCompleted ? 'bg-green-600' : ''}
+                            className={signup.profileCompleted ? 'bg-primary-600' : ''}
                           >
                             {signup.profileCompleted ? 'Completed' : 'Pending'}
                           </Badge>

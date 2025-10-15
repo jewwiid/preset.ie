@@ -1,130 +1,294 @@
-/**
- * Showcase Email Templates
- * Approvals, publishing, featuring
- */
+import { EmailTemplate } from '../types/email';
 
-import { getEmailTemplate } from './shared.templates';
-
-export function getShowcaseApprovalRequestTemplate(
-  recipientName: string,
-  collaboratorName: string,
-  gigTitle: string,
-  showcaseUrl: string,
-  userEmail?: string,
-  userId?: string
-): string {
-  const content = `
-    <div style="text-align: center; margin-bottom: 30px;">
-      <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #00876f 0%, #00a389 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-        <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
-          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z"/>
-        </svg>
-      </div>
-      <h1 style="color: #1a1a1a; font-size: 28px; font-weight: 700; margin: 0 0 10px 0;">Showcase Approval Needed</h1>
-      <p style="color: #6b7280; font-size: 16px; margin: 0;">${collaboratorName} wants to publish your collaboration</p>
-    </div>
-
-    <div style="background-color: #f9fafb; border-radius: 12px; padding: 25px; margin: 30px 0;">
-      <p style="color: #6b7280; font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; font-weight: 600;">Project</p>
-      <p style="color: #1a1a1a; font-size: 20px; font-weight: 600; margin: 0 0 15px 0;">${gigTitle}</p>
-      <p style="color: #6b7280; font-size: 15px; margin: 0 0 10px 0;">Collaborator: ${collaboratorName}</p>
-      <p style="color: #4b5563; font-size: 14px; margin: 0;">Please review and approve the showcase before it goes live on both your portfolios.</p>
-    </div>
-
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${showcaseUrl}" style="display: inline-block; background: linear-gradient(135deg, #00876f 0%, #00a389 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; margin-right: 10px;">
-        Review Showcase
-      </a>
-    </div>
-
-    <div style="background-color: #eff6ff; border-radius: 8px; padding: 15px; margin-top: 30px;">
-      <p style="color: #1e40af; font-size: 14px; margin: 0;">
-        <strong>💡 Tip:</strong> Make sure you're happy with how the work is presented before approving!
-      </p>
-    </div>
-  `;
-
-  return getEmailTemplate(content, userEmail, userId);
+export function getShowcaseSubmittedForApprovalTemplate({
+  talentName,
+  talentEmail,
+  gigTitle,
+  creatorName,
+  showcaseId,
+  platformUrl
+}: {
+  talentName: string;
+  talentEmail: string;
+  gigTitle: string;
+  creatorName: string;
+  showcaseId: string;
+  platformUrl: string;
+}): EmailTemplate {
+  return {
+    to: talentEmail,
+    subject: `Showcase Review Required: ${gigTitle}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Showcase Review Required</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #00876f 0%, #0d7d72 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+          .button { display: inline-block; background: #00876f; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+          .highlight { background: #fafdfc; padding: 15px; border-left: 4px solid #00876f; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📸 Showcase Review Required</h1>
+            <p>${creatorName} has created a showcase from your gig and needs your approval</p>
+          </div>
+          
+          <div class="content">
+            <h2>Hi ${talentName}!</h2>
+            
+            <p><strong>${creatorName}</strong> has uploaded photos from your completed gig "<strong>${gigTitle}</strong>" and submitted them for your review.</p>
+            
+            <div class="highlight">
+              <h3>What you need to do:</h3>
+              <ul>
+                <li>Review all uploaded photos</li>
+                <li>Approve the showcase to make it public, or</li>
+                <li>Request changes if needed</li>
+              </ul>
+            </div>
+            
+            <p>Once approved, the showcase will be visible to everyone and credited to both you and ${creatorName}.</p>
+            
+            <div style="text-align: center;">
+              <a href="${platformUrl}/gigs/${showcaseId}" class="button">Review Showcase</a>
+            </div>
+            
+            <p><small>This showcase contains custom photos from your gig and requires your approval before being published.</small></p>
+          </div>
+          
+          <div class="footer">
+            <p>Best regards,<br>The Preset Team</p>
+            <p><a href="${platformUrl}">Visit Preset</a> | <a href="${platformUrl}/settings">Manage Notifications</a></p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `
+      Showcase Review Required: ${gigTitle}
+      
+      Hi ${talentName}!
+      
+      ${creatorName} has uploaded photos from your completed gig "${gigTitle}" and submitted them for your review.
+      
+      What you need to do:
+      - Review all uploaded photos
+      - Approve the showcase to make it public, or
+      - Request changes if needed
+      
+      Once approved, the showcase will be visible to everyone and credited to both you and ${creatorName}.
+      
+      Review Showcase: ${platformUrl}/gigs/${showcaseId}
+      
+      This showcase contains custom photos from your gig and requires your approval before being published.
+      
+      Best regards,
+      The Preset Team
+    `
+  };
 }
 
-export function getShowcasePublishedTemplate(
-  recipientName: string,
-  collaboratorName: string,
-  gigTitle: string,
-  showcaseUrl: string,
-  userEmail?: string,
-  userId?: string
-): string {
-  const content = `
-    <div style="text-align: center; margin-bottom: 30px;">
-      <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #00876f 0%, #00a389 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-        <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
-          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-        </svg>
-      </div>
-      <h1 style="color: #1a1a1a; font-size: 28px; font-weight: 700; margin: 0 0 10px 0;">Showcase is Live!</h1>
-      <p style="color: #6b7280; font-size: 16px; margin: 0;">Your collaboration is now visible on both portfolios</p>
-    </div>
-
-    <div style="background-color: #f0fdf4; border: 2px solid #86efac; border-radius: 12px; padding: 25px; margin: 30px 0; text-align: center;">
-      <p style="color: #166534; font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; font-weight: 600;">Published Showcase</p>
-      <p style="color: #1a1a1a; font-size: 22px; font-weight: 700; margin: 0 0 10px 0;">${gigTitle}</p>
-      <p style="color: #4b5563; font-size: 15px; margin: 0;">with ${collaboratorName}</p>
-    </div>
-
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${showcaseUrl}" style="display: inline-block; background: linear-gradient(135deg, #00876f 0%, #00a389 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-        View Showcase
-      </a>
-    </div>
-
-    <div style="background-color: #eff6ff; border-radius: 8px; padding: 15px; margin-top: 30px;">
-      <p style="color: #1e40af; font-size: 14px; margin: 0;">
-        <strong>🎉 Share it!</strong> Your showcase is now part of your public portfolio. Share it with your network!
-      </p>
-    </div>
-  `;
-
-  return getEmailTemplate(content, userEmail, userId);
+export function getShowcaseApprovedTemplate({
+  creatorName,
+  creatorEmail,
+  gigTitle,
+  talentName,
+  showcaseId,
+  platformUrl
+}: {
+  creatorName: string;
+  creatorEmail: string;
+  gigTitle: string;
+  talentName: string;
+  showcaseId: string;
+  platformUrl: string;
+}): EmailTemplate {
+  return {
+    to: creatorEmail,
+    subject: `🎉 Your showcase for "${gigTitle}" has been approved!`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Showcase Approved</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #00876f 0%, #0d7d72 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+          .button { display: inline-block; background: #00876f; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+          .success { background: #fafdfc; padding: 15px; border-left: 4px solid #00876f; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🎉 Showcase Approved!</h1>
+            <p>Your showcase is now live and visible to everyone</p>
+          </div>
+          
+          <div class="content">
+            <h2>Congratulations ${creatorName}!</h2>
+            
+            <div class="success">
+              <h3>✅ Your showcase has been approved!</h3>
+              <p><strong>${talentName}</strong> has approved your showcase for "<strong>${gigTitle}</strong>" and it's now live!</p>
+            </div>
+            
+            <p>Your showcase is now:</p>
+            <ul>
+              <li>✅ Visible to everyone on the platform</li>
+              <li>✅ Featured on both your and ${talentName}'s profiles</li>
+              <li>✅ Available for likes, shares, and comments</li>
+            </ul>
+            
+            <div style="text-align: center;">
+              <a href="${platformUrl}/showcases/${showcaseId}" class="button">View Your Showcase</a>
+            </div>
+            
+            <p>Great work on creating such an amazing showcase! Keep up the excellent photography.</p>
+          </div>
+          
+          <div class="footer">
+            <p>Best regards,<br>The Preset Team</p>
+            <p><a href="${platformUrl}">Visit Preset</a> | <a href="${platformUrl}/showcases">Browse Showcases</a></p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `
+      🎉 Your showcase for "${gigTitle}" has been approved!
+      
+      Congratulations ${creatorName}!
+      
+      ✅ Your showcase has been approved!
+      ${talentName} has approved your showcase for "${gigTitle}" and it's now live!
+      
+      Your showcase is now:
+      ✅ Visible to everyone on the platform
+      ✅ Featured on both your and ${talentName}'s profiles
+      ✅ Available for likes, shares, and comments
+      
+      View Your Showcase: ${platformUrl}/showcases/${showcaseId}
+      
+      Great work on creating such an amazing showcase! Keep up the excellent photography.
+      
+      Best regards,
+      The Preset Team
+    `
+  };
 }
 
-export function getShowcaseFeaturedTemplate(
-  recipientName: string,
-  showcaseTitle: string,
-  showcaseUrl: string,
-  userEmail?: string,
-  userId?: string
-): string {
-  const content = `
-    <div style="text-align: center; margin-bottom: 30px;">
-      <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-        <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
-          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-        </svg>
-      </div>
-      <h1 style="color: #1a1a1a; font-size: 28px; font-weight: 700; margin: 0 0 10px 0;">Featured Showcase! 🌟</h1>
-      <p style="color: #6b7280; font-size: 16px; margin: 0;">Your work has been selected as a featured showcase</p>
-    </div>
-
-    <div style="background-color: #fffbeb; border: 2px solid #fbbf24; border-radius: 12px; padding: 25px; margin: 30px 0; text-align: center;">
-      <p style="color: #92400e; font-size: 14px; margin: 0 0 10px 0; text-transform: uppercase; font-weight: 600;">Featured Showcase</p>
-      <p style="color: #1a1a1a; font-size: 22px; font-weight: 700; margin: 0 0 15px 0;">${showcaseTitle}</p>
-      <p style="color: #4b5563; font-size: 15px; margin: 0;">Your showcase will be highlighted on the Preset homepage and in our newsletter!</p>
-    </div>
-
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${showcaseUrl}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-        View Featured Showcase
-      </a>
-    </div>
-
-    <div style="background-color: #f0fdf4; border-radius: 8px; padding: 15px; margin-top: 30px;">
-      <p style="color: #166534; font-size: 14px; margin: 0;">
-        <strong>🎊 Congratulations!</strong> Featured showcases get 10x more visibility. This is great exposure for your work!
-      </p>
-    </div>
-  `;
-
-  return getEmailTemplate(content, userEmail, userId);
+export function getShowcaseChangesRequestedTemplate({
+  creatorName,
+  creatorEmail,
+  gigTitle,
+  talentName,
+  feedback,
+  showcaseId,
+  platformUrl
+}: {
+  creatorName: string;
+  creatorEmail: string;
+  gigTitle: string;
+  talentName: string;
+  feedback: string;
+  showcaseId: string;
+  platformUrl: string;
+}): EmailTemplate {
+  return {
+    to: creatorEmail,
+    subject: `📝 Changes requested for your "${gigTitle}" showcase`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Changes Requested</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #00876f 0%, #0d7d72 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+          .button { display: inline-block; background: #00876f; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+          .feedback { background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>📝 Changes Requested</h1>
+            <p>${talentName} has requested changes to your showcase</p>
+          </div>
+          
+          <div class="content">
+            <h2>Hi ${creatorName}!</h2>
+            
+            <p><strong>${talentName}</strong> has reviewed your showcase for "<strong>${gigTitle}</strong>" and requested some changes before approval.</p>
+            
+            <div class="feedback">
+              <h3>💬 Feedback from ${talentName}:</h3>
+              <p>"${feedback}"</p>
+            </div>
+            
+            <p>Don't worry - this is part of the collaborative process! You can:</p>
+            <ul>
+              <li>Review the feedback and make the requested changes</li>
+              <li>Upload new photos if needed</li>
+              <li>Resubmit for approval when ready</li>
+            </ul>
+            
+            <div style="text-align: center;">
+              <a href="${platformUrl}/gigs/${showcaseId}" class="button">Make Changes</a>
+            </div>
+            
+            <p><small>Remember: Both you and ${talentName} need to be happy with the showcase before it goes live.</small></p>
+          </div>
+          
+          <div class="footer">
+            <p>Best regards,<br>The Preset Team</p>
+            <p><a href="${platformUrl}">Visit Preset</a> | <a href="${platformUrl}/showcases">Browse Showcases</a></p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `
+      📝 Changes requested for your "${gigTitle}" showcase
+      
+      Hi ${creatorName}!
+      
+      ${talentName} has reviewed your showcase for "${gigTitle}" and requested some changes before approval.
+      
+      💬 Feedback from ${talentName}:
+      "${feedback}"
+      
+      Don't worry - this is part of the collaborative process! You can:
+      - Review the feedback and make the requested changes
+      - Upload new photos if needed
+      - Resubmit for approval when ready
+      
+      Make Changes: ${platformUrl}/gigs/${showcaseId}
+      
+      Remember: Both you and ${talentName} need to be happy with the showcase before it goes live.
+      
+      Best regards,
+      The Preset Team
+    `
+  };
 }
-

@@ -15,27 +15,89 @@ export async function GET(request: NextRequest) {
 
   try {
     if (bbox) {
-      // Bounding box query
+      // Bounding box query - using direct query instead of RPC function
       const [minLng, minLat, maxLng, maxLat] = bbox.split(',').map(Number);
-      const { data, error } = await supabase.rpc('get_gigs_in_bbox', {
-        min_lng: minLng, min_lat: minLat,
-        max_lng: maxLng, max_lat: maxLat,
-        limit_count: limit
-      });
+      
+      const { data, error } = await supabase
+        .from('gigs')
+        .select(`
+          id,
+          title,
+          description,
+          location_text,
+          lat,
+          lng,
+          start_time,
+          end_time,
+          comp_type,
+          budget_min,
+          budget_max,
+          moodboards!left(
+            id,
+            palette,
+            items,
+            summary
+          )
+        `)
+        .eq('status', 'PUBLISHED')
+        .gte('application_deadline', new Date().toISOString())
+        .not('lat', 'is', null)
+        .not('lng', 'is', null)
+        .gte('lat', minLat)
+        .lte('lat', maxLat)
+        .gte('lng', minLng)
+        .lte('lng', maxLng)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+        
       if (error) throw error;
       return NextResponse.json(data || []);
     } 
     
     if (center && radius) {
-      // Radius query
+      // Radius query - using direct query instead of RPC function
       const [lng, lat] = center.split(',').map(Number);
-      const { data, error } = await supabase.rpc('get_gigs_near_point', {
-        center_lng: lng, center_lat: lat,
-        search_radius_meters: parseInt(radius),
-        limit_count: limit
-      });
+      const radiusMeters = parseInt(radius);
+      
+      const { data, error } = await supabase
+        .from('gigs')
+        .select(`
+          id,
+          title,
+          description,
+          location_text,
+          lat,
+          lng,
+          start_time,
+          end_time,
+          comp_type,
+          budget_min,
+          budget_max,
+          moodboards!left(
+            id,
+            palette,
+            items,
+            summary
+          )
+        `)
+        .eq('status', 'PUBLISHED')
+        .gte('application_deadline', new Date().toISOString())
+        .not('lat', 'is', null)
+        .not('lng', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+        
       if (error) throw error;
-      return NextResponse.json(data || []);
+      
+      // Filter by distance in JavaScript (since we can't use PostGIS functions easily)
+      const filteredData = data?.filter(gig => {
+        const distance = Math.sqrt(
+          Math.pow(gig.lng - lng, 2) + Math.pow(gig.lat - lat, 2)
+        ) * 111000; // Rough conversion to meters (1 degree ≈ 111km)
+        return distance <= radiusMeters;
+      }) || [];
+      
+      return NextResponse.json(filteredData);
     }
 
     return NextResponse.json({ error: 'Missing bbox or center+radius params' }, { status: 400 });

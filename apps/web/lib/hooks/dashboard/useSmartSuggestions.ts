@@ -14,7 +14,7 @@ interface GigMatch {
   application_deadline: string
   compatibility_score: number
   role_match_status: string
-  looking_for_types: string[]
+  looking_for: string[]
 }
 
 interface MatchingImprovement {
@@ -137,7 +137,7 @@ async function analyzeMatchingPotential(
   const improvements: MatchingImprovement[] = []
   
   // Check if adding height would help (for TALENT users)
-  if (profile.role_flags?.includes('TALENT') && !profile.height_cm) {
+  if (profile.account_type?.includes('TALENT') && !profile.height_cm) {
     const { data: gigsNeedingHeight } = await (supabaseClient as any)
       .from('gigs')
       .select('id')
@@ -157,7 +157,7 @@ async function analyzeMatchingPotential(
   }
   
   // Check if adding equipment would help (for CONTRIBUTOR users)
-  if (profile.role_flags?.includes('CONTRIBUTOR') && 
+  if (profile.account_type?.includes('CONTRIBUTOR') && 
       (!profile.equipment_list || profile.equipment_list.length === 0)) {
     const { data: gigsNeedingEquipment } = await (supabaseClient as any)
       .from('gigs')
@@ -217,7 +217,7 @@ async function analyzeMatchingPotential(
   }
   
   // Check if body type/physical attributes would help (for TALENT)
-  if (profile.role_flags?.includes('TALENT') && !profile.body_type) {
+  if (profile.account_type?.includes('TALENT') && !profile.body_type) {
     const { data: gigsNeedingBodyType } = await (supabaseClient as any)
       .from('gigs')
       .select('id')

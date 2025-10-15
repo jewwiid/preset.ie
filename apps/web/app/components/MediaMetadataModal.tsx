@@ -158,7 +158,7 @@ export default function MediaMetadataModal({ isOpen, onClose, media, showcase }:
     const escapedSubject = highlightedSubject.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const regex = new RegExp(`\\b${escapedSubject}\\b`, 'gi')
 
-    return text.replace(regex, `<span class="text-green-500 italic font-medium">${highlightedSubject}</span>`)
+    return text.replace(regex, `<span class="text-primary-500 italic font-medium">${highlightedSubject}</span>`)
   }
 
   // Extract preset information

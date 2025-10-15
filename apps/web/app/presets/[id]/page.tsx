@@ -637,9 +637,9 @@ export default function PresetDetailPage() {
 
             {/* Video Generation Support Section */}
             {(preset.generation_mode === 'both' || preset.generation_mode === 'video') && (
-              <Card className="border-green-200 bg-green-50/50">
+              <Card className="border-primary/20 bg-primary-50/50">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-700">
+                  <CardTitle className="flex items-center gap-2 text-primary-700">
                     <Video className="h-5 w-5" />
                     Video Generation Support
                   </CardTitle>
@@ -647,7 +647,7 @@ export default function PresetDetailPage() {
                 <CardContent className="space-y-4">
                   {/* Main Badge */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="outline" className="border-green-500 text-green-600 bg-green-100">
+                    <Badge variant="outline" className="border-primary-500 text-primary-600 bg-primary-100">
                       🎬 Supports Video Generation
                     </Badge>
 
@@ -1085,8 +1085,8 @@ export default function PresetDetailPage() {
                                   {example.is_verified && (
                                     <>
                                       <span>•</span>
-                                      <CheckCircle className="h-3 w-3 text-green-500 flex-shrink-0" />
-                                      <span className="text-green-600 font-medium">Promoted</span>
+                                      <CheckCircle className="h-3 w-3 text-primary-500 flex-shrink-0" />
+                                      <span className="text-primary-600 font-medium">Promoted</span>
                                     </>
                                   )}
                                 </div>

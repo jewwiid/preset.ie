@@ -169,7 +169,11 @@ export default function MoodboardViewer({ gigId }: MoodboardViewerProps) {
                 ) : (
                   selectedImage.photographer
                 )}
-                {' on Pexels'}
+                {' on '}
+                {selectedImage.source === 'pexels' && 'Pexels'}
+                {selectedImage.source === 'unsplash' && 'Unsplash'}
+                {selectedImage.source === 'pixabay' && 'Pixabay'}
+                {!['pexels', 'unsplash', 'pixabay'].includes(selectedImage.source || '') && 'Pexels'}
               </div>
             )}
             <button

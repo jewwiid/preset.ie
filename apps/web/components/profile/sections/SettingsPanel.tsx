@@ -300,15 +300,15 @@ export function SettingsPanel() {
 
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${formSettings.show_location ? 'bg-green-500' : 'bg-muted'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${formSettings.show_location ? 'bg-primary-500' : 'bg-muted'}`}></div>
             <span className="text-muted-foreground">Location {formSettings.show_location ? 'Visible' : 'Hidden'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${formSettings.show_age ? 'bg-green-500' : 'bg-muted'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${formSettings.show_age ? 'bg-primary-500' : 'bg-muted'}`}></div>
             <span className="text-muted-foreground">Age {formSettings.show_age ? 'Visible' : 'Hidden'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${formSettings.show_physical_attributes ? 'bg-green-500' : 'bg-muted'}`}></div>
+            <div className={`w-2 h-2 rounded-full ${formSettings.show_physical_attributes ? 'bg-primary-500' : 'bg-muted'}`}></div>
             <span className="text-muted-foreground">Physical Attributes {formSettings.show_physical_attributes ? 'Visible' : 'Hidden'}</span>
           </div>
         </div>

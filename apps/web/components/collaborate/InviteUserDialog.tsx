@@ -43,7 +43,7 @@ interface UserSearchResult {
   display_name: string;
   avatar_url?: string;
   primary_skill?: string;
-  role_flags?: string[];
+  account_type?: string[];
   city?: string;
   country?: string;
 }
@@ -80,7 +80,7 @@ export function InviteUserDialog({
       try {
         const [skillsRes, talentRes] = await Promise.all([
           supabase?.from('predefined_skills').select('name').eq('is_active', true).order('sort_order'),
-          supabase?.from('predefined_performance_roles').select('role_name').eq('is_active', true).order('sort_order')
+          supabase?.from('predefined_talent_categoriess').select('role_name').eq('is_active', true).order('sort_order')
         ]);
 
         const allSkills = [
