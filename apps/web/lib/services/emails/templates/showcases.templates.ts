@@ -374,7 +374,103 @@ export function getShowcaseChangesRequestedTemplate({
       Address Feedback: ${platformUrl}/gigs/${showcaseId}
       
       ${totalTalents > 1 ? 'All talents must approve before the showcase goes live.' : 'The talent must approve before the showcase goes live.'}
-      
+
+      Best regards,
+      The Preset Team
+    `
+  };
+}
+
+// Additional missing templates for email system
+export function getShowcaseApprovalRequestTemplate(
+  collaboratorName: string,
+  gigTitle: string,
+  showcaseUrl: string
+): EmailTemplate {
+  return {
+    to: '',
+    subject: `📸 Approval requested for showcase: "${gigTitle}"`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>📸 Approval Requested</h2>
+        <p>Hi ${collaboratorName},</p>
+        <p>Your approval is requested for a showcase submission: <strong>"${gigTitle}"</strong></p>
+        <p><a href="${showcaseUrl}" style="background: #00876f; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Review Showcase</a></p>
+        <p>Best regards,<br>The Preset Team</p>
+      </div>
+    `,
+    text: `
+      Approval Requested for showcase: "${gigTitle}"
+
+      Hi ${collaboratorName},
+
+      Your approval is requested for a showcase submission: "${gigTitle}"
+
+      Review: ${showcaseUrl}
+
+      Best regards,
+      The Preset Team
+    `
+  };
+}
+
+export function getShowcasePublishedTemplate(
+  name: string,
+  collaboratorName: string,
+  showcaseUrl: string
+): EmailTemplate {
+  return {
+    to: '',
+    subject: `🎉 Showcase published: "${name}"`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>🎉 Showcase Published!</h2>
+        <p>Hi ${collaboratorName},</p>
+        <p>Your showcase has been published and is now live: <strong>"${name}"</strong></p>
+        <p><a href="${showcaseUrl}" style="background: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Showcase</a></p>
+        <p>Best regards,<br>The Preset Team</p>
+      </div>
+    `,
+    text: `
+      Showcase published: "${name}"
+
+      Hi ${collaboratorName},
+
+      Your showcase has been published and is now live: "${name}"
+
+      View: ${showcaseUrl}
+
+      Best regards,
+      The Preset Team
+    `
+  };
+}
+
+export function getShowcaseFeaturedTemplate(
+  showcaseTitle: string,
+  showcaseUrl: string
+): EmailTemplate {
+  return {
+    to: '',
+    subject: `⭐ Your showcase has been featured!`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>⭐ Showcase Featured!</h2>
+        <p>Congratulations!</p>
+        <p>Your showcase has been selected as a featured submission: <strong>"${showcaseTitle}"</strong></p>
+        <p><a href="${showcaseUrl}" style="background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Featured Showcase</a></p>
+        <p>Best regards,<br>The Preset Team</p>
+      </div>
+    `,
+    text: `
+      Your showcase has been featured!
+
+      Congratulations!
+
+      Your showcase has been selected as a featured submission: "${showcaseTitle}"
+
+      View: ${showcaseUrl}
+
       Best regards,
       The Preset Team
     `
