@@ -80,7 +80,7 @@ export async function PUT(
         .eq('id', mediaId)
         .eq('user_id', user.id)
         .select()
-        .single()
+        .maybeSingle()
 
       if (updateError) {
         console.error('Error updating user_media:', updateError)
@@ -113,7 +113,7 @@ export async function PUT(
       .eq('id', mediaId)
       .eq('user_id', user.id)
       .select()
-      .single()
+      .maybeSingle()
 
     if (updateError) {
       console.error('Error updating playground_gallery:', updateError)

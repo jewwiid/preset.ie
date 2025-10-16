@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { StockPhotoDownloaderService } from './stock-photo-downloader.service'
+import { uploadUserImage } from './unified-media-storage.service'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -95,40 +96,41 @@ export class FeaturedImageService {
           attribution: featuredItem.attribution || `Photo by ${featuredItem.photographer}`
         }
         
-        // Download the stock photo
-        const downloadResult = await this.stockPhotoDownloader.downloadAndSaveStockPhoto(
-          stockPhoto,
+        // Download the stock photo using unified media storage
+        const unifiedResult = await this.saveFeaturedImageToUnifiedStorage(
+          featuredItem,
           userId,
-          'featured'
+          moodboardId
         )
-        
-        if (downloadResult.success) {
+
+        if (unifiedResult.success) {
           // Update the moodboard item with the permanent URL
-          const updatedItems = moodboard.items.map((item: any) => 
-            item.id === featuredImageId 
+          const updatedItems = moodboard.items.map((item: any) =>
+            item.id === featuredImageId
               ? {
                   ...item,
-                  url: downloadResult.permanentUrl,
-                  thumbnail_url: downloadResult.permanentUrl,
-                  mediaId: downloadResult.mediaId,
+                  url: unifiedResult.publicUrl,
+                  thumbnail_url: unifiedResult.publicUrl,
+                  mediaId: unifiedResult.mediaId,
+                  unified_media_id: unifiedResult.mediaId,
                   permanentlyStored: true,
                   downloadStatus: 'completed'
                 }
               : item
           )
-          
+
           // Update the moodboard in the database
           await this.supabaseAdmin
             .from('moodboards')
             .update({ items: updatedItems })
             .eq('id', moodboardId)
-          
-          console.log('✅ Featured image downloaded and moodboard updated')
-          
+
+          console.log('✅ Featured image saved to unified storage and moodboard updated')
+
           return {
             success: true,
-            featuredImageUrl: downloadResult.permanentUrl,
-            mediaId: downloadResult.mediaId,
+            featuredImageUrl: unifiedResult.publicUrl,
+            mediaId: unifiedResult.mediaId,
             metadata: {
               provider: featuredItem.source,
               photographer: featuredItem.photographer,
@@ -137,7 +139,7 @@ export class FeaturedImageService {
             }
           }
         } else {
-          throw new Error(downloadResult.error || 'Failed to download featured image')
+          throw new Error(unifiedResult.error || 'Failed to save featured image to unified storage')
         }
       }
       
@@ -358,6 +360,72 @@ export class FeaturedImageService {
         downloaded: 0,
         failed: 0,
         errors: [error instanceof Error ? error.message : 'Unknown error']
+      }
+    }
+  }
+
+  /**
+   * Saves a featured image to the unified media storage system
+   */
+  private async saveFeaturedImageToUnifiedStorage(
+    featuredItem: any,
+    userId: string,
+    moodboardId: string
+  ): Promise<any> {
+    try {
+      console.log(`💾 Saving featured image to unified storage: ${featuredItem.source}`)
+
+      // Download the image from external URL
+      const response = await fetch(featuredItem.url)
+      if (!response.ok) {
+        throw new Error(`Failed to download image: ${response.status}`)
+      }
+
+      const imageBuffer = await response.arrayBuffer()
+      const imageBlob = new Blob([imageBuffer])
+      const file = new File([imageBlob], `featured-${featuredItem.id}.jpg`, { type: 'image/jpeg' })
+
+      // Determine source type
+      let sourceType: 'upload' | 'playground' | 'enhanced' | 'stock' = 'upload'
+      if (['pexels', 'unsplash', 'pixabay'].includes(featuredItem.source)) {
+        sourceType = 'stock'
+      } else if (featuredItem.source === 'ai-enhanced') {
+        sourceType = 'enhanced'
+      }
+
+      // Upload to unified storage
+      const result = await uploadUserImage(file, userId, {
+        source_type: sourceType,
+        metadata: {
+          title: `Featured Image - ${featuredItem.source}`,
+          description: featuredItem.caption || `Featured image from ${featuredItem.source}`,
+          tags: ['featured', featuredItem.source, 'moodboard'],
+          photographer: featuredItem.photographer,
+          attribution: featuredItem.attribution,
+          provider: featuredItem.source,
+          photographer_url: featuredItem.photographer_url,
+          width: featuredItem.width,
+          height: featuredItem.height,
+          original_url: featuredItem.url,
+          featured_image: true,
+          moodboard_id: moodboardId,
+          original_item_id: featuredItem.id,
+          saved_at: new Date().toISOString()
+        }
+      })
+
+      if (result.success) {
+        console.log('✅ Featured image saved to unified storage:', result.mediaId)
+        return result
+      } else {
+        throw new Error(result.error || 'Failed to save to unified storage')
+      }
+
+    } catch (error) {
+      console.error('❌ Error saving featured image to unified storage:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       }
     }
   }

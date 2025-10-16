@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check subscription tier (PLUS or PRO only)
+    // Check subscription tier and apply limits
     const { data: profile, error: profileError } = await supabase
       .from('users_profile')
       .select('subscription_tier')
@@ -51,10 +51,30 @@ export async function POST(req: NextRequest) {
     }
 
     const tier = profile?.subscription_tier || 'FREE';
+    
+    // For FREE users, check rate limiting
     if (tier === 'FREE') {
-      return NextResponse.json({ 
-        error: 'Voice transcription requires a PLUS or PRO subscription. Please upgrade to use this feature.' 
-      }, { status: 403 });
+      // Check if user has exceeded their free usage (5 transcriptions per hour)
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      
+      const { data: recentTranscriptions, error: usageError } = await supabase
+        .from('chatbot_messages')
+        .select('id')
+        .eq('role', 'user')
+        .gte('created_at', oneHourAgo)
+        .not('metadata->source', 'is', null);
+
+      if (usageError) {
+        console.error('Usage check error:', usageError);
+        return NextResponse.json({ error: 'Failed to check usage limits' }, { status: 500 });
+      }
+
+      const transcriptionCount = recentTranscriptions?.length || 0;
+      if (transcriptionCount >= 5) {
+        return NextResponse.json({ 
+          error: 'Free users are limited to 5 voice transcriptions per hour. Upgrade to Plus or Pro for unlimited usage.' 
+        }, { status: 429 });
+      }
     }
 
     // Get audio file

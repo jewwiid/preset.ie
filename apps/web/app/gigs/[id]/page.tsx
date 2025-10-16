@@ -215,12 +215,12 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
         .from('showcases')
         .select(`
           *,
-          creator:creator_user_id (
+          creator:users_profile!showcases_creator_user_id_fkey (
             display_name,
             handle,
             avatar_url
           ),
-          talent:talent_user_id (
+          talent:users_profile!showcases_talent_user_id_fkey (
             display_name,
             handle,
             avatar_url
@@ -959,25 +959,25 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                     {/* Showcase Status */}
                     <div className="flex items-center gap-2">
                       {showcase.approval_status === 'approved' && (
-                        <Badge className="bg-green-100 text-green-800">
+                        <Badge variant="success">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Published
                         </Badge>
                       )}
                       {showcase.approval_status === 'pending_approval' && (
-                        <Badge className="bg-yellow-100 text-yellow-800">
+                        <Badge variant="info">
                           <Clock className="w-3 h-3 mr-1" />
                           Pending Approval
                         </Badge>
                       )}
                       {showcase.approval_status === 'blocked_by_changes' && (
-                        <Badge className="bg-red-100 text-red-800">
+                        <Badge variant="destructive">
                           <CheckSquare className="w-3 h-3 mr-1" />
                           Blocked by Changes
                         </Badge>
                       )}
                       {showcase.approval_status === 'changes_requested' && (
-                        <Badge className="bg-orange-100 text-orange-800">
+                        <Badge variant="warning">
                           <CheckSquare className="w-3 h-3 mr-1" />
                           Changes Requested
                         </Badge>
@@ -1001,15 +1001,15 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
                         </div>
                         {showcase.change_requests && showcase.change_requests > 0 && (
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-orange-600">Change requests:</span>
-                            <span className="font-semibold text-orange-600">
+                            <span className="text-orange-700 dark:text-orange-400">Change requests:</span>
+                            <span className="font-semibold text-orange-700 dark:text-orange-400">
                               {showcase.change_requests}
                             </span>
                           </div>
                         )}
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-muted rounded-full h-2">
                           <div 
-                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                            className="bg-primary h-2 rounded-full transition-all duration-300"
                             style={{ 
                               width: `${((showcase.approved_talents || 0) / showcase.total_talents) * 100}%` 
                             }}
@@ -1109,8 +1109,8 @@ export default function GigDetailPage({ params }: { params: Promise<{ id: string
 
                     {/* Show feedback if changes were requested */}
                     {showcase.approval_status === 'changes_requested' && showcase.approval_notes && (
-                      <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                        <p className="text-sm text-orange-800">
+                      <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                        <p className="text-sm text-orange-700 dark:text-orange-400">
                           <strong>Feedback:</strong> {showcase.approval_notes}
                         </p>
                       </div>

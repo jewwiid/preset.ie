@@ -82,15 +82,15 @@ export function NSFWWarning({
   }
 
   return (
-    <Card className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
+    <Card className="border-destructive/20 bg-destructive/10">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-orange-600" />
+          <AlertTriangle className="h-6 w-6 text-destructive" />
           <div>
-            <CardTitle className="text-orange-800 dark:text-orange-200">
+            <CardTitle className="text-destructive">
               Content Warning
             </CardTitle>
-            <CardDescription className="text-orange-700 dark:text-orange-300">
+            <CardDescription className="text-destructive/80">
               This content may contain material that some users find inappropriate.
             </CardDescription>
           </div>
@@ -100,7 +100,7 @@ export function NSFWWarning({
       <CardContent className="space-y-4">
         {content.type_label && (
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-orange-700 border-orange-300">
+            <Badge variant="outline" className="border-destructive/30">
               {content.type_label}
             </Badge>
             {content.is_nsfw && (
@@ -121,7 +121,7 @@ export function NSFWWarning({
         <div className="flex gap-2">
           <Button 
             onClick={handleAccept}
-            className="bg-orange-600 hover:bg-orange-700 text-white"
+            variant="destructive"
           >
             <Eye className="h-4 w-4 mr-2" />
             Show Content
@@ -130,7 +130,6 @@ export function NSFWWarning({
           <Button 
             variant="outline" 
             onClick={handleReject}
-            className="border-orange-300 text-orange-700 hover:bg-orange-100"
           >
             <EyeOff className="h-4 w-4 mr-2" />
             Hide Content

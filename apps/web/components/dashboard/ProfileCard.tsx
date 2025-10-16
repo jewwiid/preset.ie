@@ -3,7 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { UserProfile, CreditsData } from '../../lib/types/dashboard'
-import { calculateCreditValue, calculateProfileCompletion } from '../../lib/utils/dashboard'
+import { calculateCreditValue } from '../../lib/utils/dashboard'
+import { getProfileCompletionSummary } from '../../lib/utils/smart-suggestions'
 import { VerificationBadges } from '../VerificationBadges'
 import { parseVerificationBadges } from '../../lib/utils/verification-badges'
 import { supabase } from '../../lib/supabase'
@@ -17,7 +18,13 @@ interface ProfileCardProps {
 
 export function ProfileCard({ profile, credits, isTalent, isContributor }: ProfileCardProps) {
   const router = useRouter()
-  const { percentage: profileCompletion } = calculateProfileCompletion(profile)
+  const completionSummary = getProfileCompletionSummary(profile)
+  console.log('🔍 ProfileCard Profile:', {
+    profileCompletion: profile.profile_completion_percentage,
+    calculatedCompletion: completionSummary.current,
+    accountType: profile.account_type,
+    id: profile.id
+  })
   const [pendingVerifications, setPendingVerifications] = useState<string[]>([])
   const [loadingVerificationStatus, setLoadingVerificationStatus] = useState(true)
 
@@ -156,15 +163,15 @@ export function ProfileCard({ profile, credits, isTalent, isContributor }: Profi
       <div className="mt-4 p-4 bg-muted rounded-xl">
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-medium text-foreground">Profile Completion</p>
-          <p className="text-sm font-bold text-primary">{profileCompletion}%</p>
+          <p className="text-sm font-bold text-primary">{completionSummary.current}%</p>
         </div>
         <div className="w-full bg-background rounded-full h-2">
           <div
             className="bg-primary h-2 rounded-full transition-all duration-300"
-            style={{ width: `${profileCompletion}%` }}
+            style={{ width: `${completionSummary.current}%` }}
           ></div>
         </div>
-        {profileCompletion < 100 && (
+        {completionSummary.current < 100 && (
           <button
             onClick={() => router.push('/profile')}
             className="mt-3 w-full text-center text-xs text-primary hover:text-primary/80 font-medium"

@@ -30,7 +30,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { parsePexelsPhoto, getSubscriptionLimits, generateItemId } from './lib/moodboardHelpers'
 import DraggableMasonryGrid from '../DraggableMasonryGrid'
 import EnhancementModal from '../EnhancementModal'
-import { downloadAndSaveEnhancedImageToGallery } from '@/lib/enhanced-image-storage'
+import { saveEnhancedImageUnified } from '@preset/adapters'
 import { useAuth } from '@/lib/auth-context'
 
 export default function MoodboardBuilder({
@@ -612,26 +612,38 @@ export default function MoodboardBuilder({
                 showing_original: false
               })
 
-              // Save enhanced image to user gallery
+              // Save enhanced image to unified storage
               try {
-                const savedImage = await downloadAndSaveEnhancedImageToGallery(
+                const savedImage = await saveEnhancedImageUnified(
                   result.enhancedUrl,
                   user?.id || '',
                   item.id,
-                  type
+                  type,
+                  {
+                    prompt,
+                    provider: enhancement.selectedProvider,
+                    style: type,
+                    width: item.width,
+                    height: item.height,
+                    original_item_id: item.id,
+                    moodboard_id: gigId
+                  }
                 )
                 if (savedImage.success) {
-                  console.log('Enhanced image saved to gallery:', savedImage.permanentUrl)
+                  console.log('Enhanced image saved to unified storage:', savedImage.publicUrl)
 
-                  // Update item with permanent URL
+                  // Update item with permanent URL and media ID
                   itemsManager.updateItem(enhancement.enhancementModal.itemId!, {
-                    enhanced_url: savedImage.permanentUrl
+                    enhanced_url: savedImage.publicUrl,
+                    media_id: savedImage.mediaId,
+                    permanentlyStored: true,
+                    storage_method: 'downloaded'
                   })
                 } else {
-                  console.error('Failed to save enhanced image to gallery:', savedImage.error)
+                  console.error('Failed to save enhanced image to unified storage:', savedImage.error)
                 }
               } catch (saveError) {
-                console.error('Error saving enhanced image to gallery:', saveError)
+                console.error('Error saving enhanced image to unified storage:', saveError)
               }
             }
           }}

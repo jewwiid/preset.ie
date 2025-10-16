@@ -64,6 +64,7 @@ export function SaveMediaDialog({
   }
 
   const handleSave = async () => {
+    console.log('💾 Save button clicked in dialog with data:', { title, description, tags })
     await onSave({ title, description, tags })
   }
 

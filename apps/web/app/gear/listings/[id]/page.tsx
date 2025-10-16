@@ -773,10 +773,10 @@ export default function ListingDetailPage() {
                             </Badge>
                             {isOwner() && (
                               <Button
-                                variant="outline"
+                                variant="destructive"
                                 size="sm"
                                 onClick={() => cancelOffer(offer.id)}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="h-8 w-8 p-0"
                               >
                                 <X className="h-4 w-4" />
                               </Button>
@@ -801,7 +801,7 @@ export default function ListingDetailPage() {
                   {currentUser && !isOwner() && (
                     <div className="mb-4 p-3 border rounded-lg">
                       <div className="flex items-start space-x-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                           <MessageCircle className="h-4 w-4 text-blue-600" />
                         </div>
                         <div className="flex-1">

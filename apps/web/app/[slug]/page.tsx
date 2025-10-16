@@ -39,12 +39,12 @@ async function getTalentCategories() {
     // Fetch from both contributor roles and talent categories
     const [contributorResult, talentResult] = await Promise.all([
       supabase
-        .from('predefined_roles')
+        .from('contributor_categories')
         .select('name')
         .eq('is_active', true)
         .order('sort_order'),
       supabase
-        .from('predefined_talent_categories')
+        .from('talent_categories')
         .select('category_name')
         .eq('is_active', true)
         .order('sort_order')
@@ -103,7 +103,7 @@ async function getTalentProfiles(skillSlug: string) {
         style_tags,
         vibe_tags,
         professional_skills,
-        talent_categoriess,
+        talent_categories,
         contributor_roles,
         years_experience,
         account_status,
@@ -144,7 +144,7 @@ async function getTalentProfiles(skillSlug: string) {
     const filteredData = (data || []).filter((profile: any) => {
       const profileSkills = [
         ...(profile.professional_skills || []),
-        ...(profile.talent_categoriess || []),
+        ...(profile.talent_categories || []),
         ...(profile.contributor_roles || [])
       ].map(s => s.toLowerCase());
       
@@ -168,16 +168,14 @@ async function getTalentProfiles(skillSlug: string) {
 export default async function CatchAllPage({ params }: PageProps) {
   const { slug } = await params;
   
-  // Fetch data server-side
-  const [talentCategories, profiles] = await Promise.all([
-    getTalentCategories(),
-    getTalentProfiles(slug)
-  ]);
-
-  // Check if this is a talent category
+  // First check if this is a talent category
+  const talentCategories = await getTalentCategories();
   const isTalentCategory = talentCategories.includes(slug.toLowerCase());
 
   if (isTalentCategory) {
+    // Only fetch profiles if it's a talent category
+    const profiles = await getTalentProfiles(slug);
+    
     const displayName = slug.split('-').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');

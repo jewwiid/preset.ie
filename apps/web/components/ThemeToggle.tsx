@@ -55,7 +55,7 @@ export function ThemeToggle() {
         e.stopPropagation()
         toggleTheme()
       }}
-      className="w-9 h-9 hover:bg-accent hover:text-accent-foreground"
+      className="w-9 h-9 hover:bg-accent"
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
       {theme === 'light' ? (

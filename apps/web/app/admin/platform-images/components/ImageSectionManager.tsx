@@ -72,9 +72,9 @@ export default function ImageSectionManager({
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="destructive"
                   onClick={() => onDeactivate(img.id)}
-                  className="w-full max-w-[150px] bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/50 text-orange-600"
+                  className="w-full max-w-[150px]"
                 >
                   <Trash2 className="h-3 w-3 mr-1" />
                   Remove

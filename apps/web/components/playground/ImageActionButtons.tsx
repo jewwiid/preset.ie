@@ -27,6 +27,7 @@ export function ImageActionButtons({
         variant="secondary"
         className="h-7 w-7 p-0 bg-background/90 hover:bg-background shadow-md"
         onClick={(e) => {
+          console.log('❤️ Save button clicked in ImageActionButtons for URL:', imageUrl);
           e.stopPropagation();
           onSave(imageUrl);
         }}

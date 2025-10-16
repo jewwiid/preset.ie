@@ -1,6 +1,8 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 interface HeroImage {
   id: string;
@@ -60,33 +62,29 @@ export default function HeroSection({ currentImageIndex, heroImages, isLoggedIn 
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               {isLoggedIn ? (
                 <>
-                  <a
-                    href="/gigs"
-                    className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-all hover:scale-105"
-                  >
-                    Browse Gigs
-                  </a>
-                  <a
-                    href="/dashboard"
-                    className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-foreground bg-background border-2 border-border rounded-lg hover:border-primary transition-all"
-                  >
-                    Go to Dashboard
-                  </a>
+                  <Button asChild size="lg" className="px-8 py-4 text-lg h-auto">
+                    <Link href="/gigs">
+                      Browse Gigs
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg" className="px-8 py-4 text-lg h-auto border-2">
+                    <Link href="/dashboard">
+                      Go to Dashboard
+                    </Link>
+                  </Button>
                 </>
               ) : (
                 <>
-                  <a
-                    href="/gigs"
-                    className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-all hover:scale-105"
-                  >
-                    Browse Gigs
-                  </a>
-                  <a
-                    href="/auth/signup"
-                    className="inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-foreground bg-background border-2 border-border rounded-lg hover:border-primary transition-all"
-                  >
-                    Sign Up
-                  </a>
+                  <Button asChild size="lg" className="px-8 py-4 text-lg h-auto">
+                    <Link href="/gigs">
+                      Browse Gigs
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg" className="px-8 py-4 text-lg h-auto border-2">
+                    <Link href="/auth/signup">
+                      Sign Up
+                    </Link>
+                  </Button>
                 </>
               )}
             </div>

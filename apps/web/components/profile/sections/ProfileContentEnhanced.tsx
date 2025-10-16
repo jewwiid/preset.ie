@@ -5,12 +5,8 @@ import { useProfile, useProfileEditing, useProfileUI } from '../context/ProfileC
 import { ProfileCompletionCard } from './ProfileCompletionCard'
 import { UserRatingDisplay } from './UserRatingDisplay'
 import { supabase } from '../../../lib/supabase'
-import CompatibilityScore from '../../matchmaking/CompatibilityScore'
-import MatchmakingCard from '../../matchmaking/MatchmakingCard'
-import { Recommendation } from '../../../lib/types/matchmaking'
 import { useProfileStats } from '../../../hooks/useProfileStats'
 import { useUserRating } from '../../../hooks/useUserRating'
-import { useCompatibleGigs } from '../../../hooks/useCompatibleGigs'
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   User, 
@@ -37,8 +33,7 @@ import {
   XCircle,
   Edit3,
   Save,
-  X,
-  TrendingUp
+  X
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
 import { Input } from '../../ui/input'
@@ -55,8 +50,7 @@ export function ProfileContentEnhanced() {
 
   // Use custom hooks for data fetching
   const { stats, loading: statsLoading } = useProfileStats(profile?.id)
-  const { rating: userRating, loading: ratingLoading } = useUserRating({ userId: profile?.id })
-  const { compatibleGigs, loading: matchmakingLoading } = useCompatibleGigs(profile?.id)
+  const { rating: userRating, loading: ratingLoading } = useUserRating({ userId: profile?.user_id })
 
   // Overview Cards Data (excluding Profile Completion which is now a full-width card)
   const overviewCards = [
@@ -436,7 +430,7 @@ export function ProfileContentEnhanced() {
             </Card>
 
             {/* User Ratings Section */}
-            <UserRatingDisplay userId={profile?.id || ''} />
+            <UserRatingDisplay userId={profile?.user_id || ''} />
           </div>
         )
       
@@ -472,7 +466,7 @@ export function ProfileContentEnhanced() {
               </Card>
             )}
 
-            {/* Compatible Gigs Section - Only for Talent Users */}
+            {/* Discover Opportunities - Link to Matchmaking */}
             {profile?.talent_categories && profile.talent_categories.length > 0 && (
               <Card>
                 <CardHeader>
@@ -481,66 +475,26 @@ export function ProfileContentEnhanced() {
                       <Target className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <div className="flex-1">
-                      <CardTitle>Compatible Gigs</CardTitle>
+                      <CardTitle>Discover Opportunities</CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        Gigs that match your profile and preferences
+                        Find gigs that match your skills and preferences through our smart matchmaking system
                       </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {compatibleGigs.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-primary" />
-                          <span className="text-sm text-primary font-medium">
-                            {compatibleGigs.length} matches found
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {matchmakingLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <LoadingSpinner size="lg" />
-                      <span className="ml-3 text-muted-foreground">Finding compatible gigs...</span>
-                    </div>
-                  ) : compatibleGigs.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {compatibleGigs.map((gig) => (
-                        <MatchmakingCard
-                          key={gig.id}
-                          type={gig.type}
-                          data={gig.data as unknown as any}
-                          compatibilityScore={gig.compatibility_score}
-                          compatibilityBreakdown={gig.compatibility_breakdown}
-                          onViewDetails={() => window.open(`/gigs/${gig.id}`, '_blank')}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">
-                        No Compatible Gigs Found
-                      </h3>
-                      <p className="text-muted-foreground mb-4">
-                        Complete your profile to get better matches, or check back later for new opportunities.
-                      </p>
-                      <div className="flex items-center justify-center gap-4">
-                        <Button
-                          onClick={() => window.location.href = '/profile?edit=true'}
-                        >
-                          Complete Profile
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => window.location.href = '/gigs'}
-                        >
-                          Browse All Gigs
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  <div className="text-center py-6">
+                    <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      Smart Matchmaking Available
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      Get personalized gig recommendations based on your profile, skills, and preferences
+                    </p>
+                    <Button onClick={() => window.location.href = '/matchmaking'}>
+                      Explore Matchmaking
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -828,7 +782,7 @@ export function ProfileContentEnhanced() {
               </CardContent>
             </Card>
 
-            {/* Compatible Gigs Section - Only for Talent Users */}
+            {/* Discover Opportunities - Link to Matchmaking */}
             {profile?.talent_categories && profile.talent_categories.length > 0 && (
               <Card>
                 <CardHeader>
@@ -837,72 +791,32 @@ export function ProfileContentEnhanced() {
                       <Target className="w-5 h-5 text-primary-foreground" />
                     </div>
                     <div className="flex-1">
-                      <CardTitle>Compatible Gigs</CardTitle>
+                      <CardTitle>Discover Opportunities</CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        Gigs that match your profile and preferences
+                        Find gigs that match your skills and preferences through our smart matchmaking system
                       </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {compatibleGigs.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-primary" />
-                          <span className="text-sm text-primary font-medium">
-                            {compatibleGigs.length} matches found
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {matchmakingLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <LoadingSpinner size="lg" />
-                      <span className="ml-3 text-muted-foreground">Finding compatible gigs...</span>
-                    </div>
-                  ) : compatibleGigs.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {compatibleGigs.map((gig) => (
-                        <MatchmakingCard
-                          key={gig.id}
-                          type={gig.type}
-                          data={gig.data as unknown as any}
-                          compatibilityScore={gig.compatibility_score}
-                          compatibilityBreakdown={gig.compatibility_breakdown}
-                          onViewDetails={() => window.open(`/gigs/${gig.id}`, '_blank')}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-foreground mb-2">
-                        No Compatible Gigs Found
-                      </h3>
-                      <p className="text-muted-foreground mb-4">
-                        Complete your profile to get better matches, or check back later for new opportunities.
-                      </p>
-                      <div className="flex items-center justify-center gap-4">
-                        <Button
-                          onClick={() => window.location.href = '/profile?edit=true'}
-                        >
-                          Complete Profile
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => window.location.href = '/gigs'}
-                        >
-                          Browse All Gigs
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  <div className="text-center py-6">
+                    <Target className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      Smart Matchmaking Available
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      Get personalized gig recommendations based on your profile, skills, and preferences
+                    </p>
+                    <Button onClick={() => window.location.href = '/matchmaking'}>
+                      Explore Matchmaking
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
 
             {/* User Ratings Section */}
-            <UserRatingDisplay userId={profile?.id || ''} />
+            <UserRatingDisplay userId={profile?.user_id || ''} />
           </div>
         )
     }

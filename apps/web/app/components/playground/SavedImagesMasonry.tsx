@@ -289,7 +289,7 @@ export default function SavedMediaMasonry({
 
       <div
         ref={galleryState.containerRef}
-        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]"
+        className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
       >
         {paginatedImages.map((image: SavedMedia) => {
         const isLoaded = galleryState.imagesLoaded.get(image.id)
@@ -301,9 +301,9 @@ export default function SavedMediaMasonry({
             contentId={image.id}
             contentType="playground_gallery"
             isNsfw={image.is_nsfw || image.user_marked_nsfw || false}
-            className={`group relative rounded-lg overflow-hidden border transition-all duration-200 cursor-pointer ${
+            className={`group relative rounded-lg overflow-hidden border transition-all duration-200 cursor-pointer break-inside-avoid mb-4 ${
               selectedImageUrl === (image.image_url || image.video_url)
-                ? 'border-primary ring-2 ring-primary/20' 
+                ? 'border-primary ring-2 ring-primary/20'
                 : 'border-border hover:border-primary/50'
             }`}
             onContentAccess={(action) => {
@@ -317,7 +317,7 @@ export default function SavedMediaMasonry({
             }}
           >
             <div
-              style={style}
+              style={{ aspectRatio: style.aspectRatio }}
               onClick={() => onImageSelect?.(image)}
             >
               {/* Media */}

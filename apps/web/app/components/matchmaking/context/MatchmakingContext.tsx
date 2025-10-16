@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
 import { supabase } from '../../../../lib/supabase'
 import { useAuth } from '../../../../lib/auth-context'
 import { 
@@ -275,7 +275,9 @@ const generateCompatibilityReason = (gig: any, userProfile: any, compatibilityDa
 }
 
 export const MatchmakingProvider: React.FC<MatchmakingProviderProps> = ({ children }) => {
+  console.log('🔥 MatchmakingProvider initializing')
   const { user } = useAuth()
+  console.log('🔥 MatchmakingProvider user:', user?.id)
   const [recommendations, setRecommendations] = useState<{
     all: Recommendation[]
     filtered: Recommendation[]
@@ -350,8 +352,13 @@ export const MatchmakingProvider: React.FC<MatchmakingProviderProps> = ({ childr
 
   // Fetch recommendations for user
   const fetchRecommendations = useCallback(async () => {
-    if (!user || !supabase) return
+    console.log('🔥 fetchRecommendations called, user:', user?.id)
+    if (!user || !supabase) {
+      console.log('🔥 fetchRecommendations early return - no user or supabase')
+      return
+    }
 
+    console.log('🔥 Starting fetchRecommendations')
     setLoading(true)
     try {
       // Get published gigs with preferences and check compatibility
@@ -380,6 +387,8 @@ export const MatchmakingProvider: React.FC<MatchmakingProviderProps> = ({ childr
         .eq('status', 'PUBLISHED')
         .order('created_at', { ascending: false })
         .limit(20)
+
+      console.log('Matchmaking - Gigs query result:', { allGigs, gigsError })
 
       if (gigsError) {
         console.error('Error fetching compatible gigs:', {
@@ -469,6 +478,8 @@ export const MatchmakingProvider: React.FC<MatchmakingProviderProps> = ({ childr
       // Calculate compatibility using advanced preference-based scoring
       const allGigRecommendations: Recommendation[] = []
       const filteredGigRecommendations: Recommendation[] = []
+
+      console.log('Matchmaking - Processing', allGigs?.length || 0, 'gigs for user', user.id)
 
       for (const gig of allGigs || []) {
         try {
@@ -591,6 +602,12 @@ export const MatchmakingProvider: React.FC<MatchmakingProviderProps> = ({ childr
       setLoading(false)
     }
   }, [user])
+
+  // Auto-fetch recommendations when user changes
+  useEffect(() => {
+    console.log('🔥 useEffect triggered - calling fetchRecommendations')
+    fetchRecommendations()
+  }, [fetchRecommendations])
 
   // Update filters
   const updateFilters = useCallback((newFilters: MatchmakingFilters) => {

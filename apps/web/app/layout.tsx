@@ -4,7 +4,11 @@ import "./globals.css";
 import { AuthProvider } from "../lib/auth-context";
 import { NavBar } from "../components/NavBar";
 import { FeedbackProvider } from "../components/feedback/FeedbackContext";
+import { ChatProvider } from "../lib/chatbot/chat-context";
+import { ChatWidget } from "../components/chat/ChatWidget";
 import { Toaster } from "@/components/ui/sonner";
+import Footer from "./components/homepage/Footer";
+import CookieConsentComponent from "./components/CookieConsent";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -33,11 +37,16 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground`}>
         <FeedbackProvider>
           <AuthProvider>
-            <NavBar />
-            <main className="min-h-screen bg-background">
-              {children}
-            </main>
-            <Toaster />
+            <ChatProvider>
+              <NavBar />
+              <main className="min-h-screen bg-background">
+                {children}
+              </main>
+              <Footer />
+              <CookieConsentComponent />
+              <ChatWidget />
+              <Toaster />
+            </ChatProvider>
           </AuthProvider>
         </FeedbackProvider>
       </body>

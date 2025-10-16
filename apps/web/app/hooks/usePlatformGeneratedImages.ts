@@ -12,6 +12,8 @@ interface PresetImage {
   tags: string[];
   created_at: string;
   user_id: string;
+  width?: number;
+  height?: number;
   users_profile?: {
     display_name: string;
     handle: string;

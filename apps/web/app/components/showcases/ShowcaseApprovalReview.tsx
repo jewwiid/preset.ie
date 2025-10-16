@@ -236,11 +236,11 @@ export function ShowcaseApprovalReview({
       </div>
 
       {/* Status Badge */}
-      <Card className="border-blue-200 bg-blue-50">
+      <Card className="border-border bg-secondary">
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-semibold text-blue-800">
+            <Clock className="w-4 h-4 text-secondary-foreground" />
+            <span className="text-sm font-semibold text-secondary-foreground">
               Pending Your Approval
             </span>
           </div>
@@ -275,13 +275,13 @@ export function ShowcaseApprovalReview({
                   </div>
                   <div className="flex items-center gap-2">
                     {approval.action === 'approve' && (
-                      <Badge className="bg-green-100 text-green-800">
+                      <Badge variant="success">
                         <Check className="w-3 h-3 mr-1" />
                         Approved
                       </Badge>
                     )}
                     {approval.action === 'request_changes' && (
-                      <Badge className="bg-orange-100 text-orange-800">
+                      <Badge variant="warning">
                         <X className="w-3 h-3 mr-1" />
                         Changes Requested
                       </Badge>
@@ -370,13 +370,13 @@ export function ShowcaseApprovalReview({
 
       {/* Previous Feedback */}
       {showcase.approval_notes && (
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-border bg-secondary">
           <CardContent className="p-4">
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-yellow-800">
+              <h4 className="text-sm font-semibold text-foreground">
                 Previous Feedback:
               </h4>
-              <p className="text-sm text-yellow-700">
+              <p className="text-sm text-muted-foreground">
                 {showcase.approval_notes}
               </p>
             </div>
@@ -422,20 +422,20 @@ export function ShowcaseApprovalReview({
 
       {/* Show current user's approval status if they've already acted */}
       {currentUserApproval && currentUserApproval.action !== 'pending' && (
-        <Card className="border-green-200 bg-green-50">
+        <Card className={currentUserApproval.action === 'approve' ? "border-primary/20 bg-primary/10" : "border-destructive/20 bg-destructive/10"}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               {currentUserApproval.action === 'approve' ? (
                 <>
-                  <Check className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-semibold text-green-800">
+                  <Check className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">
                     You have approved this showcase
                   </span>
                 </>
               ) : (
                 <>
-                  <X className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm font-semibold text-orange-800">
+                  <X className="w-4 h-4 text-orange-700 dark:text-orange-400" />
+                  <span className="text-sm font-semibold text-orange-700 dark:text-orange-400">
                     You have requested changes
                   </span>
                 </>
@@ -467,7 +467,7 @@ export function ShowcaseApprovalReview({
             <AlertDialogAction
               onClick={handleApprove}
               disabled={isApproving}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-primary hover:bg-primary/90"
             >
               {isApproving ? 'Approving...' : 'Approve'}
             </AlertDialogAction>
@@ -492,7 +492,7 @@ export function ShowcaseApprovalReview({
             <AlertDialogAction
               onClick={handleRequestChanges}
               disabled={isRequestingChanges || !feedback.trim()}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90"
             >
               {isRequestingChanges ? 'Sending...' : 'Request Changes'}
             </AlertDialogAction>

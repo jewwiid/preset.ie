@@ -17,7 +17,6 @@ import ContributorSection from './components/homepage/ContributorSection';
 import FeaturedWorkSection from './components/homepage/FeaturedWorkSection';
 import AboutSection from './components/homepage/AboutSection';
 import CallToActionSection from './components/homepage/CallToActionSection';
-import Footer from './components/homepage/Footer';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -233,7 +232,6 @@ export default function Home() {
 
       <CallToActionSection isLoggedIn={isLoggedIn} />
 
-      <Footer />
     </div>
   );
 }

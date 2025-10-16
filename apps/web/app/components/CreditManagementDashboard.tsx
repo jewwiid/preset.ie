@@ -147,22 +147,22 @@ const CreditManagementDashboard = () => {
       </div>
 
       {/* Provider Usage */}
-      <div className="bg-background rounded-lg border border-border-200 p-6">
-        <h3 className="text-lg font-semibold text-muted-foreground-900 mb-4">Provider Usage (Last 30 Days)</h3>
+      <div className="bg-background rounded-lg border border-border p-6">
+        <h3 className="text-lg font-semibold text-foreground mb-4">Provider Usage (Last 30 Days)</h3>
         {creditStats.providerUsage.length > 0 ? (
           <div className="space-y-4">
             {creditStats.providerUsage.map((provider, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-muted-50 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-primary-500" />
+                  <div className="w-3 h-3 rounded-full bg-primary" />
                   <div>
-                    <p className="font-medium text-muted-foreground-900">{provider.name}</p>
-                    <p className="text-sm text-muted-foreground-600">
+                    <p className="font-medium text-foreground">{provider.name}</p>
+                    <p className="text-sm text-muted-foreground">
                       ${provider.avgCostPerGeneration} avg cost per generation
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6 text-sm text-muted-foreground-600">
+                <div className="flex items-center gap-6 text-sm text-muted-foreground">
                   <span>{provider.generations} generations</span>
                   <span>${provider.costUsd} total cost</span>
                 </div>
@@ -170,7 +170,7 @@ const CreditManagementDashboard = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-muted-foreground-600">
+          <div className="text-center py-8 text-muted-foreground">
             <p>No provider usage data yet</p>
             <p className="text-sm">Usage will appear here once users start generating content</p>
           </div>
@@ -179,15 +179,15 @@ const CreditManagementDashboard = () => {
 
       {/* Refund Summary */}
       {creditStats.refundsLast7Days > 0 && (
-        <div className="bg-background rounded-lg border border-border-200 p-6">
-          <h3 className="text-lg font-semibold text-muted-foreground-900 mb-4">Recent Refunds</h3>
+        <div className="bg-background rounded-lg border border-border p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Recent Refunds</h3>
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <RefreshCw className="w-6 h-6 text-orange-600" />
+            <div className="p-3 bg-primary/10 rounded-lg">
+              <RefreshCw className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-muted-foreground-900">{creditStats.refundsLast7Days} credits refunded</p>
-              <p className="text-sm text-muted-foreground-600">Last 7 days - failed generations automatically refunded</p>
+              <p className="font-semibold text-foreground">{creditStats.refundsLast7Days} credits refunded</p>
+              <p className="text-sm text-muted-foreground">Last 7 days - failed generations automatically refunded</p>
             </div>
           </div>
         </div>

@@ -8,6 +8,9 @@ export interface MediaItem {
   metadata?: any;
   preset?: string;
   source?: string;
+  source_type?: string;
+  image_url?: string;
+  upload_path?: string;
   width?: number;
   height?: number;
 }
@@ -47,15 +50,18 @@ export function useShowcaseMedia({ accessToken, onError }: ShowcaseMediaOptions 
     if (!accessToken) return;
 
     setLoadingMedia(true);
+    const startTime = performance.now();
     try {
-      console.log('Fetching available media...');
+      console.log('🚀 Fetching available media...');
       const response = await fetch('/api/media', {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       });
-      console.log('Media API response status:', response.status);
+      const responseTime = performance.now() - startTime;
+      console.log(`⏱️ Media API response took ${responseTime.toFixed(2)}ms, status:`, response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('Media API data:', data);
+        const processingTime = performance.now() - startTime;
+        console.log(`📦 Media API data processed in ${processingTime.toFixed(2)}ms, items:`, data.media?.length);
         console.log('Sample media item from API:', data.media[0]);
         setAvailableMedia(data.media.map((m: any) => ({
           id: m.id,
@@ -65,13 +71,23 @@ export function useShowcaseMedia({ accessToken, onError }: ShowcaseMediaOptions 
           metadata: m.metadata,
           preset: m.preset,
           source: m.source,
+          source_type: m.source_type,
           width: m.width,
           height: m.height
         })));
       } else {
         const errorData = await response.json();
         console.error('Media API error:', errorData);
-        onError?.(`Failed to load media: ${errorData.error || 'Unknown error'}`);
+
+        // Handle authentication errors specifically
+        if (response.status === 401 || response.status === 403) {
+          console.error('Authentication failed - token may be expired');
+          onError?.('Your session has expired. Please refresh the page and sign in again to load your media.');
+          // Clear the media arrays to show proper empty state
+          setAvailableMedia([]);
+        } else {
+          onError?.(`Failed to load media: ${errorData.error || 'Unknown error'}`);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch available media:', err);
@@ -85,20 +101,32 @@ export function useShowcaseMedia({ accessToken, onError }: ShowcaseMediaOptions 
     if (!accessToken) return;
 
     setLoadingPlayground(true);
+    const startTime = performance.now();
     try {
-      console.log('Fetching playground gallery...');
+      console.log('🚀 Fetching playground gallery...');
       const response = await fetch('/api/playground/gallery', {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       });
-      console.log('Playground gallery response status:', response.status);
+      const responseTime = performance.now() - startTime;
+      console.log(`⏱️ Playground API response took ${responseTime.toFixed(2)}ms, status:`, response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('Playground gallery data:', data);
+        const processingTime = performance.now() - startTime;
+        console.log(`📦 Playground API data processed in ${processingTime.toFixed(2)}ms, items:`, data.media?.length);
         setPlaygroundGallery(data.media || []);
       } else {
         const errorData = await response.json();
         console.error('Playground gallery API error:', errorData);
-        onError?.(`Failed to load playground gallery: ${errorData.error || 'Unknown error'}`);
+
+        // Handle authentication errors specifically
+        if (response.status === 401 || response.status === 403) {
+          console.error('Authentication failed - token may be expired');
+          onError?.('Your session has expired. Please refresh the page and sign in again to load your media.');
+          // Clear the playground gallery to show proper empty state
+          setPlaygroundGallery([]);
+        } else {
+          onError?.(`Failed to load playground gallery: ${errorData.error || 'Unknown error'}`);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch playground gallery:', err);
@@ -125,23 +153,49 @@ export function useShowcaseMedia({ accessToken, onError }: ShowcaseMediaOptions 
   }, [accessToken]);
 
   const getFilteredMedia = useCallback((type: 'moodboard' | 'individual_image' | 'treatment' | 'video') => {
-    console.log('Filtering media for type:', type);
-    console.log('Available media:', availableMedia);
-    console.log('Playground gallery:', playgroundGallery);
+    console.log(`🔍 Filtering for ${type} - Available media: ${availableMedia.length}, Playground: ${playgroundGallery.length}`);
 
+    // Process playground gallery items directly (they're already in the correct format)
+    const playgroundItems = playgroundGallery.map(item => ({
+      id: item.id,
+      url: item.image_url || item.video_url,
+      type: item.media_type === 'video' ? 'video' as const : 'image' as const,
+      thumbnail_url: item.thumbnail_url || item.image_url,
+      metadata: item.generation_metadata || {},
+      preset: item.generation_metadata?.preset || item.generation_metadata?.style || 'realistic',
+      source: 'playground_gallery',
+      title: item.title,
+      description: item.description,
+      width: item.width,
+      height: item.height,
+      image_url: item.image_url,
+      video_url: item.video_url,
+      media_type: item.media_type
+    }));
+
+    // Filter media library items (uploads and other media)
+    const uploadItems = availableMedia.filter(item => {
+      // Exclude playground items from availableMedia to avoid duplication
+      if (item.source_type === 'playground' || item.source === 'playground_gallery') return false;
+      // Only include upload/media table items
+      if (item.source_type === 'upload' || item.source === 'media_table') return true;
+      // Fallback: exclude playground items by URL pattern
+      if (item.url && item.url.includes('playground-images')) return false;
+      return true;
+    });
+
+    
     switch (type) {
       case 'moodboard':
         return {
-          playground: playgroundGallery.filter(item => item.media_type === 'image'),
-          media: availableMedia.filter(item => item.type === 'image'),
+          playground: playgroundItems.filter(item => item.type === 'image'),
+          media: uploadItems.filter(item => item.type === 'image' || !item.type),
           treatments: []
         };
       case 'individual_image':
         return {
-          playground: playgroundGallery.filter(item => item.media_type === 'image'),
-          media: availableMedia.filter(item =>
-            item.type === 'image' || !item.type
-          ),
+          playground: playgroundItems.filter(item => item.type === 'image'),
+          media: uploadItems.filter(item => item.type === 'image' || !item.type),
           treatments: []
         };
       case 'treatment':
@@ -152,13 +206,13 @@ export function useShowcaseMedia({ accessToken, onError }: ShowcaseMediaOptions 
         };
       case 'video':
         return {
-          playground: playgroundGallery.filter(item => item.media_type === 'video'),
+          playground: playgroundItems.filter(item => item.type === 'video'),
           media: availableMedia.filter(item => item.type === 'video'),
           treatments: []
         };
       default:
         return {
-          playground: playgroundGallery,
+          playground: playgroundItems,
           media: availableMedia,
           treatments: []
         };

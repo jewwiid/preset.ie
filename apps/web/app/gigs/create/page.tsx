@@ -302,7 +302,7 @@ export default function CreateGigPage() {
         owner_user_id: profile.id,
         title: formData.title,
         description: formData.description,
-        looking_for_types: formData.lookingFor || [],  // Map to database column name
+        looking_for: formData.lookingFor || [],  // Use correct column name
         purpose: formData.purpose,
         comp_type: formData.compType,
         comp_details: formData.compDetails,

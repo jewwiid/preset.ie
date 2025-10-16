@@ -8,7 +8,7 @@ export interface Gig {
   description: string;
   purpose?: PurposeType;
   comp_type: CompensationType;
-  looking_for_types?: string[];
+  looking_for?: string[];
   location_text: string;
   lat?: number;
   lng?: number;

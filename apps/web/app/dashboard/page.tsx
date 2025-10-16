@@ -18,6 +18,7 @@ import { UserReferralCard } from '../../components/dashboard/UserReferralCard'
 import SavedMediaGallery from '../components/playground/SavedImagesGallery'
 import { BannerPosition } from '../../lib/types/dashboard'
 import { LoadingSpinner } from '../../components/ui/loading-spinner'
+import { Button } from '../../components/ui/button'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -231,12 +232,13 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground">Images saved from the playground for use in moodboards, showcases, and profiles</p>
                 </div>
               </div>
-              <button
+              <Button 
+                variant="link" 
                 onClick={() => router.push('/playground')}
-                className="text-sm text-primary hover:text-primary/80 font-medium"
+                className="text-sm font-medium"
               >
                 Generate More →
-              </button>
+              </Button>
             </div>
 
             <SavedMediaGallery

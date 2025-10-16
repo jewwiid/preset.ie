@@ -8,18 +8,7 @@
 export function getImageGridStyle(width: number, height: number) {
   const aspectRatio = width / height
 
-  // Determine column span based on aspect ratio
-  let colSpan = 1
-  if (aspectRatio > 1.5) {
-    colSpan = 2 // Wide images span 2 columns
-  } else if (aspectRatio < 0.7) {
-    colSpan = 1 // Tall images span 1 column
-  } else {
-    colSpan = 1 // Square images span 1 column
-  }
-
   return {
-    gridColumn: `span ${colSpan}`,
     aspectRatio: aspectRatio.toString()
   }
 }

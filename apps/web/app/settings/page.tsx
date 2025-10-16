@@ -368,12 +368,12 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div className="bg-muted border border-border rounded-lg p-4">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <AlertTriangle className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="font-medium text-blue-900 dark:text-blue-100">Age Verification Required</h4>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    <h4 className="font-medium text-foreground">Age Verification Required</h4>
+                    <p className="text-sm text-muted-foreground mt-1">
                       You must be 18 or older to view NSFW content. Age verification is required for safety and compliance.
                     </p>
                   </div>

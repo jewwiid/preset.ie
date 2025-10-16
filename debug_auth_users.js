@@ -80,7 +80,7 @@ async function debugAuthUsers() {
     console.log('\n4. 📋 Checking available gigs...')
     const { data: gigs, error: gigsError } = await supabase
       .from('gigs')
-      .select('id, title, looking_for, looking_for_types, city, status')
+      .select('id, title, looking_for, city, status')
       .eq('status', 'PUBLISHED')
       .order('created_at', { ascending: false })
       .limit(5)
@@ -92,7 +92,6 @@ async function debugAuthUsers() {
       gigs.forEach((gig, i) => {
         console.log(`   ${i+1}. ${gig.title}`)
         console.log(`      Looking for: ${JSON.stringify(gig.looking_for)}`)
-        console.log(`      Looking for types: ${JSON.stringify(gig.looking_for_types)}`)
         console.log(`      Location: ${gig.city}`)
       })
     }

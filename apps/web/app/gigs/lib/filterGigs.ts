@@ -96,7 +96,7 @@ export const filterGigs = (gigs: Gig[], filters: GigFilters): Gig[] => {
   // Role types filter
   if (filters.selectedRoleTypes.length > 0) {
     filtered = filtered.filter(gig =>
-      gig.looking_for_types && gig.looking_for_types.some(type =>
+      gig.looking_for && gig.looking_for.some(type =>
         filters.selectedRoleTypes.includes(type)
       )
     );

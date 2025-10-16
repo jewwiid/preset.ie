@@ -5,6 +5,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function GET(request: NextRequest) {
+  const startTime = performance.now();
   try {
     // Get auth token from header
     const authHeader = request.headers.get('Authorization')
@@ -98,6 +99,9 @@ export async function GET(request: NextRequest) {
       ...item,
       generation_metadata: item.generation_metadata || {}
     }))
+
+  const totalTime = performance.now() - startTime;
+    console.log(`✅ Playground API completed in ${totalTime.toFixed(2)}ms, returning ${mediaWithDefaults.length} items`);
 
     return NextResponse.json({
       success: true,

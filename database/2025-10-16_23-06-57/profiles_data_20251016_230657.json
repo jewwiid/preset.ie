@@ -1,0 +1,1 @@
+{"code":"PGRST205","details":null,"hint":"Perhaps you meant the table 'public.users_profile'","message":"Could not find the table 'public.profiles' in the schema cache"}

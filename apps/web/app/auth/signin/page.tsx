@@ -18,6 +18,8 @@ import {
 import { Logo } from '../../../components/Logo'
 import { GoogleSignInButton } from '../../../components/auth/GoogleSignInButton'
 import { AsyncButton } from '../../../components/ui/async-button'
+import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 function SignInContent() {
   const [emailOrHandle, setEmailOrHandle] = useState('')
@@ -202,14 +204,14 @@ function SignInContent() {
         </div>
 
         {/* Sign In Form */}
-        <form className={`space-y-6 transition-all duration-300 ${showErrorAnimation ? 'animate-shake' : ''}`} onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="emailOrHandle" className="block text-sm font-medium text-foreground mb-2">
               Email or Handle
             </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
+            <div className={cn("relative", showErrorAnimation && "animate-shake")}>
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+              <Input
                 id="emailOrHandle"
                 name="emailOrHandle"
                 type="text"
@@ -223,11 +225,7 @@ function SignInContent() {
                     setShowErrorAnimation(false)
                   }
                 }}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground transition-all duration-300 ${
-                  showErrorAnimation 
-                    ? 'border-red-500 animate-pulse shadow-lg shadow-red-500/20' 
-                    : 'border-border'
-                }`}
+                className={cn("pl-10", showErrorAnimation && "border-destructive")}
                 placeholder="Enter your email or handle"
               />
             </div>
@@ -237,9 +235,9 @@ function SignInContent() {
             <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
               Password
             </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
+            <div className={cn("relative", showErrorAnimation && "animate-shake")}>
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+              <Input
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
@@ -253,17 +251,13 @@ function SignInContent() {
                     setShowErrorAnimation(false)
                   }
                 }}
-                className={`w-full pl-10 pr-12 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground transition-all duration-300 ${
-                  showErrorAnimation 
-                    ? 'border-red-500 animate-pulse shadow-lg shadow-red-500/20' 
-                    : 'border-border'
-                }`}
+                className={cn("pl-10 pr-12", showErrorAnimation && "border-destructive")}
                 placeholder="Enter your password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none focus:text-foreground"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none focus:text-foreground z-10"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (

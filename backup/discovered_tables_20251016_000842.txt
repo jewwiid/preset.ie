@@ -1,0 +1,8 @@
+# Comprehensive Table Discovery Report
+# Project: zbsmgymyfhnwjdnmlelr
+# Generated: Thu Oct 16 00:08:42 IST 2025
+# URL: https://zbsmgymyfhnwjdnmlelr.supabase.co
+#
+
+## Discovered Tables
+

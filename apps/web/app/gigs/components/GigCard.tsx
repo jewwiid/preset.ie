@@ -155,10 +155,10 @@ export const GigCard = ({ gig, isSaved, onToggleSave }: GigCardProps) => {
             </h3>
 
             {/* Looking For Role Badges */}
-            {gig.looking_for_types && gig.looking_for_types.length > 0 && (
+            {gig.looking_for && gig.looking_for.length > 0 && (
               <div className="mt-2 flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-muted-foreground font-medium">Looking for:</span>
-                {gig.looking_for_types.slice(0, 2).map((type) => (
+                {gig.looking_for.slice(0, 2).map((type) => (
                   <Badge
                     key={type}
                     variant="secondary"
@@ -167,9 +167,9 @@ export const GigCard = ({ gig, isSaved, onToggleSave }: GigCardProps) => {
                     👤 {getLookingForLabel(type)}
                   </Badge>
                 ))}
-                {gig.looking_for_types.length > 2 && (
+                {gig.looking_for.length > 2 && (
                   <Badge variant="outline" className="text-xs">
-                    +{gig.looking_for_types.length - 2}
+                    +{gig.looking_for.length - 2}
                   </Badge>
                 )}
               </div>

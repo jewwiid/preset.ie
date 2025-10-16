@@ -9,6 +9,8 @@ interface FeaturedImage {
   result_image_url?: string;
   video_url?: string;
   media_type?: string;
+  width?: number;
+  height?: number;
   users_profile?: {
     display_name?: string;
     handle?: string;
@@ -24,7 +26,26 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: 'image' | 'video'; title: string; creator: string } | null>(null);
   const [failedVideos, setFailedVideos] = useState<Set<string>>(new Set());
 
-  const heights = ['h-64', 'h-48', 'h-80', 'h-64', 'h-72', 'h-56', 'h-80', 'h-64', 'h-72', 'h-80'];
+  // Helper function to calculate image dimensions maintaining aspect ratio
+  const getImageStyle = (image: FeaturedImage) => {
+    const BASE_WIDTH = 320;
+
+    if (image.width && image.height) {
+      const aspectRatio = image.width / image.height;
+      const height = Math.round(BASE_WIDTH / aspectRatio);
+
+      return {
+        width: `${BASE_WIDTH}px`,
+        height: `${height}px`
+      };
+    }
+
+    // Fallback to 4:3 aspect ratio
+    return {
+      width: `${BASE_WIDTH}px`,
+      height: `${Math.round(BASE_WIDTH * 0.75)}px`
+    };
+  };
 
   const handleVideoError = (videoUrl: string) => {
     setFailedVideos(prev => new Set(prev).add(videoUrl));
@@ -45,18 +66,26 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
             <div className="overflow-hidden">
               <div className="flex gap-4 animate-scroll-left">
                 {(() => {
-                  if (featuredImages.length === 0) {
-                    // Fallback placeholder images if no platform images available
+                  // Filter valid images (only show videos stored in Supabase)
+                  const validImages = featuredImages.filter(image => {
+                    if (image.media_type === 'video') {
+                      return image.video_url?.includes('supabase.co/storage');
+                    }
+                    return true;
+                  });
+
+                  // If no images, show placeholders
+                  if (validImages.length === 0) {
+                    const placeholderStyle = { width: '320px', height: '240px' };
                     const placeholders = Array.from({ length: 10 }, (_, index) => (
-                      <div key={`placeholder-${index}`} className={`relative ${heights[index]} w-80 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                      <div key={`placeholder-${index}`} className="relative rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer" style={placeholderStyle}>
                         <div className="w-full h-full bg-muted flex items-center justify-center">
                           <span className="text-muted-foreground text-sm">Coming Soon</span>
                         </div>
                       </div>
                     ));
-                    // Duplicate for seamless loop with unique keys
                     const duplicatePlaceholders = Array.from({ length: 10 }, (_, index) => (
-                      <div key={`placeholder-duplicate-${index}`} className={`relative ${heights[index]} w-80 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}>
+                      <div key={`placeholder-duplicate-${index}`} className="relative rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer" style={placeholderStyle}>
                         <div className="w-full h-full bg-muted flex items-center justify-center">
                           <span className="text-muted-foreground text-sm">Coming Soon</span>
                         </div>
@@ -65,31 +94,23 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                     return [...placeholders, ...duplicatePlaceholders];
                   }
 
-                  const images = featuredImages
-                    .filter(image => {
-                      // Show all images, but only show videos that are saved to Supabase storage
-                      if (image.media_type === 'video') {
-                        return image.video_url && image.video_url.includes('supabase.co/storage');
-                      }
-                      return true;
-                    })
-                    .map((image, index) => {
+                  // Create image item component
+                  const createImageItem = (image: FeaturedImage, index: number, keyPrefix = '') => {
                     const isVideo = image.media_type === 'video' && image.video_url;
                     const mediaUrl = isVideo ? image.video_url : image.result_image_url;
+                    const imageStyle = getImageStyle(image);
 
                     return (
                       <div
-                        key={`${image.id}-${index}`}
-                        className={`relative ${heights[index % heights.length]} w-80 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}
-                        onClick={() => {
-                          setLightboxMedia({
-                            url: mediaUrl || '',
-                            type: isVideo ? 'video' : 'image',
-                            title: image.title || 'Creative Project',
-                            creator: image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'
-                          });
-                          setLightboxOpen(true);
-                        }}
+                        key={`${keyPrefix}${image.id}-${index}`}
+                        className="relative rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer"
+                        style={imageStyle}
+                        onClick={() => setLightboxMedia({
+                          url: mediaUrl || '',
+                          type: isVideo ? 'video' : 'image',
+                          title: image.title || 'Creative Project',
+                          creator: image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'
+                        })}
                       >
                         {isVideo ? (
                           <video
@@ -122,85 +143,21 @@ export default function FeaturedWorkSection({ featuredImages }: FeaturedWorkSect
                         <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <div className="text-primary-foreground">
-                            <p className="text-sm font-medium">{image.title || 'Creative Project'}</p>
-                            <p className="text-xs text-primary-foreground/70">
+                            <p className="text-sm font-medium truncate">{image.title || 'Creative Project'}</p>
+                            <p className="text-xs text-primary-foreground/70 truncate">
                               by {image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'}
                             </p>
                           </div>
                         </div>
                       </div>
                     );
-                  });
+                  };
 
-                  // Duplicate images/videos for seamless loop with unique keys
-                  const duplicateImages = featuredImages
-                    .filter(image => {
-                      // Show all images, but only show videos that are saved to Supabase storage
-                      if (image.media_type === 'video') {
-                        return image.video_url && image.video_url.includes('supabase.co/storage');
-                      }
-                      return true;
-                    })
-                    .map((image, index) => {
-                    const isVideo = image.media_type === 'video' && image.video_url;
-                    const mediaUrl = isVideo ? image.video_url : image.result_image_url;
+                  // Create original and duplicate arrays for seamless scrolling
+                  const originalItems = validImages.map((image, index) => createImageItem(image, index));
+                  const duplicateItems = validImages.map((image, index) => createImageItem(image, index, 'duplicate-'));
 
-                    return (
-                      <div
-                        key={`duplicate-${image.id}-${index}`}
-                        className={`relative ${heights[index % heights.length]} w-80 rounded-lg overflow-hidden bg-accent flex-shrink-0 group cursor-pointer`}
-                        onClick={() => {
-                          setLightboxMedia({
-                            url: mediaUrl || '',
-                            type: isVideo ? 'video' : 'image',
-                            title: image.title || 'Creative Project',
-                            creator: image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'
-                          });
-                          setLightboxOpen(true);
-                        }}
-                      >
-                        {isVideo ? (
-                          <video
-                            src={mediaUrl}
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                          />
-                        ) : (
-                          <Image
-                            src={mediaUrl || ''}
-                            alt={image.title || `Featured work ${index + 1}`}
-                            fill
-                            sizes="320px"
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy"
-                            quality={80}
-                            placeholder="blur"
-                            blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjUwMCIgZmlsbD0iIzIwMjAyMCIvPjwvc3ZnPg=="
-                            onError={(e) => {
-                              const fallbackUrl = 'https://zbsmgymyfhnwjdnmlelr.supabase.co/storage/v1/object/public/platform-images/presetie_logo.png';
-                              if ((e.target as HTMLImageElement).src !== fallbackUrl) {
-                                (e.target as HTMLImageElement).src = fallbackUrl;
-                              }
-                            }}
-                          />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="text-primary-foreground">
-                            <p className="text-sm font-medium">{image.title || 'Creative Project'}</p>
-                            <p className="text-xs text-primary-foreground/70">
-                              by {image.users_profile?.display_name || image.users_profile?.handle || 'Platform User'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  });
-
-                  return [...images, ...duplicateImages];
+                  return [...originalItems, ...duplicateItems];
                 })()}
               </div>
             </div>

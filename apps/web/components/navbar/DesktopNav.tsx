@@ -112,7 +112,7 @@ export function DesktopNav({
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/dashboard') || isActive('/profile') || isActive('/matchmaking') || isActive('/dashboard/media'))
                   ? 'text-primary bg-primary/10'
-                  : 'text-primary hover:bg-primary/5'
+                  : 'text-primary hover:bg-accent'
                 }
               `}>
                 <Home className="w-4 h-4 lg:mr-2" />
@@ -159,7 +159,7 @@ export function DesktopNav({
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/gigs'))
                   ? 'text-primary bg-primary/10'
-                  : 'text-primary hover:bg-primary/5'
+                  : 'text-primary hover:bg-accent'
                 }
               `}>
                 <Search className="w-4 h-4 lg:mr-2" />
@@ -196,67 +196,80 @@ export function DesktopNav({
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/gear') || isActive('/presets/marketplace'))
                   ? 'text-primary bg-primary/10'
-                  : 'text-primary hover:bg-primary/5'
+                  : 'text-primary hover:bg-accent'
                 }
               `}>
                 <Store className="w-4 h-4 lg:mr-2" />
                 <span className="hidden lg:inline">Marketplace</span>
                 <ChevronDown className="w-3 h-3 lg:w-4 lg:h-4 lg:ml-1" />
               </MenubarTrigger>
-              <MenubarContent className="w-48">
-                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Preset Marketplace</div>
-                <MenubarItem asChild>
-                  <Link href="/presets/marketplace" className="flex items-center nav-submenu-item">
+              <MenubarContent className="w-56">
+                <MenubarSub>
+                  <MenubarSubTrigger className="nav-submenu-title">
                     <Palette className="mr-2 h-4 w-4" />
-                    Browse Presets
-                  </Link>
-                </MenubarItem>
-                <MenubarItem asChild>
-                  <Link href="/presets/marketplace/my-listings" className="flex items-center nav-submenu-item">
-                    <ShoppingBag className="mr-2 h-4 w-4" />
-                    My Preset Listings
-                  </Link>
-                </MenubarItem>
-                <MenubarItem asChild>
-                  <Link href="/presets/marketplace/purchases" className="flex items-center nav-submenu-item">
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Purchase History
-                  </Link>
-                </MenubarItem>
-                <MenubarItem asChild>
-                  <Link href="/presets/marketplace/analytics" className="flex items-center nav-submenu-item">
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    Analytics
-                  </Link>
-                </MenubarItem>
+                    Preset Marketplace
+                  </MenubarSubTrigger>
+                  <MenubarSubContent className="w-48">
+                    <MenubarItem asChild>
+                      <Link href="/presets/marketplace" className="flex items-center nav-submenu-item">
+                        <Palette className="mr-2 h-4 w-4" />
+                        Browse Presets
+                      </Link>
+                    </MenubarItem>
+                    <MenubarItem asChild>
+                      <Link href="/presets/marketplace/my-listings" className="flex items-center nav-submenu-item">
+                        <ShoppingBag className="mr-2 h-4 w-4" />
+                        My Preset Listings
+                      </Link>
+                    </MenubarItem>
+                    <MenubarItem asChild>
+                      <Link href="/presets/marketplace/purchases" className="flex items-center nav-submenu-item">
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Purchase History
+                      </Link>
+                    </MenubarItem>
+                    <MenubarItem asChild>
+                      <Link href="/presets/marketplace/analytics" className="flex items-center nav-submenu-item">
+                        <TrendingUp className="mr-2 h-4 w-4" />
+                        Analytics
+                      </Link>
+                    </MenubarItem>
+                  </MenubarSubContent>
+                </MenubarSub>
 
-                <MenubarSeparator />
-                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Equipment Marketplace</div>
-                <MenubarItem asChild>
-                  <Link href="/gear" className="flex items-center nav-submenu-item">
+                <MenubarSub>
+                  <MenubarSubTrigger className="nav-submenu-title">
                     <Camera className="mr-2 h-4 w-4" />
-                    Browse Equipment
-                  </Link>
-                </MenubarItem>
-                <MenubarItem asChild>
-                  <Link href="/gear/create" className="flex items-center nav-submenu-item">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Listing
-                  </Link>
-                </MenubarItem>
-                <MenubarItem asChild>
-                  <Link href="/gear/my-listings" className="flex items-center nav-submenu-item">
-                    <Package className="mr-2 h-4 w-4" />
-                    My Equipment Listings
-                  </Link>
-                </MenubarItem>
-                <MenubarItem asChild>
-                  <Link href="/gear/orders" className="flex items-center nav-submenu-item">
-                    <Briefcase className="mr-2 h-4 w-4" />
-                    My Orders
-                  </Link>
-                </MenubarItem>
-                <MenubarSeparator />
+                    Gear Marketplace
+                  </MenubarSubTrigger>
+                  <MenubarSubContent className="w-48">
+                    <MenubarItem asChild>
+                      <Link href="/gear" className="flex items-center nav-submenu-item">
+                        <Camera className="mr-2 h-4 w-4" />
+                        Browse Equipment
+                      </Link>
+                    </MenubarItem>
+                    <MenubarItem asChild>
+                      <Link href="/gear/create" className="flex items-center nav-submenu-item">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Listing
+                      </Link>
+                    </MenubarItem>
+                    <MenubarItem asChild>
+                      <Link href="/gear/my-listings" className="flex items-center nav-submenu-item">
+                        <Package className="mr-2 h-4 w-4" />
+                        My Equipment Listings
+                      </Link>
+                    </MenubarItem>
+                    <MenubarItem asChild>
+                      <Link href="/gear/orders" className="flex items-center nav-submenu-item">
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        My Orders
+                      </Link>
+                    </MenubarItem>
+                  </MenubarSubContent>
+                </MenubarSub>
+
                 <MenubarSub>
                   <MenubarSubTrigger className="nav-submenu-title">
                     <MessageSquare className="mr-2 h-4 w-4" />
@@ -292,7 +305,7 @@ export function DesktopNav({
                 inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
                 ${(isActive('/presets') || isActive('/presets/create') || isActive('/showcases') || isActive('/showcases/create') || isActive('/treatments') || isActive('/treatments/create') || isActive('/playground') || isActive('/moodboards'))
                   ? 'text-primary bg-primary/10'
-                  : 'text-primary hover:bg-primary/5'
+                  : 'text-primary hover:bg-accent'
                 }
               `}>
                 <Plus className="w-4 h-4 lg:mr-2" />
@@ -350,7 +363,7 @@ export function DesktopNav({
               inline-flex items-center h-10 px-2 md:px-3 text-sm md:text-base rounded-lg transition-colors nav-menu-item
               ${isActive(item.href)
                 ? 'text-primary bg-primary/10'
-                : 'text-primary hover:bg-primary/5'
+                : 'text-primary hover:bg-accent'
               }
             `}
           >

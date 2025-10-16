@@ -686,13 +686,13 @@ export default function PlatformImagesAdmin() {
                   <p className="text-xs text-muted-foreground">Total in Bucket</p>
                   <p className="text-2xl font-bold">{auditResults.summary.totalInBucket}</p>
                 </div>
-                <div className="p-3 bg-red-500/10 rounded-md">
+                <div className="p-3 bg-destructive/10 rounded-md">
                   <p className="text-xs text-muted-foreground">Valid Images</p>
-                  <p className="text-2xl font-bold text-red-600">{auditResults.summary.validImages}</p>
+                  <p className="text-2xl font-bold text-destructive">{auditResults.summary.validImages}</p>
                 </div>
-                <div className="p-3 bg-red-500/10 rounded-md">
+                <div className="p-3 bg-destructive/10 rounded-md">
                   <p className="text-xs text-muted-foreground">Broken Links</p>
-                  <p className="text-2xl font-bold text-red-600">{auditResults.summary.brokenLinks}</p>
+                  <p className="text-2xl font-bold text-destructive">{auditResults.summary.brokenLinks}</p>
                 </div>
               </div>
 
@@ -788,9 +788,9 @@ export default function PlatformImagesAdmin() {
                         </Button>
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="destructive"
                           onClick={() => handleDeactivate(image.id)}
-                          className="w-full max-w-[150px] bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/50 text-orange-600"
+                          className="w-full max-w-[150px]"
                         >
                           <Trash2 className="h-3 w-3 mr-1" />
                           Remove
@@ -862,9 +862,9 @@ export default function PlatformImagesAdmin() {
                         </Button>
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="destructive"
                           onClick={() => handleDeactivate(image.id)}
-                          className="w-full max-w-[150px] bg-orange-500/10 hover:bg-orange-500/20 border-orange-500/50 text-orange-600"
+                          className="w-full max-w-[150px]"
                         >
                           <Trash2 className="h-3 w-3 mr-1" />
                           Remove

@@ -1,0 +1,34 @@
+QUICK REFERENCE - Database Backup 2025-10-16_23-01-15
+================================================
+
+Project: preset
+Created: Thu Oct 16 23:01:16 IST 2025
+
+Supabase Dashboard: https://app.supabase.com
+Project Ref: zbsmgymyfhnwjdnmlelr
+
+FILES CREATED:
+- backup_summary_20251016_230115.md       - Main documentation
+- schema_documentation_20251016_230115.md - Database structure
+- supabase_backups_20251016_230115.json   - API backup list (if available)
+- quick_reference_20251016_230115.txt     - This file
+
+QUICK COMMANDS:
+----------------
+# View tables in database
+\dt
+
+# View table structure
+\d table_name
+
+# Export single table
+pg_dump --data-only --table=table_name your_db_url > table.sql
+
+# Import table
+psql your_db_url < table.sql
+
+IMPORTANT:
+-----------
+- Keep this folder for reference
+- Test restores on development first
+- Check .env.backup for connection details

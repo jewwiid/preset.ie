@@ -1,20 +1,24 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { UserProfile } from '../../lib/types/dashboard'
-import { getProfileCompletionSummary, calculatePotentialWithField } from '@/lib/utils/smart-suggestions'
 import { useSmartSuggestions } from '@/lib/hooks/dashboard/useSmartSuggestions'
-import { 
-  Target, 
-  Sparkles, 
-  TrendingUp, 
-  Clock, 
-  MapPin, 
-  DollarSign, 
+import { getProfileCompletionSummary } from '@/lib/utils/smart-suggestions'
+import { Button } from '@/components/ui/button'
+import {
+  Target,
+  Sparkles,
+  TrendingUp,
+  Clock,
+  MapPin,
+  DollarSign,
   Award,
   AlertCircle,
   Globe,
-  Briefcase
+  Briefcase,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 
 interface SmartSuggestionsCardProps {
@@ -24,8 +28,40 @@ interface SmartSuggestionsCardProps {
 export function SmartSuggestionsCard({ profile }: SmartSuggestionsCardProps) {
   const router = useRouter()
   const completionSummary = getProfileCompletionSummary(profile)
+  console.log('🔍 SmartSuggestionsCard Profile:', {
+    profileCompletion: profile.profile_completion_percentage,
+    calculatedCompletion: completionSummary.current,
+    accountType: profile.account_type,
+    id: profile.id
+  })
   const { topMatches, matchingInsights, nearbyGigs, deadlineGigs, loading } = useSmartSuggestions(profile)
 
+  // Carousel state for cycling through matches
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
+
+  // Auto-rotate through matches
+  useEffect(() => {
+    if (topMatches.length <= 1) return
+
+    const interval = setInterval(() => {
+      setCurrentMatchIndex((prev) => (prev + 1) % topMatches.length)
+    }, 4000) // Change every 4 seconds
+
+    return () => clearInterval(interval)
+  }, [topMatches.length])
+
+  // Navigate to previous/next match
+  const goToPreviousMatch = () => {
+    setCurrentMatchIndex((prev) => (prev - 1 + topMatches.length) % topMatches.length)
+  }
+
+  const goToNextMatch = () => {
+    setCurrentMatchIndex((prev) => (prev + 1) % topMatches.length)
+  }
+
+  const currentMatch = topMatches[currentMatchIndex]
+
+  
   const hasAnyContent = profile.years_experience || profile.specializations?.length ||
     (profile.hourly_rate_min && profile.hourly_rate_max) || profile.available_for_travel
 
@@ -72,7 +108,7 @@ export function SmartSuggestionsCard({ profile }: SmartSuggestionsCardProps) {
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Add {completionSummary.topMissingLabel} to reach{' '}
-                  {calculatePotentialWithField(profile, completionSummary.topMissingField.key)}%
+                  {completionSummary.current + completionSummary.topMissingField.weight}%
                   {' '}and boost your visibility
                   {topMatches.length > 0 && ` (${topMatches.length} gig${topMatches.length > 1 ? 's' : ''} match your profile)`}
                 </p>
@@ -121,21 +157,50 @@ export function SmartSuggestionsCard({ profile }: SmartSuggestionsCardProps) {
                 <Sparkles className="w-3 h-3 text-primary-foreground" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-primary">
-                  {topMatches.length} Perfect Match{topMatches.length > 1 ? 'es' : ''} Found!
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-primary">
+                    {topMatches.length} Perfect Match{topMatches.length > 1 ? 'es' : ''} Found!
+                  </p>
+                  {topMatches.length > 1 && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Button
+                        onClick={goToPreviousMatch}
+                        variant="secondary"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-primary-foreground bg-primary hover:bg-primary/90 border-primary hover:border-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:border-muted"
+                        disabled={loading}
+                      >
+                        <ChevronLeft className="w-3 h-3" />
+                      </Button>
+                      <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold bg-primary/10 text-primary border border-primary/20 rounded-md min-w-[3rem]">
+                        {currentMatchIndex + 1}/{topMatches.length}
+                      </span>
+                      <Button
+                        onClick={goToNextMatch}
+                        variant="secondary"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-primary-foreground bg-primary hover:bg-primary/90 border-primary hover:border-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:border-muted"
+                        disabled={loading}
+                      >
+                        <ChevronRight className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  "{topMatches[0].title}" in {topMatches[0].city} is a{' '}
-                  {Math.round(topMatches[0].compatibility_score)}% match
-                  {topMatches[0].application_deadline && 
-                    `. Apply before ${new Date(topMatches[0].application_deadline).toLocaleDateString()}`}
+                  "{currentMatch.title}" in {currentMatch.city} is a{' '}
+                  {Math.round(currentMatch.compatibility_score)}% match
+                  {currentMatch.application_deadline &&
+                    `. Apply before ${new Date(currentMatch.application_deadline).toLocaleDateString()}`}
                 </p>
-                <button
-                  onClick={() => router.push(`/gigs/${topMatches[0].id}`)}
-                  className="mt-2 text-xs text-primary hover:text-foreground font-medium transition-colors"
+                <Button
+                  onClick={() => router.push(`/gigs/${currentMatch.id}`)}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
                 >
                   View Gig →
-                </button>
+                </Button>
               </div>
             </div>
           </div>

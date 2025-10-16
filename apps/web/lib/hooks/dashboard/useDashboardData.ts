@@ -75,7 +75,8 @@ export const useDashboardData = () => {
         const { data: compatibleGigs } = await (supabase as any)
           .rpc('find_compatible_gigs_for_user', {
             p_profile_id: profileData.id,
-            p_limit: 3
+            p_limit: 3,
+            p_min_score: 40.0
           })
 
         if (compatibleGigs) {

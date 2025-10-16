@@ -62,21 +62,21 @@ export function PendingShowcaseApprovals() {
     switch (status) {
       case 'pending_approval':
         return (
-          <Badge className="bg-yellow-100 text-yellow-800">
+          <Badge variant="info">
             <Clock className="w-3 h-3 mr-1" />
             Pending Your Approval
           </Badge>
         );
       case 'blocked_by_changes':
         return (
-          <Badge className="bg-red-100 text-red-800">
+          <Badge variant="destructive">
             <CheckSquare className="w-3 h-3 mr-1" />
             Blocked by Changes
           </Badge>
         );
       case 'changes_requested':
         return (
-          <Badge className="bg-orange-100 text-orange-800">
+          <Badge variant="warning">
             <CheckSquare className="w-3 h-3 mr-1" />
             Changes Requested
           </Badge>
@@ -255,16 +255,16 @@ export function PendingShowcaseApprovals() {
                           {showcase.approved_talents || 0}/{showcase.total_talents}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                      <div className="w-full bg-muted rounded-full h-1 mt-1">
                         <div 
-                          className="bg-green-600 h-1 rounded-full transition-all duration-300"
+                          className="bg-primary h-1 rounded-full transition-all duration-300"
                           style={{ 
                             width: `${((showcase.approved_talents || 0) / showcase.total_talents) * 100}%` 
                           }}
                         ></div>
                       </div>
                       {showcase.change_requests && showcase.change_requests > 0 && (
-                        <p className="text-xs text-orange-600 mt-1">
+                        <p className="text-xs text-orange-700 dark:text-orange-400 mt-1">
                           {showcase.change_requests} change request{showcase.change_requests !== 1 ? 's' : ''}
                         </p>
                       )}

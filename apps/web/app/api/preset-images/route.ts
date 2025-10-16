@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // Filter to only show items with generation_metadata (AI-generated content)
     const { data: images, error: imagesError } = await supabase
       .from('playground_gallery')
-      .select('id, image_url, thumbnail_url, video_url, media_type, title, description, tags, user_id, created_at, generation_metadata')
+      .select('id, image_url, thumbnail_url, video_url, media_type, title, description, tags, user_id, created_at, generation_metadata, width, height')
       .not('generation_metadata', 'is', null)
       .not('generation_metadata', 'eq', '{}')
       .order('created_at', { ascending: false })
@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch preset images', details: imagesError }, { status: 500 });
     }
 
+    
     if (!images || images.length === 0) {
       console.log('No playground_gallery images found, falling back to platform_images');
 
@@ -86,6 +87,8 @@ export async function GET(request: NextRequest) {
         tags: image.tags || [],
         created_at: image.created_at,
         user_id: image.user_id,
+        width: image.width,
+        height: image.height,
         users_profile: profile
       };
     });

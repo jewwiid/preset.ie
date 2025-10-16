@@ -50,7 +50,7 @@ interface UserProfile {
   availability_status?: string
   account_status?: string
   verification_badges?: VerificationBadge[]
-  talent_categoriess?: string[]
+  talent_categories?: string[]
   height_cm?: number
   eye_color?: string
   hair_color?: string
@@ -213,7 +213,7 @@ async function getUserProfile(handle: string): Promise<ProfileData | null> {
         studio_name,
         availability_status,
         account_status,
-        talent_categoriess,
+        talent_categories,
         height_cm,
         eye_color,
         hair_color
@@ -669,11 +669,11 @@ export default async function UserProfilePage({ params }: PageProps) {
               {/* Additional Professional Details */}
               <div className="space-y-6">
                 {/* Talent Categorys */}
-                {profile.account_type?.includes('TALENT') && (profile as any).talent_categoriess && (profile as any).talent_categoriess.length > 0 && (
+                {profile.account_type?.includes('TALENT') && (profile as any).talent_categories && (profile as any).talent_categories.length > 0 && (
                   <div>
                     <h3 className="text-sm font-semibold text-muted-foreground mb-2">Talent Categorys</h3>
                     <div className="flex flex-wrap gap-2">
-                      {(profile as any).talent_categoriess.map((role: string, index: number) => (
+                      {(profile as any).talent_categories.map((role: string, index: number) => (
                         <span
                           key={`role-${index}`}
                           className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary border border-primary/20"

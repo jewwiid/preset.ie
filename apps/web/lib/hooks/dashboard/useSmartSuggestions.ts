@@ -49,7 +49,188 @@ interface SmartSuggestionsData {
   error: string | null
 }
 
+// Basic compatibility calculation (identical to Matchmaker for consistency)
+const calculateBasicCompatibility = async (gig: any, userProfile: any): Promise<number> => {
+  let score = 0
+  const matched = []
+
+  // 1. Primary role matching (35 points) - Core compatibility
+  if (gig.looking_for && userProfile.primary_skill && gig.looking_for.includes(userProfile.primary_skill)) {
+    score += 35
+    matched.push(`Perfect role: ${userProfile.primary_skill}`)
+  }
+
+  // 2. Category/role alignment (15 points) - Secondary role match
+  if (gig.looking_for_types && userProfile.talent_categories && userProfile.talent_categories.some(cat => gig.looking_for_types.includes(cat))) {
+    score += 15
+    matched.push('Category match')
+  }
+
+  // 3. Location bonus (12 points) - Proximity advantage
+  if (gig.location_text && userProfile.city && gig.location_text.toLowerCase().includes(userProfile.city.toLowerCase())) {
+    score += 12
+    matched.push(`Same city: ${userProfile.city}`)
+  } else if (gig.location_text && userProfile.country && gig.location_text.toLowerCase().includes(userProfile.country.toLowerCase())) {
+    score += 6  // Half points for same country
+    matched.push(`Same country: ${userProfile.country}`)
+  }
+
+  // 4. Granular preference matching (using gig.applicant_preferences or basic checks)
+  if (gig.applicant_preferences) {
+    const prefs = gig.applicant_preferences
+
+    // Height matching (8 points) - Range-based scoring
+    if (prefs.physical?.height_range && userProfile.height_cm) {
+      const { min, max } = prefs.physical.height_range
+      if (min && max && userProfile.height_cm >= min && userProfile.height_cm <= max) {
+        score += 8
+        matched.push(`Height match: ${userProfile.height_cm}cm`)
+      } else if (min && userProfile.height_cm >= min) {
+        // Partial points for being above minimum
+        const margin = Math.min(10, userProfile.height_cm - min)
+        score += Math.round(4 * (margin / 10)) // 0-4 points based on how close to minimum
+        matched.push(`Height above minimum: ${userProfile.height_cm}cm`)
+      } else if (max && userProfile.height_cm <= max) {
+        // Partial points for being below maximum
+        const margin = Math.min(10, max - userProfile.height_cm)
+        score += Math.round(4 * (margin / 10)) // 0-4 points based on how close to maximum
+        matched.push(`Height below maximum: ${userProfile.height_cm}cm`)
+      }
+    }
+
+    // Eye color matching (5 points)
+    if (prefs.physical?.eye_color?.preferred?.length > 0 && userProfile.eye_color) {
+      if (prefs.physical.eye_color.preferred.includes(userProfile.eye_color)) {
+        score += 5
+        matched.push(`Eye color: ${userProfile.eye_color}`)
+      }
+    }
+
+    // Hair color matching (5 points)
+    if (prefs.physical?.hair_color?.preferred?.length > 0 && userProfile.hair_color) {
+      if (prefs.physical.hair_color.preferred.includes(userProfile.hair_color)) {
+        score += 5
+        matched.push(`Hair color: ${userProfile.hair_color}`)
+      }
+    }
+
+    // Weight matching (6 points) - Range-based for gigs that specify weight
+    if (prefs.physical?.weight_range && userProfile.weight_kg) {
+      const { min, max } = prefs.physical.weight_range
+      if (min && max && userProfile.weight_kg >= min && userProfile.weight_kg <= max) {
+        score += 6
+        matched.push(`Weight match: ${userProfile.weight_kg}kg`)
+      } else if (min && userProfile.weight_kg >= min) {
+        // Partial points for being close to minimum
+        const margin = Math.min(5, userProfile.weight_kg - min)
+        score += Math.round(3 * (margin / 5)) // 0-3 points
+        matched.push(`Weight close to requirement: ${userProfile.weight_kg}kg`)
+      } else if (max && userProfile.weight_kg <= max) {
+        // Partial points for being close to maximum
+        const margin = Math.min(5, max - userProfile.weight_kg)
+        score += Math.round(3 * (margin / 5)) // 0-3 points
+        matched.push(`Weight close to requirement: ${userProfile.weight_kg}kg`)
+      }
+    }
+
+    // Body type matching (4 points)
+    if (prefs.physical?.body_type?.preferred?.length > 0 && userProfile.body_type) {
+      if (prefs.physical.body_type.preferred.includes(userProfile.body_type)) {
+        score += 4
+        matched.push(`Body type: ${userProfile.body_type}`)
+      }
+    }
+
+    // Tattoos preference matching (3 points)
+    if (prefs.physical?.tattoos !== undefined && userProfile.tattoos !== undefined) {
+      if (prefs.physical.tattoos === 'required' && userProfile.tattoos) {
+        score += 3
+        matched.push('Has tattoos (preferred)')
+      } else if (prefs.physical.tattoos === 'no_tattoos' && !userProfile.tattoos) {
+        score += 3
+        matched.push('No tattoos (preferred)')
+      } else if (prefs.physical.tattoos === 'acceptable') {
+        score += 1  // Small bonus for acceptable
+        matched.push('Tattoos acceptable')
+      }
+    }
+
+    // Piercings preference matching (3 points)
+    if (prefs.physical?.piercings !== undefined && userProfile.piercings !== undefined) {
+      if (prefs.physical.piercings === 'required' && userProfile.piercings) {
+        score += 3
+        matched.push('Has piercings (preferred)')
+      } else if (prefs.physical.piercings === 'no_piercings' && !userProfile.piercings) {
+        score += 3
+        matched.push('No piercings (preferred)')
+      } else if (prefs.physical.piercings === 'acceptable') {
+        score += 1  // Small bonus for acceptable
+        matched.push('Piercings acceptable')
+      }
+    }
+
+    // Hair length matching (2 points)
+    if (prefs.physical?.hair_length?.preferred?.length > 0 && userProfile.hair_length) {
+      if (prefs.physical.hair_length.preferred.includes(userProfile.hair_length)) {
+        score += 2
+        matched.push(`Hair length: ${userProfile.hair_length}`)
+      }
+    }
+
+    // Skin tone matching (2 points)
+    if (prefs.physical?.skin_tone?.preferred?.length > 0 && userProfile.skin_tone) {
+      if (prefs.physical.skin_tone.preferred.includes(userProfile.skin_tone)) {
+        score += 2
+        matched.push(`Skin tone: ${userProfile.skin_tone}`)
+      }
+    }
+
+    // Experience level matching (10 points)
+    if (prefs.professional?.required_years_experience && userProfile.years_experience) {
+      const required = prefs.professional.required_years_experience
+      if (userProfile.years_experience >= required) {
+        score += 10
+        matched.push(`Experience: ${userProfile.years_experience} years`)
+      } else {
+        // Partial points based on how close to requirement
+        const ratio = userProfile.years_experience / required
+        score += Math.round(10 * ratio)
+        matched.push(`Experience: ${userProfile.years_experience} years (needs ${required})`)
+      }
+    }
+  } else {
+    // Fallback: Basic experience scoring if no preferences
+    if (userProfile.years_experience) {
+      if (userProfile.years_experience >= 5) {
+        score += 10
+        matched.push(`Experienced: ${userProfile.years_experience} years`)
+      } else if (userProfile.years_experience >= 2) {
+        score += 5
+        matched.push(`Some experience: ${userProfile.years_experience} years`)
+      }
+    }
+  }
+
+  // 5. Professional skills matching (10 points) - Contributor-specific
+  if (gig.looking_for && userProfile.professional_skills && Array.isArray(userProfile.professional_skills)) {
+    const skillMatches = userProfile.professional_skills.filter(skill =>
+      gig.looking_for.some(lookingFor =>
+        lookingFor.toLowerCase().includes(skill.toLowerCase()) ||
+        skill.toLowerCase().includes(lookingFor.toLowerCase())
+      )
+    )
+    if (skillMatches.length > 0) {
+      const skillPoints = Math.min(10, skillMatches.length * 3)
+      score += skillPoints
+      matched.push(`Skills: ${skillMatches.join(', ')}`)
+    }
+  }
+
+  return Math.min(100, score)
+}
+
 export function useSmartSuggestions(profile: UserProfile | null): SmartSuggestionsData {
+
   const [topMatches, setTopMatches] = useState<GigMatch[]>([])
   const [matchingInsights, setMatchingInsights] = useState<MatchingInsights | null>(null)
   const [nearbyGigs, setNearbyGigs] = useState<NearbyGig[]>([])
@@ -59,7 +240,11 @@ export function useSmartSuggestions(profile: UserProfile | null): SmartSuggestio
   
   useEffect(() => {
     async function fetchSuggestions() {
-      if (!profile?.id) {
+          // Need to get the actual user ID, not the profile ID
+      // The profile object has 'id' which is the profile ID, but we need user_id for compatibility calculations
+      const userId = (profile as any).user_id || profile?.id
+
+      if (!userId) {
         setLoading(false)
         return
       }
@@ -71,28 +256,143 @@ export function useSmartSuggestions(profile: UserProfile | null): SmartSuggestio
           return
         }
         
-        // Get top 3 gig matches using existing matchmaking function
-        const { data: matches, error: matchError } = await (supabase as any)
-          .rpc('find_compatible_gigs_for_user', { 
-            p_profile_id: profile.id, 
-            p_limit: 5 
-          })
-        
-        if (matchError) {
-          console.error('Error fetching gig matches:', matchError)
+        // Get top 5 gig matches using the same advanced compatibility function as Matchmaker
+        const { data: allGigs, error: gigsError } = await (supabase as any)
+          .from('gigs')
+          .select(`
+            id,
+            title,
+            description,
+            location_text,
+            comp_type,
+            application_deadline,
+            looking_for,
+            looking_for_types,
+            applicant_preferences,
+            status
+          `)
+          .eq('status', 'PUBLISHED')
+          .order('created_at', { ascending: false })
+          .limit(20)
+
+        if (gigsError) {
+          console.error('Error fetching gigs:', gigsError)
+        } else if (!allGigs || allGigs.length === 0) {
+          return
         } else {
-          setTopMatches(matches || [])
-          
+          // Get user profile for compatibility calculation (same as Matchmaker)
+          const { data: userProfile, error: profileError } = await (supabase as any)
+            .from('users_profile')
+            .select(`
+              primary_skill,
+              talent_categories,
+              city,
+              country,
+              height_cm,
+              weight_kg,
+              eye_color,
+              hair_color,
+              hair_length,
+              skin_tone,
+              body_type,
+              tattoos,
+              piercings,
+              years_experience,
+              professional_skills,
+              contributor_roles
+            `)
+            .eq('user_id', userId)
+            .single()
+
+          if (profileError) {
+          console.error('Error fetching user profile:', profileError)
+          return
+        }
+
+          // Calculate compatibility for each gig using the same logic as Matchmaker
+          const gigMatches = []
+
+          for (const gig of allGigs || []) {
+            try {
+              let compatibilityScore = 0
+
+              // Use the same advanced compatibility function as Matchmaker
+              if (gig.applicant_preferences) {
+                const { data: advancedScore, error: advancedError } = await (supabase as any)
+                  .rpc('calculate_gig_compatibility_with_preferences', {
+                    p_profile_id: userId,
+                    p_gig_id: gig.id
+                  })
+
+                if (!advancedError && advancedScore && advancedScore.length > 0) {
+                  const rawScore = advancedScore[0].compatibility_score
+                  compatibilityScore = parseFloat(rawScore) || 0
+
+                  // If advanced calculation gives 0, fall back to basic to get some scores
+                  if (compatibilityScore === 0) {
+                    compatibilityScore = await calculateBasicCompatibility(gig, userProfile)
+                  }
+                } else {
+                  // Fall back to basic calculation if advanced fails
+                  compatibilityScore = await calculateBasicCompatibility(gig, userProfile)
+                }
+              } else {
+                // Use basic calculation for gigs without preferences
+                compatibilityScore = await calculateBasicCompatibility(gig, userProfile)
+              }
+
+              // Only include gigs with minimum compatibility score
+              if (compatibilityScore >= 30) {
+                const locationText = gig.location_text || 'Location TBD'
+                let city = 'Location TBD'
+                let country = ''
+
+                // Parse location
+                if (locationText && locationText !== 'Location TBD') {
+                  const parts = locationText.split(',')
+                  if (parts.length >= 2) {
+                    city = parts[0]?.trim() || 'Location TBD'
+                    country = parts.slice(1).join(',').trim() || ''
+                  } else {
+                    city = locationText
+                  }
+                }
+
+                gigMatches.push({
+                  id: gig.id,
+                  title: gig.title,
+                  city,
+                  country,
+                  location_text: locationText,
+                  comp_type: gig.comp_type || 'TFP',
+                  application_deadline: gig.application_deadline,
+                  compatibility_score: compatibilityScore,
+                  role_match_status: compatibilityScore >= 80 ? 'perfect' : compatibilityScore >= 60 ? 'partial' : 'weak',
+                  looking_for: gig.looking_for || []
+                })
+              }
+            } catch (error) {
+              console.error(`Error processing gig ${gig.id}:`, error)
+              continue
+            }
+          }
+
+          // Sort by compatibility score and take top 5
+          gigMatches.sort((a, b) => b.compatibility_score - a.compatibility_score)
+          const top5Matches = gigMatches.slice(0, 5)
+
+          setTopMatches(top5Matches)
+
           // Filter for deadline alerts (closing in 3 days)
           const threeDaysFromNow = new Date()
           threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3)
-          
-          const urgentGigs = (matches || []).filter((gig: GigMatch) => {
+
+          const urgentGigs = top5Matches.filter((gig: GigMatch) => {
             if (!gig.application_deadline) return false
             const deadline = new Date(gig.application_deadline)
             return deadline <= threeDaysFromNow && deadline > new Date()
           })
-          
+
           setDeadlineGigs(urgentGigs)
         }
         
@@ -115,7 +415,7 @@ export function useSmartSuggestions(profile: UserProfile | null): SmartSuggestio
     }
     
     fetchSuggestions()
-  }, [profile?.id])
+  }, [profile?.id, (profile as any)?.user_id])
   
   return { 
     topMatches, 

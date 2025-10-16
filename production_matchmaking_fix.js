@@ -65,10 +65,10 @@ async function applyProductionFixes() {
                   END IF;
               END IF;
 
-              -- Secondary role matching using looking_for_types (30 points)
-              IF v_gig.looking_for_types IS NOT NULL AND array_length(v_gig.looking_for_types, 1) > 0 THEN
-                  IF v_profile.talent_categories && v_gig.looking_for_types OR
-                     v_profile.primary_skill = ANY(v_gig.looking_for_types) THEN
+              -- Secondary role matching using looking_for (30 points)
+              IF v_gig.looking_for IS NOT NULL AND array_length(v_gig.looking_for, 1) > 0 THEN
+                  IF v_profile.talent_categories && v_gig.looking_for OR
+                     v_profile.primary_skill = ANY(v_gig.looking_for) THEN
                       v_score := v_score + 30;
                       v_factors := jsonb_set(v_factors, '{category_match}', 'true'::jsonb);
                   END IF;

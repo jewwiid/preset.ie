@@ -25,6 +25,7 @@ import { ModerationQueue } from '../components/admin/ModerationQueue'
 import { ModerationAnalytics } from '../components/admin/ModerationAnalytics'
 import { FeaturedPresetsQueue } from '../components/admin/FeaturedPresetsQueue'
 import { InviteSystemManager } from '../components/admin/InviteSystemManager'
+import HelpArticlesManager from '../components/admin/HelpArticlesManager'
 
 interface PlatformStats {
   totalUsers: number
@@ -335,6 +336,7 @@ export default function AdminDashboard() {
     { id: 'verification', label: 'Verifications', icon: CheckCircle },
     { id: 'featured-presets', label: 'Featured Presets', icon: Star },
     { id: 'platform-images', label: 'Platform Images', icon: ImageIcon },
+    { id: 'help-articles', label: 'Help Articles', icon: FileText },
     { id: 'credits', label: 'Credits', icon: CreditCard },
   ]
 
@@ -530,6 +532,12 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Help Articles Tab */}
+        {activeTab === 'help-articles' && (
+          <div className="space-y-6">
+            <HelpArticlesManager />
+          </div>
+        )}
 
         {/* Credits Tab */}
         {activeTab === 'credits' && (

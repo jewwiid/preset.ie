@@ -436,10 +436,9 @@ export default function OffersPage() {
                           {activeTab === 'sent' && offer.status === 'pending' && (
                             <div className="mt-4 flex justify-end">
                               <Button
-                                variant="outline"
+                                variant="destructive"
                                 size="sm"
                                 onClick={() => withdrawOffer(offer.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <X className="h-4 w-4 mr-2" />
                                 Withdraw Offer

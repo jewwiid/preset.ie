@@ -1,0 +1,23 @@
+Backup started at Thu Oct 16 00:03:52 IST 2025
+Project: zbsmgymyfhnwjdnmlelr
+URL: https://zbsmgymyfhnwjdnmlelr.supabase.co
+
+✅ Exported: offers
+✅ Exported: listings
+✅ Exported: gigs
+✅ Exported: applications
+✅ Exported: messages
+✅ Exported: notifications
+✅ Exported: presets
+✅ Exported: showcases
+✅ Exported: moodboards
+✅ Exported: gig_invitations
+✅ Exported: reports
+✅ Exported: verification_requests
+✅ Exported: media
+
+Backup completed at Thu Oct 16 00:04:00 IST 2025
+Tables checked: 24
+Tables exported: 13
+File size: 228K
+Backup file: ./backup/table-backups/table_backup_20251016_000352.sql

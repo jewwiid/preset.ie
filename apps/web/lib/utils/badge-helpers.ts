@@ -137,22 +137,22 @@ export function getStatusBadgeColor(status: string): string {
     case 'approved':
     case 'completed':
     case 'success':
-      return 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-300';
+      return 'bg-primary/10 text-primary ring-primary/20';
 
     case 'pending':
     case 'in_progress':
     case 'processing':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+      return 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 ring-yellow-500/20';
 
     case 'inactive':
     case 'rejected':
     case 'failed':
     case 'error':
-      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      return 'bg-destructive/10 text-destructive ring-destructive/20';
 
     case 'draft':
     case 'archived':
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+      return 'bg-muted text-muted-foreground ring-border';
 
     default:
       return 'bg-muted text-muted-foreground';
@@ -166,13 +166,13 @@ export function getStatusBadgeColor(status: string): string {
 export function getPriorityBadgeColor(priority: 'low' | 'medium' | 'high' | 'urgent'): string {
   switch (priority) {
     case 'low':
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+      return 'bg-muted text-muted-foreground ring-border';
     case 'medium':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      return 'bg-secondary text-secondary-foreground ring-border';
     case 'high':
-      return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+      return 'bg-orange-500/10 text-orange-700 dark:text-orange-400 ring-orange-500/20';
     case 'urgent':
-      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+      return 'bg-destructive/10 text-destructive ring-destructive/20';
     default:
       return 'bg-muted text-muted-foreground';
   }
@@ -188,15 +188,15 @@ export function getSubscriptionTierColor(tier: string): string {
   switch (normalizedTier) {
     case 'free':
     case 'basic':
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
+      return 'bg-muted text-muted-foreground ring-border';
 
     case 'pro':
     case 'premium':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+      return 'bg-secondary text-secondary-foreground ring-border';
 
     case 'enterprise':
     case 'business':
-      return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+      return 'bg-primary/10 text-primary ring-primary/20';
 
     default:
       return 'bg-muted text-muted-foreground';

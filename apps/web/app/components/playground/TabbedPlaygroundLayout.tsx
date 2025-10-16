@@ -636,6 +636,10 @@ export default function TabbedPlaygroundLayout({
   }, [videoGenerationStatus, generatedVideoUrl, refreshVideos, onVideoGenerated])
 
   const handleSaveToGallery = useCallback(async (url: string) => {
+    console.log('🔍 Save to gallery called with URL:', url)
+    console.log('🔍 Session token available:', !!sessionToken)
+    console.log('🔍 Current project:', currentProject?.id)
+
     // Check if this is the newly generated video
     const isNewlyGeneratedVideo = url === generatedVideoUrl && generatedVideoMetadata
 
@@ -684,17 +688,26 @@ export default function TabbedPlaygroundLayout({
       setSaveDialogOpen(true)
       return
     }
-  }, [generatedVideoUrl, generatedVideoMetadata, savedVideos, currentProject])
+  }, [generatedVideoUrl, generatedVideoMetadata, savedVideos, currentProject, sessionToken])
 
   // Actually perform the save after user confirms in dialog
   const performSaveToGallery = useCallback(async (data: { title: string; description: string; tags: string[] }) => {
-    if (!pendingSaveUrl) return
+    console.log('🚀 performSaveToGallery called with data:', data)
+    console.log('🚀 pendingSaveUrl:', pendingSaveUrl)
+    console.log('🚀 pendingSaveMetadata:', pendingSaveMetadata)
+    console.log('🚀 sessionToken available:', !!sessionToken)
+
+    if (!pendingSaveUrl) {
+      console.log('❌ No pendingSaveUrl, returning')
+      return
+    }
 
     const url = pendingSaveUrl
     const metadata = pendingSaveMetadata
 
     // Check if this is a video
     const isVideo = metadata?.type === 'video'
+    console.log('🚀 isVideo:', isVideo)
 
     if (isVideo) {
       // This is the newly generated video, use the metadata we stored
@@ -844,7 +857,7 @@ export default function TabbedPlaygroundLayout({
     if (savedGalleryRef.current) {
       savedGalleryRef.current.refresh()
     }
-  }, [sessionToken, generatedVideoMetadata, savedVideos, currentProject, refreshVideos, showFeedback])
+  }, [sessionToken, generatedVideoMetadata, savedVideos, currentProject, refreshVideos, showFeedback, pendingSaveUrl, pendingSaveMetadata])
 
   const handleDeleteVideo = useCallback(async (videoUrl: string) => {
     if (!sessionToken) return

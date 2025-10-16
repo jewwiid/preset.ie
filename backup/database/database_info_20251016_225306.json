@@ -1,0 +1,1 @@
+{"code":"PGRST202","details":"Searched for the function public.get_database_info without parameters or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.","hint":"Perhaps you meant to call the function public.get_user_rating_info","message":"Could not find the function public.get_database_info without parameters in the schema cache"}

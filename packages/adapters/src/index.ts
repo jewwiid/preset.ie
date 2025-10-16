@@ -22,6 +22,7 @@ export * from './clients/supabase.client';
 // Service adapters
 export * from './services/featured-image.service';
 export * from './services/stock-photo-downloader.service';
+export * from './services/unified-media-storage.service';
 export * from './services/pexels.service';
 export * from './services/unsplash.service';
 export * from './services/pixabay.service';

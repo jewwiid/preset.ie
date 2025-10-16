@@ -107,3 +107,9 @@ temp_*.ts
 
 # Test images
 *-profile-updated.png
+
+.documents/
+.docs/
+.backup/
+
+.sh

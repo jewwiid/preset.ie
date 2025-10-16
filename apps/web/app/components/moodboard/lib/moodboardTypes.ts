@@ -37,6 +37,9 @@ export interface MoodboardItem {
   downloadStatus?: 'pending' | 'completed' | 'failed'
   downloadError?: string
   permanentlyStored?: boolean
+  storage_method?: string
+  media_id?: string
+  unified_media_id?: string
 }
 
 /**

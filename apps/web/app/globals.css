@@ -106,34 +106,7 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--primary/10);
 }
 
-/* Button-specific hover states */
-.btn-secondary {
-  background-color: var(--secondary);
-  color: var(--secondary-foreground);
-  border: 1px solid var(--border);
-  transition: all 0.2s ease-in-out;
-}
-
-.btn-secondary:hover {
-  background-color: var(--accent);
-  color: var(--accent-foreground);
-}
-
-.btn-secondary:active {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
-}
-
-/* Card-specific hover states */
-.card-interactive {
-  transition: all 0.2s ease-in-out;
-}
-
-.card-interactive:hover {
-  background-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
+/* Custom button and card classes removed - using Shadcn Button and Card components */
 
 :root {
   /* Enhanced OKLCH Theme - Modern Design System with Light Teal Tints */
@@ -855,4 +828,10 @@ h1[class*="font-"], h2[class*="font-"], h3[class*="font-"], h4[class*="font-"], 
 
 .animate-shake {
   animation: shake 0.6s ease-in-out;
+}
+
+/* Chat input placeholder styling */
+.chat-input-placeholder::placeholder {
+  color: #5c6169 !important;
+  opacity: 1 !important;
 }

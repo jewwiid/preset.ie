@@ -61,7 +61,7 @@ function renderPresetTypeBadge(presetId: string) {
 function getGenerationModeBadge(preset: Preset) {
   if (preset.cinematic_settings?.generationMode === 'image-to-image') {
     return (
-      <Badge variant="outline" className="text-xs bg-orange-50 border-orange-200 text-orange-700">
+      <Badge variant="secondary" className="text-xs">
         Img2Img
       </Badge>
     );
