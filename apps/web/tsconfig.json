@@ -21,7 +21,9 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@preset/adapters": ["../../packages/adapters/src"]
+      "@preset/adapters": ["../../packages/adapters/src"],
+      "@preset/types": ["../../packages/types/src"],
+      "@preset/services": ["../../packages/services/src"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", "next.config.js", ".next/types/**/*.ts"],
