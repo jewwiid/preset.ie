@@ -295,138 +295,114 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
           <div className="col-span-full text-xs text-muted-foreground font-medium mb-2">
             🎨 Playground Gallery ({filtered.playground.length})
           </div>
-          {filtered.playground.map((item) => (
-            <div key={`playground-${item.id}`} className="relative group">
-              <button
-                type="button"
-                className={`relative rounded-2xl overflow-hidden border-2 transition-all w-full shadow-lg hover:shadow-xl ${
-                  media.selectedMedia.some(media => media.id === `playground-${item.id}`)
-                    ? 'border-primary ring-4 ring-primary/20 scale-105'
-                    : 'border-border/30 hover:border-primary/60'
-                }`}
-                style={{
-                  aspectRatio: item.width && item.height ? `${item.width}/${item.height}` : '1/1',
-                  minHeight: '120px'
-                }}
-                onClick={() => media.handleMediaSelect({
-                  id: `playground-${item.id}`,
-                  url: item.image_url || item.video_url,
-                  type: item.media_type === 'video' ? 'video' as const : 'image' as const,
-                  thumbnail_url: item.thumbnail_url || item.image_url,
-                  metadata: item.generation_metadata || {},
-                  preset: item.generation_metadata?.preset || item.generation_metadata?.style || 'realistic',
-                  source: 'playground_gallery'
-                })}
-                disabled={form.loading || !subscription.canCreateShowcase() || 
-                  (media.selectedMedia.length >= 6 && !media.selectedMedia.some(media => media.id === `playground-${item.id}`))}
-              >
-                {item.media_type === 'video' ? (
-                  <video
-                    src={item.video_url || item.image_url}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                    muted
-                    preload="metadata"
-                    poster={item.thumbnail_url || item.image_url}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                ) : (
-                  <div className="relative w-full h-full">
-                    {/* Debug overlay showing URL */}
-                    <div className="absolute top-0 left-0 right-0 bg-black/70 text-white text-xs p-1 z-10 opacity-0 hover:opacity-100 transition-opacity">
-                      URL: {item.image_url?.slice(0, 50)}...
-                    </div>
-                    {/* Fallback for missing URL */}
-                    {!item.image_url && (
-                      <div className="absolute inset-0 bg-muted/80 flex items-center justify-center text-muted-foreground text-xs p-2 text-center">
-                        <div>No URL<br/>ID: {item.id?.slice(0, 8)}</div>
-                      </div>
-                    )}
-                      <img
-                      src={item.image_url}
-                      alt={item.title || 'Playground image'}
-                      className="w-full h-full object-contain transition-transform group-hover:scale-110 bg-muted/20"
-                    onError={(e) => {
-                      console.error('Failed to load playground image:', {
-                        image_url: item.image_url,
-                        item_id: item.id,
-                        item_type: item.media_type,
-                        width: item.width,
-                        height: item.height
-                      });
-                      const target = e.currentTarget;
-                      target.style.display = 'none';
-                      // Show error placeholder with debug info
-                      const parent = target.parentElement;
-                      if (parent && !parent.querySelector('.error-placeholder')) {
-                        const errorDiv = document.createElement('div');
-                        errorDiv.className = 'error-placeholder absolute inset-0 bg-muted/50 flex items-center justify-center text-muted-foreground text-xs p-2 text-center';
-                        errorDiv.innerHTML = `<div>Load Error<br/>ID: ${item.id?.slice(0, 8)}</div>`;
-                        parent.appendChild(errorDiv);
-                      }
-                    }}
-                    onLoad={() => {
-                      console.log('✅ Successfully loaded playground image:', {
-                        image_url: item.image_url,
-                        item_id: item.id,
-                        dimensions: `${item.width}x${item.height}`
-                      });
-                    }}
-                    />
-                  </div>
-                )}
+          {filtered.playground.map((item) => {
+            const isSelected = media.selectedMedia.some(media => media.id === `playground-${item.id}`);
+            const aspectRatio = item.width && item.height ? `${item.width}/${item.height}` : '1/1';
 
-                {/* Solid overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity" />
-                
-                {/* Selection overlay */}
-                {media.selectedMedia.some(media => media.id === `playground-${item.id}`) && (
-                  <div className="absolute inset-0 bg-primary/30 flex items-center justify-center backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
-                      <Check className="h-5 w-5 text-primary-foreground" />
+            return (
+              <div key={`playground-${item.id}`} className="relative group">
+                <button
+                  type="button"
+                  className={`relative rounded-xl overflow-hidden border-2 transition-all w-full shadow-md hover:shadow-lg ${
+                    isSelected
+                      ? 'border-primary ring-2 ring-primary/20 scale-105'
+                      : 'border-border/30 hover:border-primary/60'
+                  }`}
+                  style={{
+                    aspectRatio: aspectRatio,
+                    minHeight: '80px'
+                  }}
+                  onClick={() => media.handleMediaSelect({
+                    id: `playground-${item.id}`,
+                    url: item.image_url || item.video_url,
+                    type: item.media_type === 'video' ? 'video' as const : 'image' as const,
+                    thumbnail_url: item.thumbnail_url || item.image_url,
+                    metadata: item.generation_metadata || {},
+                    preset: item.generation_metadata?.preset || item.generation_metadata?.style || 'realistic',
+                    source: 'playground_gallery',
+                    width: item.width,
+                    height: item.height
+                  })}
+                  disabled={form.loading || !subscription.canCreateShowcase() ||
+                    (media.selectedMedia.length >= 6 && !isSelected)}
+                >
+                  {item.media_type === 'video' ? (
+                    <video
+                      src={item.video_url || item.image_url}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105 bg-muted/20"
+                      muted
+                      preload="metadata"
+                      poster={item.thumbnail_url || item.image_url}
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <div className="relative w-full h-full">
+                      {/* Fallback for missing URL */}
+                      {!item.image_url && (
+                        <div className="absolute inset-0 bg-muted/80 flex items-center justify-center text-muted-foreground text-xs p-2 text-center">
+                          <div>No URL<br/>ID: {item.id?.slice(0, 8)}</div>
+                        </div>
+                      )}
+                      <img
+                        src={item.image_url}
+                        alt={item.title || 'Playground image'}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105 bg-muted/20"
+                        onError={(e) => {
+                          console.error('Failed to load playground image:', {
+                            image_url: item.image_url,
+                            item_id: item.id,
+                            item_type: item.media_type,
+                            width: item.width,
+                            height: item.height
+                          });
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          // Show error placeholder with debug info
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('.error-placeholder')) {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'error-placeholder absolute inset-0 bg-muted/50 flex items-center justify-center text-muted-foreground text-xs p-2 text-center';
+                            errorDiv.innerHTML = `<div>Load Error<br/>ID: ${item.id?.slice(0, 8)}</div>`;
+                            parent.appendChild(errorDiv);
+                          }
+                        }}
+                        onLoad={() => {
+                          console.log('✅ Successfully loaded playground image:', {
+                            image_url: item.image_url,
+                            item_id: item.id,
+                            dimensions: `${item.width}x${item.height}`
+                          });
+                        }}
+                      />
                     </div>
-                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
-                      Click to deselect
+                  )}
+
+                  {/* Compact overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                  {/* Selection indicator */}
+                  {isSelected && (
+                    <div className="absolute top-1 right-1 bg-primary rounded-full p-1 shadow-lg">
+                      <Check className="h-3 w-3 text-primary-foreground" />
                     </div>
-                  </div>
-                )}
-                
-                {/* Content overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 text-white transform translate-y-full group-hover:translate-y-0 transition-transform">
-                  <div className="space-y-1">
-                    {item.generation_metadata?.preset && (
-                      <div className="text-xs font-medium bg-black/50 px-2 py-1 rounded-full inline-block">
-                        🎨 {item.generation_metadata.preset}
+                  )}
+
+                  {/* Hover info */}
+                  <div className="absolute bottom-0 left-0 right-0 p-2 text-white transform translate-y-full group-hover:translate-y-0 transition-transform">
+                    <div className="text-xs font-medium truncate">
+                      {item.generation_metadata?.preset || 'Playground'}
+                    </div>
+                    {item.width && item.height && (
+                      <div className="text-xs opacity-80">
+                        {item.width} × {item.height}
                       </div>
                     )}
-                    <div className="text-xs opacity-90">Playground Gallery</div>
                   </div>
-                </div>
-                
-                {/* Promoted badge */}
-                {item.is_promoted && (
-                  <div className="absolute top-3 right-3 bg-primary-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
-                    ✓ Promoted
-                  </div>
-                )}
-                
-                {/* Promote button */}
-                {item.can_promote && (
-                  <button
-                    type="button"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      media.promoteToMedia(item.id);
-                    }}
-                    disabled={media.promotingImage === item.id || form.loading}
-                    className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity font-medium shadow-lg"
-                  >
-                    {media.promotingImage === item.id ? '...' : 'Promote'}
-                  </button>
-                )}
-              </button>
-            </div>
-          ))}
+                </button>
+              </div>
+            );
+          })}
         </>
       );
     }
@@ -438,101 +414,99 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
           <div className="col-span-full text-xs text-muted-foreground font-medium mb-2 mt-4">
             📁 Media Library ({filtered.media.length})
           </div>
-          {filtered.media.map((mediaItem) => (
-            <div key={mediaItem.id} className="relative group">
-              <button
-                type="button"
-                onClick={() => media.handleMediaSelect(mediaItem)}
-                className={`relative rounded-2xl overflow-hidden border-2 transition-all w-full shadow-lg hover:shadow-xl ${
-                  media.selectedMedia.some(item => item.id === mediaItem.id)
-                    ? 'border-primary ring-4 ring-primary/20 scale-105'
-                    : 'border-border/30 hover:border-primary/60'
-                }`}
-                style={{
-                  aspectRatio: mediaItem.width && mediaItem.height ? `${mediaItem.width}/${mediaItem.height}` : '1/1',
-                  minHeight: '120px'
-                }}
-                disabled={form.loading || !subscription.canCreateShowcase() ||
-                  (media.selectedMedia.length >= 6 && !media.selectedMedia.some(item => item.id === mediaItem.id))}
-              >
-                {mediaItem.type === 'video' ? (
-                  <video
-                    src={mediaItem.url}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                    muted
-                    preload="metadata"
-                    poster={mediaItem.thumbnail_url}
-                  />
-                ) : (
-                  <div className="relative w-full h-full">
-                    {/* Debug overlay showing URL */}
-                    <div className="absolute top-0 left-0 right-0 bg-black/70 text-white text-xs p-1 z-10 opacity-0 hover:opacity-100 transition-opacity">
-                      URL: {(mediaItem.thumbnail_url || mediaItem.url)?.slice(0, 50)}...
-                    </div>
-                    {/* Fallback for missing URL */}
-                    {!(mediaItem.thumbnail_url || mediaItem.url) && (
-                      <div className="absolute inset-0 bg-muted/80 flex items-center justify-center text-muted-foreground text-xs p-2 text-center">
-                        <div>No URL<br/>ID: {mediaItem.id?.slice(0, 8)}</div>
-                      </div>
-                    )}
-                    <img
-                      src={mediaItem.thumbnail_url || mediaItem.url}
-                      alt="Media"
-                      className="w-full h-full object-contain transition-transform group-hover:scale-110 bg-muted/20"
-                    onError={(e) => {
-                      console.error('Failed to load media library image:', mediaItem.thumbnail_url || mediaItem.url);
-                      const target = e.currentTarget;
-                      target.style.display = 'none';
-                      // Show error placeholder
-                      const parent = target.parentElement;
-                      if (parent && !parent.querySelector('.error-placeholder')) {
-                        const errorDiv = document.createElement('div');
-                        errorDiv.className = 'error-placeholder absolute inset-0 bg-muted/50 flex items-center justify-center text-muted-foreground text-xs p-2 text-center';
-                        errorDiv.innerHTML = `<div>Image<br/>Failed<br/>to Load</div>`;
-                        parent.appendChild(errorDiv);
-                      }
-                    }}
-                    onLoad={() => {
-                      console.log('Successfully loaded media library image:', mediaItem.thumbnail_url || mediaItem.url);
-                    }}
+          {filtered.media.map((mediaItem) => {
+            const isSelected = media.selectedMedia.some(item => item.id === mediaItem.id);
+            const aspectRatio = mediaItem.width && mediaItem.height ? `${mediaItem.width}/${mediaItem.height}` : '1/1';
+
+            return (
+              <div key={mediaItem.id} className="relative group">
+                <button
+                  type="button"
+                  onClick={() => media.handleMediaSelect(mediaItem)}
+                  className={`relative rounded-xl overflow-hidden border-2 transition-all w-full shadow-md hover:shadow-lg ${
+                    isSelected
+                      ? 'border-primary ring-2 ring-primary/20 scale-105'
+                      : 'border-border/30 hover:border-primary/60'
+                  }`}
+                  style={{
+                    aspectRatio: aspectRatio,
+                    minHeight: '80px'
+                  }}
+                  disabled={form.loading || !subscription.canCreateShowcase() ||
+                    (media.selectedMedia.length >= 6 && !isSelected)}
+                >
+                  {mediaItem.type === 'video' ? (
+                    <video
+                      src={mediaItem.url}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      muted
+                      preload="metadata"
+                      poster={mediaItem.thumbnail_url}
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="relative w-full h-full">
+                      {/* Fallback for missing URL */}
+                      {!(mediaItem.thumbnail_url || mediaItem.url) && (
+                        <div className="absolute inset-0 bg-muted/80 flex items-center justify-center text-muted-foreground text-xs p-2 text-center">
+                          <div>No URL<br/>ID: {mediaItem.id?.slice(0, 8)}</div>
+                        </div>
+                      )}
+                      <img
+                        src={mediaItem.thumbnail_url || mediaItem.url}
+                        alt="Media"
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105 bg-muted/20"
+                        onError={(e) => {
+                          console.error('Failed to load media library image:', mediaItem.thumbnail_url || mediaItem.url);
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          // Show error placeholder
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('.error-placeholder')) {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'error-placeholder absolute inset-0 bg-muted/50 flex items-center justify-center text-muted-foreground text-xs p-2 text-center';
+                            errorDiv.innerHTML = `<div>Load<br/>Error</div>`;
+                            parent.appendChild(errorDiv);
+                          }
+                        }}
+                        onLoad={() => {
+                          console.log('Successfully loaded media library image:', mediaItem.thumbnail_url || mediaItem.url);
+                        }}
+                      />
+                    </div>
+                  )}
 
-                {/* Solid overlay */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity" />
-                
-                {/* Selection overlay */}
-                {media.selectedMedia.some(selectedItem => selectedItem.id === mediaItem.id) && (
-                  <div className="absolute inset-0 bg-primary/30 flex items-center justify-center backdrop-blur-sm">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
-                      <Check className="h-5 w-5 text-primary-foreground" />
+                  {/* Compact overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                  {/* Selection indicator */}
+                  {isSelected && (
+                    <div className="absolute top-1 right-1 bg-primary rounded-full p-1 shadow-lg">
+                      <Check className="h-3 w-3 text-primary-foreground" />
                     </div>
-                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
-                      Click to deselect
+                  )}
+
+                  {/* Hover info */}
+                  <div className="absolute bottom-0 left-0 right-0 p-2 text-white transform translate-y-full group-hover:translate-y-0 transition-transform">
+                    <div className="text-xs font-medium truncate">
+                      {mediaItem.preset || 'Media Library'}
                     </div>
-                  </div>
-                )}
-                
-                {/* Content overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 text-white transform translate-y-full group-hover:translate-y-0 transition-transform">
-                  <div className="space-y-1">
-                    {mediaItem.preset && (
-                      <div className="text-xs font-medium bg-black/50 px-2 py-1 rounded-full inline-block">
-                        🎨 {mediaItem.preset}
+                    {mediaItem.width && mediaItem.height && (
+                      <div className="text-xs opacity-80">
+                        {mediaItem.width} × {mediaItem.height}
                       </div>
                     )}
-                    <div className="text-xs opacity-90">Media Library</div>
                   </div>
-                </div>
 
-                {/* Media type indicator */}
-                <div className="absolute top-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full font-medium shadow-lg">
-                  {mediaItem.type === 'video' ? '🎥 Video' : '🖼️ Image'}
-                </div>
-              </button>
-            </div>
-          ))}
+                  {/* Media type indicator */}
+                  {mediaItem.type === 'video' && (
+                    <div className="absolute top-1 left-1 bg-black/70 text-white text-[8px] px-1.5 py-0.5 rounded-full font-medium shadow-lg">
+                      🎥
+                    </div>
+                  )}
+                </button>
+              </div>
+            );
+          })}
         </>
       );
     }
@@ -785,15 +759,21 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-[1200px] h-[95vh] max-h-[95vh] overflow-hidden flex flex-col p-0">
-        {/* Header - Compact */}
-        <DialogHeader className="flex-shrink-0 px-6 py-4 border-b bg-muted/20">
-          <DialogTitle className="text-xl font-bold text-primary">
-            Create Showcase
-          </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Share your creative work with the community
-          </p>
+      <DialogContent className="w-[95vw] max-w-[1400px] h-[98vh] max-h-[98vh] overflow-hidden flex flex-col p-0 mx-auto">
+        {/* Mobile responsive class additions */}
+        <div className="flex flex-col h-full lg:block lg:h-auto">
+        {/* Header - Ultra Compact */}
+        <DialogHeader className="flex-shrink-0 px-6 py-3 border-b bg-muted/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="text-lg font-bold text-primary">
+                Create Showcase
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Share your creative work with the community
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
         {/* Monthly Limit Reached Banner */}
@@ -828,14 +808,14 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
 
         <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 flex-1 min-h-0 overflow-hidden">
-            {/* Left Column - Media Selection & Preview */}
-            <div className="border-r border-border/50 bg-muted/20 flex flex-col h-full min-h-0">
-              {/* Media Selection Header - Compact */}
-              <div className="px-6 py-3 border-b bg-background/50">
-                <div className="flex items-center justify-between mb-3">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 flex-1 min-h-0 overflow-hidden">
+            {/* Left Column - Media Selection (3 columns on desktop, full on mobile) */}
+            <div className="lg:col-span-3 border-b lg:border-b-0 lg:border-r border-border/50 bg-muted/20 flex flex-col h-full min-h-0 order-2 lg:order-1">
+              {/* Media Selection Header - Ultra Compact */}
+              <div className="px-4 py-2 border-b bg-background/50">
+                <div className="flex items-center justify-between mb-2">
                   <div>
-                    <h3 className="text-base font-semibold">Select Media</h3>
+                    <h3 className="text-sm font-semibold">Select Media</h3>
                     <p className="text-xs text-muted-foreground">Choose up to 6 items</p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -849,7 +829,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                           form.setSelectedMoodboard('');
                         }}
                         disabled={form.loading || !subscription.canCreateShowcase()}
-                        className="text-xs px-2 py-1 h-7"
+                        className="text-xs px-2 py-1 h-6"
                       >
                         Clear All
                       </Button>
@@ -862,8 +842,8 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                     </Badge>
                   </div>
                 </div>
-                
-                {/* Showcase Type Quick Selector - Compact */}
+
+                {/* Showcase Type Quick Selector - Ultra Compact */}
                 <div className="flex gap-1 flex-wrap items-center">
                   {/* Primary Options */}
                   {[
@@ -879,7 +859,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                         variant={form.type === option.value ? "default" : "outline"}
                         onClick={() => form.setType(option.value as any)}
                         disabled={form.loading || !subscription.canCreateShowcase()}
-                        className={`flex items-center space-x-1 h-7 px-2 transition-all ${
+                        className={`flex items-center space-x-1 h-6 px-2 transition-all ${
                           form.type === option.value ? 'shadow-sm scale-105' : 'hover:shadow-sm hover:scale-102'
                         }`}
                         size="sm"
@@ -897,7 +877,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                       variant={showMoreOptions ? "default" : "outline"}
                       onClick={() => setShowMoreOptions(!showMoreOptions)}
                       disabled={form.loading || !subscription.canCreateShowcase()}
-                      className={`flex items-center space-x-1 h-7 px-2 transition-all ${
+                      className={`flex items-center space-x-1 h-6 px-2 transition-all ${
                         showMoreOptions ? 'shadow-sm scale-105' : 'hover:shadow-sm hover:scale-102'
                       }`}
                       size="sm"
@@ -948,7 +928,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                       setShowAllMedia(!showAllMedia);
                     }}
                     disabled={form.loading || !subscription.canCreateShowcase()}
-                    className="flex items-center space-x-1 h-7 px-2 text-xs"
+                    className="flex items-center space-x-1 h-6 px-2 text-xs"
                     size="sm"
                   >
                     <span>{showAllMedia ? "Filtered" : "Show All"}</span>
@@ -956,13 +936,10 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                 </div>
               </div>
 
-              {/* Scrollable Media Content Area */}
-              <div className="flex-1 overflow-y-auto">
-
-              {/* Main Preview - Compact */}
+              {/* Compact Preview - Only when media is selected */}
               {media.selectedMedia.length > 0 && (
-                <div className="p-4 border-b bg-muted/10">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="px-4 py-3 border-b bg-muted/10">
+                  <div className="flex items-center justify-between mb-2">
                     <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Preview</h4>
                     {media.selectedMedia.length > 1 && (
                       <div className="flex gap-1.5">
@@ -979,12 +956,18 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="relative group">
                     <button
                       type="button"
                       onClick={() => setIsPreviewModalOpen(true)}
-                      className="w-full aspect-video bg-muted/50 rounded-xl overflow-hidden shadow-lg ring-1 ring-border/50 hover:ring-primary/30 transition-all"
+                      className="w-full aspect-video bg-muted/50 rounded-lg overflow-hidden shadow-lg ring-1 ring-border/50 hover:ring-primary/30 transition-all"
+                      style={{
+                        aspectRatio: media.selectedMedia[media.previewIndex].width &&
+                                    media.selectedMedia[media.previewIndex].height ?
+                                    `${media.selectedMedia[media.previewIndex].width}/${media.selectedMedia[media.previewIndex].height}` :
+                                    '16/9'
+                      }}
                     >
                       {media.selectedMedia[media.previewIndex].type === 'video' ? (
                         <video
@@ -1000,75 +983,46 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                         <img
                           src={media.selectedMedia[media.previewIndex].thumbnail_url || media.selectedMedia[media.previewIndex].url}
                           alt="Preview"
-                          className="w-full h-full object-contain transition-transform group-hover:scale-105 bg-muted/20"
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105 bg-muted/20"
                         />
                       )}
                     </button>
 
-                    {/* Preview Overlay Info */}
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4 rounded-b-xl pointer-events-none">
+                    {/* Compact Preview Overlay Info */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2 rounded-b-lg pointer-events-none">
                       <div className="text-white">
-                        <p className="text-sm font-medium">{media.selectedMedia[media.previewIndex].preset || 'Custom'}</p>
-                        {media.selectedMedia[media.previewIndex].metadata?.generation_metadata?.resolution && (
-                          <p className="text-xs opacity-80">{media.selectedMedia[media.previewIndex].metadata.generation_metadata.resolution}</p>
+                        <p className="text-xs font-medium">{media.selectedMedia[media.previewIndex].preset || 'Custom'}</p>
+                        {media.selectedMedia[media.previewIndex].width && media.selectedMedia[media.previewIndex].height && (
+                          <p className="text-xs opacity-80">{media.selectedMedia[media.previewIndex].width} × {media.selectedMedia[media.previewIndex].height}</p>
                         )}
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Media Details */}
-                  <div className="mt-4 space-y-3">
-                    <div className="flex flex-wrap gap-2">
-                      {media.selectedMedia[media.previewIndex].preset && (
-                        <Badge variant="secondary" className="px-2 py-1 text-xs">
-                          🎨 {media.selectedMedia[media.previewIndex].preset}
-                        </Badge>
-                      )}
-                      {media.selectedMedia[media.previewIndex].metadata?.generation_metadata?.aspect_ratio && (
-                        <Badge variant="outline" className="px-2 py-1 text-xs">
-                          📐 {media.selectedMedia[media.previewIndex].metadata.generation_metadata.aspect_ratio}
-                        </Badge>
-                      )}
-                      {media.selectedMedia[media.previewIndex].metadata?.generation_metadata?.provider && (
-                        <Badge variant="outline" className="px-2 py-1 text-xs">
-                          ⚡ {media.selectedMedia[media.previewIndex].metadata.generation_metadata.provider}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Prompt Preview */}
-                    {media.selectedMedia[media.previewIndex].metadata?.generation_metadata?.prompt && (
-                      <div className="space-y-2">
-                        <Label className="text-xs text-muted-foreground font-medium">Generation Prompt</Label>
-                        <div className="text-xs bg-background/70 p-3 rounded-lg border max-h-16 overflow-y-auto leading-relaxed">
-                          {media.selectedMedia[media.previewIndex].metadata.generation_metadata.prompt}
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
               
-              {/* Selected Media Thumbnails - Compact */}
+              {/* Selected Media Thumbnails - Ultra Compact */}
               {media.selectedMedia.length > 1 && (
-                <div className="p-4 border-b bg-background/30">
-                  <h4 className="text-xs font-semibold text-muted-foreground mb-3">
-                    Selected ({media.selectedMedia.length}/6)
-                  </h4>
-                  <div className="grid grid-cols-4 gap-3">
+                <div className="px-4 py-2 border-b bg-background/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-semibold text-muted-foreground">
+                      Selected ({media.selectedMedia.length}/6)
+                    </h4>
+                  </div>
+                  <div className="grid grid-cols-6 gap-2">
                     {media.selectedMedia.map((mediaItem, index) => (
                       <button
                         key={mediaItem.id}
                         type="button"
                         onClick={() => media.setPreviewIndex(index)}
-                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all group ${
-                          media.previewIndex === index ? 'border-primary ring-2 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'
+                        className={`relative aspect-square rounded-md overflow-hidden border-2 transition-all group ${
+                          media.previewIndex === index ? 'border-primary ring-1 ring-primary/30 scale-105' : 'border-border hover:border-primary/50'
                         }`}
                       >
                         {mediaItem.type === 'video' ? (
                           <video
                             src={mediaItem.url}
-                            className="w-full h-full object-contain bg-muted/20"
+                            className="w-full h-full object-cover bg-muted/20"
                             muted
                             preload="metadata"
                             poster={mediaItem.thumbnail_url}
@@ -1077,7 +1031,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                           <img
                             src={mediaItem.thumbnail_url || mediaItem.url}
                             alt="Media thumbnail"
-                            className="w-full h-full object-contain bg-muted/20 transition-transform group-hover:scale-110"
+                            className="w-full h-full object-cover bg-muted/20 transition-transform group-hover:scale-110"
                           />
                         )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -1090,14 +1044,14 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                                 e.stopPropagation()
                                 media.setSelectedMedia(prev => prev.filter(item => item.id !== mediaItem.id))
                               }}
-                              className="h-6 w-6 p-0 rounded-full"
+                              className="h-4 w-4 p-0 rounded-full"
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-2 w-2" />
                             </Button>
                           </div>
                         </div>
                         {media.previewIndex === index && (
-                          <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs px-1.5 py-0.5 rounded-full font-medium">
+                          <div className="absolute top-0.5 left-0.5 bg-primary text-primary-foreground text-[8px] px-1 py-0.5 rounded-full font-medium">
                             {index + 1}
                           </div>
                         )}
@@ -1106,140 +1060,138 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                   </div>
                 </div>
               )}
-              
+
               {/* Available Media Grid */}
-              <div className="flex-1 min-h-0 p-6">
+              <div className="flex-1 min-h-0 px-4 pb-4">
                 <div className="h-full overflow-y-auto">
-                  {/* Media Stats */}
+                  {/* Compact Media Stats */}
                   {(() => {
                     const filtered = showAllMedia
                       ? media.getFilteredMedia('individual_image' as any) // Get all images when showing all
                       : media.getFilteredMedia(form.type === 'gig' ? 'individual_image' : form.type);
                     const totalMedia = filtered.media.length + filtered.playground.length + (filtered.treatments?.length || 0);
                     return totalMedia > 0 && (
-                      <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border/50">
-                        <div className="flex items-center justify-between text-sm">
+                      <div className="mb-3 p-2 bg-muted/30 rounded-md border border-border/50">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="font-medium text-muted-foreground">
                             {showAllMedia ? 'All Media' : `Media (${form.type === 'gig' ? 'image' : form.type})`}
                           </span>
-                          <div className="flex gap-4 text-xs">
+                          <div className="flex gap-3 text-xs">
                             {filtered.media.length > 0 && (
-                              <span className="text-primary">📁 {filtered.media.length} from library</span>
+                              <span className="text-primary">📁 {filtered.media.length}</span>
                             )}
                             {filtered.playground.length > 0 && (
-                              <span className="text-primary">🎨 {filtered.playground.length} from playground</span>
+                              <span className="text-primary">🎨 {filtered.playground.length}</span>
                             )}
                             {filtered.treatments && filtered.treatments.length > 0 && (
-                              <span className="text-primary">🎬 {filtered.treatments.length} treatments</span>
+                              <span className="text-primary">🎬 {filtered.treatments.length}</span>
                             )}
                           </div>
                         </div>
                       </div>
                     );
                   })()}
-                  
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
                     {filteredMedia}
                   </div>
                 </div>
               </div>
-              </div>
             </div>
 
-
-            {/* Right Column - Form Fields */}
-            <div className="bg-background flex flex-col overflow-hidden">
-              {/* Form Header */}
-              <div className="p-6 pb-4 border-b bg-muted/20">
-                <h3 className="text-lg font-semibold">Showcase Details</h3>
-                <p className="text-sm text-muted-foreground mt-1">Fill in the details for your showcase</p>
+            {/* Right Column - Form Fields (2 columns on desktop, first on mobile) */}
+            <div className="lg:col-span-2 bg-background flex flex-col overflow-hidden order-1 lg:order-2 border-b lg:border-b-0">
+              {/* Form Header - Compact */}
+              <div className="p-4 pb-3 border-b bg-muted/20">
+                <h3 className="text-base font-semibold">Showcase Details</h3>
+                <p className="text-xs text-muted-foreground mt-1">Fill in the details for your showcase</p>
               </div>
-              
-              {/* Form Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                {/* Title and Description */}
-                <div className="space-y-4">
-                  <div className="space-y-3">
-                    <Label htmlFor="title" className="text-sm font-semibold">Title *</Label>
+
+              {/* Form Content - Compact */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* Title and Description - Compact */}
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="title" className="text-xs font-semibold">Title *</Label>
                     <Input
                       id="title"
                       value={form.title}
                       onChange={(e) => form.setTitle(e.target.value)}
                       placeholder="Enter a compelling title..."
                       disabled={form.loading || !subscription.canCreateShowcase()}
-                      className="text-sm h-11 border-border/50 focus:border-primary/50 transition-colors"
+                      className="text-sm h-9 border-border/50 focus:border-primary/50 transition-colors"
                     />
                   </div>
-                  
-                  <div className="space-y-3">
-                    <Label htmlFor="description" className="text-sm font-semibold">Description</Label>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description" className="text-xs font-semibold">Description</Label>
                     <div className="relative">
                       <Textarea
                         id="description"
                         value={form.description}
                         onChange={(e) => form.setDescription(e.target.value)}
                         placeholder="Describe your showcase, the process, or any interesting details..."
-                        rows={4}
+                        rows={3}
                         disabled={form.loading || !subscription.canCreateShowcase()}
-                        className="text-sm resize-none border-border/50 focus:border-primary/50 transition-colors pr-14"
+                        className="text-sm resize-none border-border/50 focus:border-primary/50 transition-colors pr-10"
                       />
-                      <div className="absolute right-2 bottom-2">
-                    <VoiceToTextButton
-                      onAppendText={async (text) => {
-                        // Typewriter effect
-                        const base = form.description.endsWith(' ') || !form.description ? form.description : form.description + ' ';
-                        let out = base;
-                        form.setDescription(out);
-                        for (let i = 0; i < text.length; i++) {
-                          out += text[i];
-                          form.setDescription(out);
-                          await new Promise(r => setTimeout(r, 8));
-                        }
-                      }}
-                      userSubscriptionTier={userSubscriptionTier as 'FREE' | 'PLUS' | 'PRO'}
-                      disabled={form.loading || !subscription.canCreateShowcase()}
-                      size={32}
-                    />
+                      <div className="absolute right-1.5 bottom-1.5">
+                        <VoiceToTextButton
+                          onAppendText={async (text) => {
+                            // Typewriter effect
+                            const base = form.description.endsWith(' ') || !form.description ? form.description : form.description + ' ';
+                            let out = base;
+                            form.setDescription(out);
+                            for (let i = 0; i < text.length; i++) {
+                              out += text[i];
+                              form.setDescription(out);
+                              await new Promise(r => setTimeout(r, 8));
+                            }
+                          }}
+                          userSubscriptionTier={userSubscriptionTier as 'FREE' | 'PLUS' | 'PRO'}
+                          disabled={form.loading || !subscription.canCreateShowcase()}
+                          size={28}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Visibility */}
-                <div className="space-y-4">
+                {/* Visibility - Compact */}
+                <div className="space-y-3">
                   <div>
-                    <Label className="text-sm font-semibold mb-3 block">Visibility</Label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <Label className="text-xs font-semibold mb-2 block">Visibility</Label>
+                    <div className="grid grid-cols-2 gap-2">
                       <Button
                         type="button"
                         variant={form.visibility === 'public' ? "default" : "outline"}
                         onClick={() => form.setVisibility('public')}
                         disabled={form.loading || !subscription.canCreateShowcase()}
-                        className="flex items-center justify-center space-x-2 h-12 border-border/50 hover:border-primary/50 transition-colors"
+                        className="flex items-center justify-center space-x-1.5 h-9 border-border/50 hover:border-primary/50 transition-colors text-xs"
                         size="sm"
                       >
-                        <Globe className="h-4 w-4" />
-                        <span className="text-sm font-medium">Public</span>
+                        <Globe className="h-3 w-3" />
+                        <span className="font-medium">Public</span>
                       </Button>
                       <Button
                         type="button"
                         variant={form.visibility === 'private' ? "default" : "outline"}
                         onClick={() => form.setVisibility('private')}
                         disabled={form.loading || !subscription.canCreateShowcase()}
-                        className="flex items-center justify-center space-x-2 h-12 border-border/50 hover:border-primary/50 transition-colors"
+                        className="flex items-center justify-center space-x-1.5 h-9 border-border/50 hover:border-primary/50 transition-colors text-xs"
                         size="sm"
                       >
-                        <Lock className="h-4 w-4" />
-                        <span className="text-sm font-medium">Private</span>
+                        <Lock className="h-3 w-3" />
+                        <span className="font-medium">Private</span>
                       </Button>
                     </div>
                   </div>
                 </div>
 
-                {/* Tags */}
-                <div className="space-y-4">
+                {/* Tags - Compact */}
+                <div className="space-y-3">
                   <div>
-                    <Label className="text-sm font-semibold mb-3 block">Tags (Optional)</Label>
+                    <Label className="text-xs font-semibold mb-2 block">Tags (Optional)</Label>
                     <div className="flex gap-2">
                       <Input
                         value={form.newTag}
@@ -1252,26 +1204,26 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                             form.addTag()
                           }
                         }}
-                        className="text-sm h-11 border-border/50 focus:border-primary/50 transition-colors"
+                        className="text-sm h-9 border-border/50 focus:border-primary/50 transition-colors text-xs"
                       />
                       <Button
                         type="button"
                         onClick={() => form.addTag()}
                         disabled={form.loading || !subscription.canCreateShowcase() || !form.newTag.trim()}
                         size="sm"
-                        className="px-4 h-11"
+                        className="px-3 h-9"
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
-                  
+
                   {form.tags.length > 0 && (
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground font-medium">Added Tags</Label>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {form.tags.map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center gap-1 text-xs px-3 py-1">
+                          <Badge key={index} variant="secondary" className="flex items-center gap-1 text-xs px-2 py-1">
                             {tag}
                             <button
                               type="button"
@@ -1279,7 +1231,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
                               className="ml-1 hover:text-destructive transition-colors"
                               disabled={form.loading || !subscription.canCreateShowcase()}
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-2 w-2" />
                             </button>
                           </Badge>
                         ))}
@@ -1292,29 +1244,29 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
           </div>
         </form>
 
-        {/* Footer */}
-        <DialogFooter className="flex-shrink-0 p-6 pt-4 border-t border-border/50 bg-muted/20 relative z-10">
-          <div className="flex items-center justify-between w-full">
-            <div className="text-xs text-muted-foreground">
+        {/* Footer - Compact */}
+        <DialogFooter className="flex-shrink-0 px-4 py-3 border-t border-border/50 bg-muted/20 relative z-10">
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
+            <div className="text-xs text-muted-foreground text-center sm:text-left">
               {subscription.canCreateShowcase() ? (
-                <span>You have {subscription.getMaxShowcases() === -1 ? 'unlimited' : `${subscription.getMaxShowcases() - subscription.monthlyShowcaseCount} remaining`} showcases this month</span>
+                <span>{subscription.getMaxShowcases() === -1 ? 'Unlimited showcases' : `${subscription.getMaxShowcases() - subscription.monthlyShowcaseCount} remaining`} this month</span>
               ) : (
                 <span className="text-destructive">Monthly limit reached - upgrade to create more</span>
               )}
             </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={onClose} disabled={form.loading} className="px-6">
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose} disabled={form.loading} className="px-4 h-8 text-xs">
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={form.loading || !subscription.canCreateShowcase()}
                 onClick={handleSubmit}
-                className="px-6 bg-primary hover:bg-primary/90"
+                className="px-4 h-8 bg-primary hover:bg-primary/90 text-xs"
               >
                 {form.loading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
                     Creating...
                   </>
                 ) : (
@@ -1324,6 +1276,7 @@ export default function CreateShowcaseModal({ isOpen, onClose, onSuccess }: Crea
             </div>
           </div>
         </DialogFooter>
+        </div>
       </DialogContent>
 
       {/* Full-Screen Preview Modal */}
